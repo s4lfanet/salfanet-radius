@@ -9,7 +9,7 @@ import { Users, Search, CheckCircle, Loader2, ChevronDown, X, Upload, Printer, B
 
 const PAGE_SIZE = 50;
 const fmtRp = (v: number) => `Rp ${Number(v || 0).toLocaleString('id-ID')}`;
-const fmtDate = (d: string) => d ? formatWIB(d, 'dd MMM yyyy') : '—';
+const fmtDate = (d: string) => d ? formatWIB(d, 'dd MMM yyyy') : '-';
 
 export default function CollectorBillingPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -183,7 +183,7 @@ export default function CollectorBillingPage() {
       return;
     }
 
-    // Already connected — just print
+    // Already connected - just print
     setActionLoading(`bt-${invoiceId}`);
     try {
       const res = await fetch(`/api/invoices/${invoiceId}/pdf`, { credentials: 'include' });
@@ -392,7 +392,7 @@ export default function CollectorBillingPage() {
                             <div className="text-xs text-muted-foreground flex items-center gap-1.5">
                               <span className="font-mono">{u.customerId || u.username}</span>
                               <span>·</span>
-                              <span className="flex items-center gap-0.5"><Phone className="w-3 h-3" />{u.phone || '—'}</span>
+                              <span className="flex items-center gap-0.5"><Phone className="w-3 h-3" />{u.phone || '-'}</span>
                             </div>
                           </div>
                         </div>
@@ -407,7 +407,7 @@ export default function CollectorBillingPage() {
                             </div>
                             <div className="text-xs text-muted-foreground">{fmtRp(u.profile.price)}/bln</div>
                           </div>
-                        ) : <span className="text-muted-foreground">—</span>}
+                        ) : <span className="text-muted-foreground">-</span>}
                       </td>
                       {/* Area */}
                       <td className="px-3 py-3">
@@ -416,7 +416,7 @@ export default function CollectorBillingPage() {
                             <MapPin className="w-3 h-3" />
                             {u.area.name}
                           </span>
-                        ) : <span className="text-muted-foreground">—</span>}
+                        ) : <span className="text-muted-foreground">-</span>}
                       </td>
                       {/* Status */}
                       <td className="px-3 py-3">
@@ -445,7 +445,7 @@ export default function CollectorBillingPage() {
                         ) : u.invoices?.length > 0 ? (
                           <span className="text-xs text-emerald-600 font-medium">Lunas</span>
                         ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
+                          <span className="text-xs text-muted-foreground">-</span>
                         )}
                       </td>
                       {/* Aksi */}

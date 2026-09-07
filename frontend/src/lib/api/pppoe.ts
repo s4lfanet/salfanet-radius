@@ -1,5 +1,5 @@
 /**
- * PPPoE API client — all PPPoE-related endpoints.
+ * PPPoE API client - all PPPoE-related endpoints.
  *
  * Usage:
  *   import { pppoeApi } from '@/lib/api/pppoe';
@@ -123,7 +123,7 @@ export const pppoeApi = {
     });
   },
 
-  /** Bulk delete users — NOTE: backend may not have this endpoint, falls back to individual deletes */
+  /** Bulk delete users - NOTE: backend may not have this endpoint, falls back to individual deletes */
   bulkDelete(userIds: string[]): Promise<{ deleted: number }> {
     return apiAdmin<{ deleted: number }>('/api/pppoe/users/bulk-delete', {
       method: 'DELETE',

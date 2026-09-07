@@ -794,10 +794,10 @@ export default function InvoicesPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         </div>
-        <Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)] relative z-10" />
+        <Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop- relative z-10" />
       </div>
     );
   }
@@ -806,7 +806,7 @@ export default function InvoicesPage() {
     <div className="bg-background relative">
       {/* Neon Cyberpunk Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
         <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
@@ -816,7 +816,7 @@ export default function InvoicesPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)]">{t('invoices.title')}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-">{t('invoices.title')}</h1>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t('invoices.monthlyBilling')}</p>
           </div>
           <div className="flex gap-1.5 flex-wrap">
@@ -833,15 +833,15 @@ export default function InvoicesPage() {
             <div className="flex items-center gap-1 flex-wrap">
               <span className="text-[10px] text-muted-foreground whitespace-nowrap">Periode:</span>
               <input type="date" value={exportDateFrom} onChange={e => setExportDateFrom(e.target.value)}
-                className="text-[10px] px-1.5 py-1 bg-muted/80 border border-violet-500/30 rounded text-foreground focus:outline-none focus:border-violet-500/60" />
-              <span className="text-[10px] text-muted-foreground/40">–</span>
+                className="text-[10px] px-1.5 py-1 bg-muted/80 border border-border rounded text-foreground focus:outline-none focus:border-border" />
+              <span className="text-[10px] text-muted-foreground/40">-</span>
               <input type="date" value={exportDateTo} onChange={e => setExportDateTo(e.target.value)}
-                className="text-[10px] px-1.5 py-1 bg-muted/80 border border-violet-500/30 rounded text-foreground focus:outline-none focus:border-violet-500/60" />
+                className="text-[10px] px-1.5 py-1 bg-muted/80 border border-border rounded text-foreground focus:outline-none focus:border-border" />
             </div>
             <button onClick={handleExportExcel} className="inline-flex items-center px-2 py-1.5 text-xs border border-success text-success rounded hover:bg-success/10"><Download className="h-3 w-3 mr-1" />Excel</button>
             <button onClick={handleExportPDF} className="inline-flex items-center px-2 py-1.5 text-xs border border-destructive text-destructive rounded hover:bg-destructive/10"><Download className="h-3 w-3 mr-1" />PDF</button>
             <Link href="/admin/invoices/import">
-              <button className="inline-flex items-center px-2 py-1.5 text-xs border border-violet-500/60 text-foreground rounded hover:bg-violet-500/10">
+              <button className="inline-flex items-center px-2 py-1.5 text-xs border border-border text-foreground rounded hover:bg-primary/10">
                 <Upload className="h-3 w-3 mr-1" />Import CSV
               </button>
             </Link>
@@ -857,18 +857,18 @@ export default function InvoicesPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-3 sm:p-4 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
+          <div className="bg-card rounded-xl border border-border p-3 sm:p-4  hover:border-border transition-all">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('common.total')}</p>
                 <p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{stats.total}</p>
               </div>
-              <div className="p-1.5 sm:p-2 rounded-lg shadow-lg bg-violet-500/20 flex-shrink-0 flex items-center justify-center">
+              <div className="p-1.5 sm:p-2 rounded-lg shadow-lg bg-primary/10 flex-shrink-0 flex items-center justify-center">
                 <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
             </div>
           </div>
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-3 sm:p-4 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
+          <div className="bg-card rounded-xl border border-border p-3 sm:p-4  hover:border-border transition-all">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('invoices.pending')}</p>
@@ -880,7 +880,7 @@ export default function InvoicesPage() {
               </div>
             </div>
           </div>
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-3 sm:p-4 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
+          <div className="bg-card rounded-xl border border-border p-3 sm:p-4  hover:border-border transition-all">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('invoices.paid')}</p>
@@ -892,7 +892,7 @@ export default function InvoicesPage() {
               </div>
             </div>
           </div>
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-3 sm:p-4 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
+          <div className="bg-card rounded-xl border border-border p-3 sm:p-4  hover:border-border transition-all">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('invoices.overdue')}</p>
@@ -1438,7 +1438,7 @@ export default function InvoicesPage() {
                       </div>
                       {genLoadingUsers && <p className="text-[10px] text-muted-foreground mt-1">Mencari...</p>}
                       {genUsers.length > 0 && !genUserId && (
-                        <div className="mt-1 rounded-xl border border-border bg-card/80 shadow-lg max-h-36 overflow-y-auto">
+                        <div className="mt-1 rounded-xl border border-border bg-card shadow-lg max-h-36 overflow-y-auto">
                           {genUsers.map(u => (
                             <button
                               key={u.id}

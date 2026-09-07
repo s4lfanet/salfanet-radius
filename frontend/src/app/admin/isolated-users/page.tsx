@@ -307,7 +307,7 @@ export default function IsolatedUsersMonitorPage() {
                               <Hash className="w-2.5 h-2.5" />{user.customerId}
                             </span>
                           ) : (
-                            <span className="text-muted-foreground">—</span>
+                            <span className="text-muted-foreground">-</span>
                           )}
                         </div>
                         <div>
@@ -317,7 +317,7 @@ export default function IsolatedUsersMonitorPage() {
                               <MapPin className="w-2.5 h-2.5 text-primary" />{user.areaName}
                             </span>
                           ) : (
-                            <span className="text-muted-foreground">—</span>
+                            <span className="text-muted-foreground">-</span>
                           )}
                         </div>
                         <div>

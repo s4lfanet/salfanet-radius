@@ -346,10 +346,10 @@ export default function HotspotProfilePage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         </div>
-        <Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)] relative z-10" />
+        <Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop- relative z-10" />
       </div>
     )
   }
@@ -357,7 +357,7 @@ export default function HotspotProfilePage() {
   return (
     <div className="bg-background relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
         <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
@@ -366,7 +366,7 @@ export default function HotspotProfilePage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)] flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop- flex items-center gap-2">
               <Ticket className="w-5 h-5 text-brand-500" />
               {t('hotspot.profiles')}
             </h1>
@@ -438,7 +438,7 @@ export default function HotspotProfilePage() {
             <div className="text-center py-8 text-muted-foreground text-xs">{t('hotspot.noProfiles')}</div>
           ) : (
             profiles.map((profile) => (
-              <div key={profile.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-violet-500/20 p-3">
+              <div key={profile.id} className="bg-card rounded-xl border border-border p-3">
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <div className="font-medium text-sm text-foreground">{profile.name}</div>
@@ -600,7 +600,7 @@ export default function HotspotProfilePage() {
                   </div>
                   <div className="bg-green-500/10 p-2 rounded-lg border border-green-500/30">
                     <div className="text-[10px] text-muted-foreground">{t('hotspot.sellingPrice')}</div>
-                    <div className="text-base font-bold text-green-500 drop-shadow-[0_0_10px_rgba(0,255,136,0.5)]">{formatCurrency(sellingPrice)}</div>
+                    <div className="text-base font-bold text-green-500 drop-">{formatCurrency(sellingPrice)}</div>
                   </div>
                   <div>
                     <ModalLabel>{t('hotspot.groupProfile')}</ModalLabel>
@@ -751,14 +751,14 @@ export default function HotspotProfilePage() {
                       </div>
                     </div>
                   </div>
-                  <div className="border border-violet-500/30 rounded-lg p-3 space-y-2 bg-violet-500/5">
-                    <div className="text-[10px] font-medium text-violet-500 mb-2">🔐 Access Control</div>
+                  <div className="border border-border rounded-lg p-3 space-y-2 bg-primary/10">
+                    <div className="text-[10px] font-medium text-primary mb-2">🔐 Access Control</div>
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={formData.agentAccess} onChange={(e) => setFormData({ ...formData, agentAccess: e.target.checked })} className="rounded border-violet-500/50 bg-background dark:bg-card accent-brand-500 dark:accent-brand-500" />
+                      <input type="checkbox" checked={formData.agentAccess} onChange={(e) => setFormData({ ...formData, agentAccess: e.target.checked })} className="rounded border-border bg-background dark:bg-card accent-brand-500 dark:accent-brand-500" />
                       <span className="text-xs text-foreground">{t('hotspot.agentAccess')}</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={formData.eVoucherAccess} onChange={(e) => setFormData({ ...formData, eVoucherAccess: e.target.checked })} className="rounded border-violet-500/50 bg-background dark:bg-card accent-brand-500 dark:accent-brand-500" />
+                      <input type="checkbox" checked={formData.eVoucherAccess} onChange={(e) => setFormData({ ...formData, eVoucherAccess: e.target.checked })} className="rounded border-border bg-background dark:bg-card accent-brand-500 dark:accent-brand-500" />
                       <span className="text-xs text-foreground">{t('hotspot.evoucherAccess')}</span>
                     </label>
                   </div>

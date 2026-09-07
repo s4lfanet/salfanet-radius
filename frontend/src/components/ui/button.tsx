@@ -12,22 +12,22 @@ const buttonVariants = cva(
         default: [
           "bg-gradient-to-r from-cyan-500 to-cyan-400 text-black",
           "border-2 border-cyan-400",
-          "shadow-[0_0_20px_rgba(0,255,255,0.3)]",
-          "hover:shadow-[0_0_30px_rgba(0,255,255,0.5)] hover:border-cyan-300",
+          "",
+          "hover: hover:border-cyan-300",
           "dark:neon-glow"
         ].join(" "),
         destructive: [
           "bg-gradient-to-r from-red-500 to-red-400 text-white",
           "border-2 border-red-400",
-          "shadow-[0_0_20px_rgba(255,51,102,0.3)]",
-          "hover:shadow-[0_0_30px_rgba(255,51,102,0.5)]"
+          "",
+          "hover:"
         ].join(" "),
         outline: [
           "bg-transparent text-cyan-400",
           "border-2 border-cyan-500/50",
-          "shadow-[0_0_10px_rgba(0,255,255,0.1)]",
+          "",
           "hover:bg-cyan-400/10 hover:border-cyan-400",
-          "hover:shadow-[0_0_20px_rgba(0,255,255,0.3)]",
+          "hover:",
           "dark:neon-border"
         ].join(" "),
         secondary: [
@@ -43,20 +43,20 @@ const buttonVariants = cva(
         link: [
           "text-cyan-400 underline-offset-4",
           "hover:underline hover:text-cyan-300",
-          "drop-shadow-[0_0_10px_rgba(0,255,255,0.5)]",
+          "drop-",
           "dark:neon-text"
         ].join(" "),
         success: [
           "bg-gradient-to-r from-green-500 to-green-400 text-black",
           "border-2 border-green-400",
-          "shadow-[0_0_20px_rgba(0,255,136,0.3)]",
-          "hover:shadow-[0_0_30px_rgba(0,255,136,0.5)]"
+          "",
+          "hover:"
         ].join(" "),
         warning: [
           "bg-gradient-to-r from-orange-500 to-orange-400 text-black",
           "border-2 border-orange-400",
-          "shadow-[0_0_20px_rgba(255,170,0,0.3)]",
-          "hover:shadow-[0_0_30px_rgba(255,170,0,0.5)]"
+          "",
+          "hover:"
         ].join(" "),
       },
       size: {

@@ -25,15 +25,15 @@ export const StatsRow: Story = {
   render: () => (
     <div className="min-h-dvh bg-background p-6 space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Stats Cards — Target vs Current</h1>
+        <h1 className="text-2xl font-bold text-foreground">Stats Cards - Target vs Current</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Top row uses semantic tokens (target). Bottom row uses hardcoded neon (current — to be replaced).
+          Top row uses semantic tokens (target). Bottom row uses hardcoded neon (current - to be replaced).
         </p>
       </div>
 
       {/* Target: semantic tokens */}
       <div>
-        <h2 className="text-lg font-bold text-foreground mb-3">✅ Target — Semantic Tokens</h2>
+        <h2 className="text-lg font-bold text-foreground mb-3">✅ Target - Semantic Tokens</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="bg-card border border-border rounded-2xl p-4">
             <div className="flex items-center justify-between mb-2">
@@ -56,8 +56,8 @@ export const StatsRow: Story = {
           <div className="bg-card border border-border rounded-2xl p-4">
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs text-muted-foreground">Revenue</p>
-              <div className="p-2 bg-violet-500/10 rounded-xl">
-                <Wallet className="w-5 h-5 text-violet-500 dark:text-violet-400" />
+              <div className="p-2 bg-primary/10 rounded-xl">
+                <Wallet className="w-5 h-5 text-primary dark:text-primary" />
               </div>
             </div>
             <p className="text-2xl font-bold text-foreground">Rp 12.5M</p>
@@ -76,7 +76,7 @@ export const StatsRow: Story = {
 
       {/* Current: hardcoded neon (technician/admin style) */}
       <div>
-        <h2 className="text-lg font-bold text-foreground mb-3">❌ Current — Hardcoded Neon (to be replaced)</h2>
+        <h2 className="text-lg font-bold text-foreground mb-3">❌ Current - Hardcoded Neon (to be replaced)</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="bg-card border border-border rounded-2xl p-4">
             <div className="flex items-center justify-between mb-2">
@@ -124,11 +124,11 @@ export const ButtonComparison: Story = {
   render: () => (
     <div className="min-h-dvh bg-background p-6 space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Buttons — Target vs Current</h1>
+        <h1 className="text-2xl font-bold text-foreground">Buttons - Target vs Current</h1>
       </div>
 
       <div>
-        <h2 className="text-lg font-bold text-foreground mb-3">✅ Target — CyberButton (already uses blue/violet)</h2>
+        <h2 className="text-lg font-bold text-foreground mb-3">✅ Target - CyberButton (already uses blue/violet)</h2>
         <div className="flex flex-wrap gap-3">
           <CyberButton variant="default">Primary Action</CyberButton>
           <CyberButton variant="outline">Secondary</CyberButton>
@@ -138,7 +138,7 @@ export const ButtonComparison: Story = {
       </div>
 
       <div>
-        <h2 className="text-lg font-bold text-foreground mb-3">❌ Current — Hardcoded neon gradients (to be replaced)</h2>
+        <h2 className="text-lg font-bold text-foreground mb-3">❌ Current - Hardcoded neon gradients (to be replaced)</h2>
         <div className="flex flex-wrap gap-3">
           <button className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-brand-500 to-brand-400 text-white text-xs font-bold rounded-xl hover:shadow-md shadow-brand-500/20 transition">
             <CheckCircle2 className="w-3.5 h-3.5" /> Take Task
@@ -159,7 +159,7 @@ export const TablePattern: Story = {
   render: () => (
     <div className="min-h-dvh bg-background p-6 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Table Pattern — Semantic Tokens</h1>
+        <h1 className="text-2xl font-bold text-foreground">Table Pattern - Semantic Tokens</h1>
       </div>
 
       <div className="bg-card border border-border rounded-xl overflow-hidden">

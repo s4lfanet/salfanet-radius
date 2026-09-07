@@ -92,7 +92,7 @@ export default function WhatsAppProvidersPage() {
     baileys: 'internal',
   };
 
-  // Known Wablas server hostnames — user picks one which sets apiUrl
+  // Known Wablas server hostnames - user picks one which sets apiUrl
   const WABLAS_SERVERS = [
     'wa', 'jakarta', 'pati', 'deu', 'kudus', 'solo', 'bogor', 'jogja', 'bandung',
   ];
@@ -262,7 +262,7 @@ export default function WhatsAppProvidersPage() {
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'mpwa': return 'bg-primary/20 text-primary dark:bg-primary/20 dark:text-primary';
-      case 'waha': return 'bg-accent/20 text-accent dark:bg-purple-900/30 dark:text-purple-400';
+      case 'waha': return 'bg-accent/20 text-accent dark:bg-purple-900/30 dark:text-primary';
       case 'fonnte': return 'bg-success/20 text-success dark:bg-green-900/30 dark:text-success';
       case 'wablas': return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400';
       case 'gowa': return 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400';
@@ -369,7 +369,7 @@ export default function WhatsAppProvidersPage() {
           startQrPolling(provider);
         }
       } else if (response.status === 202) {
-        // Baileys WAITING — QR belum siap, retry otomatis
+        // Baileys WAITING - QR belum siap, retry otomatis
         retrying = true;
         setTimeout(() => {
           if (showQrModalRef.current) showQrCode(provider);
@@ -396,10 +396,10 @@ export default function WhatsAppProvidersPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         </div>
-        <div className="w-12 h-12 border-4 border-brand-500 dark:border-brand-500 border-t-transparent rounded-full animate-spin dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)] relative z-10"></div>
+        <div className="w-12 h-12 border-4 border-brand-500 dark:border-brand-500 border-t-transparent rounded-full animate-spin dark:drop- relative z-10"></div>
       </div>
     );
   }
@@ -407,7 +407,7 @@ export default function WhatsAppProvidersPage() {
   return (
     <div className="bg-background relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
         <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
@@ -417,7 +417,7 @@ export default function WhatsAppProvidersPage() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)]">{t('whatsapp.providersTitle')}</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-">{t('whatsapp.providersTitle')}</h1>
               <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t('whatsapp.providersSubtitle')}</p>
             </div>
             <button
@@ -681,17 +681,17 @@ export default function WhatsAppProvidersPage() {
                           );
                         })}
                       </div>
-                      <p className="text-[9px] text-muted-foreground/60 mt-0.5">Server sesuai akun Wablas Anda — lihat di dashboard Wablas</p>
+                      <p className="text-[9px] text-muted-foreground/60 mt-0.5">Server sesuai akun Wablas Anda - lihat di dashboard Wablas</p>
                     </div>
                   )}
                   {formData.type !== 'wablas' && DEFAULT_URLS[formData.type] && formData.apiUrl === DEFAULT_URLS[formData.type] && (
-                    <p className="text-[9px] text-primary/70 mt-0.5">✓ URL default {formData.type} — bisa diubah manual</p>
+                    <p className="text-[9px] text-primary/70 mt-0.5">✓ URL default {formData.type} - bisa diubah manual</p>
                   )}
                   {formData.type !== 'wablas' && DEFAULT_URLS[formData.type] && formData.apiUrl !== DEFAULT_URLS[formData.type] && formData.apiUrl && (
-                    <p className="text-[9px] text-amber-500 mt-0.5">⚠ URL custom — berbeda dari default</p>
+                    <p className="text-[9px] text-amber-500 mt-0.5">⚠ URL custom - berbeda dari default</p>
                   )}
                   {!DEFAULT_URLS[formData.type] && (
-                    <p className="text-[9px] text-muted-foreground mt-0.5">Self-hosted — isi URL server {formData.type.toUpperCase()} Anda</p>
+                    <p className="text-[9px] text-muted-foreground mt-0.5">Self-hosted - isi URL server {formData.type.toUpperCase()} Anda</p>
                   )}
                 </div>
                 <div>
@@ -738,12 +738,12 @@ export default function WhatsAppProvidersPage() {
           <ModalBody className="flex flex-col items-center justify-center space-y-4">
             {qrLoading ? (
               <div className="flex flex-col items-center space-y-2 py-8">
-                <div className="w-10 h-10 border-4 border-brand-500 dark:border-brand-500 border-t-transparent rounded-full animate-spin dark:drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]" />
+                <div className="w-10 h-10 border-4 border-brand-500 dark:border-brand-500 border-t-transparent rounded-full animate-spin dark:drop-" />
                 <p className="text-xs text-muted-foreground">{t('common.loading')}</p>
               </div>
             ) : qrConnected ? (
               <div className="flex flex-col items-center space-y-3 py-6">
-                <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center shadow-[0_0_30px_rgba(34,197,94,0.4)]">
+                <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center ">
                   <svg className="w-10 h-10 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
@@ -753,7 +753,7 @@ export default function WhatsAppProvidersPage() {
               </div>
             ) : qrImage ? (
               <>
-                <div className="p-3 bg-white rounded-lg shadow-[0_0_20px_rgba(6,182,212,0.3)]">
+                <div className="p-3 bg-white rounded-lg ">
                   <img src={qrImage} alt="QR Code" width={192} height={192} className="w-48 h-48" />
                 </div>
                 <p className="text-[10px] text-muted-foreground text-center">{t('whatsapp.scanWhatsapp')}</p>

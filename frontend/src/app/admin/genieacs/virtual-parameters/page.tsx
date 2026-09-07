@@ -190,12 +190,12 @@ export default function VirtualParametersPage() {
 
   return (
     <div className="bg-background relative">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div><div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div><div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div><div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div></div>
+      <div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div><div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div><div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div><div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div></div>
       <div className="relative z-10 max-w-6xl mx-auto space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)] flex items-center gap-2">
-              <Cpu className="w-6 h-6 text-brand-500 dark:text-brand-500 dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)]" />
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop- flex items-center gap-2">
+              <Cpu className="w-6 h-6 text-brand-500 dark:text-brand-500 dark:drop-" />
               {t('genieacs.virtualParamsTitle')}
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">
@@ -272,7 +272,7 @@ export default function VirtualParametersPage() {
 
           {loading ? (
             <div className="flex items-center justify-center py-10">
-              <Loader2 className="w-5 h-5 animate-spin text-brand-500 dark:text-brand-500 dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)]" />
+              <Loader2 className="w-5 h-5 animate-spin text-brand-500 dark:text-brand-500 dark:drop-" />
             </div>
           ) : items.length === 0 ? (
             <div className="py-10 text-center">
@@ -292,7 +292,7 @@ export default function VirtualParametersPage() {
             {/* Mobile Card View */}
             <div className="block md:hidden space-y-3 p-3">
               {items.map((vp) => (
-                <div key={vp.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-violet-500/20 p-3">
+                <div key={vp.id} className="bg-card rounded-xl border border-border p-3">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1 min-w-0">
                       <span className="text-sm font-semibold text-foreground">{vp.name}</span>
@@ -391,7 +391,7 @@ export default function VirtualParametersPage() {
           </ModalHeader>
 
             {/* Tabs */}
-            <div className="flex border-b border-violet-500/30 px-5">
+            <div className="flex border-b border-border px-5">
               <button
                 type="button"
                 onClick={() => setActiveTab('basic')}
@@ -451,7 +451,7 @@ export default function VirtualParametersPage() {
                   <p className="text-[11px] text-muted-foreground">{t('genieacs.expressionHint')}</p>
                   <details className="text-[11px] text-muted-foreground">
                     <summary className="cursor-pointer text-brand-500 hover:underline">{t('genieacs.viewExpressionExamples')}</summary>
-                    <div className="mt-2 p-2 bg-muted/50 dark:bg-card/50 rounded border border-violet-500/20 space-y-2">
+                    <div className="mt-2 p-2 bg-muted/50 dark:bg-card/50 rounded border border-border space-y-2">
                       <div>
                         <p className="font-semibold text-foreground">1. Uptime (detik):</p>
                         <pre className="text-[10px] overflow-x-auto text-brand-500/80">{`let uptime = declare("Device.DeviceInfo.UpTime", {value: Date.now()}).value[0];
@@ -488,7 +488,7 @@ return user || "N/A";`}</pre>
                       type="checkbox"
                       checked={form.isActive}
                       onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
-                      className="rounded border-violet-500/40 bg-background dark:bg-background dark:bg-card accent-brand-500 dark:accent-brand-500/50"
+                      className="rounded border-border bg-background dark:bg-background dark:bg-card accent-brand-500 dark:accent-brand-500/50"
                     />
                     {t('genieacs.activateThisParam')}
                   </label>
@@ -590,7 +590,7 @@ return user || "N/A";`}</pre>
                       type="checkbox"
                       checked={form.showInSummary}
                       onChange={(e) => setForm({ ...form, showInSummary: e.target.checked })}
-                      className="rounded border-violet-500/40 bg-background dark:bg-background dark:bg-card accent-brand-500 dark:accent-brand-500/50"
+                      className="rounded border-border bg-background dark:bg-background dark:bg-card accent-brand-500 dark:accent-brand-500/50"
                     />
                     {t('genieacs.showInSummary')}
                   </label>

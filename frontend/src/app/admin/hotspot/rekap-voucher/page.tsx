@@ -110,7 +110,7 @@ export default function RekapVoucherPage() {
       const end = new Date(periodValue + 'T00:00:00');
       end.setDate(start.getDate() + 6);
       const fmt = (d: Date) => `${d.getDate()} ${MONTH_NAMES_ID[d.getMonth()].slice(0,3)}`;
-      return `${fmt(start)} – ${fmt(end)} ${end.getFullYear()}`;
+      return `${fmt(start)} - ${fmt(end)} ${end.getFullYear()}`;
     }
     if (periodMode === 'monthly' && periodValue) {
       const [y, m] = periodValue.split('-').map(Number);
@@ -265,7 +265,7 @@ export default function RekapVoucherPage() {
         </div>
       </div>
 
-      {/* Summary Stats — compact inline */}
+      {/* Summary Stats - compact inline */}
       <div className="flex flex-wrap gap-2 text-xs">
         {isPeriodMode ? (
           <>
@@ -284,10 +284,10 @@ export default function RekapVoucherPage() {
         )}
         <Stat label="Pendapatan" value={formatCurrency(totalRevenue)} color="text-brand-500" />
         <Stat label="Admin" value={formatCurrency(totalAdminEarnings)} color="text-blue-400" />
-        {totalAgentProfit > 0 && <Stat label="Profit Agent" value={formatCurrency(totalAgentProfit)} color="text-violet-500" />}
+        {totalAgentProfit > 0 && <Stat label="Profit Agent" value={formatCurrency(totalAgentProfit)} color="text-primary" />}
       </div>
 
-      {/* Daily Breakdown — period mode only */}
+      {/* Daily Breakdown - period mode only */}
       {isPeriodMode && dailyBreakdown.length > 0 && (
         <div className="bg-card rounded-lg border border-border overflow-hidden">
           <div className="px-3 py-2 bg-muted border-b border-border text-xs font-semibold">Rincian per Hari</div>
@@ -327,7 +327,7 @@ export default function RekapVoucherPage() {
         </div>
       )}
 
-      {/* Per-agent summary — only if agent data exists */}
+      {/* Per-agent summary - only if agent data exists */}
       {agentMap.size > 0 && (
         <div className="bg-card rounded-lg border border-border overflow-hidden">
           <div className="px-3 py-2 bg-muted border-b border-border text-xs font-semibold">Pendapatan per Agent</div>
@@ -345,7 +345,7 @@ export default function RekapVoucherPage() {
                   <tr key={id} className="hover:bg-muted/50">
                     <td className="px-3 py-1.5 font-medium text-foreground whitespace-nowrap">{a.name}</td>
                     <td className="px-3 py-1.5 text-right text-muted-foreground whitespace-nowrap">{a.sold}</td>
-                    <td className="px-3 py-1.5 text-right text-violet-500 font-medium whitespace-nowrap">{formatCurrency(a.profit)}</td>
+                    <td className="px-3 py-1.5 text-right text-primary font-medium whitespace-nowrap">{formatCurrency(a.profit)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -354,7 +354,7 @@ export default function RekapVoucherPage() {
                   <tr>
                     <td className="px-3 py-1.5 whitespace-nowrap">Total</td>
                     <td className="px-3 py-1.5 text-right whitespace-nowrap">{filteredRekap.filter(i => i.agent).reduce((s,i) => s+i.sold, 0)}</td>
-                    <td className="px-3 py-1.5 text-right text-violet-500 whitespace-nowrap">{formatCurrency(totalAgentProfit)}</td>
+                    <td className="px-3 py-1.5 text-right text-primary whitespace-nowrap">{formatCurrency(totalAgentProfit)}</td>
                   </tr>
                 </tfoot>
               )}
@@ -363,7 +363,7 @@ export default function RekapVoucherPage() {
         </div>
       )}
 
-      {/* Main Table — responsive (cards on mobile, table on desktop) */}
+      {/* Main Table - responsive (cards on mobile, table on desktop) */}
       {loading ? (
         <div className="text-center py-12 text-muted-foreground text-sm">{t('common.loading')}</div>
       ) : filteredRekap.length === 0 ? (
@@ -474,7 +474,7 @@ export default function RekapVoucherPage() {
                       </td>
                       <td className="px-3 py-2 text-right text-muted-foreground whitespace-nowrap">{item.sellingPrice > 0 ? formatCurrency(item.sellingPrice) : '-'}</td>
                       <td className="px-3 py-2 text-right font-medium text-brand-500 whitespace-nowrap">{item.totalRevenue > 0 ? formatCurrency(item.totalRevenue) : '-'}</td>
-                      <td className="px-3 py-2 text-right font-medium text-violet-500 whitespace-nowrap">{item.agentProfit > 0 ? formatCurrency(item.agentProfit) : <span className="text-muted-foreground">-</span>}</td>
+                      <td className="px-3 py-2 text-right font-medium text-primary whitespace-nowrap">{item.agentProfit > 0 ? formatCurrency(item.agentProfit) : <span className="text-muted-foreground">-</span>}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -488,7 +488,7 @@ export default function RekapVoucherPage() {
                     <td className="px-3 py-2 text-right text-red-400 whitespace-nowrap">{totalExpired}</td>
                     <td className="px-3 py-2 text-right text-muted-foreground whitespace-nowrap">-</td>
                     <td className="px-3 py-2 text-right text-brand-500 whitespace-nowrap">{formatCurrency(totalRevenue)}</td>
-                    <td className="px-3 py-2 text-right text-violet-500 whitespace-nowrap">{formatCurrency(totalAgentProfit)}</td>
+                    <td className="px-3 py-2 text-right text-primary whitespace-nowrap">{formatCurrency(totalAgentProfit)}</td>
                   </tr>
                 </tfoot>
               </table>

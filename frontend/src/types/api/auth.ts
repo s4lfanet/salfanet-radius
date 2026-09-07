@@ -1,5 +1,5 @@
 /**
- * Auth API types — matches backend admin auth responses.
+ * Auth API types - matches backend admin auth responses.
  *
  * @see backend/src/app/api/admin/auth/verify/route.ts
  */

@@ -6,7 +6,7 @@ import { getToken } from 'next-auth/jwt';
  *
  * Admin routes (/admin/*) require a valid NextAuth JWT session.
  * Agent, customer, and technician portals use client-side token auth
- * (localStorage-based) and are therefore NOT enforced here — their
+ * (localStorage-based) and are therefore NOT enforced here - their
  * layout components handle redirects to the appropriate login page.
  *
  * Public routes that never require auth:

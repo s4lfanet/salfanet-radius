@@ -222,7 +222,7 @@ function AgentLayoutInner({ children }: { children: React.ReactNode }) {
     return () => clearInterval(tick);
   }, []);
 
-  // Register global 401 handler — redirect to agent login on any API 401
+  // Register global 401 handler - redirect to agent login on any API 401
   useEffect(() => {
     onUnauthorized(() => {
       if (typeof window !== 'undefined' && pathname !== '/agent') {
@@ -333,7 +333,7 @@ function AgentLayoutInner({ children }: { children: React.ReactNode }) {
       {/* Main Content Area */}
       <div className="lg:ml-64 min-h-dvh flex flex-col">
         {/* Desktop Header */}
-        <header className="hidden lg:block sticky top-0 z-20 bg-background/80 backdrop-blur-xl border-b border-border shadow-theme-sm">
+        <header className="hidden lg:block sticky top-0 z-20 bg-background/80 border-b border-border shadow-theme-sm">
           <div className="px-6 py-3 flex items-center justify-between">
             <div>
               <h2 className="text-sm font-bold text-foreground">{t('agent.portal.welcome')}</h2>
@@ -363,7 +363,7 @@ function AgentLayoutInner({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Mobile Header */}
-        <header className="lg:hidden sticky top-0 z-20 bg-background/95 backdrop-blur-xl border-b border-border shadow-theme-sm safe-area-inset-top">
+        <header className="lg:hidden sticky top-0 z-20 bg-background/95 border-b border-border shadow-theme-sm safe-area-inset-top">
           <div className="px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button

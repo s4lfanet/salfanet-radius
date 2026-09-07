@@ -604,7 +604,7 @@ export default function AgentDashboardPage() {
   return (
     <div className="p-4 lg:p-6 space-y-5">
       {/* Balance Card - Desktop: smaller, Mobile: full */}
-      <div className="bg-gradient-to-r from-violet-600 to-cyan-600 rounded-2xl shadow-lg p-4 lg:p-5 text-white">
+      <div className="bg-gradient-to-r from-primary to-cyan-600 rounded-2xl shadow-lg p-4 lg:p-5 text-white">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <p className="text-xs lg:text-sm opacity-90 uppercase tracking-wider">{t('agent.portal.yourBalance')}</p>
@@ -616,14 +616,14 @@ export default function AgentDashboardPage() {
           <div className="flex gap-2">
             <button
               onClick={() => setShowDepositModal(true)}
-              className="flex items-center px-3 lg:px-4 py-2 bg-card hover:bg-accent text-violet-600 dark:text-violet-400 rounded-xl text-xs lg:text-sm font-bold transition shadow-lg hover:shadow-xl"
+              className="flex items-center px-3 lg:px-4 py-2 bg-card hover:bg-accent text-violet-600 dark:text-primary rounded-xl text-xs lg:text-sm font-bold transition shadow-lg hover:shadow-xl"
             >
               <Plus className="h-4 w-4 mr-1.5" />
               {t('agent.portal.deposit')}
             </button>
             <button
               onClick={() => loadDashboard()}
-              className="flex items-center justify-center px-3 py-2 bg-card hover:bg-accent text-violet-600 dark:text-violet-400 rounded-xl transition shadow-lg hover:shadow-xl min-w-[40px]"
+              className="flex items-center justify-center px-3 py-2 bg-card hover:bg-accent text-violet-600 dark:text-primary rounded-xl transition shadow-lg hover:shadow-xl min-w-[40px]"
             >
               <RefreshCcw className="h-4 w-4" />
             </button>
@@ -645,15 +645,15 @@ export default function AgentDashboardPage() {
           </div>
         </div>
 
-        <div className="bg-card rounded-xl border border-violet-200 dark:border-violet-500/20 p-3 lg:p-4 shadow-sm">
+        <div className="bg-card rounded-xl border border-violet-200 dark:border-border p-3 lg:p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[10px] lg:text-xs text-muted-foreground">{t('agent.portal.totalCommission')}</p>
-              <p className="text-base lg:text-lg font-bold mt-0.5 text-violet-600 dark:text-violet-400">
+              <p className="text-base lg:text-lg font-bold mt-0.5 text-violet-600 dark:text-primary">
                 {formatCurrency(stats.allTime?.total || 0)}
               </p>
             </div>
-            <Calendar className="h-5 lg:h-6 w-5 lg:w-6 text-violet-500 dark:text-violet-400" />
+            <Calendar className="h-5 lg:h-6 w-5 lg:w-6 text-primary dark:text-primary" />
           </div>
         </div>
 
@@ -694,8 +694,8 @@ export default function AgentDashboardPage() {
       {/* Quick Generate */}
       <div className="bg-card rounded-2xl border border-border p-4 lg:p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
-            <div className="p-2 bg-violet-100 dark:bg-violet-500/20 rounded-lg border border-violet-200 dark:border-violet-500/30 flex items-center justify-center">
-              <Zap className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+            <div className="p-2 bg-violet-100 dark:bg-primary/10 rounded-lg border border-violet-200 dark:border-border flex items-center justify-center">
+              <Zap className="h-5 w-5 text-violet-600 dark:text-primary" />
             </div>
             <h2 className="text-base font-bold text-foreground">{t('agent.portal.generateVoucher')}</h2>
           </div>
@@ -748,7 +748,7 @@ export default function AgentDashboardPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('agent.portal.codeLength')} (4–12)</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('agent.portal.codeLength')} (4-12)</label>
               <input
                 type="number"
                 min="4"
@@ -797,7 +797,7 @@ export default function AgentDashboardPage() {
           <button
             onClick={handleGenerate}
             disabled={generating || !selectedProfile}
-            className="mt-4 w-full flex items-center justify-center px-4 py-3 bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700 text-white text-sm font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+            className="mt-4 w-full flex items-center justify-center px-4 py-3 bg-gradient-to-r from-primary to-cyan-600 hover:from-violet-700 hover:to-cyan-700 text-white text-sm font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
           >
             {generating ? (
               <>
@@ -866,7 +866,7 @@ export default function AgentDashboardPage() {
               </button>
               <button
                 onClick={() => setShowVouchersModal(false)}
-                className="px-4 py-2 text-sm font-bold bg-gradient-to-r from-violet-600 to-cyan-600 text-white rounded-xl transition"
+                className="px-4 py-2 text-sm font-bold bg-gradient-to-r from-primary to-cyan-600 text-white rounded-xl transition"
               >
                 {t('agent.portal.cancel')}
               </button>
@@ -881,7 +881,7 @@ export default function AgentDashboardPage() {
           <div className="bg-card border border-border rounded-2xl shadow-xl w-full max-w-sm sm:max-w-lg max-h-[92vh] flex flex-col">
             <div className="px-4 sm:px-5 py-4 border-b border-border shrink-0">
               <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-                <Wallet className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                <Wallet className="h-5 w-5 text-violet-600 dark:text-primary" />
                 {t('agent.portal.topUpBalance')}
               </h2>
             </div>
@@ -1160,7 +1160,7 @@ export default function AgentDashboardPage() {
                   (depositMode === 'gateway' && paymentGateways.length === 0) ||
                   (depositMode === 'manual' && adminBankAccounts.length === 0)
                 }
-                className="px-4 py-2 text-sm font-bold bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-700 hover:to-cyan-700 text-white rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+                className="px-4 py-2 text-sm font-bold bg-gradient-to-r from-primary to-cyan-600 hover:from-violet-700 hover:to-cyan-700 text-white rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
               >
                 {creatingDeposit || creatingManualDeposit || uploadingProof ? (
                   <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block mr-2"></div>{t('agent.portal.processing')}...</>

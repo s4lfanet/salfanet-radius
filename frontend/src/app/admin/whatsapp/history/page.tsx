@@ -32,7 +32,7 @@ const getProviderColor = (type?: string) => {
   switch (type?.toLowerCase()) {
     case 'mpwa': return 'bg-primary/20 text-primary dark:bg-primary/20 dark:text-primary';
     case 'waha': return 'bg-success/20 text-success dark:bg-green-900/30 dark:text-success';
-    case 'fonnte': return 'bg-accent/20 text-accent dark:bg-purple-900/30 dark:text-purple-400';
+    case 'fonnte': return 'bg-accent/20 text-accent dark:bg-purple-900/30 dark:text-primary';
     case 'wablas': return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400';
     case 'gowa': return 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400';
     case 'wablast': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
@@ -89,21 +89,21 @@ export default function WhatsAppHistoryPage() {
     try { responseData = JSON.parse(viewingItem.response); } catch { responseData = viewingItem.response; }
     return createPortal(
       <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setViewingItem(null)}>
-        <div className="bg-card dark:bg-[#1e1b2e] border border-border dark:border-violet-500/30 rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center justify-between p-5 border-b border-violet-500/20">
+        <div className="bg-card dark:bg-[#1e1b2e] border border-border dark:border-border rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center justify-between p-5 border-b border-border">
             <h2 className="text-lg font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500">{t('whatsapp.messageDetail')}</h2>
             <button onClick={() => setViewingItem(null)} className="text-muted-foreground hover:text-foreground transition-colors text-xl leading-none">&times;</button>
           </div>
           <div className="p-5 overflow-y-auto flex-1 space-y-3 text-sm">
             <div className="flex gap-2"><span className="font-semibold text-gray-400 min-w-[80px]">{t('whatsapp.numberLabel')}:</span><span className="text-gray-200">{viewingItem.phone}</span></div>
             <div className="flex gap-2"><span className="font-semibold text-gray-400 min-w-[80px]">{t('whatsapp.statusLabel')}:</span><span className={viewingItem.status === 'sent' ? 'text-green-400' : 'text-red-400'}>{viewingItem.status === 'sent' ? `✅ ${t('whatsapp.sentStatus')}` : `❌ ${t('whatsapp.failedStatus')}`}</span></div>
-            {viewingItem.providerName && <div className="flex gap-2"><span className="font-semibold text-gray-400 min-w-[80px]">{t('whatsapp.providerLabel')}:</span><span className="text-gray-200">{viewingItem.providerName} <span className="text-purple-400">({viewingItem.providerType?.toUpperCase()})</span></span></div>}
+            {viewingItem.providerName && <div className="flex gap-2"><span className="font-semibold text-gray-400 min-w-[80px]">{t('whatsapp.providerLabel')}:</span><span className="text-gray-200">{viewingItem.providerName} <span className="text-primary">({viewingItem.providerType?.toUpperCase()})</span></span></div>}
             <div className="flex gap-2"><span className="font-semibold text-gray-400 min-w-[80px]">{t('whatsapp.timeLabel')}:</span><span className="text-gray-200">{formatWIB(viewingItem.sentAt, 'dd/MM/yyyy HH:mm:ss')}</span></div>
             <div className="mt-4"><div className="font-semibold text-gray-400 mb-2">{t('whatsapp.messageLabel')}:</div><div className="whitespace-pre-wrap bg-gray-800 border border-gray-700 p-3 rounded text-xs max-h-32 overflow-auto text-gray-200">{viewingItem.message}</div></div>
             <div className="mt-4"><div className="font-semibold text-gray-400 mb-2">{t('whatsapp.responseLabel')}:</div><pre className="text-xs bg-gray-800 border border-gray-700 p-3 rounded max-h-40 overflow-auto text-gray-300 font-mono">{JSON.stringify(responseData, null, 2)}</pre></div>
           </div>
-          <div className="p-4 border-t border-violet-500/20 flex justify-end">
-            <button onClick={() => setViewingItem(null)} className="px-6 py-2 text-sm font-bold text-white bg-brand-500 dark:text-muted dark:bg-brand-500 rounded-lg dark:shadow-[0_0_20px_rgba(6,182,212,0.4)] hover:opacity-90 transition-all">{t('common.close')}</button>
+          <div className="p-4 border-t border-border flex justify-end">
+            <button onClick={() => setViewingItem(null)} className="px-6 py-2 text-sm font-bold text-white bg-brand-500 dark:text-muted dark:bg-brand-500 rounded-lg dark: hover:opacity-90 transition-all">{t('common.close')}</button>
           </div>
         </div>
       </div>,
@@ -116,7 +116,7 @@ export default function WhatsAppHistoryPage() {
     <WaDetailModal />
     <div className="bg-background relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
         <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
@@ -125,7 +125,7 @@ export default function WhatsAppHistoryPage() {
         <div className="max-w-7xl mx-auto space-y-3">
           {/* Header */}
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)] flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop- flex items-center gap-2">
               <svg className="w-6 h-6 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -178,7 +178,7 @@ export default function WhatsAppHistoryPage() {
             <div className="bg-card rounded-lg border border-border p-2">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 bg-accent/20 dark:bg-purple-900/30 rounded">
-                  <svg className="w-3.5 h-3.5 text-accent dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-3.5 h-3.5 text-accent dark:text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                   </svg>
                 </div>
@@ -246,7 +246,7 @@ export default function WhatsAppHistoryPage() {
                 {/* Mobile Card View */}
                 <div className="block md:hidden space-y-3 p-3">
                   {history.map((item) => (
-                    <div key={item.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-violet-500/20 p-3">
+                    <div key={item.id} className="bg-card rounded-xl border border-border p-3">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-mono text-foreground">{item.phone}</span>
                         {item.status === 'sent' ? (

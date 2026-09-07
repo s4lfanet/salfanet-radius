@@ -18,7 +18,7 @@ if (!NEXTAUTH_SECRET) {
 const BACKEND_URL = process.env.SERVER_API_URL || process.env.BACKEND_URL || 'http://localhost:3001';
 
 /**
- * Typed HTTP error — thrown by requireAuth/requireAdmin/requireStaff/requireRole.
+ * Typed HTTP error - thrown by requireAuth/requireAdmin/requireStaff/requireRole.
  * Catch blocks can inspect `.status` to return the correct HTTP status code
  * instead of a generic 500.
  *

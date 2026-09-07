@@ -71,7 +71,7 @@ export const billingApi = {
     return apiAdmin<ManualPaymentListResponse>(`/api/manual-payments${query}`);
   },
 
-  /** Approve manual payment — backend uses PATCH /api/manual-payments/[id] with { action: 'APPROVE' } */
+  /** Approve manual payment - backend uses PATCH /api/manual-payments/[id] with { action: 'APPROVE' } */
   approveManualPayment(id: string): Promise<ManualPaymentResponse> {
     return apiAdmin<ManualPaymentResponse>(`/api/manual-payments/${id}`, {
       method: 'PATCH',
@@ -79,7 +79,7 @@ export const billingApi = {
     });
   },
 
-  /** Reject manual payment — backend uses PATCH /api/manual-payments/[id] with { action: 'REJECT', rejectionReason } */
+  /** Reject manual payment - backend uses PATCH /api/manual-payments/[id] with { action: 'REJECT', rejectionReason } */
   rejectManualPayment(id: string, reason?: string): Promise<ManualPaymentResponse> {
     return apiAdmin<ManualPaymentResponse>(`/api/manual-payments/${id}`, {
       method: 'PATCH',
@@ -87,7 +87,7 @@ export const billingApi = {
     });
   },
 
-  /** List transactions (keuangan) — backend endpoint is /api/keuangan/transactions */
+  /** List transactions (keuangan) - backend endpoint is /api/keuangan/transactions */
   listTransactions(params?: Record<string, string>): Promise<TransactionListResponse> {
     const query = params ? '?' + new URLSearchParams(params).toString() : '';
     return apiAdmin<TransactionListResponse>(`/api/keuangan/transactions${query}`);

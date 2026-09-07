@@ -55,7 +55,7 @@ const INVOICE_TYPE_LABEL: Record<string, string> = {
 // Payment source config
 const PAYMENT_SOURCE_CONFIG: Record<string, { label: string; color: string }> = {
   gateway: { label: 'Payment Gateway', color: 'text-cyan-400' },
-  manual:  { label: 'Transfer Bank',   color: 'text-purple-400' },
+  manual:  { label: 'Transfer Bank',   color: 'text-primary' },
   admin:   { label: 'Dikonfirmasi Admin', color: 'text-success' },
 };
 
@@ -480,9 +480,9 @@ export default function PaymentHistoryPage() {
 
   const getStatusConfig = (status: string) => {
     switch (status) {
-      case 'PAID': return { icon: CheckCircle, text: 'Lunas', bgColor: 'bg-success/20', textColor: 'text-success', borderColor: 'border-success/40 shadow-[0_0_5px_rgba(0,255,136,0.3)]' };
-      case 'PENDING': return { icon: Clock, text: 'Menunggu', bgColor: 'bg-warning/20', textColor: 'text-warning', borderColor: 'border-warning/40 shadow-[0_0_5px_rgba(255,170,0,0.3)]' };
-      case 'OVERDUE': return { icon: AlertCircle, text: 'Terlambat', bgColor: 'bg-destructive/20', textColor: 'text-destructive', borderColor: 'border-destructive/40 shadow-[0_0_5px_rgba(255,51,102,0.3)]' };
+      case 'PAID': return { icon: CheckCircle, text: 'Lunas', bgColor: 'bg-success/20', textColor: 'text-success', borderColor: 'border-success/40 ' };
+      case 'PENDING': return { icon: Clock, text: 'Menunggu', bgColor: 'bg-warning/20', textColor: 'text-warning', borderColor: 'border-warning/40 ' };
+      case 'OVERDUE': return { icon: AlertCircle, text: 'Terlambat', bgColor: 'bg-destructive/20', textColor: 'text-destructive', borderColor: 'border-destructive/40 ' };
       default: return { icon: Clock, text: status, bgColor: 'bg-muted/20', textColor: 'text-muted-foreground', borderColor: 'border-muted/40' };
     }
   };
@@ -490,7 +490,7 @@ export default function PaymentHistoryPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-6 h-6 animate-spin text-primary shadow-[0_0_15px_rgba(139,92,246,0.5)]" />
+        <Loader2 className="w-6 h-6 animate-spin text-primary " />
       </div>
     );
   }
@@ -505,7 +505,7 @@ export default function PaymentHistoryPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-primary drop-shadow-[0_0_5px_rgba(139,92,246,0.5)]">Riwayat Pembayaran</h1>
+          <h1 className="text-xl font-bold text-primary drop-">Riwayat Pembayaran</h1>
           <p className="text-xs text-accent mt-1">Lihat status invoice Anda</p>
         </div>
         <button
@@ -519,7 +519,7 @@ export default function PaymentHistoryPage() {
       </div>
 
       {payments.length === 0 && (
-        <CyberCard className="p-10 text-center bg-card/80 backdrop-blur-xl border-2 border-primary/30">
+        <CyberCard className="p-10 text-center bg-card border-2 border-primary/30">
           <Receipt className="w-14 h-14 mx-auto mb-3 text-primary/40" />
           <h3 className="text-sm font-bold text-white mb-1">Tidak Ada Tagihan</h3>
           <p className="text-xs text-muted-foreground">Belum ada tagihan yang dicatat</p>
@@ -531,7 +531,7 @@ export default function PaymentHistoryPage() {
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <div className="p-1.5 bg-warning/20 rounded-lg border border-warning/30 flex items-center justify-center"><Clock className="w-4 h-4 text-warning" /></div>
-            <h2 className="text-sm font-bold text-warning drop-shadow-[0_0_5px_rgba(255,170,0,0.5)]">
+            <h2 className="text-sm font-bold text-warning drop-">
               Belum Bayar
               <span className="ml-2 px-2 py-0.5 bg-warning/20 text-warning text-[10px] rounded-full border border-warning/30">{pendingPayments.length}</span>
             </h2>
@@ -546,7 +546,7 @@ export default function PaymentHistoryPage() {
               const invoiceLabel = payment.isPackageChange ? 'Ganti Paket' : (payment.invoiceType ? (INVOICE_TYPE_LABEL[payment.invoiceType] || payment.invoiceType) : null);
 
               return (
-                <CyberCard key={payment.id} className={`bg-card/80 backdrop-blur-xl border-2 ${config.borderColor} overflow-hidden`}>
+                <CyberCard key={payment.id} className={`bg-card border-2 ${config.borderColor} overflow-hidden`}>
                   <div className={`h-1 w-full ${payment.status === 'OVERDUE' ? 'bg-destructive' : 'bg-warning'}`} />
                   <div className="p-4">
                     {/* Header row */}
@@ -561,7 +561,7 @@ export default function PaymentHistoryPage() {
                             {invoiceLabel && (
                               <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded-md border ${
                                 payment.isPackageChange
-                                  ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
+                                  ? 'bg-primary/10 text-purple-300 border-border'
                                   : 'bg-primary/20 text-primary border-primary/30'
                               }`}>{invoiceLabel}</span>
                             )}
@@ -577,8 +577,8 @@ export default function PaymentHistoryPage() {
 
                     {/* Package change description */}
                     {payment.isPackageChange && payment.packageChangeDescription && (
-                      <div className="mb-3 flex items-center gap-2 px-2.5 py-1.5 bg-purple-500/10 rounded-lg border border-purple-500/20">
-                        <Package className="w-3 h-3 text-purple-400 flex-shrink-0" />
+                      <div className="mb-3 flex items-center gap-2 px-2.5 py-1.5 bg-primary/10 rounded-lg border border-border">
+                        <Package className="w-3 h-3 text-primary flex-shrink-0" />
                         <span className="text-[10px] text-purple-300">{payment.packageChangeDescription}</span>
                       </div>
                     )}
@@ -657,14 +657,14 @@ export default function PaymentHistoryPage() {
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <div className="p-1.5 bg-success/20 rounded-lg border border-success/30 flex items-center justify-center"><CheckCircle className="w-4 h-4 text-success" /></div>
-          <h2 className="text-sm font-bold text-success drop-shadow-[0_0_5px_rgba(0,255,136,0.5)]">
+          <h2 className="text-sm font-bold text-success drop-">
             Lunas
             <span className="ml-2 px-2 py-0.5 bg-success/20 text-success text-[10px] rounded-full border border-success/30">{paidPayments.length}</span>
           </h2>
         </div>
 
         {paidPayments.length === 0 ? (
-          <CyberCard className="p-6 text-center bg-card/80 backdrop-blur-xl border-2 border-muted/30">
+          <CyberCard className="p-6 text-center bg-card border-2 border-muted/30">
             <Banknote className="w-10 h-10 mx-auto mb-2 text-muted-foreground/40" />
             <p className="text-sm text-muted-foreground">Belum ada riwayat pembayaran</p>
           </CyberCard>
@@ -675,14 +675,14 @@ export default function PaymentHistoryPage() {
               const sourceConfig = payment.paymentSource ? PAYMENT_SOURCE_CONFIG[payment.paymentSource] : null;
 
               return (
-                <CyberCard key={payment.id} className="bg-card/80 backdrop-blur-xl border-2 border-success/20 shadow-[0_0_15px_rgba(0,255,136,0.05)] overflow-hidden">
+                <CyberCard key={payment.id} className="bg-card border-2 border-success/20  overflow-hidden">
                   <div className="h-1 w-full bg-gradient-to-r from-success/50 to-success/10" />
                   <div className="p-4 pt-4">
                     {/* Header */}
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-2.5">
                         <div className="p-2 rounded-lg bg-success/10 border border-success/20">
-                          {payment.isPackageChange ? <Package className="w-4 h-4 text-purple-400" /> : <Receipt className="w-4 h-4 text-success" />}
+                          {payment.isPackageChange ? <Package className="w-4 h-4 text-primary" /> : <Receipt className="w-4 h-4 text-success" />}
                         </div>
                         <div>
                           <div className="flex items-center gap-2 flex-wrap">
@@ -690,7 +690,7 @@ export default function PaymentHistoryPage() {
                             {invoiceLabel && (
                               <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md border ${
                                 payment.isPackageChange
-                                  ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
+                                  ? 'bg-primary/10 text-purple-300 border-border'
                                   : 'bg-success/15 text-success border-success/30'
                               }`}>{invoiceLabel}</span>
                             )}
@@ -798,8 +798,8 @@ export default function PaymentHistoryPage() {
           <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm" onClick={() => setPaymentChoiceVisible(false)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
             <div className="pointer-events-auto w-full max-w-sm">
-              <CyberCard className="bg-card/95 dark:bg-card/95 backdrop-blur-xl border-2 border-cyan-500/40 shadow-[0_0_30px_rgba(6,182,212,0.15)] overflow-hidden">
-                <div className="h-1 w-full bg-gradient-to-r from-cyan-400 to-violet-500" />
+              <CyberCard className="bg-card/95 dark:bg-card/95 border-2 border-cyan-500/40  overflow-hidden">
+                <div className="h-1 w-full bg-gradient-to-r from-cyan-400 to-primary" />
                 <div className="p-5">
                   <div className="flex items-center justify-between mb-4">
                     <div>
@@ -823,14 +823,14 @@ export default function PaymentHistoryPage() {
                     </button>
                     <button
                       onClick={handleChooseOffline}
-                      className="w-full flex items-center gap-3 p-4 bg-purple-500/10 hover:bg-purple-500/20 border-2 border-purple-500/40 rounded-xl transition-all text-left"
+                      className="w-full flex items-center gap-3 p-4 bg-primary/10 hover:bg-primary/10 border border-border rounded-xl transition-all text-left"
                     >
-                      <div className="p-2 bg-purple-500/20 rounded-lg border border-purple-500/30 flex items-center justify-center"><Building2 className="w-5 h-5 text-purple-400" /></div>
+                      <div className="p-2 bg-primary/10 rounded-lg border border-border flex items-center justify-center"><Building2 className="w-5 h-5 text-primary" /></div>
                       <div className="flex-1">
                         <p className="text-sm font-bold text-white">Transfer Manual</p>
                         <p className="text-[10px] text-muted-foreground">Upload bukti transfer, tunggu konfirmasi admin</p>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-purple-400" />
+                      <ChevronRight className="w-4 h-4 text-primary" />
                     </button>
                   </div>
                   <p className="text-[10px] text-muted-foreground/60 text-center mt-3">Pembayaran offline memerlukan persetujuan admin</p>
@@ -847,8 +847,8 @@ export default function PaymentHistoryPage() {
           <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm" onClick={() => setGatewayDialogVisible(false)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
             <div className="pointer-events-auto w-full max-w-sm">
-              <CyberCard className="bg-card/95 dark:bg-card/95 backdrop-blur-xl border-2 border-cyan-500/40 shadow-[0_0_30px_rgba(6,182,212,0.15)] overflow-hidden">
-                <div className="h-1 w-full bg-gradient-to-r from-cyan-400 to-violet-500" />
+              <CyberCard className="bg-card/95 dark:bg-card/95 border-2 border-cyan-500/40  overflow-hidden">
+                <div className="h-1 w-full bg-gradient-to-r from-cyan-400 to-primary" />
                 <div className="p-5">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-bold text-foreground">Pilih Payment Gateway</h3>
@@ -895,9 +895,9 @@ export default function PaymentHistoryPage() {
           <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm" onClick={() => !submittingOffline && setOfflineDialogVisible(false)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
             <div className="pointer-events-auto w-full max-w-md max-h-[90vh] flex flex-col">
-              <CyberCard className="bg-card/95 dark:bg-card/95 backdrop-blur-xl border-2 border-purple-500/40 shadow-[0_0_30px_rgba(139,92,246,0.15)] overflow-hidden flex flex-col max-h-[90vh]">
-                <div className="h-1 w-full bg-gradient-to-r from-purple-400 to-violet-500 flex-shrink-0" />
-                <div className="p-5 border-b border-purple-500/20 flex items-center justify-between flex-shrink-0">
+              <CyberCard className="bg-card/95 dark:bg-card/95 border border-border  overflow-hidden flex flex-col max-h-[90vh]">
+                <div className="h-1 w-full bg-gradient-to-r from-primary to-primary flex-shrink-0" />
+                <div className="p-5 border-b border-border flex items-center justify-between flex-shrink-0">
                   <div>
                     <h3 className="text-sm font-bold text-white">Pembayaran Offline</h3>
                     <p className="text-[10px] text-muted-foreground">{selectedPaymentInvoice.invoiceNumber} ? {formatCurrency(selectedPaymentInvoice.amount)}</p>
@@ -1001,7 +1001,7 @@ export default function PaymentHistoryPage() {
                   </div>
                 </div>
 
-                <div className="p-5 border-t border-purple-500/20 flex gap-2 flex-shrink-0">
+                <div className="p-5 border-t border-border flex gap-2 flex-shrink-0">
                   <button onClick={() => setOfflineDialogVisible(false)} disabled={submittingOffline} className="flex-1 py-2.5 bg-muted/20 hover:bg-muted/30 border border-border/50 rounded-lg text-xs font-bold text-muted-foreground transition-colors disabled:opacity-50">
                     Batal
                   </button>
@@ -1027,10 +1027,10 @@ export default function PaymentHistoryPage() {
           <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm" onClick={() => setSelectedDetail(null)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
             <div className="pointer-events-auto w-full max-w-sm">
-              <CyberCard className={`bg-card/95 dark:bg-card/95 backdrop-blur-xl border-2 overflow-hidden ${
-                selectedDetail.status === 'PAID' ? 'border-success/40 shadow-[0_0_30px_rgba(0,255,136,0.15)]' :
-                selectedDetail.status === 'OVERDUE' ? 'border-destructive/40 shadow-[0_0_30px_rgba(255,51,102,0.15)]' :
-                'border-warning/40 shadow-[0_0_30px_rgba(255,170,0,0.15)]'
+              <CyberCard className={`bg-card/95 dark:bg-card/95 border-2 overflow-hidden ${
+                selectedDetail.status === 'PAID' ? 'border-success/40 ' :
+                selectedDetail.status === 'OVERDUE' ? 'border-destructive/40 ' :
+                'border-warning/40 '
               }`}>
                 <div className={`h-1 w-full ${
                   selectedDetail.status === 'PAID' ? 'bg-gradient-to-r from-success to-success/30' :
@@ -1068,7 +1068,7 @@ export default function PaymentHistoryPage() {
                         <p className="text-[10px] text-muted-foreground">No. Invoice</p>
                         <p className="text-xs font-mono font-bold text-white truncate">{selectedDetail.invoiceNumber}</p>
                       </div>
-                      {selectedDetail.isPackageChange && <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/40 flex-shrink-0">Ganti Paket</span>}
+                      {selectedDetail.isPackageChange && <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-md bg-primary/10 text-purple-300 border border-border flex-shrink-0">Ganti Paket</span>}
                     </div>
 
                     {/* Amount */}
@@ -1082,8 +1082,8 @@ export default function PaymentHistoryPage() {
 
                     {/* Package change description */}
                     {selectedDetail.isPackageChange && selectedDetail.packageChangeDescription && (
-                      <div className="flex items-center gap-3 p-3 bg-purple-500/5 rounded-xl border border-purple-500/20">
-                        <div className="p-1.5 bg-purple-500/20 rounded-lg border border-purple-500/30 flex-shrink-0 flex items-center justify-center"><Package className="w-3.5 h-3.5 text-purple-400" /></div>
+                      <div className="flex items-center gap-3 p-3 bg-primary/10 rounded-xl border border-border">
+                        <div className="p-1.5 bg-primary/10 rounded-lg border border-border flex-shrink-0 flex items-center justify-center"><Package className="w-3.5 h-3.5 text-primary" /></div>
                         <div>
                           <p className="text-[10px] text-muted-foreground">Permintaan</p>
                           <p className="text-xs font-semibold text-purple-300">{selectedDetail.packageChangeDescription}</p>

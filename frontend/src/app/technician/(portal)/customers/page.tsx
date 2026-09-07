@@ -162,7 +162,7 @@ export default function TechnicianCustomersPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t('techPortal.searchCustomer')}
-            className="w-full pl-9 pr-8 py-2.5 text-sm bg-card border border-border rounded-xl text-foreground placeholder-slate-400 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition"
+            className="w-full pl-9 pr-8 py-2.5 text-sm bg-card border border-border rounded-xl text-foreground placeholder-slate-400 focus:outline-none focus:border-border focus:ring-1 focus:ring-primary/20 transition"
           />
           {search && (
             <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition">
@@ -173,7 +173,7 @@ export default function TechnicianCustomersPage() {
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-foreground focus:outline-none focus:border-violet-500/50 transition sm:w-40"
+          className="px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-foreground focus:outline-none focus:border-border transition sm:w-40"
         >
           <option value="">{t('techPortal.allStatus')}</option>
           {STATUS_FILTERS.map((s) => (
@@ -200,17 +200,17 @@ export default function TechnicianCustomersPage() {
       {/* Table */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
           <p className="text-xs text-slate-400 dark:text-muted-foreground/40">{t('techPortal.loading')}</p>
         </div>
       ) : customers.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-muted/60 flex items-center justify-center">
-            <Users className="w-7 h-7 text-slate-300 dark:text-violet-500/30" />
+            <Users className="w-7 h-7 text-slate-300 dark:text-primary/30" />
           </div>
           <p className="text-sm text-slate-500 dark:text-muted-foreground/40">{t('techPortal.noData')}</p>
           {search && (
-            <button onClick={() => setSearch('')} className="text-xs text-violet-500 hover:underline">
+            <button onClick={() => setSearch('')} className="text-xs text-primary hover:underline">
               Clear search
             </button>
           )}
@@ -223,7 +223,7 @@ export default function TechnicianCustomersPage() {
               const cfg = STATUS_CONFIG[c.status] ?? STATUS_CONFIG.active;
               const nearExpiry = isNearExpiry(c.expiredAt);
               return (
-                <div key={c.id} className="p-3 space-y-2 hover:bg-slate-50 dark:hover:bg-violet-500/5 transition-colors">
+                <div key={c.id} className="p-3 space-y-2 hover:bg-slate-50 dark:hover:bg-primary/10 transition-colors">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className={`w-1.5 h-8 rounded-full flex-shrink-0 ${cfg.dot}`} />
@@ -231,7 +231,7 @@ export default function TechnicianCustomersPage() {
                         <p className="font-semibold text-foreground text-[13px] truncate">{c.name}</p>
                         <p className="text-[11px] font-mono text-[#00bcd4] dark:text-brand-500 truncate">
                           {c.username}
-                          {c.customerId && <span className="ml-1.5 text-violet-500/60">#{c.customerId}</span>}
+                          {c.customerId && <span className="ml-1.5 text-primary/60">#{c.customerId}</span>}
                         </p>
                       </div>
                     </div>
@@ -280,7 +280,7 @@ export default function TechnicianCustomersPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-100 dark:border-violet-500/10 bg-input/40">
+                  <tr className="border-b border-slate-100 dark:border-border bg-input/40">
                     <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 whitespace-nowrap">
                       {t('techPortal.name')} / Username
                     </th>
@@ -308,7 +308,7 @@ export default function TechnicianCustomersPage() {
                     return (
                       <tr
                         key={c.id}
-                        className="hover:bg-slate-50 dark:hover:bg-violet-500/5 transition-colors"
+                        className="hover:bg-slate-50 dark:hover:bg-primary/10 transition-colors"
                       >
                         {/* Name + Username */}
                         <td className="px-4 py-3">
@@ -321,7 +321,7 @@ export default function TechnicianCustomersPage() {
                               <p className="text-[11px] font-mono text-[#00bcd4] dark:text-brand-500 truncate">
                                 {c.username}
                                 {c.customerId && (
-                                  <span className="ml-1.5 text-violet-500/60 dark:text-violet-500/50">
+                                  <span className="ml-1.5 text-primary/60 dark:text-primary/50">
                                     #{c.customerId}
                                   </span>
                                 )}

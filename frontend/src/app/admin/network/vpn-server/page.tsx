@@ -323,7 +323,7 @@ export default function VpnServerPage() {
     }
   };
 
-  // handleL2tpSshSubmit removed — form is now inline in the L2TP Control modal via handleConnectL2tp
+  // handleL2tpSshSubmit removed - form is now inline in the L2TP Control modal via handleConnectL2tp
 
 
   // --- PPTP Control Handler ----------------------------------------------------
@@ -501,7 +501,7 @@ export default function VpnServerPage() {
 
       // Build RouterOS 7 WireGuard setup script
       const parts = data.vpnIp.split('.');
-      const script = `# WireGuard NAS Setup — ${wgNewPeerName}
+      const script = `# WireGuard NAS Setup - ${wgNewPeerName}
 # Generated: ${new Date().toISOString().split('T')[0]}
 # ────────────────────────────────────────────────
 
@@ -649,7 +649,7 @@ export default function VpnServerPage() {
         body: JSON.stringify({ host: server.host, username: server.username, password: testPasswordValue, apiPort: server.apiPort }),
       });
       if (result.success) {
-        addToast({ type: 'success', title: t('network.connectionSuccess') || 'Koneksi Berhasil', description: `Identity: ${result.identity || '-'} — ${result.message || ''}` });
+        addToast({ type: 'success', title: t('network.connectionSuccess') || 'Koneksi Berhasil', description: `Identity: ${result.identity || '-'} - ${result.message || ''}` });
       } else {
         addToast({ type: 'error', title: t('network.connectionFailed') || 'Koneksi Gagal', description: result.message || 'Tidak dapat terhubung ke RouterOS API' });
       }
@@ -737,7 +737,7 @@ export default function VpnServerPage() {
                 addToast({ type: 'success', title: t('network.setupComplete') || 'Setup VPN Berhasil', description: `Protokol aktif: ${protocols.join(', ') || '-'}` });
                 queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vpn-server') });
               } else {
-                const errMsg = data.message || 'Setup gagal — periksa koneksi ke CHR';
+                const errMsg = data.message || 'Setup gagal - periksa koneksi ke CHR';
                 setSetupResultModal({ success: false, title: t('network.connectionFailed') || 'Setup Gagal', message: errMsg, stepsHtml });
                 addToast({ type: 'error', title: 'Setup VPN Gagal', description: errMsg });
               }
@@ -766,11 +766,11 @@ export default function VpnServerPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         </div>
         <div className="relative z-10 flex flex-col items-center gap-4">
-          <div className="w-16 h-16 border-4 border-brand-500 border-t-transparent rounded-full animate-spin shadow-[0_0_30px_rgba(6,182,212,0.5)]"></div>
+          <div className="w-16 h-16 border-4 border-brand-500 border-t-transparent rounded-full animate-spin "></div>
           <p className="text-brand-500 font-medium animate-pulse">{t('network.loadingVpnServers')}</p>
         </div>
       </div>
@@ -779,13 +779,13 @@ export default function VpnServerPage() {
 
   return (
     <>
-      {/* L2TP SSH Credential Modal — removed, form is now inline in L2TP Control modal */}
-      {/* PPTP SSH Credential Modal — removed, form is now inline in PPTP Control modal */}
+      {/* L2TP SSH Credential Modal - removed, form is now inline in L2TP Control modal */}
+      {/* PPTP SSH Credential Modal - removed, form is now inline in PPTP Control modal */}
       {/* Test Password Modal */}
       {showTestPasswordModal && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={() => setShowTestPasswordModal(false)}>
-          <div className="bg-[#1e1b2e] border border-violet-500/40 rounded-xl w-full max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b border-violet-500/20">
+          <div className="bg-[#1e1b2e] border border-border rounded-xl w-full max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-border">
               <h2 className="font-bold text-brand-500">{t('network.enterPassword')}</h2>
               <button onClick={() => setShowTestPasswordModal(false)}><X className="w-5 h-5 text-muted-foreground hover:text-foreground" /></button>
             </div>
@@ -793,7 +793,7 @@ export default function VpnServerPage() {
               <p className="text-sm text-muted-foreground mb-3">{t('network.mikrotikPassword')} - {testPasswordServer?.name}</p>
               <input className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground text-sm" type="password" placeholder={t('network.mikrotikPassword')} value={testPasswordValue} onChange={(e) => setTestPasswordValue(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSubmitTestPassword()} autoFocus />
             </div>
-            <div className="flex gap-2 p-4 border-t border-violet-500/20">
+            <div className="flex gap-2 p-4 border-t border-border">
               <button onClick={() => setShowTestPasswordModal(false)} className="flex-1 px-4 py-2 text-sm border border-gray-600 rounded-lg text-muted-foreground hover:text-foreground">{t('common.cancel')}</button>
               <button onClick={handleSubmitTestPassword} className="flex-1 px-4 py-2 text-sm font-bold bg-brand-500 text-muted rounded-lg">Test</button>
             </div>
@@ -804,8 +804,8 @@ export default function VpnServerPage() {
       {/* Setup Password Modal */}
       {showSetupPasswordModal && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={() => setShowSetupPasswordModal(false)}>
-          <div className="bg-[#1e1b2e] border border-violet-500/40 rounded-xl w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b border-violet-500/20">
+          <div className="bg-[#1e1b2e] border border-border rounded-xl w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-border">
               <h2 className="font-bold text-brand-500">Auto-Setup VPN Server?</h2>
               <button onClick={() => setShowSetupPasswordModal(false)}><X className="w-5 h-5 text-muted-foreground hover:text-foreground" /></button>
             </div>
@@ -814,7 +814,7 @@ export default function VpnServerPage() {
               <label className="block text-sm font-medium text-brand-500 mb-2">MikroTik Password:</label>
               <input className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground text-sm" type="password" placeholder="Enter password..." value={setupPasswordValue} onChange={(e) => setSetupPasswordValue(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSubmitSetupPassword()} autoFocus />
             </div>
-            <div className="flex gap-2 p-4 border-t border-violet-500/20">
+            <div className="flex gap-2 p-4 border-t border-border">
               <button onClick={() => setShowSetupPasswordModal(false)} className="flex-1 px-4 py-2 text-sm border border-gray-600 rounded-lg text-muted-foreground hover:text-foreground">{t('common.cancel')}</button>
               <button onClick={handleSubmitSetupPassword} className="flex-1 px-4 py-2 text-sm font-bold bg-brand-500 text-muted rounded-lg">{t('network.yesSetupNow')}</button>
             </div>
@@ -825,8 +825,8 @@ export default function VpnServerPage() {
       {/* Setup Result Modal */}
       {setupResultModal && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={() => setupResultModal?.success !== null && setSetupResultModal(null)}>
-          <div className="bg-[#1e1b2e] border border-violet-500/40 rounded-xl w-full max-w-lg mx-4" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b border-violet-500/20">
+          <div className="bg-[#1e1b2e] border border-border rounded-xl w-full max-w-lg mx-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-border">
               <h2 className={`font-bold ${setupResultModal.success === false ? 'text-red-400' : 'text-brand-500'}`}>{setupResultModal.title}</h2>
               <button onClick={() => setupResultModal.success !== null && setSetupResultModal(null)} disabled={setupResultModal.success === null}>
                 <X className={`w-5 h-5 ${setupResultModal.success === null ? 'text-muted-foreground/30' : 'text-muted-foreground hover:text-foreground'}`} />
@@ -836,7 +836,7 @@ export default function VpnServerPage() {
               <p className="text-sm mb-3 text-gray-300">{setupResultModal.message}</p>
               {setupResultModal.stepsHtml && <div className="space-y-1" dangerouslySetInnerHTML={{ __html: setupResultModal.stepsHtml }} />}
             </div>
-            <div className="p-4 border-t border-violet-500/20">
+            <div className="p-4 border-t border-border">
               <button onClick={() => setSetupResultModal(null)} disabled={setupResultModal.success === null} className={`w-full px-4 py-2 text-sm font-bold rounded-lg ${setupResultModal.success === null ? 'bg-muted/30 text-foreground/40 cursor-not-allowed' : 'bg-muted text-foreground'}`}>Close</button>
             </div>
           </div>
@@ -846,8 +846,8 @@ export default function VpnServerPage() {
       {/* VPN Script Modal */}
       {showVpnScriptModal && vpnScriptData && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={() => setShowVpnScriptModal(false)}>
-          <div className="bg-[#1e1b2e] border border-violet-500/40 rounded-xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b border-violet-500/20">
+          <div className="bg-[#1e1b2e] border border-border rounded-xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-border">
               <h2 className="font-bold text-brand-500">📋 Manual Setup Script</h2>
               <button onClick={() => setShowVpnScriptModal(false)}><X className="w-5 h-5 text-muted-foreground hover:text-foreground" /></button>
             </div>
@@ -866,7 +866,7 @@ export default function VpnServerPage() {
                 <pre className="bg-gray-100 dark:bg-slate-900 text-yellow-700 dark:text-yellow-300 p-3 rounded-lg text-xs overflow-auto max-h-64 whitespace-pre font-mono border border-orange-500/20">{vpnScriptData.ros6}</pre>
               </div>
             </div>
-            <div className="p-4 border-t border-violet-500/20">
+            <div className="p-4 border-t border-border">
               <button onClick={() => setShowVpnScriptModal(false)} className="w-full px-4 py-2 text-sm bg-muted text-foreground rounded-lg">Tutup</button>
             </div>
           </div>
@@ -876,7 +876,7 @@ export default function VpnServerPage() {
       <main className="bg-background relative">
         {/* Animated Background */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none dark:block hidden">
-          <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-violet-500/15 rounded-full blur-[120px] animate-pulse"></div>
+          <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] animate-pulse"></div>
           <div className="absolute top-1/3 right-1/4 w-[400px] h-[400px] bg-brand-500/15 rounded-full blur-[100px] animate-pulse delay-700"></div>
           <div className="absolute bottom-0 left-1/2 w-[600px] h-[400px] bg-pink-500/10 rounded-full blur-[150px] animate-pulse delay-1000"></div>
           <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:60px_60px]"></div>
@@ -888,7 +888,7 @@ export default function VpnServerPage() {
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2.5 bg-gradient-to-br from-violet-500 to-brand-500 rounded-xl shadow-[0_0_20px_rgba(139,92,246,0.4)] flex items-center justify-center">
+                  <div className="p-2.5 bg-gradient-to-br from-primary to-brand-500 rounded-xl  flex items-center justify-center">
                     <Shield className="w-6 h-6 text-white" />
                   </div>
                   <h1 className="text-3xl lg:text-4xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500">
@@ -901,7 +901,7 @@ export default function VpnServerPage() {
               </div>
               <button
                 onClick={handleAdd}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] transition-all duration-300 transform hover:scale-105"
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition-all duration-300 transform hover:scale-105"
               >
                 <Plus className="w-5 h-5" />
                 {t('network.addVpnServer')}
@@ -911,7 +911,7 @@ export default function VpnServerPage() {
 
           {/* ── Tutorial / Flow Banner ───────────────────────────────── */}
           <div className="mb-8">
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border border-brand-500/20 rounded-2xl overflow-hidden">
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 border border-brand-500/20 rounded-2xl overflow-hidden">
               <button
                 onClick={() => setShowTutorial(!showTutorial)}
                 className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-brand-500/5 transition-colors"
@@ -920,7 +920,7 @@ export default function VpnServerPage() {
                   <div className="p-1.5 bg-brand-500/20 rounded-lg flex items-center justify-center">
                     <Info className="w-4 h-4 text-brand-500" />
                   </div>
-                  <span className="text-sm font-bold text-brand-500 uppercase tracking-wider">Cara Penggunaan — Alur VPN Server</span>
+                  <span className="text-sm font-bold text-brand-500 uppercase tracking-wider">Cara Penggunaan - Alur VPN Server</span>
                 </div>
                 {showTutorial ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
               </button>
@@ -928,7 +928,7 @@ export default function VpnServerPage() {
                 <div className="px-6 pb-6 border-t border-brand-500/10">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-5">
                     {[
-                      { step: 1, icon: '☁️', color: 'border-violet-500/40 bg-violet-500/5', title: 'Install di VPS', desc: 'Jalankan installer SALFANET di VPS: bash vps-install.sh. FreeRADIUS, Node.js, dan PM2 akan terinstall otomatis.', link: null, linkLabel: null },
+                      { step: 1, icon: '☁️', color: 'border-border bg-primary/10', title: 'Install di VPS', desc: 'Jalankan installer SALFANET di VPS: bash vps-install.sh. FreeRADIUS, Node.js, dan PM2 akan terinstall otomatis.', link: null, linkLabel: null },
                       { step: 2, icon: '🖥️', color: 'border-brand-500/40 bg-brand-500/5', title: 'Tambah VPN Server', desc: 'Isi IP MikroTik CHR, username admin, dan subnet VPN (contoh: 10.20.30.0/24). Klik "Test Koneksi" lalu Simpan.', link: null, linkLabel: null },
                       { step: 3, icon: '⚙️', color: 'border-green-500/40 bg-green-500/5', title: 'Setup Protokol', desc: 'Klik tombol "Setup" pada kartu server untuk konfigurasi L2TP/SSTP/PPTP di MikroTik CHR secara otomatis. Untuk WireGuard (RouterOS 7+) klik tombol WireGuard.', link: null, linkLabel: null },
                       { step: 4, icon: '📡', color: 'border-amber-500/40 bg-amber-500/5', title: 'Tambah VPN Client', desc: 'Setelah server siap, pergi ke menu VPN Client untuk tambahkan setiap NAS sebagai client. Sistem generate script RouterOS otomatis.', link: '/admin/network/vpn-client', linkLabel: '→ Menu VPN Client' },
@@ -947,8 +947,8 @@ export default function VpnServerPage() {
                     ))}
                   </div>
                   <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="p-3 rounded-xl border border-violet-500/20 bg-violet-500/5">
-                      <p className="text-xs font-bold text-violet-500 mb-1">🔷 WireGuard (RouterOS 7+)</p>
+                    <div className="p-3 rounded-xl border border-border bg-primary/10">
+                      <p className="text-xs font-bold text-primary mb-1">🔷 WireGuard (RouterOS 7+)</p>
                       <p className="text-xs text-muted-foreground">Arsitektur baru: VPS sebagai WG server, setiap NAS connect langsung ke VPS. Lebih cepat, lebih aman, tidak perlu CHR.</p>
                     </div>
                     <div className="p-3 rounded-xl border border-brand-500/20 bg-brand-500/5">
@@ -966,17 +966,17 @@ export default function VpnServerPage() {
           {/* Stats Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {/* Total Servers */}
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-2xl border border-violet-500/30 p-5 hover:border-violet-500/50 transition-all group">
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-border p-5 hover:border-border transition-all group">
               <div className="flex items-center justify-between mb-3">
-                <div className="p-2 bg-violet-500/20 rounded-lg group-hover:bg-violet-500/30 transition-colors flex items-center justify-center">
-                  <Server className="w-5 h-5 text-violet-500" />
+                <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/10 transition-colors flex items-center justify-center">
+                  <Server className="w-5 h-5 text-primary" />
                 </div>
               </div>
               <p className="text-lg sm:text-2xl font-bold text-foreground">{totalServers}</p>
               <p className="text-xs text-muted-foreground mt-1">Total Server</p>
             </div>
             {/* Active Servers */}
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-2xl border border-green-500/30 p-5 hover:border-green-500/50 transition-all group">
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-green-500/30 p-5 hover:border-green-500/50 transition-all group">
               <div className="flex items-center justify-between mb-3">
                 <div className="p-2 bg-green-500/20 rounded-lg group-hover:bg-green-500/30 transition-colors flex items-center justify-center">
                   <Activity className="w-5 h-5 text-green-400" />
@@ -986,7 +986,7 @@ export default function VpnServerPage() {
               <p className="text-xs text-muted-foreground mt-1">Server Aktif</p>
             </div>
             {/* L2TP Servers */}
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-2xl border border-green-500/30 p-5 hover:border-green-500/50 transition-all group">
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-green-500/30 p-5 hover:border-green-500/50 transition-all group">
               <div className="flex items-center justify-between mb-3">
                 <div className="p-2 bg-green-500/20 rounded-lg group-hover:bg-green-500/30 transition-colors flex items-center justify-center">
                   <Shield className="w-5 h-5 text-green-400" />
@@ -996,7 +996,7 @@ export default function VpnServerPage() {
               <p className="text-xs text-muted-foreground mt-1">L2TP Aktif</p>
             </div>
             {/* SSTP Servers */}
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-5 hover:border-cyan-500/50 transition-all group">
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-cyan-500/30 p-5 hover:border-cyan-500/50 transition-all group">
               <div className="flex items-center justify-between mb-3">
                 <div className="p-2 bg-cyan-500/20 rounded-lg group-hover:bg-cyan-500/30 transition-colors flex items-center justify-center">
                   <Shield className="w-5 h-5 text-cyan-400" />
@@ -1009,9 +1009,9 @@ export default function VpnServerPage() {
 
           {/* Server List */}
           {servers.length === 0 ? (
-            <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl rounded-3xl border-2 border-dashed border-violet-500/40 p-16 text-center">
-              <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-violet-500/20 to-brand-500/20 rounded-2xl flex items-center justify-center">
-                <Shield className="w-10 h-10 text-violet-500" />
+            <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 rounded-3xl border-2 border-dashed border-border p-16 text-center">
+              <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-primary/20 to-brand-500/20 rounded-2xl flex items-center justify-center">
+                <Shield className="w-10 h-10 text-primary" />
               </div>
               <h3 className="text-lg sm:text-2xl font-bold text-foreground mb-3">{t('network.noVpnServersYet')}</h3>
               <p className="text-muted-foreground mb-8 max-w-md mx-auto">
@@ -1019,7 +1019,7 @@ export default function VpnServerPage() {
               </p>
               <button
                 onClick={handleAdd}
-                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] transition-all duration-300 transform hover:scale-105"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition-all duration-300 transform hover:scale-105"
               >
                 <Plus className="w-5 h-5" />
                 {t('network.addFirstVpnServer')}
@@ -1030,13 +1030,13 @@ export default function VpnServerPage() {
               {servers.map((server) => (
                 <div
                   key={server.id}
-                  className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-2xl border border-violet-500/30 overflow-hidden hover:border-brand-500/50 hover:shadow-[0_0_40px_rgba(6,182,212,0.15)] transition-all duration-300 group"
+                  className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-border overflow-hidden hover:border-brand-500/50 hover: transition-all duration-300 group"
                 >
                   {/* Server Header */}
-                  <div className="p-6 border-b border-violet-500/20">
+                  <div className="p-6 border-b border-border">
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                       <div className="flex items-center gap-4">
-                        <div className="p-3 bg-gradient-to-br from-violet-500/30 to-brand-500/30 rounded-xl group-hover:from-violet-500/40 group-hover:to-brand-500/40 transition-colors flex items-center justify-center">
+                        <div className="p-3 bg-gradient-to-br from-primary/30 to-brand-500/30 rounded-xl group-hover:from-primary/40 group-hover:to-brand-500/40 transition-colors flex items-center justify-center">
                           <Server className="w-7 h-7 text-brand-500" />
                         </div>
                         <div>
@@ -1048,22 +1048,22 @@ export default function VpnServerPage() {
                       {/* Protocol Badges */}
                       <div className="flex flex-wrap gap-2">
                         {server.l2tpEnabled && (
-                          <span className="px-3 py-1.5 bg-green-500/20 text-green-400 border border-green-500/40 text-xs font-bold rounded-lg shadow-[0_0_15px_rgba(34,197,94,0.2)]">
+                          <span className="px-3 py-1.5 bg-green-500/20 text-green-400 border border-green-500/40 text-xs font-bold rounded-lg ">
                             L2TP/IPSec
                           </span>
                         )}
                         {server.sstpEnabled && (
-                          <span className="px-3 py-1.5 bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 text-xs font-bold rounded-lg shadow-[0_0_15px_rgba(6,182,212,0.2)]">
+                          <span className="px-3 py-1.5 bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 text-xs font-bold rounded-lg ">
                             SSTP
                           </span>
                         )}
                         {server.pptpEnabled && (
-                          <span className="px-3 py-1.5 bg-purple-500/20 text-purple-400 border border-purple-500/40 text-xs font-bold rounded-lg shadow-[0_0_15px_rgba(168,85,247,0.2)]">
+                          <span className="px-3 py-1.5 bg-primary/10 text-primary border border-border text-xs font-bold rounded-lg ">
                             PPTP
                           </span>
                         )}
                         {server.wgEnabled && (
-                          <span className="px-3 py-1.5 bg-teal-500/20 text-teal-400 border border-teal-500/40 text-xs font-bold rounded-lg shadow-[0_0_15px_rgba(20,184,166,0.2)] flex items-center gap-1">
+                          <span className="px-3 py-1.5 bg-teal-500/20 text-teal-400 border border-teal-500/40 text-xs font-bold rounded-lg  flex items-center gap-1">
                             <Wifi className="w-3 h-3" />
                             WireGuard
                           </span>
@@ -1100,7 +1100,7 @@ export default function VpnServerPage() {
 
                     {/* Pool Config Info */}
                     <div className="mb-4 px-4 py-3 rounded-xl bg-brand-500/5 border border-brand-500/20 flex flex-wrap gap-4 text-xs">
-                      <span className="text-muted-foreground">Pool IP: <span className="font-mono text-foreground">{server.subnet.split('.').slice(0,3).join('.')}.{server.poolStart ?? 10} – {server.subnet.split('.').slice(0,3).join('.')}.{server.poolEnd ?? 254}</span></span>
+                      <span className="text-muted-foreground">Pool IP: <span className="font-mono text-foreground">{server.subnet.split('.').slice(0,3).join('.')}.{server.poolStart ?? 10} - {server.subnet.split('.').slice(0,3).join('.')}.{server.poolEnd ?? 254}</span></span>
                       <span className="text-muted-foreground">Gateway: <span className="font-mono text-foreground">{server.gateway || (server.subnet.split('.').slice(0,3).join('.') + '.1')}</span></span>
                       <button onClick={() => handleEdit(server)} className="ml-auto text-brand-500 hover:underline flex items-center gap-1"><Settings className="w-3 h-3" /> Edit Pool</button>
                     </div>
@@ -1123,7 +1123,7 @@ export default function VpnServerPage() {
                       <button
                         onClick={() => handleSetup(server)}
                         disabled={settingUpId === server.id}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all disabled:opacity-50"
+                        className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition-all disabled:opacity-50"
                       >
                         {settingUpId === server.id ? (
                           <RefreshCw className="w-4 h-4 animate-spin" />
@@ -1160,7 +1160,7 @@ export default function VpnServerPage() {
                               setTimeout(() => executeL2tpAction('status', server, savedSshCredentials), 150);
                             }
                           }}
-                          className="flex items-center gap-2 px-4 py-2.5 bg-violet-500/20 border border-violet-500/50 text-violet-500 rounded-xl hover:bg-violet-500/30 transition-all"
+                          className="flex items-center gap-2 px-4 py-2.5 bg-primary/10 border border-border text-primary rounded-xl hover:bg-primary/10 transition-all"
                         >
                           <Terminal className="w-4 h-4" />
                           <span className="text-sm font-medium">L2TP Control</span>
@@ -1204,9 +1204,9 @@ export default function VpnServerPage() {
         {
           showModal && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-2.5 sm:p-4">
-              <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-violet-500/50 rounded-2xl max-w-lg w-full p-6 shadow-[0_0_50px_rgba(139,92,246,0.3)] max-h-[90vh] overflow-y-auto">
+              <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-border rounded-2xl max-w-lg w-full p-6  max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 bg-gradient-to-br from-violet-500 to-brand-500 rounded-lg flex items-center justify-center">
+                  <div className="p-2 bg-gradient-to-br from-primary to-brand-500 rounded-lg flex items-center justify-center">
                     <Shield className="w-5 h-5 text-white" />
                   </div>
                   <h2 className="text-xl font-bold text-foreground">
@@ -1333,7 +1333,7 @@ export default function VpnServerPage() {
                         placeholder="mis. 10.20.30.1 (opsional)"
                       />
                     </div>
-                    <p className="mt-2 text-xs text-muted-foreground">Pool: x.x.x.<strong>{formData.poolStart || '10'}</strong> – x.x.x.<strong>{formData.poolEnd || '254'}</strong> · Gateway: <strong>{formData.gateway || (formData.subnet ? formData.subnet.split('.').slice(0,3).join('.') + '.1' : 'auto')}</strong></p>
+                    <p className="mt-2 text-xs text-muted-foreground">Pool: x.x.x.<strong>{formData.poolStart || '10'}</strong> - x.x.x.<strong>{formData.poolEnd || '254'}</strong> · Gateway: <strong>{formData.gateway || (formData.subnet ? formData.subnet.split('.').slice(0,3).join('.') + '.1' : 'auto')}</strong></p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-brand-500 mb-3">Protokol VPN</label>
@@ -1390,7 +1390,7 @@ export default function VpnServerPage() {
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 px-4 py-3 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all"
+                      className="flex-1 px-4 py-3 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition-all"
                     >
                       {editingServer ? t('common.update') : t('common.save')}
                     </button>
@@ -1404,13 +1404,13 @@ export default function VpnServerPage() {
         {/* ── WireGuard Panel Modal ── */}
         {showWgPanel && wgPanelServer && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-2.5 sm:p-4" onClick={() => setShowWgPanel(false)}>
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-teal-500/50 rounded-2xl max-w-3xl w-full p-6 shadow-[0_0_50px_rgba(20,184,166,0.3)] max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-teal-500/50 rounded-2xl max-w-3xl w-full p-6  max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-gradient-to-br from-teal-500 to-brand-500 rounded-lg flex items-center justify-center">
                     <Wifi className="w-5 h-5 text-white" />
                   </div>
-                  <h2 className="text-xl font-bold text-foreground">WireGuard VPN Server — {wgPanelServer.name}</h2>
+                  <h2 className="text-xl font-bold text-foreground">WireGuard VPN Server - {wgPanelServer.name}</h2>
                 </div>
                 <button onClick={() => setShowWgPanel(false)} className="p-2 text-muted-foreground hover:text-foreground transition-colors">
                   <XCircle className="w-6 h-6" />
@@ -1465,8 +1465,8 @@ export default function VpnServerPage() {
                         {wgPeers.map((peer) => (
                           <div key={peer.publicKey} className="flex items-center justify-between p-3 rounded-xl bg-slate-900/60 border border-teal-500/20">
                             <div>
-                              <p className="text-xs font-mono text-foreground">{peer.allowedIps || '–'}</p>
-                              <p className="text-xs text-muted-foreground">{peer.endpoint || 'no endpoint'} • {peer.transfer || '–'}</p>
+                              <p className="text-xs font-mono text-foreground">{peer.allowedIps || '-'}</p>
+                              <p className="text-xs text-muted-foreground">{peer.endpoint || 'no endpoint'} • {peer.transfer || '-'}</p>
                               <p className="text-xs text-muted-foreground truncate max-w-[200px]">{peer.publicKey}</p>
                               {peer.lastHandshake && <p className="text-xs text-teal-400">Handshake: {formatWIB(peer.lastHandshake, 'dd MMM HH:mm')}</p>}
                             </div>
@@ -1505,7 +1505,7 @@ export default function VpnServerPage() {
                   {wgGeneratedScript && (
                     <div className="mt-4 p-4 rounded-xl bg-slate-900 border border-teal-500/30">
                       <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm font-bold text-teal-300">Script RouterOS 7 — Copy ke Winbox Terminal</p>
+                        <p className="text-sm font-bold text-teal-300">Script RouterOS 7 - Copy ke Winbox Terminal</p>
                         <button onClick={() => { navigator.clipboard.writeText(wgGeneratedScript); addToast({ type: 'success', title: 'Script disalin!' }); }} className="text-xs text-brand-500 bg-muted px-2 py-1 rounded">Copy</button>
                       </div>
                       <pre className="text-xs font-mono text-green-300 whitespace-pre overflow-x-auto max-h-64">{wgGeneratedScript}</pre>
@@ -1520,10 +1520,10 @@ export default function VpnServerPage() {
         {/* L2TP Control Modal */}
         {showL2tpControl && editingServer && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-2.5 sm:p-4">
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-violet-500/50 rounded-2xl max-w-2xl w-full p-6 shadow-[0_0_50px_rgba(139,92,246,0.3)] max-h-[90vh] overflow-y-auto">
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-border rounded-2xl max-w-2xl w-full p-6  max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-br from-violet-500 to-brand-500 rounded-lg flex items-center justify-center">
+                  <div className="p-2 bg-gradient-to-br from-primary to-brand-500 rounded-lg flex items-center justify-center">
                     <Terminal className="w-5 h-5 text-white" />
                   </div>
                   <h2 className="text-xl font-bold text-foreground">L2TP Control - {editingServer.name}</h2>
@@ -1538,16 +1538,16 @@ export default function VpnServerPage() {
 
               {/* Inline SSH + L2TP Credentials */}
               {!savedSshCredentials ? (
-                <div className="mb-6 p-4 rounded-xl border border-violet-500/30 bg-muted/50 dark:bg-slate-900/60">
-                  <p className="text-xs font-bold text-brand-500 mb-1">🔑 SSH Connection — VPS RADIUS Server</p>
-                  <p className="text-xs text-muted-foreground mb-3">Target: <span className="text-violet-500 font-medium">{editingServer.name}</span> ({editingServer.host})</p>
+                <div className="mb-6 p-4 rounded-xl border border-border bg-muted/50 dark:bg-slate-900/60">
+                  <p className="text-xs font-bold text-brand-500 mb-1">🔑 SSH Connection - VPS RADIUS Server</p>
+                  <p className="text-xs text-muted-foreground mb-3">Target: <span className="text-primary font-medium">{editingServer.name}</span> ({editingServer.host})</p>
                   <input className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground text-sm mb-2" placeholder="VPS IP/Hostname" value={l2tpSshForm.host} onChange={(e) => setL2tpSshForm(p => ({...p, host: e.target.value}))} />
                   <div className="grid grid-cols-2 gap-2 mb-2">
                     <input className="px-3 py-2 bg-input border border-border rounded-lg text-foreground text-sm" placeholder="SSH Port" type="number" value={l2tpSshForm.port} onChange={(e) => setL2tpSshForm(p => ({...p, port: e.target.value}))} />
                     <input className="px-3 py-2 bg-input border border-border rounded-lg text-foreground text-sm" placeholder="SSH Username" value={l2tpSshForm.username} onChange={(e) => setL2tpSshForm(p => ({...p, username: e.target.value}))} />
                   </div>
                   <input className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground text-sm mb-3" placeholder="SSH Password" type="password" value={l2tpSshForm.password} onChange={(e) => setL2tpSshForm(p => ({...p, password: e.target.value}))} />
-                  <div className="border-t border-violet-500/20 pt-3">
+                  <div className="border-t border-border pt-3">
                     <p className="text-xs font-bold text-brand-500 mb-2">🔗 L2TP Connection Details</p>
                     {(() => {
                       const radiusClients = vpnClients.filter(c => c.vpnType === 'l2tp' && c.isRadiusServer);
@@ -1559,7 +1559,7 @@ export default function VpnServerPage() {
                           )}
                           {radiusClients.length > 0 && (
                             <select
-                              className="w-full px-3 py-2 bg-input border border-violet-500/40 rounded-lg text-foreground text-sm"
+                              className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground text-sm"
                               defaultValue=""
                               onChange={(e) => {
                                 const client = radiusClients.find(c => c.id === e.target.value);
@@ -1576,7 +1576,7 @@ export default function VpnServerPage() {
                               <option value="" disabled>📋 Pilih akun VPN Client (RADIUS Server)...</option>
                               {radiusClients.map(c => (
                                 <option key={c.id} value={c.id}>
-                                  🔐 {c.name} — {c.username} ({c.vpnServerHost || 'no host'})
+                                  🔐 {c.name} - {c.username} ({c.vpnServerHost || 'no host'})
                                 </option>
                               ))}
                             </select>
@@ -1650,7 +1650,7 @@ export default function VpnServerPage() {
                 <button onClick={() => handleL2tpAction('restart', editingServer)} disabled={l2tpLoading} className="px-4 py-2 bg-amber-500/20 border border-amber-500/40 text-amber-400 rounded-xl hover:bg-amber-500/30 transition-all disabled:opacity-50">
                   Restart
                 </button>
-                <button onClick={() => handleL2tpAction('configure', editingServer)} disabled={l2tpLoading} className="px-4 py-2 bg-violet-500/20 border border-violet-500/40 text-violet-500 rounded-xl hover:bg-violet-500/30 transition-all disabled:opacity-50">
+                <button onClick={() => handleL2tpAction('configure', editingServer)} disabled={l2tpLoading} className="px-4 py-2 bg-primary/10 border border-border text-primary rounded-xl hover:bg-primary/10 transition-all disabled:opacity-50">
                   Configure
                 </button>
                 <button onClick={() => handleL2tpAction('logs', editingServer)} disabled={l2tpLoading} className="px-4 py-2 bg-muted border border-border text-foreground rounded-xl hover:bg-accent transition-all disabled:opacity-50">
@@ -1659,7 +1659,7 @@ export default function VpnServerPage() {
               </div>
 
               {l2tpLogs.length > 0 && (
-                <div className="p-4 bg-slate-950 rounded-xl border border-violet-500/30 max-h-60 overflow-y-auto">
+                <div className="p-4 bg-slate-950 rounded-xl border border-border max-h-60 overflow-y-auto">
                   <p className="text-brand-500 text-xs uppercase mb-2">{t('network.recentLogs')}</p>
                   <pre className="text-xs text-muted-foreground font-mono whitespace-pre-wrap">{l2tpLogs.join('\n')}</pre>
                 </div>

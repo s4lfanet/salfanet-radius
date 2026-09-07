@@ -127,7 +127,7 @@ export default function AgentLoginPage() {
   return (
     <div className="min-h-dvh flex flex-col lg:flex-row bg-background">
       {/* ── Mobile Brand Header (mobile only) ── */}
-      <div className="lg:hidden bg-gradient-to-br from-indigo-600 to-violet-600 px-6 pt-10 pb-8 relative overflow-hidden flex-shrink-0">
+      <div className="lg:hidden bg-gradient-to-br from-indigo-600 to-primary px-6 pt-10 pb-8 relative overflow-hidden flex-shrink-0">
         <div className="absolute top-[-50px] right-[-50px] w-40 h-40 bg-white/10 rounded-full pointer-events-none" />
         <div className="absolute bottom-[-30px] left-[-30px] w-28 h-28 bg-white/5 rounded-full pointer-events-none" />
         <div className="relative z-10">
@@ -289,7 +289,7 @@ export default function AgentLoginPage() {
           <h1 className="text-5xl font-extrabold leading-tight mb-1 text-foreground">
             {companyName}
           </h1>
-          <div className="mb-4 h-1.5 w-28 rounded-full bg-gradient-to-r from-indigo-600 to-violet-500" />
+          <div className="mb-4 h-1.5 w-28 rounded-full bg-gradient-to-r from-indigo-600 to-primary" />
           <p className="text-base text-muted-foreground mb-8 leading-relaxed">
             Portal agen resmi untuk mengelola penjualan voucher, memantau komisi, dan mendaftarkan pelanggan baru di wilayah Anda.
           </p>
@@ -304,14 +304,14 @@ export default function AgentLoginPage() {
             </div>
             <div className="bg-card rounded-2xl p-4 shadow-sm border border-border text-center">
               <div className="w-10 h-10 bg-violet-100 dark:bg-violet-900/40 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <svg className="w-5 h-5 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" /></svg>
+                <svg className="w-5 h-5 text-violet-600 dark:text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" /></svg>
               </div>
               <p className="text-sm font-bold text-foreground mb-1">Voucher Hotspot</p>
               <p className="text-xs text-muted-foreground leading-snug">Jual voucher harga agen</p>
             </div>
             <div className="bg-card rounded-2xl p-4 shadow-sm border border-border text-center">
               <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/40 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <svg className="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                <svg className="w-5 h-5 text-purple-600 dark:text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
               </div>
               <p className="text-sm font-bold text-foreground mb-1">Rekap Penjualan</p>
               <p className="text-xs text-muted-foreground leading-snug">Laporan harian &amp; bulanan</p>
@@ -320,9 +320,9 @@ export default function AgentLoginPage() {
 
           <div className="space-y-3">
             {[
-              { color: 'bg-indigo-500', text: 'Deposit Agent — Kelola saldo deposit untuk pembelian voucher' },
-              { color: 'bg-violet-500', text: 'Kelola Voucher — Cetak dan distribusikan voucher ke pelanggan' },
-              { color: 'bg-purple-500', text: 'Monitor Pelanggan — Pantau pelanggan yang didaftarkan lewat akun Anda' },
+              { color: 'bg-indigo-500', text: 'Deposit Agent - Kelola saldo deposit untuk pembelian voucher' },
+              { color: 'bg-violet-500', text: 'Kelola Voucher - Cetak dan distribusikan voucher ke pelanggan' },
+              { color: 'bg-purple-500', text: 'Monitor Pelanggan - Pantau pelanggan yang didaftarkan lewat akun Anda' },
             ].map((item, i) => (
               <div key={i} className="flex items-center gap-3 bg-card/70 rounded-xl px-4 py-3 border border-border">
                 <span className={`w-2 h-2 rounded-full flex-shrink-0 ${item.color}`} />

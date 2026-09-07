@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -543,7 +543,7 @@ export default function CustomerReferralPage() {
         <CyberCard>
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-900/30">
-              <Gift className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+              <Gift className="w-4 h-4 text-purple-600 dark:text-primary" />
             </div>
             <div>
               <p className="text-xs text-gray-500 dark:text-gray-400">Direferensikan oleh</p>

@@ -1,5 +1,5 @@
 /**
- * PPPoE API types — matches backend pppoe service responses.
+ * PPPoE API types - matches backend pppoe service responses.
  *
  * @see backend/src/app/api/pppoe/users/route.ts
  * @see backend/src/app/api/pppoe/profiles/route.ts
@@ -259,7 +259,7 @@ export interface SyncAuditFixResponse {
   stats: { success: number; failed: number; total: number };
 }
 
-// === Router (NAS) — referenced by PPPoE ===
+// === Router (NAS) - referenced by PPPoE ===
 
 export interface Router {
   id: ID;

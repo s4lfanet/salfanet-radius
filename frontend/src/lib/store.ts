@@ -47,7 +47,7 @@ export const useAppStore = create<AppState>()(
       },
       initializeTimezone: async () => {
         // Initialize company info (including timezone) from server on app load.
-        // Use /api/company/info (public) — fetches name, logo, timezone, etc.
+        // Use /api/company/info (public) - fetches name, logo, timezone, etc.
         // Throttle: only fetch once per 5 minutes (matches server Cache-Control)
         const lastFetch = (typeof window !== 'undefined' && (window as any).__companyInfoLastFetch) || 0;
         const now = Date.now();

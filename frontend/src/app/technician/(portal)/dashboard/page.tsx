@@ -91,7 +91,7 @@ export default function TechnicianDashboardPage() {
       case 'RESOLVED': return 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-200 dark:border-green-500/30';
       case 'CLOSED': return 'bg-slate-500/10 text-muted-foreground border-slate-200 dark:border-slate-500/30';
       case 'IN_PROGRESS': return 'bg-cyan-500/10 text-[#00bcd4] dark:text-brand-500 border-cyan-200 dark:border-brand-500/30';
-      case 'WAITING_CUSTOMER': return 'bg-purple-500/10 text-purple-600 dark:text-violet-500 border-purple-200 dark:border-violet-500/30';
+      case 'WAITING_CUSTOMER': return 'bg-primary/10 text-purple-600 dark:text-primary border-purple-200 dark:border-border';
       case 'OPEN': return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/30';
       default: return 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-500/30';
     }
@@ -120,7 +120,7 @@ export default function TechnicianDashboardPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: t('technician.totalTasks'), value: stats.total, icon: ClipboardList, color: 'text-violet-500', bg: 'bg-purple-500/10 dark:bg-violet-500/10', border: 'border-purple-200 dark:border-violet-500/20' },
+          { label: t('technician.totalTasks'), value: stats.total, icon: ClipboardList, color: 'text-primary', bg: 'bg-primary/10 dark:bg-primary/10', border: 'border-purple-200 dark:border-border' },
           { label: t('technician.openTasks'), value: stats.open, icon: Clock, color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-200 dark:border-amber-500/20' },
           { label: t('technician.activeTasks'), value: stats.active, icon: AlertTriangle, color: 'text-[#00bcd4] dark:text-brand-500', bg: 'bg-cyan-500/10 dark:bg-brand-500/10', border: 'border-cyan-200 dark:border-brand-500/20' },
           { label: t('technician.completedTasks'), value: stats.completed, icon: CheckCircle2, color: 'text-green-500', bg: 'bg-green-500/10', border: 'border-green-200 dark:border-green-500/20' },
@@ -212,7 +212,7 @@ export default function TechnicianDashboardPage() {
                   <button
                     onClick={() => handleAction(ticket.id, 'claim')}
                     disabled={actionLoading === ticket.id}
-                    className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black text-xs font-bold rounded-xl hover:shadow-[0_0_15px_rgba(6,182,212,0.4)] transition disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black text-xs font-bold rounded-xl hover: transition disabled:opacity-50"
                   >
                     {actionLoading === ticket.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                     {t('technician.takeTask')}
@@ -222,7 +222,7 @@ export default function TechnicianDashboardPage() {
                   <button
                     onClick={() => handleAction(ticket.id, 'update_status', 'RESOLVED')}
                     disabled={actionLoading === ticket.id}
-                    className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold rounded-xl hover:shadow-[0_0_15px_rgba(34,197,94,0.4)] transition disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold rounded-xl hover: transition disabled:opacity-50"
                   >
                     {actionLoading === ticket.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                     Selesaikan

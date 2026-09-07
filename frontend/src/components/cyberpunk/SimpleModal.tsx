@@ -53,7 +53,7 @@ export function SimpleModal({
     showClose = true,
     className
 }: SimpleModalProps) {
-    // Stable ref for onClose — prevents useEffect churn when consumers pass inline arrows.
+    // Stable ref for onClose - prevents useEffect churn when consumers pass inline arrows.
     // Without this, every parent re-render (e.g. notification polling every 30s,
     // or setFormData on each keystroke) creates a new onClose reference, causing the
     // Escape-key effect to teardown/setup on EVERY render. On mobile this rapid
@@ -66,7 +66,7 @@ export function SimpleModal({
     const pointerDownTarget = React.useRef<EventTarget | null>(null);
     const contentRef = React.useRef<HTMLDivElement>(null);
 
-    // Handle escape key — depends only on isOpen (not onClose)
+    // Handle escape key - depends only on isOpen (not onClose)
     React.useEffect(() => {
         if (!isOpen) return;
         const handleEscape = (e: KeyboardEvent) => {
@@ -135,7 +135,7 @@ export function SimpleModal({
                     // Base styles - theme aware
                     'bg-card dark:bg-muted rounded-xl overflow-hidden',
                     // Border with glow
-                    'border-2 border-border dark:border-violet-500/40',
+                    'border-2 border-border dark:border-border',
                     // Shadow glow effect
                     'shadow-xl dark:shadow-lg dark:shadow-violet-500/25',
                     className
@@ -153,8 +153,8 @@ export function SimpleModal({
                         className={cn(
                             'absolute right-3 top-3 z-10 rounded-lg p-2',
                             'text-muted-foreground hover:text-primary',
-                            'bg-muted/50 hover:bg-muted dark:bg-card/50 dark:hover:bg-violet-500/20',
-                            'border border-border dark:border-violet-500/30 hover:border-primary/50',
+                            'bg-muted/50 hover:bg-muted dark:bg-card/50 dark:hover:bg-primary/10',
+                            'border border-border dark:border-border hover:border-primary/50',
                             'transition-all duration-200',
                             'focus:outline-none focus:ring-2 focus:ring-primary/50'
                         )}
@@ -173,7 +173,7 @@ export function SimpleModal({
 export function ModalHeader({ children, onClose, className }: ModalHeaderProps) {
     return (
         <div className={cn(
-            'px-5 py-4 border-b border-border dark:border-violet-500/30',
+            'px-5 py-4 border-b border-border dark:border-border',
             'bg-slate-100 dark:bg-muted',
             className
         )}>
@@ -217,7 +217,7 @@ export function ModalBody({ children, className }: ModalBodyProps) {
 export function ModalFooter({ children, className }: ModalFooterProps) {
     return (
         <div className={cn(
-            'px-5 py-4 border-t border-border dark:border-violet-500/30',
+            'px-5 py-4 border-t border-border dark:border-border',
             'bg-slate-50 dark:bg-muted',
             'flex items-center justify-end gap-3',
             className
@@ -233,7 +233,7 @@ export function ModalInput({ className, ...props }: React.InputHTMLAttributes<HT
         <input
             className={cn(
                 'w-full px-3 py-2 text-sm',
-                'bg-background dark:bg-card border-2 border-input dark:border-violet-500/30 rounded-lg',
+                'bg-background dark:bg-card border-2 border-input dark:border-border rounded-lg',
                 'text-foreground placeholder-muted-foreground',
                 'focus:border-primary dark:focus:border-brand-500 focus:ring-1 focus:ring-primary/50 dark:focus:ring-brand-500/50',
                 'dark:focus:shadow-md dark:focus:shadow-brand-500/20',
@@ -251,7 +251,7 @@ export function ModalSelect({ className, children, ...props }: React.SelectHTMLA
         <select
             className={cn(
                 'w-full px-3 py-2 text-sm',
-                'bg-background dark:bg-card border-2 border-input dark:border-violet-500/30 rounded-lg',
+                'bg-background dark:bg-card border-2 border-input dark:border-border rounded-lg',
                 'text-foreground',
                 'focus:border-primary dark:focus:border-brand-500 focus:ring-1 focus:ring-primary/50 dark:focus:ring-brand-500/50',
                 'transition-all outline-none appearance-none cursor-pointer',
@@ -269,7 +269,7 @@ export function ModalTextarea({ className, ...props }: React.TextareaHTMLAttribu
         <textarea
             className={cn(
                 'w-full px-3 py-2 text-sm',
-                'bg-background dark:bg-card border-2 border-input dark:border-violet-500/30 rounded-lg',
+                'bg-background dark:bg-card border-2 border-input dark:border-border rounded-lg',
                 'text-foreground placeholder-muted-foreground',
                 'focus:border-primary dark:focus:border-brand-500 focus:ring-1 focus:ring-primary/50 dark:focus:ring-brand-500/50',
                 'dark:focus:shadow-md dark:focus:shadow-brand-500/20',
@@ -300,15 +300,15 @@ export function ModalButton({
     const variants = {
         primary: cn(
             'bg-primary hover:bg-primary/90',
-            'dark:bg-gradient-to-r dark:from-violet-500 dark:to-brand-500',
-            'dark:hover:from-violet-600 dark:hover:to-brand-600',
+            'dark:bg-gradient-to-r dark:from-primary dark:to-brand-500',
+            'dark:hover:from-primary dark:hover:to-brand-600',
             'text-primary-foreground font-bold',
-            'dark:shadow-[0_0_20px_rgba(139,92,246,0.3)]',
-            'dark:hover:shadow-[0_0_30px_rgba(139,92,246,0.5)]'
+            'dark:',
+            'dark:hover:'
         ),
         secondary: cn(
-            'bg-secondary border-2 border-border dark:border-violet-500/30',
-            'hover:bg-secondary/80 dark:hover:border-brand-500/50 dark:hover:bg-violet-500/10',
+            'bg-secondary border-2 border-border dark:border-border',
+            'hover:bg-secondary/80 dark:hover:border-brand-500/50 dark:hover:bg-primary/10',
             'text-secondary-foreground'
         ),
         danger: cn(

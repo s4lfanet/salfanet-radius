@@ -229,7 +229,7 @@ export default function SystemPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-violet-600 dark:from-cyan-400 dark:to-pink-400 tracking-wider">
+          <h1 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-primary dark:from-cyan-400 dark:to-pink-400 tracking-wider">
             {t('system.title')}
           </h1>
           <p className="text-xs text-muted-foreground mt-1">{t('system.subtitle')}</p>
@@ -283,7 +283,7 @@ export default function SystemPage() {
           <div className="flex items-center gap-3">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <p className="text-xs font-bold">
-              {t('system.updateAvailable')} — {info.commit} → {info.remoteCommit} ({info.behindCount || '?'} commit{info.behindCount !== 1 ? 's' : ''} behind)
+              {t('system.updateAvailable')} - {info.commit} → {info.remoteCommit} ({info.behindCount || '?'} commit{info.behindCount !== 1 ? 's' : ''} behind)
             </p>
           </div>
           <div className="flex gap-2">
@@ -313,7 +313,7 @@ export default function SystemPage() {
           <div className="flex items-center gap-3">
             <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
             <p className="text-xs font-bold">
-              Sistem sudah up to date ({info.commit}) — {info.totalCommits || 0} total commits di branch {info.gitBranch || 'master'}
+              Sistem sudah up to date ({info.commit}) - {info.totalCommits || 0} total commits di branch {info.gitBranch || 'master'}
             </p>
           </div>
           <div className="flex gap-2">
@@ -369,7 +369,7 @@ export default function SystemPage() {
         </div>
       )}
 
-      {/* Update progress — live status from background process */}
+      {/* Update progress - live status from background process */}
       {updateStatus && updateStatus.phase !== 'idle' && (
         <div className="rounded-xl border border-border/50 bg-card/30 overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-3 bg-white/5 border-b border-border/40">
@@ -445,7 +445,7 @@ export default function SystemPage() {
       <div className="rounded-xl border border-border/50 bg-card/30 overflow-hidden">
         <div className="flex items-center gap-2 px-4 py-3 bg-white/5 border-b border-border/40">
           <Terminal className="w-4 h-4 text-cyan-400" />
-          <span className="text-sm font-bold text-foreground">Cara Update — via SSH (Manual)</span>
+          <span className="text-sm font-bold text-foreground">Cara Update - via SSH (Manual)</span>
         </div>
         <div className="p-4 space-y-4">
           <p className="text-xs text-muted-foreground">Update juga bisa dilakukan manual via SSH ke VPS. Jalankan perintah berikut:</p>

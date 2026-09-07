@@ -219,13 +219,13 @@ function IsolatedContent() {
   }
 
   /* ─── main page ────────────────────────────────────────────────────────────── */
-  // Build user info rows — primary (always shown) and secondary (show more)
+  // Build user info rows - primary (always shown) and secondary (show more)
   const primaryInfoItems = userInfo ? ([
     { label: 'Username',     value: userInfo.username,              mono: true },
     { label: 'Nama',         value: userInfo.name                              },
     userInfo.profileName  ? { label: 'Paket',       value: userInfo.profileName                } : null,
     { label: 'Expired',      value: fmtDate(userInfo.expiredAt),    warn: true },
-    { label: 'Telepon',      value: userInfo.phone || '—'                     },
+    { label: 'Telepon',      value: userInfo.phone || '-'                     },
   ] as Array<{ label: string; value: string; mono?: boolean; warn?: boolean; full?: boolean } | null>).filter(Boolean) : [];
 
   const secondaryInfoItems = userInfo ? ([
@@ -442,7 +442,7 @@ function IsolatedContent() {
                 'Klik "Bayar Sekarang" pada tagihan di atas',
                 'Pilih metode pembayaran yang diinginkan',
                 'Selesaikan pembayaran di halaman yang terbuka di tab baru',
-                'Layanan aktif otomatis 1–2 menit setelah dikonfirmasi',
+                'Layanan aktif otomatis 1-2 menit setelah dikonfirmasi',
                 'Logout & login ulang PPPoE untuk akses penuh',
               ].map((step, i) => (
                 <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>

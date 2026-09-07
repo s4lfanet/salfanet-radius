@@ -263,7 +263,7 @@ export default function RenewalPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-6 h-6 animate-spin text-primary shadow-[0_0_15px_rgba(139,92,246,0.5)]" />
+        <Loader2 className="w-6 h-6 animate-spin text-primary " />
       </div>
     );
   }
@@ -276,14 +276,14 @@ export default function RenewalPage() {
           <ChevronLeft className="w-4 h-4" />
         </button>
         <div>
-          <h1 className="text-lg font-bold text-primary drop-shadow-[0_0_5px_rgba(139,92,246,0.5)]">Perpanjang Langganan</h1>
+          <h1 className="text-lg font-bold text-primary drop-">Perpanjang Langganan</h1>
           <p className="text-xs text-accent mt-0.5">Perpanjang paket internet Anda</p>
         </div>
       </div>
 
       {/* Current Account Info */}
       {user && (
-        <CyberCard className="p-4 bg-card/80 backdrop-blur-xl border-2 border-primary/30 shadow-[0_0_20px_rgba(139,92,246,0.1)]">
+        <CyberCard className="p-4 bg-card border-2 border-primary/30 ">
           <div className="flex items-center gap-2 mb-3">
             <div className="p-1.5 bg-primary/20 rounded-lg border border-primary/30 flex items-center justify-center">
               <Package className="w-3.5 h-3.5 text-primary" />
@@ -321,7 +321,7 @@ export default function RenewalPage() {
 
       {/* Cannot renew warning */}
       {canRenew === false && (
-        <CyberCard className="p-4 bg-card/80 backdrop-blur-xl border-2 border-warning/30">
+        <CyberCard className="p-4 bg-card border-2 border-warning/30">
           <div className="flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
             <div>
@@ -335,7 +335,7 @@ export default function RenewalPage() {
       {/* STEP: Select Package */}
       {step === 'select' && canRenew !== false && (
         <div className="space-y-4">
-          <CyberCard className="p-4 bg-card/80 backdrop-blur-xl border-2 border-cyan-500/30">
+          <CyberCard className="p-4 bg-card border-2 border-cyan-500/30">
             <div className="flex items-center gap-2 mb-3">
               <div className="p-1.5 bg-cyan-500/20 rounded-lg border border-cyan-500/30 flex items-center justify-center">
                 <Zap className="w-3.5 h-3.5 text-cyan-400" />
@@ -383,7 +383,7 @@ export default function RenewalPage() {
 
           {/* Summary */}
           {selectedPkg && (
-            <CyberCard className="p-4 bg-card/80 backdrop-blur-xl border-2 border-success/20">
+            <CyberCard className="p-4 bg-card border-2 border-success/20">
               <div className="flex items-center gap-2 mb-3">
                 <Info className="w-3.5 h-3.5 text-success" />
                 <span className="text-xs font-bold text-success">Ringkasan Perpanjangan</span>
@@ -437,7 +437,7 @@ export default function RenewalPage() {
       {/* STEP: Payment Choice */}
       {step === 'payment-choice' && createdInvoice && (
         <div className="space-y-4">
-          <CyberCard className="p-4 bg-card/80 backdrop-blur-xl border-2 border-success/30">
+          <CyberCard className="p-4 bg-card border-2 border-success/30">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle className="w-4 h-4 text-success" />
               <span className="text-xs font-bold text-success">Invoice Berhasil Dibuat</span>
@@ -473,14 +473,14 @@ export default function RenewalPage() {
             </button>
             <button
               onClick={() => setStep('offline-pay')}
-              className="w-full flex items-center gap-3 p-4 bg-purple-500/10 hover:bg-purple-500/20 border-2 border-purple-500/40 rounded-xl transition-all text-left"
+              className="w-full flex items-center gap-3 p-4 bg-primary/10 hover:bg-primary/10 border border-border rounded-xl transition-all text-left"
             >
-              <div className="p-2 bg-purple-500/20 rounded-lg border border-purple-500/30 flex items-center justify-center"><Building2 className="w-5 h-5 text-purple-400" /></div>
+              <div className="p-2 bg-primary/10 rounded-lg border border-border flex items-center justify-center"><Building2 className="w-5 h-5 text-primary" /></div>
               <div className="flex-1">
                 <p className="text-sm font-bold text-white">Transfer Manual</p>
                 <p className="text-[10px] text-muted-foreground">Upload bukti transfer, tunggu konfirmasi admin</p>
               </div>
-              <ChevronRight className="w-4 h-4 text-purple-400" />
+              <ChevronRight className="w-4 h-4 text-primary" />
             </button>
           </div>
         </div>
@@ -532,9 +532,9 @@ export default function RenewalPage() {
             <span className="text-sm font-bold text-white">Upload Bukti Transfer</span>
           </div>
 
-          {/* Admin Bank Accounts — transfer destination */}
+          {/* Admin Bank Accounts - transfer destination */}
           {adminBankAccounts.length > 0 && (
-            <CyberCard className="p-4 bg-card/80 backdrop-blur-xl border-2 border-cyan-500/30">
+            <CyberCard className="p-4 bg-card border-2 border-cyan-500/30">
               <div className="flex items-center gap-2 mb-3">
                 <div className="p-1.5 bg-cyan-500/20 rounded-lg border border-cyan-500/30">
                   <Building2 className="w-3.5 h-3.5 text-cyan-400" />
@@ -566,7 +566,7 @@ export default function RenewalPage() {
             </CyberCard>
           )}
 
-          <CyberCard className="p-4 bg-card/80 backdrop-blur-xl border-2 border-purple-500/30 space-y-3">
+          <CyberCard className="p-4 bg-card border border-border space-y-3">
             {/* Bank Sender Name */}
             <div>
               <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide block mb-1.5">Metode / Bank Pengirim *</label>
@@ -598,7 +598,7 @@ export default function RenewalPage() {
               {proofPreviewUrl ? (
                 <div className="relative">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={proofPreviewUrl} alt="Proof" className="w-full max-h-48 object-contain rounded-lg border border-purple-500/30" loading="lazy" />
+                  <img src={proofPreviewUrl} alt="Proof" className="w-full max-h-48 object-contain rounded-lg border border-border" loading="lazy" />
                   <button onClick={() => { setProofFile(null); if (proofPreviewUrl) URL.revokeObjectURL(proofPreviewUrl); setProofPreviewUrl(null); }}
                     className="absolute top-2 right-2 p-1 bg-red-500/80 rounded-full hover:bg-red-500">
                     <X className="w-3 h-3 text-white" />
@@ -606,8 +606,8 @@ export default function RenewalPage() {
                 </div>
               ) : (
                 <button type="button" onClick={() => fileInputRef.current?.click()}
-                  className="w-full flex flex-col items-center gap-2 p-6 border-2 border-dashed border-purple-500/40 rounded-xl hover:border-purple-400 hover:bg-purple-500/5 transition">
-                  <Upload className="w-6 h-6 text-purple-400" />
+                  className="w-full flex flex-col items-center gap-2 p-6 border-2 border-dashed border-border rounded-xl hover:border-purple-400 hover:bg-primary/10 transition">
+                  <Upload className="w-6 h-6 text-primary" />
                   <span className="text-xs text-muted-foreground">Tap untuk upload foto bukti transfer</span>
                   <span className="text-[10px] text-muted-foreground/60">JPG, PNG, WebP (maks. 5 MB)</span>
                 </button>
@@ -624,8 +624,8 @@ export default function RenewalPage() {
 
       {/* STEP: Success */}
       {step === 'success' && (
-        <CyberCard className="p-6 bg-card/80 backdrop-blur-xl border-2 border-success/40 text-center shadow-[0_0_30px_rgba(0,255,136,0.15)]">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-success/20 border-2 border-success/40 flex items-center justify-center shadow-[0_0_20px_rgba(0,255,136,0.3)]">
+        <CyberCard className="p-6 bg-card border-2 border-success/40 text-center ">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-success/20 border-2 border-success/40 flex items-center justify-center ">
             <CheckCircle className="w-8 h-8 text-success" />
           </div>
           <h3 className="text-base font-bold text-white mb-2">Pembayaran Dikirim!</h3>

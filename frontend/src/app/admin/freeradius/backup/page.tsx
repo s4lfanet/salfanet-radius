@@ -79,7 +79,7 @@ export default function FreeRADIUSBackupPage() {
     const fetchData = useCallback(async () => {
         try {
             await refetch();
-        } catch (e: unknown) { /* ignore — polling will retry */ console.warn('Failed to fetch backup data:', e); }
+        } catch (e: unknown) { /* ignore - polling will retry */ console.warn('Failed to fetch backup data:', e); }
     }, [refetch]);
 
     const stopPolling = useCallback(() => {
@@ -146,7 +146,7 @@ export default function FreeRADIUSBackupPage() {
                 method: 'POST',
                 body: JSON.stringify({ file }),
             });
-            setRestoreLog({ file, log: data.log || data.error || '—', ok: data.success });
+            setRestoreLog({ file, log: data.log || data.error || '-', ok: data.success });
             if (data.success) {
                 addToast({ type: 'success', title: 'Restore berhasil', description: `${data.restored} file dipulihkan`, duration: 4000 });
             } else {
@@ -189,7 +189,7 @@ export default function FreeRADIUSBackupPage() {
                 method: 'POST',
                 body: JSON.stringify({ file: savedAs }),
             });
-            setRestoreLog({ file: savedAs, log: restData.log || restData.error || '—', ok: restData.success });
+            setRestoreLog({ file: savedAs, log: restData.log || restData.error || '-', ok: restData.success });
             if (restData.success) {
                 addToast({ type: 'success', title: 'Restore berhasil', description: `${restData.restored} file dipulihkan`, duration: 4000 });
                 setUploadFile(null);
@@ -217,7 +217,7 @@ export default function FreeRADIUSBackupPage() {
                         Backup & Restore FreeRADIUS
                     </h1>
                     <p className="text-sm text-muted-foreground mt-1">
-                        Backup config yang berjalan di VPS ke arsip lokal — bisa di-restore atau didownload
+                        Backup config yang berjalan di VPS ke arsip lokal - bisa di-restore atau didownload
                     </p>
                 </div>
                 <button
@@ -240,7 +240,7 @@ export default function FreeRADIUSBackupPage() {
                     </div>
                 </div>
                 <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-3">
-                    <div className="p-2 bg-purple-500/10 rounded-lg"><HardDrive className="w-5 h-5 text-purple-500" /></div>
+                    <div className="p-2 bg-primary/10 rounded-lg"><HardDrive className="w-5 h-5 text-primary" /></div>
                     <div>
                         <p className="text-xs text-muted-foreground">Disimpan di</p>
                         <p className="text-xs font-mono font-medium text-foreground">backups/freeradius/</p>
@@ -324,7 +324,7 @@ export default function FreeRADIUSBackupPage() {
                 </div>
             )}
 
-            {/* Restore from other VPS — Upload section */}
+            {/* Restore from other VPS - Upload section */}
             <div className="bg-card rounded-xl border border-border overflow-hidden">
                 <div className="px-4 py-3 border-b border-border bg-muted/20 flex items-center gap-2">
                     <Server className="w-4 h-4 text-primary" />

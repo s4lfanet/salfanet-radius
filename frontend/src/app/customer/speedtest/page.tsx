@@ -34,7 +34,7 @@ export default function CustomerSpeedTestPage() {
         </button>
       </div>
 
-      <CyberCard className="p-0 overflow-hidden bg-card/80 backdrop-blur-xl border-2 border-cyan-500/30 shadow-[0_0_30px_rgba(6,182,212,0.15)]">
+      <CyberCard className="p-0 overflow-hidden bg-card border-2 border-cyan-500/30 ">
         <div className="relative w-full" style={{ height: 'calc(100dvh - 220px)', minHeight: 480 }}>
           {loading && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-card z-10">
@@ -55,7 +55,7 @@ export default function CustomerSpeedTestPage() {
 
       <div className="flex items-center justify-between px-1">
         <p className="text-[10px] text-muted-foreground">
-          Powered by OpenSpeedTest — hasil dapat bervariasi tergantung jaringan lokal Anda.
+          Powered by OpenSpeedTest - hasil dapat bervariasi tergantung jaringan lokal Anda.
         </p>
         <a
           href="https://openspeedtest.com/speedtest"

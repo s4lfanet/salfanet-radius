@@ -347,10 +347,10 @@ export default function CustomerDashboard() {
         setOntDevice(wifiData.device);
         setConnectedDevices(wifiData.device.connectedHosts || []);
       } else if (wifiData.reason === 'not_configured') {
-        // GenieACS not set up — silently skip, no device info available
+        // GenieACS not set up - silently skip, no device info available
       }
     } catch (error) { 
-      // Silently ignore — WiFi info is non-critical for dashboard
+      // Silently ignore - WiFi info is non-critical for dashboard
     }
     finally { setLoadingOnt(false); }
   };
@@ -484,7 +484,7 @@ export default function CustomerDashboard() {
         <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1">Menu Cepat</p>
         <div className="grid grid-cols-4 lg:grid-cols-8 gap-2">
           {([
-            { name: 'Riwayat',      href: '/customer/history',       icon: Receipt,       color: 'text-purple-400',  bg: 'bg-purple-500/10 border-purple-500/30' },
+            { name: 'Riwayat',      href: '/customer/history',       icon: Receipt,       color: 'text-primary',  bg: 'bg-primary/10 border-border' },
             { name: 'WiFi',         href: '/customer/wifi',          icon: Wifi,          color: 'text-blue-400',    bg: 'bg-blue-500/10 border-blue-500/30' },
             { name: 'Speed Test',   href: '/customer/speedtest',     icon: Gauge,         color: 'text-cyan-300',    bg: 'bg-cyan-500/10 border-cyan-500/30' },
             { name: 'Bantuan',      href: '/customer/tickets',       icon: MessageSquare, color: 'text-yellow-400',  bg: 'bg-yellow-500/10 border-yellow-500/30' },
@@ -556,7 +556,7 @@ export default function CustomerDashboard() {
       {/* -- ONT/WiFi + All Invoices (desktop 2-col) --------------------- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
         {/* ONT/WiFi Card */}
-        <CyberCard className="p-4 bg-card/80 backdrop-blur-xl border-2 border-accent/30 shadow-[0_0_30px_rgba(6,182,212,0.15)]">
+        <CyberCard className="p-4 bg-card border-2 border-accent/30 ">
           <div className="flex items-center justify-between gap-2 mb-3">
             <div className="flex items-center gap-2">
               <div className="p-2 bg-accent/20 rounded-lg border border-accent/30 flex items-center justify-center">
@@ -647,7 +647,7 @@ export default function CustomerDashboard() {
         </CyberCard>
 
         {/* All Invoices Card */}
-        <CyberCard className="p-4 bg-card/80 backdrop-blur-xl border-2 border-success/30 shadow-[0_0_30px_rgba(0,255,136,0.15)]">
+        <CyberCard className="p-4 bg-card border-2 border-success/30 ">
           <div className="flex items-center justify-between gap-2 mb-3">
             <div className="flex items-center gap-2">
               <div className="p-2 bg-success/20 rounded-lg border border-success/30 flex items-center justify-center">
@@ -713,12 +713,12 @@ export default function CustomerDashboard() {
       {/* Manual Payment Proof Modal */}
       {manualPayModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 pb-20 sm:pb-0 px-4 pt-4">
-          <div className="bg-card border border-primary/30 rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto shadow-[0_0_40px_rgba(139,92,246,0.2)]">
+          <div className="bg-card border border-primary/30 rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto ">
             <div className="p-5">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h3 className="text-sm font-bold text-foreground">Kirim Bukti Transfer</h3>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">{manualPayModal.invoiceNumber} — {formatCurrency(manualPayModal.amount)}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{manualPayModal.invoiceNumber} - {formatCurrency(manualPayModal.amount)}</p>
                 </div>
                 <button onClick={() => setManualPayModal(null)} className="p-1.5 rounded-lg bg-muted/20 hover:bg-muted/40 border border-border/50">
                   <X className="w-4 h-4 text-muted-foreground" />

@@ -1,5 +1,5 @@
 /**
- * Centralized API client — barrel export (client-side safe).
+ * Centralized API client - barrel export (client-side safe).
  *
  * Usage:
  *   import { pppoeApi, invoiceApi, customerApi } from '@/lib/api';

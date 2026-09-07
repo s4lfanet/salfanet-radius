@@ -4,456 +4,456 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ============================================================
-   TAILADMIN DESIGN SYSTEM TOKENS
-   Brand blue palette + gray scale + semantic colors + type scale
-   Applied globally across all roles (admin, agent, customer, technician)
-   ============================================================ */
+  TAILADMIN DESIGN SYSTEM TOKENS
+  Brand blue palette + gray scale + semantic colors + type scale
+  Applied globally across all roles (admin, agent, customer, technician)
+  ============================================================ */
 @theme {
-  /* Font */
-  --font-outfit: Outfit, sans-serif;
+ /* Font */
+ --font-outfit: Outfit, sans-serif;
 
-  /* Extended Breakpoints */
-  --breakpoint-2xsm: 375px;
-  --breakpoint-xsm: 425px;
-  --breakpoint-3xl: 2000px;
+ /* Extended Breakpoints */
+ --breakpoint-2xsm: 375px;
+ --breakpoint-xsm: 425px;
+ --breakpoint-3xl: 2000px;
 
-  /* Typography Scale (TailAdmin) */
-  --text-title-2xl: 72px;
-  --text-title-2xl--line-height: 90px;
-  --text-title-xl: 60px;
-  --text-title-xl--line-height: 72px;
-  --text-title-lg: 48px;
-  --text-title-lg--line-height: 60px;
-  --text-title-md: 36px;
-  --text-title-md--line-height: 44px;
-  --text-title-sm: 30px;
-  --text-title-sm--line-height: 38px;
-  --text-theme-xl: 20px;
-  --text-theme-xl--line-height: 30px;
-  --text-theme-sm: 14px;
-  --text-theme-sm--line-height: 20px;
-  --text-theme-xs: 12px;
-  --text-theme-xs--line-height: 18px;
+ /* Typography Scale (TailAdmin) */
+ --text-title-2xl: 72px;
+ --text-title-2xl--line-height: 90px;
+ --text-title-xl: 60px;
+ --text-title-xl--line-height: 72px;
+ --text-title-lg: 48px;
+ --text-title-lg--line-height: 60px;
+ --text-title-md: 36px;
+ --text-title-md--line-height: 44px;
+ --text-title-sm: 30px;
+ --text-title-sm--line-height: 38px;
+ --text-theme-xl: 20px;
+ --text-theme-xl--line-height: 30px;
+ --text-theme-sm: 14px;
+ --text-theme-sm--line-height: 20px;
+ --text-theme-xs: 12px;
+ --text-theme-xs--line-height: 18px;
 
-  /* Brand palette (#465fff = brand-500, main primary) */
-  --color-brand-25: #f2f7ff;
-  --color-brand-50: #ecf3ff;
-  --color-brand-100: #dde9ff;
-  --color-brand-200: #c2d6ff;
-  --color-brand-300: #9cb9ff;
-  --color-brand-400: #7592ff;
-  --color-brand-500: #465fff;
-  --color-brand-600: #3641f5;
-  --color-brand-700: #2a31d8;
-  --color-brand-800: #252dae;
-  --color-brand-900: #262e89;
-  --color-brand-950: #161950;
+ /* Brand palette (#465fff = brand-500, main primary) */
+ --color-brand-25: #f2f7ff;
+ --color-brand-50: #ecf3ff;
+ --color-brand-100: #dde9ff;
+ --color-brand-200: #c2d6ff;
+ --color-brand-300: #9cb9ff;
+ --color-brand-400: #7592ff;
+ --color-brand-500: #465fff;
+ --color-brand-600: #3641f5;
+ --color-brand-700: #2a31d8;
+ --color-brand-800: #252dae;
+ --color-brand-900: #262e89;
+ --color-brand-950: #161950;
 
-  /* Gray scale (TailAdmin) */
-  --color-gray-25: #fcfcfd;
-  --color-gray-50: #f9fafb;
-  --color-gray-100: #f2f4f7;
-  --color-gray-200: #e4e7ec;
-  --color-gray-300: #d0d5dd;
-  --color-gray-400: #98a2b3;
-  --color-gray-500: #667085;
-  --color-gray-600: #475467;
-  --color-gray-700: #344054;
-  --color-gray-800: #1d2939;
-  --color-gray-900: #101828;
-  --color-gray-950: #0c111d;
-  --color-gray-dark: #1a2231;
+ /* Gray scale (TailAdmin) */
+ --color-gray-25: #fcfcfd;
+ --color-gray-50: #f9fafb;
+ --color-gray-100: #f2f4f7;
+ --color-gray-200: #e4e7ec;
+ --color-gray-300: #d0d5dd;
+ --color-gray-400: #98a2b3;
+ --color-gray-500: #667085;
+ --color-gray-600: #475467;
+ --color-gray-700: #344054;
+ --color-gray-800: #1d2939;
+ --color-gray-900: #101828;
+ --color-gray-950: #0c111d;
+ --color-gray-dark: #1a2231;
 
-  /* Success palette */
-  --color-success-25: #f6fef9;
-  --color-success-50: #ecfdf3;
-  --color-success-100: #d1fadf;
-  --color-success-200: #a6f4c5;
-  --color-success-300: #6ce9a6;
-  --color-success-400: #32d583;
-  --color-success-500: #12b76a;
-  --color-success-600: #039855;
-  --color-success-700: #027a48;
-  --color-success-800: #05603a;
-  --color-success-900: #054f31;
-  --color-success-950: #053321;
+ /* Success palette */
+ --color-success-25: #f6fef9;
+ --color-success-50: #ecfdf3;
+ --color-success-100: #d1fadf;
+ --color-success-200: #a6f4c5;
+ --color-success-300: #6ce9a6;
+ --color-success-400: #32d583;
+ --color-success-500: #12b76a;
+ --color-success-600: #039855;
+ --color-success-700: #027a48;
+ --color-success-800: #05603a;
+ --color-success-900: #054f31;
+ --color-success-950: #053321;
 
-  /* Error palette */
-  --color-error-25: #fffbfa;
-  --color-error-50: #fef3f2;
-  --color-error-100: #fee4e2;
-  --color-error-200: #fecdca;
-  --color-error-300: #fda29b;
-  --color-error-400: #f97066;
-  --color-error-500: #f04438;
-  --color-error-600: #d92d20;
-  --color-error-700: #b42318;
-  --color-error-800: #912018;
-  --color-error-900: #7a271a;
-  --color-error-950: #55160c;
+ /* Error palette */
+ --color-error-25: #fffbfa;
+ --color-error-50: #fef3f2;
+ --color-error-100: #fee4e2;
+ --color-error-200: #fecdca;
+ --color-error-300: #fda29b;
+ --color-error-400: #f97066;
+ --color-error-500: #f04438;
+ --color-error-600: #d92d20;
+ --color-error-700: #b42318;
+ --color-error-800: #912018;
+ --color-error-900: #7a271a;
+ --color-error-950: #55160c;
 
-  /* Warning palette */
-  --color-warning-25: #fffcf5;
-  --color-warning-50: #fffaeb;
-  --color-warning-100: #fef0c7;
-  --color-warning-200: #fedf89;
-  --color-warning-300: #fec84b;
-  --color-warning-400: #fdb022;
-  --color-warning-500: #f79009;
-  --color-warning-600: #dc6803;
-  --color-warning-700: #b54708;
-  --color-warning-800: #93370d;
-  --color-warning-900: #7a2e0e;
-  --color-warning-950: #4e1d09;
+ /* Warning palette */
+ --color-warning-25: #fffcf5;
+ --color-warning-50: #fffaeb;
+ --color-warning-100: #fef0c7;
+ --color-warning-200: #fedf89;
+ --color-warning-300: #fec84b;
+ --color-warning-400: #fdb022;
+ --color-warning-500: #f79009;
+ --color-warning-600: #dc6803;
+ --color-warning-700: #b54708;
+ --color-warning-800: #93370d;
+ --color-warning-900: #7a2e0e;
+ --color-warning-950: #4e1d09;
 
-  /* Orange palette */
-  --color-orange-25: #fffaf5;
-  --color-orange-50: #fff6ed;
-  --color-orange-100: #ffead5;
-  --color-orange-200: #fddcab;
-  --color-orange-300: #feb273;
-  --color-orange-400: #fd853a;
-  --color-orange-500: #fb6514;
-  --color-orange-600: #ec4a0a;
-  --color-orange-700: #c4320a;
-  --color-orange-800: #9c2a10;
-  --color-orange-900: #7e2410;
-  --color-orange-950: #511c10;
+ /* Orange palette */
+ --color-orange-25: #fffaf5;
+ --color-orange-50: #fff6ed;
+ --color-orange-100: #ffead5;
+ --color-orange-200: #fddcab;
+ --color-orange-300: #feb273;
+ --color-orange-400: #fd853a;
+ --color-orange-500: #fb6514;
+ --color-orange-600: #ec4a0a;
+ --color-orange-700: #c4320a;
+ --color-orange-800: #9c2a10;
+ --color-orange-900: #7e2410;
+ --color-orange-950: #511c10;
 
-  /* Blue Light palette */
-  --color-blue-light-25: #f5fbff;
-  --color-blue-light-50: #f0f9ff;
-  --color-blue-light-100: #e0f2fe;
-  --color-blue-light-200: #b9e6fe;
-  --color-blue-light-300: #7cd4fd;
-  --color-blue-light-400: #36bffa;
-  --color-blue-light-500: #0ba5ec;
-  --color-blue-light-600: #0086c9;
-  --color-blue-light-700: #026aa2;
-  --color-blue-light-800: #065986;
-  --color-blue-light-900: #0b4a6f;
-  --color-blue-light-950: #062c41;
+ /* Blue Light palette */
+ --color-blue-light-25: #f5fbff;
+ --color-blue-light-50: #f0f9ff;
+ --color-blue-light-100: #e0f2fe;
+ --color-blue-light-200: #b9e6fe;
+ --color-blue-light-300: #7cd4fd;
+ --color-blue-light-400: #36bffa;
+ --color-blue-light-500: #0ba5ec;
+ --color-blue-light-600: #0086c9;
+ --color-blue-light-700: #026aa2;
+ --color-blue-light-800: #065986;
+ --color-blue-light-900: #0b4a6f;
+ --color-blue-light-950: #062c41;
 
-  /* Accent */
-  --color-theme-pink-500: #ee46bc;
-  --color-theme-purple-500: #7a5af8;
+ /* Accent */
+ --color-theme-pink-500: #ee46bc;
+ --color-theme-purple-500: #7a5af8;
 
-  /* Shadows (TailAdmin) */
-  --shadow-theme-xs: 0px 1px 2px 0px rgba(16, 24, 40, 0.05);
-  --shadow-theme-sm: 0px 1px 3px 0px rgba(16, 24, 40, 0.1), 0px 1px 2px 0px rgba(16, 24, 40, 0.06);
-  --shadow-theme-md: 0px 4px 8px -2px rgba(16, 24, 40, 0.1), 0px 2px 4px -2px rgba(16, 24, 40, 0.06);
-  --shadow-theme-lg: 0px 12px 16px -4px rgba(16, 24, 40, 0.08), 0px 4px 6px -2px rgba(16, 24, 40, 0.03);
-  --shadow-theme-xl: 0px 20px 24px -4px rgba(16, 24, 40, 0.08), 0px 8px 8px -4px rgba(16, 24, 40, 0.03);
-  --shadow-focus-ring: 0px 0px 0px 4px rgba(70, 95, 255, 0.12);
-  --shadow-card: 0px 1px 3px 0px rgba(16, 24, 40, 0.08), 0px 1px 2px 0px rgba(16, 24, 40, 0.04);
+ /* Shadows (TailAdmin) */
+ --shadow-theme-xs: 0px 1px 2px 0px rgba(16, 24, 40, 0.05);
+ --shadow-theme-sm: 0px 1px 3px 0px rgba(16, 24, 40, 0.1), 0px 1px 2px 0px rgba(16, 24, 40, 0.06);
+ --shadow-theme-md: 0px 4px 8px -2px rgba(16, 24, 40, 0.1), 0px 2px 4px -2px rgba(16, 24, 40, 0.06);
+ --shadow-theme-lg: 0px 12px 16px -4px rgba(16, 24, 40, 0.08), 0px 4px 6px -2px rgba(16, 24, 40, 0.03);
+ --shadow-theme-xl: 0px 20px 24px -4px rgba(16, 24, 40, 0.08), 0px 8px 8px -4px rgba(16, 24, 40, 0.03);
+ --shadow-focus-ring: 0px 0px 0px 4px rgba(70, 95, 255, 0.12);
+ --shadow-card: 0px 1px 3px 0px rgba(16, 24, 40, 0.08), 0px 1px 2px 0px rgba(16, 24, 40, 0.04);
 
-  /* Z-index scale */
-  --z-index-1: 1;
-  --z-index-9: 9;
-  --z-index-99: 99;
-  --z-index-999: 999;
-  --z-index-9999: 9999;
-  --z-index-99999: 99999;
-  --z-index-999999: 999999;
+ /* Z-index scale */
+ --z-index-1: 1;
+ --z-index-9: 9;
+ --z-index-99: 99;
+ --z-index-999: 999;
+ --z-index-9999: 9999;
+ --z-index-99999: 99999;
+ --z-index-999999: 999999;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --color-success: var(--success);
-  --color-success-foreground: var(--success-foreground);
-  --color-warning: var(--warning);
-  --color-warning-foreground: var(--warning-foreground);
-  --color-info: var(--info);
-  --color-info-foreground: var(--info-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  
-  /* Modern Blue/Indigo Accent Palette */
-  --blue-primary: #3b82f6;
-  --indigo-accent: #6366f1;
-  --violet-soft: #8b5cf6;
-  --sky-light: #0ea5e9;
-  --emerald-ok: #10b981;
-  --amber-warn: #f59e0b;
-  --red-err: #ef4444;
-  --slate-mid: #94a3b8;
+ --color-background: var(--background);
+ --color-foreground: var(--foreground);
+ --font-sans: var(--font-geist-sans);
+ --font-mono: var(--font-geist-mono);
+ --color-success: var(--success);
+ --color-success-foreground: var(--success-foreground);
+ --color-warning: var(--warning);
+ --color-warning-foreground: var(--warning-foreground);
+ --color-info: var(--info);
+ --color-info-foreground: var(--info-foreground);
+ --color-destructive: var(--destructive);
+ --color-destructive-foreground: var(--destructive-foreground);
+ --color-sidebar-ring: var(--sidebar-ring);
+ --color-sidebar-border: var(--sidebar-border);
+ --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+ --color-sidebar-accent: var(--sidebar-accent);
+ --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+ --color-sidebar-primary: var(--sidebar-primary);
+ --color-sidebar-foreground: var(--sidebar-foreground);
+ --color-sidebar: var(--sidebar);
+ --color-chart-5: var(--chart-5);
+ --color-chart-4: var(--chart-4);
+ --color-chart-3: var(--chart-3);
+ --color-chart-2: var(--chart-2);
+ --color-chart-1: var(--chart-1);
+ --color-ring: var(--ring);
+ --color-input: var(--input);
+ --color-border: var(--border);
+ --color-accent-foreground: var(--accent-foreground);
+ --color-accent: var(--accent);
+ --color-muted-foreground: var(--muted-foreground);
+ --color-muted: var(--muted);
+ --color-secondary-foreground: var(--secondary-foreground);
+ --color-secondary: var(--secondary);
+ --color-primary-foreground: var(--primary-foreground);
+ --color-primary: var(--primary);
+ --color-popover-foreground: var(--popover-foreground);
+ --color-popover: var(--popover);
+ --color-card-foreground: var(--card-foreground);
+ --color-card: var(--card);
+ --radius-sm: calc(var(--radius) - 4px);
+ --radius-md: calc(var(--radius) - 2px);
+ --radius-lg: var(--radius);
+ --radius-xl: calc(var(--radius) + 4px);
+ 
+ /* Modern Blue/Indigo Accent Palette */
+ --blue-primary: #3b82f6;
+ --indigo-accent: #6366f1;
+ --violet-soft: #8b5cf6;
+ --sky-light: #0ea5e9;
+ --emerald-ok: #10b981;
+ --amber-warn: #f59e0b;
+ --red-err: #ef4444;
+ --slate-mid: #94a3b8;
 }
 
 /* Disable transitions/animations during theme toggle */
 :root.theme-no-transition, :root.theme-no-transition * {
-  transition: none !important;
-  animation: none !important;
+ transition: none !important;
+ animation: none !important;
 }
 
 /* ===========================================
-   MODERN BRAND THEME — Cyan/Violet Dynamic
-   Dark: Deep Navy + Cyan-500 + Violet-500 accent
-   Light: Slate-50 + Cyan-600 + Violet-600 accent
-   Brand color: #06b6d4 (matches PWA themeColor)
-   =========================================== */
+  MODERN BRAND THEME - Cyan/Violet Dynamic
+  Dark: Deep Navy + Cyan-500 + Violet-500 accent
+  Light: Slate-50 + Cyan-600 + Violet-600 accent
+  Brand color: #06b6d4 (matches PWA themeColor)
+  =========================================== */
 
 :root {
-  --radius: 0.625rem;
+ --radius: 0.625rem;
 
-  /* Deep navy with subtle blue tint — richer than plain slate-950 */
-  --background: #0a1428;
-  --foreground: #e8eef9;
+ /* Deep navy with subtle blue tint - richer than plain slate-950 */
+ --background: #0a1428;
+ --foreground: #e8eef9;
 
-  /* Elevated card — visible hierarchy from background */
-  --card: #162033;
-  --card-foreground: #e8eef9;
-  --popover: #162033;
-  --popover-foreground: #e8eef9;
+ /* Elevated card - visible hierarchy from background */
+ --card: #162033;
+ --card-foreground: #e8eef9;
+ --popover: #162033;
+ --popover-foreground: #e8eef9;
 
-  /* Brand primary: TailAdmin brand-500 (#465fff) */
-  --primary: #465fff;
-  --primary-foreground: #ffffff;
+ /* Brand primary: TailAdmin brand-500 (#465fff) */
+ --primary: #465fff;
+ --primary-foreground: #ffffff;
 
-  --secondary: #1e2a44;
-  --secondary-foreground: #e8eef9;
+ --secondary: #1e2a44;
+ --secondary-foreground: #e8eef9;
 
-  --muted: #1e2a44;
-  --muted-foreground: #9ba8c4;
+ --muted: #1e2a44;
+ --muted-foreground: #9ba8c4;
 
-  /* Violet accent — dynamic complement to brand */
-  --accent: #7a5af8;
-  --accent-foreground: #ffffff;
+ /* Violet accent - dynamic complement to brand */
+ --accent: #7a5af8;
+ --accent-foreground: #ffffff;
 
-  --destructive: #f04438;
-  --destructive-foreground: #ffffff;
-  --success: #12b76a;
-  --success-foreground: #ffffff;
-  --warning: #f79009;
-  --warning-foreground: #ffffff;
-  --info: #0ba5ec;
-  --info-foreground: #ffffff;
+ --destructive: #f04438;
+ --destructive-foreground: #ffffff;
+ --success: #12b76a;
+ --success-foreground: #ffffff;
+ --warning: #f79009;
+ --warning-foreground: #ffffff;
+ --info: #0ba5ec;
+ --info-foreground: #ffffff;
 
-  /* More visible borders for card/layout separation */
-  --border: #27374f;
-  --input: #1e2a44;
-  --ring: #465fff;
+ /* More visible borders for card/layout separation */
+ --border: #27374f;
+ --input: #1e2a44;
+ --ring: #465fff;
 
-  /* Brand-aligned chart palette */
-  --chart-1: #465fff;
-  --chart-2: #7a5af8;
-  --chart-3: #f79009;
-  --chart-4: #12b76a;
-  --chart-5: #ee46bc;
+ /* Brand-aligned chart palette */
+ --chart-1: #465fff;
+ --chart-2: #7a5af8;
+ --chart-3: #f79009;
+ --chart-4: #12b76a;
+ --chart-5: #ee46bc;
 
-  /* Sidebar deeper than bg for visual hierarchy */
-  --sidebar: #091020;
-  --sidebar-foreground: #e8eef9;
-  --sidebar-primary: #465fff;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #162033;
-  --sidebar-accent-foreground: #e8eef9;
-  --sidebar-border: #27374f;
-  --sidebar-ring: #465fff;
+ /* Sidebar deeper than bg for visual hierarchy */
+ --sidebar: #091020;
+ --sidebar-foreground: #e8eef9;
+ --sidebar-primary: #465fff;
+ --sidebar-primary-foreground: #ffffff;
+ --sidebar-accent: #162033;
+ --sidebar-accent-foreground: #e8eef9;
+ --sidebar-border: #27374f;
+ --sidebar-ring: #465fff;
 
-  color-scheme: dark;
+ color-scheme: dark;
 }
 
 .dark {
-  --background: #0a1428;
-  --foreground: #e8eef9;
-  --card: #162033;
-  --card-foreground: #e8eef9;
-  --popover: #162033;
-  --popover-foreground: #e8eef9;
-  --primary: #465fff;
-  --primary-foreground: #ffffff;
-  --secondary: #1e2a44;
-  --secondary-foreground: #e8eef9;
-  --muted: #1e2a44;
-  --muted-foreground: #9ba8c4;
-  --accent: #7a5af8;
-  --accent-foreground: #ffffff;
-  --destructive: #f04438;
-  --destructive-foreground: #ffffff;
-  --success: #12b76a;
-  --success-foreground: #ffffff;
-  --warning: #f79009;
-  --warning-foreground: #ffffff;
-  --info: #0ba5ec;
-  --info-foreground: #ffffff;
-  --border: #27374f;
-  --input: #1e2a44;
-  --ring: #465fff;
-  --chart-1: #465fff;
-  --chart-2: #7a5af8;
-  --chart-3: #f79009;
-  --chart-4: #12b76a;
-  --chart-5: #ee46bc;
-  --sidebar: #091020;
-  --sidebar-foreground: #e8eef9;
-  --sidebar-primary: #465fff;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #162033;
-  --sidebar-accent-foreground: #e8eef9;
-  --sidebar-border: #27374f;
-  --sidebar-ring: #465fff;
-  color-scheme: dark;
+ --background: #0a1428;
+ --foreground: #e8eef9;
+ --card: #162033;
+ --card-foreground: #e8eef9;
+ --popover: #162033;
+ --popover-foreground: #e8eef9;
+ --primary: #465fff;
+ --primary-foreground: #ffffff;
+ --secondary: #1e2a44;
+ --secondary-foreground: #e8eef9;
+ --muted: #1e2a44;
+ --muted-foreground: #9ba8c4;
+ --accent: #7a5af8;
+ --accent-foreground: #ffffff;
+ --destructive: #f04438;
+ --destructive-foreground: #ffffff;
+ --success: #12b76a;
+ --success-foreground: #ffffff;
+ --warning: #f79009;
+ --warning-foreground: #ffffff;
+ --info: #0ba5ec;
+ --info-foreground: #ffffff;
+ --border: #27374f;
+ --input: #1e2a44;
+ --ring: #465fff;
+ --chart-1: #465fff;
+ --chart-2: #7a5af8;
+ --chart-3: #f79009;
+ --chart-4: #12b76a;
+ --chart-5: #ee46bc;
+ --sidebar: #091020;
+ --sidebar-foreground: #e8eef9;
+ --sidebar-primary: #465fff;
+ --sidebar-primary-foreground: #ffffff;
+ --sidebar-accent: #162033;
+ --sidebar-accent-foreground: #e8eef9;
+ --sidebar-border: #27374f;
+ --sidebar-ring: #465fff;
+ color-scheme: dark;
 }
 
 /* ===========================================
-   LIGHT MODE — Modern Clean Brand-Aligned
-   Slate-50 base + Cyan-600/Violet-600 accents
-   =========================================== */
+  LIGHT MODE - Modern Clean Brand-Aligned
+  Slate-50 base + Cyan-600/Violet-600 accents
+  =========================================== */
 :root:not(.dark) {
-  --background: #f8fafc;    /* slate-50: off-white so cards/inputs float */
-  --foreground: #0f172a;
+ --background: #f8fafc;  /* slate-50: off-white so cards/inputs float */
+ --foreground: #0f172a;
 
-  --card: #ffffff;
-  --card-foreground: #0f172a;
-  --popover: #ffffff;
-  --popover-foreground: #0f172a;
+ --card: #ffffff;
+ --card-foreground: #0f172a;
+ --popover: #ffffff;
+ --popover-foreground: #0f172a;
 
-  /* Brand TailAdmin brand-500 (#465fff) — unified with dark mode */
-  --primary: #465fff;
-  --primary-foreground: #ffffff;
+ /* Brand TailAdmin brand-500 (#465fff) - unified with dark mode */
+ --primary: #465fff;
+ --primary-foreground: #ffffff;
 
-  --secondary: #ecf3ff;           /* brand-50 — brand-tinted secondary */
-  --secondary-foreground: #2a31d8; /* brand-700 */
+ --secondary: #ecf3ff;      /* brand-50 - brand-tinted secondary */
+ --secondary-foreground: #2a31d8; /* brand-700 */
 
-  --muted: #f2f4f7;               /* gray-100 */
-  --muted-foreground: #475467;    /* gray-600 — readable */
+ --muted: #f2f4f7;        /* gray-100 */
+ --muted-foreground: #475467;  /* gray-600 - readable */
 
-  --accent: #7a5af8;              /* theme-purple-500 — dynamic complement */
-  --accent-foreground: #ffffff;
+ --accent: #7a5af8;       /* theme-purple-500 - dynamic complement */
+ --accent-foreground: #ffffff;
 
-  --destructive: #f04438;         /* error-500 */
-  --destructive-foreground: #ffffff;
-  --success: #039855;             /* success-600 */
-  --success-foreground: #ffffff;
-  --warning: #dc6803;             /* warning-600 */
-  --warning-foreground: #ffffff;
-  --info: #0086c9;                /* blue-light-600 */
-  --info-foreground: #ffffff;
+ --destructive: #f04438;     /* error-500 */
+ --destructive-foreground: #ffffff;
+ --success: #039855;       /* success-600 */
+ --success-foreground: #ffffff;
+ --warning: #dc6803;       /* warning-600 */
+ --warning-foreground: #ffffff;
+ --info: #0086c9;        /* blue-light-600 */
+ --info-foreground: #ffffff;
 
-  --border: #e4e7ec;              /* gray-200 — TailAdmin border */
-  --input: #ffffff;               /* white inputs on gray-50 bg */
-  --ring: #465fff;                /* brand focus ring */
+ --border: #e4e7ec;       /* gray-200 - TailAdmin border */
+ --input: #ffffff;        /* white inputs on gray-50 bg */
+ --ring: #465fff;        /* brand focus ring */
 
-  /* Brand-aligned chart palette */
-  --chart-1: #465fff;
-  --chart-2: #7a5af8;
-  --chart-3: #dc6803;
-  --chart-4: #039855;
-  --chart-5: #ee46bc;
+ /* Brand-aligned chart palette */
+ --chart-1: #465fff;
+ --chart-2: #7a5af8;
+ --chart-3: #dc6803;
+ --chart-4: #039855;
+ --chart-5: #ee46bc;
 
-  /* Light sidebar — TailAdmin style: white sidebar, dark text */
-  --sidebar: #ffffff;
-  --sidebar-foreground: #344054;       /* gray-700 */
-  --sidebar-primary: #465fff;          /* brand-500 */
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f2f4f7;           /* gray-100 hover */
-  --sidebar-accent-foreground: #101828; /* gray-900 */
-  --sidebar-border: #e4e7ec;           /* gray-200 */
-  --sidebar-ring: #465fff;
+ /* Light sidebar - TailAdmin style: white sidebar, dark text */
+ --sidebar: #ffffff;
+ --sidebar-foreground: #344054;    /* gray-700 */
+ --sidebar-primary: #465fff;     /* brand-500 */
+ --sidebar-primary-foreground: #ffffff;
+ --sidebar-accent: #f2f4f7;      /* gray-100 hover */
+ --sidebar-accent-foreground: #101828; /* gray-900 */
+ --sidebar-border: #e4e7ec;      /* gray-200 */
+ --sidebar-ring: #465fff;
 
-  color-scheme: light;
+ color-scheme: light;
 }
 
 /* ============================================================
-   TAILADMIN UTILITY CLASSES
-   Portable nav-item helpers used across all role sidebars.
-   ============================================================ */
+  TAILADMIN UTILITY CLASSES
+  Portable nav-item helpers used across all role sidebars.
+  ============================================================ */
 
 @utility menu-item {
-  @apply relative flex items-center w-full gap-3 px-3 py-2 font-medium rounded-lg text-theme-sm transition-all duration-200;
+ @apply relative flex items-center w-full gap-3 px-3 py-2 font-medium rounded-lg text-theme-sm transition-all duration-200;
 }
 
 @utility menu-item-active {
-  @apply bg-brand-50 text-brand-500 dark:bg-brand-500/[0.12] dark:text-brand-400;
+ @apply bg-brand-50 text-brand-500 dark:bg-brand-500/[0.12] dark:text-brand-400;
 }
 
 @utility menu-item-inactive {
-  @apply text-gray-700 hover:bg-gray-100 group-hover:text-gray-700 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-gray-300;
+ @apply text-gray-700 hover:bg-gray-100 group-hover:text-gray-700 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-gray-300;
 }
 
 @utility menu-item-icon {
-  @apply text-gray-500 group-hover:text-gray-700 dark:text-gray-400;
+ @apply text-gray-500 group-hover:text-gray-700 dark:text-gray-400;
 }
 
 @utility menu-item-icon-active {
-  @apply text-brand-500 dark:text-brand-400;
+ @apply text-brand-500 dark:text-brand-400;
 }
 
 @utility menu-item-icon-inactive {
-  @apply text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300;
+ @apply text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300;
 }
 
 @utility menu-dropdown-item {
-  @apply relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-theme-sm font-medium transition-all duration-200;
+ @apply relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-theme-sm font-medium transition-all duration-200;
 }
 
 @utility menu-dropdown-item-active {
-  @apply bg-brand-50 text-brand-500 dark:bg-brand-500/[0.12] dark:text-brand-400;
+ @apply bg-brand-50 text-brand-500 dark:bg-brand-500/[0.12] dark:text-brand-400;
 }
 
 @utility menu-dropdown-item-inactive {
-  @apply text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5;
+ @apply text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5;
 }
 
 @utility no-scrollbar {
-  &::-webkit-scrollbar {
-    display: none;
-  }
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+ &::-webkit-scrollbar {
+  display: none;
+ }
+ -ms-overflow-style: none;
+ scrollbar-width: none;
 }
 
 @utility custom-scrollbar {
-  &::-webkit-scrollbar {
-    @apply size-1.5;
-  }
-  &::-webkit-scrollbar-track {
-    @apply rounded-full;
-  }
-  &::-webkit-scrollbar-thumb {
-    @apply bg-gray-300 rounded-full dark:bg-gray-700;
-  }
+ &::-webkit-scrollbar {
+  @apply size-1.5;
+ }
+ &::-webkit-scrollbar-track {
+  @apply rounded-full;
+ }
+ &::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full dark:bg-gray-700;
+ }
 }
 
 /* =====================================================
-   AGENT + TECHNICIAN THEME HARMONIZATION (ADMIN-LIKE)
-   Scoped by data-role to avoid affecting admin/customer.
-   ===================================================== */
+  AGENT + TECHNICIAN THEME HARMONIZATION (ADMIN-LIKE)
+  Scoped by data-role to avoid affecting admin/customer.
+  ===================================================== */
 
 /* Light mode: replace legacy neon/dark surfaces with theme surfaces */
 :root:not(.dark) [data-role="agent"] [class*="bg-[#0a0520"],
@@ -466,26 +466,26 @@
 :root:not(.dark) [data-role="technician"] [class*="bg-[#0b1120"],
 :root:not(.dark) [data-role="technician"] [class*="bg-[#0d0a1e"],
 :root:not(.dark) [data-role="technician"] [class*="bg-[#0a0e1a"] {
-  background-color: var(--card) !important;
+ background-color: var(--card) !important;
 }
 
 :root:not(.dark) [data-role="agent"] [class*="text-[#00f7ff"],
 :root:not(.dark) [data-role="agent"] [class*="text-cyan-"],
 :root:not(.dark) [data-role="technician"] [class*="text-[#00f7ff"],
 :root:not(.dark) [data-role="technician"] [class*="text-cyan-"] {
-  color: var(--primary) !important;
+ color: var(--primary) !important;
 }
 
 :root:not(.dark) [data-role="agent"] [class*="text-[#bc13fe"],
 :root:not(.dark) [data-role="agent"] [class*="text-purple-"],
 :root:not(.dark) [data-role="technician"] [class*="text-[#bc13fe"],
 :root:not(.dark) [data-role="technician"] [class*="text-purple-"] {
-  color: var(--accent) !important;
+ color: var(--accent) !important;
 }
 
 :root:not(.dark) [data-role="agent"] [class*="text-[#e0d0ff"],
 :root:not(.dark) [data-role="technician"] [class*="text-[#e0d0ff"] {
-  color: var(--muted-foreground) !important;
+ color: var(--muted-foreground) !important;
 }
 
 :root:not(.dark) [data-role="agent"] [class*="border-[#bc13fe"],
@@ -496,17 +496,17 @@
 :root:not(.dark) [data-role="technician"] [class*="border-[#00f7ff"],
 :root:not(.dark) [data-role="technician"] [class*="border-cyan-"],
 :root:not(.dark) [data-role="technician"] [class*="border-purple-"] {
-  border-color: var(--border) !important;
+ border-color: var(--border) !important;
 }
 
 :root:not(.dark) [data-role="agent"] [class*="from-[#bc13fe"],
 :root:not(.dark) [data-role="technician"] [class*="from-[#bc13fe"] {
-  --tw-gradient-from: var(--primary) var(--tw-gradient-from-position) !important;
+ --tw-gradient-from: var(--primary) var(--tw-gradient-from-position) !important;
 }
 
 :root:not(.dark) [data-role="agent"] [class*="to-[#00f7ff"],
 :root:not(.dark) [data-role="technician"] [class*="to-[#00f7ff"] {
-  --tw-gradient-to: var(--accent) var(--tw-gradient-to-position) !important;
+ --tw-gradient-to: var(--accent) var(--tw-gradient-to-position) !important;
 }
 
 :root:not(.dark) [data-role="agent"] input,
@@ -515,26 +515,26 @@
 :root:not(.dark) [data-role="technician"] input,
 :root:not(.dark) [data-role="technician"] textarea,
 :root:not(.dark) [data-role="technician"] select {
-  color: var(--foreground) !important;
+ color: var(--foreground) !important;
 }
 
 :root:not(.dark) [data-role="agent"] input::placeholder,
 :root:not(.dark) [data-role="agent"] textarea::placeholder,
 :root:not(.dark) [data-role="technician"] input::placeholder,
 :root:not(.dark) [data-role="technician"] textarea::placeholder {
-  color: var(--muted-foreground) !important;
+ color: var(--muted-foreground) !important;
 }
 
 /* Preserve white text inside agent/technician sidebars (sidebar is always dark navy bg-sidebar) */
 :root:not(.dark) [data-role="agent"] aside .text-white,
 :root:not(.dark) [data-role="technician"] aside .text-white {
-  color: #ffffff !important;
+ color: #ffffff !important;
 }
 
 /* Preserve icon colors inside the gradient badge divs in both sidebars */
 :root:not(.dark) [data-role="agent"] aside [class*="bg-gradient-to"] *,
 :root:not(.dark) [data-role="technician"] aside [class*="bg-gradient-to"] * {
-  color: #ffffff !important;
+ color: #ffffff !important;
 }
 
 /* Inputs/selects inside content area (not sidebar) must keep readable colors */
@@ -542,7 +542,7 @@
 :root:not(.dark) [data-role="agent"] aside select,
 :root:not(.dark) [data-role="technician"] aside input,
 :root:not(.dark) [data-role="technician"] aside select {
-  color: var(--sidebar-foreground) !important;
+ color: var(--sidebar-foreground) !important;
 }
 
 /* No theme transition (instant switch) */
@@ -550,13 +550,13 @@ html.theme-transitioning,
 html.theme-transitioning *,
 html.theme-transitioning *::before,
 html.theme-transitioning *::after {
-  transition: none !important;
+ transition: none !important;
 }
 
 /* =======================================================
-   LIGHT MODE — Comprehensive Override for Cyberpunk Colors
-   Targets all hardcoded dark hex classes across admin pages
-   ======================================================= */
+  LIGHT MODE - Comprehensive Override for Cyberpunk Colors
+  Targets all hardcoded dark hex classes across admin pages
+  ======================================================= */
 
 /* --- 1. PAGE BACKGROUNDS: ALL dark hex → white --- */
 :root:not(.dark) .bg-\[\#1a0f35\],
@@ -571,12 +571,12 @@ html.theme-transitioning *::after {
 :root:not(.dark) [class*="bg-[#1e1e1e]"],
 :root:not(.dark) [class*="bg-[#0B141A]"],
 :root:not(.dark) [class*="bg-[#0d0a1a]"] {
-  background-color: var(--background) !important;
+ background-color: var(--background) !important;
 }
 
-/* bg-[#0a0520] — used for inputs/buttons/table cells → light gray input bg */
+/* bg-[#0a0520] - used for inputs/buttons/table cells → light gray input bg */
 :root:not(.dark) .bg-\[\#0a0520\] {
-  background-color: var(--input) !important;
+ background-color: var(--input) !important;
 }
 
 /* --- 1b. SLATE BACKGROUNDS → white/light --- */
@@ -584,87 +584,87 @@ html.theme-transitioning *::after {
 :root:not(.dark) .bg-slate-800,
 :root:not(.dark) [class*="bg-slate-900"],
 :root:not(.dark) [class*="bg-slate-800"] {
-  background-color: var(--background) !important;
+ background-color: var(--background) !important;
 }
 :root:not(.dark) [class*="bg-slate-800\/"],
 :root:not(.dark) [class*="bg-slate-900\/"] {
-  background-color: var(--input) !important;
+ background-color: var(--input) !important;
 }
 
 /* --- 1c. SLATE/DARK GRADIENTS → white/light on light mode --- */
 :root:not(.dark) [class*="from-slate-900"],
 :root:not(.dark) [class*="from-slate-800"] {
-  --tw-gradient-from: #ffffff !important;
+ --tw-gradient-from: #ffffff !important;
 }
 :root:not(.dark) [class*="via-slate-900"],
 :root:not(.dark) [class*="via-slate-800"] {
-  --tw-gradient-via: #f8fafc !important;
+ --tw-gradient-via: #f8fafc !important;
 }
 :root:not(.dark) [class*="to-slate-900"],
 :root:not(.dark) [class*="to-slate-800"] {
-  --tw-gradient-to: #f1f5f9 !important;
+ --tw-gradient-to: #f1f5f9 !important;
 }
 :root:not(.dark) [class*="from-[#1a0f35]"],
 :root:not(.dark) [class*="from-[#0a0520]"] {
-  --tw-gradient-from: #ffffff !important;
+ --tw-gradient-from: #ffffff !important;
 }
 :root:not(.dark) [class*="via-[#1a0f35]"] {
-  --tw-gradient-via: #f8fafc !important;
+ --tw-gradient-via: #f8fafc !important;
 }
 :root:not(.dark) [class*="to-[#1a0f35]"],
 :root:not(.dark) [class*="to-[#0a0520]"] {
-  --tw-gradient-to: #f1f5f9 !important;
+ --tw-gradient-to: #f1f5f9 !important;
 }
 
 /* --- 1d. WHATSAPP GREEN BUBBLE (keep visible but lighter) --- */
 :root:not(.dark) .bg-\[\#005C4B\],
 :root:not(.dark) [class*="bg-[#005C4B]"] {
-  background-color: #059669 !important;
+ background-color: #059669 !important;
 }
 
 /* --- 2. INPUT/FORM BACKGROUNDS --- */
 :root:not(.dark) .bg-\[\#1a1135\],
 :root:not(.dark) [class*="bg-[#1a1135]"] {
-  background-color: var(--input) !important;
-  border-color: var(--border) !important;
+ background-color: var(--input) !important;
+ border-color: var(--border) !important;
 }
 :root:not(.dark) [class*="bg-[#0a0520]/"] {
-  background-color: var(--input) !important;
+ background-color: var(--input) !important;
 }
 /* Any element with bg-[#1a0f35] used as input/card bg → input bg */
 :root:not(.dark) [class*="bg-[#1a0f35]"] {
-  background-color: var(--input) !important;
-  border-color: var(--border) !important;
+ background-color: var(--input) !important;
+ border-color: var(--border) !important;
 }
 /* bg-[#1e1b2e] modal/card backgrounds → card bg */
 :root:not(.dark) [class*="bg-[#1e1b2e]"] {
-  background-color: var(--card) !important;
-  border-color: var(--border) !important;
+ background-color: var(--card) !important;
+ border-color: var(--border) !important;
 }
 /* bg-[#0f0a1e] code/pre block backgrounds → muted bg */
 :root:not(.dark) [class*="bg-[#0f0a1e]"] {
-  background-color: var(--muted) !important;
-  border-color: var(--border) !important;
+ background-color: var(--muted) !important;
+ border-color: var(--border) !important;
 }
 
 /* --- 3. CARD BACKGROUNDS: solid white on light --- */
 :root:not(.dark) [class*="bg-card/"] {
-  background-color: #ffffff !important;
-  border-color: var(--border) !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(203, 213, 225, 0.5);
+ background-color: #ffffff !important;
+ border-color: var(--border) !important;
+ box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(203, 213, 225, 0.5);
 }
 
-/* Admin login 2FA input — always stays dark regardless of theme */
+/* Admin login 2FA input - always stays dark regardless of theme */
 :root:not(.dark) .login-input-2fa {
-  background-color: rgba(15, 23, 42, 0.9) !important;
-  color: #ffffff !important;
-  caret-color: #ffffff !important;
-  border-color: rgba(0, 247, 255, 0.4) !important;
+ background-color: rgba(15, 23, 42, 0.9) !important;
+ color: #ffffff !important;
+ caret-color: #ffffff !important;
+ border-color: rgba(0, 247, 255, 0.4) !important;
 }
 
 /* --- 4. TEXT-WHITE → dark foreground, but keep white on colored bg --- */
 :root:not(.dark) .text-white {
-  color: var(--foreground) !important;
+ color: var(--foreground) !important;
 }
 /* Restore white text for elements with colored background on SAME element */
 :root:not(.dark) .text-white[class*="bg-gradient-to"],
@@ -695,457 +695,457 @@ html.theme-transitioning *::after {
 :root:not(.dark) .text-white[class*="bg-warning"],
 :root:not(.dark) .text-white[class*="bg-info"],
 :root:not(.dark) .text-white[class*="bg-accent"] {
-  color: #ffffff !important;
+ color: #ffffff !important;
 }
 
 /* text-white with opacity variants */
 :root:not(.dark) [class*="text-white\\/"] {
-  color: var(--muted-foreground) !important;
+ color: var(--muted-foreground) !important;
 }
 
 /* --- 5. LIGHT PURPLE TEXT (#e0d0ff) → readable on white --- */
 :root:not(.dark) [class*="text-[#e0d0ff]"] {
-  color: var(--muted-foreground) !important;
+ color: var(--muted-foreground) !important;
 }
 
 /* --- 6. PRIMARY TEXT (#00f7ff neon cyan) → blue primary --- */
 :root:not(.dark) [class*="text-[#00f7ff]"] {
-  color: var(--primary) !important;
+ color: var(--primary) !important;
 }
 
 /* --- 7. OTHER NEON TEXT → readable alternatives --- */
 :root:not(.dark) [class*="text-[#00ff88]"] {
-  color: #059669 !important;
+ color: #059669 !important;
 }
 :root:not(.dark) [class*="text-[#bc13fe]"] {
-  color: #4f46e5 !important;
+ color: #4f46e5 !important;
 }
 :root:not(.dark) [class*="text-[#ff6b8a]"],
 :root:not(.dark) [class*="text-[#ff4466]"],
 :root:not(.dark) [class*="text-[#ff3366]"] {
-  color: #dc2626 !important;
+ color: #dc2626 !important;
 }
 :root:not(.dark) [class*="text-[#ff44cc]"] {
-  color: #7c3aed !important;
+ color: #7c3aed !important;
 }
 :root:not(.dark) [class*="text-[#ff8c00]"] {
-  color: #d97706 !important;
+ color: #d97706 !important;
 }
 :root:not(.dark) .text-\[\#1a0f35\] {
-  color: var(--foreground) !important;
+ color: var(--foreground) !important;
 }
 
 /* --- 8. GRADIENT TEXT: via-white → visible on white bg --- */
 :root:not(.dark) .bg-clip-text[class*="via-white"] {
-  background-image: linear-gradient(to right, #0891b2, #6366f1, #7c3aed) !important;
+ background-image: linear-gradient(to right, #0891b2, #6366f1, #7c3aed) !important;
 }
 :root:not(.dark) [class*="via-white"].bg-clip-text {
-  background-image: linear-gradient(to right, #0891b2, #6366f1, #7c3aed) !important;
+ background-image: linear-gradient(to right, #0891b2, #6366f1, #7c3aed) !important;
 }
 
 /* --- 9. INVISIBLE WHITE BORDERS → visible --- */
 :root:not(.dark) [class*="border-white\\/"],
 :root:not(.dark) [class*="border-white/"] {
-  border-color: var(--border) !important;
+ border-color: var(--border) !important;
 }
 :root:not(.dark) .border-white {
-  border-color: var(--border) !important;
+ border-color: var(--border) !important;
 }
 
 /* --- 10. NEON HEX BORDERS → softer for light --- */
 :root:not(.dark) [class*="border-[#bc13fe]"] {
-  border-color: rgba(124, 58, 237, 0.25) !important;
+ border-color: rgba(124, 58, 237, 0.25) !important;
 }
 :root:not(.dark) [class*="border-[#00f7ff]"] {
-  border-color: var(--border) !important;
+ border-color: var(--border) !important;
 }
 :root:not(.dark) [class*="border-[#ff4466]"],
 :root:not(.dark) [class*="border-[#ff3366]"] {
-  border-color: rgba(220, 38, 38, 0.15) !important;
+ border-color: rgba(220, 38, 38, 0.15) !important;
 }
 :root:not(.dark) [class*="border-[#00ff88]"] {
-  border-color: rgba(5, 150, 105, 0.15) !important;
+ border-color: rgba(5, 150, 105, 0.15) !important;
 }
 :root:not(.dark) [class*="border-[#ff44cc]"] {
-  border-color: rgba(219, 39, 119, 0.15) !important;
+ border-color: rgba(219, 39, 119, 0.15) !important;
 }
 :root:not(.dark) [class*="border-[#ff8c00]"] {
-  border-color: rgba(217, 119, 6, 0.15) !important;
+ border-color: rgba(217, 119, 6, 0.15) !important;
 }
 
 /* Cyan Tailwind borders → solid gray */
 :root:not(.dark) [class*="border-cyan-500"],
 :root:not(.dark) [class*="border-cyan-400"] {
-  border-color: var(--border) !important;
+ border-color: var(--border) !important;
 }
 
 /* --- 11. NEON SHADOWS → visible card elevation shadows --- */
 :root:not(.dark) [class*="shadow-[0_0_"],
 :root:not(.dark) [class*="shadow-[5px_0_"],
 :root:not(.dark) [class*="shadow-[inset_"] {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.06) !important;
+ box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.06) !important;
 }
 :root:not(.dark) [class*="shadow-[0_4px_30px"] {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05) !important;
+ box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05) !important;
 }
 :root:not(.dark) [class*="drop-shadow-[0_0_"] {
-  filter: none !important;
+ filter: none !important;
 }
 /* Agent/Technician portal: heavier card elevation for better visual hierarchy */
 :root:not(.dark) [data-role="agent"] main [class*="shadow-[0_0_"],
 :root:not(.dark) [data-role="technician"] main [class*="shadow-[0_0_"] {
-  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.10), 0 2px 6px -2px rgba(0, 0, 0, 0.07) !important;
+ box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.10), 0 2px 6px -2px rgba(0, 0, 0, 0.07) !important;
 }
 
 /* --- 12. NEON GLOW BLOBS → fade out on white bg (use opacity, NOT display:none) --- */
 :root:not(.dark) .rounded-full.blur-3xl,
 :root:not(.dark) .rounded-full[class*="blur-"] {
-  opacity: 0 !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
+ opacity: 0 !important;
+ visibility: hidden !important;
+ pointer-events: none !important;
 }
 
 /* --- 12b. CYBERPUNK BACKGROUND EFFECTS CONTAINER → hide entirely in light --- */
 :root:not(.dark) .cyberpunk-bg {
-  opacity: 0 !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
+ opacity: 0 !important;
+ visibility: hidden !important;
+ pointer-events: none !important;
 }
 
 /* --- 13. SCAN LINES & GRID PATTERNS → fade out --- */
 :root:not(.dark) [class*="bg-[repeating-linear-gradient"] {
-  opacity: 0 !important;
+ opacity: 0 !important;
 }
 :root:not(.dark) [class*="bg-[linear-gradient(rgba(0,255,255"] {
-  opacity: 0 !important;
+ opacity: 0 !important;
 }
 :root:not(.dark) [class*="bg-[linear-gradient(rgba(188,19,254"] {
-  opacity: 0 !important;
+ opacity: 0 !important;
 }
 
 /* --- 14. NEON RING FOCUS → primary ring --- */
 :root:not(.dark) [class*="ring-[#00f7ff]"],
 :root:not(.dark) [class*="ring-[#bc13fe]"] {
-  --tw-ring-color: var(--ring) !important;
+ --tw-ring-color: var(--ring) !important;
 }
 
 /* --- 15. NEON BACKGROUND ACCENTS → soft tinted backgrounds on light --- */
 :root:not(.dark) [class*="bg-[#bc13fe]"] {
-  background-color: rgba(124, 58, 237, 0.12) !important;
+ background-color: rgba(124, 58, 237, 0.12) !important;
 }
 :root:not(.dark) [class*="bg-[#00f7ff]"] {
-  background-color: rgba(8, 145, 178, 0.12) !important;
+ background-color: rgba(8, 145, 178, 0.12) !important;
 }
 :root:not(.dark) [class*="bg-[#ff44cc]"] {
-  background-color: rgba(219, 39, 119, 0.12) !important;
+ background-color: rgba(219, 39, 119, 0.12) !important;
 }
 :root:not(.dark) [class*="bg-[#00ff88]"] {
-  background-color: rgba(5, 150, 105, 0.12) !important;
+ background-color: rgba(5, 150, 105, 0.12) !important;
 }
 :root:not(.dark) [class*="bg-[#ff4466]"] {
-  background-color: rgba(220, 38, 38, 0.12) !important;
+ background-color: rgba(220, 38, 38, 0.12) !important;
 }
 :root:not(.dark) [class*="bg-[#ff8c00]"] {
-  background-color: rgba(217, 119, 6, 0.12) !important;
+ background-color: rgba(217, 119, 6, 0.12) !important;
 }
 /* Opacity variants stay more transparent */
 :root:not(.dark) [class*="bg-[#bc13fe]\\/"] {
-  background-color: rgba(124, 58, 237, 0.08) !important;
+ background-color: rgba(124, 58, 237, 0.08) !important;
 }
 :root:not(.dark) [class*="bg-[#00f7ff]\\/"] {
-  background-color: rgba(8, 145, 178, 0.08) !important;
+ background-color: rgba(8, 145, 178, 0.08) !important;
 }
 :root:not(.dark) [class*="bg-[#ff44cc]\\/"] {
-  background-color: rgba(219, 39, 119, 0.08) !important;
+ background-color: rgba(219, 39, 119, 0.08) !important;
 }
 :root:not(.dark) [class*="bg-[#ff4466]\\/"] {
-  background-color: rgba(220, 38, 38, 0.08) !important;
+ background-color: rgba(220, 38, 38, 0.08) !important;
 }
 :root:not(.dark) [class*="bg-[#00ff88]\\/"] {
-  background-color: rgba(5, 150, 105, 0.08) !important;
+ background-color: rgba(5, 150, 105, 0.08) !important;
 }
 :root:not(.dark) [class*="bg-[#ff8c00]\\/"] {
-  background-color: rgba(217, 119, 6, 0.08) !important;
+ background-color: rgba(217, 119, 6, 0.08) !important;
 }
 
 /* --- 16. SIDEBAR NEON TOP LINE → slate for dark sidebar --- */
 :root:not(.dark) .via-cyan-400 {
-  --tw-gradient-via: #334155 !important;
+ --tw-gradient-via: #334155 !important;
 }
 
 /* --- 17. SIDEBAR ACTIVE STATE → blue tint on dark sidebar --- */
 :root:not(.dark) .bg-cyan-500\/10 {
-  background-color: rgba(59, 130, 246, 0.14) !important;
+ background-color: rgba(59, 130, 246, 0.14) !important;
 }
 :root:not(.dark) .border-cyan-400\/20,
 :root:not(.dark) .border-cyan-400\/30 {
-  border-color: rgba(59, 130, 246, 0.3) !important;
+ border-color: rgba(59, 130, 246, 0.3) !important;
 }
 
 /* --- 18. MOBILE OVERLAY → lighter --- */
 :root:not(.dark) .bg-black\/80 {
-  background-color: rgba(0, 0, 0, 0.4) !important;
+ background-color: rgba(0, 0, 0, 0.4) !important;
 }
 :root:not(.dark) .bg-black\/60 {
-  background-color: rgba(0, 0, 0, 0.35) !important;
+ background-color: rgba(0, 0, 0, 0.35) !important;
 }
 :root:not(.dark) .bg-black\/70 {
-  background-color: rgba(0, 0, 0, 0.35) !important;
+ background-color: rgba(0, 0, 0, 0.35) !important;
 }
 
 /* --- 19. SIDEBAR CATEGORY TEXT → blue-300/400 on dark sidebar --- */
 :root:not(.dark) .text-cyan-400\/45 {
-  color: rgba(96, 165, 250, 0.45) !important;
+ color: rgba(96, 165, 250, 0.45) !important;
 }
 :root:not(.dark) .text-cyan-400\/60 {
-  color: rgba(96, 165, 250, 0.60) !important;
+ color: rgba(96, 165, 250, 0.60) !important;
 }
 :root:not(.dark) .text-cyan-400\/70 {
-  color: rgba(96, 165, 250, 0.70) !important;
+ color: rgba(96, 165, 250, 0.70) !important;
 }
 :root:not(.dark) .text-cyan-400\/80 {
-  color: #60a5fa !important;
+ color: #60a5fa !important;
 }
 
 /* --- 20. SIDEBAR GRADIENT BACKGROUNDS → transparent on white --- */
 :root:not(.dark) [class*="from-cyan-500/5"][class*="to-pink-500/5"] {
-  background-image: none !important;
-  background-color: transparent !important;
+ background-image: none !important;
+ background-color: transparent !important;
 }
 
-/* --- 21. BACKDROP BLUR + BG — content = light, sidebar handled via bg-sidebar var --- */
+/* --- 21. BACKDROP BLUR + BG - content = light, sidebar handled via bg-sidebar var --- */
 :root:not(.dark) .bg-background\/80 {
-  background-color: rgba(248, 250, 252, 0.97) !important;
+ background-color: rgba(248, 250, 252, 0.97) !important;
 }
 :root:not(.dark) .bg-background\/95 {
-  background-color: rgba(248, 250, 252, 0.97) !important;
+ background-color: rgba(248, 250, 252, 0.97) !important;
 }
 
 /* --- 22. FORCE ALL TEXT FOREGROUND DARKER --- */
 :root:not(.dark) .text-foreground {
-  color: #111827 !important;
+ color: #111827 !important;
 }
 :root:not(.dark) .text-card-foreground {
-  color: #111827 !important;
+ color: #111827 !important;
 }
 :root:not(.dark) .text-muted-foreground {
-  color: #374151 !important;
+ color: #374151 !important;
 }
 
 /* --- 23. WHITE OVERLAYS → subtle gray (invisible white-on-white) --- */
 :root:not(.dark) [class*="bg-white\\/5"],
 :root:not(.dark) .bg-white\/5 {
-  background-color: rgba(0, 0, 0, 0.02) !important;
+ background-color: rgba(0, 0, 0, 0.02) !important;
 }
 :root:not(.dark) [class*="bg-white\\/10"],
 :root:not(.dark) .bg-white\/10 {
-  background-color: rgba(0, 0, 0, 0.04) !important;
+ background-color: rgba(0, 0, 0, 0.04) !important;
 }
 :root:not(.dark) [class*="bg-white\\/20"],
 :root:not(.dark) .bg-white\/20 {
-  background-color: rgba(0, 0, 0, 0.05) !important;
+ background-color: rgba(0, 0, 0, 0.05) !important;
 }
 :root:not(.dark) [class*="bg-white\\/30"],
 :root:not(.dark) .bg-white\/30 {
-  background-color: rgba(0, 0, 0, 0.06) !important;
+ background-color: rgba(0, 0, 0, 0.06) !important;
 }
 
 /* --- 24. PRIMARY BORDERS with opacity → solid border --- */
 :root:not(.dark) [class*="border-primary\\/"] {
-  border-color: var(--border) !important;
+ border-color: var(--border) !important;
 }
 
 /* --- 25. FOCUS/HOVER NEON BORDERS → themed primary --- */
 :root:not(.dark) [class*="focus\\:border-\\[\\#00f7ff\\]"]:focus,
 :root:not(.dark) [class*="focus\\:border-\\[\\#bc13fe\\]"]:focus {
-  border-color: var(--primary) !important;
+ border-color: var(--primary) !important;
 }
 :root:not(.dark) [class*="hover\\:border-\\[\\#00f7ff\\]"]:hover,
 :root:not(.dark) [class*="hover\\:border-\\[\\#bc13fe\\]"]:hover {
-  border-color: var(--primary) !important;
+ border-color: var(--primary) !important;
 }
 :root:not(.dark) [class*="hover\\:border-white"]:hover {
-  border-color: var(--border) !important;
+ border-color: var(--border) !important;
 }
 
 /* --- 26. PLACEHOLDER COLORS → readable gray --- */
 :root:not(.dark) [class*="placeholder-\\[\\#e0d0ff\\]"]::placeholder,
 :root:not(.dark) [class*="placeholder\\:text-\\[\\#e0d0ff\\]"]::placeholder {
-  color: #9ca3af !important;
+ color: #9ca3af !important;
 }
 :root:not(.dark) ::placeholder {
-  color: #9ca3af !important;
+ color: #9ca3af !important;
 }
 :root:not(.dark) [class*="placeholder-gray-"]::placeholder {
-  color: #9ca3af !important;
+ color: #9ca3af !important;
 }
 
 /* --- 27. DIVIDE NEON COLORS → visible gray --- */
 :root:not(.dark) [class*="divide-\\[\\#bc13fe\\]"] > * + * {
-  border-color: var(--border) !important;
+ border-color: var(--border) !important;
 }
 :root:not(.dark) [class*="divide-white"] > * + * {
-  border-color: var(--border) !important;
+ border-color: var(--border) !important;
 }
 :root:not(.dark) [class*="divide-cyan"] > * + * {
-  border-color: var(--border) !important;
+ border-color: var(--border) !important;
 }
 
 /* --- 28. HOVER BG NEON HIGH OPACITY → themed --- */
 :root:not(.dark) [class*="hover\\:bg-\\[\\#00f7ff\\]"]:hover {
-  background-color: var(--primary) !important;
-  color: #ffffff !important;
+ background-color: var(--primary) !important;
+ color: #ffffff !important;
 }
 :root:not(.dark) [class*="hover\\:bg-\\[\\#bc13fe\\]"]:hover {
-  background-color: #7c3aed !important;
-  color: #ffffff !important;
+ background-color: #7c3aed !important;
+ color: #ffffff !important;
 }
 
 /* --- 29. GROUP-HOVER NEON STATES → themed --- */
 :root:not(.dark) .group:hover [class*="group-hover\\:text-\\[\\#00f7ff\\]"],
 :root:not(.dark) .group:hover [class*="group-hover\\:text-cyan"] {
-  color: var(--primary) !important;
+ color: var(--primary) !important;
 }
 :root:not(.dark) .group:hover [class*="group-hover\\:border-\\[\\#00f7ff\\]"] {
-  border-color: var(--primary) !important;
+ border-color: var(--primary) !important;
 }
 
 /* --- 30. BG HEX WITH OPACITY SLASH → white --- */
 :root:not(.dark) [class*="bg-\\[\\#1a0f35\\]\\/"],
 :root:not(.dark) [class*="bg-\\[\\#0a0520\\]\\/"] {
-  background-color: var(--input) !important;
+ background-color: var(--input) !important;
 }
 
 /* --- 31. CYAN/PINK GRADIENT SUBTLE BG → transparent on light --- */
 :root:not(.dark) [class*="from-cyan-500\\/"],
 :root:not(.dark) [class*="to-pink-500\\/"],
 :root:not(.dark) [class*="from-pink-500\\/"] {
-  --tw-gradient-from: transparent !important;
-  --tw-gradient-to: transparent !important;
+ --tw-gradient-from: transparent !important;
+ --tw-gradient-to: transparent !important;
 }
 
 /* --- 32. NEON ACCENT BG WITH OPACITY (hover states etc) --- */
 :root:not(.dark) [class*="hover\\:bg-primary\\/10"]:hover,
 :root:not(.dark) [class*="hover\\:bg-primary\\/20"]:hover {
-  background-color: rgba(8, 145, 178, 0.08) !important;
+ background-color: rgba(8, 145, 178, 0.08) !important;
 }
 
 /* --- 33. INSET SHADOWS (white ghost borders) → none on light --- */
 :root:not(.dark) [class*="inset_0_1px_0_rgba(255,255,255"] {
-  box-shadow: none !important;
+ box-shadow: none !important;
 }
 
 /* --- 34. ADDITIONAL BORDER SOLID TWEAKS --- */
 :root:not(.dark) .border-cyan-500\/20 {
-  border-color: var(--border) !important;
+ border-color: var(--border) !important;
 }
 :root:not(.dark) .border-cyan-500\/30 {
-  border-color: var(--border) !important;
+ border-color: var(--border) !important;
 }
 :root:not(.dark) .border-cyan-400\/20 {
-  border-color: var(--border) !important;
+ border-color: var(--border) !important;
 }
 :root:not(.dark) .border-cyan-400\/30 {
-  border-color: var(--border) !important;
+ border-color: var(--border) !important;
 }
 :root:not(.dark) .border-cyan-400\/50 {
-  border-color: rgba(8, 145, 178, 0.25) !important;
+ border-color: rgba(8, 145, 178, 0.25) !important;
 }
 
 /* --- 35. CARD HOVER → subtle lift shadow --- */
 :root:not(.dark) [class*="hover\\:shadow-\\[0_0_"]:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+ box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
 }
 
 /* --- 36. NEON PULSE ANIMATION → subtle on light --- */
 :root:not(.dark) [class*="animate-\\[neonPulse"] {
-  animation: none !important;
+ animation: none !important;
 }
 
 /* --- 37. BG-BLACK OVERLAYS → softer on light --- */
 :root:not(.dark) .bg-black\/50 {
-  background-color: rgba(0, 0, 0, 0.25) !important;
+ background-color: rgba(0, 0, 0, 0.25) !important;
 }
 :root:not(.dark) .bg-black\/60 {
-  background-color: rgba(0, 0, 0, 0.3) !important;
+ background-color: rgba(0, 0, 0, 0.3) !important;
 }
 :root:not(.dark) .bg-black\/70 {
-  background-color: rgba(0, 0, 0, 0.35) !important;
+ background-color: rgba(0, 0, 0, 0.35) !important;
 }
 :root:not(.dark) .bg-black\/85 {
-  background-color: rgba(0, 0, 0, 0.45) !important;
+ background-color: rgba(0, 0, 0, 0.45) !important;
 }
 
 /* --- 38. FOCUS RING SHADOW → clean primary --- */
 :root:not(.dark) [class*="focus\\:ring-\\[\\#00f7ff\\]"]:focus {
-  --tw-ring-color: var(--ring) !important;
+ --tw-ring-color: var(--ring) !important;
 }
 :root:not(.dark) [class*="focus\\:shadow-\\[0_0_"]:focus {
-  box-shadow: 0 0 0 2px rgba(8, 145, 178, 0.2) !important;
+ box-shadow: 0 0 0 2px rgba(8, 145, 178, 0.2) !important;
 }
 
 /* --- 39. GRADIENT TOP/BOTTOM LINES → subtle gray instead of neon --- */
 :root:not(.dark) .h-px.bg-gradient-to-r {
-  background-image: linear-gradient(to right, transparent, #e5e7eb, transparent) !important;
+ background-image: linear-gradient(to right, transparent, #e5e7eb, transparent) !important;
 }
 :root:not(.dark) .h-\[2px\].bg-gradient-to-r {
-  background-image: linear-gradient(to right, transparent, #d1d5db, transparent) !important;
+ background-image: linear-gradient(to right, transparent, #d1d5db, transparent) !important;
 }
 
 /* --- 40. GRADIENT STAT CARD backgrounds → cleaner light tints --- */
 :root:not(.dark) [class*="from-[#ff4466]"][class*="to-[#ff44cc]"] {
-  background-image: linear-gradient(to bottom right, rgba(220,38,38,0.06), rgba(219,39,119,0.06)) !important;
+ background-image: linear-gradient(to bottom right, rgba(220,38,38,0.06), rgba(219,39,119,0.06)) !important;
 }
 :root:not(.dark) [class*="from-[#00ff88]"][class*="to-[#00f7ff]"] {
-  background-image: linear-gradient(to bottom right, rgba(5,150,105,0.06), rgba(8,145,178,0.06)) !important;
+ background-image: linear-gradient(to bottom right, rgba(5,150,105,0.06), rgba(8,145,178,0.06)) !important;
 }
 :root:not(.dark) [class*="from-[#ff44cc]"][class*="to-[#bc13fe]"] {
-  background-image: linear-gradient(to bottom right, rgba(219,39,119,0.06), rgba(124,58,237,0.06)) !important;
+ background-image: linear-gradient(to bottom right, rgba(219,39,119,0.06), rgba(124,58,237,0.06)) !important;
 }
 :root:not(.dark) [class*="from-[#00f7ff]"][class*="to-[#bc13fe]"] {
-  background-image: linear-gradient(to bottom right, rgba(8,145,178,0.06), rgba(124,58,237,0.06)) !important;
+ background-image: linear-gradient(to bottom right, rgba(8,145,178,0.06), rgba(124,58,237,0.06)) !important;
 }
 
 /* --- 41. STAT CARD BORDERS → slightly more visible --- */
 :root:not(.dark) [class*="border-[#ff4466]/"] {
-  border-color: rgba(220, 38, 38, 0.2) !important;
+ border-color: rgba(220, 38, 38, 0.2) !important;
 }
 :root:not(.dark) [class*="border-[#00ff88]/"] {
-  border-color: rgba(5, 150, 105, 0.2) !important;
+ border-color: rgba(5, 150, 105, 0.2) !important;
 }
 :root:not(.dark) [class*="border-[#ff44cc]/"] {
-  border-color: rgba(219, 39, 119, 0.2) !important;
+ border-color: rgba(219, 39, 119, 0.2) !important;
 }
 :root:not(.dark) [class*="border-[#00f7ff]/"] {
-  border-color: rgba(8, 145, 178, 0.2) !important;
+ border-color: rgba(8, 145, 178, 0.2) !important;
 }
 :root:not(.dark) [class*="border-gray-500/"] {
-  border-color: rgba(107, 114, 128, 0.2) !important;
+ border-color: rgba(107, 114, 128, 0.2) !important;
 }
 
 /* --- 42. TABLE HEADER / MUTED ROW bg → clean light gray --- */
 :root:not(.dark) [class*="bg-[#0a0520]"][class*="/50"],
 :root:not(.dark) tr[class*="bg-[#0a0520]"] {
-  background-color: #f3f4f6 !important;
+ background-color: #f3f4f6 !important;
 }
 
 /* --- 43. ACTIVE FILTER / TAB BUTTONS → themed --- */
 :root:not(.dark) [class*="bg-[#bc13fe]/20"] {
-  background-color: rgba(124, 58, 237, 0.1) !important;
+ background-color: rgba(124, 58, 237, 0.1) !important;
 }
 :root:not(.dark) [class*="text-[#bc13fe]"] {
-  color: #7c3aed !important;
+ color: #7c3aed !important;
 }
 
 /* --- 44. SLATE TEXT → foreground for light mode --- */
 :root:not(.dark) .text-slate-100,
 :root:not(.dark) .text-slate-200,
 :root:not(.dark) .text-slate-300 {
-  color: var(--foreground) !important;
+ color: var(--foreground) !important;
 }
 :root:not(.dark) .text-slate-400,
 :root:not(.dark) .text-slate-500 {
-  color: var(--muted-foreground) !important;
+ color: var(--muted-foreground) !important;
 }
 
 /* --- 45. BORDER-SLATE → normal border --- */
@@ -1155,39 +1155,39 @@ html.theme-transitioning *::after {
 :root:not(.dark) [class*="border-slate-7"],
 :root:not(.dark) [class*="border-slate-6"],
 :root:not(.dark) [class*="border-slate-8"] {
-  border-color: var(--border) !important;
+ border-color: var(--border) !important;
 }
 
 /* --- 46. RING/OUTLINE SLATE → themed --- */
 :root:not(.dark) [class*="ring-slate-"] {
-  --tw-ring-color: var(--ring) !important;
+ --tw-ring-color: var(--ring) !important;
 }
 
 /* --- 47. DIVIDE-SLATE → border color --- */
 :root:not(.dark) [class*="divide-slate-"] > * + * {
-  border-color: var(--border) !important;
+ border-color: var(--border) !important;
 }
 
 /* --- 48. PLACEHOLDER SLATE → gray --- */
 :root:not(.dark) [class*="placeholder-slate-"]::placeholder,
 :root:not(.dark) [class*="placeholder\:text-slate-"]::placeholder {
-  color: #9ca3af !important;
+ color: #9ca3af !important;
 }
 
 /* --- 49. SHADOW-SLATE → light shadow --- */
 :root:not(.dark) [class*="shadow-slate-"] {
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1) !important;
+ box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1) !important;
 }
 
 /* --- 50. HOVER/FOCUS BG-SLATE → light hover --- */
 :root:not(.dark) [class*="hover\:bg-slate-"]:hover {
-  background-color: var(--muted) !important;
+ background-color: var(--muted) !important;
 }
 :root:not(.dark) [class*="focus\:bg-slate-"]:focus {
-  background-color: var(--muted) !important;
+ background-color: var(--muted) !important;
 }
 :root:not(.dark) [class*="hover\:text-slate-"]:hover {
-  color: var(--foreground) !important;
+ color: var(--foreground) !important;
 }
 
 /* --- 51. GRAY TEXT → darker for light mode readability --- */
@@ -1197,16 +1197,16 @@ html.theme-transitioning *::after {
 /* --- 52. BG-SLATE-700 → light muted gray --- */
 :root:not(.dark) .bg-slate-700,
 :root:not(.dark) [class*="bg-slate-700"] {
-  background-color: var(--muted) !important;
+ background-color: var(--muted) !important;
 }
 :root:not(.dark) [class*="bg-slate-700\/"] {
-  background-color: rgba(241, 245, 249, 0.8) !important;
+ background-color: rgba(241, 245, 249, 0.8) !important;
 }
 
 /* --- 53. BG-SLATE-950 → light gray --- */
 :root:not(.dark) .bg-slate-950,
 :root:not(.dark) [class*="bg-slate-950"] {
-  background-color: #f3f4f6 !important;
+ background-color: #f3f4f6 !important;
 }
 
 /* --- 54. LIGHT-COLORED TEXT → darker for readability on white --- */
@@ -1223,7 +1223,7 @@ html.theme-transitioning *::after {
 :root:not(.dark) .fixed.inset-0 > [class*="rounded-2xl"],
 :root:not(.dark) .fixed.inset-0 > [class*="rounded-xl"],
 :root:not(.dark) .fixed.inset-0 > [class*="rounded-lg"] {
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+ box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
 }
 
 /* --- 56. LIGHT-MODE -400 TEXT COLORS → darker for readability on white bg --- */
@@ -1248,7 +1248,7 @@ html.theme-transitioning *::after {
 /* --- 57. GRADIENT PARENT → child text-white stays white (icons/text inside gradient containers) --- */
 :root:not(.dark) [class*="bg-gradient-to"] .text-white,
 :root:not(.dark) [class*="bg-gradient-to"] [class*="text-white"] {
-  color: #ffffff !important;
+ color: #ffffff !important;
 }
 
 /* --- 58. BG-GRAY buttons → proper styling in light mode --- */
@@ -1260,7 +1260,7 @@ html.theme-transitioning *::after {
 
 /* --- 58b. hover:text-white → dark on hover in light mode --- */
 :root:not(.dark) [class*="hover\\:text-white"]:hover {
-  color: var(--foreground) !important;
+ color: var(--foreground) !important;
 }
 /* But keep white hover text on colored/gradient backgrounds */
 :root:not(.dark) [class*="bg-gradient-to"][class*="hover\\:text-white"]:hover,
@@ -1269,34 +1269,34 @@ html.theme-transitioning *::after {
 :root:not(.dark) [class*="bg-green-"][class*="hover\\:text-white"]:hover,
 :root:not(.dark) [class*="bg-blue-"][class*="hover\\:text-white"]:hover,
 :root:not(.dark) [class*="bg-purple-"][class*="hover\\:text-white"]:hover {
-  color: #ffffff !important;
+ color: #ffffff !important;
 }
 
 /* --- 58c. BG-SLATE-700/50 buttons → proper light Cancel/Batal buttons --- */
 :root:not(.dark) [class*="bg-slate-700\/50"],
 :root:not(.dark) [class*="bg-slate-700\/"] {
-  background-color: #e5e7eb !important;
-  border-color: #d1d5db !important;
+ background-color: #e5e7eb !important;
+ border-color: #d1d5db !important;
 }
 :root:not(.dark) [class*="hover\\:bg-slate-700"]:hover {
-  background-color: #d1d5db !important;
+ background-color: #d1d5db !important;
 }
 
 /* --- 58d. border-[#334155] → visible border --- */
 :root:not(.dark) [class*="border-[#334155]"] {
-  border-color: var(--border) !important;
+ border-color: var(--border) !important;
 }
 
 /* --- 58e. bg-slate-800 option elements → light --- */
 :root:not(.dark) option[class*="bg-slate"] {
-  background-color: var(--background) !important;
-  color: var(--foreground) !important;
+ background-color: var(--background) !important;
+ color: var(--foreground) !important;
 }
 
 /* --- 58f. border-gray-600 → visible border in light --- */
 :root:not(.dark) .border-gray-600,
 :root:not(.dark) [class*="border-gray-6"] {
-  border-color: #d1d5db !important;
+ border-color: #d1d5db !important;
 }
 
 /* --- 59. -200 TEXT COLORS → much darker for light mode readability --- */
@@ -1313,7 +1313,7 @@ html.theme-transitioning *::after {
 :root:not(.dark) .text-indigo-200 { color: #4f46e5 !important; }
 
 /* --- 60. GRAY-400/500 TEXT → readable in light mode --- */
-/* gray-400 (#9ca3af) on white = ~2.5:1 contrast — WCAG FAIL; override to gray-600 */
+/* gray-400 (#9ca3af) on white = ~2.5:1 contrast - WCAG FAIL; override to gray-600 */
 :root:not(.dark) .text-gray-400 { color: #4b5563 !important; } /* gray-600: ~7:1 on white */
 :root:not(.dark) .text-gray-500 { color: #374151 !important; } /* gray-700: ~9:1 on white */
 
@@ -1321,26 +1321,26 @@ html.theme-transitioning *::after {
 /* gray-700/800 borders appear near-invisible or wrong contrast on light bg */
 :root:not(.dark) .border-gray-700,
 :root:not(.dark) [class*="border-gray-7"] {
-  border-color: var(--border) !important;
+ border-color: var(--border) !important;
 }
 :root:not(.dark) .border-gray-800,
 :root:not(.dark) [class*="border-gray-8"] {
-  border-color: var(--border) !important;
+ border-color: var(--border) !important;
 }
 
 /* --- 62. BG-GRAY-800\/ BG-GRAY-900\/ opacity variants → light in light mode --- */
 /* e.g. bg-gray-800/50 used in modals / code blocks → should be light gray */
 :root:not(.dark) [class*="bg-gray-800\/"] {
-  background-color: rgba(241, 245, 249, 0.8) !important;
+ background-color: rgba(241, 245, 249, 0.8) !important;
 }
 :root:not(.dark) [class*="bg-gray-900\/"] {
-  background-color: rgba(248, 250, 252, 0.9) !important;
+ background-color: rgba(248, 250, 252, 0.9) !important;
 }
 
 /* =====================================================
-   DARK MODE — Remap legacy cyberpunk neon → Modern Blue
-   Prevents jarring neon purple/cyan in dark mode.
-   ===================================================== */
+  DARK MODE - Remap legacy cyberpunk neon → Modern Blue
+  Prevents jarring neon purple/cyan in dark mode.
+  ===================================================== */
 
 /* Neon text colors → blue/indigo tones */
 .dark [class*="text-[#00f7ff]"] { color: #60a5fa !important; }
@@ -1382,9 +1382,9 @@ html.theme-transitioning *::after {
 /* Hide neon glow blobs in dark mode */
 .dark .rounded-full.blur-3xl,
 .dark .rounded-full[class*="blur-"] {
-  opacity: 0 !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
+ opacity: 0 !important;
+ visibility: hidden !important;
+ pointer-events: none !important;
 }
 
 /* Hide neon grid scan patterns */
@@ -1415,56 +1415,56 @@ html.theme-transitioning *::after {
 /* Gradient text: from-[#00f7ff] via-white to-[#ff44cc] → blue-indigo */
 .dark .bg-clip-text[class*="from-[#00f7ff]"],
 .dark .bg-clip-text[class*="from-[#bc13fe]"] {
-  background-image: linear-gradient(to right, #60a5fa, #a5b4fc) !important;
+ background-image: linear-gradient(to right, #60a5fa, #a5b4fc) !important;
 }
 
 /* --- 60. BG with low opacity → slightly visible on white --- */
 :root:not(.dark) [class*="bg-green-500/10"],
 :root:not(.dark) [class*="bg-green-500/20"] {
-  background-color: rgba(5, 150, 105, 0.1) !important;
+ background-color: rgba(5, 150, 105, 0.1) !important;
 }
 :root:not(.dark) [class*="bg-red-500/10"],
 :root:not(.dark) [class*="bg-red-500/20"] {
-  background-color: rgba(220, 38, 38, 0.1) !important;
+ background-color: rgba(220, 38, 38, 0.1) !important;
 }
 :root:not(.dark) [class*="bg-amber-500/10"],
 :root:not(.dark) [class*="bg-amber-500/20"] {
-  background-color: rgba(217, 119, 6, 0.1) !important;
+ background-color: rgba(217, 119, 6, 0.1) !important;
 }
 :root:not(.dark) [class*="bg-orange-500/10"],
 :root:not(.dark) [class*="bg-orange-500/20"] {
-  background-color: rgba(234, 88, 12, 0.1) !important;
+ background-color: rgba(234, 88, 12, 0.1) !important;
 }
 :root:not(.dark) [class*="bg-blue-500/10"],
 :root:not(.dark) [class*="bg-blue-500/20"] {
-  background-color: rgba(37, 99, 235, 0.1) !important;
+ background-color: rgba(37, 99, 235, 0.1) !important;
 }
 :root:not(.dark) [class*="bg-purple-500/10"],
 :root:not(.dark) [class*="bg-purple-500/20"] {
-  background-color: rgba(124, 58, 237, 0.1) !important;
+ background-color: rgba(124, 58, 237, 0.1) !important;
 }
 
 /* --- 61. SMOOTH MODAL ENTRANCE ANIMATION (consistent for ALL modals) --- */
 @keyframes modalBackdropIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+ from { opacity: 0; }
+ to { opacity: 1; }
 }
 @keyframes modalContentIn {
-  from {
-    opacity: 0;
-    transform: scale(0.96) translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
+ from {
+  opacity: 0;
+  transform: scale(0.96) translateY(8px);
+ }
+ to {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+ }
 }
 
 /* Backdrop fade-in: applies to ALL fixed overlay modals */
 .fixed.inset-0[class*="z-50"],
 .fixed.inset-0[class*="z-\["],
 div[style*="z-index: 9999"].fixed.inset-0 {
-  animation: modalBackdropIn 0.2s ease-out forwards;
+ animation: modalBackdropIn 0.2s ease-out forwards;
 }
 
 /* Modal content slide-up: direct children that are NOT backdrop overlays */
@@ -1477,7 +1477,7 @@ div[style*="z-index: 9999"].fixed.inset-0 {
 .fixed.inset-0 > div[class*="bg-\\[#0f172a\\]"],
 .fixed.inset-0 > div[class*="bg-slate"],
 .fixed.inset-0 > div[class*="max-w-"] {
-  animation: modalContentIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+ animation: modalContentIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* --- 62. FORM INPUTS IN MODALS → proper light styling --- */
@@ -1487,1015 +1487,1012 @@ div[style*="z-index: 9999"].fixed.inset-0 {
 :root:not(.dark) input[class*="bg-slate-800"],
 :root:not(.dark) select[class*="bg-slate-800"],
 :root:not(.dark) textarea[class*="bg-slate-800"] {
-  background-color: var(--input) !important;
-  color: var(--foreground) !important;
-  border-color: var(--border) !important;
+ background-color: var(--input) !important;
+ color: var(--foreground) !important;
+ border-color: var(--border) !important;
 }
 :root:not(.dark) input[class*="bg-\\[\\#0a0520\\]"],
 :root:not(.dark) select[class*="bg-\\[\\#0a0520\\]"],
 :root:not(.dark) textarea[class*="bg-\\[\\#0a0520\\]"] {
-  background-color: var(--input) !important;
-  color: var(--foreground) !important;
-  border-color: var(--border) !important;
+ background-color: var(--input) !important;
+ color: var(--foreground) !important;
+ border-color: var(--border) !important;
 }
 
 /* --- 63. CHECKBOX INPUTS → proper light styling --- */
 :root:not(.dark) input[type="checkbox"][class*="bg-slate"],
 :root:not(.dark) input[type="checkbox"][class*="bg-\\["] {
-  background-color: var(--background) !important;
-  border-color: var(--border) !important;
+ background-color: var(--background) !important;
+ border-color: var(--border) !important;
 }
 
 /* --- 64. SELECT OPTION ELEMENTS → always light bg in light mode --- */
 :root:not(.dark) option {
-  background-color: var(--background) !important;
-  color: var(--foreground) !important;
+ background-color: var(--background) !important;
+ color: var(--foreground) !important;
 }
 
 /* --- 65. MODAL CONTAINER CARD SHADOWS → clean light elevation --- */
 :root:not(.dark) .fixed.inset-0 [class*="rounded-xl"][class*="border"],
 :root:not(.dark) .fixed.inset-0 [class*="rounded-2xl"][class*="border"] {
-  box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.2), 0 10px 20px -10px rgba(0, 0, 0, 0.1) !important;
+ box-shadow: 0 20px 60px -15px rgba(0, 0, 0, 0.2), 0 10px 20px -10px rgba(0, 0, 0, 0.1) !important;
 }
 
 /* --- 66. TEXT IN MODALS: ensure dark text on light backgrounds --- */
 :root:not(.dark) .fixed.inset-0 .text-white:not([class*="bg-gradient-to"]):not([class*="bg-cyan-"]):not([class*="bg-red-"]):not([class*="bg-green-"]):not([class*="bg-blue-"]):not([class*="bg-purple-"]):not([class*="bg-gray-"]):not([class*="bg-pink-"]):not([class*="bg-amber-"]):not([class*="bg-orange-"]) {
-  color: var(--foreground) !important;
+ color: var(--foreground) !important;
 }
 
 /* --- 67. MODAL SECTION BACKGROUNDS → slightly more visible in light --- */
 :root:not(.dark) [class*="bg-\\[\\#bc13fe\\]\\/10"],
 :root:not(.dark) [class*="bg-\\[\\#00f7ff\\]\\/10"] {
-  background-color: rgba(124, 58, 237, 0.06) !important;
+ background-color: rgba(124, 58, 237, 0.06) !important;
 }
 
 /* --- 68. BORDER-SLATE in modals → proper visible border --- */
 :root:not(.dark) [class*="border-slate-600"] {
-  border-color: var(--border) !important;
+ border-color: var(--border) !important;
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground antialiased;
-    font-size: 13px;
-    line-height: 1.5;
-    /* Prevent pull-to-refresh in Android WebView & Chrome mobile */
-    overscroll-behavior-y: none;
-  }
-  
-  /* Smaller base font */
+ * {
+  @apply border-border outline-ring/50;
+ }
+ body {
+  @apply bg-background text-foreground antialiased;
+  font-size: 13px;
+  line-height: 1.5;
+  /* Prevent pull-to-refresh in Android WebView & Chrome mobile */
+  overscroll-behavior-y: none;
+ }
+ 
+ /* Smaller base font */
+ html {
+  font-size: 14px;
+  scroll-behavior: smooth;
+  /* Prevent pull-to-refresh at root level */
+  overscroll-behavior: none;
+ }
+ 
+ @media (max-width: 640px) {
   html {
-    font-size: 14px;
-    scroll-behavior: smooth;
-    /* Prevent pull-to-refresh at root level */
-    overscroll-behavior: none;
+   font-size: 13px;
   }
-  
-  @media (max-width: 640px) {
-    html {
-      font-size: 13px;
-    }
-  }
-  
-  /* Scrollbar */
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-  
-  ::-webkit-scrollbar-track {
-    background: #1e293b;
-    border-radius: 4px;
-  }
-  
-  ::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, #3b82f6 0%, #6366f1 100%);
-    border-radius: 4px;
-  }
-  
-  ::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, #60a5fa 0%, #818cf8 100%);
-  }
-  
-  /* Light mode scrollbar */
-  :root:not(.dark) ::-webkit-scrollbar-track {
-    background: #e2e8f0;
-  }
-  
-  :root:not(.dark) ::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, #3b82f6 0%, #6366f1 100%);
-    box-shadow: none;
-  }
-  
-  /* Scrollbar class */
-  .cyber-scrollbar::-webkit-scrollbar {
-    width: 6px;
-  }
-  
-  .cyber-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  
-  .cyber-scrollbar::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, rgba(59, 130, 246, 0.5), rgba(99, 102, 241, 0.5));
-    border-radius: 3px;
-  }
-  
-  /* Typography */
-  h1 { @apply text-lg sm:text-xl font-bold tracking-wide; font-size: clamp(1.125rem, 2vw, 1.25rem); }
-  h2 { @apply text-base sm:text-lg font-bold tracking-wide; font-size: clamp(1rem, 1.75vw, 1.125rem); }
-  h3 { @apply text-sm sm:text-base font-semibold; font-size: clamp(0.875rem, 1.5vw, 1rem); }
-  h4 { @apply text-xs sm:text-sm font-semibold; font-size: clamp(0.75rem, 1.25vw, 0.875rem); }
-  p { @apply text-xs; }
+ }
+ 
+ /* Scrollbar */
+ ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+ }
+ 
+ ::-webkit-scrollbar-track {
+  background: #1e293b;
+  border-radius: 4px;
+ }
+ 
+ ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #3b82f6 0%, #6366f1 100%);
+  border-radius: 4px;
+ }
+ 
+ ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #60a5fa 0%, #818cf8 100%);
+ }
+ 
+ /* Light mode scrollbar */
+ :root:not(.dark) ::-webkit-scrollbar-track {
+  background: #e2e8f0;
+ }
+ 
+ :root:not(.dark) ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #3b82f6 0%, #6366f1 100%);
+  box-shadow: none;
+ }
+ 
+ /* Scrollbar class */
+ .cyber-scrollbar::-webkit-scrollbar {
+  width: 6px;
+ }
+ 
+ .cyber-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+ }
+ 
+ .cyber-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.5), rgba(99, 102, 241, 0.5));
+  border-radius: 3px;
+ }
+ 
+ /* Typography */
+ h1 { @apply text-lg sm:text-xl font-bold tracking-wide; font-size: clamp(1.125rem, 2vw, 1.25rem); }
+ h2 { @apply text-base sm:text-lg font-bold tracking-wide; font-size: clamp(1rem, 1.75vw, 1.125rem); }
+ h3 { @apply text-sm sm:text-base font-semibold; font-size: clamp(0.875rem, 1.5vw, 1rem); }
+ h4 { @apply text-xs sm:text-sm font-semibold; font-size: clamp(0.75rem, 1.25vw, 0.875rem); }
+ p { @apply text-xs; }
 }
 
 /* ===========================================
-   MOBILE OPTIMIZATION - Safe Area & Touch
-   =========================================== */
+  MOBILE OPTIMIZATION - Safe Area & Touch
+  =========================================== */
 
 /* Safe area insets for notched devices (iPhone X+, Android) */
 .safe-area-inset-top {
-  padding-top: env(safe-area-inset-top, 0);
+ padding-top: env(safe-area-inset-top, 0);
 }
 
 .safe-area-inset-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0);
+ padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
 .safe-area-inset-left {
-  padding-left: env(safe-area-inset-left, 0);
+ padding-left: env(safe-area-inset-left, 0);
 }
 
 .safe-area-inset-right {
-  padding-right: env(safe-area-inset-right, 0);
+ padding-right: env(safe-area-inset-right, 0);
 }
 
 .safe-area-pb {
-  padding-bottom: env(safe-area-inset-bottom, 0);
+ padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
 /* Touch optimization */
 @media (hover: none) and (pointer: coarse) {
-  /* Increase tap targets on touch devices - NOT for compact table action buttons */
-  button:not(.compact-action), 
-  a:not(.compact-action), 
-  [role="button"]:not(.compact-action) {
-    min-height: 44px;
-    min-width: 44px;
-  }
-  
-  /* Disable hover effects on touch */
-  .hover\:bg-primary\/20:active {
-    background-color: rgba(6, 182, 212, 0.2);
-  }
+ /* Increase tap targets on touch devices - NOT for compact table action buttons */
+ button:not(.compact-action), 
+ a:not(.compact-action), 
+ [role="button"]:not(.compact-action) {
+  min-height: 44px;
+  min-width: 44px;
+ }
+ 
+ /* Disable hover effects on touch */
+ .hover\:bg-primary\/20:active {
+  background-color: rgba(6, 182, 212, 0.2);
+ }
 }
 
 /* Prevent text selection on interactive elements */
 .no-select {
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  -webkit-touch-callout: none;
+ -webkit-user-select: none;
+ -moz-user-select: none;
+ -ms-user-select: none;
+ user-select: none;
+ -webkit-touch-callout: none;
 }
 
 /* Improve scrolling on mobile */
 .touch-pan-y {
-  touch-action: pan-y;
-  -webkit-overflow-scrolling: touch;
+ touch-action: pan-y;
+ -webkit-overflow-scrolling: touch;
 }
 
 /* Smooth momentum scroll for all overflow containers on mobile */
 @media (hover: none) and (pointer: coarse) {
-  [class*="overflow-y-auto"],
-  [class*="overflow-y-scroll"],
-  [class*="overflow-auto"],
-  [class*="overflow-scroll"],
-  aside,
-  nav,
-  main,
-  .sidebar,
-  [data-sidebar],
-  [role="navigation"] {
-    -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
-    /* Allow scrolling inside elements but not bubble to body (no pull-to-refresh) */
-    overscroll-behavior: contain;
-  }
+ [class*="overflow-y-auto"],
+ [class*="overflow-y-scroll"],
+ [class*="overflow-auto"],
+ [class*="overflow-scroll"],
+ aside,
+ nav,
+ main,
+ .sidebar,
+ [data-sidebar],
+ [role="navigation"] {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  /* Allow scrolling inside elements but not bubble to body (no pull-to-refresh) */
+  overscroll-behavior: contain;
+ }
 }
 
 /* Custom scrollbar for mobile - thinner */
 @media (max-width: 768px) {
-  ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
-  }
-  
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 3px;
-  }
+ ::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+ }
+ 
+ .custom-scrollbar::-webkit-scrollbar {
+  width: 3px;
+ }
 }
 
 /* Prevent pull-to-refresh on mobile sidebar */
 .overscroll-contain {
-  overscroll-behavior: contain;
+ overscroll-behavior: contain;
 }
 
 @layer utilities {
-  /* ===========================================
-     NEON GLOW EFFECTS
-     =========================================== */
-  
-  /* Primary Neon Glow - Cyan */
-  .neon-glow {
-    box-shadow: 
-      0 0 5px rgba(0, 255, 255, 0.5),
-      0 0 10px rgba(0, 255, 255, 0.3),
-      0 0 20px rgba(0, 255, 255, 0.2),
-      0 0 40px rgba(0, 255, 255, 0.1);
-  }
-  
-  .neon-glow-intense {
-    box-shadow: 
-      0 0 10px rgba(0, 255, 255, 0.8),
-      0 0 20px rgba(0, 255, 255, 0.6),
-      0 0 40px rgba(0, 255, 255, 0.4),
-      0 0 80px rgba(0, 255, 255, 0.2);
-  }
-  
-  /* Blue Glow */
-  .neon-glow-magenta {
-    box-shadow: 
-      0 0 5px rgba(59, 130, 246, 0.5),
-      0 0 10px rgba(59, 130, 246, 0.3),
-      0 0 20px rgba(59, 130, 246, 0.2);
-  }
-  
-  /* Blue-Violet Glow */
-  .neon-glow-purple {
-    box-shadow: 
-      0 0 5px rgba(59, 130, 246, 0.5),
-      0 0 10px rgba(59, 130, 246, 0.3),
-      0 0 20px rgba(59, 130, 246, 0.2);
-  }
-  
-  /* Green Glow */
-  .neon-glow-green {
-    box-shadow: 
-      0 0 5px rgba(0, 255, 136, 0.5),
-      0 0 10px rgba(0, 255, 136, 0.3),
-      0 0 20px rgba(0, 255, 136, 0.2);
-  }
-  
-  /* Red/Destructive Glow */
-  .neon-glow-red {
-    box-shadow: 
-      0 0 5px rgba(255, 51, 102, 0.5),
-      0 0 10px rgba(255, 51, 102, 0.3),
-      0 0 20px rgba(255, 51, 102, 0.2);
-  }
-  
-  /* Neon Border Effects */
-  .neon-border {
-    border-color: rgba(0, 255, 255, 0.5);
-    box-shadow: 
-      0 0 5px rgba(0, 255, 255, 0.3),
-      inset 0 0 5px rgba(0, 255, 255, 0.1);
-  }
-  
-  .neon-border-magenta {
-    border-color: rgba(59, 130, 246, 0.5);
-    box-shadow: 
-      0 0 5px rgba(59, 130, 246, 0.3),
-      inset 0 0 5px rgba(59, 130, 246, 0.1);
-  }
-  
-  /* Neon Text Effects */
-  .neon-text {
-    text-shadow: 
-      0 0 5px rgba(0, 255, 255, 0.8),
-      0 0 10px rgba(0, 255, 255, 0.6),
-      0 0 20px rgba(0, 255, 255, 0.4);
-  }
-  
-  .neon-text-magenta {
-    text-shadow: 
-      0 0 5px rgba(59, 130, 246, 0.8),
-      0 0 10px rgba(59, 130, 246, 0.6),
-      0 0 20px rgba(59, 130, 246, 0.4);
-  }
+ /* ===========================================
+   NEON GLOW EFFECTS
+   =========================================== */
+ 
+ /* Primary Neon Glow - Cyan */
+ .neon-glow {
+  box-shadow: 
+   0 0 5px rgba(0, 255, 255, 0.5),
+   0 0 10px rgba(0, 255, 255, 0.3),
+   0 0 20px rgba(0, 255, 255, 0.2),
+   0 0 40px rgba(0, 255, 255, 0.1);
+ }
+ 
+ .neon-glow-intense {
+  box-shadow: 
+   0 0 10px rgba(0, 255, 255, 0.8),
+   0 0 20px rgba(0, 255, 255, 0.6),
+   0 0 40px rgba(0, 255, 255, 0.4),
+   0 0 80px rgba(0, 255, 255, 0.2);
+ }
+ 
+ /* Blue Glow */
+ .neon-glow-magenta {
+  box-shadow: 
+   0 0 5px rgba(59, 130, 246, 0.5),
+   0 0 10px rgba(59, 130, 246, 0.3),
+   0 0 20px rgba(59, 130, 246, 0.2);
+ }
+ 
+ /* Blue-Violet Glow */
+ .neon-glow-purple {
+  box-shadow: 
+   0 0 5px rgba(59, 130, 246, 0.5),
+   0 0 10px rgba(59, 130, 246, 0.3),
+   0 0 20px rgba(59, 130, 246, 0.2);
+ }
+ 
+ /* Green Glow */
+ .neon-glow-green {
+  box-shadow: 
+   0 0 5px rgba(0, 255, 136, 0.5),
+   0 0 10px rgba(0, 255, 136, 0.3),
+   0 0 20px rgba(0, 255, 136, 0.2);
+ }
+ 
+ /* Red/Destructive Glow */
+ .neon-glow-red {
+  box-shadow: 
+   0 0 5px rgba(255, 51, 102, 0.5),
+   0 0 10px rgba(255, 51, 102, 0.3),
+   0 0 20px rgba(255, 51, 102, 0.2);
+ }
+ 
+ /* Neon Border Effects */
+ .neon-border {
+  border-color: rgba(0, 255, 255, 0.5);
+  box-shadow: 
+   0 0 5px rgba(0, 255, 255, 0.3),
+   inset 0 0 5px rgba(0, 255, 255, 0.1);
+ }
+ 
+ .neon-border-magenta {
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 
+   0 0 5px rgba(59, 130, 246, 0.3),
+   inset 0 0 5px rgba(59, 130, 246, 0.1);
+ }
+ 
+ /* Neon Text Effects */
+ .neon-text {
+  text-shadow: 
+   0 0 5px rgba(0, 255, 255, 0.8),
+   0 0 10px rgba(0, 255, 255, 0.6),
+   0 0 20px rgba(0, 255, 255, 0.4);
+ }
+ 
+ .neon-text-magenta {
+  text-shadow: 
+   0 0 5px rgba(59, 130, 246, 0.8),
+   0 0 10px rgba(59, 130, 246, 0.6),
+   0 0 20px rgba(59, 130, 246, 0.4);
+ }
 
-  /* ===========================================
-     CYBERPUNK GRADIENT BACKGROUNDS
-     =========================================== */
-  
-  .cyber-gradient {
-    background: linear-gradient(135deg, 
-      #0a0e1a 0%, 
-      #0f172a 50%, 
-      #0a0e1a 100%);
-  }
-  
-  .cyber-gradient-primary {
-    background: linear-gradient(135deg,
-      #06b6d4 0%,
-      #3b82f6 100%);
-  }
-  
-  .cyber-gradient-subtle {
-    background: linear-gradient(135deg,
-      rgba(6, 182, 212, 0.1) 0%,
-      rgba(59, 130, 246, 0.1) 100%);
-  }
-  
-  .cyber-gradient-radial {
-    background: radial-gradient(
-      ellipse at center,
-      rgba(6, 182, 212, 0.1) 0%,
-      transparent 70%
-    );
-  }
+ /* ===========================================
+   CYBERPUNK GRADIENT BACKGROUNDS
+   =========================================== */
+ 
+ .cyber-gradient {
+  background: linear-gradient(135deg, 
+   #0a0e1a 0%, 
+   #0f172a 50%, 
+   #0a0e1a 100%);
+ }
+ 
+ .cyber-gradient-primary {
+  background: linear-gradient(135deg,
+   #06b6d4 0%,
+   #3b82f6 100%);
+ }
+ 
+ .cyber-gradient-subtle {
+  background: linear-gradient(135deg,
+   rgba(6, 182, 212, 0.1) 0%,
+   rgba(59, 130, 246, 0.1) 100%);
+ }
+ 
+ .cyber-gradient-radial {
+  background: radial-gradient(
+   ellipse at center,
+   rgba(6, 182, 212, 0.1) 0%,
+   transparent 70%
+  );
+ }
 
-  /* ===========================================
-     GLASSMORPHISM EFFECTS
-     =========================================== */
-  
-  .glass {
-    @apply bg-white/5 backdrop-blur-xl border border-white/10;
-    box-shadow: 
-      0 8px 32px rgba(0, 0, 0, 0.4),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-  }
-  
-  .glass-card {
-    @apply bg-black/40 backdrop-blur-xl border border-white/10;
-    box-shadow: 
-      0 0 20px rgba(6, 182, 212, 0.1),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  }
-  
-  .glass-neon {
-    @apply bg-black/60 backdrop-blur-xl border-2 border-cyan-500/30;
-    box-shadow: 
-      0 0 30px rgba(6, 182, 212, 0.15),
-      inset 0 0 20px rgba(6, 182, 212, 0.02);
-  }
+ /* ===========================================
+   GLASSMORPHISM EFFECTS
+   =========================================== */
+ 
+ .glass {
+  @apply bg-white/5 border border-white/10;
+  box-shadow: 
+   0 8px 32px rgba(0, 0, 0, 0.4),
+   inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+ }
+ 
+ .glass-card {
+  @apply bg-black/40 border border-white/10;
+  box-shadow: 
+   0 0 20px rgba(6, 182, 212, 0.1),
+   inset 0 1px 0 rgba(255, 255, 255, 0.1);
+ }
+ 
+ .glass-neon {
+  @apply bg-black/60 border-2 border-cyan-500/30;
+  box-shadow: 
+   0 0 30px rgba(6, 182, 212, 0.15),
+   inset 0 0 20px rgba(6, 182, 212, 0.02);
+ }
 
-  /* ===========================================
-     SCAN LINE & RETRO EFFECTS
-     =========================================== */
-  
-  .scanlines {
-    position: relative;
-  }
-  
-  .scanlines::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(6, 182, 212, 0.03) 2px,
-      rgba(6, 182, 212, 0.03) 4px
-    );
-    pointer-events: none;
-    z-index: 1;
-  }
-  
-  .noise-overlay {
-    position: relative;
-  }
-  
-  .noise-overlay::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    opacity: 0.02;
-    pointer-events: none;
-  }
+ /* ===========================================
+   SCAN LINE & RETRO EFFECTS
+   =========================================== */
+ 
+ .scanlines {
+  position: relative;
+ }
+ 
+ .scanlines::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+   0deg,
+   transparent,
+   transparent 2px,
+   rgba(6, 182, 212, 0.03) 2px,
+   rgba(6, 182, 212, 0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 1;
+ }
+ 
+ .noise-overlay {
+  position: relative;
+ }
+ 
+ .noise-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.02;
+  pointer-events: none;
+ }
 
-  /* ===========================================
-     GRADIENT TEXT
-     =========================================== */
-  
-  .gradient-text {
-    background: linear-gradient(90deg, #06b6d4, #3b82f6);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-  
-  .gradient-text-primary {
-    background: linear-gradient(90deg, #06b6d4, #3b82f6);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
+ /* ===========================================
+   GRADIENT TEXT
+   =========================================== */
+ 
+ .gradient-text {
+  background: linear-gradient(90deg, #06b6d4, #3b82f6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+ }
+ 
+ .gradient-text-primary {
+  background: linear-gradient(90deg, #06b6d4, #3b82f6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+ }
 
-  /* ===========================================
-     CYBERPUNK BUTTONS
-     =========================================== */
+ /* ===========================================
+   CYBERPUNK BUTTONS
+   =========================================== */
+ 
+ .btn-cyber {
+  @apply relative overflow-hidden font-bold uppercase tracking-wider;
+  @apply bg-gradient-to-r from-cyan-500 to-cyan-400 text-black;
+  @apply border-2 border-cyan-400;
   
-  .btn-cyber {
-    @apply relative overflow-hidden font-bold uppercase tracking-wider;
-    @apply bg-gradient-to-r from-cyan-500 to-cyan-400 text-black;
-    @apply border-2 border-cyan-400;
-    @apply shadow-[0_0_20px_rgba(0,255,255,0.3)];
-    @apply transition-all duration-300;
-  }
+  @apply transition-all duration-300;
+ }
+ 
+ .btn-cyber:hover {
   
-  .btn-cyber:hover {
-    @apply shadow-[0_0_30px_rgba(0,255,255,0.5)];
-    @apply border-cyan-300;
-  }
+  @apply border-cyan-300;
+ }
+ 
+ .btn-cyber::before {
+  content: '';
+  @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent;
+  transform: translateX(-200%);
+  transition: transform 0.7s ease;
+ }
+ 
+ .btn-cyber:hover::before {
+  transform: translateX(200%);
+ }
+ 
+ .btn-cyber-outline {
+  @apply bg-transparent text-cyan-400;
+  @apply border-2 border-cyan-500/50;
   
-  .btn-cyber::before {
-    content: '';
-    @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent;
-    transform: translateX(-200%);
-    transition: transform 0.7s ease;
-  }
+  @apply hover:bg-cyan-400/10 hover:border-cyan-400;
   
-  .btn-cyber:hover::before {
-    transform: translateX(200%);
-  }
-  
-  .btn-cyber-outline {
-    @apply bg-transparent text-cyan-400;
-    @apply border-2 border-cyan-500/50;
-    @apply shadow-[0_0_10px_rgba(0,255,255,0.1)];
-    @apply hover:bg-cyan-400/10 hover:border-cyan-400;
-    @apply hover:shadow-[0_0_20px_rgba(0,255,255,0.3)];
-    @apply transition-all duration-300;
-  }
-  
-  .btn-primary {
-    @apply bg-gradient-to-r from-cyan-500 to-cyan-400 text-black font-bold;
-    @apply rounded-lg transition-all duration-200;
-    @apply shadow-[0_0_15px_rgba(0,255,255,0.3)];
-    @apply hover:shadow-[0_0_25px_rgba(0,255,255,0.5)];
-    @apply active:scale-[0.98];
-    @apply disabled:opacity-50 disabled:cursor-not-allowed;
-  }
-  
-  .btn-secondary {
-    @apply bg-white/5 text-foreground font-medium;
-    @apply border border-white/10;
-    @apply hover:bg-white/10 hover:border-cyan-400/30;
-    @apply rounded-lg transition-all duration-200;
-  }
-  
-  .btn-smooth {
-    @apply transition-all duration-200 active:scale-[0.98];
-  }
-  
-  .btn-compact {
-    @apply h-8 px-3 text-xs font-bold;
-  }
+  @apply transition-all duration-300;
+ }
+ 
+ .btn-primary {
+  @apply bg-gradient-to-r from-cyan-500 to-cyan-400 text-black font-bold;
+  @apply rounded-lg transition-all duration-200;
 
-  /* ===========================================
-     STATUS BADGES - Neon Style
-     =========================================== */
-  
-  .badge-success {
-    @apply bg-green-500/20 text-green-400 border border-green-500/50;
-    box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
-  }
-  
-  .badge-warning {
-    @apply bg-orange-500/20 text-orange-400 border border-orange-500/50;
-    box-shadow: 0 0 10px rgba(255, 170, 0, 0.2);
-  }
-  
-  .badge-error {
-    @apply bg-red-500/20 text-red-400 border border-red-500/50;
-    box-shadow: 0 0 10px rgba(255, 51, 102, 0.2);
-  }
-  
-  .badge-info {
-    @apply bg-cyan-500/20 text-cyan-400 border border-cyan-500/50;
-    box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
-  }
-  
-  .badge-primary {
-    @apply bg-cyan-500/20 text-cyan-400 border border-cyan-500/50;
-    box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
-  }
-  
-  .badge-compact {
-    @apply px-2 py-0.5 text-[10px] font-bold rounded-md uppercase tracking-wide;
-  }
+  @apply active:scale-[0.98];
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
+ }
+ 
+ .btn-secondary {
+  @apply bg-white/5 text-foreground font-medium;
+  @apply border border-white/10;
+  @apply hover:bg-white/10 hover:border-cyan-400/30;
+  @apply rounded-lg transition-all duration-200;
+ }
+ 
+ .btn-smooth {
+  @apply transition-all duration-200 active:scale-[0.98];
+ }
+ 
+ .btn-compact {
+  @apply h-8 px-3 text-xs font-bold;
+ }
 
-  /* ===========================================
-     TABLE STYLES
-     =========================================== */
-  
-  .table-container {
-    @apply w-full overflow-x-auto;
-    @apply border-2 border-cyan-500/20 rounded-xl;
-    @apply shadow-[0_0_20px_rgba(0,255,255,0.1)];
-  }
-  
-  .table-container > table {
-    @apply min-w-full;
-  }
-  
-  .table-compact th,
-  .table-compact td {
-    @apply px-3 py-2 text-xs;
-  }
+ /* ===========================================
+   STATUS BADGES - Neon Style
+   =========================================== */
+ 
+ .badge-success {
+  @apply bg-green-500/20 text-green-400 border border-green-500/50;
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
+ }
+ 
+ .badge-warning {
+  @apply bg-orange-500/20 text-orange-400 border border-orange-500/50;
+  box-shadow: 0 0 10px rgba(255, 170, 0, 0.2);
+ }
+ 
+ .badge-error {
+  @apply bg-red-500/20 text-red-400 border border-red-500/50;
+  box-shadow: 0 0 10px rgba(255, 51, 102, 0.2);
+ }
+ 
+ .badge-info {
+  @apply bg-cyan-500/20 text-cyan-400 border border-cyan-500/50;
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+ }
+ 
+ .badge-primary {
+  @apply bg-cyan-500/20 text-cyan-400 border border-cyan-500/50;
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+ }
+ 
+ .badge-compact {
+  @apply px-2 py-0.5 text-[10px] font-bold rounded-md uppercase tracking-wide;
+ }
 
-  /* Responsive column hiding — hide less-critical columns on small screens */
-  .col-hide-sm { @apply hidden sm:table-cell; }
-  .col-hide-md { @apply hidden md:table-cell; }
-  .col-hide-lg { @apply hidden lg:table-cell; }
+ /* ===========================================
+   TABLE STYLES
+   =========================================== */
+ 
+ .table-container {
+  @apply w-full overflow-x-auto;
+  @apply border-2 border-cyan-500/20 rounded-xl;
+  
+ }
+ 
+ .table-container > table {
+  @apply min-w-full;
+ }
+ 
+ .table-compact th,
+ .table-compact td {
+  @apply px-3 py-2 text-xs;
+ }
 
-  /* Fluid stat value — scales smoothly with viewport */
-  .stat-value {
-    font-size: clamp(1rem, 2.5vw, 1.5rem);
-    @apply font-bold leading-tight;
-  }
+ /* Responsive column hiding - hide less-critical columns on small screens */
+ .col-hide-sm { @apply hidden sm:table-cell; }
+ .col-hide-md { @apply hidden md:table-cell; }
+ .col-hide-lg { @apply hidden lg:table-cell; }
 
-  /* ===========================================
-     CARD STYLES
-     =========================================== */
-  
-  .compact-card {
-    @apply rounded-xl p-4;
-    @apply bg-card/90 backdrop-blur-sm;
-    @apply border-2 border-cyan-500/20;
-    @apply shadow-[0_0_15px_rgba(0,255,255,0.1)];
-    @apply hover:border-cyan-500/40 hover:shadow-[0_0_25px_rgba(0,255,255,0.15)];
-    @apply transition-all duration-300;
-  }
-  
-  .card-elevated {
-    @apply bg-card border-2 border-cyan-500/20;
-    @apply shadow-[0_0_20px_rgba(0,255,255,0.1)];
-    @apply hover:shadow-[0_0_30px_rgba(0,255,255,0.15)];
-    @apply transition-all duration-300;
-  }
-  
-  .card-hover {
-    @apply transition-all duration-300;
-    @apply hover:shadow-[0_0_25px_rgba(0,255,255,0.15)];
-    @apply hover:border-cyan-500/40;
-  }
+ /* Fluid stat value - scales smoothly with viewport */
+ .stat-value {
+  font-size: clamp(1rem, 2.5vw, 1.5rem);
+  @apply font-bold leading-tight;
+ }
 
-  /* ===========================================
-     GRID LAYOUTS
-     =========================================== */
+ /* ===========================================
+   CARD STYLES
+   =========================================== */
+ 
+ .compact-card {
+  @apply rounded-xl p-4;
+  @apply bg-card/90 backdrop-blur-sm;
+  @apply border-2 border-cyan-500/20;
   
-  .responsive-grid {
-    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4;
-  }
-  
-  .stats-grid {
-    @apply grid grid-cols-2 lg:grid-cols-4 gap-4;
-  }
+  @apply hover:border-cyan-500/40;
+  @apply transition-all duration-300;
+ }
+ 
+ .card-elevated {
+  @apply bg-card border-2 border-cyan-500/20;
 
-  /* Fluid auto-fit grids — columns adapt to container width */
-  .auto-fit-grid {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
-  }
+  @apply transition-all duration-300;
+ }
+ 
+ .card-hover {
+  @apply transition-all duration-300;
   
-  .auto-fit-grid-sm {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
-  }
-  
-  .auto-fit-grid-lg {
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
-  }
+  @apply hover:border-cyan-500/40;
+ }
 
-  /* ===========================================
-     ANIMATIONS
-     =========================================== */
-  
-  .fade-in {
-    animation: fadeIn 0.3s ease-out;
-  }
-  
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  
-  .slide-in {
-    animation: slideIn 0.3s ease-out;
-  }
-  
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateX(-10px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
-  
-  /* Neon Pulse Animation */
-  .animate-neon-pulse {
-    animation: neonPulse 2s ease-in-out infinite;
-  }
-  
-  @keyframes neonPulse {
-    0%, 100% {
-      box-shadow: 
-        0 0 5px rgba(0, 255, 255, 0.5),
-        0 0 10px rgba(0, 255, 255, 0.3),
-        0 0 20px rgba(0, 255, 255, 0.2);
-    }
-    50% {
-      box-shadow: 
-        0 0 10px rgba(0, 255, 255, 0.8),
-        0 0 20px rgba(0, 255, 255, 0.5),
-        0 0 40px rgba(0, 255, 255, 0.3);
-    }
-  }
-  
-  /* Neon Flicker Animation */
-  .animate-neon-flicker {
-    animation: neonFlicker 0.15s ease-in-out infinite alternate;
-  }
-  
-  @keyframes neonFlicker {
-    0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
-      text-shadow: 
-        0 0 5px rgba(0, 255, 255, 0.8),
-        0 0 10px rgba(0, 255, 255, 0.6),
-        0 0 20px rgba(0, 255, 255, 0.4);
-    }
-    20%, 24%, 55% {
-      text-shadow: none;
-    }
-  }
-  
-  /* Glitch Animation */
-  .animate-glitch-1 {
-    animation: glitch1 0.3s ease-in-out infinite;
-  }
-  
-  @keyframes glitch1 {
-    0%, 100% { transform: translate(0); }
-    33% { transform: translate(-2px, 2px); }
-    66% { transform: translate(2px, -2px); }
-  }
-  
-  .animate-glitch-2 {
-    animation: glitch2 0.3s ease-in-out infinite reverse;
-  }
-  
-  @keyframes glitch2 {
-    0%, 100% { transform: translate(0); }
-    33% { transform: translate(2px, -2px); }
-    66% { transform: translate(-2px, 2px); }
-  }
-  
-  /* Float Animation */
-  .animate-float {
-    animation: float 6s ease-in-out infinite;
-  }
-  
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-20px); }
-  }
-  
-  /* Grid Scroll Animation */
-  .animate-grid-scroll {
-    animation: gridScroll 20s linear infinite;
-  }
-  
-  @keyframes gridScroll {
-    0% { transform: translateY(0); }
-    100% { transform: translateY(50px); }
-  }
-  
-  /* Slow Spin */
-  .animate-spin-slow {
-    animation: spin 3s linear infinite;
-  }
-  
-  /* Shimmer Animation */
-  .animate-shimmer {
-    animation: shimmer 2s linear infinite;
-  }
-  
-  @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-  }
-  
-  /* Shrink Width Animation */
-  .animate-shrink-width {
-    animation: shrinkWidth linear forwards;
-  }
-  
-  @keyframes shrinkWidth {
-    0% { width: 100%; }
-    100% { width: 0%; }
-  }
-  
-  /* Pulse Slow */
-  .animate-pulse-slow {
-    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
+ /* ===========================================
+   GRID LAYOUTS
+   =========================================== */
+ 
+ .responsive-grid {
+  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4;
+ }
+ 
+ .stats-grid {
+  @apply grid grid-cols-2 lg:grid-cols-4 gap-4;
+ }
 
-  /* ===========================================
-     UTILITY CLASSES
-     =========================================== */
-  
-  .touch-target {
-    @apply min-h-[44px] min-w-[44px];
+ /* Fluid auto-fit grids - columns adapt to container width */
+ .auto-fit-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+ }
+ 
+ .auto-fit-grid-sm {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+ }
+ 
+ .auto-fit-grid-lg {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+ }
+
+ /* ===========================================
+   ANIMATIONS
+   =========================================== */
+ 
+ .fade-in {
+  animation: fadeIn 0.3s ease-out;
+ }
+ 
+ @keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+ }
+ 
+ .slide-in {
+  animation: slideIn 0.3s ease-out;
+ }
+ 
+ @keyframes slideIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+ }
+ 
+ /* Neon Pulse Animation */
+ .animate-neon-pulse {
+  animation: neonPulse 2s ease-in-out infinite;
+ }
+ 
+ @keyframes neonPulse {
+  0%, 100% {
+   box-shadow: 
+    0 0 5px rgba(0, 255, 255, 0.5),
+    0 0 10px rgba(0, 255, 255, 0.3),
+    0 0 20px rgba(0, 255, 255, 0.2);
   }
-  
-  .safe-bottom {
-    padding-bottom: env(safe-area-inset-bottom, 0);
+  50% {
+   box-shadow: 
+    0 0 10px rgba(0, 255, 255, 0.8),
+    0 0 20px rgba(0, 255, 255, 0.5),
+    0 0 40px rgba(0, 255, 255, 0.3);
   }
-  
-  .safe-top {
-    padding-top: env(safe-area-inset-top, 0);
+ }
+ 
+ /* Neon Flicker Animation */
+ .animate-neon-flicker {
+  animation: neonFlicker 0.15s ease-in-out infinite alternate;
+ }
+ 
+ @keyframes neonFlicker {
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+   text-shadow: 
+    0 0 5px rgba(0, 255, 255, 0.8),
+    0 0 10px rgba(0, 255, 255, 0.6),
+    0 0 20px rgba(0, 255, 255, 0.4);
   }
-  
-  .input-compact {
-    @apply h-9 text-xs px-3;
+  20%, 24%, 55% {
+   text-shadow: none;
   }
-  
-  .section-spacing {
-    @apply space-y-4 sm:space-y-6;
-  }
-  
-  .page-header {
-    @apply mb-4 sm:mb-6;
-  }
-  
-  .icon-xs { @apply w-3 h-3; }
-  .icon-sm { @apply w-4 h-4; }
-  .icon-md { @apply w-5 h-5; }
-  .icon-lg { @apply w-6 h-6; }
-  
-  .text-muted {
-    @apply text-muted-foreground text-xs;
-  }
-  
-  .divider {
-    @apply border-t border-cyan-500/20;
-  }
-  
-  /* Leaflet popup - precise styling */
-  .leaflet-popup-content-wrapper {
-    padding: 0 !important;
-    border-radius: 12px !important;
-    overflow: hidden;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.15), 0 2px 10px rgba(0,0,0,0.1) !important;
-  }
-  
-  .leaflet-popup-content {
-    margin: 0 !important;
-    padding: 0 !important;
-    width: auto !important;
-    max-width: 340px !important;
-    max-height: 75vh;
-    overflow-y: auto;
-  }
-  
-  .leaflet-popup-tip {
-    box-shadow: 0 3px 10px rgba(0,0,0,0.1) !important;
-  }
-  
-  /* Popup card structure */
-  .popup-card {
-    min-width: 280px;
-    background: white;
-  }
-  
-  .popup-header {
-    color: white;
-    padding: 12px 14px;
-  }
-  
-  .popup-content {
-    padding: 14px;
-  }
-  
-  /* Ensure Leaflet popups are below modals */
-  .leaflet-pane {
-    z-index: 40 !important;
-  }
-  
-  .leaflet-top, .leaflet-bottom {
-    z-index: 45 !important;
-  }
-  
-  .leaflet-popup-pane {
-    z-index: 45 !important;
-  }
-  
-  /* Modal overlay - ensure it's above everything */
-  .modal-overlay {
-    z-index: 9999 !important;
-  }
-  
-  /* SweetAlert high z-index for notifications above modals */
+ }
+ 
+ /* Glitch Animation */
+ .animate-glitch-1 {
+  animation: glitch1 0.3s ease-in-out infinite;
+ }
+ 
+ @keyframes glitch1 {
+  0%, 100% { transform: translate(0); }
+  33% { transform: translate(-2px, 2px); }
+  66% { transform: translate(2px, -2px); }
+ }
+ 
+ .animate-glitch-2 {
+  animation: glitch2 0.3s ease-in-out infinite reverse;
+ }
+ 
+ @keyframes glitch2 {
+  0%, 100% { transform: translate(0); }
+  33% { transform: translate(2px, -2px); }
+  66% { transform: translate(-2px, 2px); }
+ }
+ 
+ /* Float Animation */
+ .animate-float {
+  animation: float 6s ease-in-out infinite;
+ }
+ 
+ @keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+ }
+ 
+ /* Grid Scroll Animation */
+ .animate-grid-scroll {
+  animation: gridScroll 20s linear infinite;
+ }
+ 
+ @keyframes gridScroll {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(50px); }
+ }
+ 
+ /* Slow Spin */
+ .animate-spin-slow {
+  animation: spin 3s linear infinite;
+ }
+ 
+ /* Shimmer Animation */
+ .animate-shimmer {
+  animation: shimmer 2s linear infinite;
+ }
+ 
+ @keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+ }
+ 
+ /* Shrink Width Animation */
+ .animate-shrink-width {
+  animation: shrinkWidth linear forwards;
+ }
+ 
+ @keyframes shrinkWidth {
+  0% { width: 100%; }
+  100% { width: 0%; }
+ }
+ 
+ /* Pulse Slow */
+ .animate-pulse-slow {
+  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+ }
+
+ /* ===========================================
+   UTILITY CLASSES
+   =========================================== */
+ 
+ .touch-target {
+  @apply min-h-[44px] min-w-[44px];
+ }
+ 
+ .safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+ }
+ 
+ .safe-top {
+  padding-top: env(safe-area-inset-top, 0);
+ }
+ 
+ .input-compact {
+  @apply h-9 text-xs px-3;
+ }
+ 
+ .section-spacing {
+  @apply space-y-4 sm:space-y-6;
+ }
+ 
+ .page-header {
+  @apply mb-4 sm:mb-6;
+ }
+ 
+ .icon-xs { @apply w-3 h-3; }
+ .icon-sm { @apply w-4 h-4; }
+ .icon-md { @apply w-5 h-5; }
+ .icon-lg { @apply w-6 h-6; }
+ 
+ .text-muted {
+  @apply text-muted-foreground text-xs;
+ }
+ 
+ .divider {
+  @apply border-t border-cyan-500/20;
+ }
+ 
+ /* Leaflet popup - precise styling */
+ .leaflet-popup-content-wrapper {
+  padding: 0 !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.15), 0 2px 10px rgba(0,0,0,0.1) !important;
+ }
+ 
+ .leaflet-popup-content {
+  margin: 0 !important;
+  padding: 0 !important;
+  width: auto !important;
+  max-width: 340px !important;
+  max-height: 75vh;
+  overflow-y: auto;
+ }
+ 
+ .leaflet-popup-tip {
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1) !important;
+ }
+ 
+ /* Popup card structure */
+ .popup-card {
+  min-width: 280px;
+  background: white;
+ }
+ 
+ .popup-header {
+  color: white;
+  padding: 12px 14px;
+ }
+ 
+ .popup-content {
+  padding: 14px;
+ }
+ 
+ /* Ensure Leaflet popups are below modals */
+ .leaflet-pane {
+  z-index: 40 !important;
+ }
+ 
+ .leaflet-top, .leaflet-bottom {
+  z-index: 45 !important;
+ }
+ 
+ .leaflet-popup-pane {
+  z-index: 45 !important;
+ }
+ 
+ /* Modal overlay - ensure it's above everything */
+ .modal-overlay {
+  z-index: 9999 !important;
+ }
+ 
+ /* SweetAlert high z-index for notifications above modals */
 .swal-high-z-index {
-  z-index: 999999 !important;
+ z-index: 999999 !important;
 }
 
 .swal-high-z-index .swal2-container {
-  z-index: 999999 !important;
+ z-index: 999999 !important;
 }
 
 .swal2-container {
-  z-index: 999999 !important;
+ z-index: 999999 !important;
 }
 
 .swal2-backdrop-show {
-  z-index: 999998 !important;
+ z-index: 999998 !important;
 }
 
 /* SweetAlert Cyberpunk Theme */
 .swal-cyberpunk {
-  z-index: 999999 !important;
+ z-index: 999999 !important;
 }
 
 .swal-cyberpunk-popup {
-  font-family: var(--font-sans);
-  border-radius: 1rem !important;
+ font-family: var(--font-sans);
+ border-radius: 1rem !important;
 }
 
 .swal-cyberpunk-title {
-  color: #ffffff !important;
-  font-weight: 700 !important;
-  text-shadow: 0 0 20px rgba(255, 255, 255, 0.5) !important;
-  font-size: 1.5rem !important;
+ color: #ffffff !important;
+ font-weight: 700 !important;
+ text-shadow: 0 0 20px rgba(255, 255, 255, 0.5) !important;
+ font-size: 1.5rem !important;
 }
 
 .swal-cyberpunk .swal2-html-container {
-  color: #e0d0ff !important;
-  font-size: 0.95rem !important;
+ color: #e0d0ff !important;
+ font-size: 0.95rem !important;
 }
 
 .swal-cyberpunk-confirm {
-  background: linear-gradient(135deg, #00f7ff 0%, #00c4cc 100%) !important;
-  border: 2px solid #00f7ff !important;
-  box-shadow: 0 0 20px rgba(0, 247, 255, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.2) !important;
-  color: #0a0520 !important;
-  font-weight: 600 !important;
-  padding: 0.6rem 1.5rem !important;
-  border-radius: 0.5rem !important;
-  transition: all 0.3s ease !important;
+ background: linear-gradient(135deg, #00f7ff 0%, #00c4cc 100%) !important;
+ border: 2px solid #00f7ff !important;
+ box-shadow: 0 0 20px rgba(0, 247, 255, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.2) !important;
+ color: #0a0520 !important;
+ font-weight: 600 !important;
+ padding: 0.6rem 1.5rem !important;
+ border-radius: 0.5rem !important;
+ transition: all 0.3s ease !important;
 }
 
 .swal-cyberpunk-confirm:hover {
-  background: linear-gradient(135deg, #00c4cc 0%, #009aa7 100%) !important;
-  box-shadow: 0 0 30px rgba(0, 247, 255, 0.8), inset 0 0 15px rgba(255, 255, 255, 0.3) !important;
-  transform: translateY(-2px) !important;
+ background: linear-gradient(135deg, #00c4cc 0%, #009aa7 100%) !important;
+ box-shadow: 0 0 30px rgba(0, 247, 255, 0.8), inset 0 0 15px rgba(255, 255, 255, 0.3) !important;
+ transform: translateY(-2px) !important;
 }
 
 .swal-cyberpunk-error {
-  background: linear-gradient(135deg, #ff4466 0%, #cc1a3a 100%) !important;
-  border: 2px solid #ff4466 !important;
-  box-shadow: 0 0 20px rgba(255, 68, 102, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.2) !important;
-  color: #ffffff !important;
-  font-weight: 600 !important;
-  padding: 0.6rem 1.5rem !important;
-  border-radius: 0.5rem !important;
+ background: linear-gradient(135deg, #ff4466 0%, #cc1a3a 100%) !important;
+ border: 2px solid #ff4466 !important;
+ box-shadow: 0 0 20px rgba(255, 68, 102, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.2) !important;
+ color: #ffffff !important;
+ font-weight: 600 !important;
+ padding: 0.6rem 1.5rem !important;
+ border-radius: 0.5rem !important;
 }
 
 .swal-cyberpunk-error:hover {
-  background: linear-gradient(135deg, #cc1a3a 0%, #990020 100%) !important;
-  box-shadow: 0 0 30px rgba(255, 68, 102, 0.8) !important;
-  transform: translateY(-2px) !important;
+ background: linear-gradient(135deg, #cc1a3a 0%, #990020 100%) !important;
+ box-shadow: 0 0 30px rgba(255, 68, 102, 0.8) !important;
+ transform: translateY(-2px) !important;
 }
 
 .swal-cyberpunk-warning {
-  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%) !important;
-  border: 2px solid #fbbf24 !important;
-  box-shadow: 0 0 20px rgba(251, 191, 36, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.2) !important;
-  color: #0a0520 !important;
-  font-weight: 600 !important;
-  padding: 0.6rem 1.5rem !important;
-  border-radius: 0.5rem !important;
+ background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%) !important;
+ border: 2px solid #fbbf24 !important;
+ box-shadow: 0 0 20px rgba(251, 191, 36, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.2) !important;
+ color: #0a0520 !important;
+ font-weight: 600 !important;
+ padding: 0.6rem 1.5rem !important;
+ border-radius: 0.5rem !important;
 }
 
 .swal-cyberpunk-warning:hover {
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
-  box-shadow: 0 0 30px rgba(251, 191, 36, 0.8) !important;
-  transform: translateY(-2px) !important;
+ background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+ box-shadow: 0 0 30px rgba(251, 191, 36, 0.8) !important;
+ transform: translateY(-2px) !important;
 }
 
 .swal-cyberpunk-info {
-  background: linear-gradient(135deg, #00f7ff 0%, #00c4cc 100%) !important;
-  border: 2px solid #00f7ff !important;
-  box-shadow: 0 0 20px rgba(0, 247, 255, 0.5) !important;
-  color: #0a0520 !important;
-  font-weight: 600 !important;
-  padding: 0.6rem 1.5rem !important;
-  border-radius: 0.5rem !important;
+ background: linear-gradient(135deg, #00f7ff 0%, #00c4cc 100%) !important;
+ border: 2px solid #00f7ff !important;
+ box-shadow: 0 0 20px rgba(0, 247, 255, 0.5) !important;
+ color: #0a0520 !important;
+ font-weight: 600 !important;
+ padding: 0.6rem 1.5rem !important;
+ border-radius: 0.5rem !important;
 }
 
 .swal-cyberpunk-cancel {
-  background: linear-gradient(135deg, #374151 0%, #1f2937 100%) !important;
-  border: 2px solid #4b5563 !important;
-  box-shadow: 0 0 10px rgba(75, 85, 99, 0.3) !important;
-  color: #e0d0ff !important;
-  font-weight: 600 !important;
-  padding: 0.6rem 1.5rem !important;
-  border-radius: 0.5rem !important;
+ background: linear-gradient(135deg, #374151 0%, #1f2937 100%) !important;
+ border: 2px solid #4b5563 !important;
+ box-shadow: 0 0 10px rgba(75, 85, 99, 0.3) !important;
+ color: #e0d0ff !important;
+ font-weight: 600 !important;
+ padding: 0.6rem 1.5rem !important;
+ border-radius: 0.5rem !important;
 }
 
 .swal-cyberpunk-cancel:hover {
-  background: linear-gradient(135deg, #1f2937 0%, #111827 100%) !important;
-  box-shadow: 0 0 15px rgba(75, 85, 99, 0.5) !important;
-  transform: translateY(-2px) !important;
+ background: linear-gradient(135deg, #1f2937 0%, #111827 100%) !important;
+ box-shadow: 0 0 15px rgba(75, 85, 99, 0.5) !important;
+ transform: translateY(-2px) !important;
 }
 
 /* Cyberpunk Toast */
 .swal-cyberpunk-toast {
-  z-index: 999999 !important;
+ z-index: 999999 !important;
 }
 
 .swal-cyberpunk-toast-popup {
-  border-radius: 0.75rem !important;
-  backdrop-filter: blur(12px) !important;
-  font-family: var(--font-sans) !important;
+ border-radius: 0.75rem !important;
+ backdrop-filter: blur(12px) !important;
+ font-family: var(--font-sans) !important;
 }
 
 .swal-cyberpunk-toast .swal2-title {
-  font-size: 0.9rem !important;
-  color: #e0d0ff !important;
-  font-weight: 600 !important;
+ font-size: 0.9rem !important;
+ color: #e0d0ff !important;
+ font-weight: 600 !important;
 }
 
 /* Icon glow effects */
 .swal-cyberpunk .swal2-icon.swal2-success {
-  border-color: #00ff88 !important;
-  color: #00ff88 !important;
-  filter: drop-shadow(0 0 15px rgba(0, 255, 136, 0.6)) !important;
+ border-color: #00ff88 !important;
+ color: #00ff88 !important;
+ filter: drop-shadow(0 0 15px rgba(0, 255, 136, 0.6)) !important;
 }
 
 .swal-cyberpunk .swal2-icon.swal2-error {
-  border-color: #ff4466 !important;
-  color: #ff4466 !important;
-  filter: drop-shadow(0 0 15px rgba(255, 68, 102, 0.6)) !important;
+ border-color: #ff4466 !important;
+ color: #ff4466 !important;
+ filter: drop-shadow(0 0 15px rgba(255, 68, 102, 0.6)) !important;
 }
 
 .swal-cyberpunk .swal2-icon.swal2-warning {
-  border-color: #fbbf24 !important;
-  color: #fbbf24 !important;
-  filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.6)) !important;
+ border-color: #fbbf24 !important;
+ color: #fbbf24 !important;
+ filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.6)) !important;
 }
 
 .swal-cyberpunk .swal2-icon.swal2-info {
-  border-color: #00f7ff !important;
-  color: #00f7ff !important;
-  filter: drop-shadow(0 0 15px rgba(0, 247, 255, 0.6)) !important;
+ border-color: #00f7ff !important;
+ color: #00f7ff !important;
+ filter: drop-shadow(0 0 15px rgba(0, 247, 255, 0.6)) !important;
 }
 
 .swal-cyberpunk .swal2-icon.swal2-question {
-  border-color: #bc13fe !important;
-  color: #bc13fe !important;
-  filter: drop-shadow(0 0 15px rgba(188, 19, 254, 0.6)) !important;
-}  @media (max-width: 640px) {
-    .leaflet-popup-content {
-      max-width: 300px !important;
-    }
-    
-    .popup-card {
-      min-width: 260px;
-    }
-    
-    .popup-header {
-      padding: 10px 12px;
-    }
-    
-    .popup-content {
-      padding: 12px;
-    }
-    
-    .leaflet-popup {
-      bottom: 20px !important;
-    }
-    
-    .custom-div-icon {
-      font-size: 10px !important;
-    }
+ border-color: #bc13fe !important;
+ color: #bc13fe !important;
+ filter: drop-shadow(0 0 15px rgba(188, 19, 254, 0.6)) !important;
+} @media (max-width: 640px) {
+  .leaflet-popup-content {
+   max-width: 300px !important;
   }
   
-  /* Leaflet custom marker labels */
-  .custom-div-icon {
-    background: transparent !important;
-    border: none !important;
+  .popup-card {
+   min-width: 260px;
   }
+  
+  .popup-header {
+   padding: 10px 12px;
+  }
+  
+  .popup-content {
+   padding: 12px;
+  }
+  
+  .leaflet-popup {
+   bottom: 20px !important;
+  }
+  
+  .custom-div-icon {
+   font-size: 10px !important;
+  }
+ }
+ 
+ /* Leaflet custom marker labels */
+ .custom-div-icon {
+  background: transparent !important;
+  border: none !important;
+ }
 }
-
 
 /* Hardcore Modal Title Override */
 .modal-title-override {
-  color: #111827 !important;
+ color: #111827 !important;
 }
 .dark .modal-title-override {
-  color: #ffffff !important;
+ color: #ffffff !important;
 }

@@ -197,7 +197,7 @@ function ODCEditForm({ data, onChange, olts }: { data: EntityFormData; onChange:
         <label className="block text-xs font-medium text-muted-foreground mb-1">OLT</label>
         <select value={data.oltId || ''} onChange={e => onChange('oltId', e.target.value)}
           className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-card text-foreground focus:ring-2 focus:ring-blue-500">
-          <option value="">— Select OLT —</option>
+          <option value="">- Select OLT -</option>
           {olts.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
         </select>
       </div>
@@ -220,7 +220,7 @@ function ODPEditForm({ data, onChange, odcs }: { data: EntityFormData; onChange:
         <label className="block text-xs font-medium text-muted-foreground mb-1">ODC</label>
         <select value={data.odcId || ''} onChange={e => onChange('odcId', e.target.value)}
           className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-card text-foreground focus:ring-2 focus:ring-blue-500">
-          <option value="">— Select ODC —</option>
+          <option value="">- Select ODC -</option>
           {odcs.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
         </select>
       </div>

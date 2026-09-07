@@ -108,7 +108,7 @@ const MODULE_CONFIG: Record<string, { label: string; color: string; Icon: React.
   auth:        { label: 'Login',     color: 'text-blue-400 bg-blue-500/20 border-blue-500/30',        Icon: LogIn },
   payment:     { label: 'Bayar',     color: 'text-emerald-400 bg-emerald-500/20 border-emerald-500/30', Icon: CreditCard },
   pppoe:       { label: 'PPPoE',     color: 'text-cyan-400 bg-cyan-500/20 border-cyan-500/30',         Icon: Network },
-  hotspot:     { label: 'Hotspot',   color: 'text-violet-400 bg-violet-500/20 border-violet-500/30',   Icon: Wifi },
+  hotspot:     { label: 'Hotspot',   color: 'text-primary bg-primary/10 border-border',   Icon: Wifi },
   voucher:     { label: 'Voucher',   color: 'text-amber-400 bg-amber-500/20 border-amber-500/30',      Icon: Ticket },
   invoice:     { label: 'Tagihan',   color: 'text-pink-400 bg-pink-500/20 border-pink-500/30',         Icon: FileText },
   transaction: { label: 'Transaksi', color: 'text-teal-400 bg-teal-500/20 border-teal-500/30',         Icon: Receipt },
@@ -379,8 +379,8 @@ export default function AdminDashboard() {
       title: t('dashboard.activeHotspotSessions'),
       value: stats.activeSessionsHotspot.toLocaleString(),
       icon: <Wifi className="w-5 h-5" />,
-      gradient: 'from-violet-500 to-purple-400',
-      bgGlow: 'bg-violet-500/20',
+      gradient: 'from-primary to-primary',
+      bgGlow: 'bg-primary/10',
       href: '/admin/sessions/hotspot',
     },
     {
@@ -457,7 +457,7 @@ export default function AdminDashboard() {
     <div className="bg-background relative">
       {/* Neon Cyberpunk Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
         <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
@@ -467,11 +467,11 @@ export default function AdminDashboard() {
             {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)]">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-">
               {t('dashboard.title')}
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-2 mt-1">
-              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.6)]"></span>
+              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse "></span>
               {tzInfo.name} &bull; {currentDate} &bull; {currentTime}
             </p>
           </div>
@@ -500,7 +500,7 @@ export default function AdminDashboard() {
             <button
               onClick={() => { dashboardQuery.refetch(); analyticsQuery.refetch(); }}
               disabled={loading || analyticsLoading}
-              className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium bg-brand-500/10 border-2 border-brand-500/30 text-brand-500 rounded-lg hover:bg-brand-500/20 disabled:opacity-50 transition-all shadow-[0_0_15px_rgba(6,182,212,0.2)]"
+              className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium bg-brand-500/10 border-2 border-brand-500/30 text-brand-500 rounded-lg hover:bg-brand-500/20 disabled:opacity-50 transition-all "
             >
               <RefreshCw className={`w-3.5 h-3.5 ${(loading || analyticsLoading) ? 'animate-spin' : ''}`} />
               {t('common.refresh')}
@@ -511,7 +511,7 @@ export default function AdminDashboard() {
         {/* Stats Grid - 4 columns */}
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-8 w-8 animate-spin text-brand-500 dark:text-brand-500 dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)]" />
+            <Loader2 className="h-8 w-8 animate-spin text-brand-500 dark:text-brand-500 dark:drop-" />
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-6 gap-2 sm:gap-3">
@@ -541,7 +541,7 @@ export default function AdminDashboard() {
                   </div>
                 </>
               );
-              const cls = 'relative bg-card/60 backdrop-blur-xl rounded-xl border border-white/10 p-3 sm:p-4 hover:border-white/20 hover:shadow-[0_0_30px_rgba(139,92,246,0.2)] transition-all group overflow-hidden';
+              const cls = 'relative bg-card/60 rounded-xl border border-white/10 p-3 sm:p-4 hover:border-white/20 hover: transition-all group overflow-hidden';
               return card.href ? (
                 <a key={card.title} href={card.href} className={cls}>{inner}</a>
               ) : (
@@ -567,7 +567,7 @@ export default function AdminDashboard() {
           </ChartCard>
 
           {/* Upcoming / Overdue Invoices */}
-          <div className="bg-card/60 backdrop-blur-xl rounded-xl border border-white/10 flex flex-col overflow-hidden">
+          <div className="bg-card/60 rounded-xl border border-white/10 flex flex-col overflow-hidden">
             <div className="flex items-center justify-between p-3 border-b border-white/10">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 rounded-lg bg-pink-500/10 border border-pink-500/20">
@@ -600,9 +600,9 @@ export default function AdminDashboard() {
                   const isOverdue = inv.status === 'OVERDUE';
                   const isUrgent = !isOverdue && inv.daysUntilDue <= 3;
                   const dotColor = isOverdue
-                    ? 'bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.8)]'
+                    ? 'bg-red-400 '
                     : isUrgent
-                    ? 'bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)]'
+                    ? 'bg-amber-400 '
                     : 'bg-yellow-400/70';
                   const labelColor = isOverdue ? 'text-red-400' : isUrgent ? 'text-amber-400' : 'text-yellow-400';
                   const labelText = isOverdue
@@ -632,8 +632,8 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Activity Log — compact panel beside charts */}
-          <div className="bg-card/60 backdrop-blur-xl rounded-xl border border-white/10 flex flex-col overflow-hidden">
+          {/* Activity Log - compact panel beside charts */}
+          <div className="bg-card/60 rounded-xl border border-white/10 flex flex-col overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between p-3 border-b border-white/10">
               <div className="flex items-center gap-2">
@@ -737,17 +737,17 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
           {/* Agent Voucher Sales */}
-          <div className="bg-card/60 backdrop-blur-xl rounded-xl border border-white/10 p-3 sm:p-4">
+          <div className="bg-card/60 rounded-xl border border-white/10 p-3 sm:p-4">
             <div className="flex items-center justify-between mb-3">
               <div>
                 <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  <Store className="w-4 h-4 text-violet-500" />
+                  <Store className="w-4 h-4 text-primary" />
                   {t('dashboard.agentVoucherSales')}
                 </h2>
                 <p className="text-[10px] text-muted-foreground mt-0.5">{t('dashboard.agentVoucherSalesSubtitle')}</p>
               </div>
               <div className="flex items-center gap-2">
-                <span className="px-2 py-1 text-[10px] font-medium bg-violet-500/20 text-violet-500 rounded-lg border border-violet-500/30">
+                <span className="px-2 py-1 text-[10px] font-medium bg-primary/10 text-primary rounded-lg border border-border">
                   {agentSalesTotal.count} {t('dashboard.agentVouchersSold')}
                 </span>
               </div>
@@ -767,7 +767,7 @@ export default function AdminDashboard() {
                 {agentSales.map((agent, i) => (
                   <div key={agent.agentId} className="grid grid-cols-3 gap-2 items-center p-2 bg-white/5 rounded-lg">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className="w-5 h-5 rounded-full bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0">
+                      <span className="w-5 h-5 rounded-full bg-gradient-to-br from-primary to-pink-500 flex items-center justify-center text-[9px] font-bold text-white flex-shrink-0">
                         {i + 1}
                       </span>
                       <span className="text-xs font-medium text-foreground truncate">{agent.agentName}</span>
@@ -780,7 +780,7 @@ export default function AdminDashboard() {
                 ))}
                 <div className="flex items-center justify-between p-2 border-t border-white/10 mt-1">
                   <span className="text-[10px] text-muted-foreground">{t('dashboard.agentTotalRevenue')}</span>
-                  <span className="text-xs font-bold text-violet-500">
+                  <span className="text-xs font-bold text-primary">
                     {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(agentSalesTotal.revenue)}
                   </span>
                 </div>
@@ -789,7 +789,7 @@ export default function AdminDashboard() {
           </div>
 
           {/* RADIUS Auth Log */}
-          <div className="bg-card/60 backdrop-blur-xl rounded-xl border border-white/10 p-3 sm:p-4">
+          <div className="bg-card/60 rounded-xl border border-white/10 p-3 sm:p-4">
             <div className="flex items-center justify-between mb-3">
               <div>
                 <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -845,7 +845,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* System Status */}
-        <div className="bg-card/60 backdrop-blur-xl rounded-xl border border-border p-3 sm:p-4">
+        <div className="bg-card/60 rounded-xl border border-border p-3 sm:p-4">
           <h2 className="text-sm font-semibold text-foreground mb-3">{t('dashboard.systemStatus')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
             {/* RADIUS Server */}

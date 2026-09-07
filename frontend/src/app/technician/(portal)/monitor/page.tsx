@@ -147,7 +147,7 @@ export default function TechnicianMonitorPage() {
             label: 'Total Pelanggan',
             value: stats.total,
             icon: <Users className="w-4 h-4" />,
-            color: 'text-violet-500 bg-violet-500/10 border-violet-500/30',
+            color: 'text-primary bg-primary/10 border-border',
             pulse: false,
           },
         ].map((s) => (
@@ -359,7 +359,7 @@ export default function TechnicianMonitorPage() {
                       <p className="text-sm font-semibold text-foreground truncate">
                         {c.name}
                       </p>
-                      <p className="text-[10px] font-mono text-violet-500">{c.username}</p>
+                      <p className="text-[10px] font-mono text-primary">{c.username}</p>
                       <p className="text-[10px] text-muted-foreground flex items-center gap-0.5 mt-0.5">
                         <Phone className="w-2.5 h-2.5" />
                         {c.phone}

@@ -6,7 +6,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const company = await getCompanyInfo();
   const name = company?.name || 'SALFANET RADIUS';
   return {
-    title: `Isolation System — ${name} Documentation`,
+    title: `Isolation System - ${name} Documentation`,
     description: 'Dokumentasi lengkap sistem isolasi otomatis untuk PPPoE users yang masa berlangganannya habis.',
   };
 }
@@ -43,7 +43,7 @@ export default function IsolationDocsPage() {
               'Gambaran Umum',
               'Alur Kerja Lengkap',
               'Komponen Sistem',
-              'Cron Job — Auto Isolir',
+              'Cron Job - Auto Isolir',
               'Konfigurasi MikroTik',
               'Konfigurasi FreeRADIUS',
               'Database & Status PPPoE User',
@@ -68,7 +68,7 @@ export default function IsolationDocsPage() {
             <SectionTitle number={1} title="Gambaran Umum" />
             <Prose>
               <p>
-                Sistem isolasi bekerja dengan cara <strong>membatasi akses internet</strong> user yang sudah expired —
+                Sistem isolasi bekerja dengan cara <strong>membatasi akses internet</strong> user yang sudah expired -
                 bukan memblokir login sepenuhnya. User tetap bisa connect PPPoE, namun:
               </p>
               <ul>
@@ -160,9 +160,9 @@ export default function IsolationDocsPage() {
 
           {/* Section 4 */}
           <section id="section-4">
-            <SectionTitle number={4} title="Cron Job — Auto Isolir" />
+            <SectionTitle number={4} title="Cron Job - Auto Isolir" />
             <Prose>
-              <p><strong>Schedule:</strong> <Code>0 * * * *</Code> — Setiap jam tepat (00 menit)</p>
+              <p><strong>Schedule:</strong> <Code>0 * * * *</Code> - Setiap jam tepat (00 menit)</p>
               <p>Cron job berjalan di <Code>salfanet-cron</Code> (PM2) dan memanggil API endpoint <Code>POST /api/cron</Code> dengan <Code>type: "pppoe_auto_isolir"</Code>.</p>
             </Prose>
             <h3 className="font-semibold text-lg mt-4 mb-2">Yang Dilakukan Per User Expired</h3>
@@ -226,7 +226,7 @@ add chain=forward src-address=192.168.200.0/24 \\
     protocol=icmp action=accept \\
     comment="Allow ping for isolated users"
 
-# Allow billing server — GANTI DENGAN IP ADDRESS SERVER!
+# Allow billing server - GANTI DENGAN IP ADDRESS SERVER!
 add chain=forward src-address=192.168.200.0/24 \\
     dst-address=103.x.x.x action=accept \\
     comment="Allow access to billing server"
@@ -243,7 +243,7 @@ add chain=forward src-address=192.168.200.0/24 \\
 
             <h3 className="font-semibold text-lg mt-4 mb-2">Script 4: Firewall NAT (Redirect)</h3>
             <CodeBlock>{`/ip firewall nat
-# Redirect HTTP — GANTI 103.x.x.x DENGAN IP SERVER!
+# Redirect HTTP - GANTI 103.x.x.x DENGAN IP SERVER!
 add chain=dstnat src-address=192.168.200.0/24 \\
     protocol=tcp dst-port=80 \\
     dst-address=!103.x.x.x dst-address-list=!payment-gateways \\
@@ -331,7 +331,7 @@ INSERT INTO radusergroup (username, groupname, priority)
 VALUES ('john123', 'isolir', 1);
 
 -- 2. radcheck: Pastikan password ada, hapus reject
--- (Cleartext-Password tetap ada — user BOLEH login)
+-- (Cleartext-Password tetap ada - user BOLEH login)
 DELETE FROM radcheck WHERE username = 'john123' AND attribute = 'Auth-Type';
 
 -- 3. radreply: Hapus IP statis (pakai pool)
@@ -415,7 +415,7 @@ WHERE status = 'active' AND expiredAt < CURDATE();`}</CodeBlock>
             </TroubleshootBlock>
 
             <TroubleshootBlock title="User Isolated Masih Bisa Akses Internet">
-              <CodeBlock>{`# Di MikroTik — cek apakah user dapat IP dari pool-isolir
+              <CodeBlock>{`# Di MikroTik - cek apakah user dapat IP dari pool-isolir
 /ppp active print where name=USERNAME
 
 # Cek radusergroup
@@ -486,7 +486,7 @@ expiredAt < hari ini
 
         {/* Footer */}
         <div className="mt-12 pt-6 border-t border-gray-200 dark:border-gray-700 text-center text-sm text-gray-500 dark:text-gray-400">
-          <p>SALFANET RADIUS — Isolation System Documentation</p>
+          <p>SALFANET RADIUS - Isolation System Documentation</p>
           <Link href="/admin/settings/isolation" className="text-blue-600 hover:underline mt-1 inline-block">
             ← Kembali ke Isolation Settings
           </Link>

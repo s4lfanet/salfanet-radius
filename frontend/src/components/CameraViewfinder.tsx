@@ -56,7 +56,7 @@ export function CameraViewfinder({ onCapture, onClose }: CameraViewfinderProps) 
         }
       });
     } catch {
-      // getUserMedia failed — silently fallback to native capture
+      // getUserMedia failed - silently fallback to native capture
       setUseNativeCapture(true);
     }
   }, [stopStream]);
@@ -130,7 +130,7 @@ export function CameraViewfinder({ onCapture, onClose }: CameraViewfinderProps) 
   if (useNativeCapture) {
     return (
       <div className="relative rounded-lg overflow-hidden border-2 border-[#00f7ff]/60 bg-black">
-        {/* Hidden native camera input — auto-clicked on mount */}
+        {/* Hidden native camera input - auto-clicked on mount */}
         <input
           ref={nativeCaptureRef}
           type="file"

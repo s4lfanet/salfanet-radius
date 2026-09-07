@@ -174,7 +174,7 @@ export default function ApprovalsPage() {
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Wifi className="w-3.5 h-3.5" />
-                      <span>{user.profile?.name ?? '—'} ({user.profile ? formatIDR(user.profile.price) : ''}/bln)</span>
+                      <span>{user.profile?.name ?? '-'} ({user.profile ? formatIDR(user.profile.price) : ''}/bln)</span>
                     </div>
                     {user.area && (
                       <div className="flex items-center gap-2 text-muted-foreground">

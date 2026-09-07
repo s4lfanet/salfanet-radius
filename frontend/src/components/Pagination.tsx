@@ -48,7 +48,7 @@ export function Pagination({
     <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2">
       <div className="flex items-center gap-2 flex-wrap">
         <p className="text-xs text-muted-foreground">
-          {from}–{to} / {total.toLocaleString('id-ID')}
+          {from}-{to} / {total.toLocaleString('id-ID')}
         </p>
         {pageSizeOptions && onLimitChange && (
           <select

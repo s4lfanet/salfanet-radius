@@ -63,10 +63,10 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
   const lastCheckedRef = useRef<string>(new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const { addToast } = useToast();
-  // Stable ref to addToast — prevents poll() recreation when context re-renders
+  // Stable ref to addToast - prevents poll() recreation when context re-renders
   const addToastRef = useRef(addToast);
   useEffect(() => { addToastRef.current = addToast; }, [addToast]);
-  // Register global 401 handler — redirect to customer login on any API 401
+  // Register global 401 handler - redirect to customer login on any API 401
   useEffect(() => {
     onUnauthorized(() => {
       if (typeof window !== 'undefined' && !window.location.pathname.includes('/customer/login')) {
@@ -86,7 +86,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
     return () => clearInterval(tick);
   }, []);
 
-  // ———— Persist notifications to localStorage ————
+  // ---- Persist notifications to localStorage ----
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
@@ -97,7 +97,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
         if (typeof parsed.unread === 'number') setUnreadCount(parsed.unread);
         if (parsed.lastChecked) lastCheckedRef.current = parsed.lastChecked;
       }
-    } catch (e: unknown) { /* ignore — localStorage may be unavailable */ console.warn('Failed to load notifications from localStorage:', e); }
+    } catch (e: unknown) { /* ignore - localStorage may be unavailable */ console.warn('Failed to load notifications from localStorage:', e); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -110,7 +110,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
         unread: unreadCount,
         lastChecked: lastCheckedRef.current,
       }));
-    } catch (e: unknown) { /* ignore — localStorage may be unavailable */ console.warn('Failed to save notifications to localStorage:', e); }
+    } catch (e: unknown) { /* ignore - localStorage may be unavailable */ console.warn('Failed to save notifications to localStorage:', e); }
   }, [notifHistory, unreadCount]);
 
   const handleClearAllNotifications = () => {
@@ -137,7 +137,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
       setNotifHistory(prev => prev.map(n => ({ ...n, isRead: true })));
       setUnreadCount(0);
     } catch (e) {
-      // silent — best-effort
+      // silent - best-effort
     }
   }, [notifHistory]);
 
@@ -194,7 +194,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
         }
       }
     } catch (e: unknown) {
-      // silently ignore — non-critical notification polling
+      // silently ignore - non-critical notification polling
       console.warn('Notification poll failed:', e);
     }
   }, []);
@@ -206,7 +206,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
       const cachedName = localStorage.getItem('_co_name');
       if (cachedLogo) setCompanyLogo(cachedLogo);
       if (cachedName) setCompanyName(cachedName);
-    } catch (e: unknown) { /* ignore — localStorage may be unavailable */ console.warn('Failed to load cached company info:', e); }
+    } catch (e: unknown) { /* ignore - localStorage may be unavailable */ console.warn('Failed to load cached company info:', e); }
     loadCompanyInfo();
     const token = localStorage.getItem('customer_token');
     const handleResize = () => { if (localStorage.getItem('customer_token')) setSidebarOpen(window.innerWidth >= 1024); };
@@ -230,16 +230,16 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
       const data = await res.json();
       if (data.company?.name) {
         setCompanyName(data.company.name);
-        try { localStorage.setItem('_co_name', data.company.name); } catch (e: unknown) { /* ignore — localStorage may be unavailable */ console.warn('Failed to cache company name:', e); }
+        try { localStorage.setItem('_co_name', data.company.name); } catch (e: unknown) { /* ignore - localStorage may be unavailable */ console.warn('Failed to cache company name:', e); }
       }
       if (data.company?.logo) {
         setCompanyLogo(data.company.logo);
-        try { localStorage.setItem('_co_logo', data.company.logo); } catch (e: unknown) { /* ignore — localStorage may be unavailable */ console.warn('Failed to cache company logo:', e); }
+        try { localStorage.setItem('_co_logo', data.company.logo); } catch (e: unknown) { /* ignore - localStorage may be unavailable */ console.warn('Failed to cache company logo:', e); }
       } else {
-        try { localStorage.removeItem('_co_logo'); } catch (e: unknown) { /* ignore — localStorage may be unavailable */ console.warn('Failed to remove cached company logo:', e); }
+        try { localStorage.removeItem('_co_logo'); } catch (e: unknown) { /* ignore - localStorage may be unavailable */ console.warn('Failed to remove cached company logo:', e); }
       }
     } catch (e: unknown) {
-      // ignore — non-critical company info fetch
+      // ignore - non-critical company info fetch
       console.warn('Failed to load company info:', e);
     }
   };
@@ -252,7 +252,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
       if (token) {
         await apiCustomer('/api/customer/auth/logout', { method: 'POST' });
       }
-    } catch { /* non-fatal — proceed with client-side cleanup */ }
+    } catch { /* non-fatal - proceed with client-side cleanup */ }
     localStorage.removeItem('customer_token');
     localStorage.removeItem('customer_user');
     router.push('/customer/login');
@@ -268,12 +268,12 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
     return pathname.startsWith(href);
   };
 
-  // Skip portal UI on login page — render children directly
+  // Skip portal UI on login page - render children directly
   if (pathname === '/customer/login') {
     return <>{children}</>;
   }
 
-  // Not yet authenticated (or not checked yet) — render children only so the
+  // Not yet authenticated (or not checked yet) - render children only so the
   // page component can run its own useEffect redirect to /customer/login
   if (!authenticated) {
     return <>{children}</>;
@@ -301,7 +301,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
       <aside
         className={cn(
           'fixed top-0 left-0 h-dvh z-50 transition-all duration-300 ease-in-out',
-          'w-64 bg-sidebar backdrop-blur-xl border-r border-sidebar-border',
+          'w-64 bg-sidebar border-r border-sidebar-border',
           'shadow-lg flex flex-col safe-area-inset-left',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full',
           'lg:translate-x-0'
@@ -388,7 +388,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
       {/* â”€â”€ MAIN CONTENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div className="lg:ml-64 flex flex-col min-h-dvh">
         {/* Desktop Header */}
-        <header className="hidden lg:flex sticky top-0 z-20 bg-background/80 backdrop-blur-xl border-b border-border items-center justify-between px-6 py-3">
+        <header className="hidden lg:flex sticky top-0 z-20 bg-background/80 border-b border-border items-center justify-between px-6 py-3">
           <div>
             <h2 className="text-sm font-bold text-foreground">Customer Portal</h2>
             <p className="text-xs text-muted-foreground">{companyName}</p>
@@ -416,7 +416,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
               {bellOpen && (
                 <>
                   <div className="fixed inset-0 z-40 touch-none" onClick={() => setBellOpen(false)} />
-                  <div className="absolute right-0 top-full mt-2 w-80 bg-card/95 backdrop-blur-xl border border-border rounded-2xl shadow-lg z-50 overflow-hidden">
+                  <div className="absolute right-0 top-full mt-2 w-80 bg-card/95 border border-border rounded-2xl shadow-lg z-50 overflow-hidden">
                     <div className="px-4 py-3 border-b border-border flex items-center justify-between">
                       <span className="text-xs font-bold text-primary uppercase tracking-wider">Notifikasi</span>
                       <div className="flex items-center gap-1">
@@ -475,7 +475,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
               title={isDark ? 'Mode Terang' : 'Mode Gelap'}
             >
               {isDark
-                ? <Sun className="w-4 h-4 text-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.7)]" />
+                ? <Sun className="w-4 h-4 text-yellow-400 drop-" />
                 : <Moon className="w-4 h-4 text-slate-400" />
               }
             </button>
@@ -484,7 +484,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Mobile Header */}
-        <header className="lg:hidden sticky top-0 z-20 bg-background/80 backdrop-blur-xl border-b border-border shadow-sm safe-area-inset-top">
+        <header className="lg:hidden sticky top-0 z-20 bg-background/80 border-b border-border shadow-sm safe-area-inset-top">
           <div className="px-4 py-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               {/* Menu button (left side) */}
@@ -528,7 +528,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
                 {bellOpen && (
                   <>
                     <div className="fixed inset-0 z-40 touch-none" onClick={() => setBellOpen(false)} />
-                    <div className="absolute right-0 top-full mt-2 w-72 bg-card/95 backdrop-blur-xl border border-border rounded-2xl shadow-lg z-50 overflow-hidden">
+                    <div className="absolute right-0 top-full mt-2 w-72 bg-card/95 border border-border rounded-2xl shadow-lg z-50 overflow-hidden">
                       <div className="px-4 py-3 border-b border-border flex items-center justify-between">
                         <span className="text-xs font-bold text-primary uppercase tracking-wider">Notifikasi</span>
                         <div className="flex items-center gap-1">
@@ -587,7 +587,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
                 title={isDark ? 'Mode Terang' : 'Mode Gelap'}
               >
                 {isDark
-                  ? <Sun className="w-4 h-4 text-yellow-400 drop-shadow-[0_0_6px_rgba(250,204,21,0.7)]" />
+                  ? <Sun className="w-4 h-4 text-yellow-400 drop-" />
                   : <Moon className="w-4 h-4 text-slate-400" />
                 }
               </button>
@@ -602,7 +602,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
         </main>
 
         {/* ── MOBILE BOTTOM NAV ─────────────────────────────────── */}
-        <nav aria-label="Quick navigation" className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur-xl border-t border-border shadow-sm">
+        <nav aria-label="Quick navigation" className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-background/95 border-t border-border shadow-sm">
           <div className="flex items-center justify-around px-1 py-1.5 safe-area-pb">
             {[
               { href: '/customer',          icon: Home,        label: 'Beranda' },

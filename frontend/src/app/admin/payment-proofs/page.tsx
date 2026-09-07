@@ -96,7 +96,7 @@ export default function AdminPaymentProofsPage() {
   const visible = filtered.slice(0, visibleCount);
 
   const fmtRp = (v: number) => `Rp ${Number(v || 0).toLocaleString('id-ID')}`;
-  const fmtDate = (d: string) => d ? formatWIB(d, 'dd MMM') : '—';
+  const fmtDate = (d: string) => d ? formatWIB(d, 'dd MMM') : '-';
 
   return (
     <div className="space-y-6">
@@ -180,10 +180,10 @@ export default function AdminPaymentProofsPage() {
                     <tr key={proof.id} className="border-b border-border last:border-0 hover:bg-muted/30">
                       <td className="p-3">
                         <div className="font-medium text-foreground">{proof.fullname || proof.username}</div>
-                        <div className="text-xs text-muted-foreground">{proof.phone || '—'}</div>
+                        <div className="text-xs text-muted-foreground">{proof.phone || '-'}</div>
                       </td>
                       <td className="p-3">
-                        <div className="text-sm text-foreground">{proof.collector_name || '—'}</div>
+                        <div className="text-sm text-foreground">{proof.collector_name || '-'}</div>
                         <div className="text-xs text-muted-foreground">@{proof.collector_username}</div>
                       </td>
                       <td className="p-3 text-xs text-muted-foreground">{proof.invoice_number}</td>

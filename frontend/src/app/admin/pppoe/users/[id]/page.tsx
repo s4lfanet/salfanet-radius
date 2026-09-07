@@ -632,7 +632,7 @@ export default function PppoeUserDetailPage({ params }: { params: Promise<{ id: 
                 <div key={s.id} className="px-4 py-2.5 grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-0.5 text-xs hover:bg-muted/20">
                   <div>
                     <span className="text-muted-foreground">Mulai: </span>
-                    <span className="text-foreground">{s.startTime ? formatDateTime(s.startTime) : '—'}</span>
+                    <span className="text-foreground">{s.startTime ? formatDateTime(s.startTime) : '-'}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Selesai: </span>

@@ -84,11 +84,11 @@ export default function CollectorOntPage() {
                     <div className="font-medium text-foreground">{r.fullname}</div>
                     <div className="text-xs text-muted-foreground font-mono">{r.customerId || r.username}</div>
                   </td>
-                  <td className="px-3 py-3 text-xs text-muted-foreground">{r.phone || '—'}</td>
-                  <td className="px-3 py-3 text-xs text-muted-foreground max-w-[200px] truncate" title={r.address}>{r.address || '—'}</td>
-                  <td className="px-3 py-3 text-xs text-muted-foreground">{r.profileName || '—'}</td>
-                  <td className="px-3 py-3 text-xs text-muted-foreground">{r.areaName || '—'}</td>
-                  <td className="px-3 py-3 text-xs text-muted-foreground">{r.notes || '—'}</td>
+                  <td className="px-3 py-3 text-xs text-muted-foreground">{r.phone || '-'}</td>
+                  <td className="px-3 py-3 text-xs text-muted-foreground max-w-[200px] truncate" title={r.address}>{r.address || '-'}</td>
+                  <td className="px-3 py-3 text-xs text-muted-foreground">{r.profileName || '-'}</td>
+                  <td className="px-3 py-3 text-xs text-muted-foreground">{r.areaName || '-'}</td>
+                  <td className="px-3 py-3 text-xs text-muted-foreground">{r.notes || '-'}</td>
                   <td className="px-3 py-3 text-right text-xs text-muted-foreground">
                     {new Date(r.removedAt).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </td>

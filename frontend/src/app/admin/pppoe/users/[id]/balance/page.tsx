@@ -360,7 +360,7 @@ export default function BalanceManagementPage() {
             </div>
           ) : (
             transactions.map((transaction) => (
-              <div key={transaction.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-violet-500/20 p-3">
+              <div key={transaction.id} className="bg-card rounded-xl border border-border p-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                     transaction.type === 'DEPOSIT'

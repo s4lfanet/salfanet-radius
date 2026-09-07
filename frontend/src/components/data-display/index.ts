@@ -1,5 +1,5 @@
 /**
- * Data Display Components — Barrel Export
+ * Data Display Components - Barrel Export
  *
  * Shared data display components: tables, stat cards, charts, etc.
  *

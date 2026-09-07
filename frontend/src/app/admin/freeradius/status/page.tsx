@@ -253,7 +253,7 @@ export default function FreeRADIUSStatusPage() {
                             {/* Memory */}
                             <div className="bg-muted/50 rounded-lg p-4">
                                 <div className="flex items-center gap-2 mb-2">
-                                    <HardDrive className="w-4 h-4 text-purple-500" />
+                                    <HardDrive className="w-4 h-4 text-primary" />
                                     <span className="text-xs font-medium text-muted-foreground uppercase">{t('radius.memoryUsage')}</span>
                                 </div>
                                 <p className="text-lg font-bold text-foreground">{status.memoryMB?.toFixed(0) || '0'} MB</p>

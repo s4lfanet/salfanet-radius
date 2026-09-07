@@ -94,20 +94,20 @@ function LoginForm() {
 
     try {
       // Use pre-login API because NextAuth v4 sanitizes authorize() errors
-      // to "CredentialsSignin" — custom error messages never reach the client.
+      // to "CredentialsSignin" - custom error messages never reach the client.
       const data = await apiAdmin<{ error?: string; requires2FA?: boolean; token?: string }>('/api/admin/auth/pre-login', {
         method: 'POST',
         body: JSON.stringify({ username: formData.username, password: formData.password }),
       });
 
       if (data.requires2FA && data.token) {
-        // Show 2FA step inline — no page redirect, no race conditions
+        // Show 2FA step inline - no page redirect, no race conditions
         setTfaToken(data.token);
         setStep('twoFactor');
         return;
       }
 
-      // No 2FA — proceed with NextAuth
+      // No 2FA - proceed with NextAuth
       const result = await signIn('credentials', {
         username: formData.username,
         password: formData.password,
@@ -409,9 +409,9 @@ function LoginForm() {
           {/* Feature list */}
           <div className="space-y-3">
             {[
-              { color: 'bg-blue-500', text: 'Automated Billing — Isolir otomatis &amp; notifikasi WhatsApp' },
-              { color: 'bg-indigo-500', text: 'Multi-Router — Kelola banyak MikroTik dalam satu server' },
-              { color: 'bg-violet-500', text: 'Payment Gateway — QRIS, Virtual Account, dan Retail' },
+              { color: 'bg-blue-500', text: 'Automated Billing - Isolir otomatis &amp; notifikasi WhatsApp' },
+              { color: 'bg-indigo-500', text: 'Multi-Router - Kelola banyak MikroTik dalam satu server' },
+              { color: 'bg-violet-500', text: 'Payment Gateway - QRIS, Virtual Account, dan Retail' },
             ].map((item, i) => (
               <div key={i} className="flex items-center gap-3 bg-white/70 dark:bg-slate-800/60 rounded-xl px-4 py-3 border border-border/50">
                 <span className={`w-2 h-2 rounded-full flex-shrink-0 ${item.color}`} />

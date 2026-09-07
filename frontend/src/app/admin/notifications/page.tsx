@@ -252,14 +252,14 @@ export default function NotificationsPage() {
   return (
     <div className="bg-background relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
         <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
       </div>
       <div className="relative z-10 space-y-6">
       {/* Header */}
-      <div className="bg-brand-500 dark:bg-gradient-to-r dark:from-violet-500 dark:to-pink-500 rounded-xl p-4 text-white dark:shadow-[0_0_30px_rgba(139,92,246,0.3)]">
+      <div className="bg-brand-500 dark:bg-gradient-to-r dark:from-primary dark:to-pink-500 rounded-xl p-4 text-white dark:">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Bell className="w-5 h-5" />
@@ -299,12 +299,12 @@ export default function NotificationsPage() {
                 onClick={() => setCategoryFilter(category.type)}
                 className={`p-2.5 rounded-lg border-2 transition-all ${
                   isActive 
-                    ? 'bg-gradient-to-br from-violet-500/20 to-pink-500/20 border-violet-500 shadow-[0_0_20px_rgba(139,92,246,0.4)]' 
-                    : 'bg-card border-border hover:border-violet-500/50 hover:bg-card/80'
+                    ? 'bg-gradient-to-br from-primary/20 to-pink-500/20 border-violet-500 ' 
+                    : 'bg-card border-border hover:border-border hover:bg-card'
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-brand-500 drop-shadow-[0_0_6px_rgba(6,182,212,0.8)]' : 'text-muted-foreground'}`} />
+                  <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-brand-500 drop-' : 'text-muted-foreground'}`} />
                   <div className="flex-1 text-left min-w-0">
                     <p className={`text-[10px] font-semibold line-clamp-1 ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>
                       {t(category.key)}
@@ -324,7 +324,7 @@ export default function NotificationsPage() {
           <div className="mt-4 pt-4 border-t border-border">
             <button
               onClick={markAllAsRead}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-500 to-brand-500 hover:from-green-500/90 hover:to-brand-500/90 text-[#0a0118] text-sm font-bold rounded-lg transition-all shadow-[0_0_25px_rgba(0,255,136,0.4)]"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-500 to-brand-500 hover:from-green-500/90 hover:to-brand-500/90 text-[#0a0118] text-sm font-bold rounded-lg transition-all "
             >
               <CheckCheck className="w-5 h-5" />
               {t('notifications.markAllRead')} ({unreadCount})

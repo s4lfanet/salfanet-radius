@@ -62,7 +62,7 @@ export default function CollectorProofsPage() {
   const visible = filtered.slice(0, visibleCount);
 
   const fmtRp = (v: number) => `Rp ${Number(v || 0).toLocaleString('id-ID')}`;
-  const fmtDate = (d: string) => d ? formatWIB(d, 'dd MMM') : '—';
+  const fmtDate = (d: string) => d ? formatWIB(d, 'dd MMM') : '-';
 
   return (
     <div className="space-y-6">
@@ -150,10 +150,10 @@ export default function CollectorProofsPage() {
                         <div className="font-medium text-foreground">{proof.fullname || proof.username}</div>
                         <div className="text-xs text-muted-foreground font-mono">{proof.customerId || proof.username}</div>
                       </td>
-                      <td className="px-3 py-3 text-xs text-muted-foreground">{proof.phone || '—'}</td>
-                      <td className="px-3 py-3 text-xs text-muted-foreground max-w-[200px] truncate" title={proof.address}>{proof.address || '—'}</td>
-                      <td className="px-3 py-3 text-xs text-muted-foreground">{proof.profileName || '—'}</td>
-                      <td className="px-3 py-3 text-xs text-muted-foreground">{proof.areaName || '—'}</td>
+                      <td className="px-3 py-3 text-xs text-muted-foreground">{proof.phone || '-'}</td>
+                      <td className="px-3 py-3 text-xs text-muted-foreground max-w-[200px] truncate" title={proof.address}>{proof.address || '-'}</td>
+                      <td className="px-3 py-3 text-xs text-muted-foreground">{proof.profileName || '-'}</td>
+                      <td className="px-3 py-3 text-xs text-muted-foreground">{proof.areaName || '-'}</td>
                       <td className="px-3 py-3 text-xs text-muted-foreground">{proof.invoice_number}</td>
                       <td className="px-3 py-3 font-semibold text-foreground">{fmtRp(proof.amount)}</td>
                       <td className="px-3 py-3">

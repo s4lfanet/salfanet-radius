@@ -134,8 +134,8 @@ export default function CustomerSuspendPage() {
       </div>
 
       {/* Info Box */}
-      <div className="bg-muted/80 border border-violet-500/30 rounded-xl p-4 text-sm text-muted-foreground/70 space-y-1">
-        <p className="flex items-start gap-2"><AlertCircle className="w-4 h-4 text-violet-500 shrink-0 mt-0.5" />
+      <div className="bg-muted/80 border border-border rounded-xl p-4 text-sm text-muted-foreground/70 space-y-1">
+        <p className="flex items-start gap-2"><AlertCircle className="w-4 h-4 text-primary shrink-0 mt-0.5" />
           <span>Suspend sementara menghentikan layanan internet untuk periode tertentu (maks. 90 hari).</span></p>
         <p className="pl-6">? Tagihan tetap berjalan selama suspend.</p>
         <p className="pl-6">? Permintaan perlu disetujui oleh admin terlebih dahulu.</p>
@@ -206,7 +206,7 @@ export default function CustomerSuspendPage() {
         </CyberCard>
       )}
 
-      {/* Request Form — only show if no active PENDING/APPROVED request */}
+      {/* Request Form - only show if no active PENDING/APPROVED request */}
       {(!current || ['REJECTED', 'CANCELLED', 'COMPLETED'].includes(current.status)) && (
         <CyberCard className="p-4 space-y-4">
           <p className="text-sm font-semibold text-brand-500">Ajukan Suspend Baru</p>
@@ -215,14 +215,14 @@ export default function CustomerSuspendPage() {
             <div>
               <label className="text-xs text-muted-foreground/60 mb-1 block">Tanggal Mulai *</label>
               <div className="relative">
-                <Calendar className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-violet-500/60" />
+                <Calendar className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-primary/60" />
                 <input
                   type="date"
                   min={todayStr}
                   value={form.startDate}
                   onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
-                  className={`[color-scheme:light] dark:[color-scheme:dark] w-full pl-8 pr-2 py-2 bg-card/80 border rounded-lg text-sm text-white focus:outline-none ${
-                    errors.startDate ? 'border-red-500' : 'border-violet-500/30 focus:border-violet-500'
+                  className={`[color-scheme:light] dark:[color-scheme:dark] w-full pl-8 pr-2 py-2 bg-card border rounded-lg text-sm text-white focus:outline-none ${
+                    errors.startDate ? 'border-red-500' : 'border-border focus:border-violet-500'
                   }`}
                 />
               </div>
@@ -231,14 +231,14 @@ export default function CustomerSuspendPage() {
             <div>
               <label className="text-xs text-muted-foreground/60 mb-1 block">Tanggal Selesai *</label>
               <div className="relative">
-                <Calendar className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-violet-500/60" />
+                <Calendar className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-primary/60" />
                 <input
                   type="date"
                   min={form.startDate || todayStr}
                   value={form.endDate}
                   onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
-                  className={`[color-scheme:light] dark:[color-scheme:dark] w-full pl-8 pr-2 py-2 bg-card/80 border rounded-lg text-sm text-white focus:outline-none ${
-                    errors.endDate ? 'border-red-500' : 'border-violet-500/30 focus:border-violet-500'
+                  className={`[color-scheme:light] dark:[color-scheme:dark] w-full pl-8 pr-2 py-2 bg-card border rounded-lg text-sm text-white focus:outline-none ${
+                    errors.endDate ? 'border-red-500' : 'border-border focus:border-violet-500'
                   }`}
                 />
               </div>
@@ -253,7 +253,7 @@ export default function CustomerSuspendPage() {
               onChange={e => setForm(f => ({ ...f, reason: e.target.value }))}
               placeholder="Contoh: Mudik Lebaran, renovasi rumah, perjalanan dinas..."
               rows={3}
-              className="w-full px-3 py-2 bg-card/80 border border-violet-500/30 rounded-lg text-sm text-white placeholder-muted-foreground/30 focus:outline-none focus:border-violet-500 resize-none"
+              className="w-full px-3 py-2 bg-card border border-border rounded-lg text-sm text-white placeholder-muted-foreground/30 focus:outline-none focus:border-violet-500 resize-none"
             />
           </div>
 

@@ -133,13 +133,13 @@ add name=isolir \\
     use-mpls=no use-compression=no use-encryption=no \\
     comment="Profile untuk user yang diisolir"`;
 
-  // Script 2b: RADIUS Attributes — address-list agar IP langsung masuk ke isolir list
+  // Script 2b: RADIUS Attributes - address-list agar IP langsung masuk ke isolir list
   // Ini penting! Tanpa ini, user yang belum reconnect bisa masih akses internet penuh.
   const addressListScript = `/ip firewall address-list
 # Catatan: address-list 'isolir' akan diisi otomatis oleh RADIUS via Mikrotik-Address-List
 # attribute saat user login ulang dengan profile isolir.
 # Untuk user yang SEDANG ONLINE saat diisolir, sistem menambahkan IP secara langsung via API.
-# Script ini hanya untuk verifikasi — tidak perlu dijalankan manual.
+# Script ini hanya untuk verifikasi - tidak perlu dijalankan manual.
 
 # Cek isi address-list isolir saat ini:
 /ip firewall address-list print where list=isolir
@@ -168,7 +168,7 @@ add name=isolir \\
 # RADIUS akan otomatis memasukkan IP user ke address-list 'isolir' via Mikrotik-Address-List attribute.
 # Sistem juga menambahkan IP via API saat isolasi aktif, tanpa menunggu reconnect.
 
-# [1] Allow ESTABLISHED & RELATED — return traffic dari payment gateway
+# [1] Allow ESTABLISHED & RELATED - return traffic dari payment gateway
 add chain=forward \\
     src-address-list=isolir \\
     connection-state=established,related \\
@@ -380,20 +380,20 @@ ${firewallNatScript}
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div><div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div><div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div><div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div></div>
-        <Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)] relative z-10" />
+        <div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div><div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div><div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div><div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div></div>
+        <Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop- relative z-10" />
       </div>
     );
   }
 
   return (
     <div className="bg-background relative">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div><div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div><div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div><div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div></div>
+      <div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div><div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div><div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div><div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div></div>
       <div className="relative z-10 max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-4">
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)] mb-1.5">
-            <Server className="w-6 h-6 text-brand-500 dark:text-brand-500 dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)] inline mr-2" />
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop- mb-1.5">
+            <Server className="w-6 h-6 text-brand-500 dark:text-brand-500 dark:drop- inline mr-2" />
             {t('isolation.mikrotikTitle')}
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
@@ -414,11 +414,11 @@ ${firewallNatScript}
           </div>
         </div>
 
-        {/* ⚠️ IMPORTANT WARNING BOX — only shown when server IP is not explicitly configured */}
+        {/* ⚠️ IMPORTANT WARNING BOX - only shown when server IP is not explicitly configured */}
         {!settings.isolationServerIp && (
         <div className="bg-gradient-to-r from-red-500/10 to-pink-500/10 border-2 border-red-500/50 rounded-lg p-4 mb-4">
           <div className="flex items-start gap-3">
-            <AlertCircle className="w-6 h-6 text-[#ff6b8a] flex-shrink-0 mt-0.5 drop-shadow-[0_0_10px_rgba(255,68,102,0.6)]" />
+            <AlertCircle className="w-6 h-6 text-[#ff6b8a] flex-shrink-0 mt-0.5 drop-" />
             <div className="flex-1">
               <h3 className="font-bold text-foreground mb-2 flex items-center gap-2">
                 ⚠️ Server IP belum dikonfigurasi!
@@ -465,7 +465,7 @@ ${firewallNatScript}
               <div>
                 <span className="text-muted-foreground dark:text-muted-foreground">Server IP (NAT):</span>
                 <p className={`font-mono font-semibold ${settings.isolationServerIp ? 'text-green-500' : 'text-amber-500'}`}>
-                  {settings.isolationServerIp || 'Belum diset — atur di pengaturan isolasi'}
+                  {settings.isolationServerIp || 'Belum diset - atur di pengaturan isolasi'}
                 </p>
               </div>
               <div>

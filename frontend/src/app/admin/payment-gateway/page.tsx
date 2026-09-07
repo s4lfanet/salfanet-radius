@@ -252,14 +252,14 @@ export default function PaymentGatewayPage() {
   return (
     <div className="bg-background relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
         <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
       </div>
       <div className="relative z-10 space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-violet-500 to-pink-500 rounded-xl p-4 text-white shadow-[0_0_30px_rgba(139,92,246,0.3)]">
+      <div className="bg-gradient-to-r from-primary to-pink-500 rounded-xl p-4 text-white ">
         <div className="flex items-center gap-2">
           <CreditCard className="w-5 h-5" />
           <div>
@@ -369,7 +369,7 @@ export default function PaymentGatewayPage() {
                   <div className="text-center py-6 text-muted-foreground text-xs">{t('paymentGateway.noLogs')}</div>
                 ) : (
                   webhookLogs.map((log) => (
-                    <div key={log.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-violet-500/20 p-3">
+                    <div key={log.id} className="bg-card rounded-xl border border-border p-3">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-mono text-foreground truncate">{log.orderId}</p>
@@ -641,7 +641,7 @@ export default function PaymentGatewayPage() {
               <div className="flex items-center justify-between p-2 bg-muted rounded-lg">
                 <div>
                   <p className="text-xs font-medium">QRIS Mandiri (Tanpa Pihak Ke-3)</p>
-                  <p className="text-[10px] text-muted-foreground">Gunakan QRIS dari rekening bank Anda sendiri — tanpa biaya admin</p>
+                  <p className="text-[10px] text-muted-foreground">Gunakan QRIS dari rekening bank Anda sendiri - tanpa biaya admin</p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input type="checkbox" checked={qrisForm.enabled} onChange={(e) => setQrisForm({ ...qrisForm, enabled: e.target.checked })} className="sr-only peer" />
@@ -717,7 +717,7 @@ export default function PaymentGatewayPage() {
               <div className="p-2.5 bg-muted rounded-lg space-y-2">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[11px] font-semibold">Device Key — Android Listener (Opsional)</p>
+                    <p className="text-[11px] font-semibold">Device Key - Android Listener (Opsional)</p>
                     <p className="text-[10px] text-muted-foreground">Jika diisi, pembayaran QRIS otomatis terdeteksi via aplikasi Android QrisListener.</p>
                   </div>
                 </div>
@@ -747,8 +747,8 @@ export default function PaymentGatewayPage() {
               <div className="p-2.5 bg-muted rounded-lg space-y-2">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[11px] font-semibold">Device Secret — V2 Signature (Opsional)</p>
-                    <p className="text-[10px] text-muted-foreground">HMAC-SHA256 signing key untuk verifikasi notifikasi otomatis. Tidak pernah dikirim ke server oleh APK — hanya dipakai untuk menandatangani payload.</p>
+                    <p className="text-[11px] font-semibold">Device Secret - V2 Signature (Opsional)</p>
+                    <p className="text-[10px] text-muted-foreground">HMAC-SHA256 signing key untuk verifikasi notifikasi otomatis. Tidak pernah dikirim ke server oleh APK - hanya dipakai untuk menandatangani payload.</p>
                   </div>
                 </div>
                 <div className="flex gap-2">

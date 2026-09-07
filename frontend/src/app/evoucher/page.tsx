@@ -87,11 +87,11 @@ export default function EVoucherPage() {
       <div className="min-h-dvh bg-muted flex items-center justify-center relative overflow-hidden">
         {/* Background Effects */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-violet-500/35 rounded-full blur-[100px]" />
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[100px]" />
           <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-pink-500/25 rounded-full blur-[100px]" />
           <div className="absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] w-[60%] h-[60%] bg-brand-500/15 rounded-full blur-[150px]" />
         </div>
-        <Loader2 className="w-6 h-6 animate-spin text-brand-500 drop-shadow-[0_0_15px_rgba(6,182,212,0.8)] relative z-10" />
+        <Loader2 className="w-6 h-6 animate-spin text-brand-500 drop- relative z-10" />
       </div>
     );
   }
@@ -100,7 +100,7 @@ export default function EVoucherPage() {
     <div className="min-h-dvh bg-muted flex flex-col p-4 relative overflow-hidden">
       {/* Cyberpunk Background Effects - Neon Purple Theme */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-violet-500/35 rounded-full blur-[100px]" />
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/10 rounded-full blur-[100px]" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-pink-500/25 rounded-full blur-[100px]" />
         <div className="absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] w-[60%] h-[60%] bg-brand-500/15 rounded-full blur-[150px]" />
         {/* Grid pattern - Purple tint */}
@@ -111,10 +111,10 @@ export default function EVoucherPage() {
       <div className="max-w-5xl mx-auto px-4 mb-5 relative z-10">
         {/* Title Section */}
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-[#281441]/80 border-2 border-violet-500/50 rounded-xl shadow-[0_0_40px_rgba(139,92,246,0.5)] mb-3 backdrop-blur-md">
-            <Wifi className="w-7 h-7 text-violet-500 drop-shadow-[0_0_15px_rgba(139,92,246,0.9)]" />
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-[#281441]/80 border border-border rounded-xl  mb-3 backdrop-blur-md">
+            <Wifi className="w-7 h-7 text-primary drop-" />
           </div>
-          <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-brand-500 via-white to-pink-500 drop-shadow-[0_0_25px_rgba(139,92,246,0.6)]">Beli Voucher WiFi</h1>
+          <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-brand-500 via-white to-pink-500 drop-">Beli Voucher WiFi</h1>
           <p className="text-sm text-muted-foreground/80 tracking-wide">Pilih paket sesuai kebutuhan Anda</p>
         </div>
       </div>
@@ -124,14 +124,14 @@ export default function EVoucherPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* Packages */}
           <div className="lg:col-span-2">
-            <h2 className="text-base font-bold text-transparent bg-clip-text bg-gradient-to-r from-brand-500 to-white mb-4 flex items-center gap-2 drop-shadow-[0_0_15px_rgba(6,182,212,0.6)]">
-              <Zap className="w-5 h-5 text-brand-500 drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]" />
+            <h2 className="text-base font-bold text-transparent bg-clip-text bg-gradient-to-r from-brand-500 to-white mb-4 flex items-center gap-2 drop-">
+              <Zap className="w-5 h-5 text-brand-500 drop-" />
               Paket Tersedia
             </h2>
             
             {profiles.length === 0 ? (
-              <div className="bg-[#281441]/50 backdrop-blur-md border-2 border-dashed border-violet-500/40 rounded-lg p-6 text-center">
-                <Wifi className="w-8 h-8 text-violet-500/60 mx-auto mb-2" />
+              <div className="bg-[#281441]/50 backdrop-blur-md border-2 border-dashed border-border rounded-lg p-6 text-center">
+                <Wifi className="w-8 h-8 text-primary/60 mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground/60">Belum ada paket tersedia</p>
               </div>
             ) : (
@@ -140,37 +140,37 @@ export default function EVoucherPage() {
                   <div
                     key={profile.id}
                     onClick={() => setSelectedProfile(profile)}
-                    className={`bg-card/80 backdrop-blur-xl rounded-lg p-4 cursor-pointer transition-all ${
+                    className={`bg-card rounded-lg p-4 cursor-pointer transition-all ${
                       selectedProfile?.id === profile.id 
-                        ? 'border-2 border-brand-500 shadow-[0_0_30px_rgba(6,182,212,0.4)]' 
-                        : 'border-2 border-violet-500/30 hover:border-brand-500/50 hover:shadow-[0_0_20px_rgba(6,182,212,0.2)]'
+                        ? 'border-2 border-brand-500 ' 
+                        : 'border border-border hover:border-brand-500/50 hover:'
                     }`}
                   >
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex-1">
-                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-brand-500/10 text-brand-500 border border-brand-500/50 text-[11px] font-semibold rounded-md mb-2 shadow-[0_0_8px_rgba(6,182,212,0.3)]">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-brand-500/10 text-brand-500 border border-brand-500/50 text-[11px] font-semibold rounded-md mb-2 ">
                           <Clock className="w-3 h-3" />
                           {formatValidity(profile.validityValue, profile.validityUnit)}
                         </span>
                         <h3 className="text-base font-bold text-white line-clamp-1 mb-1 ">{profile.name}</h3>
                         <div className="flex items-center text-xs text-muted-foreground/80 mt-1">
-                          <Clock className="w-3.5 h-3.5 mr-1 text-brand-500 drop-shadow-[0_0_6px_rgba(6,182,212,0.6)]" />
+                          <Clock className="w-3.5 h-3.5 mr-1 text-brand-500 drop-" />
                           {formatValidity(profile.validityValue, profile.validityUnit)}
                         </div>
                       </div>
                       {selectedProfile?.id === profile.id && (
-                        <CheckCircle className="w-5 h-5 text-brand-500 drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]" />
+                        <CheckCircle className="w-5 h-5 text-brand-500 drop-" />
                       )}
                     </div>
-                    <div className="pt-3 border-t border-violet-500/30 flex justify-between items-center">
+                    <div className="pt-3 border-t border-border flex justify-between items-center">
                       <div>
                         <p className="text-[11px] text-muted-foreground/60 font-medium uppercase tracking-wider">Harga</p>
-                        <p className="text-base font-bold text-brand-500 drop-shadow-[0_0_8px_rgba(6,182,212,0.6)]">{formatCurrency(profile.sellingPrice)}</p>
+                        <p className="text-base font-bold text-brand-500 drop-">{formatCurrency(profile.sellingPrice)}</p>
                       </div>
                       <button className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
                         selectedProfile?.id === profile.id 
-                          ? 'bg-brand-500 text-black shadow-[0_0_20px_rgba(6,182,212,0.6)]' 
-                          : 'border-2 border-brand-500/50 text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 hover:shadow-[0_0_15px_rgba(6,182,212,0.4)]'
+                          ? 'bg-brand-500 text-black ' 
+                          : 'border-2 border-brand-500/50 text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 hover:'
                       }`}>
                         {selectedProfile?.id === profile.id ? 'Dipilih' : 'Pilih'}
                       </button>
@@ -183,36 +183,36 @@ export default function EVoucherPage() {
 
           {/* Order Form */}
           <div>
-            <div className="bg-card/80 backdrop-blur-xl border-2 border-violet-500/30 rounded-lg shadow-[0_0_30px_rgba(139,92,246,0.15)] sticky top-4">
-              <div className="p-4 border-b-2 border-violet-500/30">
-                <h3 className="flex items-center gap-2 text-base font-bold text-violet-500 drop-shadow-[0_0_8px_rgba(139,92,246,0.6)]">
-                  <ShoppingCart className="w-5 h-5 text-violet-500 drop-shadow-[0_0_8px_rgba(139,92,246,0.8)]" />
+            <div className="bg-card border border-border rounded-lg  sticky top-4">
+              <div className="p-4 border-b-2 border-border">
+                <h3 className="flex items-center gap-2 text-base font-bold text-primary drop-">
+                  <ShoppingCart className="w-5 h-5 text-primary drop-" />
                   Ringkasan Pesanan
                 </h3>
               </div>
               <div className="p-4 space-y-4">
                 {selectedProfile ? (
-                  <div className="bg-violet-500/10 border-2 border-violet-500/30 rounded-lg p-3 shadow-[0_0_15px_rgba(139,92,246,0.2)]">
-                    <p className="text-xs font-bold text-brand-500 uppercase mb-2 tracking-wider drop-shadow-[0_0_6px_rgba(6,182,212,0.6)]">Paket Dipilih</p>
+                  <div className="bg-primary/10 border border-border rounded-lg p-3 ">
+                    <p className="text-xs font-bold text-brand-500 uppercase mb-2 tracking-wider drop-">Paket Dipilih</p>
                     <p className="text-base font-bold text-white mb-1 ">{selectedProfile.name}</p>
                     <p className="text-xs text-muted-foreground/80">
                       {formatValidity(selectedProfile.validityValue, selectedProfile.validityUnit)}
                     </p>
-                    <div className="pt-3 mt-3 border-t-2 border-violet-500/30 flex justify-between items-baseline">
-                      <span className="text-xs text-brand-500 font-semibold uppercase tracking-wide drop-shadow-[0_0_6px_rgba(6,182,212,0.5)]">Total Bayar</span>
-                      <span className="text-xl font-bold text-brand-500 drop-shadow-[0_0_10px_rgba(6,182,212,0.8)]">{formatCurrency(selectedProfile.sellingPrice)}</span>
+                    <div className="pt-3 mt-3 border-t-2 border-border flex justify-between items-baseline">
+                      <span className="text-xs text-brand-500 font-semibold uppercase tracking-wide drop-">Total Bayar</span>
+                      <span className="text-xl font-bold text-brand-500 drop-">{formatCurrency(selectedProfile.sellingPrice)}</span>
                     </div>
                   </div>
                 ) : (
-                  <div className="bg-card/50 border-2 border-dashed border-violet-500/30 rounded-lg p-5 text-center">
-                    <Wifi className="w-8 h-8 text-violet-500/60 mx-auto mb-2" />
+                  <div className="bg-card/50 border-2 border-dashed border-border rounded-lg p-5 text-center">
+                    <Wifi className="w-8 h-8 text-primary/60 mx-auto mb-2" />
                     <p className="text-sm text-muted-foreground/60 font-medium">Pilih paket terlebih dahulu</p>
                   </div>
                 )}
 
                 <form onSubmit={handlePurchase} className="space-y-4">
                   <div>
-                    <label className="flex items-center gap-1.5 text-xs font-semibold text-brand-500 mb-2 uppercase tracking-wide drop-shadow-[0_0_6px_rgba(6,182,212,0.5)]">
+                    <label className="flex items-center gap-1.5 text-xs font-semibold text-brand-500 mb-2 uppercase tracking-wide drop-">
                       <User className="w-3.5 h-3.5 text-brand-500" /> Nama Lengkap *
                     </label>
                     <input
@@ -221,12 +221,12 @@ export default function EVoucherPage() {
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       required
                       placeholder="Masukkan nama Anda"
-                      className="w-full px-3 py-2 text-sm border-2 border-violet-500/30 rounded-lg bg-card/50 text-white placeholder:text-muted-foreground/40 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.3)] transition"
+                      className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-card/50 text-white placeholder:text-muted-foreground/40 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 focus: transition"
                     />
                   </div>
 
                   <div>
-                    <label className="flex items-center gap-1.5 text-xs font-semibold text-brand-500 mb-2 uppercase tracking-wide drop-shadow-[0_0_6px_rgba(6,182,212,0.5)]">
+                    <label className="flex items-center gap-1.5 text-xs font-semibold text-brand-500 mb-2 uppercase tracking-wide drop-">
                       <Bell className="w-3.5 h-3.5 text-brand-500" /> Kirim Notifikasi Melalui
                     </label>
                     <div className="space-y-1.5">
@@ -265,7 +265,7 @@ export default function EVoucherPage() {
 
                   {(formData.notificationMethod === 'whatsapp' || formData.notificationMethod === 'both') && (
                     <div>
-                      <label className="flex items-center gap-1.5 text-xs font-semibold text-brand-500 mb-2 uppercase tracking-wide drop-shadow-[0_0_6px_rgba(6,182,212,0.5)]">
+                      <label className="flex items-center gap-1.5 text-xs font-semibold text-brand-500 mb-2 uppercase tracking-wide drop-">
                         <Phone className="w-3.5 h-3.5 text-brand-500" /> Nomor WhatsApp *
                       </label>
                       <input
@@ -274,14 +274,14 @@ export default function EVoucherPage() {
                         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                         required
                         placeholder="08123456789"
-                        className="w-full px-3 py-2 text-sm border-2 border-violet-500/30 rounded-lg bg-card/50 text-white placeholder:text-muted-foreground/40 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.3)] transition"
+                        className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-card/50 text-white placeholder:text-muted-foreground/40 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 focus: transition"
                       />
                     </div>
                   )}
 
                   {(formData.notificationMethod === 'email' || formData.notificationMethod === 'both') && (
                     <div>
-                      <label className="flex items-center gap-1.5 text-xs font-semibold text-brand-500 mb-2 uppercase tracking-wide drop-shadow-[0_0_6px_rgba(6,182,212,0.5)]">
+                      <label className="flex items-center gap-1.5 text-xs font-semibold text-brand-500 mb-2 uppercase tracking-wide drop-">
                         <Mail className="w-3.5 h-3.5 text-brand-500" /> Email *
                       </label>
                       <input
@@ -290,7 +290,7 @@ export default function EVoucherPage() {
                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         required
                         placeholder="email@contoh.com"
-                        className="w-full px-3 py-2 text-sm border-2 border-violet-500/30 rounded-lg bg-card/50 text-white placeholder:text-muted-foreground/40 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 focus:shadow-[0_0_10px_rgba(6,182,212,0.3)] transition"
+                        className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-card/50 text-white placeholder:text-muted-foreground/40 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 focus: transition"
                       />
                     </div>
                   )}
@@ -298,7 +298,7 @@ export default function EVoucherPage() {
                   <button
                     type="submit"
                     disabled={!selectedProfile || purchasing}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-brand-500 hover:bg-brand-500/90 disabled:bg-violet-500/20 disabled:cursor-not-allowed disabled:shadow-none disabled:text-muted-foreground/40 text-black font-bold rounded-lg transition-all shadow-[0_0_20px_rgba(6,182,212,0.5)] hover:shadow-[0_0_30px_rgba(6,182,212,0.7)] text-sm"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-brand-500 hover:bg-brand-500/90 disabled:bg-primary/10 disabled:cursor-not-allowed disabled:shadow-none disabled:text-muted-foreground/40 text-black font-bold rounded-lg transition-all  hover: text-sm"
                   >
                     {purchasing ? (
                       <><Loader2 className="w-5 h-5 animate-spin" />Memproses...</>

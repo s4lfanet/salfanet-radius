@@ -338,7 +338,7 @@ export default function CronSettingsPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl" />
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
           <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl" />
         </div>
         <Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 relative z-10" />
@@ -351,7 +351,7 @@ export default function CronSettingsPage() {
   return (
     <div className="bg-background relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl" />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
         <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl" />
         <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl" />
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]" />
@@ -615,7 +615,7 @@ export default function CronSettingsPage() {
               ) : filteredHistory.map((item) => {
                 const duration = item.completedAt ? Math.round((new Date(item.completedAt).getTime() - new Date(item.startedAt).getTime()) / 1000) : null;
                 return (
-                  <div key={item.id} className="bg-card/80 border border-border rounded-xl p-3">
+                  <div key={item.id} className="bg-card border border-border rounded-xl p-3">
                     <div className="flex items-center justify-between mb-2">
                       <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground rounded">{typeLabels[item.type] || item.type}</span>
                       {getStatusBadge(item.status)}

@@ -114,7 +114,7 @@ export class BluetoothPrinter {
   private nativeBridge: Window['AndroidBluetoothPrinter'] | null = null;
 
   /**
-   * Check if Bluetooth printing is available — either Web Bluetooth or native Android bridge
+   * Check if Bluetooth printing is available - either Web Bluetooth or native Android bridge
    */
   static isSupported(): boolean {
     if (typeof window !== 'undefined' && window.AndroidBluetoothPrinter) {
@@ -125,7 +125,7 @@ export class BluetoothPrinter {
 
   /**
    * Connect to a thermal printer.
-   * In Android APK: uses native bridge — shows bonded devices, user selects one.
+   * In Android APK: uses native bridge - shows bonded devices, user selects one.
    * In browser: uses Web Bluetooth device picker.
    */
   async connect(): Promise<boolean> {
@@ -232,7 +232,7 @@ export class BluetoothPrinter {
       return true;
     }
 
-    // Multiple candidates — prompt user to select
+    // Multiple candidates - prompt user to select
     const deviceList = candidates.map((d, i) => `${i + 1}. ${d.name}`).join('\n');
     const selection = prompt(`Pilih printer Bluetooth:\n\n${deviceList}`);
     if (!selection) throw new Error('Tidak ada printer yang dipilih');
@@ -289,12 +289,12 @@ export class BluetoothPrinter {
     const commands: number[] = [];
 
     // Initialize printer
-    commands.push(ESC, 0x40); // ESC @ — init
-    commands.push(ESC, 0x21, 0x00); // ESC ! — normal font
+    commands.push(ESC, 0x40); // ESC @ - init
+    commands.push(ESC, 0x21, 0x00); // ESC ! - normal font
 
     // Company name (centered, bold, double height)
-    commands.push(ESC, 0x61, 0x01); // ESC a 1 — center
-    commands.push(ESC, 0x21, 0x30); // ESC ! 0x30 — double height + width + bold
+    commands.push(ESC, 0x61, 0x01); // ESC a 1 - center
+    commands.push(ESC, 0x21, 0x30); // ESC ! 0x30 - double height + width + bold
     commands.push(...encoder.encode(data.company.name));
     commands.push(LF);
     commands.push(ESC, 0x21, 0x00); // Reset font
@@ -420,7 +420,7 @@ export class BluetoothPrinter {
 
     // Feed and cut
     commands.push(LF, LF, LF, LF); // Feed 4 lines
-    commands.push(GS, 0x56, 0x00); // GS V 0 — partial cut
+    commands.push(GS, 0x56, 0x00); // GS V 0 - partial cut
 
     await this.write(new Uint8Array(commands));
   }

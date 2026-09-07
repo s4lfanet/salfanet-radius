@@ -73,12 +73,12 @@ export default function HotspotSessionsPage() {
   const [pageSize, setPageSize] = useState<number>(25);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  // Sessions query — 10s polling for live bytes from MikroTik API
+  // Sessions query - 10s polling for live bytes from MikroTik API
   const sessionsParams: Record<string, unknown> = {
     page: currentPage,
     limit: pageSize,
     type: 'hotspot', // Force Hotspot only
-    // live traffic disabled — CPU optimization, only need online/offline status
+    // live traffic disabled - CPU optimization, only need online/offline status
   };
   if (routerFilter) sessionsParams.routerId = routerFilter;
   if (searchFilter) sessionsParams.search = searchFilter;
@@ -89,7 +89,7 @@ export default function HotspotSessionsPage() {
     pagination?: Pagination;
   }>('/api/sessions', {
     params: sessionsParams,
-    // 10 detik — live bytes dari MikroTik API
+    // 10 detik - live bytes dari MikroTik API
     refetchInterval: 10000,
     placeholderData: 'keepPreviousData',
     queryOptions: { refetchOnWindowFocus: true },
@@ -103,7 +103,7 @@ export default function HotspotSessionsPage() {
   const { data: routersData } = useApiQuery<{ routers?: Router[] }>('/api/network/routers');
   const routers = routersData?.routers || [];
 
-  // Sync mutation — invalidates sessions query after success
+  // Sync mutation - invalidates sessions query after success
   const syncMutation = useApiMutation<unknown, undefined>(
     '/api/sessions/sync?type=hotspot',
     {
@@ -113,7 +113,7 @@ export default function HotspotSessionsPage() {
   );
   const syncing = syncMutation.isPending;
 
-  // Disconnect mutation — invalidates sessions query after success
+  // Disconnect mutation - invalidates sessions query after success
   const disconnectMutation = useApiMutation<{ success: boolean; disconnected?: number; error?: string }, { sessionIds: string[] }>(
     '/api/sessions/disconnect',
     {
@@ -213,7 +213,7 @@ export default function HotspotSessionsPage() {
   return (
     <div className="bg-background relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
         <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
@@ -222,7 +222,7 @@ export default function HotspotSessionsPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)] flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop- flex items-center gap-2">
               <WifiOff className="w-5 h-5 text-pink-500" />
               {t('sessions.hotspotSessions')}
             </h1>
@@ -250,11 +250,11 @@ export default function HotspotSessionsPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition-all">
             <p className="text-xs text-brand-500 uppercase tracking-wide">{t('sessions.activeSessions')}</p>
             <p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{stats?.hotspot || 0}</p>
           </div>
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition-all">
             <p className="text-xs text-brand-500 uppercase tracking-wide">{t('sessions.router')}</p>
             <p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{routers.length || '-'}</p>
           </div>

@@ -228,7 +228,7 @@ export default function VpScriptsPage() {
             VP Scripts (GenieACS)
           </h1>
           <p className="text-sm text-muted-foreground">
-            Kelola Virtual Parameter scripts — disimpan di Prisma, otomatis sync ke GenieACS NBI
+            Kelola Virtual Parameter scripts - disimpan di Prisma, otomatis sync ke GenieACS NBI
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -333,16 +333,16 @@ export default function VpScriptsPage() {
               items.map((vp) => (
                 <tr key={vp._id} className="hover:bg-accent/50">
                   <td className="px-4 py-3">
-                    <span className="font-mono font-medium text-purple-700 dark:text-purple-400">
+                    <span className="font-mono font-medium text-purple-700 dark:text-primary">
                       {vp._id}
                     </span>
                   </td>
                   <td className="px-4 py-3 hidden md:table-cell text-muted-foreground text-xs">
-                    {vp.description || <span className="italic">—</span>}
+                    {vp.description || <span className="italic">-</span>}
                   </td>
                   <td className="px-4 py-3 hidden lg:table-cell">
                     <code className="text-xs text-muted-foreground font-mono">
-                      {(vp.script || '').split('\n').find((l) => l.trim() && !l.startsWith('/'))?.slice(0, 70) || '—'}
+                      {(vp.script || '').split('\n').find((l) => l.trim() && !l.startsWith('/'))?.slice(0, 70) || '-'}
                     </code>
                   </td>
                   <td className="px-4 py-3">

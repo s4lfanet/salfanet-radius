@@ -55,7 +55,7 @@ interface Category {
 const STATUS_COLORS: Record<string, string> = {
   OPEN:             'bg-blue-500/10 text-blue-400 border-blue-500/30',
   IN_PROGRESS:      'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
-  WAITING_CUSTOMER: 'bg-purple-500/10 text-purple-400 border-purple-500/30',
+  WAITING_CUSTOMER: 'bg-primary/10 text-primary border-border',
   RESOLVED:         'bg-green-500/10 text-green-400 border-green-500/30',
   CLOSED:           'bg-slate-500/10 text-slate-400 border-slate-500/30',
 };
@@ -271,7 +271,7 @@ export default function AgentTicketsPage() {
           </button>
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-violet-600 to-cyan-600 text-white shadow-sm hover:shadow-md transition-all"
+            className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-primary to-cyan-600 text-white shadow-sm hover:shadow-md transition-all"
           >
             <Plus className="w-3.5 h-3.5" />
             Buat Tiket
@@ -283,7 +283,7 @@ export default function AgentTicketsPage() {
       {showForm && (
         <div className="rounded-2xl bg-card border border-border shadow-sm p-5 space-y-4">
           <h2 className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2">
-            <TicketPlus className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+            <TicketPlus className="w-4 h-4 text-violet-600 dark:text-primary" />
             Buat Tiket Baru
           </h2>
 
@@ -395,7 +395,7 @@ export default function AgentTicketsPage() {
             <button
               onClick={handleCreate}
               disabled={creating}
-              className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-violet-600 to-cyan-600 text-white disabled:opacity-60 shadow-sm transition"
+              className="flex-1 flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-primary to-cyan-600 text-white disabled:opacity-60 shadow-sm transition"
             >
               {creating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
               {creating ? 'Mengirim...' : 'Kirim Tiket'}
@@ -412,7 +412,7 @@ export default function AgentTicketsPage() {
             onClick={() => handleFilterChange(val)}
             className={`px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all ${
               filterStatus === val
-                ? 'bg-violet-100 text-violet-700 border-violet-300 dark:bg-violet-500/20 dark:text-violet-400 dark:border-violet-500/40'
+                ? 'bg-violet-100 text-violet-700 border-violet-300 dark:bg-primary/10 dark:text-primary dark:border-border'
                 : 'bg-muted/50 text-muted-foreground border-border hover:bg-slate-200 dark:hover:bg-slate-700'
             }`}
           >
@@ -424,12 +424,12 @@ export default function AgentTicketsPage() {
       {/* Ticket List */}
       {loading ? (
         <div className="flex justify-center items-center py-16">
-          <Loader2 className="w-6 h-6 text-violet-600 dark:text-violet-400 animate-spin" />
+          <Loader2 className="w-6 h-6 text-violet-600 dark:text-primary animate-spin" />
         </div>
       ) : tickets.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
-          <div className="p-5 rounded-2xl bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20">
-            <MessageSquare className="w-10 h-10 text-violet-400 dark:text-violet-500" />
+          <div className="p-5 rounded-2xl bg-violet-50 dark:bg-primary/10 border border-violet-200 dark:border-border">
+            <MessageSquare className="w-10 h-10 text-primary dark:text-primary" />
           </div>
           <p className="text-sm font-bold text-muted-foreground">Belum ada tiket</p>
           <p className="text-xs text-muted-foreground/70">Buat tiket baru untuk melaporkan gangguan</p>
@@ -448,7 +448,7 @@ export default function AgentTicketsPage() {
               >
                 <div className="flex-1 min-w-0 space-y-1.5">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[10px] font-bold text-violet-700 dark:text-violet-400 bg-violet-100 dark:bg-violet-500/10 px-2 py-0.5 rounded-md">
+                    <span className="text-[10px] font-bold text-violet-700 dark:text-primary bg-violet-100 dark:bg-primary/10 px-2 py-0.5 rounded-md">
                       #{ticket.ticketNumber}
                     </span>
                     <span className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md border ${STATUS_COLORS[ticket.status] || STATUS_COLORS.OPEN}`}>
@@ -493,7 +493,7 @@ export default function AgentTicketsPage() {
                         <div key={msg.id} className={`flex gap-2.5 ${isAgent ? 'flex-row-reverse' : 'flex-row'}`}>
                           <div className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black ${
                             isAgent
-                              ? 'bg-gradient-to-br from-violet-600 to-cyan-600 text-white'
+                              ? 'bg-gradient-to-br from-primary to-cyan-600 text-white'
                               : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-white'
                           }`}>
                             {msg.senderName.charAt(0).toUpperCase()}
@@ -528,7 +528,7 @@ export default function AgentTicketsPage() {
                       <button
                         onClick={() => handleReply(ticket.id)}
                         disabled={sendingReply === ticket.id || !replyText[ticket.id]?.trim()}
-                        className="flex items-center gap-1 px-3 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-violet-600 to-cyan-600 text-white disabled:opacity-50 transition"
+                        className="flex items-center gap-1 px-3 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-primary to-cyan-600 text-white disabled:opacity-50 transition"
                       >
                         {sendingReply === ticket.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                       </button>

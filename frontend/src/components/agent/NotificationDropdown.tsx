@@ -41,7 +41,7 @@ export default function AgentNotificationDropdown({ agentId, enableToasts = true
     // Only the first mounted instance polls (prevents double polling from desktop+mobile headers)
     const id = instanceIdRef.current;
     if (_agentPollingInstance && _agentPollingInstance !== id) {
-      // Another instance is already polling — just load once for the dropdown UI
+      // Another instance is already polling - just load once for the dropdown UI
       loadNotifications(true);
       return;
     }
@@ -97,7 +97,7 @@ export default function AgentNotificationDropdown({ agentId, enableToasts = true
       }>('/api/agent/notifications?limit=10');
       if (data.success) {
         if (skipToasts || !enableToasts) {
-          // Passive instance — just update dropdown data, no toasts
+          // Passive instance - just update dropdown data, no toasts
           data.notifications.forEach((n: Notification) => shownNotifIdsRef.current.add(n.id));
           isFirstLoadRef.current = false;
         } else if (isFirstLoadRef.current) {
@@ -180,25 +180,25 @@ export default function AgentNotificationDropdown({ agentId, enableToasts = true
     const iconClass = 'w-5 h-5';
     switch (type) {
       case 'voucher_generated':
-        return <Bell className={`${iconClass} text-[#00f7ff] drop-shadow-[0_0_8px_rgba(0,247,255,0.6)]`} />;
+        return <Bell className={`${iconClass} text-[#00f7ff] drop-`} />;
       case 'deposit_success':
-        return <Check className={`${iconClass} text-[#00ff88] drop-shadow-[0_0_8px_rgba(0,255,136,0.6)]`} />;
+        return <Check className={`${iconClass} text-[#00ff88] drop-`} />;
       case 'deposit_request_submitted':
-        return <Bell className={`${iconClass} text-[#00f7ff] drop-shadow-[0_0_8px_rgba(0,247,255,0.6)]`} />;
+        return <Bell className={`${iconClass} text-[#00f7ff] drop-`} />;
       case 'deposit_rejected':
-        return <X className={`${iconClass} text-[#ff6b8a] drop-shadow-[0_0_8px_rgba(255,107,138,0.6)]`} />;
+        return <X className={`${iconClass} text-[#ff6b8a] drop-`} />;
       case 'low_balance':
-        return <AlertTriangle className={`${iconClass} text-[#ff6b8a] drop-shadow-[0_0_8px_rgba(255,107,138,0.6)]`} />;
+        return <AlertTriangle className={`${iconClass} text-[#ff6b8a] drop-`} />;
       case 'voucher_sold':
-        return <CheckCheck className={`${iconClass} text-[#00ff88] drop-shadow-[0_0_8px_rgba(0,255,136,0.6)]`} />;
+        return <CheckCheck className={`${iconClass} text-[#00ff88] drop-`} />;
       case 'voucher_deleted':
-        return <Trash2 className={`${iconClass} text-[#ff6b8a] drop-shadow-[0_0_8px_rgba(255,107,138,0.6)]`} />;
+        return <Trash2 className={`${iconClass} text-[#ff6b8a] drop-`} />;
       case 'balance_added':
-        return <TrendingUp className={`${iconClass} text-[#00ff88] drop-shadow-[0_0_8px_rgba(0,255,136,0.6)]`} />;
+        return <TrendingUp className={`${iconClass} text-[#00ff88] drop-`} />;
       case 'balance_deducted':
-        return <TrendingDown className={`${iconClass} text-[#ff6b8a] drop-shadow-[0_0_8px_rgba(255,107,138,0.6)]`} />;
+        return <TrendingDown className={`${iconClass} text-[#ff6b8a] drop-`} />;
       default:
-        return <Bell className={`${iconClass} text-[#bc13fe] drop-shadow-[0_0_8px_rgba(188,19,254,0.6)]`} />;
+        return <Bell className={`${iconClass} text-[#bc13fe] drop-`} />;
     }
   };
 
@@ -235,14 +235,14 @@ export default function AgentNotificationDropdown({ agentId, enableToasts = true
       >
         <Bell className="h-5 w-5 text-foreground dark:text-[#e0d0ff]" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-gradient-to-r from-[#ff4466] to-[#ff44cc] text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center shadow-[0_0_10px_rgba(255,68,102,0.5)]">
+          <span className="absolute -top-1 -right-1 bg-gradient-to-r from-[#ff4466] to-[#ff44cc] text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center ">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-80 md:w-96 bg-card border-2 border-purple-200 dark:border-[#00f7ff]/50 rounded-2xl shadow-[0_0_50px_rgba(0,247,255,0.2)] z-[9999] overflow-hidden backdrop-blur-xl">
+        <div className="absolute right-0 top-full mt-2 w-80 md:w-96 bg-card border-2 border-purple-200 dark:border-[#00f7ff]/50 rounded-2xl  z-[9999] overflow-hidden">
           <div className="px-4 py-3 bg-gradient-to-r from-purple-50 to-cyan-50 dark:from-[#bc13fe]/20 dark:to-[#00f7ff]/20 border-b border-purple-200 dark:border-[#00f7ff]/30 flex items-center justify-between">
             <h3 className="text-base font-bold text-foreground">Notifikasi</h3>
             {notifications.length > 0 && (
@@ -272,7 +272,7 @@ export default function AgentNotificationDropdown({ agentId, enableToasts = true
                     }`}
                   >
                     <div className="flex gap-3">
-                      <div className={`p-2.5 rounded-xl border-2 ${getNotificationBg(notification.type)} shadow-[0_0_15px_rgba(0,247,255,0.2)]`}>
+                      <div className={`p-2.5 rounded-xl border-2 ${getNotificationBg(notification.type)} `}>
                         {getNotificationIcon(notification.type)}
                       </div>
                       <div className="flex-1 min-w-0">

@@ -3,7 +3,7 @@
 import { CyberToastProvider } from '@/components/cyberpunk/CyberToast';
 
 /**
- * Sessions sub-layout — provides CyberToastProvider for all sessions pages.
+ * Sessions sub-layout - provides CyberToastProvider for all sessions pages.
  *
  * Reason: the admin root layout also wraps with CyberToastProvider, but Next.js
  * code-splitting can place the layout bundle and each page bundle into separate

@@ -6,7 +6,7 @@ import { apiAdmin } from '@/lib/api';
 import { showError, showSuccess } from '@/lib/sweetalert';
 
 const fmtRp = (v: number) => `Rp ${Number(v || 0).toLocaleString('id-ID')}`;
-const fmtTime = (d: string | null) => d ? new Date(d).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
+const fmtTime = (d: string | null) => d ? new Date(d).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '-';
 
 interface SettlementCollector {
   collector_id: string;

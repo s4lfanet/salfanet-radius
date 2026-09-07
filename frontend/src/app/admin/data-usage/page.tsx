@@ -140,7 +140,7 @@ export default function DataUsagePage() {
             <BarChart3 className="w-6 h-6" />
             Data Usage Reports
           </h1>
-          <p className="text-sm text-gray-400 mt-1">Bandwidth tracking per user — aggregated daily from radacct</p>
+          <p className="text-sm text-gray-400 mt-1">Bandwidth tracking per user - aggregated daily from radacct</p>
         </div>
         <div className="flex gap-2">
           <button onClick={triggerAggregate} className="px-3 py-2 bg-yellow-600/20 text-yellow-400 rounded-lg hover:bg-yellow-600/30 flex items-center gap-2 text-sm" title="Manual aggregate">

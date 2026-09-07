@@ -225,7 +225,7 @@ export default function UserDetailModal({
     if (submitData.connectionType === 'PPPOE') {
       submitData.ipAddress = '';
     }
-    // Don't send password if empty — backend will use existing password from DB
+    // Don't send password if empty - backend will use existing password from DB
     // This prevents overwriting MikroTik secret with empty password
     if (!submitData.password) {
       delete submitData.password;
@@ -279,7 +279,7 @@ export default function UserDetailModal({
 
   return createPortal(
     <div className="fixed inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm modal-overlay p-4 animate-in fade-in-0 duration-200" style={{ zIndex: 9999 }}>
-      <div className="bg-card dark:bg-gradient-to-br dark:from-[#0a0520] dark:to-[#1a0f35] rounded-xl shadow-xl dark:shadow-[0_0_40px_rgba(188,19,254,0.3)] w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border border-border dark:border-[#bc13fe]/50 animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-4 duration-300">
+      <div className="bg-card dark:bg-gradient-to-br dark:from-[#0a0520] dark:to-[#1a0f35] rounded-xl shadow-xl dark: w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border border-border dark:border-[#bc13fe]/50 animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-4 duration-300">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border dark:border-[#bc13fe]/30 bg-slate-100 dark:bg-[#1a0f35]">
           <div>
@@ -594,7 +594,7 @@ export default function UserDetailModal({
                 <div className="col-span-2">
                   <label className={labelCls2}>{t('userModal.subscriptionType')}</label>
                   <div className="grid grid-cols-2 gap-3">
-                    <label className={`flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all ${formData.subscriptionType === 'POSTPAID' ? 'border-primary dark:border-[#00f7ff] bg-primary/10 dark:bg-[#00f7ff]/10 shadow-md dark:shadow-[0_0_10px_rgba(0,247,255,0.3)]' : 'border-border dark:border-[#bc13fe]/30 hover:border-primary/50 dark:hover:border-[#00f7ff]/50'}`}>
+                    <label className={`flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all ${formData.subscriptionType === 'POSTPAID' ? 'border-primary dark:border-[#00f7ff] bg-primary/10 dark:bg-[#00f7ff]/10 shadow-md dark:' : 'border-border dark:border-[#bc13fe]/30 hover:border-primary/50 dark:hover:border-[#00f7ff]/50'}`}>
                       <input
                         type="radio"
                         name="subscriptionType"
@@ -608,7 +608,7 @@ export default function UserDetailModal({
                         <div className="text-xs text-muted-foreground dark:text-[#e0d0ff]/50">Tagihan bulanan, tanggal tetap</div>
                       </div>
                     </label>
-                    <label className={`flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all ${formData.subscriptionType === 'PREPAID' ? 'border-primary dark:border-[#bc13fe] bg-primary/10 dark:bg-[#bc13fe]/10 shadow-md dark:shadow-[0_0_10px_rgba(188,19,254,0.3)]' : 'border-border dark:border-[#bc13fe]/30 hover:border-primary/50 dark:hover:border-[#bc13fe]/50'}`}>
+                    <label className={`flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all ${formData.subscriptionType === 'PREPAID' ? 'border-primary dark:border-[#bc13fe] bg-primary/10 dark:bg-[#bc13fe]/10 shadow-md dark:' : 'border-border dark:border-[#bc13fe]/30 hover:border-primary/50 dark:hover:border-[#bc13fe]/50'}`}>
                       <input
                         type="radio"
                         name="subscriptionType"
@@ -707,8 +707,8 @@ export default function UserDetailModal({
                     onChange={(e) => setFormData({ ...formData, autoIsolationEnabled: e.target.value === 'isolate' })}
                     className={selectCls}
                   >
-                    <option value="isolate">ISOLIR INTERNET (Suspend) — isolir otomatis saat expired</option>
-                    <option value="keep">TETAP TERHUBUNG (No Action) — tidak isolir meski expired</option>
+                    <option value="isolate">ISOLIR INTERNET (Suspend) - isolir otomatis saat expired</option>
+                    <option value="keep">TETAP TERHUBUNG (No Action) - tidak isolir meski expired</option>
                   </select>
                   <p className="text-xs text-muted-foreground dark:text-[#e0d0ff]/50 mt-1">
                     Pilih tindakan otomatis saat tanggal tagihan / expired terlewati.
@@ -874,7 +874,7 @@ export default function UserDetailModal({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg shadow-md transition-all dark:bg-gradient-to-r dark:from-[#00f7ff] dark:to-[#bc13fe] dark:text-white dark:hover:from-[#00f7ff]/80 dark:hover:to-[#bc13fe]/80 dark:shadow-[0_0_15px_rgba(0,247,255,0.4)]"
+                  className="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg shadow-md transition-all dark:bg-gradient-to-r dark:from-[#00f7ff] dark:to-[#bc13fe] dark:text-white dark:hover:from-[#00f7ff]/80 dark:hover:to-[#bc13fe]/80 dark:"
                 >
                   {t('common.saveChanges')}
                 </button>
@@ -1315,7 +1315,7 @@ function CustomerAddonsTab({ userId }: { userId: string }) {
                 >
                   <option value="">-- Pilih layanan --</option>
                   {addonTypes.filter(t => t.isActive).map(t => (
-                    <option key={t.id} value={t.id}>{t.name} — Rp {Number(t.price).toLocaleString('id-ID')}{t.isRecurring ? '/bln' : ' (sekali)'}</option>
+                    <option key={t.id} value={t.id}>{t.name} - Rp {Number(t.price).toLocaleString('id-ID')}{t.isRecurring ? '/bln' : ' (sekali)'}</option>
                   ))}
                 </select>
               </div>

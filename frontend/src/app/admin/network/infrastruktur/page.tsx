@@ -61,7 +61,7 @@ const STATUS_BADGE: Record<string, string> = {
 
 const TAB_COLOR: Record<TabType, string> = {
   OTB: 'border-blue-500 text-blue-600 dark:text-blue-400',
-  JC: 'border-violet-500 text-violet-600 dark:text-violet-400',
+  JC: 'border-violet-500 text-violet-600 dark:text-primary',
   ODC: 'border-cyan-500 text-cyan-600 dark:text-cyan-400',
   ODP: 'border-emerald-500 text-emerald-600 dark:text-emerald-400',
 };
@@ -135,10 +135,10 @@ function OTBTable({ search }: { search: string }) {
               {r.usedPorts}/{r.portCount}
             </td>
             <td className="px-4 py-3 text-sm text-muted-foreground">
-              {r.network_olts?.name ?? <span className="text-gray-400">—</span>}
+              {r.network_olts?.name ?? <span className="text-gray-400">-</span>}
             </td>
             <td className="px-4 py-3 text-sm text-muted-foreground max-w-[180px] truncate">
-              {r.address || <span className="text-gray-400">—</span>}
+              {r.address || <span className="text-gray-400">-</span>}
             </td>
             <td className="px-4 py-3"><CoordCell lat={r.latitude} lng={r.longitude} /></td>
             <td className="px-4 py-3">
@@ -198,9 +198,9 @@ function JCTable({ search }: { search: string }) {
               <p className="text-xs text-muted-foreground font-mono">{r.code}</p>
             </td>
             <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
-            <td className="px-4 py-3 text-sm text-muted-foreground">{r.type?.replace(/_/g, ' ') ?? '—'}</td>
-            <td className="px-4 py-3 text-sm text-muted-foreground">{r.closureType ?? '—'}</td>
-            <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">{r.fiberCount ?? '—'}</td>
+            <td className="px-4 py-3 text-sm text-muted-foreground">{r.type?.replace(/_/g, ' ') ?? '-'}</td>
+            <td className="px-4 py-3 text-sm text-muted-foreground">{r.closureType ?? '-'}</td>
+            <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">{r.fiberCount ?? '-'}</td>
             <td className="px-4 py-3"><CoordCell lat={r.latitude} lng={r.longitude} /></td>
             <td className="px-4 py-3"><MapPinLink lat={r.latitude} lng={r.longitude} /></td>
             <td className="px-4 py-3">
@@ -258,7 +258,7 @@ function ODCTable({ search }: { search: string }) {
             </td>
             <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
             <td className="px-4 py-3 text-sm text-muted-foreground">
-              {r.network_olts?.name ?? <span className="text-gray-400">—</span>}
+              {r.network_olts?.name ?? <span className="text-gray-400">-</span>}
             </td>
             <td className="px-4 py-3 text-sm text-muted-foreground">{r.ponPort}</td>
             <td className="px-4 py-3 text-sm text-muted-foreground">{r.portCount}</td>
@@ -322,13 +322,13 @@ function ODPTable({ search }: { search: string }) {
             </td>
             <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
             <td className="px-4 py-3 text-sm text-muted-foreground">
-              {r.network_olts?.name ?? <span className="text-gray-400">—</span>}
+              {r.network_olts?.name ?? <span className="text-gray-400">-</span>}
             </td>
             <td className="px-4 py-3 text-sm text-muted-foreground">
-              {r.network_odcs?.name ?? <span className="text-gray-400">—</span>}
+              {r.network_odcs?.name ?? <span className="text-gray-400">-</span>}
             </td>
             <td className="px-4 py-3 text-sm text-muted-foreground">{r.portCount}</td>
-            <td className="px-4 py-3 text-sm text-muted-foreground">{r.splitterRatio ?? '—'}</td>
+            <td className="px-4 py-3 text-sm text-muted-foreground">{r.splitterRatio ?? '-'}</td>
             <td className="px-4 py-3"><CoordCell lat={r.latitude} lng={r.longitude} /></td>
             <td className="px-4 py-3"><MapPinLink lat={r.latitude} lng={r.longitude} /></td>
             <td className="px-4 py-3">

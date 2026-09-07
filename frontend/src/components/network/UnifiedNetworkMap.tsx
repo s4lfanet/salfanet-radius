@@ -246,7 +246,7 @@ export default function UnifiedNetworkMap({
   // Tracks whether the pending pin is mid-drag (suppresses re-play of drop animation)
   const [pinDragging, setPinDragging] = useState(false);
 
-  // Default center — will be overridden by map settings from API
+  // Default center - will be overridden by map settings from API
   const [mapCenter, setMapCenter] = useState<[number, number]>([-8.6705, 115.2126]);
   const [mapZoom, setMapZoom] = useState(13);
 
@@ -284,7 +284,7 @@ export default function UnifiedNetworkMap({
     document.head.appendChild(s);
   }, []);
 
-  // Memoised pending pin icon — only rebuilds when nodeType changes or drag state changes
+  // Memoised pending pin icon - only rebuilds when nodeType changes or drag state changes
   const pendingPinIcon = useMemo(
     () => pendingPin ? createPendingPinIcon(pendingPin.nodeType, pinDragging) : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -543,7 +543,7 @@ export default function UnifiedNetworkMap({
         />
       )}
 
-      {/* Google Earth-style drop pin for pending node placement — draggable, outside cluster */}
+      {/* Google Earth-style drop pin for pending node placement - draggable, outside cluster */}
       {pendingPin && pendingPinIcon && (
         <Marker
           position={[pendingPin.lat, pendingPin.lng]}

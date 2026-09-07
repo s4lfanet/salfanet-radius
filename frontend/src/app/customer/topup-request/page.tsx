@@ -99,13 +99,13 @@ export default function TopUpRequestPage() {
           {t('nav.backToDashboard')}
         </button>
 
-        <CyberCard className="p-5 bg-gradient-to-r from-violet-500/20 to-brand-500/20">
+        <CyberCard className="p-5 bg-gradient-to-r from-primary/20 to-brand-500/20">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-violet-500/30 rounded-xl border border-violet-500/50 shadow-[0_0_15px_rgba(139,92,246,0.4)] shrink-0 flex items-center justify-center">
-              <DollarSign className="w-7 h-7 text-violet-500" />
+            <div className="p-3 bg-primary/10 rounded-xl border border-border  shrink-0 flex items-center justify-center">
+              <DollarSign className="w-7 h-7 text-primary" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-brand-500 to-white drop-shadow-[0_0_20px_rgba(6,182,212,0.5)]">
+              <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-brand-500 to-white drop-">
                 {t('customer.topupRequest')}
               </h1>
               <p className="text-muted-foreground/70 text-sm mt-0.5">
@@ -120,7 +120,7 @@ export default function TopUpRequestPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* Form â€” takes 2/3 on desktop */}
         <div className="lg:col-span-2">
-        <CyberCard className="p-6 bg-card/80 backdrop-blur-xl border-2 border-violet-500/30">
+        <CyberCard className="p-6 bg-card border border-border">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Amount */}
             <div>
@@ -135,7 +135,7 @@ export default function TopUpRequestPage() {
                   type="number"
                   value={formData.amount}
                   onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-                  className="w-full pl-12 pr-4 py-3 bg-slate-900/80 border-2 border-violet-500/40 rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 focus:shadow-[0_0_15px_rgba(6,182,212,0.2)] transition-all"
+                  className="w-full pl-12 pr-4 py-3 bg-slate-900/80 border border-border rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 focus: transition-all"
                   placeholder="10000"
                   required
                   min="10000"
@@ -157,11 +157,11 @@ export default function TopUpRequestPage() {
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'TRANSFER' }))}
                   className={`p-4 rounded-xl border-2 transition-all ${formData.paymentMethod === 'TRANSFER'
-                      ? 'border-brand-500 bg-brand-500/10 shadow-[0_0_20px_rgba(6,182,212,0.3)]'
-                      : 'border-violet-500/30 bg-slate-900/50 hover:border-brand-500/50'
+                      ? 'border-brand-500 bg-brand-500/10 '
+                      : 'border-border bg-slate-900/50 hover:border-brand-500/50'
                     }`}
                 >
-                  <CreditCard className={`w-6 h-6 mx-auto mb-2 ${formData.paymentMethod === 'TRANSFER' ? 'text-brand-500 drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]' : 'text-muted-foreground/50'
+                  <CreditCard className={`w-6 h-6 mx-auto mb-2 ${formData.paymentMethod === 'TRANSFER' ? 'text-brand-500 drop-' : 'text-muted-foreground/50'
                     }`} />
                   <p className={`text-xs font-bold ${formData.paymentMethod === 'TRANSFER' ? 'text-brand-500' : 'text-muted-foreground/50'
                     }`}>
@@ -173,11 +173,11 @@ export default function TopUpRequestPage() {
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'EWALLET' }))}
                   className={`p-4 rounded-xl border-2 transition-all ${formData.paymentMethod === 'EWALLET'
-                      ? 'border-brand-500 bg-brand-500/10 shadow-[0_0_20px_rgba(6,182,212,0.3)]'
-                      : 'border-violet-500/30 bg-slate-900/50 hover:border-brand-500/50'
+                      ? 'border-brand-500 bg-brand-500/10 '
+                      : 'border-border bg-slate-900/50 hover:border-brand-500/50'
                     }`}
                 >
-                  <Smartphone className={`w-6 h-6 mx-auto mb-2 ${formData.paymentMethod === 'EWALLET' ? 'text-brand-500 drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]' : 'text-muted-foreground/50'
+                  <Smartphone className={`w-6 h-6 mx-auto mb-2 ${formData.paymentMethod === 'EWALLET' ? 'text-brand-500 drop-' : 'text-muted-foreground/50'
                     }`} />
                   <p className={`text-xs font-bold ${formData.paymentMethod === 'EWALLET' ? 'text-brand-500' : 'text-muted-foreground/50'
                     }`}>
@@ -189,11 +189,11 @@ export default function TopUpRequestPage() {
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'CASH' }))}
                   className={`p-4 rounded-xl border-2 transition-all ${formData.paymentMethod === 'CASH'
-                      ? 'border-brand-500 bg-brand-500/10 shadow-[0_0_20px_rgba(6,182,212,0.3)]'
-                      : 'border-violet-500/30 bg-slate-900/50 hover:border-brand-500/50'
+                      ? 'border-brand-500 bg-brand-500/10 '
+                      : 'border-border bg-slate-900/50 hover:border-brand-500/50'
                     }`}
                 >
-                  <Banknote className={`w-6 h-6 mx-auto mb-2 ${formData.paymentMethod === 'CASH' ? 'text-brand-500 drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]' : 'text-muted-foreground/50'
+                  <Banknote className={`w-6 h-6 mx-auto mb-2 ${formData.paymentMethod === 'CASH' ? 'text-brand-500 drop-' : 'text-muted-foreground/50'
                     }`} />
                   <p className={`text-xs font-bold ${formData.paymentMethod === 'CASH' ? 'text-brand-500' : 'text-muted-foreground/50'
                     }`}>
@@ -209,7 +209,7 @@ export default function TopUpRequestPage() {
                 <label className="block text-sm font-bold text-brand-500 mb-3 uppercase tracking-wider">
                   {t('customer.paymentProof')} <span className="text-red-400">*</span>
                 </label>
-                <div className="border-2 border-dashed border-violet-500/40 rounded-xl p-6 text-center hover:border-brand-500/50 transition-colors bg-slate-900/50">
+                <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-brand-500/50 transition-colors bg-slate-900/50">
                   <input
                     type="file"
                     accept="image/*"
@@ -218,7 +218,7 @@ export default function TopUpRequestPage() {
                     id="proof-upload"
                   />
                   <label htmlFor="proof-upload" className="cursor-pointer">
-                    <Upload className="w-12 h-12 mx-auto mb-3 text-violet-500" />
+                    <Upload className="w-12 h-12 mx-auto mb-3 text-primary" />
                     <p className="text-sm text-brand-500 font-bold">
                       {formData.proofFile ? formData.proofFile.name : t('customer.uploadProof')}
                     </p>
@@ -238,7 +238,7 @@ export default function TopUpRequestPage() {
               <textarea
                 value={formData.note}
                 onChange={(e) => setFormData(prev => ({ ...prev, note: e.target.value }))}
-                className="w-full px-4 py-3 bg-slate-900/80 border-2 border-violet-500/40 rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 focus:shadow-[0_0_15px_rgba(6,182,212,0.2)] transition-all min-h-[100px]"
+                className="w-full px-4 py-3 bg-slate-900/80 border border-border rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 focus: transition-all min-h-[100px]"
                 placeholder={t('customer.notePlaceholder')}
               />
             </div>

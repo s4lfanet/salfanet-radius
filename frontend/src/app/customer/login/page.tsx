@@ -398,9 +398,9 @@ export default function CustomerLoginPage() {
 
           <div className="space-y-3">
             {[
-              { color: 'bg-primary', text: 'Invoice Digital — Unduh &amp; cetak tagihan bulanan dengan mudah' },
-              { color: 'bg-blue-500', text: 'Riwayat Pembayaran — Pantau semua histori transaksi kapan saja' },
-              { color: 'bg-green-500', text: 'Portal Self-Service — Kelola akun sendiri tanpa perlu telepon' },
+              { color: 'bg-primary', text: 'Invoice Digital - Unduh &amp; cetak tagihan bulanan dengan mudah' },
+              { color: 'bg-blue-500', text: 'Riwayat Pembayaran - Pantau semua histori transaksi kapan saja' },
+              { color: 'bg-green-500', text: 'Portal Self-Service - Kelola akun sendiri tanpa perlu telepon' },
             ].map((item, i) => (
                 <div key={i} className="flex items-center gap-3 bg-card/70 rounded-xl px-4 py-3 border border-border/60">
                 <span className={`w-2 h-2 rounded-full flex-shrink-0 ${item.color}`} />

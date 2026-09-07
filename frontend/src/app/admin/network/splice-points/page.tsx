@@ -273,7 +273,7 @@ export default function SplicePointsPage() {
       case 'MECHANICAL':
         return 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/30 dark:text-orange-400';
       case 'PIGTAIL':
-        return 'bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-900/30 dark:text-purple-400';
+        return 'bg-purple-100 text-purple-700 border-purple-300 dark:bg-purple-900/30 dark:text-primary';
       default:
         return 'bg-gray-100 text-gray-700 border-gray-300';
     }
@@ -350,7 +350,7 @@ export default function SplicePointsPage() {
         </div>
         <div className="bg-card rounded-lg border dark:border-gray-800 p-3">
           <div className="flex items-center gap-2">
-            <Link2 className="h-4 w-4 text-purple-500" />
+            <Link2 className="h-4 w-4 text-primary" />
             <span className="text-xs text-gray-500">Pigtail</span>
           </div>
           <p className="text-xl font-bold mt-1 text-purple-600">{stats.pigtail}</p>
@@ -655,7 +655,7 @@ export default function SplicePointsPage() {
 
                 {/* Outgoing Core */}
                 <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg space-y-3">
-                  <h3 className="text-xs font-semibold text-purple-700 dark:text-purple-400">
+                  <h3 className="text-xs font-semibold text-purple-700 dark:text-primary">
                     Outgoing Core
                   </h3>
                   <div>

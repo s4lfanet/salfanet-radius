@@ -28,11 +28,11 @@ const CyberCard = React.forwardRef<HTMLDivElement, CyberCardProps>(
         gradient: 'from-pink-500/10 to-transparent',
       },
       purple: {
-        border: 'border-violet-500/30',
-        hoverBorder: 'hover:border-violet-400/60',
+        border: 'border-border',
+        hoverBorder: 'hover:border-border',
         glow: 'shadow-md shadow-violet-500/20',
         hoverGlow: 'hover:shadow-md shadow-violet-500/20',
-        gradient: 'from-violet-500/10 to-transparent',
+        gradient: 'from-primary/10 to-transparent',
       },
       blue: {
         border: 'border-blue-500/30',
@@ -52,14 +52,14 @@ const CyberCard = React.forwardRef<HTMLDivElement, CyberCardProps>(
 
     const variantStyles = {
       default: cn(
-        'bg-card/90 backdrop-blur-sm border-2 rounded-xl',
+        'bg-card backdrop-blur-sm border-2 rounded-xl',
         neonColorMap[neonColor].border,
         hoverEffect && neonColorMap[neonColor].hoverBorder,
         glowIntensity !== 'none' && neonColorMap[neonColor].glow,
         hoverEffect && neonColorMap[neonColor].hoverGlow
       ),
       glass: cn(
-        'bg-card/40 backdrop-blur-xl border border-border/50 rounded-xl',
+        'bg-card/40 border border-border/50 rounded-xl',
         'shadow-md',
         hoverEffect && 'hover:bg-muted/50 hover:border-border'
       ),
@@ -71,10 +71,10 @@ const CyberCard = React.forwardRef<HTMLDivElement, CyberCardProps>(
         hoverEffect && 'hover:shadow-xl hover:shadow-brand-500/30'
       ),
       hologram: cn(
-        'bg-gradient-to-br from-brand-500/5 via-violet-500/5 to-pink-500/5 backdrop-blur-xl',
+        'bg-gradient-to-br from-brand-500/5 via-primary/5 to-pink-500/5',
         'border border-border/50 rounded-xl',
         'shadow-lg shadow-brand-500/10',
-        hoverEffect && 'hover:from-brand-500/10 hover:via-violet-500/10 hover:to-pink-500/10'
+        hoverEffect && 'hover:from-brand-500/10 hover:via-primary/10 hover:to-pink-500/10'
       ),
     };
 
@@ -193,7 +193,7 @@ function CyberStatsCard({
   const colorMap = {
     cyan: 'from-brand-400 to-brand-500',
     magenta: 'from-pink-400 to-pink-500',
-    purple: 'from-violet-400 to-violet-500',
+    purple: 'from-primary to-primary',
     green: 'from-green-400 to-green-500',
   };
 
