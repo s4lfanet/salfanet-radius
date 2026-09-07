@@ -300,7 +300,7 @@ export default function UserDetailModal({
 
         {/* Tabs */}
         <div className="border-b border-border dark:border-[#bc13fe]/30">
-          <div className="flex px-2 sm:px-6 overflow-x-auto scrollbar-thin gap-1">
+          <div className="flex px-2 sm:px-6 overflow-x-auto gap-1 [&::-webkit-scrollbar]:h-1">
             {[
               { id: 'info', label: t('userModal.userInfo') },
               { id: 'sessions', label: t('userModal.sessions') },
@@ -313,7 +313,7 @@ export default function UserDetailModal({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-medium border-b-2 transition-all whitespace-nowrap ${activeTab === tab.id
+                className={`shrink-0 px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-medium border-b-2 transition-all whitespace-nowrap ${activeTab === tab.id
                   ? 'border-primary text-primary dark:border-[#00f7ff] dark:text-[#00f7ff] bg-primary/10 dark:bg-[#00f7ff]/10'
                   : 'border-transparent text-muted-foreground dark:text-[#e0d0ff]/60 hover:text-foreground dark:hover:text-[#e0d0ff] hover:bg-muted dark:hover:bg-[#bc13fe]/10'
                   }`}
