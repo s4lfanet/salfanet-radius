@@ -45,7 +45,9 @@ export async function GET(req: NextRequest) {
   });
   const onlineUsernames = new Set(onlineSessions.map((s) => s.username));
 
-  // Get routers — need full details for local-auth to fetch PPP secrets
+  // Get routers — need full details for ALL routers to fetch PPP secrets
+  // For RADIUS-auth routers, also check MikroTik /ppp/active as fallback
+  // when radacct is empty (accounting not working or just migrated).
   const routers = await prisma.router.findMany({
     where: { isActive: true },
     select: { id: true, name: true, authMode: true },
@@ -54,9 +56,11 @@ export async function GET(req: NextRequest) {
   const localRouterIds = localRouters.map(r => r.id);
   const routerMap = new Map(routers.map(r => [r.id, r]));
 
-  // Check MikroTik /ppp/active for local-auth routers
-  if (localRouterIds.length > 0) {
-    const pppActiveNames = await batchListPppActive(localRouterIds);
+  // Check MikroTik /ppp/active for ALL routers (not just local-auth)
+  // RADIUS-mode routers may have active PPP sessions not in radacct
+  const allRouterIds = routers.map(r => r.id);
+  if (allRouterIds.length > 0) {
+    const pppActiveNames = await batchListPppActive(allRouterIds);
     for (const name of pppActiveNames) {
       onlineUsernames.add(name);
     }

@@ -62,16 +62,15 @@ export async function GET(req: NextRequest) {
     : [];
   const onlineMap = new Map(activeSessions.map((s) => [s.username, s.framedipaddress]));
 
-  // Also check MikroTik /ppp/active for local-auth routers
+  // Also check MikroTik /ppp/active for ALL routers (not just local-auth)
+  // RADIUS-mode routers may have active PPP sessions not in radacct
   const routers = await prisma.router.findMany({
     where: { isActive: true },
     select: { id: true, authMode: true },
   });
-  const localRouterIds = routers
-    .filter(r => (r.authMode || 'local') !== 'radius')
-    .map(r => r.id);
-  if (localRouterIds.length > 0 && usernames.length > 0) {
-    const pppActiveNames = await batchListPppActive(localRouterIds);
+  const allRouterIds = routers.map(r => r.id);
+  if (allRouterIds.length > 0 && usernames.length > 0) {
+    const pppActiveNames = await batchListPppActive(allRouterIds);
     const usernameSet = new Set(usernames);
     for (const name of pppActiveNames) {
       if (usernameSet.has(name) && !onlineMap.has(name)) {
