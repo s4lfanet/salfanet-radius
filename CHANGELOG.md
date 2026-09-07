@@ -6,6 +6,44 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.20.0] — 2026-09-07 — Bulk Edit PPPoE + Migrasi Local→RADIUS + UI Icon Audit
+
+### Summary
+Tiga fitur besar: (1) Bulk edit pelanggan PPPoE untuk Router/Hari Tagihan/Auto Isolasi, (2) Migrasi satu-klik dari auth mode LOCAL ke RADIUS dengan sync otomatis semua data pelanggan, dan (3) Audit UI menambahkan ikon Lucide ke empty states, page headers, status badges, dan modal sections di semua role.
+
+### Bulk Edit Pelanggan PPPoE
+- **[FEATURE]** Tombol "Edit" di bulk action bar pada halaman Data Pelanggan — ubah Router, Hari Tagihan (1-28), dan Auto Isolasi untuk multiple pelanggan sekaligus
+- **[FEATURE]** Endpoint `PUT /api/pppoe/users/bulk-update` — update massal `routerId`, `billingDay`, `autoIsolationEnabled`
+- **[FEATURE]** Saat router berubah, backend otomatis: hapus RADIUS entries di NAS lama, buat di NAS baru, manage MikroTik PPP secret (disable di router lama, enable di router baru), CoA disconnect semua sesi aktif
+- **[UI]** Modal bulk edit dengan opsi "— Tidak berubah —" per field, konfirmasi sebelum apply, summary hasil
+
+### Migrasi Local → RADIUS Auth
+- **[FEATURE]** Tombol "Migrate to RADIUS" di halaman Router (hanya muncul saat `authMode = local`) — migrasi satu-klik
+- **[FEATURE]** Endpoint `POST /api/pppoe/users/bulk-migrate-radius` — migrasi router dari local ke RADIUS:
+  - Ubah `router.authMode` dari `local` → `radius`
+  - Re-sync SEMUA pelanggan ke RADIUS tables (`radcheck`, `radusergroup`, `radreply`)
+  - Disable PPP secrets di MikroTik (sebagai backup, RADIUS jadi primary)
+  - Reload FreeRADIUS
+  - CoA disconnect semua sesi aktif untuk re-auth via RADIUS
+- **[FEATURE]** Tombol "Re-sync RADIUS" di halaman Router — perbaiki data RADIUS yang tidak sinkron tanpa ubah authMode
+- **[FEATURE]** Endpoint `POST /api/pppoe/users/bulk-sync-radius` — re-sync semua user ke RADIUS tables untuk router tertentu atau semua router
+- **[DOCS]** Penjelasan arsitektur auth mode (local vs RADIUS) di README
+
+### UI Icon Audit (Lucide)
+- **[UI]** Tambah ikon Lucide ke 12 empty states yang sebelumnya text-only (radcheck, manual-payments, keuangan, stopped PPPoE, balance, bank-accounts, hotspot templates/profiles/vouchers/evouchers/agents, pay-manual)
+- **[UI]** Tambah ikon ke page headers admin (invoices, pppoe users, tickets, whatsapp send/providers/notifications, settings/security)
+- **[UI]** Tambah ikon ke customer invoice status badges (Lunas/Jatuh Tempo/Menunggu/Ditolak/Belum Bayar)
+- **[UI]** Tambah ikon ke UserDetailModal section headers (KTP, Foto Instalasi, Layanan Tambahan, Janji Bayar) + empty states + action buttons
+- **[UI]** Tambah AlertCircle ke error alerts di customer/technician/collector login pages
+- **[UI]** Tambah Wallet icon ke agent balance card label
+- **[UI]** Tambah ikon ke collector my-collections stat cards (Receipt/Wallet/Banknote/ArrowRightLeft)
+
+### Other
+- **[CHORE]** Bump service worker cache ke v28
+- **[CHORE]** Bump root & frontend package.json version ke 5.20.0
+
+---
+
 ## [5.19.1] — 2026-09-06 — Rekap Voucher Rombak + PPPoE Profile Sync + CSP Fix
 
 ### Summary

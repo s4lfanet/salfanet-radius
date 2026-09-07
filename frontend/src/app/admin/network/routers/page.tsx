@@ -5,8 +5,9 @@ import { createPortal } from 'react-dom';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Server, Plus, Trash2, Edit, CheckCircle, XCircle, Copy, Loader2, Shield, Radio, Wifi, Activity, RefreshCw, Settings, X, ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { Server, Plus, Trash2, Edit, CheckCircle, XCircle, Copy, Loader2, Shield, Radio, Wifi, Activity, RefreshCw, Settings, X, ChevronDown, ChevronUp, Info, ArrowRightCircle, RefreshCcw } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
+import { pppoeApi } from '@/lib/api/pppoe';
 import { useApiQuery, useApiMutation, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface Router {
@@ -119,6 +120,8 @@ export default function RouterPage() {
   const [testing, setTesting] = useState(false)
   const [creating, setCreating] = useState(false)
   const [settingUpRadius, setSettingUpRadius] = useState<string | null>(null)
+  const [migratingRouter, setMigratingRouter] = useState<string | null>(null)
+  const [syncingRadius, setSyncingRadius] = useState<string | null>(null)
   const [showScriptModal, setShowScriptModal] = useState(false)
   const [showTutorial, setShowTutorial] = useState(true)
   const [scriptModalData, setScriptModalData] = useState<{ script: string; scriptRos6?: string; scriptRos7?: string; config: ScriptConfig } | null>(null)
@@ -362,6 +365,46 @@ export default function RouterPage() {
       setSettingUpRadius(null)
     }
   }
+
+  const handleMigrateToRadius = async (routerId: string, routerName: string) => {
+    const confirmed = await showConfirm(
+      `Migrasi router "${routerName}" dari LOCAL ke RADIUS auth?`,
+      'Migrasi ke RADIUS',
+      'Semua pelanggan akan di-sync ke tabel RADIUS (radcheck/radusergroup/radreply), PPP secret di MikroTik di-disable (sebagai backup), dan sesi aktif akan di-kick untuk re-auth via RADIUS. Pastikan MikroTik sudah dikonfigurasi sebagai RADIUS client (jalankan Setup RADIUS terlebih dahulu).'
+    );
+    if (!confirmed) return;
+    setMigratingRouter(routerId);
+    try {
+      const result = await pppoeApi.migrateToRadius(routerId);
+      await showSuccess(result.message);
+      // Refresh router list to reflect authMode change
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('routers') });
+    } catch (error: unknown) {
+      console.error('Migrate to RADIUS error:', error);
+      showError((error instanceof Error ? error.message : String(error)) || 'Gagal migrasi ke RADIUS');
+    } finally {
+      setMigratingRouter(null);
+    }
+  };
+
+  const handleBulkSyncRadius = async (routerId: string, routerName: string) => {
+    const confirmed = await showConfirm(
+      `Re-sync semua pelanggan router "${routerName}" ke RADIUS?`,
+      'Sync RADIUS',
+      'Ini akan memperbarui semua entri RADIUS (radcheck/radusergroup/radreply) untuk pelanggan pada router ini. Berguna jika data RADIUS tidak sinkron dengan database. Tidak mengubah authMode router.'
+    );
+    if (!confirmed) return;
+    setSyncingRadius(routerId);
+    try {
+      const result = await pppoeApi.bulkSyncRadius(routerId);
+      await showSuccess(result.message);
+    } catch (error: unknown) {
+      console.error('Bulk sync RADIUS error:', error);
+      showError((error instanceof Error ? error.message : String(error)) || 'Gagal sync RADIUS');
+    } finally {
+      setSyncingRadius(null);
+    }
+  };
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text)
@@ -658,6 +701,24 @@ export default function RouterPage() {
                             title="Setup RADIUS Client"
                           >
                             <Radio className="w-5 h-5" />
+                          </button>
+                          {(routerData.authMode === 'local') && (
+                            <button
+                              onClick={() => handleMigrateToRadius(routerData.id, routerData.name)}
+                              disabled={migratingRouter === routerData.id}
+                              className="p-2.5 bg-amber-500/10 border border-amber-500/30 text-amber-500 rounded-xl hover:bg-amber-500/20 transition-all disabled:opacity-50"
+                              title="Migrasi dari Local ke RADIUS Auth"
+                            >
+                              {migratingRouter === routerData.id ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRightCircle className="w-5 h-5" />}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleBulkSyncRadius(routerData.id, routerData.name)}
+                            disabled={syncingRadius === routerData.id}
+                            className="p-2.5 bg-cyan-500/10 border border-cyan-500/30 text-cyan-500 rounded-xl hover:bg-cyan-500/20 transition-all disabled:opacity-50"
+                            title="Re-sync semua pelanggan ke RADIUS"
+                          >
+                            {syncingRadius === routerData.id ? <Loader2 className="w-5 h-5 animate-spin" /> : <RefreshCcw className="w-5 h-5" />}
                           </button>
                           <button
                             onClick={() => handleEdit(routerData)}
