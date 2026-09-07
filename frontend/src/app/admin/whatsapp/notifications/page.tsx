@@ -395,7 +395,7 @@ export default function NotificationSettingsPage() {
             {/* Info Box */}
             <div className="p-2.5 bg-primary/10 border border-primary/30 rounded-lg">
               <p className="text-[10px] text-blue-800 dark:text-blue-200 leading-relaxed">
-                💡 <strong>Tips:</strong> Untuk menghindari banned WhatsApp, gunakan batch size 10-20 pesan dengan jeda 60-120 detik. 
+                <strong>Tips:</strong> Untuk menghindari banned WhatsApp, gunakan batch size 10-20 pesan dengan jeda 60-120 detik. 
                 Aktifkan pengacakan urutan untuk menghindari deteksi pattern otomatis.
               </p>
             </div>
@@ -404,7 +404,7 @@ export default function NotificationSettingsPage() {
             {batchSize > 0 && batchDelay > 0 && (
               <div className="p-2 bg-muted/50 rounded-lg">
                 <p className="text-[10px] text-foreground">
-                  📊 <strong>Estimasi:</strong> Untuk 100 reminder, akan dikirim dalam {Math.ceil(100 / batchSize)} batch, 
+                  <strong>Estimasi:</strong> Untuk 100 reminder, akan dikirim dalam {Math.ceil(100 / batchSize)} batch, 
                   total waktu ~{Math.ceil((100 / batchSize) * batchDelay / 60)} menit
                 </p>
               </div>

@@ -34,7 +34,7 @@ export default function CollectorOntPage() {
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
         <div className="bg-card border border-border rounded-xl p-4 flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center text-red-600">
             <Unplug className="w-5 h-5" />

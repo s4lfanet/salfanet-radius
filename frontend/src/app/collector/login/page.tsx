@@ -182,7 +182,7 @@ export default function CollectorLoginPage() {
         <div className="absolute top-0 right-0 w-40 h-40 sm:w-72 sm:h-72 bg-emerald-100/60 dark:bg-emerald-900/20 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-56 h-56 bg-teal-100/50 dark:bg-teal-900/20 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="max-w-lg w-full relative z-10">
+        <div className="max-w-[calc(100%-2rem)] sm:max-w-lg w-full relative z-10">
           <div className="mb-2">
             <span className="text-xs font-semibold uppercase tracking-widest text-emerald-500 dark:text-emerald-400">Portal Kolektor</span>
           </div>

@@ -369,18 +369,18 @@ export default function PPPoEProfilesPage() {
           `Router: ${result.routerName}  |  User: ${result.user}`,
           `Port: ${okPort.port}  |  Identity: ${okPort.identity}`,
           ``,
-          `PPP Profile Read: ${pppReadOk ? '✅ ' + okPort.pppReadError : '❌ ' + okPort.pppReadError}`,
-          `PPP Profile Write: ${pppWriteOk ? '✅ OK' : '❌ ' + okPort.pppWriteError}`,
+          `PPP Profile Read: ${pppReadOk ? '' + okPort.pppReadError : '' + okPort.pppReadError}`,
+          `PPP Profile Write: ${pppWriteOk ? 'OK' : '' + okPort.pppWriteError}`,
         ];
-        if (result.hint) lines.push('', '⚠️ ' + result.hint);
+        if (result.hint) lines.push('', '' + result.hint);
         if (!pppReadOk || !pppWriteOk) {
           await showError('Koneksi OK tapi akses PPP gagal:\n\n' + lines.join('\n'));
         } else {
-          await showSuccess('✅ Semua test berhasil!\n\n' + lines.join('\n'));
+          await showSuccess('Semua test berhasil!\n\n' + lines.join('\n'));
         }
       } else {
-        const detail = result.results?.map((r) => `Port ${r.port}: ❌ ${r.error}`).join('\n') || '';
-        await showError(`❌ Gagal konek ke ${result.host}\n\n${detail}\n\n${result.hint || ''}`);
+        const detail = result.results?.map((r) => `Port ${r.port}: ${r.error}`).join('\n') || '';
+        await showError(`Gagal konek ke ${result.host}\n\n${detail}\n\n${result.hint || ''}`);
       }
     } catch (e: unknown) { await showError((e instanceof Error ? e.message : String(e)) || 'Gagal test koneksi'); }
     finally { setTestingConnection(false); }
@@ -532,7 +532,7 @@ export default function PPPoEProfilesPage() {
                     <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-warning/10 text-warning"><XCircle className="h-2.5 w-2.5 mr-0.5" />{t('pppoe.pending')}</span>
                   )}
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mb-3">
                   <div><span className="text-muted-foreground">{t('hotspot.price')}:</span><p className="font-medium">Rp {profile.price.toLocaleString('id-ID')}</p></div>
                   <div><span className="text-muted-foreground">{t('hotspot.speed')}:</span><p className="font-mono font-medium">{profile.downloadSpeed}M/{profile.uploadSpeed}M</p></div>
                   <div><span className="text-muted-foreground">{t('pppoe.validity')}:</span><p className="font-medium">{profile.validityValue} {profile.validityUnit === 'MONTHS' ? 'Mo' : 'D'}</p></div>
@@ -750,7 +750,7 @@ export default function PPPoEProfilesPage() {
                     ))}
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <ModalLabel required>Download ({formData.speedUnit})</ModalLabel>
                     <ModalInput type="number" min="1" value={formData.downloadSpeed} onChange={(e) => setFormData({ ...formData, downloadSpeed: e.target.value })} required />
@@ -801,7 +801,7 @@ export default function PPPoEProfilesPage() {
                     <p className="text-[10px] text-muted-foreground pt-3">
                       Burst memberi kecepatan lebih tinggi sementara. Aktif saat trafik rata-rata di bawah <strong>threshold</strong> selama <strong>burst time</strong> detik.
                     </p>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <ModalLabel>Burst Download ({formData.speedUnit})</ModalLabel>
                         <ModalInput type="number" min="0" value={formData.burstDownload} onChange={(e) => setFormData({ ...formData, burstDownload: e.target.value })} placeholder={formData.downloadSpeed ? String(parseInt(formData.downloadSpeed) * 2) : '20'} />
@@ -811,7 +811,7 @@ export default function PPPoEProfilesPage() {
                         <ModalInput type="number" min="0" value={formData.burstUpload} onChange={(e) => setFormData({ ...formData, burstUpload: e.target.value })} placeholder={formData.uploadSpeed ? String(parseInt(formData.uploadSpeed) * 2) : '20'} />
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <ModalLabel>Threshold Download ({formData.speedUnit})</ModalLabel>
                         <ModalInput type="number" min="0" value={formData.burstThresholdDownload} onChange={(e) => setFormData({ ...formData, burstThresholdDownload: e.target.value })} placeholder={formData.downloadSpeed ? String(Math.round(parseInt(formData.downloadSpeed) * 0.8)) : '8'} />
@@ -823,7 +823,7 @@ export default function PPPoEProfilesPage() {
                         <p className="text-[9px] text-muted-foreground mt-0.5">Kosong = pakai kecepatan normal</p>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <ModalLabel>Burst Time (detik)</ModalLabel>
                         <ModalInput type="number" min="1" value={formData.burstTime} onChange={(e) => setFormData({ ...formData, burstTime: e.target.value })} />
@@ -837,7 +837,7 @@ export default function PPPoEProfilesPage() {
                     </div>
                     <div>
                       <ModalLabel>Limit-at / Minimum Guarantee ({formData.speedUnit})</ModalLabel>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <ModalInput type="number" min="0" value={formData.limitAtDownload} onChange={(e) => setFormData({ ...formData, limitAtDownload: e.target.value })} placeholder="0" />
                           <p className="text-[9px] text-muted-foreground mt-0.5">↓ Download minimum</p>
@@ -904,7 +904,7 @@ export default function PPPoEProfilesPage() {
               </div>
 
               {/* Masa Aktif */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <ModalLabel required>Masa Aktif</ModalLabel>
                   <ModalInput type="number" min="1" value={formData.validityValue} onChange={(e) => setFormData({ ...formData, validityValue: e.target.value })} required className={fieldErrors['validityValue'] ? 'border-red-500' : ''} />
@@ -979,7 +979,7 @@ export default function PPPoEProfilesPage() {
               </>
             ) : (
               <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="p-3 bg-success/10 border border-success/30 rounded-lg text-center">
                     <p className="text-xl font-bold text-success">{importResults.success}</p>
                     <p className="text-[10px] text-muted-foreground">Berhasil diimpor</p>
@@ -1036,7 +1036,7 @@ export default function PPPoEProfilesPage() {
                 {/* Kecepatan */}
                 <div>
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Kecepatan</p>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="bg-muted/50 rounded-lg p-3 border border-border">
                       <p className="text-[10px] text-muted-foreground mb-1">Download</p>
                       <p className="text-base font-bold text-foreground">{detailProfile.downloadSpeed} Mbps</p>
@@ -1091,7 +1091,7 @@ export default function PPPoEProfilesPage() {
                 {/* Status & Pengaturan */}
                 <div>
                   <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Pengaturan</p>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                     <div className="flex items-center gap-2">
                       {detailProfile.sharedUser
                         ? <XCircle className="h-3.5 w-3.5 text-muted-foreground" />
@@ -1116,7 +1116,7 @@ export default function PPPoEProfilesPage() {
                 </div>
 
                 {/* Sync Actions */}
-                <div className="grid grid-cols-2 gap-2 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
                   <button
                     onClick={() => { handleSyncRadius(detailProfile); setDetailProfile(null); }}
                     disabled={syncingRadiusId === detailProfile.id}

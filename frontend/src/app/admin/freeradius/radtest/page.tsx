@@ -118,7 +118,7 @@ export default function RadTestPage() {
                         </div>
 
                         {/* NAS IP */}
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm font-medium text-foreground mb-1.5">
                                     <Server className="w-4 h-4 inline mr-1" />

@@ -268,7 +268,7 @@ export function NetworkTopologyMap({
                   <h3 className="font-semibold text-white mb-1">{node.code}</h3>
                   <p className="text-sm text-gray-300 mb-2">{node.name}</p>
                   {node.address && (
-                    <p className="text-xs text-gray-400 mb-3">📍 {node.address}</p>
+                    <p className="text-xs text-gray-400 mb-3">{node.address}</p>
                   )}
                   <button
                     onClick={() => handleNodeClick(node)}

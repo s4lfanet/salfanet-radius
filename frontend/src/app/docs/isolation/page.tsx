@@ -187,7 +187,7 @@ curl -X POST http://localhost:3000/api/cron \\
 # Contoh log sukses:
 # [CRON] Running PPPoE Auto Isolir (attempt 1/3)...
 # [PPPoE Auto-Isolir] Found 3 expired user(s) to isolate
-# ✅ [PPPoE Auto-Isolir] User john123 isolated
+# [PPPoE Auto-Isolir] User john123 isolated
 # [CRON] PPPoE Auto Isolir completed: ✓ Isolated 3/3 users`}</CodeBlock>
           </section>
 
@@ -309,10 +309,10 @@ add chain=dstnat src-address=192.168.200.0/24 \\
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {[
-                    ['active', '✅ Ya', '✅ Penuh', 'Berlangganan aktif normal'],
-                    ['isolated', '✅ Ya', '⚠️ Terbatas', 'Expired, redirect ke /isolated. Group: isolir, IP: pool-isolir, BW: 64k/64k'],
-                    ['blocked', '❌ Tidak', '❌ Tidak ada', 'Diblokir manual oleh admin (Auth-Type:Reject)'],
-                    ['stop', '❌ Tidak', '❌ Tidak ada', 'Dihentikan (tagihan lama, Auth-Type:Reject)'],
+                    ['active', 'Ya', 'Penuh', 'Berlangganan aktif normal'],
+                    ['isolated', 'Ya', 'Terbatas', 'Expired, redirect ke /isolated. Group: isolir, IP: pool-isolir, BW: 64k/64k'],
+                    ['blocked', 'Tidak', 'Tidak ada', 'Diblokir manual oleh admin (Auth-Type:Reject)'],
+                    ['stop', 'Tidak', 'Tidak ada', 'Dihentikan (tagihan lama, Auth-Type:Reject)'],
                   ].map(([status, login, akses, ket]) => (
                     <tr key={status} className="bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800">
                       <td className="px-4 py-2 font-mono font-bold border border-gray-200 dark:border-gray-700">{status}</td>
@@ -479,7 +479,7 @@ expiredAt < hari ini
                                    └──► User bayar invoice
                                         └──► status = active
                                              └──► (Reconnect PPPoE)
-                                                  └──► Internet penuh ✅`}</CodeBlock>
+                                                  └──► Internet penuh `}</CodeBlock>
           </section>
 
         </div>

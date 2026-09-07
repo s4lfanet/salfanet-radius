@@ -1381,7 +1381,7 @@ export default function GenieACSDevicesPage() {
               )}
               {/* Add mode: band + channel */}
               {wifiModalMode === 'add' && (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <ModalLabel>Band</ModalLabel>
                     <ModalSelect value={editWifiData.band} onChange={(e) => setEditWifiData({ ...editWifiData, band: e.target.value })}>
@@ -1452,7 +1452,7 @@ export default function GenieACSDevicesPage() {
           {/* Add mode only */}
           {wanModalMode === 'add' && (
             <>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <ModalLabel>Connection Type</ModalLabel>
                   <ModalSelect value={editWanData.connectionType} onChange={(e) => setEditWanData({ ...editWanData, connectionType: e.target.value })}>
@@ -1465,7 +1465,7 @@ export default function GenieACSDevicesPage() {
                   <ModalInput type="text" value={editWanData.name} onChange={(e) => setEditWanData({ ...editWanData, name: e.target.value })} placeholder="e.g. INTERNET" autoComplete="off" />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <ModalLabel>WAN Device (Port)</ModalLabel>
                   <ModalSelect value={editWanData.wanDeviceIndex} onChange={(e) => setEditWanData({ ...editWanData, wanDeviceIndex: parseInt(e.target.value) })}>
@@ -1490,7 +1490,7 @@ export default function GenieACSDevicesPage() {
           )}
           {/* PPPoE credentials */}
           {editWanData.connectionType === 'PPPoE' && (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <ModalLabel>{wanModalMode === 'edit' ? 'PPPoE Username' : 'Username'}</ModalLabel>
                 <ModalInput type="text" value={editWanData.username} onChange={(e) => setEditWanData({ ...editWanData, username: e.target.value })} placeholder="user@isp.com" autoComplete="off" />
@@ -1502,7 +1502,7 @@ export default function GenieACSDevicesPage() {
             </div>
           )}
           {/* VLAN */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <ModalLabel>VLAN ID <span className="text-muted-foreground">(0 = untagged)</span></ModalLabel>
               <ModalInput type="number" min={0} max={4094} value={editWanData.vlanId} onChange={(e) => setEditWanData({ ...editWanData, vlanId: e.target.value })} placeholder="e.g. 100" />
@@ -1528,7 +1528,7 @@ export default function GenieACSDevicesPage() {
             <p className="text-[10px] text-muted-foreground mt-1">Sets X_HW_ServiceList on device (Huawei/ZTE compatible)</p>
           </div>
           {/* Enable + NAT toggles */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="flex items-center justify-between p-3 bg-muted/50 border border-border rounded-lg">
               <div>
                 <p className="text-xs font-medium text-foreground">WAN Enable</p>

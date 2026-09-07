@@ -142,7 +142,7 @@ export default function TechnicianOfflinePage() {
                   </div>
                   <span className={`px-2 py-1 text-xs font-bold rounded-lg ${u.disabled ? 'bg-red-500/10 text-red-600 dark:text-red-400' : u.status === 'isolated' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' : 'bg-red-500/10 text-red-600 dark:text-red-400'}`}>{u.disabled ? 'Disabled' : 'Offline'}</span>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   <div>
                     <span className="text-muted-foreground/70">{t('techPortal.phone')}: </span>
                     <span className="text-foreground/80">{u.phone}</span>

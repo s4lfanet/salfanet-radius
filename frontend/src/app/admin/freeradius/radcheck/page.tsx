@@ -257,7 +257,7 @@ export default function RadCheckPage() {
                                     placeholder="e.g., user1"
                                 />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label className="text-sm font-medium block mb-1">Attribute</label>
                                     <input

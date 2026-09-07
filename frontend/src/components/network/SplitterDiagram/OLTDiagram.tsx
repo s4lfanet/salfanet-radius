@@ -326,7 +326,7 @@ export function OLTDiagram({
           <h4 className="text-sm font-semibold text-foreground mb-2">
             {t('network.olt.ponPort')} {hoveredPort.number - node.inputPorts}
           </h4>
-          <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
             <div>
               <span className="text-muted-foreground">{t('common.status')}:</span>
               <span className="ml-2 text-foreground">

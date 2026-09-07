@@ -113,7 +113,7 @@ export default function AdminCollectorSettlementsPage() {
 
       {/* Mode Toggle */}
       <div className="flex gap-2">
-        {[{ key: 'daily', label: '📅 Harian' }, { key: 'range', label: '📆 Rentang' }].map(m => (
+        {[{ key: 'daily', label: 'Harian' }, { key: 'range', label: '📆 Rentang' }].map(m => (
           <button
             key={m.key}
             onClick={() => setMode(m.key as 'daily' | 'range')}
@@ -173,12 +173,12 @@ export default function AdminCollectorSettlementsPage() {
                             </span>
                           ) : (
                             <span className="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 font-medium">
-                              ⏳ Belum Dikonfirmasi
+                              Belum Dikonfirmasi
                             </span>
                           )}
                         </div>
                         <div className="mt-1.5 flex gap-4 flex-wrap text-xs text-muted-foreground">
-                          <span>📄 {c.invoice_count} transaksi</span>
+                          <span>{c.invoice_count} transaksi</span>
                           <span className="font-bold text-foreground">{fmtRp(c.total_amount)}</span>
                           <span>💵 Cash: {fmtRp(c.cash_amount)}</span>
                           <span>🏦 Transfer: {fmtRp(c.transfer_amount)}</span>

@@ -369,7 +369,7 @@ export default function CustomerAssignmentPage() {
                     Port {assignment.portNumber}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mb-2">
                   <div>
                     <span className="text-muted-foreground text-[10px]">ODP</span>
                     <div className="space-y-0.5 mt-0.5">

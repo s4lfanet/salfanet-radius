@@ -444,7 +444,7 @@ export default function CustomerDashboard() {
             }
           </div>
           {/* Package + expiry info */}
-          <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
             <div className="bg-foreground/5 rounded-xl p-2.5">
               <p className="text-[9px] font-bold uppercase tracking-wide text-primary/70 mb-0.5">Paket</p>
               <p className="text-sm font-bold text-foreground leading-tight">{user.profile.name}</p>
@@ -573,7 +573,7 @@ export default function CustomerDashboard() {
           : !ontDevice ? <div className="text-center py-4 text-muted-foreground text-xs"><Wifi className="w-8 h-8 mx-auto mb-1 opacity-30" /><p>{t('customer.ontNotFound')}</p></div>
           : (
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                 <div className="bg-muted/20 rounded-lg p-2"><span className="text-muted-foreground block text-[9px] uppercase font-bold">{t('customer.model')}</span><span className="font-medium text-foreground text-[11px]">{ontDevice.manufacturer} {ontDevice.model}</span></div>
                 <div className="bg-muted/20 rounded-lg p-2"><span className="text-muted-foreground block text-[9px] uppercase font-bold">{t('customer.ontStatus')}</span>
                   <span className={`text-[11px] font-bold ${ontDevice.status === 'Online' ? 'text-green-400' : 'text-red-400'}`}>{ontDevice.status}</span>

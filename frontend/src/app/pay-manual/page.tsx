@@ -514,7 +514,7 @@ function PayManualPageContent() {
 
         <Card className="mt-6 bg-primary/10 border-primary/30">
           <CardContent className="pt-6">
-            <h3 className="font-semibold mb-3">⚠️ Penting:</h3>
+            <h3 className="font-semibold mb-3">Penting:</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li>• Pastikan transfer sesuai dengan jumlah tagihan</li>
               <li>• Upload bukti transfer yang jelas dan terbaca</li>

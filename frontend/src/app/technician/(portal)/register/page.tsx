@@ -351,7 +351,7 @@ export default function TechnicianRegisterPage() {
                       className="w-full flex items-center justify-center gap-2 py-2 px-4 text-xs font-semibold bg-primary/10 hover:bg-primary/10 text-primary border border-border rounded-xl transition-all disabled:opacity-60"
                     >
                       {gpsLoading ? <><span className="w-3.5 h-3.5 border border-border border-t-violet-500 rounded-full animate-spin" /></> : <MapPin className="w-3.5 h-3.5" />}
-                      {gpsLoading ? 'Mendapatkan lokasi...' : '📍 Ambil Lokasi GPS Saya'}
+                      {gpsLoading ? 'Mendapatkan lokasi...' : 'Ambil Lokasi GPS Saya'}
                     </button>
                     {form.latitude && form.longitude && (
                       <a href={`https://maps.google.com/?q=${form.latitude},${form.longitude}`} target="_blank" rel="noopener noreferrer" className="mt-1.5 flex items-center gap-1 text-xs text-brand-500 hover:underline">

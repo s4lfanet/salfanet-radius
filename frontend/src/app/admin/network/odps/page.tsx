@@ -361,7 +361,7 @@ export default function ODPsPage() {
                     {odp.status}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mb-2">
                   <div>
                     <span className="text-muted-foreground text-[10px]">Connection</span>
                     <div className="space-y-0.5 mt-0.5">
@@ -563,7 +563,7 @@ export default function ODPsPage() {
                 <ModalLabel required>{t('common.name')}</ModalLabel>
                 <ModalInput type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required placeholder={t('network.odpNamePlaceholder')} />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <ModalLabel required>{t('olt.title')}</ModalLabel>
                   <ModalSelect value={formData.oltId} onChange={(e) => setFormData({ ...formData, oltId: e.target.value, odcId: '', parentOdpId: '' })} required>
@@ -598,7 +598,7 @@ export default function ODPsPage() {
                   </ModalSelect>
                 )}
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <ModalLabel>{t('network.portCount')}</ModalLabel>
                   <ModalInput type="number" value={formData.portCount} onChange={(e) => setFormData({ ...formData, portCount: e.target.value })} min={1} placeholder={t('network.portCountPlaceholder')} />
@@ -624,7 +624,7 @@ export default function ODPsPage() {
                     </button>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <ModalInput type="number" step="any" value={formData.latitude} onChange={(e) => setFormData({ ...formData, latitude: e.target.value })} required placeholder={t('network.latitude')} />
                   <ModalInput type="number" step="any" value={formData.longitude} onChange={(e) => setFormData({ ...formData, longitude: e.target.value })} required placeholder={t('network.longitude')} />
                 </div>

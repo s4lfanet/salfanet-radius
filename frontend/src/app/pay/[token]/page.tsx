@@ -344,7 +344,7 @@ export default function PaymentPage() {
             </div>
 
             {/* Dates */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="bg-card/50 rounded-xl p-3">
                 <p className="text-[10px] text-muted-foreground/60 mb-0.5 flex items-center gap-1"><Calendar className="w-3 h-3 text-primary" />Tanggal Terbit</p>
                 <p className="text-xs font-medium text-white">{formatDate(invoice.createdAt)}</p>
@@ -486,7 +486,7 @@ export default function PaymentPage() {
         {company && (
           <div className="bg-muted/80 rounded-2xl border border-border p-4 text-center">
             <h3 className="text-sm font-bold text-white">{company.name}</h3>
-            {company.address && <p className="text-[10px] text-muted-foreground/60 mt-1">📍 {company.address}</p>}
+            {company.address && <p className="text-[10px] text-muted-foreground/60 mt-1">{company.address}</p>}
             <div className="flex flex-wrap justify-center gap-3 text-[10px] text-muted-foreground/60 mt-2">
               {company.phone && <span>📞 {company.phone}</span>}
               {company.email && <span>✉️ {company.email}</span>}
@@ -551,7 +551,7 @@ export default function PaymentPage() {
                   <p className="text-2xl font-bold text-brand-500 drop-">
                     Rp {qrisData.uniqueAmount.toLocaleString('id-ID')}
                   </p>
-                  <p className="text-[10px] text-amber-400 mt-1">⚠️ Transfer tepat jumlah ini untuk verifikasi otomatis</p>
+                  <p className="text-[10px] text-amber-400 mt-1">Transfer tepat jumlah ini untuk verifikasi otomatis</p>
                 </div>
 
                 {/* Countdown */}

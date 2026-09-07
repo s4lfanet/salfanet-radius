@@ -160,7 +160,7 @@ export function TraceResultDisplay({ path, summary, onNodeClick }: TraceResultDi
                     </div>
                     {node.coordinates && (
                       <div className="text-xs opacity-75 mt-0.5">
-                        📍 {parseFloat(node.coordinates.lat).toFixed(6)}, {parseFloat(node.coordinates.lng).toFixed(6)}
+                        {parseFloat(node.coordinates.lat).toFixed(6)}, {parseFloat(node.coordinates.lng).toFixed(6)}
                       </div>
                     )}
                   </div>
@@ -189,7 +189,7 @@ export function TraceResultDisplay({ path, summary, onNodeClick }: TraceResultDi
 
       {/* Additional Info */}
       <div className="mt-6 p-4 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
           <div>
             <span className="text-muted-foreground">{t('network.tracing.routeQuality')}:</span>
             <span className={`ml-2 font-semibold ${quality.color}`}>{quality.label}</span>

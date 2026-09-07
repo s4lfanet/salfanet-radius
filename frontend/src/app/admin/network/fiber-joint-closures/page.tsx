@@ -403,7 +403,7 @@ export default function FiberJointClosuresPage() {
           </ModalHeader>
           <form onSubmit={handleSubmit}>
             <ModalBody className="space-y-4 max-h-[60vh] overflow-y-auto">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <ModalLabel>{t('network.jointClosure.name') || 'JC Name'} *</ModalLabel>
                   <ModalInput
@@ -427,7 +427,7 @@ export default function FiberJointClosuresPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <ModalLabel>{t('network.jointClosure.type') || 'JC Type'} *</ModalLabel>
                   <ModalSelect
@@ -451,7 +451,7 @@ export default function FiberJointClosuresPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <ModalLabel>{t('network.jointClosure.cableType') || 'Cable Type'} *</ModalLabel>
                   <ModalSelect
@@ -476,7 +476,7 @@ export default function FiberJointClosuresPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <ModalLabel>Splice Tray Count</ModalLabel>
                   <ModalInput
@@ -537,7 +537,7 @@ export default function FiberJointClosuresPage() {
 
               <div>
                 <ModalLabel>{t('network.jointClosure.location') || 'Location'} *</ModalLabel>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
                     <ModalLabel className="text-xs">{t('network.jointClosure.latitude') || 'Latitude'}</ModalLabel>
                     <ModalInput

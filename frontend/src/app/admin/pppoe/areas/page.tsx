@@ -240,7 +240,7 @@ export default function AreasPage() {
                     {area.isActive ? t('common.active') : t('common.inactive')}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mb-3">
                   <div><span className="text-muted-foreground">{t('common.description')}:</span><p className="font-medium">{area.description || '-'}</p></div>
                   <div>
                     <span className="text-muted-foreground">{t('pppoe.customer')}:</span>

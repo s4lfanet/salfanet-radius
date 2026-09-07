@@ -187,32 +187,32 @@ const TEMPLATE_CONTENT: Record<string, { title: string; body: string }> = {
   // Customer templates
   cust_broadcast: { title: '📢 Pengumuman dari Salfanet', body: 'Kepada pelanggan setia Salfanet, kami ingin menyampaikan informasi penting. Terima kasih atas kepercayaan Anda.' },
   cust_tagihan: { title: '💳 Tagihan Internet Jatuh Tempo', body: 'Tagihan internet Anda akan segera jatuh tempo. Segera lakukan pembayaran agar layanan tetap aktif.' },
-  cust_maintenance: { title: '🔧 Jadwal Maintenance Jaringan', body: 'Akan dilakukan maintenance jaringan. Layanan internet mungkin terganggu sementara. Mohon maaf atas ketidaknyamanannya.' },
-  cust_gangguan: { title: '⚠️ Gangguan Jaringan', body: 'Saat ini terjadi gangguan pada jaringan kami. Tim teknis sedang bekerja untuk memulihkan layanan. Mohon maaf atas ketidaknyamanannya.' },
-  cust_promo: { title: '🎁 Promo Spesial Salfanet!', body: 'Dapatkan penawaran spesial dari Salfanet! Upgrade paket internet Anda dengan harga terbaik. Berlaku terbatas!' },
+  cust_maintenance: { title: 'Jadwal Maintenance Jaringan', body: 'Akan dilakukan maintenance jaringan. Layanan internet mungkin terganggu sementara. Mohon maaf atas ketidaknyamanannya.' },
+  cust_gangguan: { title: 'Gangguan Jaringan', body: 'Saat ini terjadi gangguan pada jaringan kami. Tim teknis sedang bekerja untuk memulihkan layanan. Mohon maaf atas ketidaknyamanannya.' },
+  cust_promo: { title: 'Promo Spesial Salfanet!', body: 'Dapatkan penawaran spesial dari Salfanet! Upgrade paket internet Anda dengan harga terbaik. Berlaku terbatas!' },
   cust_info: { title: 'ℹ️ Informasi Layanan Salfanet', body: 'Kepada pelanggan Salfanet, berikut informasi penting terkait layanan kami. Harap dibaca dengan seksama.' },
   // Admin templates
   admin_broadcast: { title: '📢 Pengumuman Admin', body: 'Pengumuman penting untuk admin Salfanet. Harap perhatikan informasi ini.' },
-  admin_alert: { title: '🚨 Alert Sistem', body: 'Terdeteksi adanya anomali/peringatan pada sistem. Segera periksa dashboard admin.' },
+  admin_alert: { title: 'Alert Sistem', body: 'Terdeteksi adanya anomali/peringatan pada sistem. Segera periksa dashboard admin.' },
   admin_info: { title: 'ℹ️ Info Admin', body: 'Informasi penting terkait sistem Salfanet. Harap dibaca dan ditindaklanjuti.' },
   // Technician templates
   tech_broadcast: { title: '📢 Pengumuman untuk Teknisi', body: 'Kepada seluruh teknisi Salfanet, berikut pengumuman penting dari manajemen. Harap diperhatikan.' },
-  tech_tugas: { title: '🔧 Ada Tugas Baru untuk Anda', body: 'Anda mendapat penugasan baru. Segera cek aplikasi teknisi untuk detail pekerjaan dan lokasi pelanggan.' },
-  tech_jadwal: { title: '📅 Perubahan Jadwal Kerja', body: 'Terdapat perubahan pada jadwal kerja Anda. Silakan cek aplikasi teknisi untuk jadwal terbaru.' },
-  tech_darurat: { title: '🚨 Kondisi Darurat - Tindakan Segera', body: 'Terjadi kondisi darurat pada jaringan. Semua teknisi harap segera standby dan hubungi supervisor Anda.' },
-  tech_maintenance: { title: '🛠️ Jadwal Maintenance Terjadwal', body: 'Pengingat: ada jadwal maintenance terjadwal. Pastikan semua peralatan siap dan koordinasikan dengan tim.' },
+  tech_tugas: { title: 'Ada Tugas Baru untuk Anda', body: 'Anda mendapat penugasan baru. Segera cek aplikasi teknisi untuk detail pekerjaan dan lokasi pelanggan.' },
+  tech_jadwal: { title: 'Perubahan Jadwal Kerja', body: 'Terdapat perubahan pada jadwal kerja Anda. Silakan cek aplikasi teknisi untuk jadwal terbaru.' },
+  tech_darurat: { title: 'Kondisi Darurat - Tindakan Segera', body: 'Terjadi kondisi darurat pada jaringan. Semua teknisi harap segera standby dan hubungi supervisor Anda.' },
+  tech_maintenance: { title: 'Jadwal Maintenance Terjadwal', body: 'Pengingat: ada jadwal maintenance terjadwal. Pastikan semua peralatan siap dan koordinasikan dengan tim.' },
   tech_info: { title: 'ℹ️ Info Teknis Terbaru', body: 'Ada informasi teknis penting yang perlu diketahui seluruh teknisi. Harap baca dan implementasikan.' },
   // Agent templates
   agent_broadcast: { title: '📢 Pengumuman untuk Agen', body: 'Kepada seluruh agen Salfanet, berikut pengumuman penting dari manajemen. Harap diperhatikan.' },
   agent_komisi: { title: '💰 Komisi Anda Telah Diproses', body: 'Komisi penjualan Anda telah diproses dan siap dicairkan. Cek aplikasi agen untuk detail komisi Anda.' },
-  agent_registrasi: { title: '🎉 Ada Registrasi Pelanggan Baru!', body: 'Ada pelanggan baru yang mendaftar melalui kode referral Anda. Terus tingkatkan penjualan untuk bonus lebih besar!' },
-  agent_target: { title: '🎯 Update Target Bulanan', body: 'Target penjualan bulan ini telah diperbarui. Cek aplikasi agen untuk melihat progress dan sisa target Anda.' },
-  agent_promo: { title: '🎁 Promo Spesial untuk Agen', body: 'Ada promo spesial yang bisa Anda tawarkan kepada calon pelanggan. Cek detail promo dan manfaatkan kesempatan ini!' },
+  agent_registrasi: { title: 'Ada Registrasi Pelanggan Baru!', body: 'Ada pelanggan baru yang mendaftar melalui kode referral Anda. Terus tingkatkan penjualan untuk bonus lebih besar!' },
+  agent_target: { title: 'Update Target Bulanan', body: 'Target penjualan bulan ini telah diperbarui. Cek aplikasi agen untuk melihat progress dan sisa target Anda.' },
+  agent_promo: { title: 'Promo Spesial untuk Agen', body: 'Ada promo spesial yang bisa Anda tawarkan kepada calon pelanggan. Cek detail promo dan manfaatkan kesempatan ini!' },
   agent_info: { title: 'ℹ️ Informasi Penting untuk Agen', body: 'Ada informasi penting yang perlu diketahui seluruh agen Salfanet. Harap baca dan pahami dengan seksama.' },
   // All templates
   all_broadcast: { title: '📢 Pengumuman Salfanet', body: 'Kepada seluruh pengguna, pelanggan, teknisi, dan agen Salfanet - berikut pengumuman penting dari manajemen.' },
-  all_gangguan: { title: '⚠️ Gangguan Jaringan Area', body: 'Saat ini terjadi gangguan pada jaringan di beberapa area. Tim teknis sedang bekerja keras untuk pemulihan. Mohon maaf atas gangguan yang terjadi.' },
-  all_maintenance: { title: '🔧 Scheduled Maintenance', body: 'Akan dilakukan pemeliharaan jaringan terjadwal. Teknisi harap standby, pelanggan mohon maaf atas gangguan sementara.' },
+  all_gangguan: { title: 'Gangguan Jaringan Area', body: 'Saat ini terjadi gangguan pada jaringan di beberapa area. Tim teknis sedang bekerja keras untuk pemulihan. Mohon maaf atas gangguan yang terjadi.' },
+  all_maintenance: { title: 'Scheduled Maintenance', body: 'Akan dilakukan pemeliharaan jaringan terjadwal. Teknisi harap standby, pelanggan mohon maaf atas gangguan sementara.' },
 };
 
 export default function PushNotificationsPage() {
@@ -643,10 +643,10 @@ export default function PushNotificationsPage() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="all">🌐 {t('pushNotif.allCustomers')}</SelectItem>
-                            <SelectItem value="active">✅ {t('pushNotif.activeCustomers')}</SelectItem>
-                            <SelectItem value="expired">❌ {t('pushNotif.expiredCustomers')}</SelectItem>
-                            <SelectItem value="area">📍 {t('pushNotif.perArea')}</SelectItem>
+                            <SelectItem value="all">{t('pushNotif.allCustomers')}</SelectItem>
+                            <SelectItem value="active">{t('pushNotif.activeCustomers')}</SelectItem>
+                            <SelectItem value="expired">{t('pushNotif.expiredCustomers')}</SelectItem>
+                            <SelectItem value="area">{t('pushNotif.perArea')}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

@@ -584,7 +584,7 @@ export default function PaymentHistoryPage() {
                     )}
 
                     {/* Info grid */}
-                    <div className="grid grid-cols-2 gap-2 mb-3 p-3 bg-muted/20 rounded-lg border border-border/50">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3 p-3 bg-muted/20 rounded-lg border border-border/50">
                       <div>
                         <p className="text-[10px] text-muted-foreground">Jatuh Tempo</p>
                         <p className="text-xs font-semibold text-white flex items-center gap-1.5 mt-1">
@@ -1092,7 +1092,7 @@ export default function PaymentHistoryPage() {
                     )}
 
                     {/* Dates */}
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div className="p-2.5 bg-muted/10 rounded-xl border border-border/40">
                         <p className="text-[9px] text-muted-foreground uppercase tracking-wide mb-1">Dibuat</p>
                         <p className="text-[11px] font-semibold text-white">{formatDate(selectedDetail.createdAt)}</p>

@@ -176,7 +176,7 @@ export default function TechnicianOnlinePage() {
                     <span className="text-xs font-bold text-green-600 dark:text-green-400">{formatUptime(s.duration)}</span>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   <div>
                     <span className="text-muted-foreground/70">IP: </span>
                     <span className="font-mono text-foreground/80">{s.framedIpAddress}</span>

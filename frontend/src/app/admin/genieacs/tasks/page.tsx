@@ -282,7 +282,7 @@ export default function GenieACSTasksPage() {
           </div>
           {pendingCount > 0 && autoRefresh && (
             <p className="text-[10px] text-primary mt-2">
-              ⏱️ {t('genieacs.autoRefreshInfo')}
+              {t('genieacs.autoRefreshInfo')}
             </p>
           )}
         </div>
@@ -309,7 +309,7 @@ export default function GenieACSTasksPage() {
                     {task.fault.message}
                   </p>
                 )}
-                <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mb-2">
                   <div>
                     <p className="text-[10px] text-muted-foreground">{t('genieacs.taskId')}</p>
                     <p className="font-mono text-[10px] text-foreground truncate">{task._id}</p>

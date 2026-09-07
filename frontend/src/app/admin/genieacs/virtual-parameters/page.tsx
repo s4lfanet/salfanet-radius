@@ -507,7 +507,7 @@ return user || "N/A";`}</pre>
               ) : (
                 <>
                   {/* Display Settings Tab */}
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <ModalLabel>{t('genieacs.displayType')}</ModalLabel>
                       <ModalSelect
@@ -533,7 +533,7 @@ return user || "N/A";`}</pre>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <ModalLabel>{t('genieacs.color')}</ModalLabel>
                       <ModalSelect

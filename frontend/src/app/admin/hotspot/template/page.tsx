@@ -54,8 +54,8 @@ const DEFAULT_TEMPLATE = `{include file="rad-template-header.tpl"}
 {$vs['validity']} - {$_c['currency_code']}. {number_format($vs['total'], 0, ',', '.')}
 </div>
 <div style="padding: 5px 10px; font-size: 9px; color: #666; background: #f9f9f9; border-top: 1px solid #eee;">
-<div>📊 Kuota: {$vs['quota']}</div>
-<div>⏱️ Durasi: {$vs['duration']}</div>
+<div>Kuota: {$vs['quota']}</div>
+<div>Durasi: {$vs['duration']}</div>
 </div>
 </div>
 {else}
@@ -77,8 +77,8 @@ const DEFAULT_TEMPLATE = `{include file="rad-template-header.tpl"}
 {$vs['validity']} - {$_c['currency_code']}. {number_format($vs['total'], 0, ',', '.')}
 </div>
 <div style="padding: 5px 10px; font-size: 9px; color: #666; background: #f9f9f9; border-top: 1px solid #eee;">
-<div>📊 Kuota: {$vs['quota']}</div>
-<div>⏱️ Durasi: {$vs['duration']}</div>
+<div>Kuota: {$vs['quota']}</div>
+<div>Durasi: {$vs['duration']}</div>
 </div>
 </div>
 {/if}

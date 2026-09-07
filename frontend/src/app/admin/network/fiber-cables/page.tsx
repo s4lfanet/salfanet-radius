@@ -357,7 +357,7 @@ export default function FiberCablesPage() {
                   <Cable className="h-3.5 w-3.5 text-blue-600" />
                   <span className="text-[10px] font-medium text-blue-700 dark:text-blue-400">{t('fiberCable.specification')}</span>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] text-gray-500">{t('fiberCable.cableType')}:</span>
                     <span className={`px-1.5 py-0.5 rounded text-[9px] ${getTypeColor(cable.cableType)}`}>
@@ -419,7 +419,7 @@ export default function FiberCablesPage() {
       {/* Add/Edit Dialog */}
       {isDialogOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-card rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-card rounded-lg shadow-xl max-w-[calc(100%-2rem)] sm:max-w-lg w-full max-h-[90vh] overflow-y-auto">
             <div className="px-4 py-3 border-b dark:border-gray-800 flex items-center justify-between sticky top-0 bg-card">
               <div>
                 <h2 className="text-sm font-semibold flex items-center gap-2">
@@ -444,7 +444,7 @@ export default function FiberCablesPage() {
                   {t('fiberCable.basicInfo')}
                 </h3>
                 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[10px] font-medium mb-1">{t('fiberCable.cableCode')} *</label>
                     <input
@@ -581,7 +581,7 @@ export default function FiberCablesPage() {
       {/* Detail Dialog */}
       {isDetailDialogOpen && selectedCable && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-card rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-card rounded-lg shadow-xl max-w-[calc(100%-2rem)] sm:max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="px-4 py-3 border-b dark:border-gray-800 flex items-center justify-between sticky top-0 bg-card">
               <div>
                 <h2 className="text-sm font-semibold flex items-center gap-2">

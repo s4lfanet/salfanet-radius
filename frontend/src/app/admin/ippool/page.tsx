@@ -447,7 +447,7 @@ export default function IPPoolPage() {
               <ModalLabel>Network (first 3 octets)</ModalLabel>
               <ModalInput value={formData.network} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, network: e.target.value })} placeholder="e.g. 172.19.200" />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <ModalLabel>Start (last octet)</ModalLabel>
                 <ModalInput type="number" value={formData.start} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, start: e.target.value })} />
@@ -478,7 +478,7 @@ export default function IPPoolPage() {
               <ModalLabel>Network (first 3 octets)</ModalLabel>
               <ModalInput value={expandData.network} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setExpandData({ ...expandData, network: e.target.value })} placeholder="e.g. 172.19.201" />
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <ModalLabel>Start</ModalLabel>
                 <ModalInput type="number" value={expandData.start} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setExpandData({ ...expandData, start: e.target.value })} />

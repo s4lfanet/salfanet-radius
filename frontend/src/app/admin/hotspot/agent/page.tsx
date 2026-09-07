@@ -419,7 +419,7 @@ export default function AgentPage() {
                     {agent.isActive ? t('common.active') : t('common.inactive')}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mb-3">
                   <div>
                     <div className="text-[10px] text-muted-foreground">{t('common.phone')}</div>
                     <div>{agent.phone}</div>
@@ -678,7 +678,7 @@ export default function AgentPage() {
               <p className="text-[10px] text-muted-foreground">{t('agent.currentBalance')}</p>
               <p className="text-lg font-bold text-brand-500 drop-">{selectedAgentForBalance && formatCurrency(selectedAgentForBalance.balance)}</p>
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <button type="button" onClick={() => setBalanceType('add')} className={`px-3 py-2 rounded-lg border-2 text-xs font-medium transition-all ${balanceType === 'add' ? 'border-green-500 bg-green-500/10 text-green-500 ' : 'border-border hover:border-green-500/50'}`}>
                 <DollarSign className="w-3.5 h-3.5 mx-auto mb-0.5" /> {t('agent.addBalance')}
               </button>
@@ -729,7 +729,7 @@ export default function AgentPage() {
                   <p className="text-xs font-semibold text-foreground">
                     {formatWIB(new Date(selectedMonthDetail.year, selectedMonthDetail.month), 'MMMM yyyy')}
                   </p>
-                  <div className="grid grid-cols-2 gap-3 mt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
                     <div>
                       <p className="text-[10px] text-muted-foreground">{t('agent.totalSales')}</p>
                       <p className="text-sm font-bold text-green-500">{formatCurrency(selectedMonthDetail.total)}</p>
@@ -809,7 +809,7 @@ export default function AgentPage() {
             <ModalDescription>{t('hotspot.setStatusForAgents', { count: selectedAgents.length })}</ModalDescription>
           </ModalHeader>
           <ModalBody>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <button type="button" onClick={() => setBulkStatusValue(true)} className={`px-3 py-3 rounded-lg border-2 text-xs font-medium transition-all ${bulkStatusValue ? 'border-green-500 bg-green-500/10 text-green-500 ' : 'border-border hover:border-green-500/50 text-foreground'}`}>
                 ✓ {t('common.active')}
               </button>

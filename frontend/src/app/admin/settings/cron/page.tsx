@@ -404,7 +404,7 @@ export default function CronSettingsPage() {
                     </div>
                     <p className="text-xs text-muted-foreground">{job.description}</p>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                     <div>
                       <span className="text-muted-foreground">{t('settings.schedule')}:</span>
                       <div className="font-medium text-foreground">{job.scheduleLabel}</div>
@@ -549,7 +549,7 @@ export default function CronSettingsPage() {
                       : <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded">⏸ Off</span>
                     }
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                     <div>
                       <span className="text-muted-foreground">Default:</span>
                       <code className="block bg-muted px-1.5 py-0.5 rounded font-mono mt-0.5">{s.defaultSchedule}</code>

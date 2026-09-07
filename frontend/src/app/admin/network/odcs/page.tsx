@@ -283,7 +283,7 @@ export default function ODCsPage() {
                     {odc.status}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mb-2">
                   <div>
                     <span className="text-muted-foreground text-[10px]">OLT</span>
                     <div className="flex items-center gap-1 mt-0.5">
@@ -458,7 +458,7 @@ export default function ODCsPage() {
                 <ModalLabel required>{t('common.name')}</ModalLabel>
                 <ModalInput type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required placeholder="ODC-01" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <ModalLabel required>{t('network.oltSelectLabel')}</ModalLabel>
                   <ModalSelect value={formData.oltId} onChange={(e) => setFormData({ ...formData, oltId: e.target.value })} required>
@@ -471,7 +471,7 @@ export default function ODCsPage() {
                   <ModalInput type="number" value={formData.ponPort} onChange={(e) => setFormData({ ...formData, ponPort: e.target.value })} required min={1} placeholder="1" />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <ModalLabel>{t('network.portCount')}</ModalLabel>
                   <ModalInput type="number" value={formData.portCount} onChange={(e) => setFormData({ ...formData, portCount: e.target.value })} min={1} placeholder="8" />
@@ -497,7 +497,7 @@ export default function ODCsPage() {
                     </button>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <ModalInput type="number" step="any" value={formData.latitude} onChange={(e) => setFormData({ ...formData, latitude: e.target.value })} required placeholder="Latitude" />
                   <ModalInput type="number" step="any" value={formData.longitude} onChange={(e) => setFormData({ ...formData, longitude: e.target.value })} required placeholder="Longitude" />
                 </div>

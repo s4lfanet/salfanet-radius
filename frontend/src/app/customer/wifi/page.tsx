@@ -304,7 +304,7 @@ export default function CustomerWiFiPage() {
           </span>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
           {device.serialNumber && device.serialNumber !== '-' && (
             <div>
               <span className="text-slate-500">Serial</span>

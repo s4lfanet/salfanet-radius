@@ -177,7 +177,7 @@ export default function SendMessagePage() {
       console.log('[Frontend] Broadcast response:', data);
 
       if (data.success) {
-        addToast({ type: 'success', title: t('whatsapp.broadcastComplete'), description: `✅ ${t('whatsapp.success')}: ${data.successCount || 0} | ❌ ${t('whatsapp.failed')}: ${data.failCount || 0}` });
+        addToast({ type: 'success', title: t('whatsapp.broadcastComplete'), description: `${t('whatsapp.success')}: ${data.successCount || 0} | ${t('whatsapp.failed')}: ${data.failCount || 0}` });
         setBroadcastResult({ total: data.total || 0, successCount: data.successCount || 0, failCount: data.failCount || 0 });
         setSelectedUsers(new Set());
       } else {
@@ -598,7 +598,7 @@ export default function SendMessagePage() {
                   <div><code className="bg-muted px-1 rounded">{'{{companyAddress}}'}</code></div>
                 </div>
                 <div className="mt-2 p-2 bg-warning/10 border border-warning/30 rounded text-[9px] text-yellow-800 dark:text-yellow-200">
-                  <p className="font-medium mb-1">⚠️ Catatan Penting:</p>
+                  <p className="font-medium mb-1">Catatan Penting:</p>
                   <p>Variabel invoice seperti <code className="bg-warning/20 dark:bg-yellow-800 px-1 rounded">{'{{invoiceNumber}}'}</code>, <code className="bg-warning/20 dark:bg-yellow-800 px-1 rounded">{'{{amount}}'}</code>, <code className="bg-warning/20 dark:bg-yellow-800 px-1 rounded">{'{{dueDate}}'}</code>, <code className="bg-warning/20 dark:bg-yellow-800 px-1 rounded">{'{{paymentLink}}'}</code> TIDAK tersedia di broadcast manual.</p>
                   <p className="mt-1">Untuk mengirim pesan invoice, gunakan fitur <strong>WhatsApp Notifications</strong> yang otomatis mengirim saat invoice dibuat.</p>
                 </div>

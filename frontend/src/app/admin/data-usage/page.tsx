@@ -191,7 +191,7 @@ export default function DataUsagePage() {
             <button onClick={() => topQuery.refetch()} className="px-3 py-1.5 bg-cyan-600/20 text-cyan-400 rounded text-sm hover:bg-cyan-600/30">Apply</button>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-4">
               <div className="text-xs text-gray-500 uppercase">Total Users (period)</div>
               <div className="text-2xl font-bold text-cyan-400">{topConsumers.total_users}</div>

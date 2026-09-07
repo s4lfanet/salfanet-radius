@@ -1133,7 +1133,7 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
             {serviceTemplate === 'zte_full' && (
               <div className="rounded-lg border border-border p-4 space-y-4">
                 <div className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">ZTE Full Template</div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs text-gray-500">Primary VLAN</Label>
                     <Input type="number" min={1} max={4094} value={primaryVlan} onChange={e => setPrimaryVlan(parseInt(e.target.value) || 30)} className="mt-1 font-mono" />
@@ -1143,7 +1143,7 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
                     <Input type="number" min={1} max={4094} value={secondaryVlan} onChange={e => setSecondaryVlan(parseInt(e.target.value) || 151)} className="mt-1 font-mono" />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs text-gray-500">PPPoE Username</Label>
                     <Input value={pppoeUsername} onChange={e => setPppoeUsername(e.target.value)} className="mt-1 font-mono" placeholder="optional" />
@@ -1160,7 +1160,7 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
                   </div>
                   <Switch checked={enableDualSsid} onCheckedChange={setEnableDualSsid} />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs text-gray-500">SSID 1 Name</Label>
                     <Input value={ssid1Name} onChange={e => setSsid1Name(e.target.value)} className="mt-1 font-mono" placeholder="optional" />
@@ -1181,7 +1181,7 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
                   </div>
                 </div>
                 {enableDualSsid && (
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <Label className="text-xs text-gray-500">SSID 2 Name</Label>
                       <Input value={ssid2Name} onChange={e => setSsid2Name(e.target.value)} className="mt-1 font-mono" placeholder="optional" />
@@ -1211,7 +1211,7 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
                   <Switch checked={enableTr069} onCheckedChange={setEnableTr069} />
                 </div>
                 {enableTr069 && (
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="col-span-2">
                       <Label className="text-xs text-gray-500">ACS URL</Label>
                       <Input value={acsUrl} onChange={e => setAcsUrl(e.target.value)} className="mt-1 font-mono" />
@@ -1259,7 +1259,7 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
             {serviceTemplate === 'huawei_full' && (
               <div className="rounded-lg border border-border p-4 space-y-4">
                 <div className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Huawei Full Template</div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs text-gray-500">Mgmt VLAN</Label>
                     <Input type="number" min={1} max={4094} value={mgmtVlan} onChange={e => setMgmtVlan(parseInt(e.target.value) || 1010)} className="mt-1 font-mono" />
@@ -1283,7 +1283,7 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
             {serviceTemplate === 'fiberhome_veip' && (
               <div className="rounded-lg border border-border p-4 space-y-4">
                 <div className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Fiberhome VEIP Template</div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <Label className="text-xs text-gray-500">TR-069 VLAN</Label>
                     <Input type="number" min={1} max={4094} value={tr069Vlan} onChange={e => setTr069Vlan(parseInt(e.target.value) || 100)} className="mt-1 font-mono" />
@@ -1297,7 +1297,7 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
                     <Input type="number" min={1} max={4094} value={voipVlan} onChange={e => setVoipVlan(parseInt(e.target.value) || 151)} className="mt-1 font-mono" />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="col-span-2">
                     <Label className="text-xs text-gray-500">ACS URL</Label>
                     <Input value={acsUrl} onChange={e => setAcsUrl(e.target.value)} className="mt-1 font-mono" />
@@ -2493,7 +2493,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                   <Label className="font-semibold">SNMP</Label>
                 </div>
                 {settings.snmpEnabled && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label>Community String</Label>
                       <Input
@@ -2535,7 +2535,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                   <Label className="font-semibold">SSH</Label>
                 </div>
                 {settings.sshEnabled && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label>Port</Label>
                       <Input
@@ -2586,7 +2586,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                   <Label className="font-semibold">Telnet</Label>
                 </div>
                 {settings.telnetEnabled && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <Label>Port</Label>
                       <Input

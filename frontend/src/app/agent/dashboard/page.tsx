@@ -887,7 +887,7 @@ export default function AgentDashboardPage() {
             </div>
 
             <div className="p-4 sm:p-5 space-y-4 overflow-y-auto min-h-0">
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setDepositMode('gateway')}

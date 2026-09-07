@@ -88,7 +88,7 @@ export default function NewPppoeUserPage() {
       try {
         const data = await pppoeApi.listUsers({ search: formData.idCardNumber });
         const found = (data.users || []).find((u: PppoeUser) => u.idCardNumber === formData.idCardNumber);
-        setFormWarnings(w => ({ ...w, nik: found ? `⚠️ NIK sudah terdaftar: ${found.name}` : '' }));
+        setFormWarnings(w => ({ ...w, nik: found ? `NIK sudah terdaftar: ${found.name}` : '' }));
       } catch (e: unknown) { /* ignore - non-critical duplicate check */ console.warn('Duplicate NIK check failed:', e); }
     }, 500);
     return () => { clearTimeout(timer); controller.abort(); };
@@ -104,7 +104,7 @@ export default function NewPppoeUserPage() {
       try {
         const data = await pppoeApi.listUsers({ search: formData.phone });
         const found = (data.users || []).find((u: PppoeUser) => u.phone === formData.phone);
-        setFormWarnings(w => ({ ...w, phone: found ? `⚠️ No HP sudah terdaftar: ${found.name}` : '' }));
+        setFormWarnings(w => ({ ...w, phone: found ? `No HP sudah terdaftar: ${found.name}` : '' }));
       } catch (e: unknown) { /* ignore - non-critical duplicate check */ console.warn('Duplicate phone check failed:', e); }
     }, 500);
     return () => { clearTimeout(timer); controller.abort(); };
@@ -288,7 +288,7 @@ export default function NewPppoeUserPage() {
                   <ModalLabel required>Nama Lengkap</ModalLabel>
                   <ModalInput type="text" value={formData.name} onChange={(e) => field('name', e.target.value)} placeholder="Sesuai KTP" />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <ModalLabel required>No. HP / WhatsApp</ModalLabel>
                     <ModalInput type="tel" inputMode="numeric" value={formData.phone} onChange={(e) => handlePhoneChange(e.target.value)} placeholder="628123456789" />
@@ -332,7 +332,7 @@ export default function NewPppoeUserPage() {
                     <input type="file" accept="image/*" capture="environment" onChange={handleUploadIdCard} disabled={uploadingIdCard} className="hidden" id="idCardCamera" />
                     <label htmlFor="idCardCamera" className={`w-full flex flex-col items-center justify-center gap-1 px-3 py-4 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted text-muted-foreground ${uploadingIdCard ? 'opacity-50 cursor-not-allowed' : ''}`}>
                       {uploadingIdCard ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
-                      <span className="text-xs font-medium">📷 Ambil Foto KTP / Pilih Gambar</span>
+                      <span className="text-xs font-medium">Ambil Foto KTP / Pilih Gambar</span>
                       <span className="text-[10px] text-muted-foreground">Kamera HP atau upload dari galeri</span>
                     </label>
                   </>
@@ -341,8 +341,8 @@ export default function NewPppoeUserPage() {
 
               {/* GPS Lokasi */}
               <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">📍 Lokasi Pelanggan <span className="text-destructive">*</span></p>
-                <div className="grid grid-cols-2 gap-2">
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Lokasi Pelanggan <span className="text-destructive">*</span></p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
                     <ModalLabel>Latitude</ModalLabel>
                     <ModalInput type="number" step="any" value={formData.latitude} onChange={(e) => field('latitude', e.target.value)} placeholder="-6.200000" />
@@ -352,7 +352,7 @@ export default function NewPppoeUserPage() {
                     <ModalInput type="number" step="any" value={formData.longitude} onChange={(e) => field('longitude', e.target.value)} placeholder="106.816666" />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <button type="button" onClick={() => {
                     if (navigator.geolocation) {
                       navigator.geolocation.getCurrentPosition(
@@ -426,10 +426,10 @@ export default function NewPppoeUserPage() {
                     );
                   })()}
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <label className={`flex items-center gap-2 p-2.5 border-2 rounded-lg cursor-pointer transition-all ${formData.subscriptionType === 'POSTPAID' ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/40'}`}>
                     <input type="radio" name="subscriptionType" value="POSTPAID" checked={formData.subscriptionType === 'POSTPAID'} onChange={() => field('subscriptionType', 'POSTPAID')} className="w-3 h-3 accent-primary" />
-                    <div><p className="text-[10px] font-semibold">📅 Postpaid</p><p className="text-[9px] text-muted-foreground">Pakai dulu, bayar nanti</p></div>
+                    <div><p className="text-[10px] font-semibold">Postpaid</p><p className="text-[9px] text-muted-foreground">Pakai dulu, bayar nanti</p></div>
                   </label>
                   <label className={`flex items-center gap-2 p-2.5 border-2 rounded-lg cursor-pointer transition-all ${formData.subscriptionType === 'PREPAID' ? 'border-purple-500 bg-primary/10' : 'border-border hover:border-border'}`}>
                     <input type="radio" name="subscriptionType" value="PREPAID" checked={formData.subscriptionType === 'PREPAID'} onChange={() => field('subscriptionType', 'PREPAID')} className="w-3 h-3 accent-purple-500" />
@@ -456,7 +456,7 @@ export default function NewPppoeUserPage() {
               {/* Diskon */}
               <div className="bg-card border border-border rounded-xl p-4 space-y-3">
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">💰 Diskon (opsional)</p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <ModalLabel>Nominal Diskon</ModalLabel>
                     <div className="relative">
@@ -483,7 +483,7 @@ export default function NewPppoeUserPage() {
                   </button>
                   <button type="button" onClick={() => setFirstInvoice('none')}
                     className={`flex flex-col items-center gap-0.5 p-2.5 border-2 rounded-xl cursor-pointer transition-all text-center ${firstInvoice === 'none' ? 'border-border bg-muted' : 'border-border/40 bg-muted/30 hover:border-border'}`}>
-                    <span className="text-base">⏰</span>
+                    <span className="text-base"></span>
                     <span className="text-[9px] font-bold">Bayar Setelah Pemakaian</span>
                     <span className="text-[8px] text-muted-foreground">Dibuat otomatis oleh sistem</span>
                   </button>
@@ -492,7 +492,7 @@ export default function NewPppoeUserPage() {
                   <div className="grid grid-cols-2 gap-1.5">
                     <label className={`flex flex-col items-center p-2 border-2 rounded-lg cursor-pointer transition-all text-center ${firstInvoice === 'prorate' ? 'border-emerald-500 bg-emerald-100 dark:bg-emerald-900/40' : 'border-border bg-background hover:border-emerald-400'}`}>
                       <input type="radio" name="firstInvoice" value="prorate" checked={firstInvoice === 'prorate'} onChange={() => setFirstInvoice('prorate')} className="sr-only" />
-                      <span className="text-sm">📅</span>
+                      <span className="text-sm"></span>
                       <span className={`text-[9px] font-bold ${firstInvoice === 'prorate' ? 'text-emerald-700 dark:text-emerald-300' : ''}`}>Prorate</span>
                       {prorateInfo ? (
                         <>
@@ -552,7 +552,7 @@ export default function NewPppoeUserPage() {
               {hasPppoeAccount && (
                 <div className="bg-card border border-border rounded-xl p-4 space-y-3">
                   <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Kredensial PPPoE</p>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <ModalLabel required>Username</ModalLabel>
                       <ModalInput type="text" value={formData.username} onChange={(e) => field('username', e.target.value.replace(/\s/g, ''))} placeholder="pppoe-username" />
@@ -588,7 +588,7 @@ export default function NewPppoeUserPage() {
               {/* Jaringan */}
               <div className="bg-card border border-border rounded-xl p-4 space-y-3">
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Jaringan</p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <ModalLabel required>NAS / Router</ModalLabel>
                     <ModalSelect value={formData.routerId} onChange={(e) => field('routerId', e.target.value)}>
@@ -604,7 +604,7 @@ export default function NewPppoeUserPage() {
                     </ModalSelect>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <ModalLabel>ODP (Reference)</ModalLabel>
                     <ModalInput type="text" value={formData.odp} onChange={(e) => field('odp', e.target.value)} placeholder="ODP-01-GRD" />
@@ -633,7 +633,7 @@ export default function NewPppoeUserPage() {
               <div className="bg-card border border-border rounded-xl p-4 space-y-3">
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Pengaturan Tambahan</p>
                 <div>
-                  <ModalLabel>⚡ Aksi Jatuh Tempo</ModalLabel>
+                  <ModalLabel>Aksi Jatuh Tempo</ModalLabel>
                   <select value={formData.autoIsolationEnabled ? 'isolate' : 'keep'} onChange={(e) => field('autoIsolationEnabled', e.target.value === 'isolate')}
                     className="w-full px-3 py-2 text-xs border border-border rounded-lg bg-background focus:outline-none focus:ring-1 focus:ring-primary">
                     <option value="isolate">ISOLIR INTERNET - isolir otomatis saat expired</option>
@@ -641,7 +641,7 @@ export default function NewPppoeUserPage() {
                   </select>
                 </div>
                 <div>
-                  <ModalLabel>📅 Tanggal Pemasangan</ModalLabel>
+                  <ModalLabel>Tanggal Pemasangan</ModalLabel>
                   <ModalInput type="date" value={formData.registeredAt} onChange={(e) => field('registeredAt', e.target.value)} />
                 </div>
                 <div>

@@ -172,7 +172,7 @@ function PaymentSuccessContent() {
       </div>
       <div className="relative z-10 max-w-sm w-full bg-muted/80 rounded-2xl border-2 border-red-500/50 p-6 text-center ">
         <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-3 border-2 border-red-500/50">
-          <span className="text-xl">❌</span>
+          <span className="text-xl"></span>
         </div>
         <h1 className="text-base font-bold text-white mb-1">Oops!</h1>
         <p className="text-xs text-muted-foreground/70 mb-4">{error || t('payment.dataNotFound')}</p>
@@ -244,7 +244,7 @@ function PaymentSuccessContent() {
               </div>
               {isPaid && (
                 <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-3">
-                  <p className="text-xs text-green-500 text-center font-medium">✅ {t('payment.balanceAddedToAccount')}</p>
+                  <p className="text-xs text-green-500 text-center font-medium">{t('payment.balanceAddedToAccount')}</p>
                 </div>
               )}
             </div>
@@ -327,7 +327,7 @@ function PaymentSuccessContent() {
             </div>
             {isPaid && (
               <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-3">
-                <p className="text-xs text-green-500 text-center font-medium">✅ {t('payment.serviceActivated')}</p>
+                <p className="text-xs text-green-500 text-center font-medium">{t('payment.serviceActivated')}</p>
               </div>
             )}
           </div>
