@@ -16,7 +16,7 @@ import { syncVoucherStatusFromRadius } from '@/server/services/radius/hotspot-sy
  *   2. Sync status dari RADIUS radacct (acctstoptime IS NULL) — untuk radius mode
  *   3. Expire voucher yang sudah lewat masa berlakunya (expiresAt < now)
  */
-export async function runHotspotSync(): Promise<{ expired: number; total: number; activated: number; mikrotikUpdated: number; errors: string[] }> {
+export async function runHotspotSync(): Promise<{ expired: number; total: number; activated: number; mikrotikUpdated: number; syntheticCreated: number; timeoutUpdated: number; errors: string[] }> {
   const errors: string[] = [];
   const now = nowWIB();
 
@@ -451,7 +451,7 @@ export async function runSessionMonitor(): Promise<{ suspicious: number; stale: 
  * SAFETY: Jika semua router API gagal, skip stale-close entirely.
  *         Hanya close orphaned (username tidak terdaftar) yang aman.
  */
-export async function runPppoeSessionSync(): Promise<{ synced: number; closed: number; orphaned: number; total: number; errors: string[] }> {
+export async function runPppoeSessionSync(): Promise<{ synced: number; closed: number; orphaned: number; total: number; created: number; errors: string[] }> {
   const errors: string[] = [];
   const now = nowWIB();
 
@@ -611,10 +611,12 @@ export async function runPppoeSessionSync(): Promise<{ synced: number; closed: n
         for (const user of registeredUsers) {
           try {
             // Find router NAS IP for this user
-            const router = await prisma.router.findUnique({
-              where: { id: user.routerId },
-              select: { nasname: true, ipAddress: true },
-            });
+            const router = user.routerId
+              ? await prisma.router.findUnique({
+                  where: { id: user.routerId },
+                  select: { nasname: true, ipAddress: true },
+                })
+              : null;
             if (!router) continue;
             const nasIp = router.nasname || router.ipAddress || '';
             // Check if synthetic entry already exists (avoid duplicates)
