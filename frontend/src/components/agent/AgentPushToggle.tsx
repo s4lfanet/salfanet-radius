@@ -141,7 +141,7 @@ export default function AgentPushToggle() {
       disabled={loading || isDenied || !isSupported}
       title={
         !isSupported ? 'Browser tidak mendukung push notification'
-        : isDenied ? 'Notifikasi diblokir — ubah di pengaturan browser'
+        : isDenied ? 'Notifikasi diblokir - ubah di pengaturan browser'
         : isOn ? 'Klik untuk nonaktifkan notifikasi push'
         : 'Klik untuk aktifkan notifikasi push'
       }

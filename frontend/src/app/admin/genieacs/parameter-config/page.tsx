@@ -261,12 +261,12 @@ export default function ParameterConfigPage() {
 
   return (
     <div className="bg-background relative">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div><div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div><div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div><div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div></div>
+      <div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div><div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div><div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div><div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div></div>
       <div className="relative z-10 max-w-6xl mx-auto space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)] flex items-center gap-2">
-              <Settings2 className="w-6 h-6 text-brand-500 dark:text-brand-500 dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)]" />
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop- flex items-center gap-2">
+              <Settings2 className="w-6 h-6 text-brand-500 dark:text-brand-500 dark:drop-" />
               {t('genieacs.paramConfigTitle')}
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">
@@ -353,7 +353,7 @@ export default function ParameterConfigPage() {
         {/* Configuration List - Card Layout */}
         {loading ? (
           <div className="flex items-center justify-center py-10">
-            <Loader2 className="w-5 h-5 animate-spin text-brand-500 dark:text-brand-500 dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)]" />
+            <Loader2 className="w-5 h-5 animate-spin text-brand-500 dark:text-brand-500 dark:drop-" />
           </div>
         ) : (
           <div className="bg-card rounded-lg border border-border">
@@ -618,7 +618,7 @@ export default function ParameterConfigPage() {
                             parameterPaths: newPaths.filter(p => p !== '' || newPaths.length === 1)
                           });
                         }}
-                        className="flex-1 px-3 py-2 border-2 border-violet-500/30 rounded-lg focus:ring-1 focus:ring-brand-500/50 focus:border-brand-500 bg-background dark:bg-card text-foreground font-mono text-sm outline-none transition-all"
+                        className="flex-1 px-3 py-2 border border-border rounded-lg focus:ring-1 focus:ring-brand-500/50 focus:border-brand-500 bg-background dark:bg-card text-foreground font-mono text-sm outline-none transition-all"
                       />
                       {(editingConfig.parameterPaths || []).length > 1 && (
                         <button
@@ -677,7 +677,7 @@ export default function ParameterConfigPage() {
                         e.target.value = '';
                       }
                     }}
-                    className="w-full px-3 py-2 border-2 border-violet-500/30 rounded-lg focus:ring-1 focus:ring-brand-500/50 focus:border-brand-500 bg-background dark:bg-card text-foreground text-sm outline-none transition-all appearance-none cursor-pointer"
+                    className="w-full px-3 py-2 border border-border rounded-lg focus:ring-1 focus:ring-brand-500/50 focus:border-brand-500 bg-background dark:bg-card text-foreground text-sm outline-none transition-all appearance-none cursor-pointer"
                   >
                     <option value="" className="dark:bg-card">{t('genieacs.selectToAdd')}</option>
                     {virtualParameters.map((vp) => (

@@ -79,7 +79,7 @@ export default function ManagementPage() {
   const { data: usersData, isLoading: loading } = useApiQuery<{ users: User[] } | User[]>('/api/admin/users', { staleTime: 30000 });
   const users: User[] = Array.isArray(usersData) ? usersData : (usersData?.users || []);
 
-  // ─── React Query: Permissions (rarely change — 5min stale) ──────────────────
+  // ─── React Query: Permissions (rarely change - 5min stale) ──────────────────
   const { data: permissionsData } = useApiQuery<{ success: boolean; permissions: Record<string, Permission[]> } | Permission[]>('/api/permissions', { staleTime: 5 * 60 * 1000 });
   // API returns grouped object: { category1: [...], category2: [...] }
   // Convert to flat array for state
@@ -92,7 +92,7 @@ export default function ManagementPage() {
     return [];
   })();
 
-  // ─── React Query: Role templates (rarely change — 5min stale) ───────────────
+  // ─── React Query: Role templates (rarely change - 5min stale) ───────────────
   const { data: templatesData } = useApiQuery<{ success: boolean; templates: Record<string, string[]> }>('/api/permissions/role-templates', { staleTime: 5 * 60 * 1000 });
   const roleTemplates: Record<string, string[]> = (templatesData?.success && templatesData.templates) ? templatesData.templates : {};
 
@@ -268,11 +268,11 @@ export default function ManagementPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         </div>
         <div className="flex flex-col items-center gap-2 relative z-10">
-          <div className="w-12 h-12 border-2 border-brand-500 dark:border-brand-500 border-t-transparent rounded-full animate-spin dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)]" />
+          <div className="w-12 h-12 border-2 border-brand-500 dark:border-brand-500 border-t-transparent rounded-full animate-spin dark:drop-" />
           <span className="text-xs text-muted-foreground">{t('common.loading')}</span>
         </div>
       </div>
@@ -282,7 +282,7 @@ export default function ManagementPage() {
   return (
     <div className="bg-background relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
         <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
@@ -291,7 +291,7 @@ export default function ManagementPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)]">{t('management.title')}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-">{t('management.title')}</h1>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t('management.subtitle')}</p>
           </div>
           {hasPermission(PERMISSIONS.USERS_CREATE) && (
@@ -309,7 +309,7 @@ export default function ManagementPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-2.5 sm:p-3 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-3  hover:border-border transition-all">
             <div className="flex items-center gap-2">
               <div className="p-1.5 bg-primary/10 rounded">
                 <svg className="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -322,7 +322,7 @@ export default function ManagementPage() {
               </div>
             </div>
           </div>
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-2.5 sm:p-3 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-3  hover:border-border transition-all">
             <div className="flex items-center gap-2">
               <div className="p-1.5 bg-destructive/10 rounded">
                 <svg className="w-3.5 h-3.5 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -337,7 +337,7 @@ export default function ManagementPage() {
               </div>
             </div>
           </div>
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-2.5 sm:p-3 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-3  hover:border-border transition-all">
             <div className="flex items-center gap-2">
               <div className="p-1.5 bg-info/10 rounded">
                 <svg className="w-3.5 h-3.5 text-info" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -352,7 +352,7 @@ export default function ManagementPage() {
               </div>
             </div>
           </div>
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-2.5 sm:p-3 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-3  hover:border-border transition-all">
             <div className="flex items-center gap-2">
               <div className="p-1.5 bg-primary/10 rounded">
                 <svg className="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -589,14 +589,14 @@ export default function ManagementPage() {
               )}
               <div>
                 <ModalLabel>{t('management.permissions')}</ModalLabel>
-                <div className="border border-violet-500/30 rounded-lg p-2 max-h-48 overflow-y-auto space-y-2 bg-muted/50 dark:bg-card/50">
+                <div className="border border-border rounded-lg p-2 max-h-48 overflow-y-auto space-y-2 bg-muted/50 dark:bg-card/50">
                   {Object.entries(permissionsByCategory).map(([category, perms]) => (
                     <div key={category}>
                       <p className="text-[10px] font-semibold text-brand-500 mb-1 uppercase tracking-wider">{category}</p>
                       <div className="grid grid-cols-2 gap-1">
                         {perms.map((perm) => (
-                          <label key={perm.id} className="flex items-center gap-1.5 cursor-pointer p-1 hover:bg-violet-500/10 rounded transition-colors">
-                            <input type="checkbox" checked={formData.permissions.includes(perm.key)} onChange={() => togglePermission(perm.key)} className="w-3 h-3 rounded border-violet-500/50 bg-background dark:bg-background dark:bg-card accent-brand-500 dark:accent-brand-500" />
+                          <label key={perm.id} className="flex items-center gap-1.5 cursor-pointer p-1 hover:bg-primary/10 rounded transition-colors">
+                            <input type="checkbox" checked={formData.permissions.includes(perm.key)} onChange={() => togglePermission(perm.key)} className="w-3 h-3 rounded border-border bg-background dark:bg-background dark:bg-card accent-brand-500 dark:accent-brand-500" />
                             <span className="text-[10px] text-foreground">{perm.name}</span>
                           </label>
                         ))}

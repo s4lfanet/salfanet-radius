@@ -72,7 +72,7 @@ export default function AdminOntRemovalTasksPage() {
     }
   }, []);
 
-  // Customers eligible for cabut ONT — sourced from the isolated/suspended
+  // Customers eligible for cabut ONT - sourced from the isolated/suspended
   // customer list, same source the standalone "Pelanggan Isolir" page uses.
   const fetchIsolatedCustomers = useCallback(async () => {
     try {

@@ -24,7 +24,7 @@ const cyberBadgeVariants = cva(
         
         // Neon purple
         purple: [
-          'bg-violet-500/20 text-violet-600 dark:text-violet-400 border border-violet-500/50',
+          'bg-primary/10 text-violet-600 dark:text-primary border border-border',
           'shadow-md shadow-violet-500/20',
         ].join(' '),
         

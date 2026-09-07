@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * React Query Provider — wraps the app with QueryClient.
+ * React Query Provider - wraps the app with QueryClient.
  *
  * Provides client-side data caching, deduplication, and background refetching
  * via @tanstack/react-query.

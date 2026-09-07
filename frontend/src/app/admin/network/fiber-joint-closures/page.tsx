@@ -209,7 +209,7 @@ export default function FiberJointClosuresPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Link2 className="h-6 w-6 text-purple-500" />
+            <Link2 className="h-6 w-6 text-primary" />
             {t('network.jointClosure.title') || 'Joint Closure Management'}
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
@@ -232,7 +232,7 @@ export default function FiberJointClosuresPage() {
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
           placeholder={t('common.search') || 'Search...'}
-          className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-foreground focus:ring-2 focus:ring-purple-500"
+          className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-foreground focus:ring-2 focus:ring-primary"
         />
         <select
           value={filterType}
@@ -281,7 +281,7 @@ export default function FiberJointClosuresPage() {
       <div className="bg-card rounded-lg border border-border overflow-hidden">
         {loading ? (
           <div className="text-center py-12">
-            <RefreshCcw className="h-8 w-8 animate-spin text-purple-500 mx-auto mb-2" />
+            <RefreshCcw className="h-8 w-8 animate-spin text-primary mx-auto mb-2" />
             <p className="text-gray-500">{t('common.loading') || 'Loading...'}</p>
           </div>
         ) : filteredJCs.length === 0 ? (

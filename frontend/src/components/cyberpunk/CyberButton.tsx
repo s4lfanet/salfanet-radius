@@ -6,12 +6,12 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const cyberButtonVariants = cva(
-  // Base styles — clean, modern
+  // Base styles - clean, modern
   'relative inline-flex items-center justify-center gap-2 whitespace-nowrap font-semibold tracking-wide transition-all duration-200 disabled:pointer-events-none disabled:opacity-50 overflow-hidden',
   {
     variants: {
       variant: {
-        // Primary — Blue
+        // Primary - Blue
         default: [
           'bg-blue-600 text-white',
           'border border-blue-600',
@@ -47,7 +47,7 @@ const cyberButtonVariants = cva(
           'active:scale-[0.98]',
         ].join(' '),
 
-        // Destructive — Red
+        // Destructive - Red
         destructive: [
           'bg-red-600 text-white',
           'border border-red-600',
@@ -56,7 +56,7 @@ const cyberButtonVariants = cva(
           'active:scale-[0.98]',
         ].join(' '),
 
-        // Success — Emerald
+        // Success - Emerald
         success: [
           'bg-emerald-600 text-white',
           'border border-emerald-600',
@@ -65,7 +65,7 @@ const cyberButtonVariants = cva(
           'active:scale-[0.98]',
         ].join(' '),
 
-        // Warning — Amber
+        // Warning - Amber
         warning: [
           'bg-amber-500 text-white',
           'border border-amber-500',
@@ -74,7 +74,7 @@ const cyberButtonVariants = cva(
           'active:scale-[0.98]',
         ].join(' '),
 
-        // Outline — Blue border
+        // Outline - Blue border
         outline: [
           'bg-transparent text-blue-600 dark:text-blue-400',
           'border border-blue-300 dark:border-blue-700',
@@ -82,7 +82,7 @@ const cyberButtonVariants = cva(
           'active:scale-[0.98]',
         ].join(' '),
 
-        // Ghost — minimal
+        // Ghost - minimal
         ghost: [
           'bg-transparent text-muted-foreground',
           'border border-transparent',
@@ -97,9 +97,9 @@ const cyberButtonVariants = cva(
           'hover:underline hover:text-blue-700 dark:hover:text-blue-300',
         ].join(' '),
 
-        // Glass — subtle overlay
+        // Glass - subtle overlay
         glass: [
-          'bg-muted/50 dark:bg-card/40 backdrop-blur-xl text-slate-800 dark:text-slate-200',
+          'bg-muted/50 dark:bg-card/40 text-slate-800 dark:text-slate-200',
           'border border-border',
           'shadow-sm',
           'hover:bg-blue-50/80 dark:hover:bg-blue-950/30 hover:border-blue-300 dark:hover:border-blue-700',

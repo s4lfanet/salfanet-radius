@@ -11,7 +11,7 @@ import {
 
 const PAGE_SIZE = 50;
 const fmtRp = (v: number) => `Rp ${Number(v || 0).toLocaleString('id-ID')}`;
-const fmtDate = (d: string | null) => d ? formatWIB(d, 'dd MMM yyyy') : '—';
+const fmtDate = (d: string | null) => d ? formatWIB(d, 'dd MMM yyyy') : '-';
 
 export default function CollectorIsolirPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -225,7 +225,7 @@ export default function CollectorIsolirPage() {
                             <div className="text-xs text-muted-foreground flex items-center gap-1.5">
                               <span className="font-mono">{u.customerId || u.username}</span>
                               <span>·</span>
-                              <span className="flex items-center gap-0.5"><Phone className="w-3 h-3" />{u.phone || '—'}</span>
+                              <span className="flex items-center gap-0.5"><Phone className="w-3 h-3" />{u.phone || '-'}</span>
                             </div>
                           </div>
                         </div>
@@ -240,7 +240,7 @@ export default function CollectorIsolirPage() {
                             </div>
                             <div className="text-xs text-muted-foreground">{fmtRp(u.profile.price)}/bln</div>
                           </div>
-                        ) : <span className="text-muted-foreground">—</span>}
+                        ) : <span className="text-muted-foreground">-</span>}
                       </td>
                       {/* Area */}
                       <td className="px-3 py-3">
@@ -249,7 +249,7 @@ export default function CollectorIsolirPage() {
                             <MapPin className="w-3 h-3" />
                             {u.area.name}
                           </span>
-                        ) : <span className="text-muted-foreground">—</span>}
+                        ) : <span className="text-muted-foreground">-</span>}
                       </td>
                       {/* Expired */}
                       <td className="px-3 py-3">

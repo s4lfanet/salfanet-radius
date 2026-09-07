@@ -252,13 +252,13 @@ export default function IPPoolPage() {
             <Network className="w-6 h-6" />
             IP Pool Management
           </h1>
-          <p className="text-sm text-gray-400 mt-1">RADIUS ippool module — dynamic IP allocation per speed tier</p>
+          <p className="text-sm text-gray-400 mt-1">RADIUS ippool module - dynamic IP allocation per speed tier</p>
         </div>
         <div className="flex gap-2">
           <button onClick={() => invalidatePoolData()} className="p-2 text-gray-400 hover:text-cyan-400 transition-colors" title="Refresh">
             <RefreshCw className="w-5 h-5" />
           </button>
-          <button onClick={() => setIsMapOpen(true)} className="px-3 py-2 bg-purple-600/20 text-purple-400 rounded-lg hover:bg-purple-600/30 flex items-center gap-2 text-sm">
+          <button onClick={() => setIsMapOpen(true)} className="px-3 py-2 bg-purple-600/20 text-primary rounded-lg hover:bg-purple-600/30 flex items-center gap-2 text-sm">
             <Link2 className="w-4 h-4" /> Map Group
           </button>
           <button onClick={() => setIsCreateOpen(true)} className="px-3 py-2 bg-cyan-600/20 text-cyan-400 rounded-lg hover:bg-cyan-600/30 flex items-center gap-2 text-sm">
@@ -340,7 +340,7 @@ export default function IPPoolPage() {
       {/* Pool-Group Mappings */}
       <div className="bg-gray-900/50 border border-gray-800 rounded-lg overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
-          <Link2 className="w-5 h-5 text-purple-400" />
+          <Link2 className="w-5 h-5 text-primary" />
           <h2 className="font-semibold text-gray-200">Pool-Name → Group Mappings (radgroupcheck)</h2>
         </div>
         {mappings.length === 0 ? (
@@ -361,7 +361,7 @@ export default function IPPoolPage() {
               <tbody className="divide-y divide-gray-800">
                 {mappings.map((m) => (
                   <tr key={m.id} className="hover:bg-gray-800/30">
-                    <td className="px-4 py-3 font-mono text-purple-400">{m.groupname}</td>
+                    <td className="px-4 py-3 font-mono text-primary">{m.groupname}</td>
                     <td className="px-4 py-3 font-mono text-cyan-400">{m.pool_name}</td>
                     <td className="px-4 py-3 text-right">
                       <button onClick={() => handleUnmap(m.id, m.groupname)} className="text-red-400 hover:text-red-300" title="Remove">

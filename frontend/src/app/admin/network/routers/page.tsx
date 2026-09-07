@@ -181,7 +181,7 @@ export default function RouterPage() {
         }))
       }
     } else {
-      // VPN client dihapus — kosongkan IP agar user isi manual
+      // VPN client dihapus - kosongkan IP agar user isi manual
       setFormData(prev => ({ ...prev, vpnClientId: '', ipAddress: '', nasname: '' }))
     }
   }
@@ -231,7 +231,7 @@ export default function RouterPage() {
           showError(`VPN tidak terhubung ke ${formData.ipAddress}`)
           return
         }
-        // Ping berhasil — lanjut test API, tapi error API tidak memblokir simpan
+        // Ping berhasil - lanjut test API, tapi error API tidak memblokir simpan
       }
 
       const result = await apiAdmin<{ success: boolean; message: string; identity?: string; usedPort?: number; diagnosis?: string }>('/api/network/routers/test', {
@@ -257,11 +257,11 @@ export default function RouterPage() {
       } else {
         setTestResult(result)
         const diagMsg = result.diagnosis === 'port_refused'
-          ? `${result.message}\n\nPort ditolak (ECONNREFUSED) — pastikan /ip service api sudah enabled dan port benar.`
+          ? `${result.message}\n\nPort ditolak (ECONNREFUSED) - pastikan /ip service api sudah enabled dan port benar.`
           : result.diagnosis === 'auth_failed'
-          ? `${result.message}\n\nUsername/password salah — cek credentials di /ip service.`
+          ? `${result.message}\n\nUsername/password salah - cek credentials di /ip service.`
           : result.diagnosis === 'firewall_block'
-          ? `${result.message}\n\nKoneksi timeout — firewall memblokir port ini.`
+          ? `${result.message}\n\nKoneksi timeout - firewall memblokir port ini.`
           : result.message
         showError(diagMsg)
       }
@@ -378,11 +378,11 @@ export default function RouterPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         </div>
         <div className="relative z-10 flex flex-col items-center gap-4">
-          <Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)]" />
+          <Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop-" />
           <p className="text-brand-500 font-medium animate-pulse">{t('network.loadingRouters')}</p>
         </div>
       </div>
@@ -393,8 +393,8 @@ export default function RouterPage() {
     <>
       {showScriptModal && scriptModalData && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={() => setShowScriptModal(false)}>
-          <div className="bg-[#1e1b2e] border border-violet-500/40 rounded-xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b border-violet-500/20">
+          <div className="bg-[#1e1b2e] border border-border rounded-xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-border">
               <h2 className="font-bold text-brand-500">{t('network.radiusScriptGenerated')}</h2>
               <button onClick={() => setShowScriptModal(false)} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
             </div>
@@ -431,7 +431,7 @@ export default function RouterPage() {
                 </div>
               </div>
             </div>
-            <div className="flex gap-2 p-4 border-t border-violet-500/20">
+            <div className="flex gap-2 p-4 border-t border-border">
               <button onClick={() => setShowScriptModal(false)} className="flex-1 px-4 py-2 text-sm border border-gray-600 rounded-lg text-muted-foreground hover:text-foreground">{t('network.close')}</button>
               <button onClick={() => {
                 const toCopy = scriptRosTab === 6 && scriptModalData.scriptRos6
@@ -448,7 +448,7 @@ export default function RouterPage() {
       <main className="bg-background relative">
         {/* Animated Background */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none dark:block hidden">
-          <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-violet-500/15 rounded-full blur-[120px] animate-pulse"></div>
+          <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px] animate-pulse"></div>
           <div className="absolute top-1/3 right-1/4 w-[400px] h-[400px] bg-brand-500/15 rounded-full blur-[100px] animate-pulse delay-700"></div>
           <div className="absolute bottom-0 left-1/2 w-[600px] h-[400px] bg-pink-500/10 rounded-full blur-[150px] animate-pulse delay-1000"></div>
           <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:60px_60px]"></div>
@@ -460,7 +460,7 @@ export default function RouterPage() {
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2.5 bg-gradient-to-br from-brand-500 to-violet-500 rounded-xl shadow-[0_0_20px_rgba(6,182,212,0.4)] flex items-center justify-center">
+                  <div className="p-2.5 bg-gradient-to-br from-brand-500 to-primary rounded-xl  flex items-center justify-center">
                     <Server className="w-6 h-6 text-white" />
                   </div>
                   <h1 className="text-3xl lg:text-4xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500">
@@ -473,7 +473,7 @@ export default function RouterPage() {
               </div>
               <button
                 onClick={() => { setEditingRouter(null); resetForm(); setShowModal(true) }}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] transition-all duration-300 transform hover:scale-105"
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition-all duration-300 transform hover:scale-105"
               >
                 <Plus className="w-5 h-5" />
                 {t('network.addRouter')}
@@ -483,7 +483,7 @@ export default function RouterPage() {
 
           {/* ── Tutorial / Flow Banner ───────────────────────────────── */}
           <div className="mb-8">
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border border-brand-500/20 rounded-2xl overflow-hidden">
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 border border-brand-500/20 rounded-2xl overflow-hidden">
               <button
                 onClick={() => setShowTutorial(!showTutorial)}
                 className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-brand-500/5 transition-colors"
@@ -492,7 +492,7 @@ export default function RouterPage() {
                   <div className="p-1.5 bg-brand-500/20 rounded-lg flex items-center justify-center">
                     <Info className="w-4 h-4 text-brand-500" />
                   </div>
-                  <span className="text-sm font-bold text-brand-500 uppercase tracking-wider">Cara Penggunaan — Alur NAS / Router</span>
+                  <span className="text-sm font-bold text-brand-500 uppercase tracking-wider">Cara Penggunaan - Alur NAS / Router</span>
                 </div>
                 {showTutorial ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
               </button>
@@ -500,7 +500,7 @@ export default function RouterPage() {
                 <div className="px-6 pb-6 border-t border-brand-500/10">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-5">
                     {[
-                      { step: 1, icon: '🔌', color: 'border-violet-500/40 bg-violet-500/5', title: 'Sambungkan VPN', desc: 'Pastikan NAS/router sudah tersambung ke VPN (L2TP, WireGuard, atau SSTP) melalui menu VPN Client.', link: '/admin/network/vpn-client', linkLabel: '→ Menu VPN Client' },
+                      { step: 1, icon: '🔌', color: 'border-border bg-primary/10', title: 'Sambungkan VPN', desc: 'Pastikan NAS/router sudah tersambung ke VPN (L2TP, WireGuard, atau SSTP) melalui menu VPN Client.', link: '/admin/network/vpn-client', linkLabel: '→ Menu VPN Client' },
                       { step: 2, icon: '➕', color: 'border-brand-500/40 bg-brand-500/5', title: 'Tambah NAS/Router', desc: 'Klik "+ Tambah Router/NAS". Isi Nama, IP VPN NAS (mis. 10.20.30.10), username & password Winbox/API MikroTik.', link: null, linkLabel: null },
                       { step: 3, icon: '🔬', color: 'border-green-500/40 bg-green-500/5', title: 'Test & Simpan', desc: 'Klik "Test Koneksi" untuk verifikasi API MikroTik dapat diakses. Simpan jika berhasil. NAS terdaftar sebagai RADIUS client.', link: null, linkLabel: null },
                       { step: 4, icon: '📜', color: 'border-amber-500/40 bg-amber-500/5', title: 'Generate RADIUS Script', desc: 'Klik "RADIUS Script" pada kartu NAS. Copy script RouterOS yang dihasilkan dan paste di terminal/WinBox MikroTik NAS tersebut.', link: null, linkLabel: null },
@@ -524,7 +524,7 @@ export default function RouterPage() {
 
                   {/* Troubleshooting: unknown client */}
                   <div className="mt-3 p-4 rounded-xl border border-amber-500/30 bg-amber-500/5">
-                    <p className="text-xs font-bold text-amber-400 mb-2">⚠️ Troubleshooting — FreeRADIUS: &quot;unknown client&quot;</p>
+                    <p className="text-xs font-bold text-amber-400 mb-2">⚠️ Troubleshooting - FreeRADIUS: &quot;unknown client&quot;</p>
                     <p className="text-xs text-muted-foreground mb-3">Jika FreeRADIUS menolak request NAS dengan error <code className="bg-slate-800 px-1 rounded text-amber-300">Ignoring request from unknown client X.X.X.X</code>, lakukan langkah berikut:</p>
                     <ol className="text-xs text-muted-foreground space-y-1.5 list-decimal list-inside">
                       <li>Pastikan NAS sudah ditambahkan lewat halaman ini (bukan langsung ke database). Jika baru saja di-INSERT manual ke DB, hapus dan tambah ulang via UI.</li>
@@ -544,19 +544,19 @@ export default function RouterPage() {
 
           {/* Stats Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-2xl border border-violet-500/30 p-5 hover:border-violet-500/50 transition-all group">
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-border p-5 hover:border-border transition-all group">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-muted-foreground text-sm mb-1">{t('common.totalRouters')}</p>
                   <p className="text-3xl font-bold text-foreground">{totalRouters}</p>
                 </div>
-                <div className="p-3 bg-violet-500/20 rounded-xl group-hover:bg-violet-500/30 transition-colors flex items-center justify-center">
-                  <Server className="w-6 h-6 text-violet-500" />
+                <div className="p-3 bg-primary/10 rounded-xl group-hover:bg-primary/10 transition-colors flex items-center justify-center">
+                  <Server className="w-6 h-6 text-primary" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-2xl border border-green-500/30 p-5 hover:border-green-500/50 transition-all group">
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-green-500/30 p-5 hover:border-green-500/50 transition-all group">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-muted-foreground text-sm mb-1">{t('network.online')}</p>
@@ -568,7 +568,7 @@ export default function RouterPage() {
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-2xl border border-brand-500/30 p-5 hover:border-brand-500/50 transition-all group">
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-brand-500/30 p-5 hover:border-brand-500/50 transition-all group">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-muted-foreground text-sm mb-1">MikroTik</p>
@@ -580,14 +580,14 @@ export default function RouterPage() {
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-2xl border border-purple-500/30 p-5 hover:border-purple-500/50 transition-all group">
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-border p-5 hover:border-border transition-all group">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-muted-foreground text-sm mb-1">{t('common.viaVpn')}</p>
-                  <p className="text-3xl font-bold text-purple-400">{vpnRouters}</p>
+                  <p className="text-3xl font-bold text-primary">{vpnRouters}</p>
                 </div>
-                <div className="p-3 bg-purple-500/20 rounded-xl group-hover:bg-purple-500/30 transition-colors flex items-center justify-center">
-                  <Shield className="w-6 h-6 text-purple-400" />
+                <div className="p-3 bg-primary/10 rounded-xl group-hover:bg-primary/10 transition-colors flex items-center justify-center">
+                  <Shield className="w-6 h-6 text-primary" />
                 </div>
               </div>
             </div>
@@ -595,9 +595,9 @@ export default function RouterPage() {
 
           {/* Router List */}
           {routers.length === 0 ? (
-            <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl rounded-3xl border-2 border-dashed border-violet-500/40 p-16 text-center">
-              <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-violet-500/20 to-brand-500/20 rounded-2xl flex items-center justify-center">
-                <Server className="w-10 h-10 text-violet-500" />
+            <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 rounded-3xl border-2 border-dashed border-border p-16 text-center">
+              <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-primary/20 to-brand-500/20 rounded-2xl flex items-center justify-center">
+                <Server className="w-10 h-10 text-primary" />
               </div>
               <h3 className="text-lg sm:text-2xl font-bold text-foreground mb-3">{t('network.noRoutersYet')}</h3>
               <p className="text-muted-foreground mb-8 max-w-md mx-auto">
@@ -605,7 +605,7 @@ export default function RouterPage() {
               </p>
               <button
                 onClick={() => { setEditingRouter(null); resetForm(); setShowModal(true) }}
-                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] transition-all duration-300 transform hover:scale-105"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition-all duration-300 transform hover:scale-105"
               >
                 <Plus className="w-5 h-5" />
                 {t('network.addFirstRouter')}
@@ -618,20 +618,20 @@ export default function RouterPage() {
                 return (
                   <div
                     key={routerData.id}
-                    className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border border-violet-500/30 rounded-2xl overflow-hidden hover:border-brand-500/50 hover:shadow-[0_0_40px_rgba(6,182,212,0.15)] transition-all duration-300 group"
+                    className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 border border-border rounded-2xl overflow-hidden hover:border-brand-500/50 hover: transition-all duration-300 group"
                   >
                     {/* Router Header */}
-                    <div className="p-6 border-b border-violet-500/20">
+                    <div className="p-6 border-b border-border">
                       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
-                          <div className="p-3 bg-gradient-to-br from-violet-500/30 to-brand-500/30 rounded-xl group-hover:from-violet-500/40 group-hover:to-brand-500/40 transition-colors flex items-center justify-center">
+                          <div className="p-3 bg-gradient-to-br from-primary/30 to-brand-500/30 rounded-xl group-hover:from-primary/40 group-hover:to-brand-500/40 transition-colors flex items-center justify-center">
                             <Server className="w-7 h-7 text-brand-500" />
                           </div>
                           <div>
                             <div className="flex items-center gap-3">
                               <h3 className="text-xl font-bold text-foreground group-hover:text-brand-500 transition-colors">{routerData.name}</h3>
                               {status?.online ? (
-                                <span className="px-3 py-1 text-xs font-bold rounded-lg bg-green-500/20 border border-green-500/40 text-green-400 shadow-[0_0_10px_rgba(34,197,94,0.2)]">
+                                <span className="px-3 py-1 text-xs font-bold rounded-lg bg-green-500/20 border border-green-500/40 text-green-400 ">
                                   {t('network.online')}
                                 </span>
                               ) : (
@@ -640,7 +640,7 @@ export default function RouterPage() {
                                 </span>
                               )}
                               {routerData.vpnClient && (
-                                <span className="px-3 py-1 text-xs font-bold rounded-lg bg-purple-500/20 border border-purple-500/40 text-purple-400">
+                                <span className="px-3 py-1 text-xs font-bold rounded-lg bg-primary/10 border border-border text-primary">
                                   via VPN: {routerData.vpnClient.name}
                                 </span>
                               )}
@@ -728,7 +728,7 @@ export default function RouterPage() {
 
                       {/* Status Info */}
                       {status && (status.identity || status.uptime) && (
-                        <div className="mt-4 pt-4 border-t border-violet-500/20 grid grid-cols-2 gap-4">
+                        <div className="mt-4 pt-4 border-t border-border grid grid-cols-2 gap-4">
                           {status.identity && (
                             <div>
                               <p className="text-brand-500 text-xs uppercase tracking-wider mb-1">{t('network.routerIdentityLabel')}</p>
@@ -758,9 +758,9 @@ export default function RouterPage() {
         {/* Add/Edit Modal */}
         {showModal && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-2.5 sm:p-4">
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-violet-500/50 rounded-2xl max-w-lg w-full p-6 shadow-[0_0_50px_rgba(139,92,246,0.3)] max-h-[90vh] overflow-y-auto">
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-border rounded-2xl max-w-lg w-full p-6  max-h-[90vh] overflow-y-auto">
               <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-gradient-to-br from-brand-500 to-violet-500 rounded-lg flex items-center justify-center">
+                <div className="p-2 bg-gradient-to-br from-brand-500 to-primary rounded-lg flex items-center justify-center">
                   <Server className="w-5 h-5 text-white" />
                 </div>
                 <h2 className="text-xl font-bold text-foreground">
@@ -797,7 +797,7 @@ export default function RouterPage() {
                   </select>
                 </div>
 
-                {/* Authentication Mode — only for MikroTik */}
+                {/* Authentication Mode - only for MikroTik */}
                 {formData.type === 'mikrotik' && (
                 <div>
                   <label className="block text-sm font-medium text-brand-500 mb-2">Authentication Mode *</label>
@@ -807,8 +807,8 @@ export default function RouterPage() {
                     className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all"
                     required
                   >
-                    <option value="radius" className="bg-background dark:bg-slate-800">RADIUS Only — Semua auth via FreeRADIUS</option>
-                    <option value="local" className="bg-background dark:bg-slate-800">Local Only — Auth via database lokal MikroTik</option>
+                    <option value="radius" className="bg-background dark:bg-slate-800">RADIUS Only - Semua auth via FreeRADIUS</option>
+                    <option value="local" className="bg-background dark:bg-slate-800">Local Only - Auth via database lokal MikroTik</option>
                   </select>
                   <p className="text-xs text-muted-foreground mt-1.5">
                     {formData.authMode === 'radius' && 'Semua user autentikasi melalui FreeRADIUS server.'}
@@ -827,7 +827,7 @@ export default function RouterPage() {
                         setUseVpnClient(e.target.checked)
                         if (!e.target.checked) setFormData({ ...formData, vpnClientId: '' })
                       }}
-                      className="w-5 h-5 rounded border-violet-500/50 bg-background dark:bg-slate-900 text-brand-500"
+                      className="w-5 h-5 rounded border-border bg-background dark:bg-slate-900 text-brand-500"
                     />
                     <div>
                       <span className="text-sm font-medium text-foreground">{t('network.connectViaVpn')}</span>
@@ -870,7 +870,7 @@ export default function RouterPage() {
                   />
                 </div>
 
-                {/* API Port — only show for MikroTik routers, not gateway/VPS */}
+                {/* API Port - only show for MikroTik routers, not gateway/VPS */}
                 {formData.type === 'mikrotik' && (
                 <div>
                   <label className="block text-sm font-medium text-brand-500 mb-2">{t('network.apiPort')}</label>
@@ -884,7 +884,7 @@ export default function RouterPage() {
                 </div>
                 )}
 
-                {/* Credentials — only for MikroTik */}
+                {/* Credentials - only for MikroTik */}
                 {formData.type === 'mikrotik' && (
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -912,7 +912,7 @@ export default function RouterPage() {
                   </div>
                 )}
 
-                {/* RADIUS Secret — auto-generated */}
+                {/* RADIUS Secret - auto-generated */}
                 <div>
                   <label className="block text-sm font-medium text-brand-500 mb-2">{t('network.radiusSecret')} (Auto-generated)</label>
                   <div className="flex gap-2">
@@ -926,7 +926,7 @@ export default function RouterPage() {
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, secret: generateSecret() })}
-                      className="px-4 py-3 bg-violet-500/20 border border-violet-500/40 text-violet-500 rounded-xl hover:bg-violet-500/30 transition-all font-medium whitespace-nowrap"
+                      className="px-4 py-3 bg-primary/10 border border-border text-primary rounded-xl hover:bg-primary/10 transition-all font-medium whitespace-nowrap"
                       title="Generate new secret"
                     >
                       <RefreshCw className="w-4 h-4" />
@@ -935,16 +935,16 @@ export default function RouterPage() {
                   <p className="text-xs text-muted-foreground mt-1.5">Secret di-generate otomatis. Copy paste ke MikroTik saat setup RADIUS.</p>
                 </div>
 
-                {/* Test Connection — only for MikroTik */}
+                {/* Test Connection - only for MikroTik */}
                 {!editingRouter && formData.type === 'mikrotik' && (
-                  <div className="p-4 bg-violet-500/10 border border-violet-500/30 rounded-xl">
+                  <div className="p-4 bg-primary/10 border border-border rounded-xl">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-sm font-medium text-foreground">{t('network.testConnection')}</span>
                       <button
                         type="button"
                         onClick={handleTestConnection}
                         disabled={testing}
-                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-lg hover:shadow-[0_0_15px_rgba(6,182,212,0.4)] transition-all disabled:opacity-50 text-sm"
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-lg hover: transition-all disabled:opacity-50 text-sm"
                       >
                         {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
                         {testing ? t('network.testing') : t('common.test')}
@@ -978,7 +978,7 @@ export default function RouterPage() {
                   <button
                     type="submit"
                     disabled={creating}
-                    className="flex-1 px-4 py-3 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all disabled:opacity-50"
+                    className="flex-1 px-4 py-3 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition-all disabled:opacity-50"
                   >
                     {creating ? t('common.saving') : (editingRouter ? t('network.updateRouter') : t('network.addRouter'))}
                   </button>

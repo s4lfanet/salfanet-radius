@@ -143,10 +143,10 @@ function DaftarPageInner() {
       <div className="min-h-dvh bg-muted relative overflow-hidden flex items-center justify-center p-4">
         {/* Animated Background */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         </div>
-        <Loader2 className="w-12 h-12 animate-spin text-brand-500 drop-shadow-[0_0_20px_rgba(6,182,212,0.6)] relative z-10" />
+        <Loader2 className="w-12 h-12 animate-spin text-brand-500 drop- relative z-10" />
       </div>
     );
   }
@@ -156,15 +156,15 @@ function DaftarPageInner() {
       <div className="min-h-dvh bg-muted relative overflow-hidden flex items-center justify-center p-4">
         {/* Animated Background */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
           <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
           <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
           <div className="absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
         </div>
 
-        <div className="relative z-10 bg-muted/80 backdrop-blur-xl rounded-2xl border-2 border-green-500/50 p-8 max-w-sm w-full text-center shadow-[0_0_50px_rgba(0,255,136,0.3)]">
-          <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-green-500/50 shadow-[0_0_30px_rgba(0,255,136,0.4)]">
-            <CheckCircle className="w-8 h-8 text-green-500 drop-shadow-[0_0_10px_rgba(0,255,136,0.8)]" />
+        <div className="relative z-10 bg-muted/80 rounded-2xl border-2 border-green-500/50 p-8 max-w-sm w-full text-center ">
+          <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-green-500/50 ">
+            <CheckCircle className="w-8 h-8 text-green-500 drop-" />
           </div>
           <h2 className="text-xl font-bold bg-gradient-to-r from-green-500 to-brand-500 bg-clip-text text-transparent mb-2">
             Pendaftaran Berhasil!
@@ -178,7 +178,7 @@ function DaftarPageInner() {
               setFormData({ name: '', phone: '', email: '', address: '', areaId: '', profileId: '', notes: '', referralCode: '', idCardNumber: '', latitude: null, longitude: null });
               setIdCardPhoto('');
             }}
-            className="w-full px-4 py-3 bg-gradient-to-r from-violet-500 to-brand-500 hover:from-violet-600 hover:to-brand-600 text-white text-sm font-bold rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(139,92,246,0.4)] hover:shadow-[0_0_30px_rgba(139,92,246,0.6)]"
+            className="w-full px-4 py-3 bg-gradient-to-r from-primary to-brand-500 hover:from-primary hover:to-brand-600 text-white text-sm font-bold rounded-xl transition-all duration-300  hover:"
           >
             Daftar Lagi
           </button>
@@ -191,7 +191,7 @@ function DaftarPageInner() {
     <div className="min-h-dvh bg-muted relative py-6 px-4">
       {/* Animated Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
         <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
         <div className="absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
@@ -200,20 +200,20 @@ function DaftarPageInner() {
       <div className="max-w-lg mx-auto relative z-10">
         {/* Header */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-violet-500 to-brand-500 rounded-2xl shadow-[0_0_40px_rgba(139,92,246,0.5)] mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary to-brand-500 rounded-2xl  mb-4">
             <Wifi className="w-8 h-8 text-white " />
           </div>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-brand-500 via-white to-pink-500 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(6,182,212,0.5)]">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-brand-500 via-white to-pink-500 bg-clip-text text-transparent drop-">
             {companyName}
           </h1>
           <p className="text-sm text-muted-foreground/80 mt-1">Daftar Layanan Internet</p>
         </div>
 
         {/* Form Card */}
-        <div className="bg-muted/80 backdrop-blur-xl rounded-2xl border-2 border-violet-500/30 p-5 shadow-[0_0_50px_rgba(139,92,246,0.2)]">
+        <div className="bg-muted/80 rounded-2xl border border-border p-5 ">
           <div className="flex items-center gap-2 mb-5">
-            <div className="p-2 bg-violet-500/20 rounded-lg border border-violet-500/30 flex items-center justify-center">
-              <UserPlus className="w-5 h-5 text-violet-500 drop-shadow-[0_0_10px_rgba(139,92,246,0.6)]" />
+            <div className="p-2 bg-primary/10 rounded-lg border border-border flex items-center justify-center">
+              <UserPlus className="w-5 h-5 text-primary drop-" />
             </div>
             <h2 className="text-base font-bold text-white">Formulir Pendaftaran</h2>
           </div>
@@ -237,7 +237,7 @@ function DaftarPageInner() {
                   placeholder="Nama lengkap Anda"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2.5 text-sm bg-card border-2 border-violet-500/30 rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus:shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all outline-none"
+                  className="w-full px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus: transition-all outline-none"
                   required
                 />
               </div>
@@ -253,7 +253,7 @@ function DaftarPageInner() {
                   placeholder="08xxxxxxxxxx"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-3 py-2.5 text-sm bg-card border-2 border-violet-500/30 rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus:shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all outline-none"
+                  className="w-full px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus: transition-all outline-none"
                   required
                 />
                 <p className="text-[10px] text-muted-foreground/60 mt-1">Untuk komunikasi</p>
@@ -270,7 +270,7 @@ function DaftarPageInner() {
                   placeholder="email@example.com (opsional)"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-3 py-2.5 text-sm bg-card border-2 border-violet-500/30 rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus:shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all outline-none"
+                  className="w-full px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus: transition-all outline-none"
                 />
               </div>
 
@@ -284,7 +284,7 @@ function DaftarPageInner() {
                   placeholder="Jalan, RT/RW, Kelurahan, Kecamatan"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full px-3 py-2.5 text-sm bg-card border-2 border-violet-500/30 rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus:shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all outline-none resize-none"
+                  className="w-full px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus: transition-all outline-none resize-none"
                   rows={2}
                   required
                 />
@@ -300,7 +300,7 @@ function DaftarPageInner() {
                   <select
                     value={formData.areaId}
                     onChange={(e) => setFormData({ ...formData, areaId: e.target.value })}
-                    className="w-full px-3 py-2.5 text-sm bg-card border-2 border-violet-500/30 rounded-xl text-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus:shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all outline-none appearance-none cursor-pointer"
+                    className="w-full px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus: transition-all outline-none appearance-none cursor-pointer"
                   >
                     <option value="" className="bg-card">-- Pilih area layanan (opsional) --</option>
                     {areas.map((area) => (
@@ -355,7 +355,7 @@ function DaftarPageInner() {
                         );
                       }}
                       disabled={submitting}
-                      className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-bold bg-gradient-to-r from-violet-500 to-brand-500 hover:from-violet-600 hover:to-brand-600 disabled:from-gray-600 disabled:to-gray-600 text-white rounded-xl transition-all shadow-[0_0_15px_rgba(139,92,246,0.3)]"
+                      className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-bold bg-gradient-to-r from-primary to-brand-500 hover:from-primary hover:to-brand-600 disabled:from-gray-600 disabled:to-gray-600 text-white rounded-xl transition-all "
                     >
                       {submitting ? (
                         <><Loader2 className="w-3.5 h-3.5 animate-spin" />Mengambil...</>
@@ -408,7 +408,7 @@ function DaftarPageInner() {
                 <select
                   value={formData.profileId}
                   onChange={(e) => setFormData({ ...formData, profileId: e.target.value })}
-                  className="w-full px-3 py-2.5 text-sm bg-card border-2 border-violet-500/30 rounded-xl text-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus:shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all outline-none appearance-none cursor-pointer"
+                  className="w-full px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus: transition-all outline-none appearance-none cursor-pointer"
                   required
                 >
                   <option value="" className="bg-card">Pilih paket internet</option>
@@ -421,7 +421,7 @@ function DaftarPageInner() {
               </div>
 
               {selectedProfile && (
-                <div className="bg-gradient-to-br from-violet-500/20 to-brand-500/20 p-4 rounded-xl border border-violet-500/30">
+                <div className="bg-gradient-to-br from-primary/20 to-brand-500/20 p-4 rounded-xl border border-border">
                   <h4 className="text-xs font-bold text-brand-500 mb-2 uppercase tracking-wide">Detail Paket</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
@@ -433,7 +433,7 @@ function DaftarPageInner() {
                       <span className="font-bold text-green-500 text-base">{formatCurrency(selectedProfile.price)}/bln</span>
                     </div>
                     {selectedProfile.description && (
-                      <p className="pt-2 border-t border-violet-500/20 text-muted-foreground/80 text-xs">{selectedProfile.description}</p>
+                      <p className="pt-2 border-t border-border text-muted-foreground/80 text-xs">{selectedProfile.description}</p>
                     )}
                   </div>
                 </div>
@@ -460,7 +460,7 @@ function DaftarPageInner() {
                   onChange={(e) => setFormData({ ...formData, idCardNumber: e.target.value.replace(/\D/g, '').slice(0, 16) })}
                   maxLength={16}
                   required
-                  className="w-full px-3 py-2.5 text-sm bg-card border-2 border-violet-500/30 rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus:shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all outline-none font-mono tracking-widest"
+                  className="w-full px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus: transition-all outline-none font-mono tracking-widest"
                 />
               </div>
 
@@ -512,7 +512,7 @@ function DaftarPageInner() {
                 placeholder="Catatan atau permintaan khusus"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                className="w-full px-3 py-2.5 text-sm bg-card border-2 border-violet-500/30 rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus:shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all outline-none resize-none"
+                className="w-full px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus: transition-all outline-none resize-none"
                 rows={2}
               />
             </div>
@@ -529,7 +529,7 @@ function DaftarPageInner() {
                 value={formData.referralCode}
                 onChange={(e) => setFormData({ ...formData, referralCode: e.target.value.toUpperCase() })}
                 maxLength={10}
-                className="w-full px-3 py-2.5 text-sm bg-card border-2 border-violet-500/30 rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus:shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all outline-none font-mono tracking-widest uppercase"
+                className="w-full px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus: transition-all outline-none font-mono tracking-widest uppercase"
               />
               {formData.referralCode && (
                 <p className="text-[10px] text-green-500 mt-1 flex items-center gap-1">
@@ -542,7 +542,7 @@ function DaftarPageInner() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-violet-500 to-brand-500 hover:from-violet-600 hover:to-brand-600 disabled:from-gray-600 disabled:to-gray-600 text-white text-sm font-bold rounded-xl transition-all duration-300 shadow-[0_0_25px_rgba(139,92,246,0.4)] hover:shadow-[0_0_35px_rgba(139,92,246,0.6)] disabled:shadow-none"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-primary to-brand-500 hover:from-primary hover:to-brand-600 disabled:from-gray-600 disabled:to-gray-600 text-white text-sm font-bold rounded-xl transition-all duration-300  hover: disabled:shadow-none"
             >
               {submitting ? (
                 <><Loader2 className="w-4 h-4 animate-spin" />Mengirim...</>

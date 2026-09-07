@@ -77,7 +77,7 @@ if (args[0].name === "${p.path}") {
 `;
   }
   const lines = [
-    '// Virtual parameter — returns value of the matched parameter',
+    '// Virtual parameter - returns value of the matched parameter',
     `// Covers: ${params.slice(0, 3).map((p) => p.path).join(', ')}${params.length > 3 ? '...' : ''}`,
     '',
     'switch (args[0].name) {',
@@ -526,7 +526,7 @@ function ParameterRow({ param, isSelected, onToggle, isCopied, onCopy }: Paramet
 
   const displayValue = () => {
     if (param.object) return <span className="text-gray-400 italic text-xs">[object]</span>;
-    if (param.value === null || param.value === undefined) return <span className="text-gray-400">—</span>;
+    if (param.value === null || param.value === undefined) return <span className="text-gray-400">-</span>;
     const str = String(param.value);
     if (str.length > 60) return <span className="font-mono text-xs" title={str}>{str.slice(0, 60)}…</span>;
     return <span className="font-mono text-xs">{str}</span>;
@@ -563,7 +563,7 @@ function ParameterRow({ param, isSelected, onToggle, isCopied, onCopy }: Paramet
       </td>
       <td className="px-3 py-1.5 text-center">
         {param.object ? (
-          <span className="text-gray-300">—</span>
+          <span className="text-gray-300">-</span>
         ) : param.writable ? (
           <span className="text-green-500 text-xs font-medium">RW</span>
         ) : (

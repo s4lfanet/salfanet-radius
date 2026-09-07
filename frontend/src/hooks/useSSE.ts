@@ -94,7 +94,7 @@ export function useSSE<T = any>(
     } catch (error) {
       console.error('[SSE] Failed to create EventSource:', error)
     }
-  }, [url]) // Only depend on url — callbacks are in refs
+  }, [url]) // Only depend on url - callbacks are in refs
 
   useEffect(() => {
     connect()

@@ -70,9 +70,9 @@ function DialogContent({
             "w-full max-w-[calc(100%-2rem)] sm:max-w-lg max-h-[90vh] overflow-y-auto",
             "grid gap-0 p-0 rounded-xl flex-col flex",
             // Cyberpunk styling
-            "bg-card dark:bg-gradient-to-br dark:from-[#0a0520] dark:to-[#1a0f35] backdrop-blur-xl",
+            "bg-card dark:bg-gradient-to-br dark:from-[#0a0520] dark:to-[#1a0f35]",
             "border border-border dark:border-[#bc13fe]/50",
-            "shadow-xl dark:shadow-[0_0_40px_rgba(188,19,254,0.3)]",
+            "shadow-xl dark:",
             // Animation
             "duration-300",
             "data-[state=open]:animate-in data-[state=closed]:animate-out",

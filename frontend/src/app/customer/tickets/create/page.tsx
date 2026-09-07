@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -247,16 +247,16 @@ export default function CreateTicketPage() {
   if (success) {
     return (
       <div className="flex items-center justify-center p-4 py-12">
-        <CyberCard className="p-8 max-w-md w-full text-center bg-card/90 backdrop-blur-xl border-2 border-success/30 shadow-[0_0_40px_rgba(34,197,94,0.2)]">
-          <CheckCircle size={64} className="text-success mx-auto mb-4 drop-shadow-[0_0_20px_rgba(34,197,94,0.8)]" />
-          <h2 className="text-2xl font-bold text-success mb-2 drop-shadow-[0_0_10px_rgba(34,197,94,0.5)]">
+        <CyberCard className="p-8 max-w-md w-full text-center bg-card border-2 border-success/30 ">
+          <CheckCircle size={64} className="text-success mx-auto mb-4 drop-" />
+          <h2 className="text-2xl font-bold text-success mb-2 drop-">
             {t('ticket.ticketCreated')}
           </h2>
           <p className="text-muted-foreground mb-4">
             {t('ticket.ticketNumberIs')}:
           </p>
-          <div className="bg-success/10 border-2 border-success/30 rounded-lg p-4 mb-6 shadow-[0_0_20px_rgba(34,197,94,0.15)]">
-            <span className="text-2xl font-mono font-bold text-success drop-shadow-[0_0_10px_rgba(34,197,94,0.6)]">
+          <div className="bg-success/10 border-2 border-success/30 rounded-lg p-4 mb-6 ">
+            <span className="text-2xl font-mono font-bold text-success drop-">
               #{ticketNumber}
             </span>
           </div>
@@ -277,12 +277,12 @@ export default function CreateTicketPage() {
       <div className="flex items-center gap-3">
         <Link
           href="/customer/tickets"
-          className="text-cyan-400 hover:text-cyan-300 transition-colors drop-shadow-[0_0_5px_rgba(6,182,212,0.5)]"
+          className="text-cyan-400 hover:text-cyan-300 transition-colors drop-"
         >
           <ArrowLeft size={22} />
         </Link>
         <div>
-          <h1 className="text-xl font-bold text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]">
+          <h1 className="text-xl font-bold text-cyan-400 drop-">
             {t('ticket.createTicket')}
           </h1>
           <p className="text-sm text-muted-foreground">
@@ -291,11 +291,11 @@ export default function CreateTicketPage() {
         </div>
       </div>
 
-      <CyberCard className="p-6 bg-card/80 backdrop-blur-xl border-2 border-cyan-500/30 shadow-[0_0_30px_rgba(6,182,212,0.15)]">
+      <CyberCard className="p-6 bg-card border-2 border-cyan-500/30 ">
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Customer Name */}
           <div>
-            <label className="block text-sm font-medium text-cyan-400 mb-2 drop-shadow-[0_0_5px_rgba(6,182,212,0.3)]">
+            <label className="block text-sm font-medium text-cyan-400 mb-2 drop-">
               {t('ticket.customerName')} <span className="text-red-400">*</span>
             </label>
             <input
@@ -314,7 +314,7 @@ export default function CreateTicketPage() {
 
           {/* Customer Phone */}
           <div>
-            <label className="block text-sm font-medium text-cyan-400 mb-2 drop-shadow-[0_0_5px_rgba(6,182,212,0.3)]">
+            <label className="block text-sm font-medium text-cyan-400 mb-2 drop-">
               {t('ticket.customerPhone')} <span className="text-red-400">*</span>
             </label>
             <input
@@ -333,7 +333,7 @@ export default function CreateTicketPage() {
 
           {/* Customer Email */}
           <div>
-            <label className="block text-sm font-medium text-cyan-400 mb-2 drop-shadow-[0_0_5px_rgba(6,182,212,0.3)]">
+            <label className="block text-sm font-medium text-cyan-400 mb-2 drop-">
               {t('ticket.customerEmail')}
             </label>
             <input
@@ -347,7 +347,7 @@ export default function CreateTicketPage() {
 
           {/* Subject */}
           <div>
-            <label className="block text-sm font-medium text-cyan-400 mb-2 drop-shadow-[0_0_5px_rgba(6,182,212,0.3)]">
+            <label className="block text-sm font-medium text-cyan-400 mb-2 drop-">
               {t('ticket.subject')} <span className="text-red-400">*</span>
             </label>
             <input
@@ -366,7 +366,7 @@ export default function CreateTicketPage() {
 
           {/* Category */}
           <div>
-            <label className="block text-sm font-medium text-cyan-400 mb-2 drop-shadow-[0_0_5px_rgba(6,182,212,0.3)]">
+            <label className="block text-sm font-medium text-cyan-400 mb-2 drop-">
               {t('ticket.category')}
             </label>
             <select
@@ -385,7 +385,7 @@ export default function CreateTicketPage() {
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-cyan-400 mb-2 drop-shadow-[0_0_5px_rgba(6,182,212,0.3)]">
+            <label className="block text-sm font-medium text-cyan-400 mb-2 drop-">
               {t('ticket.description')} <span className="text-red-400">*</span>
             </label>
             <textarea
@@ -407,7 +407,7 @@ export default function CreateTicketPage() {
 
           {/* Location Tag */}
           <div>
-            <label className="block text-sm font-medium text-cyan-400 mb-2 drop-shadow-[0_0_5px_rgba(6,182,212,0.3)]">
+            <label className="block text-sm font-medium text-cyan-400 mb-2 drop-">
               <MapPin size={14} className="inline mr-1" />
               Lokasi / Alamat Rumah
             </label>
@@ -453,7 +453,7 @@ export default function CreateTicketPage() {
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-cyan-500/40 text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {gpsLoading ? (
-                  <><div className="w-3 h-3 border border-cyan-400 border-t-transparent rounded-full animate-spin" /> Mendapatkan lokasi…</>
+                  <><div className="w-3 h-3 border border-cyan-400 border-t-transparent rounded-full animate-spin" /> Mendapatkan lokasi�</>
                 ) : (
                   <><Navigation size={12} /> Ambil GPS Sekarang</>
                 )}
@@ -474,18 +474,18 @@ export default function CreateTicketPage() {
                   rel="noopener noreferrer"
                   className="text-xs text-cyan-400 hover:text-cyan-300 underline"
                 >
-                  📍 Lihat di Maps
+                  ?? Lihat di Maps
                 </a>
               )}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Opsional — membantu teknisi menemukan lokasi rumah Anda. Bisa diisi manual, ambil GPS, atau dari data pelanggan.
+              Opsional � membantu teknisi menemukan lokasi rumah Anda. Bisa diisi manual, ambil GPS, atau dari data pelanggan.
             </p>
           </div>
 
           {/* File Upload */}
           <div>
-            <label className="block text-sm font-medium text-cyan-400 mb-2 drop-shadow-[0_0_5px_rgba(6,182,212,0.3)]">
+            <label className="block text-sm font-medium text-cyan-400 mb-2 drop-">
               <Upload size={14} className="inline mr-1" />
               Lampiran (Foto / Dokumen)
             </label>
@@ -507,7 +507,7 @@ export default function CreateTicketPage() {
               {uploading ? (
                 <div className="flex flex-col items-center gap-2">
                   <div className="w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-xs text-cyan-400">Mengupload…</span>
+                  <span className="text-xs text-cyan-400">Mengupload�</span>
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-1.5">
@@ -516,7 +516,7 @@ export default function CreateTicketPage() {
                     Klik untuk pilih file
                   </span>
                   <span className="text-xs text-muted-foreground/70">
-                    JPG, PNG, WebP, PDF — maks 10MB per file
+                    JPG, PNG, WebP, PDF � maks 10MB per file
                   </span>
                 </div>
               )}
@@ -559,7 +559,7 @@ export default function CreateTicketPage() {
               </div>
             )}
             <p className="text-xs text-muted-foreground mt-1">
-              Opsional — lampirkan foto kerusakan, screenshot error, atau dokumen pendukung lainnya
+              Opsional � lampirkan foto kerusakan, screenshot error, atau dokumen pendukung lainnya
             </p>
           </div>
 

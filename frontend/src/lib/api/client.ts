@@ -20,7 +20,7 @@
  *   - agent: Bearer token from localStorage('agentToken')
  */
 
-// Client-side API URL — NEXT_PUBLIC_ vars are safe to inline (empty = relative)
+// Client-side API URL - NEXT_PUBLIC_ vars are safe to inline (empty = relative)
 const CLIENT_API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 /**
@@ -35,7 +35,7 @@ function buildUrl(path: string): string {
 export type AuthMode = 'admin' | 'customer' | 'agent';
 
 /**
- * Global 401 handler — registered by layout components to redirect to login
+ * Global 401 handler - registered by layout components to redirect to login
  * when any API call returns 401 Unauthorized.
  *
  * Layouts register their handler:
@@ -52,7 +52,7 @@ export function onUnauthorized(handler: () => void): void {
 
 function triggerUnauthorized(): void {
   if (!_unauthorizedHandler) return;
-  if (_unauthorizedTimer) return; // Already pending — debounce
+  if (_unauthorizedTimer) return; // Already pending - debounce
   _unauthorizedTimer = setTimeout(() => {
     _unauthorizedTimer = null;
     _unauthorizedHandler?.();
@@ -73,7 +73,7 @@ interface ApiErrorResponse {
 }
 
 /**
- * API error class — thrown by all apiCall variants.
+ * API error class - thrown by all apiCall variants.
  */
 export class ApiError extends Error {
   public readonly status: number;
@@ -114,11 +114,11 @@ function getBearerToken(mode: AuthMode): string | null {
 
 /**
  * Core API call function (client-side).
- * Uses relative path — nginx routes /api/* to backend.
+ * Uses relative path - nginx routes /api/* to backend.
  *
  * Content-Type handling:
- *   - FormData: browser sets multipart/form-data; boundary automatically — do NOT override
- *   - Blob / ArrayBuffer / ReadableStream: binary — do NOT set Content-Type
+ *   - FormData: browser sets multipart/form-data; boundary automatically - do NOT override
+ *   - Blob / ArrayBuffer / ReadableStream: binary - do NOT set Content-Type
  *   - string (JSON): set Content-Type: application/json
  *   - no body (GET/DELETE): do NOT set Content-Type
  *
@@ -134,7 +134,7 @@ export async function apiCall<T = unknown>(
   const url = buildUrl(path);
   const token = getBearerToken(mode);
 
-  // Build headers — only set Content-Type for JSON string bodies.
+  // Build headers - only set Content-Type for JSON string bodies.
   // FormData, Blob, ArrayBuffer, and ReadableStream must NOT have
   // Content-Type forced, otherwise the browser cannot set the correct
   // multipart boundary or binary MIME type.
@@ -171,17 +171,17 @@ export async function apiCall<T = unknown>(
     } catch {
       // Response body is not JSON (e.g. HTML error page, empty body)
       if (res.status === 401) {
-        message = 'Unauthorized — please log in again';
+        message = 'Unauthorized - please log in again';
       } else if (res.status === 403) {
-        message = 'Forbidden — insufficient permissions';
+        message = 'Forbidden - insufficient permissions';
       } else if (res.status === 404) {
         message = `Not found: ${path}`;
       } else if (res.status === 405) {
         message = `Method not allowed for ${path}`;
       } else if (res.status === 429) {
-        message = 'Too many requests — please slow down';
+        message = 'Too many requests - please slow down';
       } else if (res.status >= 500) {
-        message = `Server error (${res.status}) — please try again later`;
+        message = `Server error (${res.status}) - please try again later`;
       }
     }
     // Trigger global 401 handler (debounced redirect to login)
@@ -191,7 +191,7 @@ export async function apiCall<T = unknown>(
     throw new ApiError(res.status, message, path, errorBody);
   }
 
-  // Handle 204 No Content or empty body — return null for void responses
+  // Handle 204 No Content or empty body - return null for void responses
   if (res.status === 204 || res.headers.get('content-length') === '0') {
     return null as T;
   }
@@ -230,7 +230,7 @@ export async function apiAgent<T = unknown>(
 }
 
 /**
- * Technician API call — functionally identical to apiAdmin (cookie-based,
+ * Technician API call - functionally identical to apiAdmin (cookie-based,
  * credentials: 'include'). Technician auth uses its own httpOnly cookie
  * ('technician-token'), verified server-side per-route; this alias exists
  * purely so call sites reading `/api/technician/*` don't look like they're
@@ -245,7 +245,7 @@ export async function apiTechnician<T = unknown>(
 
 /**
  * Legacy: Client-side API fetch with auth token.
- * Kept for backward compatibility — prefer apiAdmin/apiCustomer/apiAgent.
+ * Kept for backward compatibility - prefer apiAdmin/apiCustomer/apiAgent.
  */
 export async function apiFetchAuth<T = unknown>(
   path: string,

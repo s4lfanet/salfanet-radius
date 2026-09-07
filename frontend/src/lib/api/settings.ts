@@ -18,12 +18,12 @@ export const settingsApi = {
     return apiAdmin<CompanyResponse>('/api/company');
   },
 
-  /** Get company settings (admin) — uses /api/company (same as getCompanyInfo but with admin auth) */
+  /** Get company settings (admin) - uses /api/company (same as getCompanyInfo but with admin auth) */
   getSettings(): Promise<CompanyResponse> {
     return apiAdmin<CompanyResponse>('/api/company');
   },
 
-  /** Update settings — uses /api/company POST */
+  /** Update settings - uses /api/company POST */
   updateSettings(payload: Record<string, unknown>): Promise<SettingsUpdateResponse> {
     return apiAdmin<SettingsUpdateResponse>('/api/company', {
       method: 'POST',

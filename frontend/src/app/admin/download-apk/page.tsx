@@ -74,10 +74,10 @@ const ROLES = [
     label: 'Portal Agen',
     description: 'Agen marketing mengelola referral, komisi, dan monitoring downline.',
     icon: <UserCheck className="w-5 h-5" />,
-    gradient: 'from-violet-600 to-violet-800',
-    border: 'border-violet-500/30',
-    iconBg: 'bg-violet-500/20 text-violet-400',
-    btn: 'from-violet-600 to-violet-700 hover:from-violet-500 hover:to-violet-600',
+    gradient: 'from-primary to-violet-800',
+    border: 'border-border',
+    iconBg: 'bg-primary/10 text-primary',
+    btn: 'from-primary to-violet-700 hover:from-primary hover:to-primary',
     pathSuffix: '/agent',
   },
   {
@@ -394,7 +394,7 @@ export default function DownloadApkPage() {
           </div>
           <div>
             <h1 className="text-lg font-bold text-white tracking-wide">Build Aplikasi Android</h1>
-            <p className="text-xs text-slate-400 mt-0.5">Build APK langsung di server — download setelah selesai, tanpa GitHub.</p>
+            <p className="text-xs text-slate-400 mt-0.5">Build APK langsung di server - download setelah selesai, tanpa GitHub.</p>
           </div>
         </div>
       </div>
@@ -424,7 +424,7 @@ export default function DownloadApkPage() {
         <div className="flex items-center gap-2 text-slate-300 text-xs font-semibold mb-3">
           <ImageIcon className="w-3.5 h-3.5 text-cyan-400" /> Logo Aplikasi (digunakan sebagai ikon APK)
         </div>
-        {/* Preview — full width */}
+        {/* Preview - full width */}
         <div className="w-44 h-44 mx-auto rounded-xl border border-slate-700 bg-slate-800/60 flex items-center justify-center overflow-hidden mb-3">
           {currentLogo ? (
             // eslint-disable-next-line @next/next/no-img-element

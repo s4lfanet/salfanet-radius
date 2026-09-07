@@ -201,7 +201,7 @@ export default function VoucherTemplatesPage() {
   return (
     <div className="bg-background relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
         <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
@@ -210,7 +210,7 @@ export default function VoucherTemplatesPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)] flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop- flex items-center gap-2">
               <FileCode className="w-5 h-5 text-brand-500" />
               {t('hotspot.templateTitle')}
             </h1>
@@ -242,7 +242,7 @@ export default function VoucherTemplatesPage() {
             <div className="text-center py-8 text-muted-foreground text-xs">{t('hotspot.noTemplates')}</div>
           ) : (
             templates.map((template) => (
-              <div key={template.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-violet-500/20 p-3">
+              <div key={template.id} className="bg-card rounded-xl border border-border p-3">
                 <div className="flex items-start justify-between mb-2">
                   <div className="font-medium text-sm text-foreground">{template.name}</div>
                   <div className="flex items-center gap-1">
@@ -357,11 +357,11 @@ export default function VoucherTemplatesPage() {
               </div>
               <div className="flex items-center gap-4">
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={formData.isDefault} onChange={(e) => setFormData({ ...formData, isDefault: e.target.checked })} className="rounded border-violet-500/50 bg-background dark:bg-card accent-brand-500 dark:accent-brand-500 w-3.5 h-3.5" />
+                  <input type="checkbox" checked={formData.isDefault} onChange={(e) => setFormData({ ...formData, isDefault: e.target.checked })} className="rounded border-border bg-background dark:bg-card accent-brand-500 dark:accent-brand-500 w-3.5 h-3.5" />
                   <span className="text-xs text-foreground">{t('hotspot.setDefault')}</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={formData.isActive} onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })} className="rounded border-violet-500/50 bg-background dark:bg-card accent-brand-500 dark:accent-brand-500 w-3.5 h-3.5" />
+                  <input type="checkbox" checked={formData.isActive} onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })} className="rounded border-border bg-background dark:bg-card accent-brand-500 dark:accent-brand-500 w-3.5 h-3.5" />
                   <span className="text-xs text-foreground">{t('common.active')}</span>
                 </label>
               </div>

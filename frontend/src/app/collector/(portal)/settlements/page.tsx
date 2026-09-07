@@ -6,8 +6,8 @@ import { formatWIB } from '@/lib/timezone';
 import { Wallet, Activity, ChevronDown, ChevronUp } from 'lucide-react';
 
 const fmtRp = (v: number) => `Rp ${Number(v || 0).toLocaleString('id-ID')}`;
-const fmtTime = (d: string) => d ? formatWIB(d, 'dd MMM HH:mm') : '—';
-const fmtDate = (d: string) => d ? formatWIB(d, 'EEEE, dd MMMM yyyy') : '—';
+const fmtTime = (d: string) => d ? formatWIB(d, 'dd MMM HH:mm') : '-';
+const fmtDate = (d: string) => d ? formatWIB(d, 'EEEE, dd MMMM yyyy') : '-';
 
 export default function CollectorSettlementsPage() {
   const today = new Date().toISOString().slice(0, 10);
@@ -113,13 +113,13 @@ export default function CollectorSettlementsPage() {
             {invoices.map((inv) => (
               <tr key={inv.id} className="hover:bg-accent/30 transition-colors">
                 <td className="px-3 py-3">
-                  <div className="font-medium text-foreground">{inv.customerName || inv.customerUsername || '—'}</div>
-                  <div className="text-xs text-muted-foreground font-mono">{inv.customerId || inv.customerUsername || '—'}</div>
+                  <div className="font-medium text-foreground">{inv.customerName || inv.customerUsername || '-'}</div>
+                  <div className="text-xs text-muted-foreground font-mono">{inv.customerId || inv.customerUsername || '-'}</div>
                 </td>
-                <td className="px-3 py-3 text-xs text-muted-foreground">{inv.phone || '—'}</td>
-                <td className="px-3 py-3 text-xs text-muted-foreground max-w-[180px] truncate" title={inv.address}>{inv.address || '—'}</td>
-                <td className="px-3 py-3 text-xs text-muted-foreground">{inv.profileName || '—'}</td>
-                <td className="px-3 py-3 text-xs text-muted-foreground">{inv.areaName || '—'}</td>
+                <td className="px-3 py-3 text-xs text-muted-foreground">{inv.phone || '-'}</td>
+                <td className="px-3 py-3 text-xs text-muted-foreground max-w-[180px] truncate" title={inv.address}>{inv.address || '-'}</td>
+                <td className="px-3 py-3 text-xs text-muted-foreground">{inv.profileName || '-'}</td>
+                <td className="px-3 py-3 text-xs text-muted-foreground">{inv.areaName || '-'}</td>
                 <td className="px-3 py-3 text-right font-medium text-foreground">{fmtRp(inv.amount)}</td>
                 <td className="px-3 py-3 text-center">{pmMethod(inv.paymentMethod)}</td>
                 <td className="px-3 py-3 text-right text-xs text-muted-foreground">{fmtTime(inv.paidAt)}</td>

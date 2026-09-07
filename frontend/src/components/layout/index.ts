@@ -1,5 +1,5 @@
 /**
- * Layout Components — Barrel Export
+ * Layout Components - Barrel Export
  *
  * Shared layout primitives used across all portals.
  * Examples: PageHeader, PageContainer, Sidebar, Breadcrumb

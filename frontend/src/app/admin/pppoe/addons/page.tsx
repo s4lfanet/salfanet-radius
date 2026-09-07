@@ -109,7 +109,7 @@ export default function AddonTypesPage() {
       </div>
 
       {/* Table */}
-      <div className="border border-border dark:border-violet-500/30 rounded-lg overflow-hidden">
+      <div className="border border-border dark:border-border rounded-lg overflow-hidden">
         {loading ? (
           <div className="p-8 text-center text-muted-foreground">Memuat...</div>
         ) : addons.length === 0 ? (
@@ -137,10 +137,10 @@ export default function AddonTypesPage() {
                 {addons.map(a => (
                   <tr key={a.id} className={`hover:bg-muted/30 ${!a.isActive ? 'opacity-50' : ''}`}>
                     <td className="px-3 py-2 text-sm font-medium text-foreground dark:text-muted-foreground">{a.name}</td>
-                    <td className="px-3 py-2 text-xs text-muted-foreground hidden md:table-cell">{a.description || '—'}</td>
+                    <td className="px-3 py-2 text-xs text-muted-foreground hidden md:table-cell">{a.description || '-'}</td>
                     <td className="px-3 py-2 text-sm font-bold text-primary dark:text-brand-500">Rp {Number(a.price).toLocaleString('id-ID')}</td>
                     <td className="px-3 py-2">
-                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${a.isRecurring ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'}`}>
+                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${a.isRecurring ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-primary' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'}`}>
                         {a.isRecurring ? 'Bulanan' : 'Sekali'}
                       </span>
                     </td>
@@ -171,7 +171,7 @@ export default function AddonTypesPage() {
       {/* Modal Create/Edit */}
       {showModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-background dark:bg-card border border-border dark:border-violet-500/30 rounded-xl shadow-2xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
+          <div className="bg-background dark:bg-card border border-border dark:border-border rounded-xl shadow-2xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-foreground dark:text-muted-foreground flex items-center gap-2">
                 <Package className="h-5 w-5" />
@@ -188,7 +188,7 @@ export default function AddonTypesPage() {
                   placeholder="Mis: Sewa STB, IPTV Premium"
                   value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-card dark:border-violet-500/30"
+                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-card dark:border-border"
                   autoFocus
                 />
               </div>
@@ -199,7 +199,7 @@ export default function AddonTypesPage() {
                   placeholder="Deskripsi singkat layanan ini"
                   value={form.description}
                   onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-card dark:border-violet-500/30"
+                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-card dark:border-border"
                 />
               </div>
               <div>
@@ -210,14 +210,14 @@ export default function AddonTypesPage() {
                   placeholder="0"
                   value={form.price}
                   onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-card dark:border-violet-500/30"
+                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-card dark:border-border"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Tipe Biaya</label>
                 <div className="flex gap-2 mt-1">
                   {[{ val: true, label: 'Bulanan (recurring)' }, { val: false, label: 'Sekali bayar' }].map(opt => (
-                    <label key={String(opt.val)} className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg cursor-pointer text-sm border-2 transition ${form.isRecurring === opt.val ? 'border-primary dark:border-brand-500 bg-primary/10 dark:bg-brand-500/10 font-medium text-primary dark:text-brand-500' : 'border-border dark:border-violet-500/30 text-muted-foreground'}`}>
+                    <label key={String(opt.val)} className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg cursor-pointer text-sm border-2 transition ${form.isRecurring === opt.val ? 'border-primary dark:border-brand-500 bg-primary/10 dark:bg-brand-500/10 font-medium text-primary dark:text-brand-500' : 'border-border dark:border-border text-muted-foreground'}`}>
                       <input type="radio" className="hidden" checked={form.isRecurring === opt.val} onChange={() => setForm(f => ({ ...f, isRecurring: opt.val }))} />
                       {opt.label}
                     </label>

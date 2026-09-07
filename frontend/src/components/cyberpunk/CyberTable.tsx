@@ -19,12 +19,12 @@ const CyberTable = React.forwardRef<HTMLDivElement, CyberTableProps>(
       neon: cn(
         'border-2 border-brand-500/30 rounded-xl overflow-hidden',
         'shadow-lg shadow-brand-500/15',
-        'bg-input/40 backdrop-blur-xl'
+        'bg-input/40'
       ),
       glass: cn(
         'border border-border/50 rounded-xl overflow-hidden',
         'shadow-md',
-        'bg-card/40 backdrop-blur-xl'
+        'bg-card/40'
       ),
     };
 
@@ -53,7 +53,7 @@ const CyberTableHeader = React.forwardRef<
   <thead
     ref={ref}
     className={cn(
-      'bg-gradient-to-r from-brand-500/10 via-violet-500/5 to-pink-500/10',
+      'bg-gradient-to-r from-brand-500/10 via-primary/5 to-pink-500/10',
       'border-b-2 border-brand-500/20',
       '[&_tr]:border-b-0',
       className

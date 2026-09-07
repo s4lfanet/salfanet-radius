@@ -146,7 +146,7 @@ export default function AdminReferralsPage() {
           </CyberCard>
           <CyberCard className="p-3">
             <div className="text-center">
-              <Users className="w-5 h-5 mx-auto text-purple-500 mb-1" />
+              <Users className="w-5 h-5 mx-auto text-primary mb-1" />
               <p className="text-2xl font-bold text-foreground">{stats.referredUsers}</p>
               <p className="text-xs text-muted-foreground">{t('referrals.statReferred')}</p>
             </div>

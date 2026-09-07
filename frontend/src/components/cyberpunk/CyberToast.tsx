@@ -161,7 +161,7 @@ function CyberToastItem({ toast, onClose }: CyberToastItemProps) {
     <div
       className={cn(
         'pointer-events-auto relative overflow-hidden',
-        'bg-background/95 backdrop-blur-xl rounded-xl',
+        'bg-background/95 rounded-xl',
         'border-2',
         border,
         glow,
@@ -274,7 +274,7 @@ function CyberConfirmModal({ options, onClose }: CyberConfirmModalProps) {
       <div
         className={cn(
           'relative z-10 w-full max-w-sm rounded-2xl border-2 p-6',
-          'bg-card dark:bg-card/95 backdrop-blur-xl',
+          'bg-card dark:bg-card/95',
           border, glow,
           'animate-in fade-in zoom-in-95 duration-200'
         )}

@@ -105,12 +105,12 @@ export default function PPPoEProfilesPage() {
   const { data: profilesData, isLoading: loading } = useApiQuery<{ profiles: PPPoEProfile[] }>('/api/pppoe/profiles');
   const profiles = profilesData?.profiles || [];
 
-  // ─── React Query: Routers (reference data — 5min stale) ─────────────────────
+  // ─── React Query: Routers (reference data - 5min stale) ─────────────────────
   const routersQueryKey = buildQueryKey('/api/pppoe/profiles/sync-mikrotik');
   const { data: routersData, refetch: refetchRouters } = useApiQuery<RouterListResponse>('/api/pppoe/profiles/sync-mikrotik', { staleTime: 5 * 60 * 1000 });
   const routers = routersData?.routers || [];
 
-  // ─── React Query: RADIUS IP Pools (reference data — 5min stale) ─────────────
+  // ─── React Query: RADIUS IP Pools (reference data - 5min stale) ─────────────
   const { data: radiusPoolsData } = useApiQuery<RadiusPoolListResponse>('/api/admin/ippool', { staleTime: 5 * 60 * 1000 });
   const radiusPools = radiusPoolsData?.data || radiusPoolsData?.pools || [];
 
@@ -459,21 +459,21 @@ export default function PPPoEProfilesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse"></div><div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div></div>
-        <RefreshCw className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)] relative z-10" />
+        <div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div><div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div></div>
+        <RefreshCw className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop- relative z-10" />
       </div>
     );
   }
 
   return (
     <div className="bg-background relative">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div><div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div><div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div><div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div></div>
+      <div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div><div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div><div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div><div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div></div>
       <div className="relative z-10 space-y-6">
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)]">{t('pppoe.profilesTitle')}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-">{t('pppoe.profilesTitle')}</h1>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t('pppoe.profilesSubtitle')}</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -494,16 +494,16 @@ export default function PPPoEProfilesPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition-all">
             <div className="flex items-center justify-between">
               <div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('common.total')}</p><p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{profiles.length}</p></div>
-              <FileText className="h-7 w-7 text-brand-500 drop-shadow-[0_0_15px_rgba(6,182,212,0.6)]" />
+              <FileText className="h-7 w-7 text-brand-500 drop-" />
             </div>
           </div>
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition-all">
             <div className="flex items-center justify-between">
               <div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('pppoe.active')}</p><p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{profiles.filter(p => p.isActive).length}</p></div>
-              <CheckCircle2 className="h-7 w-7 text-green-400 drop-shadow-[0_0_15px_rgba(34,197,94,0.6)]" />
+              <CheckCircle2 className="h-7 w-7 text-green-400 drop-" />
             </div>
           </div>
           <div className="bg-card rounded-lg border border-border p-3">
@@ -517,10 +517,10 @@ export default function PPPoEProfilesPage() {
         {/* Mobile Card View */}
         <div className="block md:hidden space-y-3">
           {profiles.length === 0 ? (
-            <div className="bg-card/80 backdrop-blur-xl rounded-xl border border-violet-500/20 p-6 text-center text-muted-foreground text-xs">{t('pppoe.noProfiles')}</div>
+            <div className="bg-card rounded-xl border border-border p-6 text-center text-muted-foreground text-xs">{t('pppoe.noProfiles')}</div>
           ) : (
             profiles.map((profile) => (
-              <div key={profile.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-violet-500/20 p-3">
+              <div key={profile.id} className="bg-card rounded-xl border border-border p-3">
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <p className="font-medium text-sm text-foreground">{profile.name}</p>
@@ -539,7 +539,7 @@ export default function PPPoEProfilesPage() {
                   <div><span className="text-muted-foreground">{t('pppoe.groupLabel')}:</span><p className="font-mono font-medium">{profile.groupName}</p></div>
                 </div>
                 <div className="flex justify-end gap-1 border-t border-border pt-2">
-                  <button onClick={() => handleSyncMikrotik(profile)} disabled={syncingMikrotikId === profile.id} className="p-2 text-purple-400 hover:bg-purple-400/10 rounded disabled:opacity-40" title="Sync ke MikroTik"><Wifi className="h-3.5 w-3.5" /></button>
+                  <button onClick={() => handleSyncMikrotik(profile)} disabled={syncingMikrotikId === profile.id} className="p-2 text-primary hover:bg-purple-400/10 rounded disabled:opacity-40" title="Sync ke MikroTik"><Wifi className="h-3.5 w-3.5" /></button>
                   <button onClick={() => handleEdit(profile)} className="p-2 text-muted-foreground hover:bg-muted rounded" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
                   <button onClick={() => setDeleteProfileId(profile.id)} className="p-2 text-destructive hover:bg-destructive/10 rounded" title="Hapus"><Trash2 className="h-3.5 w-3.5" /></button>
                 </div>
@@ -587,7 +587,7 @@ export default function PPPoEProfilesPage() {
                         <p className="text-[9px] text-muted-foreground mt-0.5">{profile.validityValue} {profile.validityUnit === 'MONTHS' ? 'Bulan' : 'Hari'}</p>
                       </td>
                       <td className="px-3 py-2.5">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-violet-500/10 text-violet-500 border border-violet-500/30">{profile.groupName}</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-primary/10 text-primary border border-border">{profile.groupName}</span>
                       </td>
                       <td className="px-3 py-2.5">
                         <div className="flex flex-col gap-0.5">
@@ -660,7 +660,7 @@ export default function PPPoEProfilesPage() {
                             title="Sync ke MikroTik"
                             onClick={() => handleSyncMikrotik(profile)}
                             disabled={syncingMikrotikId === profile.id}
-                            className="p-1.5 text-muted-foreground hover:text-purple-400 hover:bg-purple-400/10 rounded transition-colors disabled:opacity-40"
+                            className="p-1.5 text-muted-foreground hover:text-primary hover:bg-purple-400/10 rounded transition-colors disabled:opacity-40"
                           >{syncingMikrotikId === profile.id ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Wifi className="h-3.5 w-3.5" />}</button>
                           <button
                             title="Lihat Detail"
@@ -776,10 +776,10 @@ export default function PPPoEProfilesPage() {
                   onChange={(e) => setFormData({ ...formData, radiusPoolName: e.target.value })}
                   className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all"
                 >
-                  <option value="">Auto — dari speed tier ({formData.downloadSpeed}Mbps-Pool)</option>
+                  <option value="">Auto - dari speed tier ({formData.downloadSpeed}Mbps-Pool)</option>
                   {radiusPools.map(p => (
                     <option key={p.pool_name} value={p.pool_name} className="bg-background dark:bg-slate-800">
-                      {p.pool_name} ({p.total_ips} IPs — {p.start_ip} s/d {p.end_ip})
+                      {p.pool_name} ({p.total_ips} IPs - {p.start_ip} s/d {p.end_ip})
                     </option>
                   ))}
                 </select>
@@ -794,7 +794,7 @@ export default function PPPoEProfilesPage() {
                   className="w-full flex items-center gap-2 px-4 py-3 text-xs font-medium hover:bg-muted/50 transition-colors text-left">
                   {showBurst ? <ChevronDown className="h-3.5 w-3.5 text-brand-500" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
                   <span>Pengaturan Burst (MikroTik)</span>
-                  <span className="text-[10px] font-normal text-muted-foreground ml-1">opsional — kecepatan sementara saat awal koneksi</span>
+                  <span className="text-[10px] font-normal text-muted-foreground ml-1">opsional - kecepatan sementara saat awal koneksi</span>
                 </button>
                 {showBurst && (
                   <div className="px-4 pb-4 space-y-3 border-t border-border bg-muted/20">
@@ -1018,7 +1018,7 @@ export default function PPPoEProfilesPage() {
                   <div>
                     <ModalTitle className="text-lg">{detailProfile.name}</ModalTitle>
                     <div className="flex items-center gap-2 mt-1.5">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-violet-500/20 text-violet-500 border border-violet-500/30">{detailProfile.groupName}</span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-primary/10 text-primary border border-border">{detailProfile.groupName}</span>
                       <span className="text-[10px] text-muted-foreground">{detailProfile.validityValue} {detailProfile.validityUnit === 'MONTHS' ? 'MONTHS' : 'DAYS'}</span>
                       {detailProfile.isActive
                         ? <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium bg-green-500/10 text-green-400 border border-green-500/20"><CheckCircle2 className="h-2.5 w-2.5 mr-0.5" />Aktif</span>
@@ -1127,7 +1127,7 @@ export default function PPPoEProfilesPage() {
                   <button
                     onClick={() => { setDetailProfile(null); handleSyncMikrotik(detailProfile); }}
                     disabled={syncingMikrotikId === detailProfile.id}
-                    className="flex items-center justify-center gap-2 px-3 py-2 text-xs border border-purple-500/30 text-purple-400 hover:bg-purple-500/10 rounded-lg transition-colors"
+                    className="flex items-center justify-center gap-2 px-3 py-2 text-xs border border-border text-primary hover:bg-primary/10 rounded-lg transition-colors"
                   >
                     <Wifi className="h-3.5 w-3.5" />Sync MikroTik
                   </button>
@@ -1147,7 +1147,7 @@ export default function PPPoEProfilesPage() {
           <ModalHeader>
             <h2 className="text-base font-bold text-foreground">Sync ke MikroTik</h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Sync paket <span className="font-semibold text-purple-400">{syncMikrotikTarget?.name}</span> · Group RADIUS: <span className="font-mono">{syncMikrotikTarget?.groupName}</span>
+              Sync paket <span className="font-semibold text-primary">{syncMikrotikTarget?.name}</span> · Group RADIUS: <span className="font-mono">{syncMikrotikTarget?.groupName}</span>
             </p>
           </ModalHeader>
           <ModalBody>
@@ -1170,7 +1170,7 @@ export default function PPPoEProfilesPage() {
                     <span className="text-xs font-medium text-foreground">Pilih Router / NAS</span>
                     <button
                       type="button"
-                      className="text-[10px] text-purple-400 hover:text-purple-300 underline"
+                      className="text-[10px] text-primary hover:text-purple-300 underline"
                       onClick={() => setSelectedRouterIds(
                         selectedRouterIds.length === routers.length ? [] : routers.map(r => r.id)
                       )}
@@ -1183,8 +1183,8 @@ export default function PPPoEProfilesPage() {
                       key={r.id}
                       className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                         selectedRouterIds.includes(r.id)
-                          ? 'border-purple-500/60 bg-purple-500/10'
-                          : 'border-border hover:border-purple-500/30 hover:bg-purple-500/5'
+                          ? 'border-border bg-primary/10'
+                          : 'border-border hover:border-border hover:bg-primary/10'
                       }`}
                     >
                       <input
@@ -1223,7 +1223,7 @@ export default function PPPoEProfilesPage() {
                   <option value="">-- Pilih pool (opsional, atau isi manual di bawah) --</option>
                   {radiusPools.map(p => (
                     <option key={p.pool_name} value={p.pool_name} className="bg-background dark:bg-slate-800">
-                      {p.pool_name} ({p.total_ips} IPs — {p.start_ip} s/d {p.end_ip})
+                      {p.pool_name} ({p.total_ips} IPs - {p.start_ip} s/d {p.end_ip})
                     </option>
                   ))}
                 </select>

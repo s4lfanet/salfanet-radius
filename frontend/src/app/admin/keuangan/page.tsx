@@ -145,7 +145,7 @@ export default function KeuanganPage() {
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // ─── React Query: Categories (rarely change — 5min stale) ─────────────────────
+  // ─── React Query: Categories (rarely change - 5min stale) ─────────────────────
   const { data: categoriesData } = useApiQuery<CategoriesListResponse>("/api/keuangan/categories", { staleTime: 5 * 60 * 1000 });
 
   // ─── React Query: Transactions list (page 1, auto-refetches on filter change) ─
@@ -495,10 +495,10 @@ export default function KeuanganPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         </div>
-        <Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)] relative z-10" />
+        <Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop- relative z-10" />
       </div>
     );
   }
@@ -506,7 +506,7 @@ export default function KeuanganPage() {
   return (
     <div className="bg-background relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
         <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
@@ -515,7 +515,7 @@ export default function KeuanganPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)]">{t('keuangan.title')}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-">{t('keuangan.title')}</h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t('keuangan.transactions')}</p>
         </div>
         <div className="flex gap-2">
@@ -532,7 +532,7 @@ export default function KeuanganPage() {
 
       {/* Stats - Cyberpunk Style */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
-        <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-3 sm:p-4 hover:border-violet-500/50 hover:shadow-[0_0_30px_rgba(139,92,246,0.3)] transition-all">
+        <div className="bg-card rounded-xl border border-border p-3 sm:p-4 hover:border-border hover: transition-all">
           <div className="flex items-center justify-between">
             <div className="min-w-0">
               <p className="text-[10px] sm:text-xs font-medium text-brand-500 uppercase tracking-wide">{t('keuangan.income')}</p>
@@ -543,7 +543,7 @@ export default function KeuanganPage() {
               <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-success" />
             </div>
           </div>
-          <div className="mt-3 pt-3 border-t border-violet-500/20 space-y-1 text-[10px] sm:text-xs">
+          <div className="mt-3 pt-3 border-t border-border space-y-1 text-[10px] sm:text-xs">
             <div className="flex justify-between">
               <span className="text-muted-foreground">{t('keuangan.pppoeLabel')}</span>
               <span className="font-medium text-foreground truncate ml-2">{formatCurrency(stats.pppoeIncome || 0)}</span>
@@ -559,7 +559,7 @@ export default function KeuanganPage() {
           </div>
         </div>
 
-        <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-3 sm:p-4 hover:border-violet-500/50 hover:shadow-[0_0_30px_rgba(139,92,246,0.3)] transition-all">
+        <div className="bg-card rounded-xl border border-border p-3 sm:p-4 hover:border-border hover: transition-all">
           <div className="flex items-center justify-between">
             <div className="min-w-0">
               <p className="text-[10px] sm:text-xs font-medium text-brand-500 uppercase tracking-wide">{t('keuangan.expense')}</p>
@@ -572,7 +572,7 @@ export default function KeuanganPage() {
           </div>
         </div>
 
-        <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-3 sm:p-4 hover:border-violet-500/50 hover:shadow-[0_0_30px_rgba(139,92,246,0.3)] transition-all">
+        <div className="bg-card rounded-xl border border-border p-3 sm:p-4 hover:border-border hover: transition-all">
           <div className="flex items-center justify-between">
             <div className="min-w-0">
               <p className="text-[10px] sm:text-xs font-medium text-brand-500 uppercase tracking-wide">{t('keuangan.balance')}</p>

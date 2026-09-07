@@ -129,24 +129,24 @@ export default function HotspotVoucherPage() {
   const totalPages = voucherData?.totalPages || 1
   const totalVouchers = voucherData?.total || 0
 
-  // ─── React Query: Profiles (rarely change — 5min stale) ──────────────────────
+  // ─── React Query: Profiles (rarely change - 5min stale) ──────────────────────
   const { data: profilesData } = useApiQuery<ProfilesResponse>('/api/hotspot/profiles', { staleTime: 5 * 60 * 1000 })
   const profiles = profilesData?.profiles || []
 
-  // ─── React Query: Routers (rarely change — 5min stale) ───────────────────────
+  // ─── React Query: Routers (rarely change - 5min stale) ───────────────────────
   const { data: routersData } = useApiQuery<{ routers: RouterItem[] }>('/api/network/routers', { staleTime: 5 * 60 * 1000 })
   const routers = routersData?.routers || []
 
-  // ─── React Query: Agents (rarely change — 5min stale) ────────────────────────
+  // ─── React Query: Agents (rarely change - 5min stale) ────────────────────────
   const { data: agentsData } = useApiQuery<AgentsResponse>('/api/hotspot/agents', { staleTime: 5 * 60 * 1000 })
   const agents = agentsData?.agents || []
 
-  // ─── React Query: Voucher templates (rarely change — 5min stale) ─────────────
+  // ─── React Query: Voucher templates (rarely change - 5min stale) ─────────────
   const { data: templatesData } = useApiQuery<VoucherTemplate[]>('/api/voucher-templates', { staleTime: 5 * 60 * 1000 })
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const templates: any[] = (templatesData || []).filter((t: any) => t.isActive)
 
-  // ─── React Query: Company info (rarely change — 30min stale) ─────────────────
+  // ─── React Query: Company info (rarely change - 30min stale) ─────────────────
   const { data: companyData } = useApiQuery<{ success: boolean; company?: { name: string } }>('/api/public/company', { staleTime: 30 * 60 * 1000 })
   const companyName = companyData?.company?.name || 'ISP'
 
@@ -244,7 +244,7 @@ export default function HotspotVoucherPage() {
     }
   }
 
-  // Debounce search input (300ms) — avoids refetch on every keystroke
+  // Debounce search input (300ms) - avoids refetch on every keystroke
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchQuery)
@@ -552,7 +552,7 @@ export default function HotspotVoucherPage() {
   }
 
   const selectedProfile = profiles.find(p => p.id === formData.profileId);
-  if (loading) { return <div className="flex items-center justify-center min-h-[60vh]"><div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse"></div><div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div></div><Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)] relative z-10" /></div>; }
+  if (loading) { return <div className="flex items-center justify-center min-h-[60vh]"><div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div><div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div></div><Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop- relative z-10" /></div>; }
   // Stats are now loaded from API
 
   return (
@@ -607,7 +607,7 @@ export default function HotspotVoucherPage() {
       {/* ─── Generate Progress Overlay ─── */}
       {genOverlay.open && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 backdrop-blur-sm">
-          <div className="bg-card border-2 border-violet-500/60 rounded-2xl p-8 max-w-sm w-full mx-4 shadow-[0_0_80px_rgba(139,92,246,0.5)]">
+          <div className="bg-card border border-border rounded-2xl p-8 max-w-sm w-full mx-4 ">
             {/* Icon */}
             <div className="flex justify-center mb-5">
               {genOverlay.phase === 'done' ? (
@@ -619,8 +619,8 @@ export default function HotspotVoucherPage() {
                   <Ticket className="h-8 w-8 text-red-400" />
                 </div>
               ) : (
-                <div className="w-16 h-16 rounded-full bg-violet-500/20 border-2 border-violet-500 flex items-center justify-center">
-                  <Loader2 className="h-8 w-8 text-violet-500 animate-spin" />
+                <div className="w-16 h-16 rounded-full bg-primary/10 border border-primary flex items-center justify-center">
+                  <Loader2 className="h-8 w-8 text-primary animate-spin" />
                 </div>
               )}
             </div>
@@ -642,7 +642,7 @@ export default function HotspotVoucherPage() {
                 </div>
                 <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
                   <div
-                    className="h-3 rounded-full transition-all duration-500 bg-gradient-to-r from-violet-500 via-pink-500 to-brand-500"
+                    className="h-3 rounded-full transition-all duration-500 bg-gradient-to-r from-primary via-pink-500 to-brand-500"
                     style={{ width: `${genOverlay.total > 0 ? Math.round((genOverlay.current / genOverlay.total) * 100) : 0}%` }}
                   />
                 </div>
@@ -678,7 +678,7 @@ export default function HotspotVoucherPage() {
       )}
       {/* Neon Cyberpunk Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
         <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
@@ -688,7 +688,7 @@ export default function HotspotVoucherPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)]">{t('hotspot.title')}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-">{t('hotspot.title')}</h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t('hotspot.generateVoucher')}</p>
         </div>
         <div className="flex gap-1.5 flex-wrap">
@@ -903,21 +903,21 @@ export default function HotspotVoucherPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-3 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all relative">
-          <div className="flex items-center justify-between"><div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('common.total')}</p><p className="text-lg sm:text-2xl font-bold text-foreground drop-shadow-none mt-1">{stats.total}</p></div><Ticket className="h-6 w-6 text-brand-500 drop-shadow-[0_0_15px_rgba(6,182,212,0.6)]" /></div>
+        <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition-all relative">
+          <div className="flex items-center justify-between"><div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('common.total')}</p><p className="text-lg sm:text-2xl font-bold text-foreground drop-shadow-none mt-1">{stats.total}</p></div><Ticket className="h-6 w-6 text-brand-500 drop-" /></div>
           {isSSEConnected && <div className="absolute top-2 right-2" title="Real-time updates active"><Wifi className="h-3 w-3 text-green-400 animate-pulse" /></div>}
         </div>
-        <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-3 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
-          <div className="flex items-center justify-between"><div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('hotspot.waiting')}</p><p className="text-lg sm:text-2xl font-bold text-foreground drop-shadow-none mt-1">{stats.waiting}</p></div><Ticket className="h-6 w-6 text-amber-400 drop-shadow-[0_0_15px_rgba(251,191,36,0.6)]" /></div>
+        <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition-all">
+          <div className="flex items-center justify-between"><div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('hotspot.waiting')}</p><p className="text-lg sm:text-2xl font-bold text-foreground drop-shadow-none mt-1">{stats.waiting}</p></div><Ticket className="h-6 w-6 text-amber-400 drop-" /></div>
         </div>
-        <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-3 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
-          <div className="flex items-center justify-between"><div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('hotspot.active')}</p><p className="text-lg sm:text-2xl font-bold text-foreground drop-shadow-none mt-1">{stats.active}</p></div><Ticket className="h-6 w-6 text-green-400 drop-shadow-[0_0_15px_rgba(34,197,94,0.6)]" /></div>
+        <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition-all">
+          <div className="flex items-center justify-between"><div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('hotspot.active')}</p><p className="text-lg sm:text-2xl font-bold text-foreground drop-shadow-none mt-1">{stats.active}</p></div><Ticket className="h-6 w-6 text-green-400 drop-" /></div>
         </div>
-        <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-3 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
+        <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition-all">
           <div className="flex items-center justify-between"><div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('hotspot.expired')}</p><p className="text-lg sm:text-2xl font-bold text-foreground drop-shadow-none mt-1">{stats.expired}</p></div><Ticket className="h-6 w-6 text-red-400 drop-shadow-md shadow-red-500/40" /></div>
         </div>
-        <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-3 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all col-span-2 sm:col-span-1">
-          <div className="flex items-center justify-between"><div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('common.total')} {t('common.price')}</p><p className="text-xl font-bold text-foreground drop-shadow-none mt-1">{formatCurrency(stats.totalValue)}</p></div><Ticket className="h-6 w-6 text-pink-500 drop-shadow-[0_0_15px_rgba(236,72,153,0.6)]" /></div>
+        <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition-all col-span-2 sm:col-span-1">
+          <div className="flex items-center justify-between"><div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('common.total')} {t('common.price')}</p><p className="text-xl font-bold text-foreground drop-shadow-none mt-1">{formatCurrency(stats.totalValue)}</p></div><Ticket className="h-6 w-6 text-pink-500 drop-" /></div>
         </div>
       </div>
 
@@ -962,7 +962,7 @@ export default function HotspotVoucherPage() {
             <div className="text-center py-8 text-muted-foreground text-xs">{t('table.noResults')}</div>
           ) : (
             vouchers.map((v) => (
-              <div key={v.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-violet-500/20 p-3 space-y-2">
+              <div key={v.id} className="bg-card rounded-xl border border-border p-3 space-y-2">
                 {/* Header: Checkbox + Code + Status + Delete */}
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
@@ -1131,7 +1131,7 @@ export default function HotspotVoucherPage() {
                   <SelectValue placeholder={editMode === 'batch' ? 'Tidak diubah' : t('common.select')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {editMode === 'batch' && <SelectItem value="keep">— Tidak diubah —</SelectItem>}
+                  {editMode === 'batch' && <SelectItem value="keep">- Tidak diubah -</SelectItem>}
                   {profiles.map(p => (
                     <SelectItem key={p.id} value={p.id}>{p.name} ({formatCurrency(p.sellingPrice)})</SelectItem>
                   ))}
@@ -1149,7 +1149,7 @@ export default function HotspotVoucherPage() {
                   <SelectValue placeholder={editMode === 'batch' ? 'Tidak diubah' : t('common.all')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {editMode === 'batch' && <SelectItem value="keep">— Tidak diubah —</SelectItem>}
+                  {editMode === 'batch' && <SelectItem value="keep">- Tidak diubah -</SelectItem>}
                   <SelectItem value="clear">Global (hapus router)</SelectItem>
                   {routers.map(r => (
                     <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
@@ -1168,7 +1168,7 @@ export default function HotspotVoucherPage() {
                   <SelectValue placeholder={editMode === 'batch' ? 'Tidak diubah' : t('hotspot.noAgent')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {editMode === 'batch' && <SelectItem value="keep">— Tidak diubah —</SelectItem>}
+                  {editMode === 'batch' && <SelectItem value="keep">- Tidak diubah -</SelectItem>}
                   <SelectItem value="clear">{t('hotspot.noAgent')} (hapus agen)</SelectItem>
                   {agents.map(a => (
                     <SelectItem key={a.id} value={a.id}>{a.name} ({a.phone})</SelectItem>

@@ -145,7 +145,7 @@ export default function SecuritySettingsPage() {
         <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500">
           Security Settings
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">Manage your account security — Two-Factor Authentication</p>
+        <p className="text-sm text-muted-foreground mt-1">Manage your account security - Two-Factor Authentication</p>
       </div>
 
       {/* Success Banner */}
@@ -158,7 +158,7 @@ export default function SecuritySettingsPage() {
 
       {/* ────────── STATUS PHASE ────────── */}
       {phase === 'status' && (
-        <div className="bg-card/80 dark:bg-gradient-to-br dark:from-slate-800/60 dark:to-slate-900/60 border border-violet-500/30 rounded-2xl p-6">
+        <div className="bg-card dark:bg-gradient-to-br dark:from-slate-800/60 dark:to-slate-900/60 border border-border rounded-2xl p-6">
           <div className="flex items-start gap-4">
             <div className={`p-3 rounded-xl ${enabled ? 'bg-green-500/20 border border-green-500/30' : 'bg-muted dark:bg-slate-700/50 border border-border dark:border-slate-600/50'}`}>
               <Shield className={`w-7 h-7 ${enabled ? 'text-green-400' : 'text-muted-foreground dark:text-slate-400'}`} />
@@ -186,7 +186,7 @@ export default function SecuritySettingsPage() {
                 <button
                   onClick={startSetup}
                   disabled={submitting}
-                  className="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg text-sm font-medium transition-opacity shadow-md dark:bg-gradient-to-r dark:from-violet-500 dark:to-brand-500 dark:shadow-[0_0_20px_rgba(139,92,246,0.3)] flex items-center gap-2 disabled:opacity-50"
+                  className="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg text-sm font-medium transition-opacity shadow-md dark:bg-gradient-to-r dark:from-primary dark:to-brand-500 dark: flex items-center gap-2 disabled:opacity-50"
                 >
                   {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <QrCode className="w-4 h-4" />}
                   Set Up 2FA
@@ -214,9 +214,9 @@ export default function SecuritySettingsPage() {
 
       {/* ────────── SETUP QR PHASE ────────── */}
       {phase === 'setup-qr' && (
-        <div className="bg-card dark:bg-gradient-to-br dark:from-slate-800/60 dark:to-slate-900/60 border border-border dark:border-violet-500/30 rounded-2xl p-6 space-y-5">
+        <div className="bg-card dark:bg-gradient-to-br dark:from-slate-800/60 dark:to-slate-900/60 border border-border dark:border-border rounded-2xl p-6 space-y-5">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">Step 1 — Scan QR Code</h2>
+            <h2 className="text-lg font-semibold text-foreground">Step 1 - Scan QR Code</h2>
             <button onClick={cancelPhase} className="text-muted-foreground hover:text-foreground dark:text-slate-400 dark:hover:text-white"><X className="w-5 h-5" /></button>
           </div>
 
@@ -226,7 +226,7 @@ export default function SecuritySettingsPage() {
 
           {/* QR Code */}
           <div className="flex justify-center">
-            <div className="p-4 bg-white rounded-2xl shadow-[0_0_30px_rgba(139,92,246,0.3)]">
+            <div className="p-4 bg-white rounded-2xl ">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={qrCode} alt="2FA QR Code" width={200} height={200} loading="lazy" />
             </div>
@@ -247,7 +247,7 @@ export default function SecuritySettingsPage() {
 
           <button
             onClick={() => { setPhase('setup-verify'); setError(''); }}
-            className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl transition-all shadow-md hover:bg-primary/90 dark:bg-gradient-to-r dark:from-violet-500 dark:to-brand-500 dark:text-white dark:shadow-[0_0_20px_rgba(139,92,246,0.3)] dark:hover:opacity-90"
+            className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl transition-all shadow-md hover:bg-primary/90 dark:bg-gradient-to-r dark:from-primary dark:to-brand-500 dark:text-white dark: dark:hover:opacity-90"
           >
             I&apos;ve Scanned the Code →
           </button>
@@ -256,9 +256,9 @@ export default function SecuritySettingsPage() {
 
       {/* ────────── SETUP VERIFY PHASE ────────── */}
       {phase === 'setup-verify' && (
-        <div className="bg-card dark:bg-gradient-to-br dark:from-slate-800/60 dark:to-slate-900/60 border border-border dark:border-violet-500/30 rounded-2xl p-6 space-y-5">
+        <div className="bg-card dark:bg-gradient-to-br dark:from-slate-800/60 dark:to-slate-900/60 border border-border dark:border-border rounded-2xl p-6 space-y-5">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">Step 2 — Verify Code</h2>
+            <h2 className="text-lg font-semibold text-foreground">Step 2 - Verify Code</h2>
             <button onClick={cancelPhase} className="text-muted-foreground hover:text-foreground dark:text-slate-400 dark:hover:text-white"><X className="w-5 h-5" /></button>
           </div>
 
@@ -288,7 +288,7 @@ export default function SecuritySettingsPage() {
                 setSetupCode(f);
               }}
               placeholder="000 000"
-              className="w-full bg-background dark:bg-slate-900 border-2 border-border dark:border-violet-500/40 rounded-xl px-4 py-3.5 text-foreground dark:text-white text-2xl font-mono tracking-[0.5em] text-center placeholder-muted-foreground dark:placeholder-slate-600 focus:border-primary dark:focus:border-brand-500 focus:outline-none transition-all"
+              className="w-full bg-background dark:bg-slate-900 border-2 border-border dark:border-border rounded-xl px-4 py-3.5 text-foreground dark:text-white text-2xl font-mono tracking-[0.5em] text-center placeholder-muted-foreground dark:placeholder-slate-600 focus:border-primary dark:focus:border-brand-500 focus:outline-none transition-all"
             />
           </div>
 
@@ -299,7 +299,7 @@ export default function SecuritySettingsPage() {
             <button
               onClick={verifyAndEnable}
               disabled={submitting}
-              className="flex-1 bg-primary text-primary-foreground font-bold py-3 rounded-xl shadow-md hover:bg-primary/90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 dark:bg-gradient-to-r dark:from-violet-500 dark:to-brand-500 dark:text-white dark:shadow-[0_0_20px_rgba(139,92,246,0.3)] dark:hover:opacity-90"
+              className="flex-1 bg-primary text-primary-foreground font-bold py-3 rounded-xl shadow-md hover:bg-primary/90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 dark:bg-gradient-to-r dark:from-primary dark:to-brand-500 dark:text-white dark: dark:hover:opacity-90"
             >
               {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               Enable 2FA
@@ -343,7 +343,7 @@ export default function SecuritySettingsPage() {
                   onChange={e => setDisablePassword(e.target.value)}
                   placeholder="Enter your password"
                   autoFocus
-                  className="w-full bg-background dark:bg-slate-900 border-2 border-border dark:border-violet-500/40 rounded-xl px-4 py-3 pr-12 text-foreground dark:text-white placeholder-muted-foreground dark:placeholder-slate-600 focus:border-primary dark:focus:border-brand-500 focus:outline-none transition-all"
+                  className="w-full bg-background dark:bg-slate-900 border-2 border-border dark:border-border rounded-xl px-4 py-3 pr-12 text-foreground dark:text-white placeholder-muted-foreground dark:placeholder-slate-600 focus:border-primary dark:focus:border-brand-500 focus:outline-none transition-all"
                 />
                 <button onClick={() => setShowDisablePassword(s => !s)} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground dark:text-slate-400 dark:hover:text-white">
                   {showDisablePassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -366,7 +366,7 @@ export default function SecuritySettingsPage() {
                   setDisableCode(f);
                 }}
                 placeholder="000 000"
-                className="w-full bg-background dark:bg-slate-900 border-2 border-border dark:border-violet-500/40 rounded-xl px-4 py-3.5 text-foreground dark:text-white text-xl font-mono tracking-[0.5em] text-center placeholder-muted-foreground dark:placeholder-slate-600 focus:border-primary dark:focus:border-brand-500 focus:outline-none transition-all"
+                className="w-full bg-background dark:bg-slate-900 border-2 border-border dark:border-border rounded-xl px-4 py-3.5 text-foreground dark:text-white text-xl font-mono tracking-[0.5em] text-center placeholder-muted-foreground dark:placeholder-slate-600 focus:border-primary dark:focus:border-brand-500 focus:outline-none transition-all"
               />
             </div>
           </div>

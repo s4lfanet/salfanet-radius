@@ -85,7 +85,7 @@ export default function FilterPanel({ filters, onFilterChange, statistics }: Fil
         </h3>
         <div className="grid grid-cols-2 gap-2 text-sm">
           <div className="flex items-center space-x-2">
-            <span className="text-purple-500">⬟</span>
+            <span className="text-primary">⬟</span>
             <span className="text-gray-500 dark:text-gray-300">OLT:</span>
             <span className="text-foreground font-bold">{statistics.olt}</span>
           </div>
@@ -95,7 +95,7 @@ export default function FilterPanel({ filters, onFilterChange, statistics }: Fil
             <span className="text-foreground font-bold">{statistics.otb}</span>
           </div>
           <div className="flex items-center space-x-2">
-            <span className="text-purple-400">◆</span>
+            <span className="text-primary">◆</span>
             <span className="text-gray-500 dark:text-gray-300">JC:</span>
             <span className="text-foreground font-bold">{statistics.jc}</span>
           </div>

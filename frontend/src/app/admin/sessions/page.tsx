@@ -112,7 +112,7 @@ export default function SessionsPage() {
     return () => clearInterval(ticker);
   }, []);
 
-  // Sessions query — 10s polling for live bytes from MikroTik API
+  // Sessions query - 10s polling for live bytes from MikroTik API
   // Full RADIUS mode dengan pagination
   const sessionsParams: Record<string, unknown> = {
     page: currentPage,
@@ -127,7 +127,7 @@ export default function SessionsPage() {
     '/api/sessions',
     {
       params: sessionsParams,
-      // Auto-refresh setiap 10 detik — silent refresh to prevent full-page spinner
+      // Auto-refresh setiap 10 detik - silent refresh to prevent full-page spinner
       refetchInterval: 10000,
       placeholderData: 'keepPreviousData',
       // Refresh immediately when tab becomes visible (browser throttles background timers)
@@ -144,7 +144,7 @@ export default function SessionsPage() {
   const { data: routersData } = useApiQuery<RoutersResponse>('/api/network/routers');
   const routers = routersData?.routers || [];
 
-  // Disconnect mutation — invalidates sessions query after success
+  // Disconnect mutation - invalidates sessions query after success
   const disconnectMutation = useApiMutation<DisconnectResponse, { sessionIds: string[] }>(
     '/api/sessions/disconnect',
     {
@@ -178,7 +178,7 @@ export default function SessionsPage() {
     return Math.max(0, Math.floor((now - startMs) / 1000));
   };
 
-  // Format date helper — uses formatWIB for consistent WIB display
+  // Format date helper - uses formatWIB for consistent WIB display
   const formatDateTime = (dateStr: string | null) => {
     if (!dateStr) return '-';
     return formatWIB(dateStr, 'dd/MM/yyyy HH:mm');
@@ -298,10 +298,10 @@ export default function SessionsPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         </div>
-        <RefreshCw className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)] relative z-10" />
+        <RefreshCw className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop- relative z-10" />
       </div>
     );
   }
@@ -310,22 +310,22 @@ export default function SessionsPage() {
     <>
     {showDateRangeModal && createPortal(
       <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowDateRangeModal(false)}>
-        <div className="bg-[#1e1b2e] border border-violet-500/30 rounded-lg w-full max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center justify-between p-4 border-b border-violet-500/20">
+        <div className="bg-[#1e1b2e] border border-border rounded-lg w-full max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center justify-between p-4 border-b border-border">
             <h2 className="text-base font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500">{t('sessions.exportHistory')}</h2>
             <button onClick={() => setShowDateRangeModal(false)} className="text-muted-foreground hover:text-foreground text-xl">&times;</button>
           </div>
           <div className="p-4 space-y-3">
             <div>
               <label className="block text-xs font-medium text-gray-400 mb-1">{t('time.from')}</label>
-              <input type="date" value={exportStartDate} onChange={(e) => setExportStartDate(e.target.value)} className="w-full px-3 py-2 border border-violet-500/30 rounded bg-muted text-gray-200 text-sm" />
+              <input type="date" value={exportStartDate} onChange={(e) => setExportStartDate(e.target.value)} className="w-full px-3 py-2 border border-border rounded bg-muted text-gray-200 text-sm" />
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-400 mb-1">{t('time.to')}</label>
-              <input type="date" value={exportEndDate} onChange={(e) => setExportEndDate(e.target.value)} className="w-full px-3 py-2 border border-violet-500/30 rounded bg-muted text-gray-200 text-sm" />
+              <input type="date" value={exportEndDate} onChange={(e) => setExportEndDate(e.target.value)} className="w-full px-3 py-2 border border-border rounded bg-muted text-gray-200 text-sm" />
             </div>
           </div>
-          <div className="flex gap-2 p-4 border-t border-violet-500/20">
+          <div className="flex gap-2 p-4 border-t border-border">
             <button onClick={() => setShowDateRangeModal(false)} className="flex-1 px-4 py-2 text-sm border border-gray-600 rounded text-muted-foreground hover:text-foreground">{t('common.cancel')}</button>
             <button onClick={handlePerformHistoryExport} className="flex-1 px-4 py-2 text-sm font-bold bg-brand-500 text-muted rounded">{t('common.export')}</button>
           </div>
@@ -336,7 +336,7 @@ export default function SessionsPage() {
     <div className="bg-background relative">
       {/* Neon Cyberpunk Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
         <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
@@ -346,7 +346,7 @@ export default function SessionsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)] flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop- flex items-center gap-2">
             <Activity className="w-6 h-6 text-brand-500" />
             {t('sessions.title')}
           </h1>
@@ -387,23 +387,23 @@ export default function SessionsPage() {
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition-all">
             <div className="text-xs text-brand-500 uppercase tracking-wide">{t('sessions.active')}</div>
             <div className="text-lg sm:text-2xl font-bold text-foreground mt-1">{stats.total}</div>
           </div>
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition-all">
             <div className="text-xs text-brand-500 uppercase tracking-wide flex items-center gap-1">
               <Wifi className="w-4 h-4" /> PPPoE
             </div>
             <div className="text-lg sm:text-2xl font-bold text-foreground mt-1">{stats.pppoe}</div>
           </div>
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition-all">
             <div className="text-xs text-brand-500 uppercase tracking-wide flex items-center gap-1">
               <WifiOff className="w-4 h-4" /> Hotspot
             </div>
             <div className="text-lg sm:text-2xl font-bold text-foreground mt-1">{stats.hotspot}</div>
           </div>
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition-all">
             <div className="text-xs text-brand-500 uppercase tracking-wide">{t('dashboard.bandwidth')}</div>
             <div className="text-lg sm:text-2xl font-bold text-foreground mt-1">{stats.totalBandwidthFormatted}</div>
           </div>

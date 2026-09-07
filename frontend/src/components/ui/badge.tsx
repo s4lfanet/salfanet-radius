@@ -11,8 +11,8 @@ const badgeVariants = cva(
       variant: {
         default: [
           "bg-cyan-500/20 text-cyan-400 border-cyan-500/50",
-          "shadow-[0_0_10px_rgba(0,255,255,0.2)]",
-          "[a&]:hover:bg-cyan-500/30 [a&]:hover:shadow-[0_0_15px_rgba(0,255,255,0.3)]",
+          "",
+          "[a&]:hover:bg-cyan-500/30 [a&]:hover:",
           "dark:neon-glow"
         ].join(" "),
         secondary: [
@@ -21,7 +21,7 @@ const badgeVariants = cva(
         ].join(" "),
         destructive: [
           "bg-red-500/20 text-red-400 border-red-500/50",
-          "shadow-[0_0_10px_rgba(255,51,102,0.2)]",
+          "",
           "[a&]:hover:bg-red-500/30",
           "focus-visible:ring-red-500/20"
         ].join(" "),
@@ -31,17 +31,17 @@ const badgeVariants = cva(
         ].join(" "),
         success: [
           "bg-green-500/20 text-green-400 border-green-500/50",
-          "shadow-[0_0_10px_rgba(0,255,136,0.2)]",
+          "",
           "[a&]:hover:bg-green-500/30"
         ].join(" "),
         warning: [
           "bg-orange-500/20 text-orange-400 border-orange-500/50",
-          "shadow-[0_0_10px_rgba(255,170,0,0.2)]",
+          "",
           "[a&]:hover:bg-orange-500/30"
         ].join(" "),
         info: [
           "bg-blue-500/20 text-blue-400 border-blue-500/50",
-          "shadow-[0_0_10px_rgba(59,130,246,0.2)]",
+          "",
           "[a&]:hover:bg-blue-500/30"
         ].join(" "),
       },

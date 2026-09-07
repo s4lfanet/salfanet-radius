@@ -89,7 +89,7 @@ export default function NewPppoeUserPage() {
         const data = await pppoeApi.listUsers({ search: formData.idCardNumber });
         const found = (data.users || []).find((u: PppoeUser) => u.idCardNumber === formData.idCardNumber);
         setFormWarnings(w => ({ ...w, nik: found ? `⚠️ NIK sudah terdaftar: ${found.name}` : '' }));
-      } catch (e: unknown) { /* ignore — non-critical duplicate check */ console.warn('Duplicate NIK check failed:', e); }
+      } catch (e: unknown) { /* ignore - non-critical duplicate check */ console.warn('Duplicate NIK check failed:', e); }
     }, 500);
     return () => { clearTimeout(timer); controller.abort(); };
   }, [formData.idCardNumber]);
@@ -105,7 +105,7 @@ export default function NewPppoeUserPage() {
         const data = await pppoeApi.listUsers({ search: formData.phone });
         const found = (data.users || []).find((u: PppoeUser) => u.phone === formData.phone);
         setFormWarnings(w => ({ ...w, phone: found ? `⚠️ No HP sudah terdaftar: ${found.name}` : '' }));
-      } catch (e: unknown) { /* ignore — non-critical duplicate check */ console.warn('Duplicate phone check failed:', e); }
+      } catch (e: unknown) { /* ignore - non-critical duplicate check */ console.warn('Duplicate phone check failed:', e); }
     }, 500);
     return () => { clearTimeout(timer); controller.abort(); };
   }, [formData.phone]);
@@ -256,7 +256,7 @@ export default function NewPppoeUserPage() {
           <h1 className="text-lg font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500">
             Registrasi Pelanggan Baru
           </h1>
-          <p className="text-[10px] text-muted-foreground">PSB — Pasang Baru</p>
+          <p className="text-[10px] text-muted-foreground">PSB - Pasang Baru</p>
         </div>
       </div>
 
@@ -313,7 +313,7 @@ export default function NewPppoeUserPage() {
                 </div>
               </div>
 
-              {/* Foto KTP — dengan kamera HP */}
+              {/* Foto KTP - dengan kamera HP */}
               <div className="bg-card border border-border rounded-xl p-4 space-y-3">
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">🪪 Foto KTP <span className="text-destructive">*</span></p>
                 {formData.idCardPhoto ? (
@@ -328,7 +328,7 @@ export default function NewPppoeUserPage() {
                   </div>
                 ) : (
                   <>
-                    {/* Camera capture — untuk HP */}
+                    {/* Camera capture - untuk HP */}
                     <input type="file" accept="image/*" capture="environment" onChange={handleUploadIdCard} disabled={uploadingIdCard} className="hidden" id="idCardCamera" />
                     <label htmlFor="idCardCamera" className={`w-full flex flex-col items-center justify-center gap-1 px-3 py-4 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted text-muted-foreground ${uploadingIdCard ? 'opacity-50 cursor-not-allowed' : ''}`}>
                       {uploadingIdCard ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
@@ -405,7 +405,7 @@ export default function NewPppoeUserPage() {
                   <ModalLabel required>Paket Internet</ModalLabel>
                   <ModalSelect value={formData.profileId} onChange={(e) => field('profileId', e.target.value)}>
                     <option value="">-- Pilih Paket --</option>
-                    {profiles.map(p => <option key={p.id} value={p.id}>{p.name} — Rp {p.price.toLocaleString('id-ID')}</option>)}
+                    {profiles.map(p => <option key={p.id} value={p.id}>{p.name} - Rp {p.price.toLocaleString('id-ID')}</option>)}
                   </ModalSelect>
                   {formData.profileId && (() => {
                     const p = profiles.find(x => x.id === formData.profileId);
@@ -431,7 +431,7 @@ export default function NewPppoeUserPage() {
                     <input type="radio" name="subscriptionType" value="POSTPAID" checked={formData.subscriptionType === 'POSTPAID'} onChange={() => field('subscriptionType', 'POSTPAID')} className="w-3 h-3 accent-primary" />
                     <div><p className="text-[10px] font-semibold">📅 Postpaid</p><p className="text-[9px] text-muted-foreground">Pakai dulu, bayar nanti</p></div>
                   </label>
-                  <label className={`flex items-center gap-2 p-2.5 border-2 rounded-lg cursor-pointer transition-all ${formData.subscriptionType === 'PREPAID' ? 'border-purple-500 bg-purple-500/10' : 'border-border hover:border-purple-400/40'}`}>
+                  <label className={`flex items-center gap-2 p-2.5 border-2 rounded-lg cursor-pointer transition-all ${formData.subscriptionType === 'PREPAID' ? 'border-purple-500 bg-primary/10' : 'border-border hover:border-border'}`}>
                     <input type="radio" name="subscriptionType" value="PREPAID" checked={formData.subscriptionType === 'PREPAID'} onChange={() => field('subscriptionType', 'PREPAID')} className="w-3 h-3 accent-purple-500" />
                     <div><p className="text-[10px] font-semibold">🎫 Prepaid</p><p className="text-[9px] text-muted-foreground">Bayar dulu, langsung aktif</p></div>
                   </label>
@@ -599,7 +599,7 @@ export default function NewPppoeUserPage() {
                   <div>
                     <ModalLabel>Area</ModalLabel>
                     <ModalSelect value={formData.areaId} onChange={(e) => field('areaId', e.target.value)}>
-                      <option value="">— Tanpa Area —</option>
+                      <option value="">- Tanpa Area -</option>
                       {areas.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                     </ModalSelect>
                   </div>
@@ -616,7 +616,7 @@ export default function NewPppoeUserPage() {
                 </div>
               </div>
 
-              {/* PPP Secret Checkbox — conditional on router auth_mode */}
+              {/* PPP Secret Checkbox - conditional on router auth_mode */}
               {showPppSecretCheckbox && (
                 <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-400/50 rounded-xl p-3">
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -636,8 +636,8 @@ export default function NewPppoeUserPage() {
                   <ModalLabel>⚡ Aksi Jatuh Tempo</ModalLabel>
                   <select value={formData.autoIsolationEnabled ? 'isolate' : 'keep'} onChange={(e) => field('autoIsolationEnabled', e.target.value === 'isolate')}
                     className="w-full px-3 py-2 text-xs border border-border rounded-lg bg-background focus:outline-none focus:ring-1 focus:ring-primary">
-                    <option value="isolate">ISOLIR INTERNET — isolir otomatis saat expired</option>
-                    <option value="keep">TETAP TERHUBUNG — tidak isolir meski expired</option>
+                    <option value="isolate">ISOLIR INTERNET - isolir otomatis saat expired</option>
+                    <option value="keep">TETAP TERHUBUNG - tidak isolir meski expired</option>
                   </select>
                 </div>
                 <div>
@@ -666,7 +666,7 @@ export default function NewPppoeUserPage() {
       </form>
       </div>
 
-      {/* Bottom Bar — Wizard Navigation */}
+      {/* Bottom Bar - Wizard Navigation */}
       <div className="flex items-center gap-2 flex-shrink-0 pt-2 border-t border-border">
         <button type="button" onClick={() => setWizardStep(s => Math.max(1, s - 1))} disabled={wizardStep === 1}
           className="inline-flex items-center gap-1 px-3 py-2 text-xs border border-border rounded-lg hover:bg-muted disabled:opacity-30">

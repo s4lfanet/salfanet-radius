@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -67,7 +67,7 @@ const getStatusBadge = (inv: Invoice) => {
 const getPaymentSourceBadge = (src: string | null) => {
   switch (src) {
     case 'gateway': return { label: 'Payment Gateway',    Icon: CreditCard,   cls: 'text-cyan-400' };
-    case 'manual':  return { label: 'Transfer Bank',      Icon: Banknote,     cls: 'text-purple-400' };
+    case 'manual':  return { label: 'Transfer Bank',      Icon: Banknote,     cls: 'text-primary' };
     case 'admin':   return { label: 'Dikonfirmasi Admin', Icon: ShieldCheck,  cls: 'text-green-400' };
     default: return null;
   }
@@ -117,7 +117,7 @@ export default function CustomerInvoicesPage() {
       const newInvoices: Invoice[] = data.data.invoices;
       setPagination(data.data.pagination);
 
-      // Payment status tracking — detect when pending manual payments get resolved
+      // Payment status tracking � detect when pending manual payments get resolved
       if (silent) {
         const pendingNow = new Set(newInvoices.filter(i => i.manualPaymentStatus === 'pending').map(i => i.id));
         prevPendingIds.current.forEach(id => {
@@ -211,7 +211,7 @@ export default function CustomerInvoicesPage() {
         body,
       });
       if (data.success) {
-        toast('success', 'Bukti Transfer Terkirim', 'Admin akan mengkonfirmasi pembayaran Anda dalam 1×24 jam');
+        toast('success', 'Bukti Transfer Terkirim', 'Admin akan mengkonfirmasi pembayaran Anda dalam 1�24 jam');
         setManualPayModal(null);
         setManualForm({ bankName: '', accountName: '', notes: '', file: null });
         setSelectedAdminBank(null);
@@ -276,7 +276,7 @@ export default function CustomerInvoicesPage() {
               onClick={() => setStatusFilter(tab.key)}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
                 active
-                  ? 'bg-cyan-500/15 text-cyan-400 border-cyan-500/40 shadow-[0_0_10px_rgba(6,182,212,0.15)]'
+                  ? 'bg-cyan-500/15 text-cyan-400 border-cyan-500/40 '
                   : 'text-slate-400 border-slate-700/50 hover:border-slate-600 hover:text-slate-300'
               }`}
             >
@@ -292,7 +292,7 @@ export default function CustomerInvoicesPage() {
         <div className="flex items-center justify-center py-20">
           <div className="text-center">
             <div className="animate-spin w-10 h-10 border-2 border-cyan-400 border-t-transparent rounded-full mx-auto" />
-            <p className="mt-3 text-slate-400 text-sm">Memuat tagihan…</p>
+            <p className="mt-3 text-slate-400 text-sm">Memuat tagihan�</p>
           </div>
         </div>
       ) : invoices.length === 0 ? (
@@ -357,7 +357,7 @@ export default function CustomerInvoicesPage() {
                       {inv.manualPaymentStatus === 'pending' && (
                         <span className="flex items-center gap-1 text-[10px] text-yellow-400 animate-pulse font-medium">
                           <Clock className="w-3 h-3" />
-                          Menunggu konfirmasi admin…
+                          Menunggu konfirmasi admin�
                         </span>
                       )}
                       {inv.manualPaymentBank && (
@@ -476,16 +476,16 @@ export default function CustomerInvoicesPage() {
       {/* Manual Payment Proof Modal */}
       {manualPayModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 pb-20 sm:pb-0 px-4 pt-4">
-          <div className="bg-card dark:bg-slate-900 border border-purple-500/30 rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto shadow-2xl">
+          <div className="bg-card dark:bg-slate-900 border border-border rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto shadow-2xl">
             <div className="p-5 border-b border-border/50 dark:border-slate-700/50 sticky top-0 bg-card dark:bg-slate-900 z-10">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-base font-bold text-white flex items-center gap-2">
-                    <Banknote className="w-5 h-5 text-purple-400" />
+                    <Banknote className="w-5 h-5 text-primary" />
                     Kirim Bukti Transfer
                   </h2>
                   <p className="text-xs text-slate-400 mt-1">
-                    {manualPayModal.invoiceNumber} · Rp {manualPayModal.amount.toLocaleString('id-ID')}
+                    {manualPayModal.invoiceNumber} � Rp {manualPayModal.amount.toLocaleString('id-ID')}
                   </p>
                 </div>
                 <button onClick={() => { setManualPayModal(null); setManualForm({ bankName: '', accountName: '', notes: '', file: null }); setSelectedAdminBank(null); }} className="p-1.5 rounded-lg bg-muted/20 hover:bg-muted/40 border border-border/50">
@@ -512,8 +512,8 @@ export default function CustomerInvoicesPage() {
                         }}
                         className={`w-full flex items-center justify-between p-3 rounded-xl border-2 transition-all text-left ${
                           selectedAdminBank === acc
-                            ? 'border-purple-400 bg-purple-500/10'
-                            : 'border-border/40 bg-muted/10 hover:border-purple-500/40'
+                            ? 'border-purple-400 bg-primary/10'
+                            : 'border-border/40 bg-muted/10 hover:border-border'
                         }`}
                       >
                         <div>
@@ -521,17 +521,17 @@ export default function CustomerInvoicesPage() {
                           <p className="font-mono text-sm text-purple-300 tracking-wider mt-0.5">{acc.accountNumber}</p>
                           <p className="text-[10px] text-muted-foreground mt-0.5">a/n {acc.accountName}</p>
                         </div>
-                        {selectedAdminBank === acc && <Check className="w-4 h-4 text-purple-400 flex-shrink-0" />}
+                        {selectedAdminBank === acc && <Check className="w-4 h-4 text-primary flex-shrink-0" />}
                       </button>
                     ))}
                   </div>
                 ) : (
                   <input
                     type="text"
-                    placeholder="cth: BCA, Mandiri, BRI…"
+                    placeholder="cth: BCA, Mandiri, BRI�"
                     value={manualForm.bankName}
                     onChange={e => setManualForm(f => ({ ...f, bankName: e.target.value }))}
-                    className="w-full bg-background dark:bg-slate-800 border border-border dark:border-slate-600 rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500/60"
+                    className="w-full bg-background dark:bg-slate-800 border border-border dark:border-slate-600 rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-border"
                   />
                 )}
               </div>
@@ -544,7 +544,7 @@ export default function CustomerInvoicesPage() {
                   placeholder="Nama sesuai rekening pengirim"
                   value={manualForm.accountName}
                   onChange={e => setManualForm(f => ({ ...f, accountName: e.target.value }))}
-                  className="w-full bg-background dark:bg-slate-800 border border-border dark:border-slate-600 rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500/60"
+                  className="w-full bg-background dark:bg-slate-800 border border-border dark:border-slate-600 rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-border"
                 />
               </div>
               <div>
@@ -555,7 +555,7 @@ export default function CustomerInvoicesPage() {
                   type="file"
                   accept="image/*"
                   onChange={e => setManualForm(f => ({ ...f, file: e.target.files?.[0] ?? null }))}
-                  className="w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-purple-500/20 file:text-purple-300 file:text-xs file:font-medium hover:file:bg-purple-500/30 cursor-pointer"
+                  className="w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-primary/10 file:text-purple-300 file:text-xs file:font-medium hover:file:bg-primary/10 cursor-pointer"
                 />
               </div>
               <div>
@@ -563,11 +563,11 @@ export default function CustomerInvoicesPage() {
                   Catatan (Opsional)
                 </label>
                 <textarea
-                  placeholder="Informasi tambahan…"
+                  placeholder="Informasi tambahan�"
                   value={manualForm.notes}
                   onChange={e => setManualForm(f => ({ ...f, notes: e.target.value }))}
                   rows={2}
-                  className="w-full bg-background dark:bg-slate-800 border border-border dark:border-slate-600 rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-purple-500/60 resize-none"
+                  className="w-full bg-background dark:bg-slate-800 border border-border dark:border-slate-600 rounded-xl px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-border resize-none"
                 />
               </div>
             </div>

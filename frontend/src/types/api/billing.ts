@@ -95,7 +95,7 @@ export interface InvoiceSendReminderResponse {
   };
 }
 
-// GET /api/invoices/[id]/pdf — endpoint does not exist in backend
+// GET /api/invoices/[id]/pdf - endpoint does not exist in backend
 // This is a BACKEND ISSUE: frontend calls this but backend has no such route
 export interface InvoicePdfResponse {
   success: boolean;

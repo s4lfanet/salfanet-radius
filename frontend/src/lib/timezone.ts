@@ -71,7 +71,7 @@ const DB_TIMEZONE_CACHE_TTL = 60 * 1000; // 1 minute
 
 /**
  * Refresh timezone from the backend's public company API (server-side only).
- * Frontend has no direct DB access — it fetches from the backend service.
+ * Frontend has no direct DB access - it fetches from the backend service.
  * Caches for 1 minute to avoid repeated requests.
  */
 async function refreshTimezoneFromBackend(): Promise<string> {
@@ -93,13 +93,13 @@ async function refreshTimezoneFromBackend(): Promise<string> {
       }
     }
   } catch {
-    // Backend unavailable — keep current/default
+    // Backend unavailable - keep current/default
   }
   return currentTimezone;
 }
 
 /**
- * Self-initializing background refresh (server-side only) — fixes stale
+ * Self-initializing background refresh (server-side only) - fixes stale
  * timezone state after a PM2 restart. Without this, frontend SSR pages
  * would keep using the ENV default (NEXT_PUBLIC_TIMEZONE) until a browser
  * session called setCurrentTimezone() via the client-side company store.
@@ -156,7 +156,7 @@ export function parseDateAsWIB(dateStr: string): Date {
     const wibDate = new Date(normalized);
     return new Date(wibDate.getTime() - getTimezoneOffsetMs());
   }
-  // Already has timezone indicator — parse as-is
+  // Already has timezone indicator - parse as-is
   return new Date(dateStr);
 }
 
@@ -165,7 +165,7 @@ export function parseDateAsWIB(dateStr: string): Date {
  * 
  * PRISMA + MYSQL TIMEZONE ARCHITECTURE:
  * Prisma's mysql2 driver stores JS Date's UTC components to MySQL DATETIME.
- * MySQL DATETIME has no timezone awareness — values are stored as-is.
+ * MySQL DATETIME has no timezone awareness - values are stored as-is.
  * When read back, Prisma interprets them as UTC.
  * 
  * This function converts the UTC date to the company timezone for display.
@@ -200,7 +200,7 @@ export function toUTC(local: Date | string): Date {
     return parseDateAsWIB(local);
   }
   // If the input is a JS Date from new Date(), it's already in true UTC.
-  // No conversion needed — Prisma stores UTC components directly.
+  // No conversion needed - Prisma stores UTC components directly.
   return local;
 }
 
@@ -443,7 +443,7 @@ function getTimezoneAbbreviation(tz: string): string {
 }
 
 /**
- * Get timezone UTC offset — uses Intl.DateTimeFormat for DST-aware,
+ * Get timezone UTC offset - uses Intl.DateTimeFormat for DST-aware,
  * universally correct offset calculation.
  *
  * This replaces the old hardcoded offsetMap which:
@@ -489,10 +489,10 @@ function getTimezoneOffset(tz: string): string {
       }
     }
   } catch {
-    // Invalid timezone — fall through to default
+    // Invalid timezone - fall through to default
   }
 
-  // Last resort fallback — WIB +07:00 (should rarely happen)
+  // Last resort fallback - WIB +07:00 (should rarely happen)
   console.warn(`[timezone] Could not determine offset for "${tz}", defaulting to +07:00`);
   return '+07:00';
 }

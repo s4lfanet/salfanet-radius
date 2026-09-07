@@ -553,7 +553,7 @@ export default function SplicePointsSection({
 
                 {/* Outgoing Core */}
                 <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg space-y-2">
-                  <h4 className="text-[10px] font-semibold text-purple-700 dark:text-purple-400">Outgoing Core</h4>
+                  <h4 className="text-[10px] font-semibold text-purple-700 dark:text-primary">Outgoing Core</h4>
                   <div>
                     <label className="block text-[9px] font-medium mb-1">Kabel</label>
                     <select

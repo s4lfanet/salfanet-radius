@@ -1,5 +1,5 @@
 /**
- * API Contract Types — barrel export.
+ * API Contract Types - barrel export.
  *
  * This module provides typed contracts for all backend API responses.
  * Use these with `apiAdmin<T>()` to get type safety on API calls.

@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Global error boundary — replaces Next.js auto-generated /_global-error.
+ * Global error boundary - replaces Next.js auto-generated /_global-error.
  * Must be a Client Component and include <html>/<body> tags because it
  * renders in place of the root layout when an unrecoverable error occurs.
  */

@@ -438,7 +438,7 @@ export default function AgentVouchersPage() {
           </table>
         </div>
 
-        {/* Pagination — always visible */}
+        {/* Pagination - always visible */}
         <div className="px-5 py-3 border-t border-border">
           <Pagination
             page={currentPage}

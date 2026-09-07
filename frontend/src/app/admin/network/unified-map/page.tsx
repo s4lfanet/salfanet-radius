@@ -13,7 +13,7 @@ import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
-// Dynamic imports (client-side only) — prevents Lucide icon hydration mismatch
+// Dynamic imports (client-side only) - prevents Lucide icon hydration mismatch
 const UnifiedNetworkMap = dynamic(
   () => import('@/components/network/UnifiedNetworkMap'),
   { ssr: false }
@@ -186,7 +186,7 @@ export default function UnifiedMapPage() {
 
   const handleConnectNodeClick = (entity: MapEntity) => {
     if (!connectMode) return;
-    // Skip customers — can't connect them in infrastructure mode
+    // Skip customers - can't connect them in infrastructure mode
     if (entity.type === 'CUSTOMER') return;
 
     if (!connectSource) {
@@ -254,7 +254,7 @@ export default function UnifiedMapPage() {
       {/* Main Content */}
       <div className="flex flex-1 min-h-0 overflow-hidden relative">
 
-        {/* Mobile backdrop — tap to close panel */}
+        {/* Mobile backdrop - tap to close panel */}
         {showPanel && (
           <div
             className="lg:hidden absolute inset-0 bg-black/40 z-[540]"
@@ -262,7 +262,7 @@ export default function UnifiedMapPage() {
           />
         )}
 
-        {/* Filter Sidebar — desktop always visible, mobile slide-in drawer */}
+        {/* Filter Sidebar - desktop always visible, mobile slide-in drawer */}
         <div className={cn(
           'bg-gray-50 dark:bg-gray-900 border-r border-border overflow-y-auto p-4',
           'lg:w-72 lg:shrink-0 lg:relative lg:z-auto lg:translate-x-0',
@@ -389,7 +389,7 @@ export default function UnifiedMapPage() {
               <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-sm px-4 py-2 rounded-full shadow-lg font-medium whitespace-nowrap">
                 {!connectSource
                   ? '🔗 Klik node SUMBER (asal koneksi)'
-                  : `🔗 ${TYPE_LABEL[connectSource.type] ?? connectSource.type}: ${connectSource.name} — Klik node TUJUAN`}
+                  : `🔗 ${TYPE_LABEL[connectSource.type] ?? connectSource.type}: ${connectSource.name} - Klik node TUJUAN`}
               </div>
             </div>
           )}
@@ -475,7 +475,7 @@ export default function UnifiedMapPage() {
             </div>
           )}
 
-          {/* Legend — collapsible on mobile, always expanded on desktop */}
+          {/* Legend - collapsible on mobile, always expanded on desktop */}
           <div className="absolute bottom-4 left-4 bg-white/95 dark:bg-gray-800/90 backdrop-blur rounded-lg shadow-lg text-xs z-[500] min-w-[180px]">
             <button
               onClick={() => setShowLegend(v => !v)}
@@ -493,11 +493,11 @@ export default function UnifiedMapPage() {
             )}>
               <div className="px-3 pb-2.5 space-y-1 border-t border-gray-200/60 dark:border-gray-700/60 pt-1.5">
                 {[
-                  ['⬟', 'text-purple-500', 'OLT – Optical Line Terminal'],
-                  ['◆', 'text-violet-500', 'JC – Joint Closure'],
-                  ['◇', 'text-blue-500', 'OTB – Optical Terminal Box'],
-                  ['■', 'text-cyan-500', 'ODC – Optical Distribution Cabinet'],
-                  ['▲', 'text-green-500', 'ODP – Optical Distribution Point'],
+                  ['⬟', 'text-primary', 'OLT - Optical Line Terminal'],
+                  ['◆', 'text-primary', 'JC - Joint Closure'],
+                  ['◇', 'text-blue-500', 'OTB - Optical Terminal Box'],
+                  ['■', 'text-cyan-500', 'ODC - Optical Distribution Cabinet'],
+                  ['▲', 'text-green-500', 'ODP - Optical Distribution Point'],
                   ['●', 'text-green-500', 'Active Customer'],
                   ['●', 'text-red-500', 'Isolated Customer'],
                 ].map(([icon, cls, label]) => (

@@ -253,10 +253,10 @@ export default function CustomerAssignmentPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         </div>
-        <RefreshCcw className="h-12 w-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)] relative z-10" />
+        <RefreshCcw className="h-12 w-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop- relative z-10" />
       </div>
     );
   }
@@ -265,7 +265,7 @@ export default function CustomerAssignmentPage() {
     <div className="bg-background relative">
       {/* Neon Cyberpunk Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
         <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
@@ -274,8 +274,8 @@ export default function CustomerAssignmentPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)] flex items-center gap-3">
-              <Link2 className="h-6 w-6 text-brand-500 drop-shadow-[0_0_15px_rgba(6,182,212,0.6)]" />
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop- flex items-center gap-3">
+              <Link2 className="h-6 w-6 text-brand-500 drop-" />
               Customer - ODP Assignment
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground mt-2">
@@ -284,7 +284,7 @@ export default function CustomerAssignmentPage() {
           </div>
           <button
             onClick={() => { resetForm(); setEditingAssignment(null); setIsDialogOpen(true); }}
-            className="inline-flex items-center px-4 py-2.5 text-sm font-bold bg-brand-500 text-black rounded-lg hover:bg-brand-500/90 transition-all shadow-[0_0_20px_rgba(6,182,212,0.4)] uppercase tracking-wide"
+            className="inline-flex items-center px-4 py-2.5 text-sm font-bold bg-brand-500 text-black rounded-lg hover:bg-brand-500/90 transition-all  uppercase tracking-wide"
           >
             <Plus className="h-4 w-4 mr-2" />
             {t('network.newAssignment')}
@@ -293,16 +293,16 @@ export default function CustomerAssignmentPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(139,92,246,0.2)]">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4 ">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-brand-500 uppercase tracking-wide">{t('network.totalAssignments')}</p>
                 <p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{assignments.length}</p>
               </div>
-              <Link2 className="h-8 w-8 text-brand-500 drop-shadow-[0_0_15px_rgba(6,182,212,0.6)]" />
+              <Link2 className="h-8 w-8 text-brand-500 drop-" />
             </div>
           </div>
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(139,92,246,0.2)]">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4 ">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-brand-500 uppercase tracking-wide">{t('network.uniqueOdps')}</p>
@@ -310,10 +310,10 @@ export default function CustomerAssignmentPage() {
                   {new Set(assignments.map(a => a.odpId)).size}
                 </p>
               </div>
-              <Box className="h-8 w-8 text-brand-500 drop-shadow-[0_0_15px_rgba(6,182,212,0.6)]" />
+              <Box className="h-8 w-8 text-brand-500 drop-" />
             </div>
           </div>
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(139,92,246,0.2)]">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4 ">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-brand-500 uppercase tracking-wide">{t('network.uniqueCustomers')}</p>
@@ -321,7 +321,7 @@ export default function CustomerAssignmentPage() {
                   {new Set(assignments.map(a => a.customerId)).size}
                 </p>
               </div>
-              <Users className="h-8 w-8 text-brand-500 drop-shadow-[0_0_15px_rgba(6,182,212,0.6)]" />
+              <Users className="h-8 w-8 text-brand-500 drop-" />
             </div>
           </div>
         </div>
@@ -351,12 +351,12 @@ export default function CustomerAssignmentPage() {
         {/* Mobile Card View */}
         <div className="block md:hidden space-y-3">
           {filteredAssignments.length === 0 ? (
-            <div className="bg-card/80 backdrop-blur-xl rounded-xl border border-violet-500/20 p-4 text-center text-muted-foreground text-xs">
+            <div className="bg-card rounded-xl border border-border p-4 text-center text-muted-foreground text-xs">
               {t('network.noAssignmentsFound')}
             </div>
           ) : (
             filteredAssignments.map((assignment) => (
-              <div key={assignment.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-violet-500/20 p-3">
+              <div key={assignment.id} className="bg-card rounded-xl border border-border p-3">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-primary" />
@@ -565,12 +565,12 @@ export default function CustomerAssignmentPage() {
                   </div>
                 ) : (
                   <div className="relative">
-                    <input type="text" value={customerSearch} onChange={(e) => { setCustomerSearch(e.target.value); searchCustomers(e.target.value); }} placeholder={t('network.searchCustomerPlaceholder')} className="w-full px-3 py-2 text-xs bg-background dark:bg-card border border-violet-500/40 rounded-lg text-foreground placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition-all" />
+                    <input type="text" value={customerSearch} onChange={(e) => { setCustomerSearch(e.target.value); searchCustomers(e.target.value); }} placeholder={t('network.searchCustomerPlaceholder')} className="w-full px-3 py-2 text-xs bg-background dark:bg-card border border-border rounded-lg text-foreground placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition-all" />
                     {isSearching && (<RefreshCcw className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 animate-spin text-brand-500" />)}
                     {searchResults.length > 0 && (
-                      <div className="absolute z-10 w-full mt-1 bg-popover dark:bg-card border border-violet-500/50 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      <div className="absolute z-10 w-full mt-1 bg-popover dark:bg-card border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
                         {searchResults.map(customer => (
-                          <button key={customer.id} type="button" onClick={() => handleCustomerSelect(customer)} className="w-full px-3 py-2 text-left hover:bg-violet-500/20 transition-colors">
+                          <button key={customer.id} type="button" onClick={() => handleCustomerSelect(customer)} className="w-full px-3 py-2 text-left hover:bg-primary/10 transition-colors">
                             <div className="text-xs font-medium text-foreground">{customer.name}</div>
                             <div className="text-[10px] text-muted-foreground">@{customer.username} • {customer.phone || t('network.noPhone')}</div>
                           </button>
@@ -586,13 +586,13 @@ export default function CustomerAssignmentPage() {
                 <div>
                   <ModalLabel required>{t('network.selectOdp')} {loadingNearestOdps && (<RefreshCcw className="inline h-2.5 w-2.5 ml-1 animate-spin text-brand-500" />)}</ModalLabel>
                   {nearestOdps.length === 0 && !loadingNearestOdps ? (
-                    <div className="p-3 bg-muted/50 dark:bg-card/50 border border-violet-500/30 rounded-lg text-xs text-muted-foreground text-center">
+                    <div className="p-3 bg-muted/50 dark:bg-card/50 border border-border rounded-lg text-xs text-muted-foreground text-center">
                       {selectedCustomer.latitude && selectedCustomer.longitude ? t('network.noOdpsFoundOrAvailable') : t('network.customerNoGpsShowingAll')}
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
                       {nearestOdps.map(odp => (
-                        <button key={odp.id} type="button" onClick={() => handleOdpSelect(odp)} disabled={(odp.availablePorts?.length || 0) === 0} className={`p-2 text-left rounded-lg border transition-all ${selectedOdpId === odp.id ? 'bg-brand-500/20 border-brand-500 shadow-[0_0_10px_rgba(6,182,212,0.3)]' : (odp.availablePorts?.length || 0) === 0 ? 'bg-muted/50 dark:bg-card/50 border-violet-500/20 opacity-50 cursor-not-allowed' : 'border-violet-500/30 hover:border-brand-500/50'}`}>
+                        <button key={odp.id} type="button" onClick={() => handleOdpSelect(odp)} disabled={(odp.availablePorts?.length || 0) === 0} className={`p-2 text-left rounded-lg border transition-all ${selectedOdpId === odp.id ? 'bg-brand-500/20 border-brand-500 ' : (odp.availablePorts?.length || 0) === 0 ? 'bg-muted/50 dark:bg-card/50 border-border opacity-50 cursor-not-allowed' : 'border-border hover:border-brand-500/50'}`}>
                           <div className="flex items-center gap-1">
                             <Box className="h-3 w-3 text-brand-500" />
                             <span className="text-xs font-medium text-foreground">{odp.name}</span>

@@ -114,7 +114,7 @@ const NOTIFICATION_TYPES_BY_ROLE: Record<RecipientRole, Array<{ value: string; l
     { value: 'gangguan', label: 'Gangguan', icon: AlertTriangle, color: 'bg-red-500/10 text-red-600 border-red-500/30', activeColor: 'bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/25' },
     { value: 'promo', label: 'Promo', icon: Gift, color: 'bg-pink-500/10 text-pink-600 border-pink-500/30', activeColor: 'bg-pink-500 text-white border-pink-500 shadow-lg shadow-pink-500/25' },
     { value: 'info', label: 'Info', icon: Info, color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30', activeColor: 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/25' },
-    { value: 'custom', label: 'Kustom', icon: MessageSquare, color: 'bg-purple-500/10 text-purple-600 border-purple-500/30', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25' },
+    { value: 'custom', label: 'Kustom', icon: MessageSquare, color: 'bg-primary/10 text-purple-600 border-border', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25' },
   ],
   technician: [
     { value: 'broadcast', label: 'Pengumuman', icon: RadioTower, color: 'bg-blue-500/10 text-blue-600 border-blue-500/30', activeColor: 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/25' },
@@ -122,7 +122,7 @@ const NOTIFICATION_TYPES_BY_ROLE: Record<RecipientRole, Array<{ value: string; l
     { value: 'jadwal', label: 'Jadwal', icon: Zap, color: 'bg-cyan-500/10 text-cyan-600 border-cyan-500/30', activeColor: 'bg-cyan-500 text-white border-cyan-500 shadow-lg shadow-cyan-500/25' },
     { value: 'info_teknis', label: 'Info Teknis', icon: Info, color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30', activeColor: 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/25' },
     { value: 'darurat', label: 'Darurat', icon: AlertTriangle, color: 'bg-red-500/10 text-red-600 border-red-500/30', activeColor: 'bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/25' },
-    { value: 'custom', label: 'Kustom', icon: MessageSquare, color: 'bg-purple-500/10 text-purple-600 border-purple-500/30', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25' },
+    { value: 'custom', label: 'Kustom', icon: MessageSquare, color: 'bg-primary/10 text-purple-600 border-border', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25' },
   ],
   agent: [
     { value: 'broadcast', label: 'Pengumuman', icon: RadioTower, color: 'bg-blue-500/10 text-blue-600 border-blue-500/30', activeColor: 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/25' },
@@ -130,19 +130,19 @@ const NOTIFICATION_TYPES_BY_ROLE: Record<RecipientRole, Array<{ value: string; l
     { value: 'registrasi_baru', label: 'Registrasi Baru', icon: Users, color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30', activeColor: 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/25' },
     { value: 'target', label: 'Target', icon: Zap, color: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/30', activeColor: 'bg-yellow-500 text-white border-yellow-500 shadow-lg shadow-yellow-500/25' },
     { value: 'promo_agen', label: 'Promo Agen', icon: Gift, color: 'bg-pink-500/10 text-pink-600 border-pink-500/30', activeColor: 'bg-pink-500 text-white border-pink-500 shadow-lg shadow-pink-500/25' },
-    { value: 'custom', label: 'Kustom', icon: MessageSquare, color: 'bg-purple-500/10 text-purple-600 border-purple-500/30', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25' },
+    { value: 'custom', label: 'Kustom', icon: MessageSquare, color: 'bg-primary/10 text-purple-600 border-border', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25' },
   ],
   admin: [
     { value: 'broadcast', label: 'Pengumuman', icon: RadioTower, color: 'bg-blue-500/10 text-blue-600 border-blue-500/30', activeColor: 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/25' },
     { value: 'alert', label: 'Alert Sistem', icon: AlertTriangle, color: 'bg-red-500/10 text-red-600 border-red-500/30', activeColor: 'bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/25' },
     { value: 'info', label: 'Info', icon: Info, color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30', activeColor: 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/25' },
-    { value: 'custom', label: 'Kustom', icon: MessageSquare, color: 'bg-purple-500/10 text-purple-600 border-purple-500/30', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25' },
+    { value: 'custom', label: 'Kustom', icon: MessageSquare, color: 'bg-primary/10 text-purple-600 border-border', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25' },
   ],
   all: [
     { value: 'broadcast', label: 'Pengumuman', icon: RadioTower, color: 'bg-blue-500/10 text-blue-600 border-blue-500/30', activeColor: 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/25' },
     { value: 'gangguan', label: 'Gangguan Jaringan', icon: AlertTriangle, color: 'bg-red-500/10 text-red-600 border-red-500/30', activeColor: 'bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/25' },
     { value: 'maintenance', label: 'Maintenance', icon: Wrench, color: 'bg-amber-500/10 text-amber-600 border-amber-500/30', activeColor: 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/25' },
-    { value: 'custom', label: 'Kustom', icon: MessageSquare, color: 'bg-purple-500/10 text-purple-600 border-purple-500/30', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25' },
+    { value: 'custom', label: 'Kustom', icon: MessageSquare, color: 'bg-primary/10 text-purple-600 border-border', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25' },
   ],
 };
 
@@ -210,7 +210,7 @@ const TEMPLATE_CONTENT: Record<string, { title: string; body: string }> = {
   agent_promo: { title: '🎁 Promo Spesial untuk Agen', body: 'Ada promo spesial yang bisa Anda tawarkan kepada calon pelanggan. Cek detail promo dan manfaatkan kesempatan ini!' },
   agent_info: { title: 'ℹ️ Informasi Penting untuk Agen', body: 'Ada informasi penting yang perlu diketahui seluruh agen Salfanet. Harap baca dan pahami dengan seksama.' },
   // All templates
-  all_broadcast: { title: '📢 Pengumuman Salfanet', body: 'Kepada seluruh pengguna, pelanggan, teknisi, dan agen Salfanet — berikut pengumuman penting dari manajemen.' },
+  all_broadcast: { title: '📢 Pengumuman Salfanet', body: 'Kepada seluruh pengguna, pelanggan, teknisi, dan agen Salfanet - berikut pengumuman penting dari manajemen.' },
   all_gangguan: { title: '⚠️ Gangguan Jaringan Area', body: 'Saat ini terjadi gangguan pada jaringan di beberapa area. Tim teknis sedang bekerja keras untuk pemulihan. Mohon maaf atas gangguan yang terjadi.' },
   all_maintenance: { title: '🔧 Scheduled Maintenance', body: 'Akan dilakukan pemeliharaan jaringan terjadwal. Teknisi harap standby, pelanggan mohon maaf atas gangguan sementara.' },
 };
@@ -296,7 +296,7 @@ export default function PushNotificationsPage() {
 
     const confirmed = await showConfirm(
       t('pushNotif.confirmSendTitle'),
-      `Kirim notifikasi "${title}" ke: ${roleLabel} — ${targetLabel}?`
+      `Kirim notifikasi "${title}" ke: ${roleLabel} - ${targetLabel}?`
     );
     if (!confirmed) return;
 
@@ -362,7 +362,7 @@ export default function PushNotificationsPage() {
       : target === 'area' ? t('pushNotif.perArea')
       : target === 'selected' ? t('pushNotif.selected')
       : target;
-    return `${roleLabel} — ${targetLabel}`;
+    return `${roleLabel} - ${targetLabel}`;
   };
 
   const coveragePct = stats && stats.totalUsers > 0 ? Math.round((stats.usersWithTokens / stats.totalUsers) * 100) : 0;
@@ -402,7 +402,7 @@ export default function PushNotificationsPage() {
               </div>
               <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-500/15 px-2 py-0.5 rounded-full">total</span>
             </div>
-            <p className="text-lg sm:text-2xl font-bold tracking-tight">{loading ? '—' : stats?.totalUsers ?? 0}</p>
+            <p className="text-lg sm:text-2xl font-bold tracking-tight">{loading ? '-' : stats?.totalUsers ?? 0}</p>
             <p className="text-xs text-muted-foreground mt-1">{t('pushNotif.totalCustomers')}</p>
           </CardContent>
         </Card>
@@ -415,7 +415,7 @@ export default function PushNotificationsPage() {
               </div>
               <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/15 px-2 py-0.5 rounded-full">push</span>
             </div>
-            <p className="text-lg sm:text-2xl font-bold tracking-tight text-emerald-600">{loading ? '—' : stats?.usersWithTokens ?? 0}</p>
+            <p className="text-lg sm:text-2xl font-bold tracking-tight text-emerald-600">{loading ? '-' : stats?.usersWithTokens ?? 0}</p>
             <p className="text-xs text-muted-foreground mt-1">{t('pushNotif.registeredPush')}</p>
           </CardContent>
         </Card>
@@ -428,7 +428,7 @@ export default function PushNotificationsPage() {
               </div>
               <span className="text-xs font-medium text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-500/15 px-2 py-0.5 rounded-full">sent</span>
             </div>
-            <p className="text-lg sm:text-2xl font-bold tracking-tight">{loading ? '—' : stats?.totalBroadcasts ?? 0}</p>
+            <p className="text-lg sm:text-2xl font-bold tracking-tight">{loading ? '-' : stats?.totalBroadcasts ?? 0}</p>
             <p className="text-xs text-muted-foreground mt-1">{t('pushNotif.totalBroadcast')}</p>
           </CardContent>
         </Card>
@@ -436,11 +436,11 @@ export default function PushNotificationsPage() {
         <Card className="border-purple-200/50 bg-gradient-to-br from-purple-50 to-white dark:from-purple-950/20 dark:to-background">
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-2 bg-purple-500/10 rounded-lg flex items-center justify-center">
+              <div className="p-2 bg-primary/10 rounded-lg flex items-center justify-center">
                 <Zap className="w-5 h-5 text-purple-600" />
               </div>
             </div>
-            <p className="text-lg sm:text-2xl font-bold tracking-tight text-purple-600">{loading ? '—' : `${coveragePct}%`}</p>
+            <p className="text-lg sm:text-2xl font-bold tracking-tight text-purple-600">{loading ? '-' : `${coveragePct}%`}</p>
             <p className="text-xs text-muted-foreground mt-1">{t('pushNotif.coverage')}</p>
             {!loading && stats && stats.totalUsers > 0 && (
               <div className="mt-2.5">
@@ -484,7 +484,7 @@ export default function PushNotificationsPage() {
                   { value: 'technician' as RecipientRole, label: 'Teknisi', icon: Wrench, color: 'bg-amber-500/10 text-amber-600 border-amber-500/30', activeColor: 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/25', count: stats?.technicianSubscribers ?? 0, unit: 'terdaftar' },
                   { value: 'agent' as RecipientRole, label: 'Agen', icon: Megaphone, color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30', activeColor: 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/25', count: stats?.agentSubscribers ?? 0, unit: 'terdaftar' },
                   { value: 'admin' as RecipientRole, label: 'Admin', icon: Shield, color: 'bg-red-500/10 text-red-600 border-red-500/30', activeColor: 'bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/25', count: stats?.adminSubscribers ?? 0, unit: 'terdaftar' },
-                  { value: 'all' as RecipientRole, label: 'Semua', icon: RadioTower, color: 'bg-purple-500/10 text-purple-600 border-purple-500/30', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25', count: (stats?.usersWithTokens ?? 0) + (stats?.agentSubscribers ?? 0) + (stats?.technicianSubscribers ?? 0) + (stats?.adminSubscribers ?? 0), unit: 'total' },
+                  { value: 'all' as RecipientRole, label: 'Semua', icon: RadioTower, color: 'bg-primary/10 text-purple-600 border-border', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25', count: (stats?.usersWithTokens ?? 0) + (stats?.agentSubscribers ?? 0) + (stats?.technicianSubscribers ?? 0) + (stats?.adminSubscribers ?? 0), unit: 'total' },
                 ] as Array<{ value: RecipientRole; label: string; icon: React.ComponentType<{ className?: string }>; color: string; activeColor: string; count: number; unit: string }>).map((role) => {
                   const RoleIcon = role.icon;
                   const active = recipientRole === role.value;
@@ -543,7 +543,7 @@ export default function PushNotificationsPage() {
               <Card>
                 <CardHeader className="px-5 pt-5 pb-3">
                   <CardTitle className="text-sm font-semibold leading-snug flex items-center gap-2.5">
-                    <MessageSquare className="w-4 h-4 text-purple-500" />
+                    <MessageSquare className="w-4 h-4 text-primary" />
                     {t('pushNotif.quickTemplate')}
                   </CardTitle>
                   <CardDescription className="text-xs">{t('pushNotif.clickToAutoFill')}</CardDescription>
@@ -742,7 +742,7 @@ export default function PushNotificationsPage() {
                         </div>
                         <div className="flex items-center justify-between text-xs border-t pt-2 mt-1">
                           <span className="text-muted-foreground font-semibold">Total penerima</span>
-                          <span className="font-bold text-purple-600 dark:text-purple-400">{(stats?.usersWithTokens ?? 0) + (stats?.agentSubscribers ?? 0) + (stats?.technicianSubscribers ?? 0) + (stats?.adminSubscribers ?? 0)}</span>
+                          <span className="font-bold text-purple-600 dark:text-primary">{(stats?.usersWithTokens ?? 0) + (stats?.agentSubscribers ?? 0) + (stats?.technicianSubscribers ?? 0) + (stats?.adminSubscribers ?? 0)}</span>
                         </div>
                       </>
                     )}
@@ -864,7 +864,7 @@ export default function PushNotificationsPage() {
                 {/* Mobile Card View */}
                 <div className="block md:hidden space-y-3.5">
                   {broadcasts.map((bc) => (
-                    <div key={bc.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-violet-500/20 dark:border-violet-500/30 p-3.5">
+                    <div key={bc.id} className="bg-card rounded-xl border border-border dark:border-border p-3.5">
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold leading-tight">{bc.title}</p>
@@ -947,7 +947,7 @@ export default function PushNotificationsPage() {
                                 <span className="font-bold text-sm">{bc.failedCount}</span>
                               </div>
                             ) : (
-                              <span className="text-muted-foreground text-sm">—</span>
+                              <span className="text-muted-foreground text-sm">-</span>
                             )}
                           </TableCell>
                           <TableCell>

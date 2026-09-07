@@ -31,7 +31,7 @@ export function useIdleTimeout({
   const lastActivityRef = useRef<number>(Date.now());
   const warningShownRef = useRef<boolean>(false);
 
-  // Use refs so callbacks never appear in dependency arrays —
+  // Use refs so callbacks never appear in dependency arrays -
   // prevents the idle timer from resetting every time the parent re-renders
   // with a new inline function reference.
   const onWarningRef = useRef(onWarning);
@@ -62,7 +62,7 @@ export function useIdleTimeout({
       await signOut({ callbackUrl: '/admin/login?reason=idle' });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // stable — uses onTimeoutRef
+  }, []); // stable - uses onTimeoutRef
 
   const resetTimer = useCallback(() => {
     if (!enabled) return;
@@ -81,7 +81,7 @@ export function useIdleTimeout({
     timeoutRef.current = setTimeout(() => {
       handleLogout();
     }, timeout);
-  // onWarning/onTimeout intentionally excluded — accessed via refs to keep timer stable
+  // onWarning/onTimeout intentionally excluded - accessed via refs to keep timer stable
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, timeout, warningTime, handleLogout, clearTimeouts]);
 

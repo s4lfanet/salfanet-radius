@@ -101,7 +101,7 @@ export default function TechnicianOnlinePage() {
             <p className="text-xs text-muted-foreground">{pagination.total} {t('techPortal.activeUsers')}</p>
           </div>
         </div>
-        <button onClick={() => fetchSessions(pagination.page)} title="Perbarui Data" className="p-2 bg-slate-100 dark:bg-muted border border-border rounded-xl hover:bg-slate-200 dark:hover:bg-violet-500/10 transition">
+        <button onClick={() => fetchSessions(pagination.page)} title="Perbarui Data" className="p-2 bg-slate-100 dark:bg-muted border border-border rounded-xl hover:bg-slate-200 dark:hover:bg-primary/10 transition">
           <RefreshCw className={`w-4 h-4 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
@@ -147,14 +147,14 @@ export default function TechnicianOnlinePage() {
               </thead>
               <tbody>
                 {sessions.map((s) => (
-                  <tr key={s.id} className="border-b border-slate-100 dark:border-violet-500/10 hover:bg-slate-50 dark:hover:bg-violet-500/5 transition">
+                  <tr key={s.id} className="border-b border-slate-100 dark:border-border hover:bg-slate-50 dark:hover:bg-primary/10 transition">
                     <td className="px-4 py-3 font-medium text-foreground">{s.username}</td>
                     <td className="px-4 py-3 text-muted-foreground/80">{s.user?.name || '-'}</td>
                     <td className="px-4 py-3 text-muted-foreground/80 font-mono text-xs">{s.framedIpAddress}</td>
                     <td className="px-4 py-3 text-muted-foreground/80 font-mono text-xs">{s.macAddress}</td>
                     <td className="px-4 py-3 text-green-600 dark:text-green-400 font-mono text-xs">{formatUptime(s.duration)}</td>
                     <td className="px-4 py-3 text-blue-600 dark:text-blue-400 text-xs">{s.downloadFormatted}</td>
-                    <td className="px-4 py-3 text-purple-600 dark:text-purple-400 text-xs">{s.uploadFormatted}</td>
+                    <td className="px-4 py-3 text-purple-600 dark:text-primary text-xs">{s.uploadFormatted}</td>
                     <td className="px-4 py-3 text-muted-foreground/80">{s.router?.name || '-'}</td>
                   </tr>
                 ))}
@@ -186,14 +186,14 @@ export default function TechnicianOnlinePage() {
                     <span className="font-mono text-foreground/80">{s.macAddress?.slice(0, 11)}...</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-4 pt-1 border-t border-slate-100 dark:border-violet-500/10">
+                <div className="flex items-center gap-4 pt-1 border-t border-slate-100 dark:border-border">
                   <div className="flex items-center gap-1">
                     <ArrowDown className="w-3 h-3 text-blue-500" />
                     <span className="text-xs font-medium text-blue-600 dark:text-blue-400">{s.downloadFormatted}</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <ArrowUp className="w-3 h-3 text-purple-500" />
-                    <span className="text-xs font-medium text-purple-600 dark:text-purple-400">{s.uploadFormatted}</span>
+                    <ArrowUp className="w-3 h-3 text-primary" />
+                    <span className="text-xs font-medium text-purple-600 dark:text-primary">{s.uploadFormatted}</span>
                   </div>
                   <div className="ml-auto text-xs text-muted-foreground">{s.router?.name}</div>
                 </div>

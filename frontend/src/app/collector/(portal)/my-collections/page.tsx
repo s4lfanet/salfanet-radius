@@ -34,12 +34,12 @@ interface CollectionData {
 
 const fmtRp = (v: number) => `Rp ${Number(v || 0).toLocaleString('id-ID')}`;
 const fmtMonth = (m: string) => {
-  if (!m || m === 'unknown') return '—';
+  if (!m || m === 'unknown') return '-';
   const [y, mo] = m.split('-');
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
   return `${months[parseInt(mo) - 1]} ${y}`;
 };
-const fmtTime = (d: string | null) => d ? new Date(d).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
+const fmtTime = (d: string | null) => d ? new Date(d).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '-';
 
 export default function CollectorMyCollectionsPage() {
   const [data, setData] = useState<CollectionData | null>(null);
@@ -169,10 +169,10 @@ export default function CollectorMyCollectionsPage() {
                       <div className="font-medium text-foreground">{inv.customerName || inv.customerUsername}</div>
                       <div className="text-xs text-muted-foreground font-mono">{inv.customerId || inv.customerUsername}</div>
                     </td>
-                    <td className="px-3 py-3 text-xs text-muted-foreground">{inv.phone || '—'}</td>
-                    <td className="px-3 py-3 text-xs text-muted-foreground max-w-[200px] truncate" title={inv.address}>{inv.address || '—'}</td>
-                    <td className="px-3 py-3 text-xs text-muted-foreground">{inv.profileName || '—'}</td>
-                    <td className="px-3 py-3 text-xs text-muted-foreground">{inv.areaName || '—'}</td>
+                    <td className="px-3 py-3 text-xs text-muted-foreground">{inv.phone || '-'}</td>
+                    <td className="px-3 py-3 text-xs text-muted-foreground max-w-[200px] truncate" title={inv.address}>{inv.address || '-'}</td>
+                    <td className="px-3 py-3 text-xs text-muted-foreground">{inv.profileName || '-'}</td>
+                    <td className="px-3 py-3 text-xs text-muted-foreground">{inv.areaName || '-'}</td>
                     <td className="px-3 py-3 text-xs text-muted-foreground">{inv.invoiceNumber}</td>
                     <td className="px-3 py-3 text-right font-semibold text-foreground">{fmtRp(inv.amount)}</td>
                     <td className="px-3 py-3 text-center">{pmBadge(inv.paymentMethod)}</td>

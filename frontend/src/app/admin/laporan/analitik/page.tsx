@@ -261,7 +261,7 @@ export default function LaporanAnalitikPage() {
             value={s.currentActiveUsers.toLocaleString('id-ID')}
             sub={t('laporanAnalitik.newIn', { n: String(s.totalNewCustomers), n2: String(data?.period) })}
             icon={Users}
-            color="bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400"
+            color="bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-primary"
             trend="up"
           />
         </div>
@@ -484,7 +484,7 @@ export default function LaporanAnalitikPage() {
                     <td className="py-2 pr-4 text-right text-muted-foreground">
                       {row.churnRate > 0 ? `${row.churnRate}%` : '-'}
                     </td>
-                    <td className="py-2 pr-4 text-right text-violet-600 dark:text-violet-400">
+                    <td className="py-2 pr-4 text-right text-violet-600 dark:text-primary">
                       {row.arpu > 0 ? fmtIDR(row.arpu) : '-'}
                     </td>
                     <td className="py-2 text-right text-muted-foreground">

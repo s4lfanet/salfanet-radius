@@ -220,9 +220,9 @@ export default function CollectorLoginPage() {
 
           <div className="space-y-3">
             {[
-              { color: 'bg-emerald-500', text: 'Tagihan Pelanggan — Tandai invoice lunas & catat metode pembayaran' },
-              { color: 'bg-teal-500', text: 'Setoran Harian — Rekap pembayaran tunai dan transfer per hari' },
-              { color: 'bg-green-500', text: 'Manajemen Isolir — Pantau pelanggan isolir & catat pencabutan ONT' },
+              { color: 'bg-emerald-500', text: 'Tagihan Pelanggan - Tandai invoice lunas & catat metode pembayaran' },
+              { color: 'bg-teal-500', text: 'Setoran Harian - Rekap pembayaran tunai dan transfer per hari' },
+              { color: 'bg-green-500', text: 'Manajemen Isolir - Pantau pelanggan isolir & catat pencabutan ONT' },
             ].map((item, i) => (
               <div key={i} className="flex items-center gap-3 bg-white/70 dark:bg-slate-800/60 rounded-xl px-4 py-3 border border-gray-100 dark:border-slate-700/50">
                 <span className={`w-2 h-2 rounded-full flex-shrink-0 ${item.color}`} />

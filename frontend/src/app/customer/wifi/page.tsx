@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -165,11 +165,11 @@ export default function CustomerWiFiPage() {
     const password = editing.password.trim();
 
     if (!ssid || ssid.length < 1 || ssid.length > 32) {
-      toast('error', 'Validasi', 'Nama WiFi (SSID) harus 1–32 karakter.');
+      toast('error', 'Validasi', 'Nama WiFi (SSID) harus 1-32 karakter.');
       return;
     }
     if (password.length > 0 && (password.length < 8 || password.length > 63)) {
-      toast('error', 'Validasi', 'Password WiFi harus 8–63 karakter. Kosongkan jika tidak ingin mengubah.');
+      toast('error', 'Validasi', 'Password WiFi harus 8-63 karakter. Kosongkan jika tidak ingin mengubah.');
       return;
     }
 
@@ -192,7 +192,7 @@ export default function CustomerWiFiPage() {
       });
 
       if (data.success) {
-        toast('success', 'Berhasil', 'Konfigurasi WiFi dikirim ke perangkat. Tunggu 30–60 detik lalu sambungkan ulang.');
+        toast('success', 'Berhasil', 'Konfigurasi WiFi dikirim ke perangkat. Tunggu 30-60 detik lalu sambungkan ulang.');
         setEditing(null);
         setTimeout(() => loadDevice(), 3000);
       } else {
@@ -373,7 +373,7 @@ export default function CustomerWiFiPage() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm">
                     <Wifi className="w-4 h-4 text-slate-500 shrink-0" />
-                    <span className="text-white">{wlan.ssid || '—'}</span>
+                    <span className="text-white">{wlan.ssid || '-'}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <span className="text-slate-500 text-xs w-16">Keamanan</span>
@@ -482,7 +482,7 @@ export default function CustomerWiFiPage() {
                         {editing.showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
-                    <p className="text-xs text-slate-500 mt-1">8–63 karakter. Kosongkan jika tidak ingin mengubah password.</p>
+                    <p className="text-xs text-slate-500 mt-1">8-63 karakter. Kosongkan jika tidak ingin mengubah password.</p>
                   </div>
 
                   {/* Action buttons */}
@@ -525,7 +525,7 @@ export default function CustomerWiFiPage() {
         <div className="flex items-start gap-3">
           <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
           <p className="text-xs text-slate-400">
-            Perubahan dikirim langsung ke perangkat via TR-069. Setelah disimpan, tunggu <strong className="text-slate-300">30–60 detik</strong> lalu sambungkan kembali ke WiFi dengan nama/password baru.
+            Perubahan dikirim langsung ke perangkat via TR-069. Setelah disimpan, tunggu <strong className="text-slate-300">30-60 detik</strong> lalu sambungkan kembali ke WiFi dengan nama/password baru.
           </p>
         </div>
       </CyberCard>

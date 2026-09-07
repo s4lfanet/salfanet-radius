@@ -69,7 +69,7 @@ export function PwaInstallPrompt() {
       className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[99998] w-[calc(100vw-32px)] max-w-sm
         flex items-center gap-3 px-4 py-3
         bg-gray-950/95 border border-cyan-500/40 rounded-2xl
-        shadow-[0_0_40px_rgba(6,182,212,0.25)] backdrop-blur-sm
+         backdrop-blur-sm
         animate-in slide-in-from-bottom-4 duration-300"
     >
       {/* Icon */}

@@ -4282,7 +4282,7 @@
     "exporting": "Exporting...",
     "exportExcel": "Export Excel",
     "exportPdf": "Export PDF",
-    "previewData": "Preview Data — menampilkan {count} dari {total} baris",
+    "previewData": "Preview Data - menampilkan {count} dari {total} baris",
     "exportHint": "Export untuk data lengkap",
     "noData": "Tidak ada data untuk filter yang dipilih",
     "initialState": "Pilih filter dan klik Tampilkan Data",
@@ -4349,7 +4349,7 @@
     "colChurnPct": "Churn %",
     "colArpu": "ARPU",
     "colActiveEst": "Aktif (est.)",
-    "methodologyNote": "Catatan metodologi: Churn rate dihitung berdasarkan pelanggan yang statusnya berubah ke \"stop\" pada bulan tersebut. ARPU = total pendapatan ÷ estimasi pelanggan aktif. Data bersifat estimasi — untuk akurasi maksimal gunakan laporan manual + audit berkala."
+    "methodologyNote": "Catatan metodologi: Churn rate dihitung berdasarkan pelanggan yang statusnya berubah ke \"stop\" pada bulan tersebut. ARPU = total pendapatan ÷ estimasi pelanggan aktif. Data bersifat estimasi - untuk akurasi maksimal gunakan laporan manual + audit berkala."
   },
   "invoicesImport": {
     "title": "Import Invoice dari CSV",

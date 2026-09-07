@@ -640,10 +640,10 @@ export default function GenieACSDevicesPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         </div>
-        <Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)] relative z-10" />
+        <Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop- relative z-10" />
       </div>
     );
   }
@@ -652,7 +652,7 @@ export default function GenieACSDevicesPage() {
     return (
       <div className="bg-background relative">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
           <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
           <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
           <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
@@ -661,7 +661,7 @@ export default function GenieACSDevicesPage() {
           <div className="space-y-4">
             {/* Header */}
             <div>
-              <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)] flex items-center gap-3">
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop- flex items-center gap-3">
                 <Server className="w-6 h-6 text-brand-500" />
                 <div>
                   <span>{t('genieacs.devicesTitle')}</span>
@@ -696,7 +696,7 @@ export default function GenieACSDevicesPage() {
   return (
     <div className="bg-background relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
         <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
@@ -705,7 +705,7 @@ export default function GenieACSDevicesPage() {
         <div className="space-y-3">
           {/* Header */}
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)] flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop- flex items-center gap-2">
               <Server className="w-6 h-6 text-brand-500" />
               <div>
                 <span>{t('genieacs.devicesTitle')}</span>
@@ -804,7 +804,7 @@ export default function GenieACSDevicesPage() {
                 </div>
               ) : (
                 filteredDevices.map((device) => (
-                  <div key={device._id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-violet-500/20 p-3">
+                  <div key={device._id} className="bg-card rounded-xl border border-border p-3">
                     <div className="flex items-center justify-between mb-2">
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-foreground truncate">{device.serialNumber || '-'}</p>
@@ -1000,7 +1000,7 @@ export default function GenieACSDevicesPage() {
             <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
               <div className="bg-card rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden mx-4">
                 {/* Modal Header */}
-                <div className="bg-gradient-to-r from-primary to-violet-500 p-3 text-white flex items-center justify-between">
+                <div className="bg-gradient-to-r from-primary to-primary p-3 text-white flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Server className="w-4 h-4" />
                     <div>
@@ -1246,7 +1246,7 @@ export default function GenieACSDevicesPage() {
                                     <div>
                                       <div className="flex items-center gap-2 flex-wrap">
                                         <p className="text-xs font-medium text-foreground">{wan.name}</p>
-                                        <span className={`px-1.5 py-0.5 text-[9px] font-semibold rounded ${wan.connectionType === 'PPPoE' ? 'bg-violet-500/20 text-violet-400' : 'bg-blue-500/20 text-blue-400'}`}>{wan.connectionType}</span>
+                                        <span className={`px-1.5 py-0.5 text-[9px] font-semibold rounded ${wan.connectionType === 'PPPoE' ? 'bg-primary/10 text-primary' : 'bg-blue-500/20 text-blue-400'}`}>{wan.connectionType}</span>
                                         {wan.serviceList && wan.serviceList !== '-' && <span className="px-1.5 py-0.5 text-[9px] font-semibold rounded bg-orange-500/20 text-orange-400">{wan.serviceList}</span>}
                                         {wan.vlanId && wan.vlanId !== '-' && <span className="px-1.5 py-0.5 text-[9px] font-semibold rounded bg-cyan-500/20 text-cyan-400">VLAN {wan.vlanId}</span>}
                                       </div>
@@ -1375,7 +1375,7 @@ export default function GenieACSDevicesPage() {
                 <div>
                   <ModalLabel>{t('genieacs.wlanIndex')}</ModalLabel>
                   <ModalSelect value={editWifiData.wlanIndex} onChange={(e) => handleWlanIndexChange(parseInt(e.target.value))}>
-                    {selectedDevice?.wlanConfigs?.map((wlan) => (<option key={wlan.index} value={wlan.index} className="dark:bg-card">WLAN {wlan.index} — {wlan.ssid || t('genieacs.noSsid')} ({wlan.band})</option>)) || (<><option value={1} className="dark:bg-card">WLAN 1 (2.4GHz)</option><option value={2} className="dark:bg-card">WLAN 2 (5GHz)</option></>)}
+                    {selectedDevice?.wlanConfigs?.map((wlan) => (<option key={wlan.index} value={wlan.index} className="dark:bg-card">WLAN {wlan.index} - {wlan.ssid || t('genieacs.noSsid')} ({wlan.band})</option>)) || (<><option value={1} className="dark:bg-card">WLAN 1 (2.4GHz)</option><option value={2} className="dark:bg-card">WLAN 2 (5GHz)</option></>)}
                   </ModalSelect>
                 </div>
               )}
@@ -1399,19 +1399,19 @@ export default function GenieACSDevicesPage() {
               <div>
                 <ModalLabel required>{t('genieacs.ssidName')}</ModalLabel>
                 <ModalInput type="text" value={editWifiData.ssid} onChange={(e) => setEditWifiData({ ...editWifiData, ssid: e.target.value })} maxLength={32} placeholder={t('genieacs.wifiName')} autoComplete="off" />
-                <p className="text-[10px] text-muted-foreground mt-1">1–32 {t('common.characters')}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">1-32 {t('common.characters')}</p>
               </div>
               {/* Security Mode */}
               <div>
                 <ModalLabel>Security / Encryption</ModalLabel>
                 <ModalSelect value={editWifiData.securityMode} onChange={(e) => setEditWifiData({ ...editWifiData, securityMode: e.target.value })}>
-                  <option value="None">None (Open — no password)</option>
+                  <option value="None">None (Open - no password)</option>
                   <option value="WPA-PSK">WPA-PSK (WPA / TKIP)</option>
-                  <option value="WPA2-PSK">WPA2-PSK (WPA2 / AES) — Recommended</option>
+                  <option value="WPA2-PSK">WPA2-PSK (WPA2 / AES) - Recommended</option>
                   <option value="WPA-WPA2-PSK">WPA/WPA2-PSK Mixed (TKIP+AES)</option>
                 </ModalSelect>
               </div>
-              {/* Password — only if not open */}
+              {/* Password - only if not open */}
               {editWifiData.securityMode !== 'None' && (
                 <div>
                   <ModalLabel>{t('genieacs.wifiPassword')}{wifiModalMode === 'edit' ? ' (kosong = tidak diubah)' : ''}</ModalLabel>
@@ -1419,7 +1419,7 @@ export default function GenieACSDevicesPage() {
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50" />
                     <ModalInput type="text" value={editWifiData.password} onChange={(e) => setEditWifiData({ ...editWifiData, password: e.target.value })} maxLength={63} placeholder={wifiModalMode === 'add' ? 'Min. 8 karakter' : t('genieacs.passwordPlaceholder')} autoComplete="off" className="pl-10" />
                   </div>
-                  <p className="text-[10px] text-muted-foreground mt-1">8–63 karakter{wifiModalMode === 'edit' ? ' · kosongkan jika tidak ingin mengubah' : ''}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">8-63 karakter{wifiModalMode === 'edit' ? ' · kosongkan jika tidak ingin mengubah' : ''}</p>
                 </div>
               )}
               {/* Enable toggle */}
@@ -1508,7 +1508,7 @@ export default function GenieACSDevicesPage() {
               <ModalInput type="number" min={0} max={4094} value={editWanData.vlanId} onChange={(e) => setEditWanData({ ...editWanData, vlanId: e.target.value })} placeholder="e.g. 100" />
             </div>
             <div>
-              <ModalLabel>VLAN Priority <span className="text-muted-foreground">(0–7)</span></ModalLabel>
+              <ModalLabel>VLAN Priority <span className="text-muted-foreground">(0-7)</span></ModalLabel>
               <ModalSelect value={editWanData.vlanPriority} onChange={(e) => setEditWanData({ ...editWanData, vlanPriority: e.target.value })}>
                 {[0,1,2,3,4,5,6,7].map(p => <option key={p} value={p}>{p}{p === 0 ? ' (default)' : p === 6 ? ' (high)' : p === 7 ? ' (highest)' : ''}</option>)}
               </ModalSelect>
@@ -1559,7 +1559,7 @@ export default function GenieACSDevicesPage() {
             <div className="p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded text-[10px] text-blue-700 dark:text-blue-300">
               <p className="font-medium mb-1">Port Binding Info</p>
               <p>WANDevice = antarmuka WAN fisik (1=ETH/xDSL, 2=2nd WAN).</p>
-              <p>WANConnectionDevice = GEM port / sub-interface (1–8). Tiap VLAN/LAN port mapping pakai index berbeda.</p>
+              <p>WANConnectionDevice = GEM port / sub-interface (1-8). Tiap VLAN/LAN port mapping pakai index berbeda.</p>
               <p>Untuk dual-stack: buat 2 koneksi dengan WanConnDev berbeda dan VLAN berbeda.</p>
             </div>
           )}
@@ -1819,7 +1819,7 @@ export default function GenieACSDevicesPage() {
                 <input
                   value={genName}
                   onChange={e => setGenName(e.target.value)}
-                  className="w-full border border-border rounded-md px-3 py-2 text-sm font-mono bg-background focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  className="w-full border border-border rounded-md px-3 py-2 text-sm font-mono bg-background focus:outline-none focus:ring-1 focus:ring-primary"
                   placeholder={genTarget === 'vp' ? 'contoh: uptime' : 'contoh: provision-default'}
                 />
               </div>
@@ -1830,7 +1830,7 @@ export default function GenieACSDevicesPage() {
                   onChange={e => setGenScript(e.target.value)}
                   rows={14}
                   spellCheck={false}
-                  className="w-full font-mono text-[11px] border border-border rounded-md p-3 bg-input/80 dark:text-green-300 resize-none focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  className="w-full font-mono text-[11px] border border-border rounded-md p-3 bg-input/80 dark:text-green-300 resize-none focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
             </div>

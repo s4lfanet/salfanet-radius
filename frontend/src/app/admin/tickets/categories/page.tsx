@@ -175,7 +175,7 @@ export default function TicketCategoriesPage() {
   return (
     <div className="bg-background relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
         <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
@@ -184,7 +184,7 @@ export default function TicketCategoriesPage() {
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)]">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-">
               {t('ticket.ticketCategories')}
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">
@@ -204,22 +204,22 @@ export default function TicketCategoriesPage() {
         {loading ? (
           <div className="flex items-center justify-center min-h-[60vh]">
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-              <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse"></div>
+              <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
               <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
             </div>
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500 dark:border-brand-500 dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)] relative z-10"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500 dark:border-brand-500 dark:drop- relative z-10"></div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {categories.map((category) => (
               <div
                 key={category.id}
-                className="bg-card dark:bg-[#1a1525]/80 backdrop-blur-sm border border-border dark:border-violet-500/30 rounded-lg p-2.5 sm:p-4 hover:border-primary/30 dark:hover:border-brand-500/50 transition-all dark:hover:shadow-[0_0_20px_rgba(6,182,212,0.3)]"
+                className="bg-card dark:bg-[#1a1525]/80 backdrop-blur-sm border border-border dark:border-border rounded-lg p-2.5 sm:p-4 hover:border-primary/30 dark:hover:border-brand-500/50 transition-all dark:hover:"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <div
-                      className="w-4 h-4 rounded-full shadow-[0_0_10px_rgba(255,255,255,0.5)]"
+                      className="w-4 h-4 rounded-full "
                       style={{ backgroundColor: category.color }}
                     />
                     <h3 className="font-semibold text-foreground">
@@ -269,21 +269,21 @@ export default function TicketCategoriesPage() {
 
         {/* Stats Footer */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-          <div className="bg-card dark:bg-[#1a1525]/80 backdrop-blur-sm border border-border dark:border-violet-500/30 rounded-lg p-2.5 sm:p-4 hover:border-primary/30 dark:hover:border-brand-500/50 transition-all">
+          <div className="bg-card dark:bg-[#1a1525]/80 backdrop-blur-sm border border-border dark:border-border rounded-lg p-2.5 sm:p-4 hover:border-primary/30 dark:hover:border-brand-500/50 transition-all">
             <p className="text-xs text-muted-foreground mb-1">{t('ticket.categoriesPage.totalCategories')}</p>
             <p className="text-lg sm:text-2xl font-bold text-foreground">{stats.total}</p>
           </div>
-          <div className="bg-card dark:bg-[#1a1525]/80 backdrop-blur-sm border border-border dark:border-violet-500/30 rounded-lg p-2.5 sm:p-4 hover:border-red-400/50 transition-all">
+          <div className="bg-card dark:bg-[#1a1525]/80 backdrop-blur-sm border border-border dark:border-border rounded-lg p-2.5 sm:p-4 hover:border-red-400/50 transition-all">
             <p className="text-xs text-muted-foreground mb-1">{t('ticket.categoriesPage.networkConnection')}</p>
             <p className="text-lg sm:text-2xl font-bold text-red-500 dark:text-red-400 dark:drop-shadow-md shadow-red-500/40">{stats.network}</p>
           </div>
-          <div className="bg-card dark:bg-[#1a1525]/80 backdrop-blur-sm border border-border dark:border-violet-500/30 rounded-lg p-2.5 sm:p-4 hover:border-green-500/50 transition-all">
+          <div className="bg-card dark:bg-[#1a1525]/80 backdrop-blur-sm border border-border dark:border-border rounded-lg p-2.5 sm:p-4 hover:border-green-500/50 transition-all">
             <p className="text-xs text-muted-foreground mb-1">{t('ticket.categoriesPage.installationTechnical')}</p>
-            <p className="text-lg sm:text-2xl font-bold text-green-600 dark:text-green-400 dark:drop-shadow-[0_0_10px_rgba(34,197,94,0.5)]">{stats.technical}</p>
+            <p className="text-lg sm:text-2xl font-bold text-green-600 dark:text-green-400 dark:drop-">{stats.technical}</p>
           </div>
-          <div className="bg-card dark:bg-[#1a1525]/80 backdrop-blur-sm border border-border dark:border-violet-500/30 rounded-lg p-2.5 sm:p-4 hover:border-cyan-500/50 transition-all">
+          <div className="bg-card dark:bg-[#1a1525]/80 backdrop-blur-sm border border-border dark:border-border rounded-lg p-2.5 sm:p-4 hover:border-cyan-500/50 transition-all">
             <p className="text-xs text-muted-foreground mb-1">{t('ticket.categoriesPage.billingSupport')}</p>
-            <p className="text-lg sm:text-2xl font-bold text-brand-500 dark:text-cyan-400 dark:drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]">{stats.billing}</p>
+            <p className="text-lg sm:text-2xl font-bold text-brand-500 dark:text-cyan-400 dark:drop-">{stats.billing}</p>
           </div>
         </div>
 
@@ -306,7 +306,7 @@ export default function TicketCategoriesPage() {
                 <ModalLabel>{t('ticket.color')}</ModalLabel>
                 <div className="grid grid-cols-4 gap-2 mt-2">
                   {colorOptions.map((color) => (
-                    <button key={color.value} type="button" onClick={() => setFormData({ ...formData, color: color.value })} className={`w-full h-10 rounded-lg border-2 transition-all ${formData.color === color.value ? 'border-white shadow-[0_0_15px_rgba(255,255,255,0.5)] scale-110' : 'border-violet-500/30 hover:border-brand-500/50'}`} style={{ backgroundColor: color.value }}>
+                    <button key={color.value} type="button" onClick={() => setFormData({ ...formData, color: color.value })} className={`w-full h-10 rounded-lg border-2 transition-all ${formData.color === color.value ? 'border-white  scale-110' : 'border-border hover:border-brand-500/50'}`} style={{ backgroundColor: color.value }}>
                       {formData.color === color.value && <Check className="mx-auto text-white " size={20} />}
                     </button>
                   ))}
@@ -314,7 +314,7 @@ export default function TicketCategoriesPage() {
               </div>
               <div className="flex items-center gap-3">
                 <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
-                  <input type="checkbox" checked={formData.isActive} onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })} className="rounded border-violet-500/50 bg-background dark:bg-card accent-brand-500 dark:accent-brand-500 w-4 h-4" />
+                  <input type="checkbox" checked={formData.isActive} onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })} className="rounded border-border bg-background dark:bg-card accent-brand-500 dark:accent-brand-500 w-4 h-4" />
                   <span>{t('ticket.active')}</span>
                 </label>
               </div>

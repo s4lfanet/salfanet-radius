@@ -80,7 +80,7 @@ export default function AgentPage() {
   const { data: agentsData, isLoading: loading, refetch: refetchAgents } = useApiQuery<{ agents: Agent[] }>('/api/hotspot/agents');
   const agents = agentsData?.agents || [];
 
-  // ─── React Query: Routers (reference data — 5min stale) ─────────────────────
+  // ─── React Query: Routers (reference data - 5min stale) ─────────────────────
   const { data: routersData } = useApiQuery<{ routers: Router[] }>('/api/network/routers', { staleTime: 5 * 60 * 1000 });
   const routers = routersData?.routers || [];
 
@@ -300,10 +300,10 @@ export default function AgentPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         </div>
-        <RefreshCw className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)] relative z-10" />
+        <RefreshCw className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop- relative z-10" />
       </div>
     );
   }
@@ -311,7 +311,7 @@ export default function AgentPage() {
   return (
     <div className="bg-background relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
         <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
@@ -320,7 +320,7 @@ export default function AgentPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)] flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop- flex items-center gap-2">
               <Users className="w-5 h-5 text-brand-500 dark:text-brand-500" />
               {t('agent.title')}
             </h1>
@@ -401,7 +401,7 @@ export default function AgentPage() {
             <div className="text-center py-8 text-muted-foreground text-xs">{t('agent.noAgentsFound')}</div>
           ) : (
             agents.map((agent) => (
-              <div key={agent.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-violet-500/20 p-3">
+              <div key={agent.id} className="bg-card rounded-xl border border-border p-3">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <input
@@ -674,15 +674,15 @@ export default function AgentPage() {
             <ModalDescription>{selectedAgentForBalance?.name}</ModalDescription>
           </ModalHeader>
           <ModalBody className="space-y-4">
-            <div className="bg-violet-500/10 rounded-lg p-3 border border-violet-500/30">
+            <div className="bg-primary/10 rounded-lg p-3 border border-border">
               <p className="text-[10px] text-muted-foreground">{t('agent.currentBalance')}</p>
-              <p className="text-lg font-bold text-brand-500 drop-shadow-[0_0_10px_rgba(6,182,212,0.5)]">{selectedAgentForBalance && formatCurrency(selectedAgentForBalance.balance)}</p>
+              <p className="text-lg font-bold text-brand-500 drop-">{selectedAgentForBalance && formatCurrency(selectedAgentForBalance.balance)}</p>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => setBalanceType('add')} className={`px-3 py-2 rounded-lg border-2 text-xs font-medium transition-all ${balanceType === 'add' ? 'border-green-500 bg-green-500/10 text-green-500 shadow-[0_0_15px_rgba(0,255,136,0.3)]' : 'border-violet-500/30 hover:border-green-500/50'}`}>
+              <button type="button" onClick={() => setBalanceType('add')} className={`px-3 py-2 rounded-lg border-2 text-xs font-medium transition-all ${balanceType === 'add' ? 'border-green-500 bg-green-500/10 text-green-500 ' : 'border-border hover:border-green-500/50'}`}>
                 <DollarSign className="w-3.5 h-3.5 mx-auto mb-0.5" /> {t('agent.addBalance')}
               </button>
-              <button type="button" onClick={() => setBalanceType('subtract')} className={`px-3 py-2 rounded-lg border-2 text-xs font-medium transition-all ${balanceType === 'subtract' ? 'border-red-500 bg-red-500/10 text-[#ff6b8a] shadow-[0_0_15px_rgba(255,68,102,0.3)]' : 'border-violet-500/30 hover:border-red-500/50'}`}>
+              <button type="button" onClick={() => setBalanceType('subtract')} className={`px-3 py-2 rounded-lg border-2 text-xs font-medium transition-all ${balanceType === 'subtract' ? 'border-red-500 bg-red-500/10 text-[#ff6b8a] ' : 'border-border hover:border-red-500/50'}`}>
                 <DollarSign className="w-3.5 h-3.5 mx-auto mb-0.5" /> {t('agent.subtractBalance')}
               </button>
             </div>
@@ -695,7 +695,7 @@ export default function AgentPage() {
               <ModalTextarea value={balanceNote} onChange={(e) => setBalanceNote(e.target.value)} placeholder={t('common.optional')} rows={2} />
             </div>
             {balanceAmount && selectedAgentForBalance && !isNaN(parseInt(balanceAmount)) && (
-              <div className="bg-muted/50 dark:bg-card rounded-lg p-2 text-xs border border-violet-500/30">
+              <div className="bg-muted/50 dark:bg-card rounded-lg p-2 text-xs border border-border">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{t('agent.newBalance')}:</span>
                   <span className="font-bold text-brand-500">{formatCurrency(balanceType === 'add' ? selectedAgentForBalance.balance + parseInt(balanceAmount) : selectedAgentForBalance.balance - parseInt(balanceAmount))}</span>
@@ -742,7 +742,7 @@ export default function AgentPage() {
                 </div>
                 <div className="space-y-2">
                   {selectedMonthDetail.sales.map((sale) => (
-                    <div key={sale.id} className="border border-violet-500/30 rounded-lg p-2 hover:bg-violet-500/10 transition-colors">
+                    <div key={sale.id} className="border border-border rounded-lg p-2 hover:bg-primary/10 transition-colors">
                       <div className="flex justify-between items-start">
                         <div>
                           <p className="font-medium text-xs text-foreground">{sale.voucherCode}</p>
@@ -764,7 +764,7 @@ export default function AgentPage() {
                     <button
                       key={`${month.year}-${month.month}`}
                       onClick={() => handleViewMonthDetail(month.year, month.month - 1)}
-                      className="w-full border border-violet-500/30 rounded-lg p-3 hover:bg-violet-500/10 text-left transition-colors"
+                      className="w-full border border-border rounded-lg p-3 hover:bg-primary/10 text-left transition-colors"
                     >
                       <div className="flex justify-between items-center">
                         <div>
@@ -810,10 +810,10 @@ export default function AgentPage() {
           </ModalHeader>
           <ModalBody>
             <div className="grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => setBulkStatusValue(true)} className={`px-3 py-3 rounded-lg border-2 text-xs font-medium transition-all ${bulkStatusValue ? 'border-green-500 bg-green-500/10 text-green-500 shadow-[0_0_15px_rgba(0,255,136,0.3)]' : 'border-violet-500/30 hover:border-green-500/50 text-foreground'}`}>
+              <button type="button" onClick={() => setBulkStatusValue(true)} className={`px-3 py-3 rounded-lg border-2 text-xs font-medium transition-all ${bulkStatusValue ? 'border-green-500 bg-green-500/10 text-green-500 ' : 'border-border hover:border-green-500/50 text-foreground'}`}>
                 ✓ {t('common.active')}
               </button>
-              <button type="button" onClick={() => setBulkStatusValue(false)} className={`px-3 py-3 rounded-lg border-2 text-xs font-medium transition-all ${!bulkStatusValue ? 'border-red-500 bg-red-500/10 text-[#ff6b8a] shadow-[0_0_15px_rgba(255,68,102,0.3)]' : 'border-violet-500/30 hover:border-red-500/50 text-foreground'}`}>
+              <button type="button" onClick={() => setBulkStatusValue(false)} className={`px-3 py-3 rounded-lg border-2 text-xs font-medium transition-all ${!bulkStatusValue ? 'border-red-500 bg-red-500/10 text-[#ff6b8a] ' : 'border-border hover:border-red-500/50 text-foreground'}`}>
                 ✗ {t('common.inactive')}
               </button>
             </div>

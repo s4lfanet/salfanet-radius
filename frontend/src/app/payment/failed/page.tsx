@@ -40,7 +40,7 @@ function PaymentFailedContent() {
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-red-500/20 rounded-full blur-3xl animate-pulse"></div>
       </div>
       <div className="text-center relative z-10">
-        <Loader2 className="w-10 h-10 animate-spin mx-auto text-[#ff6b8a] drop-shadow-[0_0_20px_rgba(255,68,102,0.6)] mb-3" />
+        <Loader2 className="w-10 h-10 animate-spin mx-auto text-[#ff6b8a] drop- mb-3" />
         <p className="text-xs text-muted-foreground/70">{t('payment.loadingInfo')}</p>
       </div>
     </div>
@@ -58,7 +58,7 @@ function PaymentFailedContent() {
         <div className="text-center">
           <div className="inline-block relative mb-4">
             <div className="absolute inset-0 bg-red-500/30 rounded-full animate-pulse"></div>
-            <div className="relative w-20 h-20 bg-gradient-to-br from-red-500 to-pink-500 rounded-full flex items-center justify-center mx-auto shadow-[0_0_40px_rgba(255,68,102,0.5)]">
+            <div className="relative w-20 h-20 bg-gradient-to-br from-red-500 to-pink-500 rounded-full flex items-center justify-center mx-auto ">
               <XCircle className="w-10 h-10 text-white " />
             </div>
           </div>
@@ -66,11 +66,11 @@ function PaymentFailedContent() {
           <p className="text-xs text-muted-foreground/70">{t('payment.transactionNotCompleted')}</p>
         </div>
 
-        <div className="bg-muted/80 backdrop-blur-xl rounded-2xl border-2 border-red-500/50 overflow-hidden shadow-[0_0_40px_rgba(255,68,102,0.2)]">
+        <div className="bg-muted/80 rounded-2xl border-2 border-red-500/50 overflow-hidden ">
           <div className="p-5 space-y-4">
             <div className="flex justify-center">
               <div className="w-14 h-14 bg-pink-500/20 rounded-full flex items-center justify-center border-2 border-pink-500/30">
-                <AlertTriangle className="w-7 h-7 text-pink-500 drop-shadow-[0_0_10px_rgba(236,72,153,0.5)]" />
+                <AlertTriangle className="w-7 h-7 text-pink-500 drop-" />
               </div>
             </div>
 
@@ -106,11 +106,11 @@ function PaymentFailedContent() {
         </div>
 
         <div className="flex gap-3">
-          <button onClick={() => router.push('/')} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-xs font-medium bg-card text-white rounded-xl border-2 border-violet-500/30 hover:border-red-500">
+          <button onClick={() => router.push('/')} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-xs font-medium bg-card text-white rounded-xl border border-border hover:border-red-500">
             <Home className="w-4 h-4 text-[#ff6b8a]" />{t('common.back')}
           </button>
           {token && (
-            <button onClick={() => router.push(`/pay/${token}`)} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-xs font-bold text-white bg-gradient-to-r from-red-500 to-pink-500 rounded-xl shadow-[0_0_20px_rgba(255,68,102,0.3)]">
+            <button onClick={() => router.push(`/pay/${token}`)} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-xs font-bold text-white bg-gradient-to-r from-red-500 to-pink-500 rounded-xl ">
               <RefreshCw className="w-4 h-4" />{t('payment.tryAgain')}
             </button>
           )}
@@ -132,7 +132,7 @@ export default function PaymentFailedPage() {
   return (
     <Suspense fallback={
       <div className="min-h-dvh bg-muted flex items-center justify-center">
-        <Loader2 className="w-10 h-10 animate-spin text-[#ff6b8a] drop-shadow-[0_0_20px_rgba(255,68,102,0.6)]" />
+        <Loader2 className="w-10 h-10 animate-spin text-[#ff6b8a] drop-" />
       </div>
     }>
       <PaymentFailedContent />

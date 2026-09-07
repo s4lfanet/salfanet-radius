@@ -154,7 +154,7 @@ export default function OLTMonitoringPage() {
             OLT Monitoring
           </h1>
           <p className="text-xs text-muted-foreground">
-            {onlineCount}/{olts.length} online — auto refresh dalam{' '}
+            {onlineCount}/{olts.length} online - auto refresh dalam{' '}
             <span className={countdown <= 5 ? 'text-amber-500 font-semibold' : ''}>{countdown}d</span>
           </p>
         </div>

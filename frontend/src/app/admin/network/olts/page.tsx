@@ -635,7 +635,7 @@ export default function OLTsPage() {
                                 </span>
                               )}
                               {status.details.http && (
-                                <span className="text-[9px] px-1 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded" title="HTTP accessible">
+                                <span className="text-[9px] px-1 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-primary rounded" title="HTTP accessible">
                                   HTTP
                                 </span>
                               )}
@@ -741,7 +741,7 @@ export default function OLTsPage() {
                             {olt.onu_stats.unconfig > 0 && (
                               <Link
                                 href={`/admin/network/onus?olt_id=${olt.id}&filter=unconfig`}
-                                className="text-[9px] px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded font-medium hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors cursor-pointer inline-flex items-center gap-0.5"
+                                className="text-[9px] px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-primary rounded font-medium hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors cursor-pointer inline-flex items-center gap-0.5"
                                 title="View unconfigured ONUs"
                               >
                                 🔧 {olt.onu_stats.unconfig} Unconfig
@@ -957,7 +957,7 @@ export default function OLTsPage() {
                     {olt.onu_stats.unconfig > 0 && (
                       <Link
                         href={`/admin/network/onus?olt_id=${olt.id}&filter=unconfig`}
-                        className="text-[9px] px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded font-medium hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors cursor-pointer"
+                        className="text-[9px] px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-primary rounded font-medium hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors cursor-pointer"
                         title="View unconfigured ONUs"
                       >
                         🔧 {olt.onu_stats.unconfig} Unconfig

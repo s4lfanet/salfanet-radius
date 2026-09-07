@@ -76,7 +76,7 @@ const tokenGroups = [
     tokens: [
       { name: '#00f7ff', var: null, desc: 'Neon cyan → use text-brand-500 dark:text-brand-400' },
       { name: '#00bcd4', var: null, desc: 'Darker cyan → use text-brand-600 dark:text-brand-300' },
-      { name: '#bc13fe', var: null, desc: 'Neon purple → use text-violet-600 dark:text-violet-400' },
+      { name: '#bc13fe', var: null, desc: 'Neon purple → use text-violet-600 dark:text-primary' },
       { name: '#0a0520', var: null, desc: 'Dark bg → use bg-background' },
       { name: '#1a0f35', var: null, desc: 'Dark card → use bg-card' },
       { name: '#0f0a1e', var: null, desc: 'Dark muted → use bg-muted' },
@@ -143,7 +143,7 @@ export const Typography: Story = {
           <p className="text-theme-xl text-foreground">Large Body Text</p>
         </div>
         <div>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">text-theme-sm (14px) — default</p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">text-theme-sm (14px) - default</p>
           <p className="text-theme-sm text-foreground">Regular body text for content and descriptions.</p>
         </div>
         <div>
@@ -154,10 +154,10 @@ export const Typography: Story = {
 
       <div className="bg-card border border-border rounded-xl p-5 space-y-3">
         <h2 className="text-lg font-bold text-foreground">Font Weights</h2>
-        <p className="text-theme-sm font-light text-foreground">font-light (300) — Outfit</p>
-        <p className="text-theme-sm font-medium text-foreground">font-medium (500) — default</p>
-        <p className="text-theme-sm font-bold text-foreground">font-bold (700) — headings</p>
-        <p className="text-theme-sm font-black text-foreground">font-black (900) — display</p>
+        <p className="text-theme-sm font-light text-foreground">font-light (300) - Outfit</p>
+        <p className="text-theme-sm font-medium text-foreground">font-medium (500) - default</p>
+        <p className="text-theme-sm font-bold text-foreground">font-bold (700) - headings</p>
+        <p className="text-theme-sm font-black text-foreground">font-black (900) - display</p>
       </div>
     </div>
   ),

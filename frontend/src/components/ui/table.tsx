@@ -9,8 +9,8 @@ function Table({ className, ...props }: React.ComponentProps<"table">) {
       className={cn(
         "relative w-full overflow-x-auto rounded-xl",
         "border-2 border-cyan-500/20",
-        "shadow-[0_0_20px_rgba(0,255,255,0.1)]",
-        "hover:border-cyan-500/30 hover:shadow-[0_0_25px_rgba(0,255,255,0.15)]",
+        "",
+        "hover:border-cyan-500/30 hover:",
         "transition-all duration-300 backdrop-blur-sm"
       )}
     >
@@ -28,7 +28,7 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
     <thead
       data-slot="table-header"
       className={cn(
-        "bg-gradient-to-r from-cyan-500/10 via-purple-500/5 to-pink-500/10",
+        "bg-gradient-to-r from-cyan-500/10 via-primary/5 to-pink-500/10",
         "[&_tr]:border-b-2 [&_tr]:border-cyan-500/20",
         className
       )}
@@ -83,7 +83,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
       className={cn(
         "h-11 sm:h-12 px-3 sm:px-4 text-left align-middle",
         "font-bold text-xs uppercase tracking-wider",
-        "text-cyan-400 drop-shadow-[0_0_10px_rgba(0,255,255,0.3)]",
+        "text-cyan-400 drop-",
         "whitespace-nowrap",
         "[&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
         className

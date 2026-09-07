@@ -191,7 +191,7 @@ export default function LaporanPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
-            <BarChart3 className="w-7 h-7 text-brand-500 drop-shadow-[0_0_10px_rgba(6,182,212,0.7)]" />
+            <BarChart3 className="w-7 h-7 text-brand-500 drop-" />
             {t('laporan.title')}
           </h1>
           <p className="text-sm text-slate-400 mt-1">{t('laporan.subtitle')}</p>
@@ -206,9 +206,9 @@ export default function LaporanPage() {
       </div>
 
       {/* ── Filter Card ── */}
-      <div className="bg-card/80 dark:bg-slate-800/60 backdrop-blur border border-violet-500/30 rounded-2xl p-6 shadow-[0_0_30px_rgba(139,92,246,0.1)]">
+      <div className="bg-card dark:bg-slate-800/60 backdrop-blur border border-border rounded-2xl p-6 ">
         <div className="flex items-center gap-2 mb-5">
-          <Filter className="w-4 h-4 text-violet-500" />
+          <Filter className="w-4 h-4 text-primary" />
           <span className="text-sm font-semibold text-foreground dark:text-slate-300 uppercase tracking-wider">{t('laporan.filterTitle')}</span>
         </div>
 
@@ -223,8 +223,8 @@ export default function LaporanPage() {
                   onClick={() => { setReportType(t); setStatus('all'); setLoaded(false); }}
                   className={`px-3 py-2 rounded-lg text-xs font-bold transition-all border ${
                     reportType === t
-                      ? 'bg-violet-500 border-violet-500 text-white shadow-[0_0_15px_rgba(139,92,246,0.5)]'
-                      : 'bg-muted/80 dark:bg-slate-900/80 border-border dark:border-slate-600 text-muted-foreground dark:text-slate-400 hover:border-violet-500/50'
+                      ? 'bg-violet-500 border-violet-500 text-white '
+                      : 'bg-muted/80 dark:bg-slate-900/80 border-border dark:border-slate-600 text-muted-foreground dark:text-slate-400 hover:border-border'
                   }`}
                 >
                   {t === 'invoice' && <FileText className="w-3.5 h-3.5 inline mr-1" />}
@@ -284,7 +284,7 @@ export default function LaporanPage() {
           <button
             onClick={fetchData}
             disabled={loading}
-            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-500 to-[#9b10d4] text-white text-sm font-bold rounded-xl hover:shadow-[0_0_20px_rgba(139,92,246,0.5)] disabled:opacity-50 transition-all"
+            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-primary to-[#9b10d4] text-white text-sm font-bold rounded-xl hover: disabled:opacity-50 transition-all"
           >
             {loading
               ? <><Loader2 className="w-4 h-4 animate-spin" />{t('laporan.loading')}</>
@@ -297,7 +297,7 @@ export default function LaporanPage() {
               <button
                 onClick={exportExcel}
                 disabled={exporting !== null}
-                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white text-sm font-bold rounded-xl hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] disabled:opacity-50 transition-all"
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white text-sm font-bold rounded-xl hover: disabled:opacity-50 transition-all"
               >
                 {exporting === 'excel'
                   ? <><Loader2 className="w-4 h-4 animate-spin" />{t('laporan.exporting')}</>
@@ -308,7 +308,7 @@ export default function LaporanPage() {
               <button
                 onClick={exportPdf}
                 disabled={exporting !== null}
-                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 text-white text-sm font-bold rounded-xl hover:shadow-[0_0_20px_rgba(225,29,72,0.4)] disabled:opacity-50 transition-all"
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 text-white text-sm font-bold rounded-xl hover: disabled:opacity-50 transition-all"
               >
                 {exporting === 'pdf'
                   ? <><Loader2 className="w-4 h-4 animate-spin" />{t('laporan.exporting')}</>
@@ -357,7 +357,7 @@ export default function LaporanPage() {
 
       {/* ── Data Preview Table ── */}
       {loaded && rows.length > 0 && (
-        <div className="bg-card/80 dark:bg-slate-800/60 backdrop-blur border border-border/50 dark:border-slate-700/50 rounded-2xl overflow-hidden">
+        <div className="bg-card dark:bg-slate-800/60 backdrop-blur border border-border/50 dark:border-slate-700/50 rounded-2xl overflow-hidden">
           <div className="px-5 py-4 border-b border-border/50 dark:border-slate-700/50 flex items-center justify-between">
             <span className="text-sm font-semibold text-foreground dark:text-slate-300">
               {t('laporan.previewData', { count: String(Math.min(rows.length, 100)), total: String(rows.length) })}
@@ -420,14 +420,14 @@ export default function LaporanPage() {
 // ── Summary Card Component ───────────────────────────────────────────────────
 function SummaryCard({ label, value, icon, color }: { label: string; value: React.ReactNode; icon: React.ReactNode; color: string }) {
   const colorMap: Record<string, string> = {
-    cyan:   'text-brand-500 border-brand-500/30 shadow-[0_0_15px_rgba(6,182,212,0.1)]',
+    cyan:   'text-brand-500 border-brand-500/30 ',
     green:  'text-emerald-400 border-emerald-500/30',
     yellow: 'text-amber-400 border-amber-500/30',
-    purple: 'text-violet-500 border-violet-500/30',
+    purple: 'text-primary border-border',
     red:    'text-rose-400 border-rose-500/30',
   };
   return (
-    <div className={`bg-card/80 dark:bg-slate-800/60 backdrop-blur border rounded-xl p-4 ${colorMap[color] || colorMap.cyan}`}>
+    <div className={`bg-card dark:bg-slate-800/60 backdrop-blur border rounded-xl p-4 ${colorMap[color] || colorMap.cyan}`}>
       <div className={`flex items-center gap-2 mb-2 ${colorMap[color]?.split(' ')[0]}`}>
         {icon}
         <span className="text-xs font-bold uppercase tracking-wider opacity-80">{label}</span>

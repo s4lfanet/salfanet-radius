@@ -209,7 +209,7 @@ export default function TechnicianGenieACSPage() {
             <p className="text-xs text-muted-foreground">{filtered.length} / {devices.length} {t('techPortal.devices')}</p>
           </div>
         </div>
-        <button onClick={fetchDevices} title="Perbarui Data" className="p-2 bg-slate-100 dark:bg-muted border border-border rounded-xl hover:bg-slate-200 dark:hover:bg-violet-500/10 transition">
+        <button onClick={fetchDevices} title="Perbarui Data" className="p-2 bg-slate-100 dark:bg-muted border border-border rounded-xl hover:bg-slate-200 dark:hover:bg-primary/10 transition">
           <RefreshCw className={`w-4 h-4 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
@@ -227,7 +227,7 @@ export default function TechnicianGenieACSPage() {
             <button
               key={s}
               onClick={() => handleFilterChange(s)}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${filterStatus === s ? 'bg-blue-500 text-white shadow' : 'text-muted-foreground hover:bg-slate-100 dark:hover:bg-violet-500/10'}`}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${filterStatus === s ? 'bg-blue-500 text-white shadow' : 'text-muted-foreground hover:bg-slate-100 dark:hover:bg-primary/10'}`}
             >
               {s === 'all' ? 'Semua' : s === 'online' ? 'Online' : 'Offline'}
               {s !== 'all' && (
@@ -279,7 +279,7 @@ export default function TechnicianGenieACSPage() {
               </thead>
               <tbody>
                 {paginated.map((d) => (
-                  <tr key={d._id} className="border-b border-slate-100 dark:border-violet-500/10 hover:bg-slate-50 dark:hover:bg-violet-500/5 transition">
+                  <tr key={d._id} className="border-b border-slate-100 dark:border-border hover:bg-slate-50 dark:hover:bg-primary/10 transition">
                     <td className="px-4 py-3 font-mono text-xs text-foreground">{d.serialNumber}</td>
                     <td className="px-4 py-3 text-muted-foreground/80">{d.manufacturer}</td>
                     <td className="px-4 py-3 text-muted-foreground/80">{d.model}</td>
@@ -300,7 +300,7 @@ export default function TechnicianGenieACSPage() {
                       <button
                         onClick={() => handleViewDetail(d._id)}
                         title={t('techPortal.details')}
-                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-violet-500/10 rounded-lg transition"
+                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-primary/10 rounded-lg transition"
                       >
                         <Eye className="w-4 h-4 text-muted-foreground" />
                       </button>
@@ -348,16 +348,16 @@ export default function TechnicianGenieACSPage() {
                     <span className="font-mono text-foreground/80">{d.serialNumber?.slice(0, 12)}</span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100 dark:border-violet-500/10">
+                <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100 dark:border-border">
                   <span className="text-muted-foreground">{d.pppoeIP || d.tr069IP || '-'}</span>
                   <span className={`font-mono ${parseFloat(d.rxPower) > -25 ? 'text-green-500' : parseFloat(d.rxPower) > -28 ? 'text-yellow-500' : 'text-red-500'}`}>
                     {d.rxPower ? `RX: ${d.rxPower}` : ''}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-violet-500/10">
+                <div className="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-border">
                   <button
                     onClick={() => handleViewDetail(d._id)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold bg-slate-100 dark:bg-violet-500/10 text-foreground border border-border rounded-xl hover:bg-slate-200 dark:hover:bg-violet-500/20 transition"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold bg-slate-100 dark:bg-primary/10 text-foreground border border-border rounded-xl hover:bg-slate-200 dark:hover:bg-primary/10 transition"
                   >
                     <Eye className="w-3.5 h-3.5" />
                     {t('techPortal.details')}
@@ -403,7 +403,7 @@ export default function TechnicianGenieACSPage() {
                     <h2 className="text-base font-bold text-foreground">{detailDevice.model}</h2>
                     <p className="text-xs text-muted-foreground">{detailDevice.serialNumber}</p>
                   </div>
-                  <button onClick={() => { setDetailDevice(null); setWifiEdit(null); }} className="p-1.5 hover:bg-slate-100 dark:hover:bg-violet-500/10 rounded-lg transition">
+                  <button onClick={() => { setDetailDevice(null); setWifiEdit(null); }} className="p-1.5 hover:bg-slate-100 dark:hover:bg-primary/10 rounded-lg transition">
                     <X className="w-5 h-5 text-slate-500" />
                   </button>
                 </div>

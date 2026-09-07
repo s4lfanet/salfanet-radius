@@ -490,7 +490,7 @@ export default function NetworkDiagramsPage() {
                   onClick={() => setSelectedTab('jc')}
                   className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                     selectedTab === 'jc'
-                      ? 'border-purple-500 text-purple-600 dark:text-purple-400'
+                      ? 'border-purple-500 text-purple-600 dark:text-primary'
                       : 'border-transparent text-muted-foreground hover:text-gray-900 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600'
                   }`}
                 >
@@ -690,7 +690,7 @@ export default function NetworkDiagramsPage() {
                               onChange={e => setAssignJc(e.target.value)}
                               className="flex-1 px-2 py-1.5 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-foreground"
                             >
-                              <option value="">— Pilih JC —</option>
+                              <option value="">- Pilih JC -</option>
                               {jcListAll.map(j => (
                                 <option key={j.id} value={j.id}>{j.name}</option>
                               ))}
@@ -741,10 +741,10 @@ export default function NetworkDiagramsPage() {
                           <select
                             value={selectedJC}
                             onChange={e => setSelectedJC(e.target.value)}
-                            className="flex-1 bg-white dark:bg-gray-700 text-foreground border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            className="flex-1 bg-white dark:bg-gray-700 text-foreground border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                           >
                             {jcList.map(jc => (
-                              <option key={jc.id} value={jc.id}>{jc.code} — {jc.name}</option>
+                              <option key={jc.id} value={jc.id}>{jc.code} - {jc.name}</option>
                             ))}
                           </select>
                         </div>
@@ -831,7 +831,7 @@ export default function NetworkDiagramsPage() {
 
                       {/* Right col: input/output segments info */}
                       <div className="space-y-4">
-                        {/* Input segments — grouped by cable */}
+                        {/* Input segments - grouped by cable */}
                         <div className="bg-card rounded-lg border border-border p-4">
                           <h3 className="font-semibold text-foreground text-sm mb-3">Kabel Masuk (dari OTB)</h3>
                           {(jcDetail?.inputSegments?.length ?? 0) === 0 ? (
@@ -875,7 +875,7 @@ export default function NetworkDiagramsPage() {
                           })()}
                         </div>
 
-                        {/* Output segments — grouped by cable */}
+                        {/* Output segments - grouped by cable */}
                         <div className="bg-card rounded-lg border border-border p-4">
                           <h3 className="font-semibold text-foreground text-sm mb-3">Kabel Keluar (ke JC/ODC/ODP)</h3>
                           {(jcDetail?.outputSegments?.length ?? 0) === 0 ? (

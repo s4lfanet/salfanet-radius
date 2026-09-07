@@ -126,7 +126,7 @@ export default function OLTAlertsPage() {
             </h1>
             <p className="text-xs text-muted-foreground">
               {unresolvedCount > 0
-                ? <>{unresolvedCount} alert aktif{criticalCount > 0 && <span className="text-red-600 font-semibold"> — {criticalCount} critical</span>}</>
+                ? <>{unresolvedCount} alert aktif{criticalCount > 0 && <span className="text-red-600 font-semibold"> - {criticalCount} critical</span>}</>
                 : 'Semua alert sudah diselesaikan'}
             </p>
           </div>

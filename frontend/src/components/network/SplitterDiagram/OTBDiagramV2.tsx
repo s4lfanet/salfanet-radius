@@ -229,7 +229,7 @@ export function OTBDiagramV2({
                       className={cn(
                         'w-3 h-3 rounded-sm cursor-pointer transition-all',
                         highlightPath.includes(core.id) && 'ring-2 ring-yellow-400 animate-pulse',
-                        selectedCore === core.id && 'ring-2 ring-purple-500'
+                        selectedCore === core.id && 'ring-2 ring-primary'
                       )}
                       style={{ 
                         backgroundColor: getCoreStatusColor(core.status),
@@ -317,7 +317,7 @@ export function OTBDiagramV2({
           OTB Diagram - {node.code}
         </text>
 
-        {/* OLT Input Section — supports multiple OLTs */}
+        {/* OLT Input Section - supports multiple OLTs */}
         {(() => {
           // Determine OLT sources: from feeder cable assignments or single upstream
           const feederAssignments: FeederCableAssignment[] = node.metadata?.feederCableAssignments ?? [];
@@ -353,7 +353,7 @@ export function OTBDiagramV2({
                 {cableCoreCount ? `${cableCoreCount} cores` : ''}
               </text>
 
-              {/* OTB Box — patch-through (no splitter) */}
+              {/* OTB Box - patch-through (no splitter) */}
               <g transform={`translate(290, 50)`}>
                 <rect width={210} height={100} rx="8" fill="url(#otbGradient)" className="stroke-blue-500" strokeWidth="2.5" />
                 <text x={105} y={25} textAnchor="middle" className="text-base font-bold fill-blue-700 dark:fill-blue-300">

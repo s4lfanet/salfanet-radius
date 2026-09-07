@@ -75,7 +75,7 @@ export default function PPPoESessionsPage() {
     page: currentPage,
     limit: pageSize,
     type: 'pppoe', // Force PPPoE only
-    // live traffic disabled — CPU optimization, only need online/offline status
+    // live traffic disabled - CPU optimization, only need online/offline status
     routerId: routerFilter || undefined,
     search: searchFilter || undefined,
   };
@@ -205,7 +205,7 @@ export default function PPPoESessionsPage() {
   return (
     <div className="bg-background relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
         <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
@@ -214,7 +214,7 @@ export default function PPPoESessionsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)] flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop- flex items-center gap-2">
             <Wifi className="w-4 h-4 sm:w-5 sm:h-5 text-brand-500 flex-shrink-0" />
             {t('sessions.pppoeSessions')}
           </h1>
@@ -249,11 +249,11 @@ export default function PPPoESessionsPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-        <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
+        <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition-all">
           <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide">{t('sessions.activeSessions')}</p>
           <p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{stats?.pppoe || 0}</p>
         </div>
-        <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
+        <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition-all">
           <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide">{t('sessions.router')}</p>
           <p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{routers.length || '-'}</p>
         </div>

@@ -537,7 +537,7 @@ function NavItem({ item, pendingCount, manualPaymentsCount, unreadNotifications,
                     </span>
                   )}
                   {child.badge === 'manualPayments' && manualPaymentsCount > 0 && (
-                    <span className="bg-amber-500 text-black text-[9px] px-1.5 py-0.5 rounded-md font-bold min-w-[18px] text-center shadow-[0_0_8px_rgba(245,158,11,0.5)] animate-pulse">
+                    <span className="bg-amber-500 text-black text-[9px] px-1.5 py-0.5 rounded-md font-bold min-w-[18px] text-center  animate-pulse">
                       {manualPaymentsCount}
                     </span>
                   )}
@@ -735,7 +735,7 @@ function AdminLayoutContent({
 
   useEffect(() => {
     setMounted(true);
-    // Register global 401 handler — redirect to login on any API 401
+    // Register global 401 handler - redirect to login on any API 401
     onUnauthorized(() => {
       if (typeof window !== 'undefined' && !window.location.pathname.includes('/admin/login')) {
         router.push('/admin/login');
@@ -743,7 +743,7 @@ function AdminLayoutContent({
     });
   }, [router]);
 
-  // Delayed unauthenticated redirect — avoids spurious full-page reload during
+  // Delayed unauthenticated redirect - avoids spurious full-page reload during
   // the brief window after signIn() where the outer SessionProvider hasn't yet
   // received the session broadcast and status is momentarily 'unauthenticated'.
   const unauthRedirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -782,7 +782,7 @@ function AdminLayoutContent({
     }
   }, [session, status]);
 
-  // Load company data (use public endpoint — works before login)
+  // Load company data (use public endpoint - works before login)
   // Throttled: only fetch once per 5 minutes (matches server Cache-Control)
   useEffect(() => {
     const lastFetch = (window as any).__companyInfoLastFetch || 0;
@@ -885,7 +885,7 @@ function AdminLayoutContent({
     pollNotifications();
     const interval = setInterval(pollNotifications, 30000);
     return () => clearInterval(interval);
-  // addToast intentionally excluded — we use addToastRef to prevent re-runs
+  // addToast intentionally excluded - we use addToastRef to prevent re-runs
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
@@ -947,10 +947,10 @@ function AdminLayoutContent({
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/5 rounded-full blur-[70px] animate-pulse delay-1000" style={{ willChange: 'opacity', transform: 'translateZ(0)' }} />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] bg-blue-500/3 rounded-full blur-[80px]" />
 
-        {/* Scan lines overlay — dark mode only */}
+        {/* Scan lines overlay - dark mode only */}
         <div className="hidden dark:block absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(70,95,255,0.01)_2px,rgba(70,95,255,0.01)_4px)]" />
 
-        {/* Grid pattern — dark mode only */}
+        {/* Grid pattern - dark mode only */}
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(70,95,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(70,95,255,0.02)_1px,transparent_1px)] bg-[size:50px_50px]" />
       </div>
 
@@ -978,14 +978,14 @@ function AdminLayoutContent({
         data-sidebar="sidebar"
         className={cn(
           'fixed top-0 left-0 z-50 h-dvh w-64 transition-transform duration-300 ease-out',
-          'bg-sidebar/95 backdrop-blur-xl',
+          'bg-sidebar/95',
           'border-r border-sidebar-border',
           'shadow-[5px_0_30px_rgba(0,0,0,0.15)]',
           'safe-area-inset-left',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
       >
-        {/* Top neon line — dark mode only */}
+        {/* Top neon line - dark mode only */}
         <div className="hidden dark:block absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brand-400 to-transparent" />
 
         <div className="flex flex-col h-full">
@@ -1078,7 +1078,7 @@ function AdminLayoutContent({
               </button>
 
               {showUserMenu && (
-                <div className="absolute bottom-full left-0 right-0 mb-2 bg-sidebar/95 backdrop-blur-xl rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.4)] border border-sidebar-border overflow-hidden animate-in slide-in-from-bottom-2 duration-200">
+                <div className="absolute bottom-full left-0 right-0 mb-2 bg-sidebar/95 rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.4)] border border-sidebar-border overflow-hidden animate-in slide-in-from-bottom-2 duration-200">
                   <div className="absolute top-0 left-2 right-2 h-px bg-gradient-to-r from-transparent via-blue-500/40 to-transparent" />
                   <div className="p-3 border-b border-sidebar-border bg-sidebar-accent/50">
                     <p className="text-[9px] text-muted-foreground uppercase tracking-[0.2em] font-medium">{t('auth.signedInAs')}</p>
@@ -1106,8 +1106,8 @@ function AdminLayoutContent({
       {/* Main */}
       <div className="lg:pl-64 min-h-dvh flex flex-col relative z-10 transition-all duration-300">
         {/* Header - optimized for mobile */}
-        <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b border-gray-200 dark:border-primary/15 shadow-theme-sm safe-area-inset-top">
-          {/* Top neon line — dark mode only */}
+        <header className="sticky top-0 z-30 bg-background/80 border-b border-gray-200 dark:border-primary/15 shadow-theme-sm safe-area-inset-top">
+          {/* Top neon line - dark mode only */}
           <div className="hidden dark:block absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brand-400 to-transparent" />
 
           <div className="flex items-center gap-2 sm:gap-4 px-3 sm:px-6 py-2 sm:py-3">
@@ -1161,7 +1161,7 @@ function AdminLayoutContent({
           {/* Scan lines */}
           <div className="hidden dark:block absolute inset-0 pointer-events-none bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(70,95,255,0.02)_2px,rgba(70,95,255,0.02)_4px)]" />
 
-          <div className="relative bg-background/95 backdrop-blur-xl border-2 border-brand-500/30 rounded-2xl shadow-theme-xl max-w-sm w-full p-6 animate-in zoom-in-95 duration-300">
+          <div className="relative bg-background/95 border-2 border-brand-500/30 rounded-2xl shadow-theme-xl max-w-sm w-full p-6 animate-in zoom-in-95 duration-300">
             {/* Top accent line */}
             <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-brand-400 to-transparent" />
 
@@ -1172,11 +1172,11 @@ function AdminLayoutContent({
             <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-blue-400 rounded-br-lg" />
 
             <div className="flex items-center gap-4 mb-6">
-              <div className="p-3 bg-amber-500/10 rounded-xl border border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.3)] animate-pulse flex items-center justify-center">
+              <div className="p-3 bg-amber-500/10 rounded-xl border border-amber-500/30  animate-pulse flex items-center justify-center">
                 <Timer className="w-6 h-6 text-amber-400" />
               </div>
               <div>
-                <h3 className="text-lg font-black text-foreground tracking-wider uppercase drop-shadow-[0_0_10px_rgba(6,182,212,0.3)]">
+                <h3 className="text-lg font-black text-foreground tracking-wider uppercase drop-">
                   {t('common.sessionTimeout')}
                 </h3>
                 <p className="text-[10px] text-brand-400/60 tracking-[0.2em] uppercase font-medium">
@@ -1191,7 +1191,7 @@ function AdminLayoutContent({
               </p>
               <div className="inline-flex items-center justify-center gap-3 px-6 py-4 bg-amber-500/10 border border-amber-500/30 rounded-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
                 <AlertTriangle className="w-5 h-5 text-amber-400 animate-pulse" />
-                <span className="text-4xl font-mono font-black text-amber-400 tabular-nums drop-shadow-[0_0_10px_rgba(245,158,11,0.5)]">
+                <span className="text-4xl font-mono font-black text-amber-400 tabular-nums drop-">
                   {idleCountdown}
                 </span>
                 <span className="text-xs text-amber-400 uppercase font-bold tracking-wider">{t('common.seconds')}</span>

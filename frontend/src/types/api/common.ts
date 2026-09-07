@@ -1,5 +1,5 @@
 /**
- * Common API response types — shared across all domain modules.
+ * Common API response types - shared across all domain modules.
  *
  * Backend uses `ok(data)` / `created(data)` helpers which return data directly
  * (no `success` wrapper). Error responses use `{ error: string }`.
@@ -17,7 +17,7 @@ export interface ApiErrorResponse {
 
 // === Success Response Shapes ===
 // Backend `ok<T>(data: T)` returns `T` directly (no wrapper).
-// Some endpoints wrap with `success: true` — keep both shapes supported.
+// Some endpoints wrap with `success: true` - keep both shapes supported.
 
 export interface SuccessResponse<T = unknown> {
   success: true;

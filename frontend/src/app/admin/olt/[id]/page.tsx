@@ -195,7 +195,7 @@ function UplinkPortModal({ oltId, port, onClose }: { oltId: string; port: string
           <div className={`w-3 h-3 rounded-full ${statusTone.dot}`} />
           <div>
             <div className={`text-sm font-bold ${statusTone.text}`}>{statusTone.label}</div>
-            <div className="text-xs text-muted-foreground">Admin: {adminStatus} · Port: {linkStatus} · {parsed['Speed'] ?? '—'}</div>
+            <div className="text-xs text-muted-foreground">Admin: {adminStatus} · Port: {linkStatus} · {parsed['Speed'] ?? '-'}</div>
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -217,12 +217,12 @@ function UplinkPortModal({ oltId, port, onClose }: { oltId: string; port: string
   const renderVlan = () => {
     const taggedVlans = (parsed['Tagged Vlan'] ?? '').split(/[\s,]+/).filter(Boolean);
     const pvid = parsed['Pvid'] ?? '';
-    const mode = parsed['Mode'] ?? '—';
+    const mode = parsed['Mode'] ?? '-';
     return (
       <div className="space-y-4">
         {/* Info row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          {([['Mode', mode], ['TLS', parsed['TLS'] ?? '—']] as [string,string][]).map(([label, val]) => (
+          {([['Mode', mode], ['TLS', parsed['TLS'] ?? '-']] as [string,string][]).map(([label, val]) => (
             <div key={label} className="p-2 rounded-lg bg-input border border-border text-center">
               <div className="text-[10px] text-muted-foreground uppercase">{label}</div>
               <div className="text-sm font-bold text-foreground mt-0.5 break-all">{val}</div>
@@ -231,7 +231,7 @@ function UplinkPortModal({ oltId, port, onClose }: { oltId: string; port: string
           {/* PVID with inline edit/remove */}
           <div className="p-2 rounded-lg bg-input border border-border">
             <div className="text-[10px] text-muted-foreground uppercase mb-1">PVID (Access)</div>
-            {pvid && pvid !== '—' ? (
+            {pvid && pvid !== '-' ? (
               <div className="flex items-center gap-1.5">
                 <span className="text-sm font-bold font-mono text-amber-400">{pvid}</span>
                 <button onClick={() => doAction('removePvid')} disabled={actionLoading}
@@ -289,19 +289,19 @@ function UplinkPortModal({ oltId, port, onClose }: { oltId: string; port: string
 
   const renderOptical = () => {
     const metrics: [string, string, string][] = [
-      ['TX Power', parsed['TX Power'] ?? '—', '#22c55e'],
-      ['RX Power', parsed['RX Power'] ?? '—', '#3b82f6'],
-      ['Temperature', parsed['Temperature'] ?? '—', '#f59e0b'],
-      ['Supply Voltage', parsed['Supply Voltage'] ?? '—', '#a855f7'],
-      ['TX Bias Current', parsed['TX Bias Current'] ?? '—', '#06b6d4'],
+      ['TX Power', parsed['TX Power'] ?? '-', '#22c55e'],
+      ['RX Power', parsed['RX Power'] ?? '-', '#3b82f6'],
+      ['Temperature', parsed['Temperature'] ?? '-', '#f59e0b'],
+      ['Supply Voltage', parsed['Supply Voltage'] ?? '-', '#a855f7'],
+      ['TX Bias Current', parsed['TX Bias Current'] ?? '-', '#06b6d4'],
     ];
     const specs: [string, string][] = [
-      ['Vendor', parsed['Vendor'] ?? parsed['Manufacturer Name'] ?? '—'],
-      ['Part No.', parsed['Part Number'] ?? '—'],
-      ['Serial No.', parsed['Serial Number'] ?? '—'],
-      ['Wavelength (nm)', parsed['Wavelength'] ?? '—'],
-      ['Fiber Type', parsed['Fiber Type'] ?? '—'],
-      ['Connector', parsed['Connector Type'] ?? '—'],
+      ['Vendor', parsed['Vendor'] ?? parsed['Manufacturer Name'] ?? '-'],
+      ['Part No.', parsed['Part Number'] ?? '-'],
+      ['Serial No.', parsed['Serial Number'] ?? '-'],
+      ['Wavelength (nm)', parsed['Wavelength'] ?? '-'],
+      ['Fiber Type', parsed['Fiber Type'] ?? '-'],
+      ['Connector', parsed['Connector Type'] ?? '-'],
     ];
     return (
       <div className="space-y-4">
@@ -531,7 +531,7 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
           {isActive ? (
             <span className="text-xs font-bold font-mono tracking-wider" style={{ color: labelColor }}>{slot.cardType}</span>
           ) : (
-            <span className="text-xs text-gray-600 font-mono">—</span>
+            <span className="text-xs text-gray-600 font-mono">-</span>
           )}
         </div>
         <div className="flex-1 py-2 pr-3 overflow-x-auto">
@@ -624,7 +624,7 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
                 <Server className="h-4 w-4 text-green-400" />
                 <span className="font-semibold text-sm text-foreground">ZTE C320 Rack Diagram</span>
               </div>
-              <div className="text-[11px] text-slate-500 mt-1">Updated: {olt.lastPollAt ? formatWIB(olt.lastPollAt, 'HH:mm') : '—'}</div>
+              <div className="text-[11px] text-slate-500 mt-1">Updated: {olt.lastPollAt ? formatWIB(olt.lastPollAt, 'HH:mm') : '-'}</div>
             </div>
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
               <span className="text-xs text-slate-500 font-mono">{olt.ipAddress}</span>
@@ -1035,13 +1035,13 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
           </button>
         </div>
 
-        {/* Body — scrollable */}
+        {/* Body - scrollable */}
         <div className="p-5 space-y-4 overflow-y-auto">
           {/* Serial number (read-only) */}
           <div>
             <Label className="text-xs text-gray-500">Serial Number (OLT detected)</Label>
             <div className="mt-1 px-3 py-2 bg-muted rounded-md font-mono text-sm text-muted-foreground">
-              {onu.serialNumber ?? <span className="text-yellow-600">Unknown — no serial via SNMP (enter manually)</span>}
+              {onu.serialNumber ?? <span className="text-yellow-600">Unknown - no serial via SNMP (enter manually)</span>}
             </div>
           </div>
 
@@ -1331,14 +1331,14 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
               <Input type="number" min={1} value={lineProfileId}
                 onChange={e => setLineProfileId(parseInt(e.target.value) || 1)}
                 className="mt-1 font-mono" />
-              <p className="text-xs text-gray-400 mt-1">ont-lineprofile-id — defines GEM/TCONT mapping</p>
+              <p className="text-xs text-gray-400 mt-1">ont-lineprofile-id - defines GEM/TCONT mapping</p>
             </div>
             <div>
               <Label className="text-xs text-gray-500">ONT Service Profile ID</Label>
               <Input type="number" min={1} value={srvProfileId}
                 onChange={e => setSrvProfileId(parseInt(e.target.value) || 1)}
                 className="mt-1 font-mono" />
-              <p className="text-xs text-gray-400 mt-1">ont-srvprofile-id — defines port/service config</p>
+              <p className="text-xs text-gray-400 mt-1">ont-srvprofile-id - defines port/service config</p>
             </div>
           </>)}
 
@@ -1844,20 +1844,20 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
       if (!res.ok) {
         if (!silent) showError(`Sync failed: ${data.error ?? 'Unknown error'}`);
       } else if (data.background) {
-        // Sync is running in background — auto-refresh after 30s
-        if (!silent) showInfo(data.message ?? 'Sync started — data will refresh automatically');
+        // Sync is running in background - auto-refresh after 30s
+        if (!silent) showInfo(data.message ?? 'Sync started - data will refresh automatically');
         setTimeout(async () => {
           await fetchOLT();
           setPolling(false);
         }, 30_000);
-        return; // don't clear polling yet — keep button disabled during wait
+        return; // don't clear polling yet - keep button disabled during wait
       } else {
         await fetchOLT();
         if (!silent) showSuccess(data.message ?? 'OLT sync completed');
       }
     } catch (e) {
       console.error('Sync failed', e);
-      if (!silent) showError('Sync failed — check network connection');
+      if (!silent) showError('Sync failed - check network connection');
     } finally {
       setPolling(false);
     }
@@ -2224,7 +2224,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                         </div>
                       </td>
                       <td className="py-2.5 pr-4">
-                        <div className="text-xs text-muted-foreground">{onu.description ?? <span className="text-gray-400">—</span>}</div>
+                        <div className="text-xs text-muted-foreground">{onu.description ?? <span className="text-gray-400">-</span>}</div>
                       </td>
                       <td className="py-2.5 pr-4">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -2248,12 +2248,12 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                           <span className={`font-mono text-xs font-medium ${onu.rxPower < -27 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
                             {onu.rxPower.toFixed(2)} dBm
                           </span>
-                        ) : <span className="text-gray-400 text-xs">—</span>}
+                        ) : <span className="text-gray-400 text-xs">-</span>}
                       </td>
                       <td className="py-2.5 pr-4 text-xs">
                         {onu.distance !== null ? (
                           <span className="font-mono text-muted-foreground">{onu.distance} m</span>
-                        ) : <span className="text-gray-400">—</span>}
+                        ) : <span className="text-gray-400">-</span>}
                       </td>
                       <td className="py-2.5 pr-4">
                         {onu.customer ? (
@@ -2266,11 +2266,11 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                         )}
                       </td>
                       <td className="py-2.5 pr-4 text-xs text-muted-foreground">
-                        {onu.lastSeenAt ? new Date(onu.lastSeenAt).toLocaleString('id-ID') : '—'}
+                        {onu.lastSeenAt ? new Date(onu.lastSeenAt).toLocaleString('id-ID') : '-'}
                       </td>
                       <td className="py-2.5 pr-3">
                         {onu.status === 'auth_failed' ? (
-                          /* Unregistered ONU — show Register button */
+                          /* Unregistered ONU - show Register button */
                           <div className="flex flex-wrap gap-1">
                             <button
                               onClick={() => setDetailOnu(onu)}
@@ -2669,7 +2669,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
           </Card>
         </TabsContent>
 
-        {/* Port Map Tab — Realistic ZTE C320 Chassis Diagram */}
+        {/* Port Map Tab - Realistic ZTE C320 Chassis Diagram */}
         <TabsContent value="portmap">
           <ZTEChassisView olt={olt} />
         </TabsContent>

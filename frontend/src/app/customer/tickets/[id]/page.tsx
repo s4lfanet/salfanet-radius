@@ -140,7 +140,7 @@ export default function TicketDetailPage() {
     const colors = {
       OPEN: 'bg-blue-500/15 text-blue-400 border border-blue-500/30',
       IN_PROGRESS: 'bg-amber-500/15 text-amber-400 border border-amber-500/30',
-      WAITING_CUSTOMER: 'bg-purple-500/15 text-purple-400 border border-purple-500/30',
+      WAITING_CUSTOMER: 'bg-primary/10 text-primary border border-border',
       RESOLVED: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30',
       CLOSED: 'bg-muted text-muted-foreground border border-border',
     };
@@ -267,7 +267,7 @@ export default function TicketDetailPage() {
                 rel="noopener noreferrer"
                 className="text-sm text-cyan-400 hover:text-cyan-300 underline"
               >
-                {ticket.latitude}, {ticket.longitude} — Lihat di Google Maps
+                {ticket.latitude}, {ticket.longitude} - Lihat di Google Maps
               </a>
             </div>
           )}

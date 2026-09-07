@@ -109,9 +109,9 @@ export function TraceResultDisplay({ path, summary, onNodeClick }: TraceResultDi
         </div>
 
         <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
-          <div className="text-sm text-purple-600 dark:text-purple-400 mb-1">{t('network.tracing.totalDistance')}</div>
+          <div className="text-sm text-purple-600 dark:text-primary mb-1">{t('network.tracing.totalDistance')}</div>
           <div className="text-2xl font-bold text-purple-900 dark:text-purple-200">{summary.totalDistance}m</div>
-          <div className="text-xs text-purple-600 dark:text-purple-400 mt-1">{(summary.totalDistance / 1000).toFixed(2)} km</div>
+          <div className="text-xs text-purple-600 dark:text-primary mt-1">{(summary.totalDistance / 1000).toFixed(2)} km</div>
         </div>
 
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">

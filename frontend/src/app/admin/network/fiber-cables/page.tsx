@@ -211,7 +211,7 @@ export default function FiberCablesPage() {
     switch (type) {
       case 'GPON': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
       case 'ADSS': return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
-      case 'OPGW': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400';
+      case 'OPGW': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-primary';
       case 'Figure-8': return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400';
       default: return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400';
     }
@@ -265,7 +265,7 @@ export default function FiberCablesPage() {
         </div>
         <div className="bg-card rounded-lg border dark:border-gray-800 p-3">
           <div className="flex items-center gap-2">
-            <Circle className="h-4 w-4 text-purple-500" />
+            <Circle className="h-4 w-4 text-primary" />
             <span className="text-xs text-gray-500">{t('fiberCable.totalCores')}</span>
           </div>
           <p className="text-xl font-bold mt-1 text-purple-600">{stats.totalCores}</p>

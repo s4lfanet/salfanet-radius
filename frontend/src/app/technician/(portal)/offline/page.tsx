@@ -72,7 +72,7 @@ export default function TechnicianOfflinePage() {
             <p className="text-xs text-muted-foreground">{pagination.total} pelanggan offline</p>
           </div>
         </div>
-        <button onClick={() => loadData(pagination.page)} title="Perbarui Data" className="p-2 bg-slate-100 dark:bg-muted border border-border rounded-xl hover:bg-slate-200 dark:hover:bg-violet-500/10 transition">
+        <button onClick={() => loadData(pagination.page)} title="Perbarui Data" className="p-2 bg-slate-100 dark:bg-muted border border-border rounded-xl hover:bg-slate-200 dark:hover:bg-primary/10 transition">
           <RefreshCw className={`w-4 h-4 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
@@ -112,7 +112,7 @@ export default function TechnicianOfflinePage() {
               </thead>
               <tbody>
                 {filtered.map((u) => (
-                  <tr key={u.id} className="border-b border-slate-100 dark:border-violet-500/10 hover:bg-slate-50 dark:hover:bg-violet-500/5 transition">
+                  <tr key={u.id} className="border-b border-slate-100 dark:border-border hover:bg-slate-50 dark:hover:bg-primary/10 transition">
                     <td className="px-4 py-3 font-medium text-foreground">{u.username}</td>
                     <td className="px-4 py-3 text-muted-foreground/80">{u.name || '-'}</td>
                     <td className="px-4 py-3 text-muted-foreground/80">{u.phone || '-'}</td>
@@ -152,7 +152,7 @@ export default function TechnicianOfflinePage() {
                     <span className="text-foreground/80">{u.profile?.name || '-'}</span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-violet-500/10 text-xs">
+                <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-border text-xs">
                   <span className="text-muted-foreground">{u.router?.name || '-'} {u.area ? `• ${u.area.name}` : ''}</span>
                   <span className={`px-2 py-0.5 rounded-lg font-medium ${u.status === 'isolated' ? 'bg-orange-500/10 text-orange-500' : u.disabled ? 'bg-red-500/10 text-red-500' : 'text-muted-foreground'}`}>{u.disabled ? 'disabled' : u.status}</span>
                 </div>

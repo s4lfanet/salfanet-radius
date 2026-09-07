@@ -156,9 +156,9 @@ export default function GenieACSProvisionsPage() {
             ) : items.map((p) => (
               <tr key={p._id} className="hover:bg-accent/50">
                 <td className="px-3 py-2 font-mono text-blue-700 dark:text-blue-400 font-medium">{p._id}</td>
-                <td className="px-3 py-2 hidden md:table-cell text-xs text-slate-500">{p.description || <span className="italic">—</span>}</td>
+                <td className="px-3 py-2 hidden md:table-cell text-xs text-slate-500">{p.description || <span className="italic">-</span>}</td>
                 <td className="px-3 py-2 truncate max-w-[300px] font-mono text-xs text-muted-foreground">
-                  {(p.script || '').split('\n').find(l => l.trim() && !l.startsWith('/'))?.slice(0, 80) || '—'}
+                  {(p.script || '').split('\n').find(l => l.trim() && !l.startsWith('/'))?.slice(0, 80) || '-'}
                 </td>
                 <td className="px-3 py-2 text-right">
                   <button onClick={() => setEditing(p)}

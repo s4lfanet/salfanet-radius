@@ -1,5 +1,5 @@
-﻿/**
- * sweetalert.ts — CyberToast bridge (replaces SweetAlert2)
+/**
+ * sweetalert.ts - CyberToast bridge (replaces SweetAlert2)
  *
  * This module exposes the same API surface as the old Swal helpers but uses the
  * CyberToast/CyberConfirm system.  A GlobalToastBridge React component

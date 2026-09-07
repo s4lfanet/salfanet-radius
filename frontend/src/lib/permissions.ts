@@ -53,7 +53,7 @@ export const PERMISSIONS = {
 export type PermissionKey = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 
 /**
- * Role hierarchy — SUPER_ADMIN always has all permissions.
+ * Role hierarchy - SUPER_ADMIN always has all permissions.
  * Other roles get permissions assigned via the management page.
  */
 export const ROLES = {

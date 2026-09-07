@@ -42,11 +42,11 @@ const CyberInput = React.forwardRef<HTMLInputElement, CyberInputProps>(
         labelColor: 'text-pink-400',
       },
       purple: {
-        border: 'border-violet-500/30',
+        border: 'border-border',
         focusBorder: 'focus:border-violet-400',
         focusRing: 'focus:ring-violet-400/30',
         focusGlow: 'focus:shadow-md shadow-violet-500/20',
-        labelColor: 'text-violet-600 dark:text-violet-400',
+        labelColor: 'text-violet-600 dark:text-primary',
       },
     };
 
@@ -66,7 +66,7 @@ const CyberInput = React.forwardRef<HTMLInputElement, CyberInputProps>(
         'focus:shadow-lg focus:shadow-brand-500/30'
       ),
       glass: cn(
-        'bg-card/40 backdrop-blur-xl',
+        'bg-card/40',
         'border border-border/50',
         'focus:border-border',
         'focus:bg-muted/50'
@@ -130,7 +130,7 @@ const CyberInput = React.forwardRef<HTMLInputElement, CyberInputProps>(
             isFocused ? 'w-full -translate-x-1/2' : 'w-0 -translate-x-1/2',
             neonColor === 'cyan' && 'from-brand-400 via-brand-500 to-cyan-400',
             neonColor === 'magenta' && 'from-pink-400 via-pink-500 to-pink-400',
-            neonColor === 'purple' && 'from-violet-400 via-violet-500 to-purple-400'
+            neonColor === 'purple' && 'from-primary via-primary to-primary'
           )} />
         </div>
         {error && (
@@ -172,10 +172,10 @@ const CyberTextarea = React.forwardRef<HTMLTextAreaElement, CyberTextareaProps>(
         labelColor: 'text-pink-400',
       },
       purple: {
-        border: 'border-violet-500/30',
+        border: 'border-border',
         focusBorder: 'focus:border-violet-400',
         focusRing: 'focus:ring-violet-400/30',
-        labelColor: 'text-violet-600 dark:text-violet-400',
+        labelColor: 'text-violet-600 dark:text-primary',
       },
     };
 
@@ -244,9 +244,9 @@ const CyberSelect = React.forwardRef<HTMLSelectElement, CyberSelectProps>(
         labelColor: 'text-pink-400',
       },
       purple: {
-        border: 'border-violet-500/30',
+        border: 'border-border',
         focusBorder: 'focus:border-violet-400',
-        labelColor: 'text-violet-600 dark:text-violet-400',
+        labelColor: 'text-violet-600 dark:text-primary',
       },
     };
 

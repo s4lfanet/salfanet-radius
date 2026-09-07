@@ -124,7 +124,7 @@ export default function AgentReportPage() {
   return (
     <div className="bg-background relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
         <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
@@ -134,7 +134,7 @@ export default function AgentReportPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)] flex items-center gap-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop- flex items-center gap-2">
               <Users className="w-5 h-5 text-brand-500" />
               Laporan Reseller/Agent
             </h1>
@@ -163,7 +163,7 @@ export default function AgentReportPage() {
                   onClick={() => setReportType(mode)}
                   className={`px-3 py-1 text-xs rounded-md transition-colors font-medium ${
                     reportType === mode
-                      ? 'bg-primary text-white shadow-[0_0_8px_rgba(139,92,246,0.4)]'
+                      ? 'bg-primary text-white '
                       : 'bg-muted text-muted-foreground hover:text-foreground'
                   }`}
                 >
@@ -212,37 +212,37 @@ export default function AgentReportPage() {
         {/* Summary Cards */}
         {summary && (
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-            <div className="bg-card p-3 rounded-lg border-2 border-primary/30 shadow-[0_0_15px_rgba(139,92,246,0.1)]">
+            <div className="bg-card p-3 rounded-lg border-2 border-primary/30 ">
               <div className="text-[10px] text-primary font-bold uppercase mb-1 flex items-center gap-1">
                 <Users className="w-3 h-3" /> Agent
               </div>
               <div className="text-lg font-bold text-primary">{summary.totalAgents}</div>
             </div>
-            <div className="bg-card p-3 rounded-lg border-2 border-success/30 shadow-[0_0_15px_rgba(0,255,136,0.1)]">
+            <div className="bg-card p-3 rounded-lg border-2 border-success/30 ">
               <div className="text-[10px] text-success font-bold uppercase mb-1 flex items-center gap-1">
                 <Package className="w-3 h-3" /> Stok
               </div>
               <div className="text-lg font-bold text-success">{summary.totalStock.toLocaleString()}</div>
             </div>
-            <div className="bg-card p-3 rounded-lg border-2 border-warning/30 shadow-[0_0_15px_rgba(255,170,0,0.1)]">
+            <div className="bg-card p-3 rounded-lg border-2 border-warning/30 ">
               <div className="text-[10px] text-warning font-bold uppercase mb-1 flex items-center gap-1">
                 <Ticket className="w-3 h-3" /> Terjual
               </div>
               <div className="text-lg font-bold text-warning">{summary.totalSold.toLocaleString()}</div>
             </div>
-            <div className="bg-card p-3 rounded-lg border-2 border-brand-500/30 shadow-[0_0_15px_rgba(6,182,212,0.1)]">
+            <div className="bg-card p-3 rounded-lg border-2 border-brand-500/30 ">
               <div className="text-[10px] text-brand-500 font-bold uppercase mb-1 flex items-center gap-1">
                 <Wallet className="w-3 h-3" /> Pendapatan
               </div>
               <div className="text-sm font-bold text-brand-500">{formatCurrency(summary.totalRevenue)}</div>
             </div>
-            <div className="bg-card p-3 rounded-lg border-2 border-violet-500/30 shadow-[0_0_15px_rgba(139,92,246,0.1)]">
-              <div className="text-[10px] text-violet-500 font-bold uppercase mb-1 flex items-center gap-1">
+            <div className="bg-card p-3 rounded-lg border border-border ">
+              <div className="text-[10px] text-primary font-bold uppercase mb-1 flex items-center gap-1">
                 <TrendingUp className="w-3 h-3" /> Komisi
               </div>
-              <div className="text-sm font-bold text-violet-500">{formatCurrency(summary.totalCommission)}</div>
+              <div className="text-sm font-bold text-primary">{formatCurrency(summary.totalCommission)}</div>
             </div>
-            <div className="bg-card p-3 rounded-lg border-2 border-emerald/30 shadow-[0_0_15px_rgba(0,200,100,0.1)]">
+            <div className="bg-card p-3 rounded-lg border-2 border-emerald/30 ">
               <div className="text-[10px] text-emerald-500 font-bold uppercase mb-1">Admin Earn</div>
               <div className="text-sm font-bold text-emerald-500">{formatCurrency(summary.totalAdminEarnings)}</div>
             </div>
@@ -253,7 +253,7 @@ export default function AgentReportPage() {
         <div className="bg-card rounded-lg border border-border overflow-hidden">
           <div className="px-4 py-3 border-b border-border">
             <h2 className="text-sm font-bold text-foreground">
-              Detail per Agent — {periodLabel}
+              Detail per Agent - {periodLabel}
             </h2>
           </div>
 
@@ -307,7 +307,7 @@ export default function AgentReportPage() {
                           <span className="text-warning font-medium">{item.sold}</span>
                         </td>
                         <td className="px-3 py-2 text-right text-brand-500 font-medium">{formatCurrency(item.totalRevenue)}</td>
-                        <td className="px-3 py-2 text-right text-violet-500 font-medium">{formatCurrency(item.totalCommission)}</td>
+                        <td className="px-3 py-2 text-right text-primary font-medium">{formatCurrency(item.totalCommission)}</td>
                         <td className="px-3 py-2 text-right text-emerald-500 font-medium">{formatCurrency(item.adminEarnings)}</td>
                         <td className="px-3 py-2 text-center text-foreground">{formatCurrency(item.balance)}</td>
                         <td className="px-3 py-2 text-center">
@@ -368,7 +368,7 @@ export default function AgentReportPage() {
                                             <td className="px-2 py-1 text-center text-success">{pb.waiting}</td>
                                             <td className="px-2 py-1 text-center text-warning">{pb.sold}</td>
                                             <td className="px-2 py-1 text-right">{formatCurrency(pb.sellingPrice)}</td>
-                                            <td className="px-2 py-1 text-right text-violet-500">{formatCurrency(pb.commission)}</td>
+                                            <td className="px-2 py-1 text-right text-primary">{formatCurrency(pb.commission)}</td>
                                             <td className="px-2 py-1 text-right text-brand-500">{formatCurrency(pb.revenue)}</td>
                                           </tr>
                                         ))}

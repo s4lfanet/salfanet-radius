@@ -115,7 +115,7 @@ export default function TopUpDirectPage() {
         setSelectedChannel(data.methods[0].code);
       }
     } catch {
-      // silent fail — user must manually pick
+      // silent fail - user must manually pick
     } finally {
       setLoadingChannels(false);
     }
@@ -183,7 +183,7 @@ export default function TopUpDirectPage() {
         console.log('[Top-Up Direct Frontend] Redirecting to:', data.paymentUrl);
 
         showSuccess(
-          `${t('customer.invoiceNo')}: ${data.invoiceNumber} — ${t('customer.total')}: ${formatCurrency(data.amount || 0)}. ${t('customer.redirectingToPayment')}`,
+          `${t('customer.invoiceNo')}: ${data.invoiceNumber} - ${t('customer.total')}: ${formatCurrency(data.amount || 0)}. ${t('customer.redirectingToPayment')}`,
           t('common.success')
         );
 
@@ -238,7 +238,7 @@ export default function TopUpDirectPage() {
       <div className="flex items-center gap-3 mb-2">
         <button
           onClick={() => router.push('/customer')}
-          className="p-2 bg-card/60 border border-violet-500/40 text-brand-500 rounded-xl hover:bg-violet-500/20 transition-all flex items-center justify-center"
+          className="p-2 bg-card/60 border border-border text-brand-500 rounded-xl hover:bg-primary/10 transition-all flex items-center justify-center"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
@@ -249,14 +249,14 @@ export default function TopUpDirectPage() {
       </div>
         {/* Current Balance */}
         {user && (
-          <CyberCard className="p-5 bg-card/80 backdrop-blur-xl border-2 border-brand-500/30 shadow-[0_0_30px_rgba(6,182,212,0.15)]">
+          <CyberCard className="p-5 bg-card border-2 border-brand-500/30 ">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 bg-brand-500/20 rounded-lg border border-brand-500/30 shadow-[0_0_10px_rgba(6,182,212,0.3)] flex items-center justify-center">
-                <Wallet className="w-5 h-5 text-brand-500 drop-shadow-[0_0_5px_rgba(6,182,212,0.8)]" />
+              <div className="p-2 bg-brand-500/20 rounded-lg border border-brand-500/30  flex items-center justify-center">
+                <Wallet className="w-5 h-5 text-brand-500 drop-" />
               </div>
               <span className="text-sm text-muted-foreground/70 uppercase tracking-wider">{t('customer.currentBalance')}</span>
             </div>
-            <h3 className="text-3xl font-bold text-brand-500 drop-shadow-[0_0_15px_rgba(6,182,212,0.6)]">
+            <h3 className="text-3xl font-bold text-brand-500 drop-">
               {formatCurrency(user.balance || 0)}
             </h3>
           </CyberCard>
@@ -271,12 +271,12 @@ export default function TopUpDirectPage() {
         )}
 
         {/* Amount Selection */}
-        <CyberCard className="p-5 bg-card/80 backdrop-blur-xl border-2 border-violet-500/30">
+        <CyberCard className="p-5 bg-card border border-border">
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-violet-500/20 rounded-lg border border-violet-500/30 flex items-center justify-center">
-              <Zap className="w-5 h-5 text-violet-500" />
+            <div className="p-2 bg-primary/10 rounded-lg border border-border flex items-center justify-center">
+              <Zap className="w-5 h-5 text-primary" />
             </div>
-            <h2 className="text-sm font-bold text-violet-500 uppercase tracking-wider">{t('customer.selectTopupAmount')}</h2>
+            <h2 className="text-sm font-bold text-primary uppercase tracking-wider">{t('customer.selectTopupAmount')}</h2>
           </div>
 
           {/* Preset Amounts */}
@@ -286,12 +286,12 @@ export default function TopUpDirectPage() {
                 key={preset}
                 onClick={() => setAmount(preset.toString())}
                 className={`p-4 rounded-xl border-2 transition-all text-left ${amount === preset.toString()
-                    ? 'border-brand-500 bg-brand-500/10 shadow-[0_0_20px_rgba(6,182,212,0.3)]'
-                    : 'border-violet-500/30 bg-slate-900/50 hover:border-brand-500/50 hover:shadow-[0_0_15px_rgba(6,182,212,0.15)]'
+                    ? 'border-brand-500 bg-brand-500/10 '
+                    : 'border-border bg-slate-900/50 hover:border-brand-500/50 hover:'
                   }`}
               >
                 <p className="text-xs text-muted-foreground/60 mb-1 uppercase tracking-wide">Top-Up</p>
-                <p className="font-bold text-brand-500 drop-shadow-[0_0_8px_rgba(6,182,212,0.5)]">{formatCurrency(preset)}</p>
+                <p className="font-bold text-brand-500 drop-">{formatCurrency(preset)}</p>
               </button>
             ))}
           </div>
@@ -306,7 +306,7 @@ export default function TopUpDirectPage() {
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder={t('customer.minimumAmount')}
-                className="w-full pl-12 pr-4 py-3 border-2 border-violet-500/40 rounded-xl bg-slate-900/80 text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 focus:shadow-[0_0_15px_rgba(6,182,212,0.2)] transition-all"
+                className="w-full pl-12 pr-4 py-3 border border-border rounded-xl bg-slate-900/80 text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 focus: transition-all"
                 min="10000"
                 step="10000"
               />
@@ -318,7 +318,7 @@ export default function TopUpDirectPage() {
         </CyberCard>
 
         {/* Payment Gateway Selection */}
-        <CyberCard className="p-5 bg-card/80 backdrop-blur-xl border-2 border-pink-500/30">
+        <CyberCard className="p-5 bg-card border-2 border-pink-500/30">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-pink-500/20 rounded-lg border border-pink-500/30 flex items-center justify-center">
                 <CreditCard className="w-5 h-5 text-pink-500" />
@@ -382,8 +382,8 @@ export default function TopUpDirectPage() {
                         key={gw.id}
                         onClick={() => setSelectedGateway(gw.provider)}
                         className={`w-full text-left p-3 rounded-xl border-2 transition-all ${selectedGateway === gw.provider
-                            ? 'border-brand-500 bg-brand-500/10 shadow-[0_0_20px_rgba(6,182,212,0.3)]'
-                            : 'border-violet-500/30 bg-slate-900/50 hover:border-brand-500/50'
+                            ? 'border-brand-500 bg-brand-500/10 '
+                            : 'border-border bg-slate-900/50 hover:border-brand-500/50'
                           }`}
                       >
                         <div className="flex items-center justify-between">
@@ -419,8 +419,8 @@ export default function TopUpDirectPage() {
                         key={ch.code}
                         onClick={() => setSelectedChannel(ch.code)}
                         className={`w-full text-left p-4 rounded-xl border-2 transition-all ${selectedChannel === ch.code
-                            ? 'border-brand-500 bg-brand-500/10 shadow-[0_0_20px_rgba(6,182,212,0.3)]'
-                            : 'border-violet-500/30 bg-slate-900/50 hover:border-brand-500/50'
+                            ? 'border-brand-500 bg-brand-500/10 '
+                            : 'border-border bg-slate-900/50 hover:border-brand-500/50'
                           }`}
                       >
                         <div className="flex items-center justify-between">
@@ -429,7 +429,7 @@ export default function TopUpDirectPage() {
                               // eslint-disable-next-line @next/next/no-img-element
                               <img src={ch.iconUrl} alt={ch.name} className="w-10 h-10 object-contain rounded-lg bg-white p-1" loading="lazy" />
                             ) : (
-                              <div className="p-2 bg-slate-800/80 border border-violet-500/30 rounded-lg flex items-center justify-center">
+                              <div className="p-2 bg-slate-800/80 border border-border rounded-lg flex items-center justify-center">
                                 <CreditCard className="w-5 h-5 text-brand-500" />
                               </div>
                             )}
@@ -443,7 +443,7 @@ export default function TopUpDirectPage() {
                             </div>
                           </div>
                           {selectedChannel === ch.code && (
-                            <CheckCircle className="w-6 h-6 text-brand-500 drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]" />
+                            <CheckCircle className="w-6 h-6 text-brand-500 drop-" />
                           )}
                         </div>
                       </button>

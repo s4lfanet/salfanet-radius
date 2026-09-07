@@ -21,8 +21,8 @@ function buildServerUrl(path: string): string {
  * Uses absolute URL to backend. No auth token.
  *
  * Content-Type handling:
- *   - FormData: browser/Node sets multipart boundary automatically — do NOT override
- *   - Blob / ArrayBuffer / ReadableStream: binary — do NOT set Content-Type
+ *   - FormData: browser/Node sets multipart boundary automatically - do NOT override
+ *   - Blob / ArrayBuffer / ReadableStream: binary - do NOT set Content-Type
  *   - string (JSON): set Content-Type: application/json
  *   - no body (GET/DELETE): do NOT set Content-Type
  */

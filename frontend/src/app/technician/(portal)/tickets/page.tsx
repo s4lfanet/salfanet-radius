@@ -90,7 +90,7 @@ const PRIORITY_LEFT: Record<string, string> = {
 const STATUS_STYLE: Record<string, string> = {
   OPEN: 'bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-500/40',
   IN_PROGRESS: 'bg-cyan-100 dark:bg-cyan-500/20 text-cyan-600 dark:text-brand-500 border-cyan-300 dark:border-brand-500/40',
-  WAITING_CUSTOMER: 'bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-300 dark:border-purple-500/40',
+  WAITING_CUSTOMER: 'bg-purple-100 dark:bg-primary/10 text-purple-600 dark:text-primary border-purple-300 dark:border-border',
   RESOLVED: 'bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 border-green-300 dark:border-green-500/40',
   CLOSED: 'bg-muted/50 text-muted-foreground border-border/40',
 };
@@ -304,7 +304,7 @@ export default function TechnicianTicketsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
-            <Ticket className="w-5 h-5 text-violet-500" />
+            <Ticket className="w-5 h-5 text-primary" />
             {t('techPortal.tickets')}
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">
@@ -314,7 +314,7 @@ export default function TechnicianTicketsPage() {
         <button
           onClick={loadTickets}
           disabled={loading}
-          className="flex items-center gap-2 px-3 py-2 text-xs font-semibold bg-slate-100 dark:bg-violet-500/10 hover:bg-slate-200 dark:hover:bg-violet-500/20 text-foreground border border-border rounded-xl transition-all"
+          className="flex items-center gap-2 px-3 py-2 text-xs font-semibold bg-slate-100 dark:bg-primary/10 hover:bg-slate-200 dark:hover:bg-primary/10 text-foreground border border-border rounded-xl transition-all"
         >
           <RefreshCcw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           {t('techPortal.refresh')}
@@ -324,7 +324,7 @@ export default function TechnicianTicketsPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: 'Total', value: stats.total, icon: <Ticket className="w-4 h-4" />, color: 'text-violet-500 bg-violet-500/10 border-violet-500/30' },
+          { label: 'Total', value: stats.total, icon: <Ticket className="w-4 h-4" />, color: 'text-primary bg-primary/10 border-border' },
           { label: t('techPortal.statusOpen'), value: stats.open, icon: <Clock className="w-4 h-4" />, color: 'text-amber-500 bg-amber-500/10 border-amber-500/30' },
           { label: t('techPortal.statusInProgress'), value: stats.inProgress, icon: <Play className="w-4 h-4" />, color: 'text-brand-500 bg-brand-500/10 border-brand-500/30' },
           { label: t('techPortal.statusResolved'), value: stats.resolved, icon: <CheckCircle2 className="w-4 h-4" />, color: 'text-green-500 bg-green-500/10 border-green-500/30' },
@@ -412,7 +412,7 @@ export default function TechnicianTicketsPage() {
                   <div className="flex items-start gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                        <span className="flex items-center gap-1 text-[10px] font-mono font-bold text-violet-500">
+                        <span className="flex items-center gap-1 text-[10px] font-mono font-bold text-primary">
                           <Hash className="w-3 h-3" />{ticket.ticketNumber}
                         </span>
                         <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full border ${PRIORITY_STYLE[ticket.priority] ?? PRIORITY_STYLE.MEDIUM}`}>
@@ -454,7 +454,7 @@ export default function TechnicianTicketsPage() {
                       <button
                         onClick={() => doAction(ticket.id, 'claim')}
                         disabled={!!isLoading}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-violet-500/10 hover:bg-violet-500/20 text-violet-500 border border-violet-500/30 rounded-xl transition-all disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-primary/10 hover:bg-primary/10 text-primary border border-border rounded-xl transition-all disabled:opacity-50"
                       >
                         {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
                         {t('techPortal.claimTicket')}
@@ -465,7 +465,7 @@ export default function TechnicianTicketsPage() {
                         <button
                           onClick={() => doAction(ticket.id, 'update_status', { status: 'WAITING_CUSTOMER' })}
                           disabled={!!isLoading}
-                          className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-purple-50 dark:bg-purple-500/10 hover:bg-purple-100 dark:hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-500/30 rounded-xl transition-all disabled:opacity-50"
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-purple-50 dark:bg-primary/10 hover:bg-purple-100 dark:hover:bg-primary/10 text-purple-600 dark:text-primary border border-purple-200 dark:border-border rounded-xl transition-all disabled:opacity-50"
                         >
                           <Clock className="w-3 h-3" />{t('techPortal.waitingCustomer')}
                         </button>
@@ -518,7 +518,7 @@ export default function TechnicianTicketsPage() {
                 }`} />
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-[10px] font-mono font-bold text-violet-500">#{detailTicket.ticketNumber}</span>
+                    <span className="text-[10px] font-mono font-bold text-primary">#{detailTicket.ticketNumber}</span>
                     <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full border ${STATUS_STYLE[detailTicket.status] ?? STATUS_STYLE.OPEN}`}>
                       {STATUS_LABEL[detailTicket.status] ?? detailTicket.status}
                     </span>
@@ -597,7 +597,7 @@ export default function TechnicianTicketsPage() {
                         <button
                           onClick={() => doAction(detailTicket.id, 'claim')}
                           disabled={!!actionLoading}
-                          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold bg-violet-500/10 hover:bg-violet-500/20 text-violet-500 border border-violet-500/30 rounded-xl transition-all disabled:opacity-50"
+                          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold bg-primary/10 hover:bg-primary/10 text-primary border border-border rounded-xl transition-all disabled:opacity-50"
                         >
                           {actionLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
                           Ambil Tiket (Klaim)
@@ -608,7 +608,7 @@ export default function TechnicianTicketsPage() {
                           <button
                             onClick={() => doAction(detailTicket.id, 'update_status', { status: 'WAITING_CUSTOMER' })}
                             disabled={!!actionLoading}
-                            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-500/30 rounded-xl transition-all disabled:opacity-50"
+                            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold bg-purple-50 dark:bg-primary/10 text-purple-600 dark:text-primary border border-purple-200 dark:border-border rounded-xl transition-all disabled:opacity-50"
                           >
                             <Clock className="w-3 h-3" />Menunggu Pelanggan
                           </button>
@@ -698,7 +698,7 @@ export default function TechnicianTicketsPage() {
                             {msg.message && msg.message !== '📷 Foto dikirim' && (
                               <div className={`px-3 py-2 rounded-2xl text-xs leading-relaxed whitespace-pre-wrap ${
                                 isTech
-                                  ? 'bg-violet-500/15 dark:bg-violet-500/20 text-slate-800 dark:text-[#f0e0ff] rounded-tr-sm border border-violet-500/20'
+                                  ? 'bg-primary/10 dark:bg-primary/10 text-slate-800 dark:text-[#f0e0ff] rounded-tr-sm border border-border'
                                   : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-muted-foreground/90 rounded-tl-sm border border-border'
                               }`}>
                                 {renderWithLinks(msg.message)}
@@ -770,7 +770,7 @@ export default function TechnicianTicketsPage() {
                         <button
                           onClick={sendReply}
                           disabled={replyLoading || (!replyMessage.trim() && !photoFile)}
-                          className="flex items-center justify-center w-9 h-9 rounded-xl bg-violet-500 hover:bg-violet-500/90 text-white transition-colors disabled:opacity-40"
+                          className="flex items-center justify-center w-9 h-9 rounded-xl bg-violet-500 hover:bg-primary/10 text-white transition-colors disabled:opacity-40"
                           title="Kirim (Ctrl+Enter)"
                         >
                           {replyLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}

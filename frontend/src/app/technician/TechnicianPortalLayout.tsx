@@ -133,7 +133,7 @@ function SidebarPushToggle({ techId }: { techId: string }) {
           body: JSON.stringify({ technicianId: techId, subscription: sub.toJSON() }),
         }).catch(() => { /* silent sync */ });
       }
-    } catch (e: unknown) { /* ignore — service worker may not be available */ console.warn('Service worker registration failed:', e); }
+    } catch (e: unknown) { /* ignore - service worker may not be available */ console.warn('Service worker registration failed:', e); }
   };
 
   useEffect(() => {
@@ -216,7 +216,7 @@ function SidebarPushToggle({ techId }: { techId: string }) {
       disabled={loading || isDenied || !isSupported}
       title={
         !isSupported ? 'Browser tidak mendukung push notification'
-        : isDenied ? 'Notifikasi diblokir — ubah di pengaturan browser'
+        : isDenied ? 'Notifikasi diblokir - ubah di pengaturan browser'
         : isOn ? 'Klik untuk nonaktifkan notifikasi push'
         : 'Klik untuk aktifkan notifikasi push'
       }
@@ -291,7 +291,7 @@ function NotificationBell() {
         return [...items, ...pushItems].slice(0, 20);
       });
       setCount(items.length);
-    } catch (e: unknown) { /* silent — non-critical polling */ console.warn('Failed to load technician notifications:', e); }
+    } catch (e: unknown) { /* silent - non-critical polling */ console.warn('Failed to load technician notifications:', e); }
   };
 
   // Listen for push notifications from service worker
@@ -589,7 +589,7 @@ function TechnicianPortalInner({ children }: { children: React.ReactNode }) {
     registerGlobalConfirm(confirm);
   }, [addToast, confirm]);
 
-  // Register global 401 handler — redirect to technician login on any API 401
+  // Register global 401 handler - redirect to technician login on any API 401
   useEffect(() => {
     onUnauthorized(() => {
       if (typeof window !== 'undefined' && !window.location.pathname.includes('/technician/login')) {
@@ -651,7 +651,7 @@ function TechnicianPortalInner({ children }: { children: React.ReactNode }) {
 
   return (
     <div data-role="technician" className="min-h-dvh bg-background overflow-x-hidden">
-      {/* Background blobs — dark only */}
+      {/* Background blobs - dark only */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none hidden dark:block">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl" />
         <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
@@ -672,7 +672,7 @@ function TechnicianPortalInner({ children }: { children: React.ReactNode }) {
       {/* Main Content Area */}
       <div className="lg:ml-64 min-h-dvh flex flex-col">
         {/* Desktop Header */}
-        <header className="hidden lg:block sticky top-0 z-20 bg-background/80 backdrop-blur-xl border-b border-border shadow-theme-sm">
+        <header className="hidden lg:block sticky top-0 z-20 bg-background/80 border-b border-border shadow-theme-sm">
           <div className="px-6 py-3 flex items-center justify-between">
             <div>
               <h2 className="text-sm font-bold text-foreground">
@@ -703,7 +703,7 @@ function TechnicianPortalInner({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Mobile Header */}
-        <header className="lg:hidden sticky top-0 z-20 bg-background/95 backdrop-blur-xl border-b border-border shadow-theme-sm safe-area-inset-top">
+        <header className="lg:hidden sticky top-0 z-20 bg-background/95 border-b border-border shadow-theme-sm safe-area-inset-top">
           <div className="px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button

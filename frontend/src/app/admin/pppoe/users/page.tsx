@@ -165,7 +165,7 @@ interface BulkUploadResponse {
   message?: string;
 }
 
-// Isolated form component — formData state lives here so typing only re-renders
+// Isolated form component - formData state lives here so typing only re-renders
 // this component, not the entire PppoeUsersPage (which has 100+ state variables).
 // This prevents mobile virtual keyboard dismissal caused by parent re-renders.
 function AddPppoeUserModal({ isOpen, onClose, onSuccess, profiles, routers, areas }: {
@@ -293,12 +293,12 @@ function AddPppoeUserModal({ isOpen, onClose, onSuccess, profiles, routers, area
             <div>
               <ModalLabel required>{t('pppoe.subscriptionType')}</ModalLabel>
               <div className="grid grid-cols-2 gap-2">
-                <label className={`flex items-center p-2 border-2 rounded-lg cursor-pointer transition-all ${formData.subscriptionType === 'POSTPAID' ? 'border-primary bg-primary/10 dark:border-brand-500 dark:bg-brand-500/10 dark:shadow-[0_0_10px_rgba(6,182,212,0.3)]' : 'border-border hover:border-primary/50 dark:border-violet-500/30 dark:hover:border-brand-500/50'}`}>
-                  <input type="radio" name="subscriptionType" value="POSTPAID" checked={formData.subscriptionType === 'POSTPAID'} onChange={(e) => setFormData(prev => ({ ...prev, subscriptionType: e.target.value as 'POSTPAID' }))} className="w-3 h-3 accent-primary dark:text-brand-500 border-border dark:border-violet-500/50 focus:ring-primary dark:focus:ring-brand-500" />
+                <label className={`flex items-center p-2 border-2 rounded-lg cursor-pointer transition-all ${formData.subscriptionType === 'POSTPAID' ? 'border-primary bg-primary/10 dark:border-brand-500 dark:bg-brand-500/10 dark:' : 'border-border hover:border-primary/50 dark:border-border dark:hover:border-brand-500/50'}`}>
+                  <input type="radio" name="subscriptionType" value="POSTPAID" checked={formData.subscriptionType === 'POSTPAID'} onChange={(e) => setFormData(prev => ({ ...prev, subscriptionType: e.target.value as 'POSTPAID' }))} className="w-3 h-3 accent-primary dark:text-brand-500 border-border dark:border-border focus:ring-primary dark:focus:ring-brand-500" />
                   <div className="ml-2 flex-1"><div className="text-[10px] font-medium text-foreground"><Calendar className="w-3 h-3 inline mr-0.5" />{t('pppoe.postpaid')}</div><div className="text-[9px] text-muted-foreground">{t('pppoe.fixedDueDate')}</div></div>
                 </label>
-                <label className={`flex items-center p-2 border-2 rounded-lg cursor-pointer transition-all ${formData.subscriptionType === 'PREPAID' ? 'border-primary bg-primary/10 dark:border-violet-500 dark:bg-violet-500/10 dark:shadow-[0_0_10px_rgba(139,92,246,0.3)]' : 'border-border hover:border-primary/50 dark:border-violet-500/30 dark:hover:border-violet-500/50'}`}>
-                  <input type="radio" name="subscriptionType" value="PREPAID" checked={formData.subscriptionType === 'PREPAID'} onChange={(e) => setFormData(prev => ({ ...prev, subscriptionType: e.target.value as 'PREPAID' }))} className="w-3 h-3 accent-primary dark:text-violet-500 border-border dark:border-violet-500/50 focus:ring-primary dark:focus:ring-violet-500" />
+                <label className={`flex items-center p-2 border-2 rounded-lg cursor-pointer transition-all ${formData.subscriptionType === 'PREPAID' ? 'border-primary bg-primary/10 dark:border-violet-500 dark:bg-primary/10 dark:' : 'border-border hover:border-primary/50 dark:border-border dark:hover:border-border'}`}>
+                  <input type="radio" name="subscriptionType" value="PREPAID" checked={formData.subscriptionType === 'PREPAID'} onChange={(e) => setFormData(prev => ({ ...prev, subscriptionType: e.target.value as 'PREPAID' }))} className="w-3 h-3 accent-primary dark:text-primary border-border dark:border-border focus:ring-primary dark:focus:ring-primary" />
                   <div className="ml-2 flex-1"><div className="text-[10px] font-medium text-foreground">⏰ {t('pppoe.prepaid')}</div><div className="text-[9px] text-muted-foreground">{t('pppoe.followsPayment')}</div></div>
                 </label>
               </div>
@@ -325,7 +325,7 @@ function AddPppoeUserModal({ isOpen, onClose, onSuccess, profiles, routers, area
             <div><ModalLabel>Kode Referral <span className="text-muted-foreground text-[10px]">(opsional)</span></ModalLabel><ModalInput type="text" value={formData.referralCode} onChange={(e) => setFormData(prev => ({ ...prev, referralCode: e.target.value }))} placeholder="Masukkan kode referral" /></div>
 
             {/* Dokumen Pelanggan */}
-            <div className="border border-border dark:border-violet-500/30 rounded-lg p-3 space-y-3">
+            <div className="border border-border dark:border-border rounded-lg p-3 space-y-3">
               <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
                 <span><CreditCard className="w-3.5 h-3.5" /></span> Dokumen Identitas (KTP)
               </div>
@@ -510,7 +510,7 @@ export default function PppoeUsersPage() {
   // Reset to first page when filters change
   useEffect(() => { setCurrentPage(1); }, [filterProfile, filterRouter, filterStatus]);
 
-  // Users list — server-side pagination, search, filter, sort
+  // Users list - server-side pagination, search, filter, sort
   const serverParams: Record<string, string> = {
     page: String(currentPage),
     limit: String(pageSize),
@@ -532,7 +532,7 @@ export default function PppoeUsersPage() {
   const totalCount = usersQuery.data?.total || 0;
   const totalPages = usersQuery.data?.totalPages || 1;
 
-  // Realtime online/offline + status polling — refresh every 10 seconds
+  // Realtime online/offline + status polling - refresh every 10 seconds
   // without reloading the entire page. Fetches online username set + status map
   // (isolated/active/stop/blocked) so status changes from cron auto-isolir
   // or manual actions by other admins are reflected in realtime.
@@ -554,7 +554,7 @@ export default function PppoeUsersPage() {
     [onlineQuery.data],
   );
   // Merge online status AND user status (isolated/active/stop) into users
-  // — only updates if there's an actual change to avoid unnecessary re-renders
+  // - only updates if there's an actual change to avoid unnecessary re-renders
   const usersWithOnline = useMemo(() => {
     let changed = false;
     const next = users.map(u => {
@@ -570,25 +570,25 @@ export default function PppoeUsersPage() {
     return changed ? next : users;
   }, [users, onlineSet, statusMap]);
 
-  // Profiles — rarely changes, cache for 5 minutes
+  // Profiles - rarely changes, cache for 5 minutes
   const profilesQuery = useApiQuery<PppoeProfileListResponse>('/api/pppoe/profiles', {
     staleTime: 300000,
   });
   const profiles: Profile[] = (profilesQuery.data?.profiles as unknown as Profile[]) || [];
 
-  // Routers/NAS — rarely changes, cache for 5 minutes
+  // Routers/NAS - rarely changes, cache for 5 minutes
   const routersQuery = useApiQuery<RouterListResponse>('/api/network/routers', {
     staleTime: 300000,
   });
   const routers: Router[] = (routersQuery.data?.routers as unknown as Router[]) || [];
 
-  // Areas — rarely changes, cache for 5 minutes
+  // Areas - rarely changes, cache for 5 minutes
   const areasQuery = useApiQuery<PppoeAreaListResponse>('/api/pppoe/areas', {
     staleTime: 300000,
   });
   const areas: Area[] = (areasQuery.data?.areas as unknown as Area[]) || [];
 
-  // Invoice counts for all users — enabled only when users are loaded
+  // Invoice counts for all users - enabled only when users are loaded
   const userIds = useMemo(() => users.map(u => u.id).join(','), [users]);
   const invoiceCountsQuery = useApiQuery<InvoiceCountsResponse>(
     '/api/invoices/counts',
@@ -1431,13 +1431,13 @@ export default function PppoeUsersPage() {
       <p className="text-xs text-muted-foreground">{t('pppoe.noPermission')}</p></div>);
   }
 
-  if (loading) { return <div className="flex items-center justify-center min-h-[60vh]"><div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse"></div><div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div></div><Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)] relative z-10" /></div>; }
+  if (loading) { return <div className="flex items-center justify-center min-h-[60vh]"><div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div><div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div></div><Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop- relative z-10" /></div>; }
 
   return (
     <div className="bg-background relative">
       {/* Neon Cyberpunk Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
         <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
@@ -1448,7 +1448,7 @@ export default function PppoeUsersPage() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="min-w-0">
-              <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)]">{t('pppoe.title')}</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-">{t('pppoe.title')}</h1>
               <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t('pppoe.subtitle')}</p>
             </div>
             {/* Tombol Kirim Notifikasi di Header */}
@@ -1503,25 +1503,25 @@ export default function PppoeUsersPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition-all">
             <div className="flex items-center justify-between">
               <div className="min-w-0"><p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide">{t('pppoe.registrationsThisMonth')}</p><p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{registrationsThisMonth}</p></div>
-              <UserPlus className="h-5 w-5 sm:h-8 sm:w-8 text-brand-500 drop-shadow-[0_0_15px_rgba(6,182,212,0.6)] flex-shrink-0" />
+              <UserPlus className="h-5 w-5 sm:h-8 sm:w-8 text-brand-500 drop- flex-shrink-0" />
             </div>
           </div>
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition-all">
             <div className="flex items-center justify-between">
               <div className="min-w-0"><p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide">{t('pppoe.renewalsThisMonth')}</p><p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{renewalsThisMonth}</p></div>
-              <RefreshCw className="h-5 w-5 sm:h-8 sm:w-8 text-green-400 drop-shadow-[0_0_15px_rgba(34,197,94,0.6)] flex-shrink-0" />
+              <RefreshCw className="h-5 w-5 sm:h-8 sm:w-8 text-green-400 drop- flex-shrink-0" />
             </div>
           </div>
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition-all">
             <div className="flex items-center justify-between">
               <div className="min-w-0"><p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide">{t('pppoe.isolatedExpired')}</p><p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{isolatedExpired}</p></div>
-              <Clock className="h-5 w-5 sm:h-8 sm:w-8 text-amber-400 drop-shadow-[0_0_15px_rgba(251,191,36,0.6)] flex-shrink-0" />
+              <Clock className="h-5 w-5 sm:h-8 sm:w-8 text-amber-400 drop- flex-shrink-0" />
             </div>
           </div>
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition-all">
             <div className="flex items-center justify-between">
               <div className="min-w-0"><p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide">{t('pppoe.blockedUsers')}</p><p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{blockedUsers}</p></div>
               <Ban className="h-5 w-5 sm:h-8 sm:w-8 text-red-400 drop-shadow-md shadow-red-500/40 flex-shrink-0" />
@@ -1531,7 +1531,7 @@ export default function PppoeUsersPage() {
 
         {/* Search and Filters */}
         <div className="bg-card rounded-lg border border-border overflow-hidden">
-          {/* Search bar — always visible */}
+          {/* Search bar - always visible */}
           <div className="p-3 flex items-center gap-2">
             <div className="flex-1 relative">
               <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -1723,7 +1723,7 @@ export default function PppoeUsersPage() {
                     >
                       <Shield className="h-3.5 w-3.5 pointer-events-none" />
                     </button>
-                    <button onClick={() => setPrintDialogUser(user)} className="compact-action p-1.5 text-purple-500 hover:bg-purple-500/10 rounded cursor-pointer flex items-center justify-center focus:outline-none" aria-label="Cetak Invoice" title="Cetak Invoice"><Printer className="h-3.5 w-3.5 pointer-events-none" /></button>
+                    <button onClick={() => setPrintDialogUser(user)} className="compact-action p-1.5 text-primary hover:bg-primary/10 rounded cursor-pointer flex items-center justify-center focus:outline-none" aria-label="Cetak Invoice" title="Cetak Invoice"><Printer className="h-3.5 w-3.5 pointer-events-none" /></button>
                     {invoiceCounts[user.id] > 0 ? (
                       <button onClick={() => handleMarkAllPaid(user.id, user.name)} disabled={markingPaid === user.id} className="compact-action px-2 py-1 text-[10px] font-medium bg-primary text-white rounded hover:bg-primary/90 disabled:opacity-50 ml-auto cursor-pointer focus:outline-none">
                         {markingPaid === user.id ? <Loader2 className="h-3 w-3 animate-spin" /> : t('pppoe.markPaid')}
@@ -1856,7 +1856,7 @@ export default function PppoeUsersPage() {
                           <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-muted text-muted-foreground">Not synced</span>
                         )}
                       </td>
-                      {/* Aksi — Sticky right + Dropdown */}
+                      {/* Aksi - Sticky right + Dropdown */}
                       <td className="px-2 py-2 text-center sticky right-0 bg-background z-20 border-l border-border/30">
                         <button
                           onClick={(e) => {
@@ -1898,7 +1898,7 @@ export default function PppoeUsersPage() {
           </div>
         </div>
 
-        {/* Action Dropdown Menu — di luar tabel, fixed positioning agar tidak terpotong */}
+        {/* Action Dropdown Menu - di luar tabel, fixed positioning agar tidak terpotong */}
         {actionMenuOpen && actionMenuPos && (() => {
           const user = filteredUsers.find(u => u.id === actionMenuOpen);
           if (!user) return null;
@@ -1926,7 +1926,7 @@ export default function PppoeUsersPage() {
                   <Ban className="h-3.5 w-3.5" /> Stop & Hapus
                 </button>
                 <button onClick={() => { setPrintDialogUser(user); setActionMenuOpen(null); }} className="w-full px-3 py-2 text-xs text-left hover:bg-muted flex items-center gap-2 cursor-pointer">
-                  <Printer className="h-3.5 w-3.5 text-purple-500" /> Cetak Invoice
+                  <Printer className="h-3.5 w-3.5 text-primary" /> Cetak Invoice
                 </button>
                 <button onClick={() => { handleManualExtend(user); setActionMenuOpen(null); }} disabled={extending === user.id} className="w-full px-3 py-2 text-xs text-left hover:bg-muted flex items-center gap-2 cursor-pointer disabled:opacity-50">
                   {extending === user.id ? <Loader2 className="h-3.5 w-3.5 animate-spin text-warning" /> : <Zap className="h-3.5 w-3.5 text-warning" />}
@@ -1950,7 +1950,7 @@ export default function PppoeUsersPage() {
           areas={areas}
         />
 
-        {/* Map Picker (edit flow only — add flow has its own MapPicker inside AddPppoeUserModal) */}
+        {/* Map Picker (edit flow only - add flow has its own MapPicker inside AddPppoeUserModal) */}
         <MapPicker isOpen={showMapPicker} onClose={() => setShowMapPicker(false)} onSelect={(lat, lng) => { const latStr = lat.toFixed(6); const lonStr = lng.toFixed(6); setMapPickerLat(latStr); setMapPickerLon(lonStr); setModalLatLng({ lat: latStr, lng: lonStr }); }} initialLat={mapPickerLat ? parseFloat(mapPickerLat) : undefined} initialLng={mapPickerLon ? parseFloat(mapPickerLon) : undefined} />
 
         {/* Import Dialog */}
@@ -1966,7 +1966,7 @@ export default function PppoeUsersPage() {
             </div>
 
             {/* Collapsible Column Guide */}
-            <div className="border border-border dark:border-violet-500/30 rounded-lg overflow-hidden">
+            <div className="border border-border dark:border-border rounded-lg overflow-hidden">
               <button
                 onClick={() => setShowImportGuide(!showImportGuide)}
                 className="w-full flex items-center justify-between px-3 py-2.5 bg-muted/50 dark:bg-card/50 hover:bg-muted transition-colors text-xs font-medium text-foreground"
@@ -1990,7 +1990,7 @@ export default function PppoeUsersPage() {
                           <code className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded font-mono whitespace-nowrap flex-shrink-0 min-w-[110px]">{item.col}</code>
                           <div className="flex-1 min-w-0">
                             <span className="text-foreground">{item.desc}</span>
-                            <span className="text-muted-foreground ml-1.5">— contoh: <code className="bg-muted px-1 rounded text-[10px]">{item.ex}</code></span>
+                            <span className="text-muted-foreground ml-1.5">- contoh: <code className="bg-muted px-1 rounded text-[10px]">{item.ex}</code></span>
                           </div>
                         </div>
                       ))}
@@ -2011,7 +2011,7 @@ export default function PppoeUsersPage() {
                           <code className="bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded font-mono whitespace-nowrap flex-shrink-0 min-w-[110px]">{item.col}</code>
                           <div className="flex-1 min-w-0">
                             <span className="text-foreground">{item.desc}</span>
-                            <span className="text-muted-foreground ml-1.5">— contoh: <code className="bg-muted px-1 rounded text-[10px]">{item.ex}</code></span>
+                            <span className="text-muted-foreground ml-1.5">- contoh: <code className="bg-muted px-1 rounded text-[10px]">{item.ex}</code></span>
                           </div>
                         </div>
                       ))}
@@ -2029,7 +2029,7 @@ export default function PppoeUsersPage() {
                         { col: 'Area/Wilayah', desc: 'Nama area yang sudah terdaftar di sistem (auto-resolved by name)', ex: 'Cluster A' },
                         { col: 'IP Address', desc: 'IP static untuk pelanggan (Framed-IP-Address). Kosongkan untuk DHCP', ex: '10.10.10.2' },
                         { col: 'MAC Address', desc: 'MAC address perangkat pelanggan. Format AA:BB:CC:DD:EE:FF', ex: 'AA:BB:CC:DD:EE:FF' },
-                        { col: 'Tanggal Expired', desc: 'Format YYYY-MM-DD. Khusus PREPAID — tanggal berakhir layanan', ex: '2026-12-31' },
+                        { col: 'Tanggal Expired', desc: 'Format YYYY-MM-DD. Khusus PREPAID - tanggal berakhir layanan', ex: '2026-12-31' },
                         { col: 'Hari Tagihan', desc: 'Tanggal tagihan bulanan (1-31). Khusus POSTPAID', ex: '1' },
                         { col: 'Latitude', desc: 'Koordinat GPS lintang', ex: '-6.200000' },
                         { col: 'Longitude', desc: 'Koordinat GPS bujur', ex: '106.816666' },
@@ -2041,7 +2041,7 @@ export default function PppoeUsersPage() {
                           <code className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded font-mono whitespace-nowrap flex-shrink-0 min-w-[110px]">{item.col}</code>
                           <div className="flex-1 min-w-0">
                             <span className="text-foreground">{item.desc}</span>
-                            <span className="text-muted-foreground ml-1.5">— contoh: <code className="bg-muted px-1 rounded text-[10px]">{item.ex}</code></span>
+                            <span className="text-muted-foreground ml-1.5">- contoh: <code className="bg-muted px-1 rounded text-[10px]">{item.ex}</code></span>
                           </div>
                         </div>
                       ))}
@@ -2064,7 +2064,7 @@ export default function PppoeUsersPage() {
                       <li>Untuk <strong>PREPAID</strong>, isi Tanggal Expired. Untuk <strong>POSTPAID</strong>, isi Hari Tagihan</li>
                       <li>Jika username sudah ada di database, data akan di-update (upsert)</li>
                       <li>Password kosong akan auto-generate. Username + password wajib untuk PPPoE</li>
-                      <li>Jika Profile tidak ditemukan, pelanggan tetap diimpor — assign paket manual setelah import</li>
+                      <li>Jika Profile tidak ditemukan, pelanggan tetap diimpor - assign paket manual setelah import</li>
                       <li>Maksimal 1000 baris per import</li>
                     </ul>
                   </div>
@@ -2075,13 +2075,13 @@ export default function PppoeUsersPage() {
             {/* File input */}
             <div>
               <ModalLabel required>{t('pppoe.selectFile')}</ModalLabel>
-              <input type="file" accept=".csv,.xlsx,.xls" onChange={handleImportFileChange} className="w-full px-3 py-2 text-xs bg-background dark:bg-card border border-border dark:border-violet-500/40 rounded-lg text-foreground file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-primary/20 dark:file:bg-violet-500/30 file:text-foreground hover:file:bg-primary/30 dark:hover:file:bg-violet-500/50 focus:border-primary dark:focus:border-brand-500 focus:ring-1 focus:ring-primary/30 dark:focus:ring-brand-500/30 transition-all" />
+              <input type="file" accept=".csv,.xlsx,.xls" onChange={handleImportFileChange} className="w-full px-3 py-2 text-xs bg-background dark:bg-card border border-border dark:border-border rounded-lg text-foreground file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-primary/20 dark:file:bg-primary/10 file:text-foreground hover:file:bg-primary/30 dark:hover:file:bg-primary/10 focus:border-primary dark:focus:border-brand-500 focus:ring-1 focus:ring-primary/30 dark:focus:ring-brand-500/30 transition-all" />
               <p className="text-[9px] text-muted-foreground mt-1">{t('pppoe.csvExcelFormat')}</p>
             </div>
 
             {/* File selected + Preview */}
             {importFile && (
-              <div className="p-3 border border-border dark:border-violet-500/30 rounded-lg bg-muted/30 dark:bg-card/50 text-xs space-y-3">
+              <div className="p-3 border border-border dark:border-border rounded-lg bg-muted/30 dark:bg-card/50 text-xs space-y-3">
                 {/* File info */}
                 <div className="flex items-center gap-2">
                   <FileText className="h-4 w-4 text-primary flex-shrink-0" />
@@ -2142,8 +2142,8 @@ export default function PppoeUsersPage() {
                                 <tr key={i} className={`border-t border-border/40 ${!isValid ? 'opacity-50' : ''}`}>
                                   <td className="px-2 py-1 text-muted-foreground">{i + 1}</td>
                                   <td className="px-2 py-1 font-medium text-foreground">{row.username || <span className="text-red-500 italic">kosong</span>}</td>
-                                  <td className="px-2 py-1 text-foreground">{row.name || <span className="text-muted-foreground">—</span>}</td>
-                                  <td className="px-2 py-1 text-foreground">{row.phone || <span className="text-muted-foreground">—</span>}</td>
+                                  <td className="px-2 py-1 text-foreground">{row.name || <span className="text-muted-foreground">-</span>}</td>
+                                  <td className="px-2 py-1 text-foreground">{row.phone || <span className="text-muted-foreground">-</span>}</td>
                                   <td className="px-2 py-1 text-foreground">{row.profile || <span className="text-amber-500 italic">tanpa paket</span>}</td>
                                   <td className="px-2 py-1">
                                     {!isValid ? (
@@ -2174,7 +2174,7 @@ export default function PppoeUsersPage() {
               </div>
             )}
             {importResult && (
-              <div className="p-3 border border-border dark:border-violet-500/30 rounded-lg bg-muted/30 dark:bg-card/50 text-xs max-h-60 overflow-y-auto">
+              <div className="p-3 border border-border dark:border-border rounded-lg bg-muted/30 dark:bg-card/50 text-xs max-h-60 overflow-y-auto">
                 <div className="flex items-center gap-1 text-green-600 dark:text-green-500 mb-2"><CheckCircle2 className="h-3 w-3" />{importResult.success} {t('common.create')}{importResult.updated > 0 && <span className="ml-2 text-blue-500 dark:text-brand-500">· {importResult.updated} Diperbarui</span>}</div>
                 {importResult.failed > 0 && (
                   <div className="text-red-500 dark:text-red-500">
@@ -2220,7 +2220,7 @@ export default function PppoeUsersPage() {
                 value={deletePassword}
                 onChange={(e) => setDeletePassword(e.target.value)}
                 placeholder="Masukkan password superadmin"
-                className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-card dark:border-violet-500/30 focus:ring-2 focus:ring-destructive/30"
+                className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-card dark:border-border focus:ring-2 focus:ring-destructive/30"
                 autoFocus
                 onKeyDown={(e) => { if (e.key === 'Enter' && !deleting) handleDelete(); }}
               />
@@ -2254,7 +2254,7 @@ export default function PppoeUsersPage() {
                 value={bulkDeletePassword}
                 onChange={(e) => setBulkDeletePassword(e.target.value)}
                 placeholder="Masukkan password superadmin"
-                className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-card dark:border-violet-500/30 focus:ring-2 focus:ring-destructive/30"
+                className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-card dark:border-border focus:ring-2 focus:ring-destructive/30"
                 autoFocus
                 onKeyDown={(e) => { if (e.key === 'Enter' && !bulkDeleting && bulkDeletePassword.trim()) confirmBulkDelete(); }}
               />
@@ -2283,7 +2283,7 @@ export default function PppoeUsersPage() {
               <div>
                 <ModalLabel>Pilih Router/NAS</ModalLabel>
                 <ModalSelect value={auditRouterId} onChange={(e) => setAuditRouterId(e.target.value)}>
-                  <option value="">— Pilih Router —</option>
+                  <option value="">- Pilih Router -</option>
                   {routers.map(r => (
                     <option key={r.id} value={r.id} className="dark:bg-gray-800">{r.name} ({r.ipAddress || r.nasname})</option>
                   ))}
@@ -2358,7 +2358,7 @@ export default function PppoeUsersPage() {
                       missing_in_db: <AlertCircle className="h-3.5 w-3.5 text-blue-500" />,
                       password_mismatch: <AlertTriangle className="h-3.5 w-3.5 text-orange-500" />,
                       profile_mismatch: <AlertTriangle className="h-3.5 w-3.5 text-yellow-500" />,
-                      status_mismatch: <AlertTriangle className="h-3.5 w-3.5 text-purple-500" />,
+                      status_mismatch: <AlertTriangle className="h-3.5 w-3.5 text-primary" />,
                     };
                     return (
                       <label key={fixKey} className={`flex items-start gap-2 p-2.5 border-l-4 rounded-r-lg cursor-pointer transition-all ${typeColors[diff.type] || 'border-l-gray-500'} ${isSelected ? 'ring-1 ring-primary' : ''}`}>
@@ -2454,12 +2454,12 @@ export default function PppoeUsersPage() {
                 </ModalSelect>
               </div>
             </div>
-            <button onClick={handleSyncPreview} disabled={!syncRouterId || syncLoading} className="w-full px-3 py-2 text-xs bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg shadow-md disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2 transition-all dark:bg-gradient-to-r dark:from-brand-500 dark:to-violet-500 dark:hover:from-brand-500/80 dark:hover:to-violet-500/80 dark:text-white dark:shadow-[0_0_15px_rgba(6,182,212,0.4)]">
+            <button onClick={handleSyncPreview} disabled={!syncRouterId || syncLoading} className="w-full px-3 py-2 text-xs bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg shadow-md disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2 transition-all dark:bg-gradient-to-r dark:from-brand-500 dark:to-primary dark:hover:from-brand-500/80 dark:hover:to-primary/80 dark:text-white dark:">
               {syncLoading ? (<><RefreshCcw className="h-3 w-3 animate-spin" />{t('pppoe.fetchingFromMikrotik')}</>) : (<><Search className="h-3 w-3" />{t('pppoe.previewSecrets')}</>)}
             </button>
             {syncPreview && (
-              <div className="border border-border dark:border-violet-500/40 rounded-lg overflow-hidden bg-muted/30 dark:bg-card/50">
-                <div className="px-3 py-2 bg-muted/50 dark:bg-violet-500/10 border-b border-border dark:border-violet-500/30 flex items-center justify-between">
+              <div className="border border-border dark:border-border rounded-lg overflow-hidden bg-muted/30 dark:bg-card/50">
+                <div className="px-3 py-2 bg-muted/50 dark:bg-primary/10 border-b border-border dark:border-border flex items-center justify-between">
                   <div className="text-xs">
                     <span className="font-medium text-foreground">{syncPreview.router?.name}</span>
                     <span className="text-muted-foreground ml-2">Total: {syncPreview.data?.total} | Baru: <span className="text-green-600 dark:text-green-500 font-medium">{syncPreview.data?.new}</span> | Sudah ada: <span className="text-orange-500 dark:text-[#ff8c00]">{syncPreview.data?.existing}</span></span>
@@ -2476,7 +2476,7 @@ export default function PppoeUsersPage() {
                     </thead>
                     <tbody className="divide-y divide-border dark:divide-violet-500/20">
                       {syncPreview.data?.secrets?.map((secret: SyncPreviewSecretExtended) => (
-                        <tr key={secret.username} className={`${secret.isNew ? 'bg-green-50 dark:bg-green-500/5' : 'bg-muted/50 dark:bg-violet-500/5'} ${secret.disabled ? 'opacity-50' : ''}`}>
+                        <tr key={secret.username} className={`${secret.isNew ? 'bg-green-50 dark:bg-green-500/5' : 'bg-muted/50 dark:bg-primary/10'} ${secret.disabled ? 'opacity-50' : ''}`}>
                           <td className="px-2 py-1.5 text-center"><input type="checkbox" checked={syncSelectedUsers.has(secret.username)} onChange={() => toggleSyncSelectUser(secret.username)} disabled={!secret.isNew || secret.disabled} className="w-3 h-3 rounded accent-primary dark:accent-brand-500" /></td>
                           <td className="px-2 py-1.5 font-mono text-foreground">{secret.username}</td>
                           <td className="px-2 py-1.5 text-muted-foreground">{secret.profile}</td>
@@ -2532,7 +2532,7 @@ export default function PppoeUsersPage() {
           </ModalHeader>
           {selectedUserForExtend && (
             <ModalBody className="space-y-4">
-              <div className="bg-muted/30 dark:bg-card/50 rounded-lg p-3 space-y-2 text-xs border border-border dark:border-violet-500/30">
+              <div className="bg-muted/30 dark:bg-card/50 rounded-lg p-3 space-y-2 text-xs border border-border dark:border-border">
                 <div className="flex justify-between"><span className="text-muted-foreground">{t('pppoe.currentPackage')}:</span><span className="font-medium text-foreground">{selectedUserForExtend.profile?.name || '-'}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">{t('pppoe.activeUntil')}:</span><span className={selectedUserForExtend.expiredAt && isExpired(selectedUserForExtend.expiredAt) ? 'text-red-500 dark:text-red-500 font-medium' : 'text-foreground'}>{selectedUserForExtend.expiredAt ? formatWIB(selectedUserForExtend.expiredAt, 'dd/MM/yyyy HH:mm') : '-'}</span></div>
               </div>
@@ -2600,15 +2600,15 @@ export default function PppoeUsersPage() {
             <div>
               <ModalLabel className="flex items-center gap-1"><Bell className="h-3 w-3" />{t('pppoe.sendVia')}</ModalLabel>
               <div className="space-y-2 mt-2">
-                <label className={`flex items-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition-all ${broadcastData.notificationMethod === 'whatsapp' ? 'border-[#25D366] bg-[#25D366]/10 shadow-[0_0_10px_rgba(37,211,102,0.3)]' : 'border-violet-500/30 hover:border-[#25D366]/50'}`}>
+                <label className={`flex items-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition-all ${broadcastData.notificationMethod === 'whatsapp' ? 'border-[#25D366] bg-[#25D366]/10 ' : 'border-border hover:border-[#25D366]/50'}`}>
                   <input type="radio" value="whatsapp" checked={broadcastData.notificationMethod === 'whatsapp'} onChange={(e) => setBroadcastData({ ...broadcastData, notificationMethod: e.target.value })} className="w-3.5 h-3.5 accent-[#25D366]" />
                   <span className="text-xs text-foreground">{t('pppoe.whatsappOnly')}</span>
                 </label>
-                <label className={`flex items-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition-all ${broadcastData.notificationMethod === 'email' ? 'border-brand-500 bg-brand-500/10 shadow-[0_0_10px_rgba(6,182,212,0.3)]' : 'border-violet-500/30 hover:border-brand-500/50'}`}>
+                <label className={`flex items-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition-all ${broadcastData.notificationMethod === 'email' ? 'border-brand-500 bg-brand-500/10 ' : 'border-border hover:border-brand-500/50'}`}>
                   <input type="radio" value="email" checked={broadcastData.notificationMethod === 'email'} onChange={(e) => setBroadcastData({ ...broadcastData, notificationMethod: e.target.value })} className="w-3.5 h-3.5 accent-brand-500" />
                   <span className="text-xs text-foreground">{t('pppoe.emailOnly')}</span>
                 </label>
-                <label className={`flex items-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition-all ${broadcastData.notificationMethod === 'both' ? 'border-violet-500 bg-violet-500/10 shadow-[0_0_10px_rgba(139,92,246,0.3)]' : 'border-violet-500/30 hover:border-violet-500/50'}`}>
+                <label className={`flex items-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition-all ${broadcastData.notificationMethod === 'both' ? 'border-violet-500 bg-primary/10 ' : 'border-border hover:border-border'}`}>
                   <input type="radio" value="both" checked={broadcastData.notificationMethod === 'both'} onChange={(e) => setBroadcastData({ ...broadcastData, notificationMethod: e.target.value })} className="w-3.5 h-3.5 accent-violet-500" />
                   <span className="text-xs text-foreground">{t('pppoe.whatsappAndEmail')}</span>
                 </label>

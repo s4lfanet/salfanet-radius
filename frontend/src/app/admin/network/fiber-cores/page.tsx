@@ -267,7 +267,7 @@ export default function FiberCoresPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-lg font-bold flex items-center gap-2">
-            <Circle className="h-5 w-5 text-purple-500" />
+            <Circle className="h-5 w-5 text-primary" />
             {t('fiberCore.title')}
           </h1>
           <p className="text-xs text-gray-500">{t('fiberCore.subtitle')}</p>
@@ -288,7 +288,7 @@ export default function FiberCoresPage() {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <div className="bg-card rounded-lg border dark:border-gray-800 p-3">
           <div className="flex items-center gap-2">
-            <Circle className="h-4 w-4 text-purple-500" />
+            <Circle className="h-4 w-4 text-primary" />
             <span className="text-xs text-gray-500">{t('fiberCore.totalCores')}</span>
           </div>
           <p className="text-xl font-bold mt-1">{stats.total}</p>
