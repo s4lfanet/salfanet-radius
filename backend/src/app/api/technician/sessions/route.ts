@@ -90,10 +90,12 @@ export async function GET(req: NextRequest) {
     take: 1000,
   });
 
-  // 3. Fetch live sessions (PPPoE + hotspot) from MikroTik for local-auth routers
-  // Uses the shared batchFetchMikrotikActiveSessions service (same as admin).
-  const mikrotikSessions = localRouters.length > 0
-    ? await batchFetchMikrotikActiveSessions(localRouters, null)
+  // 3. Fetch live sessions (PPPoE + hotspot) from MikroTik for ALL routers
+  // For RADIUS-auth routers, radacct is primary but MikroTik API serves as
+  // fallback when accounting is not working (e.g. just migrated to RADIUS).
+  // For local-auth routers, MikroTik API is the only source (no radacct).
+  const mikrotikSessions = routers.length > 0
+    ? await batchFetchMikrotikActiveSessions(routers, null)
     : [];
 
   const TZ_OFFSET_MS = getTimezoneOffsetMs();

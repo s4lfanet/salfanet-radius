@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
+import { listPppActive } from '@/server/services/mikrotik/ppp-secret.service';
 
 
 
@@ -87,6 +88,18 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    // Fallback: check MikroTik /ppp/active if no radacct session
+    // Needed when RADIUS accounting is not working (e.g. just migrated)
+    let mikrotikOnline = false;
+    if (!activeSession && user.routerId) {
+      try {
+        const pppActive = await listPppActive(user.routerId);
+        mikrotikOnline = pppActive.has(user.username);
+      } catch {
+        // Router API failed — assume offline
+      }
+    }
+
     // Get usage stats for current month
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -162,7 +175,7 @@ export async function GET(request: NextRequest) {
         packagePrice: user.profile?.price || 0,
       },
       session: {
-        isOnline: !!activeSession,
+        isOnline: !!activeSession || mikrotikOnline,
         ipAddress: activeSession?.framedipaddress || null,
         startTime: activeSession?.acctstarttime?.toISOString() || null,
       },
