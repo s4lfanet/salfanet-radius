@@ -119,7 +119,7 @@ export async function GET(req: NextRequest) {
     downloadFormatted: string;
     totalFormatted: string;
     router: { id: string; name: string } | null;
-    user: { id: string; customerId: string; name: string; phone: string; profile: string; area: { id: string; name: string } | null } | null;
+    user: { id: string; customerId: string | null; name: string; phone: string; profile: string; area: { id: string; name: string } | null } | null;
   };
 
   const radacctSessions: MergedSession[] = onlineSessions.map((s) => {
