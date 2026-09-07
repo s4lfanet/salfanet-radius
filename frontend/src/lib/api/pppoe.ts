@@ -123,6 +123,18 @@ export const pppoeApi = {
     });
   },
 
+  /** Bulk update editable fields (routerId, billingDay, autoIsolationEnabled) for multiple users */
+  bulkUpdate(userIds: string[], fields: {
+    routerId?: string | null;
+    billingDay?: number;
+    autoIsolationEnabled?: boolean;
+  }): Promise<{ success: boolean; updated: number; fields: string[] }> {
+    return apiAdmin<{ success: boolean; updated: number; fields: string[] }>('/api/pppoe/users/bulk-update', {
+      method: 'PUT',
+      body: JSON.stringify({ userIds, ...fields }),
+    });
+  },
+
   /** Bulk delete users - NOTE: backend may not have this endpoint, falls back to individual deletes */
   bulkDelete(userIds: string[]): Promise<{ deleted: number }> {
     return apiAdmin<{ deleted: number }>('/api/pppoe/users/bulk-delete', {

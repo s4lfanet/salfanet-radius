@@ -474,6 +474,13 @@ export default function PppoeUsersPage() {
   const [selectedUserForExtend, setSelectedUserForExtend] = useState<PppoeUser | null>(null);
   const [selectedProfileForExtend, setSelectedProfileForExtend] = useState('');
 
+  // Bulk edit states
+  const [bulkEditModalOpen, setBulkEditModalOpen] = useState(false);
+  const [bulkEditLoading, setBulkEditLoading] = useState(false);
+  const [bulkEditRouter, setBulkEditRouter] = useState<string>('__unchanged__');
+  const [bulkEditBillingDay, setBulkEditBillingDay] = useState<string>('__unchanged__');
+  const [bulkEditAutoIsolation, setBulkEditAutoIsolation] = useState<string>('__unchanged__');
+
   // Broadcast notification states
   const [isBroadcastDialogOpen, setIsBroadcastDialogOpen] = useState(false);
   const [notificationType, setNotificationType] = useState<'outage' | 'invoice' | 'payment'>('outage');
@@ -1033,6 +1040,53 @@ export default function PppoeUsersPage() {
       setBulkDeleteModalOpen(false);
     } catch (error: unknown) { console.error('Bulk delete error:', error); await showError(error instanceof Error ? error.message : t('common.failed')); }
     finally { setBulkDeleting(false); setBulkDeletePassword(''); }
+  };
+
+  const handleBulkEdit = () => {
+    if (selectedUsers.size === 0) return;
+    setBulkEditRouter('__unchanged__');
+    setBulkEditBillingDay('__unchanged__');
+    setBulkEditAutoIsolation('__unchanged__');
+    setBulkEditModalOpen(true);
+  };
+
+  const confirmBulkEdit = async () => {
+    if (selectedUsers.size === 0) return;
+    const fields: { routerId?: string | null; billingDay?: number; autoIsolationEnabled?: boolean } = {};
+    const changes: string[] = [];
+    if (bulkEditRouter !== '__unchanged__') {
+      fields.routerId = bulkEditRouter === '' ? null : bulkEditRouter;
+      changes.push('Router');
+    }
+    if (bulkEditBillingDay !== '__unchanged__') {
+      fields.billingDay = parseInt(bulkEditBillingDay, 10);
+      changes.push('Hari Tagihan');
+    }
+    if (bulkEditAutoIsolation !== '__unchanged__') {
+      fields.autoIsolationEnabled = bulkEditAutoIsolation === 'true';
+      changes.push('Auto Isolasi');
+    }
+    if (changes.length === 0) {
+      await showError('Pilih minimal satu field untuk diubah.');
+      return;
+    }
+    const confirmed = await showConfirm(
+      `Ubah ${changes.join(', ')} untuk ${selectedUsers.size} pelanggan?`
+    );
+    if (!confirmed) return;
+    setBulkEditLoading(true);
+    try {
+      const result = await pppoeApi.bulkUpdate(Array.from(selectedUsers), fields);
+      await showSuccess(`Berhasil mengubah ${result.updated} pelanggan (${changes.join(', ')}).`);
+      setSelectedUsers(new Set());
+      invalidateUserData();
+      setBulkEditModalOpen(false);
+    } catch (error: unknown) {
+      console.error('Bulk edit error:', error);
+      await showError(error instanceof Error ? error.message : t('common.failed'));
+    } finally {
+      setBulkEditLoading(false);
+    }
   };
 
   const handleOpenNotificationMenu = (type: 'outage' | 'invoice' | 'payment') => {
@@ -1622,6 +1676,7 @@ export default function PppoeUsersPage() {
                 <button onClick={() => handleBulkStatusChange('isolated')} className="px-1.5 py-0.5 text-[10px] bg-warning text-white rounded flex items-center gap-0.5"><ShieldOff className="h-2.5 w-2.5" />{t('pppoe.isolir')}</button>
                 <button onClick={() => handleBulkStatusChange('blocked')} className="px-1.5 py-0.5 text-[10px] bg-destructive text-destructive-foreground rounded flex items-center gap-0.5"><Ban className="h-2.5 w-2.5" />{t('pppoe.block')}</button>
                 <button onClick={handleExportSelected} className="px-1.5 py-0.5 text-[10px] bg-teal-600 text-white rounded flex items-center gap-0.5"><Download className="h-2.5 w-2.5" />{t('common.export')}</button>
+                <button onClick={handleBulkEdit} className="px-1.5 py-0.5 text-[10px] bg-blue-600 text-white rounded flex items-center gap-0.5"><Pencil className="h-2.5 w-2.5" />Edit</button>
                 <button onClick={handleBulkDelete} className="px-1.5 py-0.5 text-[10px] bg-muted text-foreground rounded flex items-center gap-0.5"><Trash2 className="h-2.5 w-2.5" />{t('common.delete')}</button>
               </div>
             )}
@@ -2268,6 +2323,69 @@ export default function PppoeUsersPage() {
             <ModalButton variant="secondary" onClick={() => { setBulkDeleteModalOpen(false); setBulkDeletePassword(''); }}>{t('common.cancel')}</ModalButton>
             <ModalButton variant="danger" onClick={confirmBulkDelete} disabled={bulkDeleting || !bulkDeletePassword.trim()}>
               {bulkDeleting ? 'Menghapus...' : t('common.delete')}
+            </ModalButton>
+          </ModalFooter>
+        </SimpleModal>
+
+        {/* Bulk Edit Dialog */}
+        <SimpleModal isOpen={bulkEditModalOpen} onClose={() => setBulkEditModalOpen(false)} size="md">
+          <ModalHeader>
+            <ModalTitle className="flex items-center gap-2"><Pencil className="h-4 w-4 text-blue-500" />Edit Massal Pelanggan</ModalTitle>
+            <ModalDescription>Ubah Router, Hari Tagihan, atau Auto Isolasi untuk {selectedUsers.size} pelanggan terpilih sekaligus.</ModalDescription>
+          </ModalHeader>
+          <ModalBody className="space-y-4">
+            {/* Router */}
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Router / NAS</label>
+              <select
+                value={bulkEditRouter}
+                onChange={(e) => setBulkEditRouter(e.target.value)}
+                className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-card dark:border-border"
+              >
+                <option value="__unchanged__">— Tidak berubah —</option>
+                <option value="">Global (tanpa router)</option>
+                {routers.map((r) => (
+                  <option key={r.id} value={r.id} className="dark:bg-card">{r.name} ({r.ipAddress})</option>
+                ))}
+              </select>
+              <p className="text-[10px] text-muted-foreground mt-1">Pindah router akan sync RADIUS & MikroTik secret otomatis.</p>
+            </div>
+
+            {/* Billing Day */}
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Hari Tagihan (Jatuh Tempo)</label>
+              <select
+                value={bulkEditBillingDay}
+                onChange={(e) => setBulkEditBillingDay(e.target.value)}
+                className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-card dark:border-border"
+              >
+                <option value="__unchanged__">— Tidak berubah —</option>
+                {Array.from({ length: 28 }, (_, i) => i + 1).map(day => (
+                  <option key={day} value={day} className="dark:bg-card">Tanggal {day}</option>
+                ))}
+              </select>
+              <p className="text-[10px] text-muted-foreground mt-1">Hari tagihan bulanan untuk pelanggan POSTPAID (1-28).</p>
+            </div>
+
+            {/* Auto Isolation */}
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Aksi Jatuh Tempo (Auto Isolasi)</label>
+              <select
+                value={bulkEditAutoIsolation}
+                onChange={(e) => setBulkEditAutoIsolation(e.target.value)}
+                className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-card dark:border-border"
+              >
+                <option value="__unchanged__">— Tidak berubah —</option>
+                <option value="true">Aktif (auto isolir saat jatuh tempo)</option>
+                <option value="false">Nonaktif (tidak auto isolir)</option>
+              </select>
+              <p className="text-[10px] text-muted-foreground mt-1">Jika aktif, pelanggan akan diisolir otomatis saat tagihan jatuh tempo.</p>
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <ModalButton variant="secondary" onClick={() => setBulkEditModalOpen(false)}>{t('common.cancel')}</ModalButton>
+            <ModalButton variant="primary" onClick={confirmBulkEdit} disabled={bulkEditLoading}>
+              {bulkEditLoading ? 'Menyimpan...' : 'Simpan Perubahan'}
             </ModalButton>
           </ModalFooter>
         </SimpleModal>
