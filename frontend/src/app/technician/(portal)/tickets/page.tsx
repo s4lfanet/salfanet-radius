@@ -384,7 +384,7 @@ export default function TechnicianTicketsPage() {
               onChange={(e) => setShowMine(e.target.checked)}
               className="rounded accent-violet-500"
             />
-            <span className="text-xs text-muted-foreground whitespace-nowrap">{t('techPortal.myTickets')}</span>
+            <span className="text-xs text-muted-foreground whitespace-nowrap truncate overflow-hidden">{t('techPortal.myTickets')}</span>
           </label>
         </div>
       </div>

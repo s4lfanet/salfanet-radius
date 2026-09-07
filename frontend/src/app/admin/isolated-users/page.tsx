@@ -227,7 +227,7 @@ export default function IsolatedUsersMonitorPage() {
       {/* User List */}
       <div className="space-y-2">
         {filteredUsers.length === 0 ? (
-          <div className="bg-card border border-border rounded-xl p-10 text-center">
+          <div className="bg-card border border-border rounded-xl p-6 sm:p-10 text-center">
             <CheckCircle className="w-10 h-10 mx-auto mb-3 text-success/50" />
             <p className="text-muted-foreground text-sm">{t('isolatedUsers.noIsolated')}</p>
           </div>
@@ -262,7 +262,7 @@ export default function IsolatedUsersMonitorPage() {
 
                     {/* User Info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start justify-between gap-2 min-w-0">
                         <div>
                           <div className="font-semibold text-sm text-foreground">{user.username}</div>
                           <div className="text-xs text-muted-foreground">{user.name}</div>

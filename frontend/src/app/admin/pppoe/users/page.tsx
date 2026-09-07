@@ -1431,15 +1431,15 @@ export default function PppoeUsersPage() {
       <p className="text-xs text-muted-foreground">{t('pppoe.noPermission')}</p></div>);
   }
 
-  if (loading) { return <div className="flex items-center justify-center min-h-[60vh]"><div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div><div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div></div><Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop- relative z-10" /></div>; }
+  if (loading) { return <div className="flex items-center justify-center min-h-[60vh]"><div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-1/4 left-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div><div className="absolute bottom-1/4 right-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div></div><Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop- relative z-10" /></div>; }
 
   return (
     <div className="bg-background relative">
       {/* Neon Cyberpunk Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-primary/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/3 right-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-1/2 w-48 h-48 sm:w-96 sm:h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
       </div>
 
@@ -1598,7 +1598,7 @@ export default function PppoeUsersPage() {
               </div>
 
               {/* Reset + count */}
-              <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/50">
+              <div className="flex items-center justify-between gap-2 min-w-0 pt-1 border-t border-border/50">
                 {(searchQuery || filterProfile || filterRouter || filterStatus || filterSession || filterPaymentStatus) ? (
                   <button onClick={() => { setSearchQuery(''); setFilterProfile(''); setFilterRouter(''); setFilterStatus(''); setFilterSession(''); setFilterPaymentStatus(''); }} className="text-[10px] text-destructive hover:text-destructive/80 font-medium flex items-center gap-0.5"><X className="h-3 w-3" />{t('common.reset')}</button>
                 ) : (
@@ -1636,7 +1636,7 @@ export default function PppoeUsersPage() {
               filteredUsers.map((user) => (
                 <div key={user.id} className="p-3 space-y-2 active:bg-muted/50 transition-colors">
                   {/* Header: checkbox + username + status badges */}
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start justify-between gap-2 min-w-0">
                     <div className="flex items-center gap-2 min-w-0">
                       <input type="checkbox" checked={selectedUsers.has(user.id)} onChange={() => toggleSelectUser(user.id)} className="rounded border-gray-300 w-3.5 h-3.5 flex-shrink-0" />
                       <div className="min-w-0">
@@ -1987,7 +1987,7 @@ export default function PppoeUsersPage() {
                         { col: 'No. Telepon', desc: 'Nomor HP/telepon pelanggan', ex: '08123456789' },
                       ].map(item => (
                         <div key={item.col} className="flex items-start gap-2 text-[11px] py-1 border-b border-border/50 last:border-0">
-                          <code className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded font-mono whitespace-nowrap flex-shrink-0 min-w-[110px]">{item.col}</code>
+                          <code className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded font-mono whitespace-nowrap truncate overflow-hidden flex-shrink-0 min-w-[110px]">{item.col}</code>
                           <div className="flex-1 min-w-0">
                             <span className="text-foreground">{item.desc}</span>
                             <span className="text-muted-foreground ml-1.5">- contoh: <code className="bg-muted px-1 rounded text-[10px]">{item.ex}</code></span>
@@ -2008,7 +2008,7 @@ export default function PppoeUsersPage() {
                         { col: 'Tagihan Pertama', desc: 'none = tidak buat invoice, prorate = prorata sesuai tanggal daftar, full = full amount. Hanya untuk PREPAID dengan profile', ex: 'prorate' },
                       ].map(item => (
                         <div key={item.col} className="flex items-start gap-2 text-[11px] py-1 border-b border-border/50 last:border-0">
-                          <code className="bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded font-mono whitespace-nowrap flex-shrink-0 min-w-[110px]">{item.col}</code>
+                          <code className="bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded font-mono whitespace-nowrap truncate overflow-hidden flex-shrink-0 min-w-[110px]">{item.col}</code>
                           <div className="flex-1 min-w-0">
                             <span className="text-foreground">{item.desc}</span>
                             <span className="text-muted-foreground ml-1.5">- contoh: <code className="bg-muted px-1 rounded text-[10px]">{item.ex}</code></span>
@@ -2038,7 +2038,7 @@ export default function PppoeUsersPage() {
                         { col: 'Tanggal Register', desc: 'Format YYYY-MM-DD. Tanggal pendaftaran pelanggan. Kosong = hari ini', ex: '2026-01-15' },
                       ].map(item => (
                         <div key={item.col} className="flex items-start gap-2 text-[11px] py-1 border-b border-border/50 last:border-0">
-                          <code className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded font-mono whitespace-nowrap flex-shrink-0 min-w-[110px]">{item.col}</code>
+                          <code className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded font-mono whitespace-nowrap truncate overflow-hidden flex-shrink-0 min-w-[110px]">{item.col}</code>
                           <div className="flex-1 min-w-0">
                             <span className="text-foreground">{item.desc}</span>
                             <span className="text-muted-foreground ml-1.5">- contoh: <code className="bg-muted px-1 rounded text-[10px]">{item.ex}</code></span>
@@ -2402,7 +2402,7 @@ export default function PppoeUsersPage() {
             {/* No differences */}
             {auditData && auditData.differences.length === 0 && !auditData.error && (
               <div className="flex flex-col items-center justify-center py-8 text-center">
-                <CheckCheck className="h-12 w-12 text-green-500 mb-2" />
+                <CheckCheck className="h-10 w-10 sm:h-12 sm:w-12 text-green-500 mb-2" />
                 <p className="text-sm font-medium text-foreground">Semua data sinkron!</p>
                 <p className="text-xs text-muted-foreground mt-1">Tidak ada perbedaan antara database dan MikroTik</p>
               </div>

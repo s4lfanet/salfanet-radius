@@ -167,7 +167,7 @@ export function ImpactAnalysisPanel({
                 key={alt.id}
                 className={`p-4 rounded-lg border-2 ${getQualityColor(alt.quality)}`}
               >
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-2 min-w-0">
                   <div>
                     <span className="font-semibold text-sm">
                       {t('network.tracing.alternativeRoutes')} #{index + 1}

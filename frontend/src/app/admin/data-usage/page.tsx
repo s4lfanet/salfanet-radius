@@ -203,7 +203,7 @@ export default function DataUsagePage() {
           </div>
 
           {topConsumers.top_consumers.length === 0 ? (
-            <div className="p-8 text-center text-gray-500 bg-gray-900/50 border border-gray-800 rounded-lg">
+            <div className="p-4 sm:p-8 text-center text-gray-500 bg-gray-900/50 border border-gray-800 rounded-lg">
               <BarChart3 className="w-12 h-12 mx-auto mb-3 opacity-30" />
               <p>No data usage records found</p>
               <p className="text-xs mt-1">Run aggregation or wait for daily cron (00:05)</p>
@@ -256,7 +256,7 @@ export default function DataUsagePage() {
           </div>
 
           {monthly.users.length === 0 ? (
-            <div className="p-8 text-center text-gray-500 bg-gray-900/50 border border-gray-800 rounded-lg">
+            <div className="p-4 sm:p-8 text-center text-gray-500 bg-gray-900/50 border border-gray-800 rounded-lg">
               <Calendar className="w-12 h-12 mx-auto mb-3 opacity-30" />
               <p>No data for this month</p>
             </div>
@@ -305,7 +305,7 @@ export default function DataUsagePage() {
           </div>
 
           {userUsage.length === 0 ? (
-            <div className="p-8 text-center text-gray-500 bg-gray-900/50 border border-gray-800 rounded-lg">
+            <div className="p-4 sm:p-8 text-center text-gray-500 bg-gray-900/50 border border-gray-800 rounded-lg">
               <Users className="w-12 h-12 mx-auto mb-3 opacity-30" />
               <p>{searchUser ? `No data for user "${searchUser}"` : 'Enter a username to search'}</p>
             </div>

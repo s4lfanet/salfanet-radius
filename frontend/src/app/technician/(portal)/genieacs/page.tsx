@@ -429,7 +429,7 @@ export default function TechnicianGenieACSPage() {
                     <p className="text-xs font-bold text-foreground/80 mb-2">{t('techPortal.deviceInfo')}</p>
                     {/* PPPoE Section */}
                     <div className="bg-input/50 rounded-xl p-3 mb-3">
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center justify-between mb-2 min-w-0">
                         <p className="text-xs font-bold text-foreground/80">{t('techPortal.pppoeInfo')}</p>
                         {detailDevice.pppoeStatus !== '-' && (
                           <span className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${

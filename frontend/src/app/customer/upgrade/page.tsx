@@ -323,7 +323,7 @@ export default function UpgradePackagePage() {
                         <CheckCircle className="w-5 h-5 text-brand-500 drop-" />
                       </div>
                     )}
-                    <div className="flex items-start justify-between mb-2 pr-6">
+                    <div className="flex items-start justify-between mb-2 min-w-0 pr-6">
                       <h3 className="font-bold text-sm text-white leading-tight">{pkg.name}</h3>
                       {isCurrentPackage && (
                         <span className="text-[9px] px-1.5 py-0.5 bg-slate-700/50 text-slate-400 rounded-full border border-slate-600/50 absolute top-2 right-2">Aktif</span>

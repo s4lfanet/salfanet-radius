@@ -416,7 +416,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
               {bellOpen && (
                 <>
                   <div className="fixed inset-0 z-40 touch-none" onClick={() => setBellOpen(false)} />
-                  <div className="absolute right-0 top-full mt-2 w-80 bg-card/95 border border-border rounded-2xl shadow-lg z-50 overflow-hidden">
+                  <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 bg-card/95 border border-border rounded-2xl shadow-lg z-50 overflow-hidden">
                     <div className="px-4 py-3 border-b border-border flex items-center justify-between">
                       <span className="text-xs font-bold text-primary uppercase tracking-wider">Notifikasi</span>
                       <div className="flex items-center gap-1">
@@ -528,7 +528,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
                 {bellOpen && (
                   <>
                     <div className="fixed inset-0 z-40 touch-none" onClick={() => setBellOpen(false)} />
-                    <div className="absolute right-0 top-full mt-2 w-72 bg-card/95 border border-border rounded-2xl shadow-lg z-50 overflow-hidden">
+                    <div className="absolute right-0 top-full mt-2 w-64 sm:w-72 bg-card/95 border border-border rounded-2xl shadow-lg z-50 overflow-hidden">
                       <div className="px-4 py-3 border-b border-border flex items-center justify-between">
                         <span className="text-xs font-bold text-primary uppercase tracking-wider">Notifikasi</span>
                         <div className="flex items-center gap-1">

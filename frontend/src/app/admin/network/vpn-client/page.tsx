@@ -884,8 +884,8 @@ ${vpnCmd}
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+          <div className="absolute top-1/4 left-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         </div>
         <div className="relative z-10 flex flex-col items-center gap-4">
           <Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop-" />
@@ -1057,7 +1057,7 @@ ${vpnCmd}
                     </div>
                   ) : wgServerInfo?.installed ? (
                     <div className="p-4 rounded-xl border border-teal-500/30 bg-teal-500/5">
-                      <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center justify-between mb-3 min-w-0">
                         <p className="text-sm font-bold text-teal-300 flex items-center gap-2">
                           <Wifi className="w-4 h-4" /> Pool IP WireGuard VPS
                         </p>
@@ -1140,7 +1140,7 @@ ${vpnCmd}
                     </div>
                   ) : l2tpServerInfo?.installed ? (
                     <div className="p-4 rounded-xl border border-border bg-primary/10">
-                      <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center justify-between mb-3 min-w-0">
                         <p className="text-sm font-bold text-primary flex items-center gap-2">
                           <Radio className="w-4 h-4" /> Pool IP L2TP/IPsec VPS
                         </p>
@@ -1743,7 +1743,7 @@ ${vpnCmd}
 
                 {/* MikroTik Script */}
                 <div>
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center justify-between mb-3 min-w-0">
                     <p className="text-sm font-medium text-brand-500 uppercase tracking-wider">
                       {t('network.mikrotikConfigScript')}
                     </p>

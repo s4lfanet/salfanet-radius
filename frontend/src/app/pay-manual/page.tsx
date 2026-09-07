@@ -348,7 +348,7 @@ function PayManualPageContent() {
                 <div className="space-y-3">
                   {bankAccounts.map((bank, index) => (
                     <div key={index} className="p-4 border rounded-lg bg-white">
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center justify-between mb-2 min-w-0">
                         <span className="font-bold text-lg">{bank.name}</span>
                       </div>
                       <div className="font-mono text-xl font-semibold mb-1">
@@ -461,7 +461,7 @@ function PayManualPageContent() {
                       </Button>
                     </div>
                   ) : (
-                    <div className="border-2 border-dashed rounded-lg p-8 text-center">
+                    <div className="border-2 border-dashed rounded-lg p-4 sm:p-8 text-center">
                       <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <Label
                         htmlFor="receiptImage"

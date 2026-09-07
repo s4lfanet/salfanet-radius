@@ -809,14 +809,14 @@ export default function OLTsPage() {
       {/* Mobile Card View */}
       <div className="md:hidden space-y-3">
         {olts.length === 0 ? (
-          <div className="bg-card rounded-lg border border-border p-8 text-center">
+          <div className="bg-card rounded-lg border border-border p-4 sm:p-8 text-center">
             <p className="text-gray-500 text-xs">{t('common.noData')}. {t('common.clickAdd')} "{t('olt.add')}".</p>
           </div>
         ) : (
           olts.map((olt) => (
             <div key={olt.id} className="bg-card rounded-lg border border-border p-3">
               {/* Header */}
-              <div className="flex items-start justify-between mb-2">
+              <div className="flex items-start justify-between mb-2 min-w-0">
                 <div className="flex items-center gap-2 flex-1">
                   <Server className="h-4 w-4 text-teal-600 flex-shrink-0" />
                   <div className="flex-1 min-w-0">

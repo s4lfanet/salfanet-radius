@@ -265,7 +265,7 @@ export default function AgentSessionsPage() {
           ) : (
             filteredSessions.map((session) => (
               <div key={session.id} className="p-3 space-y-2 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start justify-between gap-2 min-w-0">
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse flex-shrink-0 mt-1" />
                     <div className="min-w-0">

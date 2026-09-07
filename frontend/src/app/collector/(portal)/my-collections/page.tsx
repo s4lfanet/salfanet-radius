@@ -75,7 +75,7 @@ export default function CollectorMyCollectionsPage() {
   }
 
   if (!data) {
-    return <div className="card p-8 text-center text-muted-foreground">Gagal memuat data.</div>;
+    return <div className="card p-4 sm:p-8 text-center text-muted-foreground">Gagal memuat data.</div>;
   }
 
   return (

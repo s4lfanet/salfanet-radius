@@ -223,7 +223,7 @@ export default function FreeRADIUSBackupPage() {
                 <button
                     onClick={handleBackup}
                     disabled={running || polling}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium whitespace-nowrap"
+                    className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium whitespace-nowrap truncate overflow-hidden"
                 >
                     {running || polling ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
                     {running || polling ? 'Membuat backup...' : 'Buat Backup'}
@@ -268,7 +268,7 @@ export default function FreeRADIUSBackupPage() {
                 </div>
 
                 {backups.length === 0 ? (
-                    <div className="p-8 text-center text-muted-foreground text-sm">
+                    <div className="p-4 sm:p-8 text-center text-muted-foreground text-sm">
                         Belum ada backup. Klik &quot;Buat Backup&quot; untuk memulai.
                     </div>
                 ) : (

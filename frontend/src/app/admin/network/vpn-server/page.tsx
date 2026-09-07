@@ -766,8 +766,8 @@ export default function VpnServerPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+          <div className="absolute top-1/4 left-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         </div>
         <div className="relative z-10 flex flex-col items-center gap-4">
           <div className="w-16 h-16 border-4 border-brand-500 border-t-transparent rounded-full animate-spin "></div>
@@ -967,7 +967,7 @@ export default function VpnServerPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {/* Total Servers */}
             <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-border p-5 hover:border-border transition-all group">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-3 min-w-0">
                 <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/10 transition-colors flex items-center justify-center">
                   <Server className="w-5 h-5 text-primary" />
                 </div>
@@ -977,7 +977,7 @@ export default function VpnServerPage() {
             </div>
             {/* Active Servers */}
             <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-green-500/30 p-5 hover:border-green-500/50 transition-all group">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-3 min-w-0">
                 <div className="p-2 bg-green-500/20 rounded-lg group-hover:bg-green-500/30 transition-colors flex items-center justify-center">
                   <Activity className="w-5 h-5 text-green-400" />
                 </div>
@@ -987,7 +987,7 @@ export default function VpnServerPage() {
             </div>
             {/* L2TP Servers */}
             <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-green-500/30 p-5 hover:border-green-500/50 transition-all group">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-3 min-w-0">
                 <div className="p-2 bg-green-500/20 rounded-lg group-hover:bg-green-500/30 transition-colors flex items-center justify-center">
                   <Shield className="w-5 h-5 text-green-400" />
                 </div>
@@ -997,7 +997,7 @@ export default function VpnServerPage() {
             </div>
             {/* SSTP Servers */}
             <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-cyan-500/30 p-5 hover:border-cyan-500/50 transition-all group">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mb-3 min-w-0">
                 <div className="p-2 bg-cyan-500/20 rounded-lg group-hover:bg-cyan-500/30 transition-colors flex items-center justify-center">
                   <Shield className="w-5 h-5 text-cyan-400" />
                 </div>
@@ -1504,7 +1504,7 @@ export default function VpnServerPage() {
                   {/* Generated RouterOS Script */}
                   {wgGeneratedScript && (
                     <div className="mt-4 p-4 rounded-xl bg-slate-900 border border-teal-500/30">
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center justify-between mb-2 min-w-0">
                         <p className="text-sm font-bold text-teal-300">Script RouterOS 7 - Copy ke Winbox Terminal</p>
                         <button onClick={() => { navigator.clipboard.writeText(wgGeneratedScript); addToast({ type: 'success', title: 'Script disalin!' }); }} className="text-xs text-brand-500 bg-muted px-2 py-1 rounded">Copy</button>
                       </div>

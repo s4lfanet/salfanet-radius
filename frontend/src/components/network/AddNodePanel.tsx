@@ -799,7 +799,7 @@ export default function AddNodePanel({ lat, lng, onClose, onCreated, initialNode
   const headerBg = activeType?.headerBg ?? 'bg-blue-600';
 
   return (
-    <div className="absolute top-0 right-0 h-full w-96 bg-card shadow-2xl flex flex-col z-[1000] border-l border-border">
+    <div className="absolute top-0 right-0 h-full w-full sm:w-96 bg-card shadow-2xl flex flex-col z-[1000] border-l border-border">
       {/* Header */}
       <div className={`flex items-center justify-between px-4 py-3 ${headerBg} shrink-0 transition-colors duration-200`}>
         <div className="flex items-center gap-2">

@@ -237,7 +237,7 @@ export default function ImportInvoicePage() {
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
-          className={`border-2 border-dashed rounded-xl p-12 text-center cursor-pointer transition-colors ${
+          className={`border-2 border-dashed rounded-xl p-6 sm:p-12 text-center cursor-pointer transition-colors ${
             isDragging
               ? 'border-blue-500 bg-blue-50'
               : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
@@ -272,7 +272,7 @@ export default function ImportInvoicePage() {
       {/* CSV Preview */}
       {selectedFile && !parseError && previewRows.length > 0 && !importResult && (
         <div className="mt-4">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-2 min-w-0">
             <div className="flex items-center gap-2">
               <FileText className="w-4 h-4 text-gray-500" />
               <span className="font-medium text-sm">{selectedFile.name}</span>

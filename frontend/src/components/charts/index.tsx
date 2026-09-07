@@ -129,7 +129,7 @@ interface ChartCardProps {
 export function ChartCard({ title, subtitle, children, action }: ChartCardProps) {
   return (
     <div className="bg-card rounded-lg border border-border p-3">
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-3 min-w-0">
         <div>
           <h3 className="text-sm font-semibold text-card-foreground">{title}</h3>
           {subtitle && <p className="text-[10px] text-muted-foreground">{subtitle}</p>}

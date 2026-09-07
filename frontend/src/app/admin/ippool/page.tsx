@@ -296,7 +296,7 @@ export default function IPPoolPage() {
           <h2 className="font-semibold text-gray-200">IP Pools</h2>
         </div>
         {pools.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
+          <div className="p-4 sm:p-8 text-center text-gray-500">
             <Network className="w-12 h-12 mx-auto mb-3 opacity-30" />
             <p>No IP pools created yet</p>
             <p className="text-xs mt-1">Create a pool to enable dynamic IP allocation</p>
@@ -344,7 +344,7 @@ export default function IPPoolPage() {
           <h2 className="font-semibold text-gray-200">Pool-Name → Group Mappings (radgroupcheck)</h2>
         </div>
         {mappings.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
+          <div className="p-4 sm:p-8 text-center text-gray-500">
             <p>No mappings yet</p>
             <p className="text-xs mt-1">Map pools to RADIUS groups to enable per-speed-tier IP allocation</p>
           </div>

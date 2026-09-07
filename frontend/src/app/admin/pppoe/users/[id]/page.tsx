@@ -544,7 +544,7 @@ export default function PppoeUserDetailPage({ params }: { params: Promise<{ id: 
           <span className="text-xs text-muted-foreground">{invoices.length} total</span>
         </div>
         {invoices.length === 0 ? (
-          <div className="p-8 text-center text-muted-foreground text-sm">
+          <div className="p-4 sm:p-8 text-center text-muted-foreground text-sm">
             <FileText className="w-8 h-8 mx-auto mb-2 opacity-30" />
             Belum ada invoice
           </div>

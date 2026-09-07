@@ -274,7 +274,7 @@ export default function CustomerInvoicesPage() {
             <button
               key={tab.key}
               onClick={() => setStatusFilter(tab.key)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap truncate overflow-hidden transition-all border ${
                 active
                   ? 'bg-cyan-500/15 text-cyan-400 border-cyan-500/40 '
                   : 'text-slate-400 border-slate-700/50 hover:border-slate-600 hover:text-slate-300'

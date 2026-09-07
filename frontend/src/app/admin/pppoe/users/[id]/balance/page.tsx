@@ -247,7 +247,7 @@ export default function BalanceManagementPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         {/* Current Balance */}
         <div className="bg-card border border-border rounded-lg p-4">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-2 min-w-0">
             <p className="text-xs text-muted-foreground uppercase">{t('pppoe.currentBalance')}</p>
             <DollarSign className="w-5 h-5 text-primary" />
           </div>
@@ -272,7 +272,7 @@ export default function BalanceManagementPage() {
 
         {/* Total Deposit */}
         <div className="bg-card border border-border rounded-lg p-4">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-2 min-w-0">
             <p className="text-xs text-muted-foreground uppercase">{t('pppoe.totalTopUp')}</p>
             <TrendingUp className="w-5 h-5 text-success" />
           </div>
@@ -286,7 +286,7 @@ export default function BalanceManagementPage() {
 
         {/* Total Spent */}
         <div className="bg-card border border-border rounded-lg p-4">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-2 min-w-0">
             <p className="text-xs text-muted-foreground uppercase">{t('pppoe.totalUsed')}</p>
             <Calendar className="w-5 h-5 text-warning" />
           </div>
@@ -361,7 +361,7 @@ export default function BalanceManagementPage() {
           ) : (
             transactions.map((transaction) => (
               <div key={transaction.id} className="bg-card rounded-xl border border-border p-3">
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-2 min-w-0">
                   <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                     transaction.type === 'DEPOSIT'
                       ? 'bg-success/10 text-success'

@@ -90,7 +90,7 @@ export function TraceResultDisplay({ path, summary, onNodeClick }: TraceResultDi
     <div className="bg-card rounded-lg shadow-md p-6 border border-border">
       {/* Header */}
       <div className="mb-6">
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-2 min-w-0">
           <h3 className="text-xl font-bold text-foreground">
             {t('network.tracing.pathFound')}
           </h3>

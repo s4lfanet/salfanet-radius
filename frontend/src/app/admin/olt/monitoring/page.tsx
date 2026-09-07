@@ -305,7 +305,7 @@ export default function OLTMonitoringPage() {
 
       {/* OLT Grid */}
       {sortedOlts.length === 0 ? (
-        <div className="bg-card rounded-lg border border-slate-200 dark:border-slate-800 p-12 text-center">
+        <div className="bg-card rounded-lg border border-slate-200 dark:border-slate-800 p-6 sm:p-12 text-center">
           <Server className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
           <p className="text-sm text-muted-foreground font-medium">Belum ada OLT</p>
           <p className="text-xs text-muted-foreground/70 mt-1">

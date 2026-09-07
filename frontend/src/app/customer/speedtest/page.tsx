@@ -15,7 +15,7 @@ export default function CustomerSpeedTestPage() {
 
   return (
     <div className="p-3 lg:p-6 w-full space-y-4">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-2 min-w-0">
         <div>
           <h1 className="text-lg lg:text-xl font-extrabold text-foreground flex items-center gap-2">
             <Gauge className="w-5 h-5 text-cyan-400" />

@@ -416,7 +416,7 @@ export default function NetworkNodePanel({ entity, onClose, onDeleted, onUpdated
   const isReadOnly = entity.type === 'CUSTOMER';
 
   return (
-    <div className="absolute top-0 right-0 h-full w-96 bg-card shadow-2xl flex flex-col z-[1000] border-l border-border">
+    <div className="absolute top-0 right-0 h-full w-full sm:w-96 bg-card shadow-2xl flex flex-col z-[1000] border-l border-border">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-muted border-b border-border shrink-0">
         <div className="flex items-center gap-2 min-w-0">

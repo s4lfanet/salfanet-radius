@@ -167,7 +167,7 @@ export default function TechnicianRegisterPage() {
     return (
       <div className="p-4 lg:p-6">
         <div className="max-w-lg mx-auto mt-4">
-          <div className="bg-card/60 rounded-2xl border border-green-200 dark:border-green-500/30 p-8 text-center">
+          <div className="bg-card/60 rounded-2xl border border-green-200 dark:border-green-500/30 p-4 sm:p-8 text-center">
             <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-500/20 flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
             </div>

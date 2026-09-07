@@ -2156,7 +2156,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
           {/* Batch Progress */}
           {batchProgress && (
             <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mb-2 min-w-0">
                 <span className="text-sm font-medium text-blue-900">Processing batch reboot...</span>
                 <span className="text-sm text-blue-700">{batchProgress.current} / {batchProgress.total}</span>
               </div>

@@ -85,7 +85,7 @@ export default function AddonTypesPage() {
     } catch (err: unknown) { await showError(err instanceof Error ? err.message : String(err)); }
   };
 
-  if (permLoading) return <div className="p-8 text-center text-muted-foreground">Loading...</div>;
+  if (permLoading) return <div className="p-4 sm:p-8 text-center text-muted-foreground">Loading...</div>;
 
   return (
     <div className="p-4 md:p-6 space-y-6">
@@ -111,10 +111,10 @@ export default function AddonTypesPage() {
       {/* Table */}
       <div className="border border-border dark:border-border rounded-lg overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center text-muted-foreground">Memuat...</div>
+          <div className="p-4 sm:p-8 text-center text-muted-foreground">Memuat...</div>
         ) : addons.length === 0 ? (
-          <div className="p-12 text-center text-muted-foreground">
-            <Package className="h-10 w-10 mx-auto mb-3 opacity-40" />
+          <div className="p-6 sm:p-12 text-center text-muted-foreground">
+            <Package className="h-8 w-8 sm:h-10 sm:w-10 mx-auto mb-3 opacity-40" />
             <p>Belum ada layanan tambahan.</p>
             <button onClick={openCreate} className="mt-3 inline-flex items-center px-3 py-2 text-sm bg-primary text-white dark:bg-brand-500 dark:text-card rounded hover:opacity-90 transition">
               <Plus className="h-4 w-4 mr-1" /> Buat Addon Pertama

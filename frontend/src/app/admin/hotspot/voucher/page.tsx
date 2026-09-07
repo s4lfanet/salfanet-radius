@@ -552,7 +552,7 @@ export default function HotspotVoucherPage() {
   }
 
   const selectedProfile = profiles.find(p => p.id === formData.profileId);
-  if (loading) { return <div className="flex items-center justify-center min-h-[60vh]"><div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div><div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div></div><Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop- relative z-10" /></div>; }
+  if (loading) { return <div className="flex items-center justify-center min-h-[60vh]"><div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-1/4 left-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div><div className="absolute bottom-1/4 right-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div></div><Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop- relative z-10" /></div>; }
   // Stats are now loaded from API
 
   return (
@@ -560,7 +560,7 @@ export default function HotspotVoucherPage() {
       {/* ─── Delete Progress Overlay ─── */}
       {deleteOverlay.open && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 backdrop-blur-sm">
-          <div className="bg-card border-2 border-red-500/60 rounded-2xl p-8 max-w-sm w-full mx-4 shadow-md shadow-red-500/40">
+          <div className="bg-card border-2 border-red-500/60 rounded-2xl p-4 sm:p-8 max-w-sm w-full mx-4 shadow-md shadow-red-500/40">
             <div className="flex justify-center mb-5">
               {deleteOverlay.phase === 'done' ? (
                 <div className="w-16 h-16 rounded-full bg-green-500/20 border-2 border-green-400 flex items-center justify-center">
@@ -607,7 +607,7 @@ export default function HotspotVoucherPage() {
       {/* ─── Generate Progress Overlay ─── */}
       {genOverlay.open && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 backdrop-blur-sm">
-          <div className="bg-card border border-border rounded-2xl p-8 max-w-sm w-full mx-4 ">
+          <div className="bg-card border border-border rounded-2xl p-4 sm:p-8 max-w-sm w-full mx-4 ">
             {/* Icon */}
             <div className="flex justify-center mb-5">
               {genOverlay.phase === 'done' ? (
@@ -678,9 +678,9 @@ export default function HotspotVoucherPage() {
       )}
       {/* Neon Cyberpunk Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-primary/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/3 right-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-1/2 w-48 h-48 sm:w-96 sm:h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
       </div>
       
@@ -964,7 +964,7 @@ export default function HotspotVoucherPage() {
             vouchers.map((v) => (
               <div key={v.id} className="bg-card rounded-xl border border-border p-3 space-y-2">
                 {/* Header: Checkbox + Code + Status + Delete */}
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center justify-between gap-2 min-w-0">
                   <div className="flex items-center gap-2 min-w-0">
                     {v.status === 'WAITING' && (
                       <input type="checkbox" checked={selectedVouchers.includes(v.id)} onChange={() => handleSelectVoucher(v.id)} className="rounded border-border w-4 h-4 shrink-0" />

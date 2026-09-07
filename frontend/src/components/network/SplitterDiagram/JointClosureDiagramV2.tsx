@@ -214,7 +214,7 @@ export function JointClosureDiagramV2({
                     onMouseEnter={() => setHoveredCable(cable)}
                     onMouseLeave={() => setHoveredCable(null)}
                   >
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center justify-between mb-2 min-w-0">
                       <span className="font-medium text-foreground">
                         {cable.cableCode}
                       </span>
@@ -262,7 +262,7 @@ export function JointClosureDiagramV2({
                     onMouseEnter={() => setHoveredCable(cable)}
                     onMouseLeave={() => setHoveredCable(null)}
                   >
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center justify-between mb-2 min-w-0">
                       <span className="font-medium text-foreground">
                         {cable.cableCode}
                       </span>

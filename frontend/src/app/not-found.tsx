@@ -11,7 +11,7 @@ export default function NotFound() {
       <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-6">
         <Search className="w-10 h-10 text-muted-foreground" />
       </div>
-      <h1 className="text-4xl font-bold mb-2">404</h1>
+      <h1 className="text-2xl sm:text-4xl font-bold mb-2">404</h1>
       <h2 className="text-lg font-semibold mb-2">Halaman Tidak Ditemukan</h2>
       <p className="text-sm text-muted-foreground mb-6 max-w-md">
         Halaman yang Anda cari tidak ada atau telah dipindahkan.

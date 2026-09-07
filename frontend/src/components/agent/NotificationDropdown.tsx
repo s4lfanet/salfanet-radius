@@ -257,7 +257,7 @@ export default function AgentNotificationDropdown({ agentId, enableToasts = true
 
           <div className="max-h-[400px] overflow-y-auto">
             {notifications.length === 0 ? (
-              <div className="p-8 text-center">
+              <div className="p-4 sm:p-8 text-center">
                 <Bell className="h-12 w-12 text-purple-300 dark:text-[#00f7ff]/40 mx-auto mb-3" />
                 <p className="text-sm font-medium text-foreground">Belum ada notifikasi</p>
                 <p className="text-xs text-slate-500 dark:text-[#e0d0ff]/60 mt-1">Notifikasi akan muncul di sini</p>
@@ -276,7 +276,7 @@ export default function AgentNotificationDropdown({ agentId, enableToasts = true
                         {getNotificationIcon(notification.type)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2 mb-1.5">
+                        <div className="flex items-start justify-between gap-2 min-w-0 mb-1.5">
                           <h4 className="text-sm font-bold text-foreground truncate">
                             {notification.title}
                           </h4>

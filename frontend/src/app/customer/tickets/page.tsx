@@ -147,11 +147,11 @@ export default function CustomerTicketsPage() {
         {/* Tickets List */}
         {loading ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto "></div>
+            <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-primary mx-auto "></div>
             <p className="text-accent mt-4">{t('ticket.loading')}</p>
           </div>
         ) : tickets.length === 0 ? (
-          <CyberCard className="p-12 text-center bg-card border-2 border-primary/30">
+          <CyberCard className="p-6 sm:p-12 text-center bg-card border-2 border-primary/30">
             <Ticket size={48} className="text-primary mx-auto mb-4 drop-" />
             <h3 className="text-lg font-bold text-primary mb-2 uppercase tracking-wider">
               {t('ticket.noTickets')}
