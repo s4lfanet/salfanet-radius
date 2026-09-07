@@ -305,7 +305,7 @@ export default function PaymentGatewayPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium whitespace-nowrap truncate overflow-hidden transition-colors ${
+              className={`shrink-0 flex items-center gap-1.5 px-3 py-2 text-xs font-medium whitespace-nowrap transition-colors ${
                 activeTab === tab.id
                   ? 'text-primary border-b-2 border-primary bg-primary/10'
                   : 'text-muted-foreground hover:bg-muted'
