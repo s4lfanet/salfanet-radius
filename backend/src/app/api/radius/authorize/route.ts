@@ -182,11 +182,28 @@ export async function POST(request: NextRequest) {
     // Voucher is valid, allow authentication to proceed
     // Set Cleartext-Password = username so FreeRADIUS PAP/CHAP can verify
     // (hotspot voucher code is used as BOTH username and password)
+    //
+    // Also send dynamic Session-Timeout based on remaining timeleft.
+    // This ensures that when a voucher reconnects (re-authenticates), RADIUS
+    // sends the correct remaining time — not a reset full validity duration.
+    // The radgroupreply Session-Timeout is also updated by hotspot_sync cronjob,
+    // but this REST response provides a real-time override at auth time.
     console.log(`[AUTHORIZE] ALLOW: Voucher ${username} is valid (status: ${voucher.status})`);
-    
-    return NextResponse.json({
+
+    const response: any = {
       "control:Cleartext-Password": username,
-    });
+    };
+
+    // Calculate remaining timeleft for ACTIVE vouchers
+    if (voucher.expiresAt) {
+      const remainingMs = voucher.expiresAt.getTime() - now.getTime();
+      const remainingSec = Math.max(0, Math.floor(remainingMs / 1000));
+      if (remainingSec > 0) {
+        response["reply:Session-Timeout"] = remainingSec.toString();
+      }
+    }
+
+    return NextResponse.json(response);
 
   } catch (error: any) {
     console.error("[AUTHORIZE] Error:", error);

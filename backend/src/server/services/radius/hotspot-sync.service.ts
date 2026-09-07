@@ -142,20 +142,31 @@ export async function syncVoucherToRadius(
     })
 
     // Calculate session timeout in seconds
+    // If voucher is already ACTIVE (has expiresAt), use remaining timeleft
+    // so migration from local to RADIUS doesn't reset the voucher timer.
+    // If voucher is WAITING (never used), use full validity duration.
     let sessionTimeout = 0
-    switch (voucher.profile.validityUnit) {
-      case 'MINUTES':
-        sessionTimeout = voucher.profile.validityValue * 60
-        break
-      case 'HOURS':
-        sessionTimeout = voucher.profile.validityValue * 3600
-        break
-      case 'DAYS':
-        sessionTimeout = voucher.profile.validityValue * 86400
-        break
-      case 'MONTHS':
-        sessionTimeout = voucher.profile.validityValue * 30 * 86400
-        break
+    if (voucher.status === 'ACTIVE' && voucher.expiresAt) {
+      const now = new Date()
+      const remainingMs = voucher.expiresAt.getTime() - now.getTime()
+      sessionTimeout = Math.max(0, Math.floor(remainingMs / 1000))
+      // If already expired, set to 0 (will be rejected by authorize route)
+      if (sessionTimeout === 0) sessionTimeout = 1 // minimum 1s to avoid issues
+    } else {
+      switch (voucher.profile.validityUnit) {
+        case 'MINUTES':
+          sessionTimeout = voucher.profile.validityValue * 60
+          break
+        case 'HOURS':
+          sessionTimeout = voucher.profile.validityValue * 3600
+          break
+        case 'DAYS':
+          sessionTimeout = voucher.profile.validityValue * 86400
+          break
+        case 'MONTHS':
+          sessionTimeout = voucher.profile.validityValue * 30 * 86400
+          break
+      }
     }
 
     // Add Mikrotik-Group (profile name in MikroTik)

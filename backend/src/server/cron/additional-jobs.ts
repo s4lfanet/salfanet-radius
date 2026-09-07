@@ -127,6 +127,17 @@ export async function runHotspotSync(): Promise<{ expired: number; total: number
       errors.push(`Synthetic radacct: ${e?.message || 'Unknown'}`);
     }
 
+    // 5. Update Session-Timeout in radgroupreply for ACTIVE vouchers
+    // Ensures remaining timeleft is sent on re-authentication (not reset to full validity)
+    let timeoutUpdated = 0;
+    try {
+      const timeoutResult = await updateActiveVoucherSessionTimeout();
+      timeoutUpdated = timeoutResult.updated;
+      errors.push(...timeoutResult.errors);
+    } catch (e: any) {
+      errors.push(`Session-Timeout update: ${e?.message || 'Unknown'}`);
+    }
+
     // Count active vouchers for reporting
     const activeCount = await prisma.hotspotVoucher.count({
       where: { status: 'ACTIVE' },
@@ -138,12 +149,81 @@ export async function runHotspotSync(): Promise<{ expired: number; total: number
       activated,
       mikrotikUpdated,
       syntheticCreated,
+      timeoutUpdated,
       errors,
     };
   } catch (error: any) {
     errors.push(error?.message || 'Unknown error');
-    return { expired: 0, total: 0, activated: 0, mikrotikUpdated: 0, syntheticCreated: 0, errors };
+    return { expired: 0, total: 0, activated: 0, mikrotikUpdated: 0, syntheticCreated: 0, timeoutUpdated: 0, errors };
   }
+}
+
+/**
+ * Update Session-Timeout in radgroupreply for ACTIVE vouchers.
+ * Called by hotspot_sync cronjob every minute.
+ *
+ * When a voucher is ACTIVE (has firstLoginAt and expiresAt), the Session-Timeout
+ * in radgroupreply should reflect the REMAINING timeleft, not the full validity.
+ * This ensures that when a voucher reconnects (re-authenticates), RADIUS sends
+ * the correct remaining time — not a reset full duration.
+ *
+ * Each voucher has a unique radgroupreply group (hotspot-{profile}-{code}),
+ * so we can update Session-Timeout per-voucher without affecting others.
+ */
+async function updateActiveVoucherSessionTimeout(): Promise<{ updated: number; errors: string[] }> {
+  const errors: string[] = [];
+  let updated = 0;
+
+  try {
+    // Get all ACTIVE vouchers with expiresAt
+    const activeVouchers = await prisma.hotspotVoucher.findMany({
+      where: {
+        status: 'ACTIVE',
+        expiresAt: { not: null },
+      },
+      select: {
+        id: true,
+        code: true,
+        expiresAt: true,
+        profile: { select: { name: true } },
+      },
+    });
+
+    if (activeVouchers.length === 0) return { updated: 0, errors };
+
+    const now = new Date();
+
+    for (const voucher of activeVouchers) {
+      try {
+        // Calculate remaining timeleft in seconds
+        const remainingMs = (voucher.expiresAt as Date).getTime() - now.getTime();
+        const remainingSec = Math.max(0, Math.floor(remainingMs / 1000));
+
+        // Build the unique group name (same logic as syncVoucherToRadius)
+        const profileName = voucher.profile.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const uniqueGroupName = `hotspot-${profileName}-${voucher.code}`;
+
+        // Update Session-Timeout in radgroupreply
+        await prisma.radgroupreply.updateMany({
+          where: {
+            groupname: uniqueGroupName,
+            attribute: 'Session-Timeout',
+          },
+          data: {
+            value: remainingSec > 0 ? remainingSec.toString() : '1',
+          },
+        });
+        updated++;
+      } catch (e: any) {
+        // Non-fatal — skip this voucher
+        console.error(`[HOTSPOT_SYNC] Failed to update Session-Timeout for ${voucher.code}:`, e?.message);
+      }
+    }
+  } catch (e: any) {
+    errors.push(`Session-Timeout update: ${e?.message || 'Unknown'}`);
+  }
+
+  return { updated, errors };
 }
 
 // ─── agent_sales ────────────────────────────────────────────────────────────
