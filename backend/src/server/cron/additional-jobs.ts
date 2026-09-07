@@ -431,15 +431,88 @@ export async function runPppoeSessionSync(): Promise<{ synced: number; closed: n
       console.log(`[PPPOE_SESSION_SYNC] All router APIs failed — skipped stale-close for ${openSessions.length} sessions`);
     }
 
+    // ── Create synthetic radacct entries for MikroTik-active users not in radacct ──
+    // When MikroTik doesn't send RADIUS accounting (e.g. accounting not configured,
+    // or just migrated to RADIUS mode), radacct is empty but users are actually online.
+    // Create synthetic radacct rows from MikroTik API data so dashboard/sessions
+    // page can display them with traffic counters and uptime.
+    let created = 0;
+    if (anySuccess) {
+      const onlineRadacctUsernames = new Set(openSessions.map(s => s.username));
+      // Collect all active MikroTik usernames across all routers
+      const allMtActiveUsernames = new Set<string>();
+      for (const [, activeSet] of routerActiveMap) {
+        for (const u of activeSet) allMtActiveUsernames.add(u);
+      }
+      // Find MikroTik-active users NOT in radacct
+      const missingFromRadacct = [...allMtActiveUsernames].filter(u => !onlineRadacctUsernames.has(u));
+      if (missingFromRadacct.length > 0) {
+        // Look up which users are registered in pppoe_users (only create for registered)
+        const registeredUsers = await prisma.pppoeUser.findMany({
+          where: { username: { in: missingFromRadacct } },
+          select: { username: true, routerId: true },
+        });
+        for (const user of registeredUsers) {
+          try {
+            // Find router NAS IP for this user
+            const router = await prisma.router.findUnique({
+              where: { id: user.routerId },
+              select: { nasname: true, ipAddress: true },
+            });
+            if (!router) continue;
+            const nasIp = router.nasname || router.ipAddress || '';
+            // Check if synthetic entry already exists (avoid duplicates)
+            const existing = await prisma.radacct.findFirst({
+              where: {
+                username: user.username,
+                acctstoptime: null,
+              },
+              select: { radacctid: true },
+            });
+            if (existing) continue;
+            // Create synthetic radacct entry
+            await prisma.$executeRaw`
+              INSERT INTO radacct (
+                acctsessionid, acctuniqueid, username, realm,
+                nasipaddress, nasportid, nasporttype,
+                acctstarttime, acctupdatetime, acctstoptime,
+                acctsessiontime, acctauthentic, connectinfo_start,
+                acctinputoctets, acctoutputoctets,
+                calledstationid, callingstationid, acctterminatecause,
+                servicetype, framedprotocol, framedipaddress
+              ) VALUES (
+                ${'mt-sync-' + Date.now() + '-' + user.username.slice(0, 8)},
+                ${'mt-' + user.username + '-' + Date.now()},
+                ${user.username},
+                NULL,
+                ${nasIp},
+                '', 'Ethernet',
+                ${now}, ${now}, NULL,
+                0, 'RADIUS', '',
+                0, 0,
+                '', '', '',
+                'Framed-User', 'PPP', ''
+              )
+            `;
+            created++;
+          } catch (e: any) {
+            // Non-fatal — skip this user
+            console.error(`[PPPOE_SESSION_SYNC] Failed to create synthetic radacct for ${user.username}:`, e?.message);
+          }
+        }
+      }
+    }
+
     return {
       synced,
       closed,
       orphaned,
       total: openSessions.length,
+      created,
       errors,
     };
   } catch (error: any) {
     errors.push(error?.message || 'Unknown error');
-    return { synced: 0, closed: 0, orphaned: 0, total: 0, errors };
+    return { synced: 0, closed: 0, orphaned: 0, total: 0, created: 0, errors };
   }
 }
