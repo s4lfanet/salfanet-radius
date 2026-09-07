@@ -36,7 +36,7 @@ Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with Free
 | **Activity Log** | Audit trail with auto-cleanup (30 days) |
 | **Security** | Session timeout 30 min, idle warning, RBAC, HTTPS/SSL |
 | **Performance** | **Redis cache untuk data non-realtime** (profiles, areas, routers), graceful degradation jika Redis unavailable |
-| **Auth Modes** | `local` (MikroTik primary) dan `radius` (FreeRADIUS primary, PPP secret backup disabled). **Auto-migrate radius → local: create PPP secrets from existing customer data + disconnect RADIUS sessions**. **hybrid mode obsolete** |
+| **Auth Modes** | `local` (MikroTik primary) dan `radius` (FreeRADIUS primary, PPP secret backup disabled). **Auto-migrate radius → local: create PPP secrets from existing customer data + disconnect RADIUS sessions**. **Migrate local → radius: one-click bulk sync all users to RADIUS tables + disable PPP secrets + CoA kick + reload FreeRADIUS**. **Bulk re-sync RADIUS** (fix out-of-sync data tanpa ubah authMode). **hybrid mode obsolete** |
 | **RADIUS Setup** | Auto-generated RouterOS script pakai **IP asli VPS** (bukan domain/Cloudflare proxy), VPN-specific address selection |
 | **Bahasa** | Bahasa Indonesia (full) |
 | **PWA** | Installable di semua portal (admin, customer, agent, technician), offline fallback, service worker cache |
@@ -127,7 +127,40 @@ File: `backend/src/server/cache/redis.ts`
 
 Diadopsi dari FreeRADIUS 3.2.8 schema (`home.pmynet.id-main` project).
 
-## 📋 Frontend Audit & Centralized API Migration (v4.4.0)
+## � Auth Modes: Local vs RADIUS (v5.20.0)
+
+Setiap router/NAS punya dua mode autentikasi yang bisa dipilih di halaman Router settings:
+
+| Mode | `authMode` | Sumber Auth | PPP Secret di MikroTik | RADIUS Tables |
+|------|-----------|-------------|------------------------|---------------|
+| **Local** | `local` | MikroTik PPP secret (primary) | Aktif | Backup (selalu di-sync tapi tidak dipakai untuk auth) |
+| **RADIUS** | `radius` | FreeRADIUS (primary) | Disabled (backup) | Aktif (primary auth source) |
+
+### Cara Migrasi Local → RADIUS
+
+1. **Pastikan MikroTik sudah dikonfigurasi sebagai RADIUS client** — jalankan "Setup RADIUS" di halaman Router untuk generate script RouterOS
+2. **Klik tombol "Migrate to RADIUS"** (ikon panah kuning) di router card — hanya muncul saat `authMode = local`
+3. Sistem otomatis:
+   - Ubah `router.authMode` → `radius`
+   - Re-sync SEMUA pelanggan ke RADIUS tables (`radcheck`, `radusergroup`, `radreply`)
+   - Disable PPP secrets di MikroTik (sebagai backup)
+   - Reload FreeRADIUS
+   - CoA disconnect semua sesi aktif (pelanggan re-auth via RADIUS)
+
+### Re-sync RADIUS (Tanpa Ubah AuthMode)
+
+Jika data RADIUS tidak sinkron dengan database (misalnya setelah restore atau manual edit):
+- Klik tombol **"Re-sync RADIUS"** (ikon refresh cyan) di router card
+- Sistem akan re-sync semua pelanggan ke RADIUS tables tanpa mengubah authMode
+
+### Bulk Edit Pelanggan
+
+Di halaman Data Pelanggan, select multiple pelanggan via checkbox, lalu klik tombol **"Edit"** (biru) di bulk action bar untuk mengubah massal:
+- **Router/NAS** — pindah router (otomatis sync RADIUS + MikroTik secret + CoA)
+- **Hari Tagihan** — tanggal jatuh tempo bulanan (1-28) untuk POSTPAID
+- **Auto Isolasi** — aktif/nonaktifkan auto-isolasi saat jatuh tempo
+
+## �📋 Frontend Audit & Centralized API Migration (v4.4.0)
 
 Migrasi frontend dari inline `fetch()` ke **centralized API client** (`@/lib/api`) untuk semua halaman admin. Frontend sekarang **UI-only** — tidak ada direct Prisma/DB/MikroTik/SSH/FreeRADIUS access.
 

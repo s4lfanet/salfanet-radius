@@ -135,6 +135,35 @@ export const pppoeApi = {
     });
   },
 
+  /** Migrate a router from LOCAL auth mode to RADIUS auth mode (sync all users + disable PPP secrets + CoA) */
+  migrateToRadius(routerId: string): Promise<{
+    success: boolean;
+    message: string;
+    alreadyRadius?: boolean;
+    router: { id: string; name: string; authMode: string };
+    summary: { total: number; synced: number; secretsDisabled: number; failed: number };
+    errors?: Array<{ username: string; error: string }>;
+    coa?: { disconnected: number; failed: number };
+  }> {
+    return apiAdmin('/api/pppoe/users/bulk-migrate-radius', {
+      method: 'POST',
+      body: JSON.stringify({ routerId }),
+    });
+  },
+
+  /** Re-sync all users to RADIUS tables (fix out-of-sync data without changing authMode) */
+  bulkSyncRadius(routerId?: string): Promise<{
+    success: boolean;
+    message: string;
+    summary: { total: number; synced: number; failed: number };
+    errors?: Array<{ username: string; error: string }>;
+  }> {
+    return apiAdmin('/api/pppoe/users/bulk-sync-radius', {
+      method: 'POST',
+      body: JSON.stringify(routerId ? { routerId } : {}),
+    });
+  },
+
   /** Bulk delete users - NOTE: backend may not have this endpoint, falls back to individual deletes */
   bulkDelete(userIds: string[]): Promise<{ deleted: number }> {
     return apiAdmin<{ deleted: number }>('/api/pppoe/users/bulk-delete', {
