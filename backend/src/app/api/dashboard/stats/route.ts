@@ -107,22 +107,23 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // ── Supplement: MikroTik local-auth sessions ──
-      // Routers with authMode='local' authenticate locally and don't send
-      // RADIUS accounting. Fetch active sessions directly from MikroTik API.
-      // Matches /api/sessions logic: show ALL local-auth hotspot sessions
-      // (including unregistered users), only registered for PPPoE.
-      // Synthetic ACTIVE vouchers are only counted if the device is actually
-      // connected to MikroTik — disconnected vouchers are hidden.
-      const localRouters = await prisma.router.findMany({
-        where: { isActive: true, authMode: { not: 'radius' } },
+      // ── Supplement: MikroTik active sessions (ALL routers) ──
+      // Fetch from ALL active routers, not just local-auth ones.
+      // For RADIUS-mode routers, radacct is the primary source but accounting
+      // may not be working (e.g. MikroTik not configured, or just migrated).
+      // MikroTik API serves as a fallback/supplement to show actual online users.
+      // For local-auth routers, MikroTik API is the only source (no radacct).
+      // Matches /api/sessions logic which fetches from all routers.
+      const allRouters = await prisma.router.findMany({
+        where: { isActive: true },
         select: { id: true, authMode: true },
       });
+      const localRouters = allRouters.filter(r => r.authMode !== 'radius');
       // Fetch MikroTik sessions first — needed to verify synthetic vouchers
       // are actually connected before counting them.
       let mtSessions: any[] = [];
-      if (localRouters.length > 0) {
-        mtSessions = await batchFetchMikrotikActiveSessions(localRouters, null);
+      if (allRouters.length > 0) {
+        mtSessions = await batchFetchMikrotikActiveSessions(allRouters, null);
       }
       const mtActiveUsernames = new Set(mtSessions.map((s: any) => s.username));
 
@@ -195,6 +196,7 @@ export async function GET(request: NextRequest) {
           const mtPppoeSet = new Set(mtPppoeUsers.map(u => u.username));
           const mtVoucherSet = new Set(mtVouchers.map(v => v.code));
           const localRouterIds = new Set(localRouters.map(r => r.id));
+          const radiusRouterIds = new Set(allRouters.filter(r => r.authMode === 'radius').map(r => r.id));
           // Count ALL raw MikroTik sessions (including duplicates by username)
           // to match the sessions page which shows every active device.
           for (const s of mtSessions) {
@@ -214,8 +216,10 @@ export async function GET(request: NextRequest) {
               } else if (s.type === 'pppoe') {
                 activeSessionsPPPoE++;
               }
+            } else if (radiusRouterIds.has(s.routerId)) {
+              // RADIUS-mode router: only count registered users (pppoe/voucher)
+              // Unregistered users on RADIUS routers are NOT counted (matches sessions page)
             }
-            // Unregistered sessions from radius-auth routers are NOT counted
           }
         }
       }
