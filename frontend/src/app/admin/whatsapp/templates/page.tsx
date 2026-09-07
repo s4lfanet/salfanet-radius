@@ -28,12 +28,12 @@ interface TemplateUpdateResponse {
 
 const templateConfig = {
   'registration-confirmation': {
-    title: '✅ Konfirmasi Pendaftaran',
+    title: 'Konfirmasi Pendaftaran',
     description: 'Dikirim otomatis saat customer submit form pendaftaran',
     variables: ['{{customerName}}', '{{phone}}', '{{email}}', '{{address}}', '{{profileName}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}', '{{companyAddress}}'],
   },
   'registration-approval': {
-    title: '🎉 Persetujuan Pendaftaran',
+    title: 'Persetujuan Pendaftaran',
     description: 'Dikirim saat admin menyetujui pendaftaran customer baru',
     variables: ['{{customerId}}', '{{customerName}}', '{{username}}', '{{password}}', '{{phone}}', '{{email}}', '{{address}}', '{{profileName}}', '{{ipAddress}}', '{{expiredAt}}', '{{installationFee}}', '{{subscriptionType}}', '{{invoiceNumber}}', '{{paymentLink}}', '{{paymentToken}}', '{{baseUrl}}', '{{bankAccounts}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}', '{{companyAddress}}'],
   },
@@ -43,27 +43,27 @@ const templateConfig = {
     variables: ['{{customerId}}', '{{customerName}}', '{{username}}', '{{password}}', '{{phone}}', '{{email}}', '{{address}}', '{{profileName}}', '{{area}}', '{{ipAddress}}', '{{expiredDate}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}', '{{companyAddress}}'],
   },
   'installation-invoice': {
-    title: '🔧 Invoice Instalasi',
+    title: 'Invoice Instalasi',
     description: 'Dikirim saat instalasi selesai dan invoice dibuat',
     variables: ['{{customerId}}', '{{customerName}}', '{{username}}', '{{phone}}', '{{email}}', '{{address}}', '{{invoiceNumber}}', '{{amount}}', '{{dueDate}}', '{{installationFee}}', '{{paymentLink}}', '{{paymentToken}}', '{{baseUrl}}', '{{bankAccounts}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}', '{{companyAddress}}'],
   },
   'invoice-reminder': {
-    title: '📅 Invoice Bulanan / Jatuh Tempo',
+    title: 'Invoice Bulanan / Jatuh Tempo',
     description: 'Dikirim via cron untuk invoice bulanan yang mendekati jatuh tempo',
     variables: ['{{customerId}}', '{{customerName}}', '{{username}}', '{{customerUsername}}', '{{phone}}', '{{email}}', '{{address}}', '{{profileName}}', '{{area}}', '{{invoiceNumber}}', '{{amount}}', '{{dueDate}}', '{{daysRemaining}}', '{{paymentLink}}', '{{paymentToken}}', '{{baseUrl}}', '{{bankAccounts}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}', '{{companyAddress}}'],
   },
   'payment-success': {
-    title: '✅ Pembayaran Berhasil',
+    title: 'Pembayaran Berhasil',
     description: 'Dikirim otomatis saat pembayaran invoice berhasil',
     variables: ['{{customerId}}', '{{customerName}}', '{{username}}', '{{password}}', '{{phone}}', '{{email}}', '{{address}}', '{{profileName}}', '{{ipAddress}}', '{{expiredDate}}', '{{invoiceNumber}}', '{{amount}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}', '{{companyAddress}}'],
   },
   'maintenance-outage': {
-    title: '⚠️ Informasi Gangguan',
+    title: 'Informasi Gangguan',
     description: 'Template untuk broadcast informasi maintenance atau gangguan jaringan',
     variables: ['{{customerId}}', '{{customerName}}', '{{username}}', '{{phone}}', '{{email}}', '{{address}}', '{{issueType}}', '{{description}}', '{{estimatedTime}}', '{{affectedArea}}', '{{status}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}', '{{baseUrl}}'],
   },
   'maintenance-resolved': {
-    title: '✅ Perbaikan Selesai',
+    title: 'Perbaikan Selesai',
     description: 'Template untuk broadcast informasi perbaikan selesai dan layanan kembali normal',
     variables: ['{{customerId}}', '{{customerName}}', '{{username}}', '{{phone}}', '{{email}}', '{{address}}', '{{description}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}', '{{baseUrl}}'],
   },
@@ -78,27 +78,27 @@ const templateConfig = {
     variables: ['{{customerId}}', '{{customerName}}', '{{username}}', '{{phone}}', '{{email}}', '{{address}}', '{{orderToken}}', '{{profileName}}', '{{price}}', '{{quantity}}', '{{totalAmount}}', '{{paymentLink}}', '{{expiryTime}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}', '{{companyAddress}}'],
   },
   'manual-extension': {
-    title: '🎉 Perpanjangan Manual',
+    title: 'Perpanjangan Manual',
     description: 'Dikirim saat admin melakukan perpanjangan langganan customer secara manual',
     variables: ['{{customerName}}', '{{customerUsername}}', '{{profileName}}', '{{area}}', '{{amount}}', '{{newExpiredAt}}', '{{invoiceNumber}}', '{{profileChanged}}', '{{companyName}}', '{{companyPhone}}'],
   },
   'manual-payment-approval': {
-    title: '✅ Pembayaran Manual Disetujui',
+    title: 'Pembayaran Manual Disetujui',
     description: 'Dikirim otomatis saat admin menyetujui konfirmasi pembayaran manual',
     variables: ['{{customerName}}', '{{customerUsername}}', '{{invoiceNumber}}', '{{amount}}', '{{profileName}}', '{{area}}', '{{expiredDate}}', '{{companyName}}', '{{companyPhone}}'],
   },
   'manual-payment-rejection': {
-    title: '❌ Pembayaran Manual Ditolak',
+    title: 'Pembayaran Manual Ditolak',
     description: 'Dikirim otomatis saat admin menolak konfirmasi pembayaran manual',
     variables: ['{{customerName}}', '{{customerUsername}}', '{{invoiceNumber}}', '{{profileName}}', '{{area}}', '{{rejectionReason}}', '{{paymentLink}}', '{{companyName}}', '{{companyPhone}}'],
   },
   'account-info': {
-    title: '📋 Informasi Akun Pelanggan',
+    title: 'Informasi Akun Pelanggan',
     description: 'Mengirimkan informasi akun pelanggan seperti username, password, dan detail lainnya',
     variables: ['{{customerId}}', '{{customerName}}', '{{username}}', '{{password}}', '{{phone}}', '{{email}}', '{{address}}', '{{profileName}}', '{{area}}', '{{ipAddress}}', '{{expiredDate}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}', '{{companyAddress}}'],
   },
   'auto-renewal-success': {
-    title: '🔄 Auto-Renewal Berhasil',
+    title: 'Auto-Renewal Berhasil',
     description: 'Dikirim otomatis saat sistem berhasil melakukan auto-renewal langganan',
     variables: ['{{customerName}}', '{{customerUsername}}', '{{profileName}}', '{{area}}', '{{amount}}', '{{expiredDate}}', '{{newBalance}}', '{{invoiceNumber}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}'],
   },
@@ -108,27 +108,27 @@ const templateConfig = {
     variables: ['{{customerName}}', '{{customerUsername}}', '{{message}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}'],
   },
   'invoice-created': {
-    title: '📄 Notifikasi Invoice Baru',
+    title: 'Notifikasi Invoice Baru',
     description: 'Dikirim saat invoice baru dibuat oleh sistem',
     variables: ['{{customerId}}', '{{customerName}}', '{{username}}', '{{phone}}', '{{email}}', '{{address}}', '{{invoiceNumber}}', '{{amount}}', '{{dueDate}}', '{{paymentLink}}', '{{paymentToken}}', '{{baseUrl}}', '{{bankAccounts}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}', '{{companyAddress}}'],
   },
   'invoice-overdue': {
-    title: '⚠️ Invoice Overdue Reminder',
+    title: 'Invoice Overdue Reminder',
     description: 'Dikirim saat invoice sudah melewati tanggal jatuh tempo',
     variables: ['{{customerId}}', '{{customerName}}', '{{username}}', '{{phone}}', '{{email}}', '{{invoiceNumber}}', '{{amount}}', '{{dueDate}}', '{{daysOverdue}}', '{{paymentLink}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}'],
   },
   'maintenance-info': {
-    title: '🔧 Pemberitahuan Maintenance',
+    title: 'Pemberitahuan Maintenance',
     description: 'Template untuk broadcast informasi maintenance terjadwal',
     variables: ['{{customerName}}', '{{maintenanceDate}}', '{{maintenanceTime}}', '{{duration}}', '{{affectedArea}}', '{{description}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}'],
   },
   'manual_payment_admin': {
-    title: '🔔 Notifikasi Admin Manual Payment',
+    title: 'Notifikasi Admin Manual Payment',
     description: 'Dikirim ke admin saat ada konfirmasi pembayaran manual dari customer',
     variables: ['{{customerName}}', '{{customerUsername}}', '{{invoiceNumber}}', '{{amount}}', '{{paymentDate}}', '{{paymentMethod}}', '{{bankName}}', '{{accountNumber}}', '{{proofImage}}'],
   },
   'outage_notification': {
-    title: '⚡ Notifikasi Gangguan',
+    title: 'Notifikasi Gangguan',
     description: 'Dikirim otomatis saat terdeteksi gangguan jaringan atau layanan',
     variables: ['{{customerName}}', '{{customerUsername}}', '{{outageType}}', '{{affectedArea}}', '{{description}}', '{{estimatedTime}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}'],
   },
@@ -138,7 +138,7 @@ const templateConfig = {
     variables: ['{{customerName}}', '{{customerUsername}}', '{{invoiceNumber}}', '{{amount}}', '{{paymentDate}}', '{{paymentMethod}}', '{{receiptNumber}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}'],
   },
   'payment-confirmed': {
-    title: '✅ Konfirmasi Pembayaran Diterima',
+    title: 'Konfirmasi Pembayaran Diterima',
     description: 'Dikirim saat pembayaran telah dikonfirmasi dan diterima',
     variables: ['{{customerName}}', '{{customerUsername}}', '{{invoiceNumber}}', '{{amount}}', '{{paymentDate}}', '{{newExpiredAt}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}'],
   },
@@ -148,32 +148,32 @@ const templateConfig = {
     variables: ['{{customerName}}', '{{customerUsername}}', '{{invoiceNumber}}', '{{amount}}', '{{dueDate}}', '{{daysRemaining}}', '{{paymentLink}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}'],
   },
   'payment-warning': {
-    title: '⚠️ Peringatan Pembayaran Tertunda',
+    title: 'Peringatan Pembayaran Tertunda',
     description: 'Dikirim sebagai peringatan untuk pembayaran yang tertunda',
     variables: ['{{customerName}}', '{{customerUsername}}', '{{invoiceNumber}}', '{{amount}}', '{{dueDate}}', '{{paymentLink}}', '{{suspensionDate}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}'],
   },
   'promo-offer': {
-    title: '🎁 Promo & Penawaran Khusus',
+    title: 'Promo & Penawaran Khusus',
     description: 'Template untuk broadcast promo atau penawaran khusus kepada pelanggan',
     variables: ['{{customerName}}', '{{promoTitle}}', '{{promoDescription}}', '{{discount}}', '{{validUntil}}', '{{termsConditions}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}'],
   },
   'thank-you': {
-    title: '🙏 Ucapan Terima Kasih',
+    title: 'Ucapan Terima Kasih',
     description: 'Template ucapan terima kasih kepada pelanggan',
     variables: ['{{customerName}}', '{{customerUsername}}', '{{message}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}'],
   },
   'upgrade-notification': {
-    title: '⬆️ Pemberitahuan Upgrade Paket',
+    title: 'Pemberitahuan Upgrade Paket',
     description: 'Dikirim saat customer melakukan upgrade paket langganan',
     variables: ['{{customerName}}', '{{customerUsername}}', '{{oldProfile}}', '{{newProfile}}', '{{newSpeed}}', '{{newPrice}}', '{{effectiveDate}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}'],
   },
   'voucher-purchase-success': {
-    title: '🎉 E-Voucher Purchase Success',
+    title: 'E-Voucher Purchase Success',
     description: 'Dikirim saat customer berhasil membeli e-voucher',
     variables: ['{{customerName}}', '{{voucherCodes}}', '{{profileName}}', '{{price}}', '{{quantity}}', '{{totalAmount}}', '{{purchaseDate}}', '{{expiryDate}}', '{{duration}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}'],
   },
   'welcome-message': {
-    title: '👋 Selamat Datang Pelanggan Baru',
+    title: 'Selamat Datang Pelanggan Baru',
     description: 'Pesan selamat datang untuk pelanggan baru yang baru bergabung',
     variables: ['{{customerName}}', '{{customerUsername}}', '{{profileName}}', '{{expiredAt}}', '{{supportContact}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}', '{{companyAddress}}'],
   },
@@ -331,7 +331,7 @@ export default function WhatsAppTemplatesPage() {
                     ))}
                   </div>
                   <p className="text-[9px] sm:text-[10px] text-primary dark:text-primary mt-1.5 sm:mt-2">
-                    💡 {t('whatsapp.clickToInsert')}
+                    {t('whatsapp.clickToInsert')}
                   </p>
                 </div>
               </div>
@@ -532,7 +532,7 @@ export default function WhatsAppTemplatesPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div className="space-y-1.5 sm:space-y-2 flex-1 min-w-0">
-              <p className="text-xs sm:text-sm font-semibold text-blue-900 dark:text-blue-100">📋 {t('whatsapp.howToUse')}</p>
+              <p className="text-xs sm:text-sm font-semibold text-blue-900 dark:text-blue-100">{t('whatsapp.howToUse')}</p>
               <ul className="text-[10px] sm:text-xs text-blue-800 dark:text-blue-200 space-y-0.5 sm:space-y-1">
                 <li>• <strong>Persetujuan Pendaftaran</strong>: Dikirim saat admin approve registrasi baru</li>
                 <li>• <strong>Admin Create User</strong>: Dikirim saat admin create user manual</li>

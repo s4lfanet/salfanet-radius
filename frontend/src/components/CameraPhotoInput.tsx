@@ -309,7 +309,7 @@ export function CameraPhotoInput({
             className={`flex items-center gap-1.5 text-[10px] rounded px-2 py-1 hover:underline ${gpsBadgeClass}`}
           >
             <MapPin className="w-3 h-3" />
-            📍 {gps.lat.toFixed(5)}, {gps.lng.toFixed(5)} · Lihat di Maps ↗
+            {gps.lat.toFixed(5)}, {gps.lng.toFixed(5)} · Lihat di Maps ↗
           </a>
         )}
 
@@ -330,7 +330,7 @@ export function CameraPhotoInput({
           <Loader2 className={`w-6 h-6 animate-spin ${isDark ? 'text-[#00f7ff]' : 'text-primary dark:text-[#00f7ff]'}`} />
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {/* Gallery - opens file picker */}
           <label
             htmlFor={galleryId}

@@ -203,7 +203,7 @@ export function ODPDiagramV2({
             </div>
             <p className="text-sm text-muted-foreground">{node.name}</p>
             {node.address && (
-              <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">📍 {node.address}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">{node.address}</p>
             )}
           </div>
           <div className="text-right">
@@ -674,7 +674,7 @@ export function ODPDiagramV2({
           <h4 className="text-sm font-semibold text-foreground mb-2">
             Port {hoveredPort.number - node.inputPorts}
           </h4>
-          <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
             <div>
               <span className="text-muted-foreground">Status:</span>
               <span className="ml-2 text-foreground">{PORT_STATUS_LABELS[hoveredPort.status]}</span>

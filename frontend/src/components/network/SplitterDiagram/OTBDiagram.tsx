@@ -108,7 +108,7 @@ export function OTBDiagram({
     <div className="otb-diagram">
       {/* Info Panel */}
       <div className="bg-card rounded-lg p-4 mb-4 border border-border">
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <p className="text-xs text-muted-foreground">{t('network.otb.name')}</p>
             <p className="font-semibold text-foreground">{node.name}</p>
@@ -365,7 +365,7 @@ export function OTBDiagram({
           <h4 className="text-sm font-semibold text-foreground mb-2">
             {t('network.otb.port')} {hoveredPort.number - node.inputPorts}
           </h4>
-          <div className="grid grid-cols-2 gap-2 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
             <div>
               <span className="text-muted-foreground">{t('common.status')}:</span>
               <span className="ml-2 text-foreground">

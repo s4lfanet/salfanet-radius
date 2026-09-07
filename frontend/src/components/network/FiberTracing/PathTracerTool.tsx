@@ -194,7 +194,7 @@ export function PathTracerTool({ nodes, onTrace, isLoading = false, onClear }: P
       {sourceId === destinationId && sourceId && (
         <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
           <p className="text-sm text-yellow-800 dark:text-yellow-200">
-            ⚠️ {t('network.common.status')}: {t('network.tracing.sourceNode')} dan {t('network.tracing.destinationNode')} tidak boleh sama
+            {t('network.common.status')}: {t('network.tracing.sourceNode')} dan {t('network.tracing.destinationNode')} tidak boleh sama
           </p>
         </div>
       )}

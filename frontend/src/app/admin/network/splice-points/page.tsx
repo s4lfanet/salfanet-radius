@@ -566,7 +566,7 @@ export default function SplicePointsPage() {
       {/* Create Splice Dialog */}
       {isCreateDialogOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-card rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-card rounded-lg shadow-xl max-w-[calc(100%-2rem)] sm:max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="px-4 py-3 border-b dark:border-gray-800 flex items-center justify-between sticky top-0 bg-card">
               <div>
                 <h2 className="text-sm font-semibold flex items-center gap-2">
@@ -611,7 +611,7 @@ export default function SplicePointsPage() {
               </div>
 
               {/* Core Selection */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Incoming Core */}
                 <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg space-y-3">
                   <h3 className="text-xs font-semibold text-blue-700 dark:text-blue-400">
@@ -696,7 +696,7 @@ export default function SplicePointsPage() {
               </div>
 
               {/* Splice Info */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[10px] font-medium mb-1">{t('common.location')}</label>
                   <input
@@ -723,7 +723,7 @@ export default function SplicePointsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[10px] font-medium mb-1">Spliced By</label>
                   <input
@@ -771,7 +771,7 @@ export default function SplicePointsPage() {
       {/* Detail Dialog */}
       {isDetailDialogOpen && selectedSplice && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-card rounded-lg shadow-xl max-w-lg w-full">
+          <div className="bg-card rounded-lg shadow-xl max-w-[calc(100%-2rem)] sm:max-w-lg w-full">
             <div className="px-4 py-3 border-b dark:border-gray-800 flex items-center justify-between">
               <h2 className="text-sm font-semibold flex items-center gap-2">
                 <Link2 className="h-4 w-4 text-blue-500" />

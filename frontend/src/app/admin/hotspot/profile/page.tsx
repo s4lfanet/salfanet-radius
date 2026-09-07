@@ -450,7 +450,7 @@ export default function HotspotProfilePage() {
                     {profile.isActive ? t('common.active') : t('common.inactive')}
                   </span>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mb-3">
                   <div>
                     <div className="text-[10px] text-muted-foreground">{t('hotspot.speed')}</div>
                     <div className="font-mono text-xs">{profile.speed}</div>
@@ -588,7 +588,7 @@ export default function HotspotProfilePage() {
                     <ModalLabel required>{t('common.name')}</ModalLabel>
                     <ModalInput value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="e.g., 3Jam-5M" required />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <ModalLabel required>{t('hotspot.costPrice')}</ModalLabel>
                       <ModalInput type="number" min={0} value={formData.costPrice} onChange={(e) => setFormData({ ...formData, costPrice: e.target.value })} placeholder="0" required />
@@ -642,7 +642,7 @@ export default function HotspotProfilePage() {
                           ))}
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <ModalLabel required>Download ({formData.speedUnit})</ModalLabel>
                           <ModalInput type="number" min="1" value={formData.speedDownload} onChange={(e) => setFormData({ ...formData, speedDownload: e.target.value })} required />
@@ -669,7 +669,7 @@ export default function HotspotProfilePage() {
                           <p className="text-[10px] text-muted-foreground pt-3">
                             Burst memberi kecepatan lebih tinggi sementara. Aktif saat trafik rata-rata di bawah <strong>threshold</strong> selama <strong>burst time</strong> detik.
                           </p>
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                               <ModalLabel>Burst Download ({formData.speedUnit})</ModalLabel>
                               <ModalInput type="number" min="0" value={formData.burstDownload} onChange={(e) => setFormData({ ...formData, burstDownload: e.target.value })} placeholder={formData.speedDownload ? String(parseInt(formData.speedDownload) * 2) : '10'} />
@@ -679,7 +679,7 @@ export default function HotspotProfilePage() {
                               <ModalInput type="number" min="0" value={formData.burstUpload} onChange={(e) => setFormData({ ...formData, burstUpload: e.target.value })} placeholder={formData.speedUpload ? String(parseInt(formData.speedUpload) * 2) : '10'} />
                             </div>
                           </div>
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                               <ModalLabel>Threshold Download ({formData.speedUnit})</ModalLabel>
                               <ModalInput type="number" min="0" value={formData.burstThresholdDownload} onChange={(e) => setFormData({ ...formData, burstThresholdDownload: e.target.value })} placeholder={formData.speedDownload ? String(Math.round(parseInt(formData.speedDownload) * 0.8)) : '4'} />
@@ -691,7 +691,7 @@ export default function HotspotProfilePage() {
                               <p className="text-[9px] text-muted-foreground mt-0.5">Kosong = pakai kecepatan normal</p>
                             </div>
                           </div>
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                               <ModalLabel>Burst Time (detik)</ModalLabel>
                               <ModalInput type="number" min="1" value={formData.burstTime} onChange={(e) => setFormData({ ...formData, burstTime: e.target.value })} />
@@ -705,7 +705,7 @@ export default function HotspotProfilePage() {
                           </div>
                           <div>
                             <ModalLabel>Limit-at / Minimum Guarantee ({formData.speedUnit})</ModalLabel>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               <div>
                                 <ModalInput type="number" min="0" value={formData.limitAtDownload} onChange={(e) => setFormData({ ...formData, limitAtDownload: e.target.value })} placeholder="0" />
                                 <p className="text-[9px] text-muted-foreground mt-0.5">↓ Download minimum</p>
@@ -722,7 +722,7 @@ export default function HotspotProfilePage() {
                     </div>
                   </div>
                   <div className="border border-brand-500/30 rounded-lg p-3 bg-brand-500/5">
-                    <div className="text-[10px] font-medium text-brand-500 mb-2">⏱️ Pembatasan Penggunaan</div>
+                    <div className="text-[10px] font-medium text-brand-500 mb-2">Pembatasan Penggunaan</div>
                     <p className="text-[9px] text-muted-foreground mb-3">Masa aktif adalah waktu voucher berlaku sejak pertama kali digunakan. Kuota & Durasi adalah batasan penggunaan selama masa aktif tersebut.</p>
                     <div className="space-y-3">
                       <div>

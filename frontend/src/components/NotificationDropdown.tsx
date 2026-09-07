@@ -99,21 +99,21 @@ export default function NotificationDropdown() {
       case 'invoice_overdue':
         return <div className={`${iconClass} bg-red-100 text-red-600 rounded-full p-1`}>💸</div>;
       case 'invoice_generated':
-        return <div className={`${iconClass} bg-blue-100 text-blue-600 rounded-full p-1`}>📄</div>;
+        return <div className={`${iconClass} bg-blue-100 text-blue-600 rounded-full p-1`}></div>;
       case 'new_registration':
         return <div className={`${iconClass} bg-blue-100 text-blue-600 rounded-full p-1`}>👤</div>;
       case 'payment_received':
-        return <div className={`${iconClass} bg-green-100 text-green-600 rounded-full p-1`}>✅</div>;
+        return <div className={`${iconClass} bg-green-100 text-green-600 rounded-full p-1`}></div>;
       case 'manual_payment_submitted':
         return <div className={`${iconClass} bg-cyan-100 text-cyan-600 rounded-full p-1`}>💳</div>;
       case 'manual_payment_approved':
         return <div className={`${iconClass} bg-green-100 text-green-600 rounded-full p-1`}>✔️</div>;
       case 'manual_payment_rejected':
-        return <div className={`${iconClass} bg-red-100 text-red-600 rounded-full p-1`}>❌</div>;
+        return <div className={`${iconClass} bg-red-100 text-red-600 rounded-full p-1`}></div>;
       case 'user_expired':
-        return <div className={`${iconClass} bg-yellow-100 text-yellow-600 rounded-full p-1`}>⏰</div>;
+        return <div className={`${iconClass} bg-yellow-100 text-yellow-600 rounded-full p-1`}></div>;
       case 'system_alert':
-        return <div className={`${iconClass} bg-purple-100 text-purple-600 rounded-full p-1`}>⚠️</div>;
+        return <div className={`${iconClass} bg-purple-100 text-purple-600 rounded-full p-1`}></div>;
       default:
         return <div className={`${iconClass} bg-muted text-muted-foreground rounded-full p-1`}>📢</div>;
     }

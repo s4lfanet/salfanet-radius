@@ -278,21 +278,21 @@ export default function UserDetailModal({
   if (!isOpen || !user) return null;
 
   return createPortal(
-    <div className="fixed inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm modal-overlay p-4 animate-in fade-in-0 duration-200" style={{ zIndex: 9999 }}>
-      <div className="bg-card dark:bg-gradient-to-br dark:from-[#0a0520] dark:to-[#1a0f35] rounded-xl shadow-xl dark: w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border border-border dark:border-[#bc13fe]/50 animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-4 duration-300">
+    <div className="fixed inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm modal-overlay p-2 sm:p-4 animate-in fade-in-0 duration-200" style={{ zIndex: 9999 }}>
+      <div className="bg-card dark:bg-gradient-to-br dark:from-[#0a0520] dark:to-[#1a0f35] rounded-xl shadow-xl dark: w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col border border-border dark:border-[#bc13fe]/50 animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-4 duration-300">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-border dark:border-[#bc13fe]/30 bg-slate-100 dark:bg-[#1a0f35]">
-          <div>
-            <h2 className="text-2xl font-bold modal-title-override">
-              User Details
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-border dark:border-[#bc13fe]/30 bg-slate-100 dark:bg-[#1a0f35]">
+          <div className="min-w-0">
+            <h2 className="text-lg sm:text-2xl font-bold modal-title-override truncate">
+              Detail Pelanggan
             </h2>
-            <p className="text-sm text-gray-600 dark:text-[#e0d0ff]/70 mt-1">
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-[#e0d0ff]/70 mt-1 truncate">
               {user.username}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground dark:text-[#e0d0ff] dark:hover:text-[#00f7ff] dark:hover:bg-[#bc13fe]/20"
+            className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground dark:text-[#e0d0ff] dark:hover:text-[#00f7ff] dark:hover:bg-[#bc13fe]/20 shrink-0"
           >
             <X className="w-5 h-5" />
           </button>
@@ -300,21 +300,21 @@ export default function UserDetailModal({
 
         {/* Tabs */}
         <div className="border-b border-border dark:border-[#bc13fe]/30">
-          <div className="flex px-6">
+          <div className="flex px-2 sm:px-6 overflow-x-auto scrollbar-thin gap-1">
             {[
               { id: 'info', label: t('userModal.userInfo') },
               { id: 'sessions', label: t('userModal.sessions') },
               { id: 'auth', label: t('userModal.authLogs') },
               { id: 'invoices', label: t('userModal.invoices') },
-              { id: 'addons', label: '📦 Add-ons' },
-              { id: 'promise', label: '🤝 Janji Bayar' },
-              { id: 'photos', label: '📷 Foto' },
+              { id: 'addons', label: 'Add-ons' },
+              { id: 'promise', label: 'Janji Bayar' },
+              { id: 'photos', label: 'Foto' },
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-3 text-sm font-medium border-b-2 transition-all ${activeTab === tab.id
-                  ? 'border-primary text-primary dark:border-[#00f7ff] dark:text-[#00f7ff] bg-primary/10 dark:bg-[#00f7ff]/10 dark:shadow-[0_2px_10px_rgba(0,247,255,0.3)]'
+                className={`px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-medium border-b-2 transition-all whitespace-nowrap ${activeTab === tab.id
+                  ? 'border-primary text-primary dark:border-[#00f7ff] dark:text-[#00f7ff] bg-primary/10 dark:bg-[#00f7ff]/10'
                   : 'border-transparent text-muted-foreground dark:text-[#e0d0ff]/60 hover:text-foreground dark:hover:text-[#e0d0ff] hover:bg-muted dark:hover:bg-[#bc13fe]/10'
                   }`}
               >
@@ -325,10 +325,10 @@ export default function UserDetailModal({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           {activeTab === 'info' && (
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>{t('userModal.username')}</label>
                   <input
@@ -542,7 +542,7 @@ export default function UserDetailModal({
                       </button>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <input
                       type="number"
                       step="any"
@@ -574,7 +574,7 @@ export default function UserDetailModal({
                       />
                       <div className="flex items-center justify-between p-2 bg-muted/50 dark:bg-[#0a0520]">
                         <span className="text-[10px] font-mono text-muted-foreground">
-                          📍 {Number(formData.latitude).toFixed(6)}, {Number(formData.longitude).toFixed(6)}
+                          {Number(formData.latitude).toFixed(6)}, {Number(formData.longitude).toFixed(6)}
                         </span>
                         <a
                           href={`https://www.google.com/maps?q=${formData.latitude},${formData.longitude}`}
@@ -593,7 +593,7 @@ export default function UserDetailModal({
                 {/* Subscription Type */}
                 <div className="col-span-2">
                   <label className={labelCls2}>{t('userModal.subscriptionType')}</label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <label className={`flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all ${formData.subscriptionType === 'POSTPAID' ? 'border-primary dark:border-[#00f7ff] bg-primary/10 dark:bg-[#00f7ff]/10 shadow-md dark:' : 'border-border dark:border-[#bc13fe]/30 hover:border-primary/50 dark:hover:border-[#00f7ff]/50'}`}>
                       <input
                         type="radio"
@@ -604,7 +604,7 @@ export default function UserDetailModal({
                         className="w-4 h-4 accent-primary dark:accent-[#00f7ff] border-border dark:border-[#bc13fe]/50 focus:ring-primary dark:focus:ring-[#00f7ff]"
                       />
                       <div className="ml-3 flex-1">
-                        <div className="text-sm font-medium text-foreground dark:text-[#e0d0ff]">📅 {t('userModal.postpaid')}</div>
+                        <div className="text-sm font-medium text-foreground dark:text-[#e0d0ff]">{t('userModal.postpaid')}</div>
                         <div className="text-xs text-muted-foreground dark:text-[#e0d0ff]/50">Tagihan bulanan, tanggal tetap</div>
                       </div>
                     </label>
@@ -618,7 +618,7 @@ export default function UserDetailModal({
                         className="w-4 h-4 accent-primary dark:accent-[#bc13fe] border-border dark:border-[#bc13fe]/50 focus:ring-primary dark:focus:ring-[#bc13fe]"
                       />
                       <div className="ml-3 flex-1">
-                        <div className="text-sm font-medium text-foreground dark:text-[#e0d0ff]">⏰ {t('userModal.prepaid')}</div>
+                        <div className="text-sm font-medium text-foreground dark:text-[#e0d0ff]">{t('userModal.prepaid')}</div>
                         <div className="text-xs text-muted-foreground dark:text-[#e0d0ff]/50">Bayar dimuka, validitas terbatas</div>
                       </div>
                     </label>
@@ -629,7 +629,7 @@ export default function UserDetailModal({
                 {formData.subscriptionType === 'POSTPAID' && (
                   <div>
                     <label className={labelCls}>
-                      📅 Tanggal Tagihan
+                      Tanggal Tagihan
                     </label>
                     <select
                       value={formData.billingDay}
@@ -672,7 +672,7 @@ export default function UserDetailModal({
                   />
                   <p className="text-xs text-muted-foreground dark:text-[#e0d0ff]/50 mt-1">
                     {formData.subscriptionType === 'POSTPAID' 
-                      ? '📌 Untuk testing: expiredAt = tanggal tagihan bulan depan (auto calculated)' 
+                      ? 'Untuk testing: expiredAt = tanggal tagihan bulan depan (auto calculated)' 
                       : 'Tanggal kadaluarsa paket. Kosongkan untuk auto dari profile.'}
                   </p>
                 </div>
@@ -701,7 +701,7 @@ export default function UserDetailModal({
 
                 {/* Aksi Jatuh Tempo */}
                 <div className="col-span-2">
-                  <label className={labelCls}>⚡ Aksi Jatuh Tempo</label>
+                  <label className={labelCls}>Aksi Jatuh Tempo</label>
                   <select
                     value={formData.autoIsolationEnabled ? 'isolate' : 'keep'}
                     onChange={(e) => setFormData({ ...formData, autoIsolationEnabled: e.target.value === 'isolate' })}
@@ -731,7 +731,7 @@ export default function UserDetailModal({
                   </p>
                 </div>
                 <div>
-                  <label className={labelCls}>📝 Alasan Diskon</label>
+                  <label className={labelCls}>Alasan Diskon</label>
                   <input
                     type="text"
                     value={formData.discountNote}
@@ -743,7 +743,7 @@ export default function UserDetailModal({
 
                 {/* Teknisi Pemasang */}
                 <div className="col-span-2">
-                  <label className={labelCls}>🔧 Teknisi Pemasang</label>
+                  <label className={labelCls}>Teknisi Pemasang</label>
                   <div className="flex items-center gap-2 p-3 bg-muted/50 dark:bg-[#bc13fe]/10 rounded-lg border border-border dark:border-[#bc13fe]/20">
                     <span className="text-sm font-medium text-foreground dark:text-[#e0d0ff]">
                       {user?.registeredByTechnician?.name || 'System / Admin'}
@@ -761,7 +761,7 @@ export default function UserDetailModal({
 
                 {/* Tanggal Register */}
                 <div>
-                  <label className={labelCls}>📅 Tanggal Register</label>
+                  <label className={labelCls}>Tanggal Register</label>
                   <input
                     type="date"
                     value={formData.registeredAt}
@@ -777,7 +777,7 @@ export default function UserDetailModal({
               {/* Dokumen KTP */}
               <div className="border border-border dark:border-[#bc13fe]/30 rounded-lg p-4 space-y-3">
                 <p className="text-sm font-semibold text-foreground dark:text-[#e0d0ff]">🪪 Dokumen Identitas (KTP)</p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className={labelCls}>No. NIK KTP</label>
                     <input
@@ -811,7 +811,7 @@ export default function UserDetailModal({
                 </div>
               </div>
               <div className="border border-border dark:border-[#00f7ff]/20 rounded-lg p-4 space-y-3">
-                <p className="text-sm font-semibold text-foreground dark:text-[#e0d0ff]">📷 Foto Instalasi</p>
+                <p className="text-sm font-semibold text-foreground dark:text-[#e0d0ff]">Foto Instalasi</p>
                 <div>
                   <input type="file" accept="image/*" onChange={handleUploadInstallation} disabled={uploadingInstallation} className="sr-only" id="installationUploadEdit" />
                   {installCameraOpen ? (
@@ -820,9 +820,9 @@ export default function UserDetailModal({
                       onClose={() => setInstallCameraOpen(false)}
                     />
                   ) : (
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <label htmlFor={uploadingInstallation ? undefined : 'installationUploadEdit'} className={`flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs border border-border dark:border-[#00f7ff]/30 rounded hover:bg-muted dark:hover:bg-[#00f7ff]/10 text-muted-foreground dark:text-[#e0d0ff]/70 ${uploadingInstallation ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer'}`}>
-                      <ImageIcon className="w-3 h-3" /> {uploadingInstallation ? '⏳ Mengupload...' : 'Galeri'}
+                      <ImageIcon className="w-3 h-3" /> {uploadingInstallation ? 'Mengupload...' : 'Galeri'}
                     </label>
                     <button type="button" onClick={() => setInstallCameraOpen(true)} disabled={uploadingInstallation} className={`flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs border border-primary/30 dark:border-[#00f7ff]/40 rounded hover:bg-primary/5 dark:hover:bg-[#00f7ff]/10 text-primary/70 dark:text-[#00f7ff]/70 ${uploadingInstallation ? 'opacity-50 cursor-not-allowed' : ''}`}>
                       <Camera className="w-3 h-3" /> Kamera
@@ -855,7 +855,7 @@ export default function UserDetailModal({
                   />
                   <div>
                     <span className="text-sm font-medium text-amber-700 dark:text-amber-400">
-                      🔄 Sync PPPoE Secret ke MikroTik
+                      Sync PPPoE Secret ke MikroTik
                     </span>
                     <p className="text-[10px] text-amber-600/70 dark:text-amber-400/60 mt-0.5">
                       Centang jika PPPoE secret belum ada di MikroTik (local-auth) atau perlu di-update. Akan membuat/update PPP secret dengan username, password, dan profile paket yang dipilih.
@@ -1098,7 +1098,7 @@ export default function UserDetailModal({
               {/* Installation Photos Section */}
               <div className="border border-border dark:border-[#00f7ff]/20 rounded-xl p-4 space-y-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-base">📷</span>
+                  <span className="text-base"></span>
                   <p className="text-sm font-semibold text-foreground dark:text-[#e0d0ff]">Foto Instalasi</p>
                   {formData.installationPhotos.length > 0 && (
                     <span className="ml-auto text-xs bg-primary/10 dark:bg-[#00f7ff]/10 text-primary dark:text-[#00f7ff] px-2 py-0.5 rounded-full">
@@ -1107,7 +1107,7 @@ export default function UserDetailModal({
                   )}
                 </div>
                 {formData.installationPhotos.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {formData.installationPhotos.map((photo, index) => (
                       <div
                         key={index}
@@ -1269,7 +1269,7 @@ function CustomerAddonsTab({ userId }: { userId: string }) {
                   {a.notes ? ` · ${a.notes}` : ''}
                 </div>
                 {a.priceOverride != null && (
-                  <div className="text-[10px] text-amber-500 mt-0.5">⚠️ Harga custom</div>
+                  <div className="text-[10px] text-amber-500 mt-0.5">Harga custom</div>
                 )}
               </div>
               <div className="flex items-center gap-3">
@@ -1444,7 +1444,7 @@ function PaymentPromiseTab({ userId, userStatus }: { userId: string; userStatus:
                 </span>
               </div>
               {activePromise.notes && (
-                <p className="text-xs text-muted-foreground mb-2">📝 {activePromise.notes}</p>
+                <p className="text-xs text-muted-foreground mb-2">{activePromise.notes}</p>
               )}
               <p className="text-[10px] text-muted-foreground">
                 Dibuat: {activePromise.createdAt ? formatWIB(activePromise.createdAt, 'd MMM yyyy') : '-'}
@@ -1488,7 +1488,7 @@ function PaymentPromiseTab({ userId, userStatus }: { userId: string; userStatus:
       {showModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4" onClick={() => setShowModal(false)}>
           <div className="bg-background dark:bg-[#0a0520] border border-border dark:border-[#bc13fe]/30 rounded-xl shadow-2xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-foreground dark:text-[#e0d0ff] mb-4">🤝 Buat Janji Bayar</h3>
+            <h3 className="text-lg font-bold text-foreground dark:text-[#e0d0ff] mb-4">Buat Janji Bayar</h3>
             <p className="text-xs text-muted-foreground mb-4">
               Pelanggan berjanji membayar tagihan pada tanggal tertentu. Akses internet akan dibuka hingga tanggal janji. Jika tidak dibayar hingga tanggal janji, pelanggan akan diisolir otomatis.
             </p>

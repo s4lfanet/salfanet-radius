@@ -686,7 +686,7 @@ export default function PaymentGatewayPage() {
                   <p className="text-[11px] font-semibold">Angka Unik (Suffix Nominal)</p>
                   <p className="text-[10px] text-muted-foreground">Sistem menambahkan angka unik ke nominal tagihan agar setiap invoice punya nominal berbeda untuk matching otomatis. Contoh: Rp150.000 + suffix 017 = Rp150.017.</p>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
                     <label className="text-[10px] font-medium text-muted-foreground">Minimum (1-999)</label>
                     <input
@@ -780,18 +780,18 @@ export default function PaymentGatewayPage() {
 
               {qrisForm.deviceKey ? (
                 <div className="p-2.5 bg-success/10 border border-success/20 rounded-lg">
-                  <p className="text-[10px] text-success">✅ Android Listener aktif. Pembayaran QRIS akan terdeteksi otomatis saat notifikasi e-wallet (DANA, GoPay, BRImo, dll) masuk ke HP listener.</p>
+                  <p className="text-[10px] text-success">Android Listener aktif. Pembayaran QRIS akan terdeteksi otomatis saat notifikasi e-wallet (DANA, GoPay, BRImo, dll) masuk ke HP listener.</p>
                   <p className="text-[9px] text-muted-foreground mt-1">Webhook URL Android: <code className="bg-muted px-1 rounded">{typeof window !== 'undefined' ? window.location.origin : ''}/api/payment/qris-notify</code></p>
                 </div>
               ) : (
                 <div className="p-2 bg-warning/10 border border-warning/20 rounded-lg">
-                  <p className="text-[10px] text-warning">⚠️ Tanpa Device Key, konfirmasi pembayaran QRIS dilakukan manual oleh admin. Isi Device Key di atas lalu install app Android QrisListener untuk deteksi otomatis.</p>
+                  <p className="text-[10px] text-warning">Tanpa Device Key, konfirmasi pembayaran QRIS dilakukan manual oleh admin. Isi Device Key di atas lalu install app Android QrisListener untuk deteksi otomatis.</p>
                 </div>
               )}
 
               {/* Simulasi / Testing QRIS Mandiri */}
               <div className="p-2.5 bg-orange-500/10 border border-orange-500/20 rounded-lg space-y-2">
-                <p className="text-[11px] font-semibold text-orange-600 dark:text-orange-400">🧪 Simulasi Pembayaran QRIS (Testing)</p>
+                <p className="text-[11px] font-semibold text-orange-600 dark:text-orange-400">Simulasi Pembayaran QRIS (Testing)</p>
                 <p className="text-[10px] text-muted-foreground">Masukkan Order ID dari invoice QRIS Mandiri yang masih pending untuk mensimulasikan pembayaran masuk tanpa menggunakan HP Android.</p>
                 <div className="flex gap-2">
                   <input
@@ -836,7 +836,7 @@ export default function PaymentGatewayPage() {
       {/* Log Detail Modal */}
       {selectedLog && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4" onClick={() => setSelectedLog(null)}>
-          <div className="bg-card rounded-lg border border-border max-w-2xl w-full max-h-[85vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-card rounded-lg border border-border max-w-[calc(100%-2rem)] sm:max-w-2xl w-full max-h-[85vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-3 border-b border-border">
               <h3 className="text-sm font-semibold">{t('paymentGateway.logDetail')}</h3>
               <button onClick={() => setSelectedLog(null)} className="p-1 hover:bg-muted rounded">
@@ -844,14 +844,14 @@ export default function PaymentGatewayPage() {
               </button>
             </div>
             <div className="p-3 space-y-3 overflow-y-auto max-h-[70vh]">
-              <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div><span className="text-[10px] text-muted-foreground block">{t('paymentGateway.timestampLabel')}</span><span className="font-medium">{formatWIB(new Date(selectedLog.createdAt), 'dd MMM yyyy HH:mm:ss')}</span></div>
                 <div><span className="text-[10px] text-muted-foreground block">{t('paymentGateway.gatewayLabel')}</span><span className="font-medium capitalize">{selectedLog.gateway}</span></div>
                 <div><span className="text-[10px] text-muted-foreground block">{t('paymentGateway.orderIdLabel')}</span><span className="font-mono text-[10px]">{selectedLog.orderId}</span></div>
                 <div><span className="text-[10px] text-muted-foreground block">{t('paymentGateway.transactionIdLabel')}</span><span className="font-mono text-[10px]">{selectedLog.transactionId || '-'}</span></div>
                 <div><span className="text-[10px] text-muted-foreground block">Status</span><span className="font-medium">{selectedLog.status}</span></div>
                 <div><span className="text-[10px] text-muted-foreground block">{t('paymentGateway.amountLabel')}</span><span className="font-medium">{formatAmount(selectedLog.amount)}</span></div>
-                <div><span className="text-[10px] text-muted-foreground block">{t('paymentGateway.successLabel')}</span><span className="font-medium">{selectedLog.success ? '✅ Yes' : '❌ No'}</span></div>
+                <div><span className="text-[10px] text-muted-foreground block">{t('paymentGateway.successLabel')}</span><span className="font-medium">{selectedLog.success ? 'Yes' : 'No'}</span></div>
                 {selectedLog.errorMessage && <div className="col-span-2"><span className="text-[10px] text-destructive block">{t('paymentGateway.errorLabel')}</span><span className="text-destructive text-[10px]">{selectedLog.errorMessage}</span></div>}
               </div>
               {selectedLog.payload && (

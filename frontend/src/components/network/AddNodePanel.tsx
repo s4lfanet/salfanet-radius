@@ -339,7 +339,7 @@ function JCForm({ lat, lng, otbs, cables, odcsList, jcsList, onSubmit, loading }
 
       {/* Info box: connections are done via map draw-line mode */}
       <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 p-3">
-        <p className="text-[11px] text-amber-700 dark:text-amber-300 font-medium mb-1">💡 Koneksi via Draw Line</p>
+        <p className="text-[11px] text-amber-700 dark:text-amber-300 font-medium mb-1">Koneksi via Draw Line</p>
         <p className="text-[10px] text-amber-600 dark:text-amber-400">
           Setelah node dibuat, gunakan tombol <strong>🔗 Hubungkan</strong> di peta untuk menghubungkan node ini ke OTB/JC lain. 
           Kabel dan core akan otomatis dialokasikan.

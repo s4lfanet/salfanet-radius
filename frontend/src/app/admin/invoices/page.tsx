@@ -316,7 +316,7 @@ export default function InvoicesPage() {
       const data = await broadcastMutation.mutateAsync({ invoiceIds: Array.from(selectedInvoices) });
 
       if (data.success) {
-        await showSuccess(`Broadcast ${t('common.success').toLowerCase()}!\n✅ ${t('whatsapp.sent')}: ${data.successCount}\n❌ ${t('whatsapp.failed')}: ${data.failCount}`);
+        await showSuccess(`Broadcast ${t('common.success').toLowerCase()}!\n${t('whatsapp.sent')}: ${data.successCount}\n${t('whatsapp.failed')}: ${data.failCount}`);
         setSelectedInvoices(new Set());
       } else {
         await showError(data.error || t('whatsapp.broadcastFailed'));
@@ -1173,7 +1173,7 @@ export default function InvoicesPage() {
             </DialogHeader>
             {selectedInvoice && (
               <div className="space-y-3 text-xs">
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <p className="text-[10px] text-muted-foreground">{t('invoices.invoiceNumber')}</p>
                     <p className="font-mono font-medium">{selectedInvoice.invoiceNumber}</p>
@@ -1188,10 +1188,10 @@ export default function InvoicesPage() {
                   <p className="font-medium">{selectedInvoice.user?.name || selectedInvoice.customerName || t('invoices.deleted')}</p>
                   <p className="text-muted-foreground">{selectedInvoice.user?.phone || selectedInvoice.customerPhone || '-'}</p>
                   {(selectedInvoice.user?.email || selectedInvoice.customerEmail) && (
-                    <p className="text-muted-foreground text-[10px]">📧 {selectedInvoice.user?.email || selectedInvoice.customerEmail}</p>
+                    <p className="text-muted-foreground text-[10px]">{selectedInvoice.user?.email || selectedInvoice.customerEmail}</p>
                   )}
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <p className="text-[10px] text-muted-foreground">{t('nav.profile')}</p>
                     <p>{selectedInvoice.user?.profile?.name || '-'}</p>
@@ -1201,7 +1201,7 @@ export default function InvoicesPage() {
                     <p className="text-base font-bold text-success">{formatCurrency(Number(selectedInvoice.amount))}</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <p className="text-[10px] text-muted-foreground">{t('invoices.createdAt')}</p>
                     <p>{formatDate(selectedInvoice.createdAt)}</p>
@@ -1404,7 +1404,7 @@ export default function InvoicesPage() {
                   {/* Scope toggle */}
                   <div>
                     <label className="text-[11px] font-medium text-muted-foreground mb-1.5 block">Target</label>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <button
                         type="button"
                         onClick={() => { setGenScope('all'); setGenUserId(''); setGenUserSearch(''); setGenUsers([]); }}

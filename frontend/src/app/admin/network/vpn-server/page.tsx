@@ -679,12 +679,12 @@ export default function VpnServerPage() {
     setSettingUpId(server.id);
 
     const formatStep = (s: string) => {
-      const cls = s.startsWith('✅') ? 'text-green-400' : s.startsWith('❌') ? 'text-red-400' : s.startsWith('⚠️') ? 'text-yellow-400' : 'text-gray-300';
+      const cls = s.startsWith('') ? 'text-green-400' : s.startsWith('') ? 'text-red-400' : s.startsWith('') ? 'text-yellow-400' : 'text-gray-300';
       return `<p class="text-xs ${cls}">${s}</p>`;
     };
 
     // Show live modal immediately so user sees progress
-    setSetupResultModal({ success: null, title: 'Setup Sedang Berjalan...', message: 'Menghubungkan ke RouterOS API...', stepsHtml: '<p class="text-xs text-gray-400 animate-pulse">⏳ Menghubungkan...</p>' });
+    setSetupResultModal({ success: null, title: 'Setup Sedang Berjalan...', message: 'Menghubungkan ke RouterOS API...', stepsHtml: '<p class="text-xs text-gray-400 animate-pulse">Menghubungkan...</p>' });
 
     const liveSteps: string[] = [];
     try {
@@ -747,7 +747,7 @@ export default function VpnServerPage() {
       }
     } catch (error: unknown) {
       const msg = (error instanceof Error ? error.message : undefined) || t('network.failedSetupVpnServer') || 'Setup VPN gagal';
-      const stepsHtml = liveSteps.map(formatStep).join('') + `<p class="text-xs text-red-400">❌ Error: ${msg}</p>`;
+      const stepsHtml = liveSteps.map(formatStep).join('') + `<p class="text-xs text-red-400">Error: ${msg}</p>`;
       addToast({ type: 'error', title: 'Setup VPN Gagal', description: msg });
       setSetupResultModal({ success: false, title: 'Setup Gagal', message: msg, stepsHtml });
     } finally {
@@ -848,7 +848,7 @@ export default function VpnServerPage() {
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={() => setShowVpnScriptModal(false)}>
           <div className="bg-[#1e1b2e] border border-border rounded-xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b border-border">
-              <h2 className="font-bold text-brand-500">📋 Manual Setup Script</h2>
+              <h2 className="font-bold text-brand-500">Manual Setup Script</h2>
               <button onClick={() => setShowVpnScriptModal(false)}><X className="w-5 h-5 text-muted-foreground hover:text-foreground" /></button>
             </div>
             <div className="p-4 overflow-y-auto flex-1">
@@ -928,10 +928,10 @@ export default function VpnServerPage() {
                 <div className="px-6 pb-6 border-t border-brand-500/10">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-5">
                     {[
-                      { step: 1, icon: '☁️', color: 'border-border bg-primary/10', title: 'Install di VPS', desc: 'Jalankan installer SALFANET di VPS: bash vps-install.sh. FreeRADIUS, Node.js, dan PM2 akan terinstall otomatis.', link: null, linkLabel: null },
+                      { step: 1, icon: '', color: 'border-border bg-primary/10', title: 'Install di VPS', desc: 'Jalankan installer SALFANET di VPS: bash vps-install.sh. FreeRADIUS, Node.js, dan PM2 akan terinstall otomatis.', link: null, linkLabel: null },
                       { step: 2, icon: '🖥️', color: 'border-brand-500/40 bg-brand-500/5', title: 'Tambah VPN Server', desc: 'Isi IP MikroTik CHR, username admin, dan subnet VPN (contoh: 10.20.30.0/24). Klik "Test Koneksi" lalu Simpan.', link: null, linkLabel: null },
-                      { step: 3, icon: '⚙️', color: 'border-green-500/40 bg-green-500/5', title: 'Setup Protokol', desc: 'Klik tombol "Setup" pada kartu server untuk konfigurasi L2TP/SSTP/PPTP di MikroTik CHR secara otomatis. Untuk WireGuard (RouterOS 7+) klik tombol WireGuard.', link: null, linkLabel: null },
-                      { step: 4, icon: '📡', color: 'border-amber-500/40 bg-amber-500/5', title: 'Tambah VPN Client', desc: 'Setelah server siap, pergi ke menu VPN Client untuk tambahkan setiap NAS sebagai client. Sistem generate script RouterOS otomatis.', link: '/admin/network/vpn-client', linkLabel: '→ Menu VPN Client' },
+                      { step: 3, icon: '', color: 'border-green-500/40 bg-green-500/5', title: 'Setup Protokol', desc: 'Klik tombol "Setup" pada kartu server untuk konfigurasi L2TP/SSTP/PPTP di MikroTik CHR secara otomatis. Untuk WireGuard (RouterOS 7+) klik tombol WireGuard.', link: null, linkLabel: null },
+                      { step: 4, icon: '', color: 'border-amber-500/40 bg-amber-500/5', title: 'Tambah VPN Client', desc: 'Setelah server siap, pergi ke menu VPN Client untuk tambahkan setiap NAS sebagai client. Sistem generate script RouterOS otomatis.', link: '/admin/network/vpn-client', linkLabel: '→ Menu VPN Client' },
                     ].map(item => (
                       <div key={item.step} className={`rounded-xl border ${item.color} p-4`}>
                         <div className="flex items-center gap-2 mb-2">
@@ -1204,7 +1204,7 @@ export default function VpnServerPage() {
         {
           showModal && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-2.5 sm:p-4">
-              <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-border rounded-2xl max-w-lg w-full p-6  max-h-[90vh] overflow-y-auto">
+              <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-border rounded-2xl max-w-[calc(100%-2rem)] sm:max-w-lg w-full p-4 sm:p-6  max-h-[90vh] overflow-y-auto">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="p-2 bg-gradient-to-br from-primary to-brand-500 rounded-lg flex items-center justify-center">
                     <Shield className="w-5 h-5 text-white" />
@@ -1227,7 +1227,7 @@ export default function VpnServerPage() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-brand-500 mb-2">{t('network.hostIp')}</label>
                       <input
@@ -1251,7 +1251,7 @@ export default function VpnServerPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-brand-500 mb-2">{t('network.username')}</label>
                       <input
@@ -1291,7 +1291,7 @@ export default function VpnServerPage() {
                   {/* Pool Config */}
                   <div className="p-4 rounded-xl border border-brand-500/20 bg-brand-500/5">
                     <label className="block text-sm font-semibold text-brand-500 mb-3">Konfigurasi Pool IP</label>
-                    <div className="grid grid-cols-2 gap-3 mb-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                       <div>
                         <label className="block text-xs text-muted-foreground mb-1">IP Mulai (pool start)</label>
                         <div className="flex items-center gap-1">
@@ -1337,7 +1337,7 @@ export default function VpnServerPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-brand-500 mb-3">Protokol VPN</label>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {([
                         { key: 'l2tpEnabled' as const, label: 'L2TP/IPSec', color: 'green' },
                         { key: 'sstpEnabled' as const, label: 'SSTP (port 992)', color: 'cyan' },
@@ -1404,7 +1404,7 @@ export default function VpnServerPage() {
         {/* ── WireGuard Panel Modal ── */}
         {showWgPanel && wgPanelServer && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-2.5 sm:p-4" onClick={() => setShowWgPanel(false)}>
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-teal-500/50 rounded-2xl max-w-3xl w-full p-6  max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-teal-500/50 rounded-2xl max-w-[calc(100%-2rem)] sm:max-w-3xl w-full p-4 sm:p-6  max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-gradient-to-br from-teal-500 to-brand-500 rounded-lg flex items-center justify-center">
@@ -1417,11 +1417,11 @@ export default function VpnServerPage() {
                 </button>
               </div>
 
-              {wgLoading && <p className="text-sm text-teal-400 animate-pulse">⏳ Membaca status WireGuard dari VPS...</p>}
+              {wgLoading && <p className="text-sm text-teal-400 animate-pulse">Membaca status WireGuard dari VPS...</p>}
 
               {!wgLoading && wgServerInfo && !wgServerInfo.installed && (
                 <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 mb-4">
-                  <p className="text-sm text-amber-400 font-bold mb-1">⚠️ WireGuard server belum di-install</p>
+                  <p className="text-sm text-amber-400 font-bold mb-1">WireGuard server belum di-install</p>
                   <p className="text-xs text-muted-foreground mb-3">{wgServerInfo.message}</p>
                   <p className="text-xs text-muted-foreground">Jalankan di VPS:</p>
                   <pre className="text-xs font-mono bg-slate-900 text-green-300 p-3 rounded-lg mt-1 overflow-x-auto">bash /var/www/salfanet-radius/vps-install/install-wg-server.sh</pre>
@@ -1520,7 +1520,7 @@ export default function VpnServerPage() {
         {/* L2TP Control Modal */}
         {showL2tpControl && editingServer && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-2.5 sm:p-4">
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-border rounded-2xl max-w-2xl w-full p-6  max-h-[90vh] overflow-y-auto">
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-border rounded-2xl max-w-[calc(100%-2rem)] sm:max-w-2xl w-full p-4 sm:p-6  max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-gradient-to-br from-primary to-brand-500 rounded-lg flex items-center justify-center">
@@ -1539,10 +1539,10 @@ export default function VpnServerPage() {
               {/* Inline SSH + L2TP Credentials */}
               {!savedSshCredentials ? (
                 <div className="mb-6 p-4 rounded-xl border border-border bg-muted/50 dark:bg-slate-900/60">
-                  <p className="text-xs font-bold text-brand-500 mb-1">🔑 SSH Connection - VPS RADIUS Server</p>
+                  <p className="text-xs font-bold text-brand-500 mb-1">SSH Connection - VPS RADIUS Server</p>
                   <p className="text-xs text-muted-foreground mb-3">Target: <span className="text-primary font-medium">{editingServer.name}</span> ({editingServer.host})</p>
                   <input className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground text-sm mb-2" placeholder="VPS IP/Hostname" value={l2tpSshForm.host} onChange={(e) => setL2tpSshForm(p => ({...p, host: e.target.value}))} />
-                  <div className="grid grid-cols-2 gap-2 mb-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
                     <input className="px-3 py-2 bg-input border border-border rounded-lg text-foreground text-sm" placeholder="SSH Port" type="number" value={l2tpSshForm.port} onChange={(e) => setL2tpSshForm(p => ({...p, port: e.target.value}))} />
                     <input className="px-3 py-2 bg-input border border-border rounded-lg text-foreground text-sm" placeholder="SSH Username" value={l2tpSshForm.username} onChange={(e) => setL2tpSshForm(p => ({...p, username: e.target.value}))} />
                   </div>
@@ -1555,7 +1555,7 @@ export default function VpnServerPage() {
                       return (
                         <div className="mb-2">
                           {allL2tp.length > 0 && radiusClients.length === 0 && (
-                            <p className="text-xs text-amber-400 mb-2 p-2 bg-amber-500/10 rounded-lg border border-amber-500/30">⚠️ Tidak ada VPN Client L2TP yang dikonfigurasi sebagai RADIUS Server. Buka menu VPN Client → centang &ldquo;Jadikan Server RADIUS&rdquo;.</p>
+                            <p className="text-xs text-amber-400 mb-2 p-2 bg-amber-500/10 rounded-lg border border-amber-500/30">Tidak ada VPN Client L2TP yang dikonfigurasi sebagai RADIUS Server. Buka menu VPN Client → centang &ldquo;Jadikan Server RADIUS&rdquo;.</p>
                           )}
                           {radiusClients.length > 0 && (
                             <select
@@ -1573,7 +1573,7 @@ export default function VpnServerPage() {
                                 }
                               }}
                             >
-                              <option value="" disabled>📋 Pilih akun VPN Client (RADIUS Server)...</option>
+                              <option value="" disabled>Pilih akun VPN Client (RADIUS Server)...</option>
                               {radiusClients.map(c => (
                                 <option key={c.id} value={c.id}>
                                   🔐 {c.name} - {c.username} ({c.vpnServerHost || 'no host'})
@@ -1585,7 +1585,7 @@ export default function VpnServerPage() {
                       );
                     })()}
                     <input className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground text-sm mb-2" placeholder="VPN Server IP (CHR/MikroTik)" value={l2tpSshForm.vpnServerIp} onChange={(e) => setL2tpSshForm(p => ({...p, vpnServerIp: e.target.value}))} />
-                    <div className="grid grid-cols-2 gap-2 mb-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
                       <input className="px-3 py-2 bg-input border border-border rounded-lg text-foreground text-sm" placeholder="L2TP Username" value={l2tpSshForm.l2tpUsername} onChange={(e) => setL2tpSshForm(p => ({...p, l2tpUsername: e.target.value}))} />
                       <input className="px-3 py-2 bg-input border border-border rounded-lg text-foreground text-sm" placeholder="L2TP Password" type="password" value={l2tpSshForm.l2tpPassword} onChange={(e) => setL2tpSshForm(p => ({...p, l2tpPassword: e.target.value}))} />
                     </div>
@@ -1596,7 +1596,7 @@ export default function VpnServerPage() {
                 </div>
               ) : (
                 <div className="mb-4 flex items-center justify-between p-3 rounded-xl bg-green-500/10 border border-green-500/30">
-                  <p className="text-sm text-green-400">✅ SSH: <span className="font-mono text-foreground">{savedSshCredentials.username}@{savedSshCredentials.host}</span></p>
+                  <p className="text-sm text-green-400">SSH: <span className="font-mono text-foreground">{savedSshCredentials.username}@{savedSshCredentials.host}</span></p>
                   <button onClick={() => { setSavedSshCredentials(null); setL2tpStatus(null); setL2tpLogs([]); try { localStorage.removeItem('l2tp_ssh_credentials'); localStorage.removeItem('l2tp_config'); } catch {} }} className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 bg-muted dark:bg-slate-700 rounded-lg transition-colors">Ubah</button>
                 </div>
               )}

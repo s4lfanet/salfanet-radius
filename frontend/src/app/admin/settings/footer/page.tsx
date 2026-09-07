@@ -16,7 +16,7 @@ interface FooterSettings {
 const PORTALS = [
   {
     key: 'footerAdmin' as keyof FooterSettings,
-    emoji: '🔒',
+    emoji: '',
     label: 'Footer Admin',
     desc: 'Ditampilkan di halaman login Admin',
     placeholder: 'Powered by Salfa Net',
@@ -32,7 +32,7 @@ const PORTALS = [
   },
   {
     key: 'footerTechnician' as keyof FooterSettings,
-    emoji: '🔧',
+    emoji: '',
     label: 'Footer Teknisi',
     desc: 'Ditampilkan di halaman login Teknisi',
     placeholder: 'Powered by Salfa Net',
@@ -40,7 +40,7 @@ const PORTALS = [
   },
   {
     key: 'footerAgent' as keyof FooterSettings,
-    emoji: '🤝',
+    emoji: '',
     label: 'Footer Agen',
     desc: 'Ditampilkan di halaman login Agen',
     placeholder: 'Powered by Salfa Net',

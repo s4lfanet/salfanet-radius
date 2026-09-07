@@ -476,7 +476,7 @@ export default function StoppedSubscriptionsPage() {
             </div>
             <div className="text-left mb-4">
               <label className="block text-xs font-medium text-muted-foreground mb-1">
-                🔒 Password Superadmin
+                Password Superadmin
               </label>
               <input
                 type="password"

@@ -328,7 +328,7 @@ export default function AdminTicketDetailPage() {
               {renderWithLinks(ticket.description)}
             </p>
             <div className="border-t border-border pt-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-muted-foreground">{t('ticket.customer')}:</span>
                   <p className="font-medium text-foreground">{ticket.customerName}</p>

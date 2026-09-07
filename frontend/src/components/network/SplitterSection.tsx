@@ -238,7 +238,7 @@ export default function SplitterSection({
           /* Edit Mode */
           <div className="space-y-4">
             {/* Type & Ratio Selection */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-[10px] font-medium mb-2">Tipe Splitter</label>
                 <div className="space-y-2">
@@ -261,7 +261,7 @@ export default function SplitterSection({
               </div>
               <div>
                 <label className="block text-[10px] font-medium mb-2">Rasio Split</label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {SPLITTER_RATIOS.map(ratio => (
                     <button
                       key={ratio.value}

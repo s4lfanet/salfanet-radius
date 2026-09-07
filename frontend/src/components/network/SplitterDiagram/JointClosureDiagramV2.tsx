@@ -146,7 +146,7 @@ export function JointClosureDiagramV2({
             </div>
             <p className="text-sm text-muted-foreground">{node.name}</p>
             {node.address && (
-              <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">📍 {node.address}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">{node.address}</p>
             )}
           </div>
           <div className="text-right">

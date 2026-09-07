@@ -33,7 +33,7 @@ export const StatsRow: Story = {
 
       {/* Target: semantic tokens */}
       <div>
-        <h2 className="text-lg font-bold text-foreground mb-3">✅ Target - Semantic Tokens</h2>
+        <h2 className="text-lg font-bold text-foreground mb-3">Target - Semantic Tokens</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="bg-card border border-border rounded-2xl p-4">
             <div className="flex items-center justify-between mb-2 min-w-0">
@@ -76,7 +76,7 @@ export const StatsRow: Story = {
 
       {/* Current: hardcoded neon (technician/admin style) */}
       <div>
-        <h2 className="text-lg font-bold text-foreground mb-3">❌ Current - Hardcoded Neon (to be replaced)</h2>
+        <h2 className="text-lg font-bold text-foreground mb-3">Current - Hardcoded Neon (to be replaced)</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div className="bg-card border border-border rounded-2xl p-4">
             <div className="flex items-center justify-between mb-2 min-w-0">
@@ -128,7 +128,7 @@ export const ButtonComparison: Story = {
       </div>
 
       <div>
-        <h2 className="text-lg font-bold text-foreground mb-3">✅ Target - CyberButton (already uses blue/violet)</h2>
+        <h2 className="text-lg font-bold text-foreground mb-3">Target - CyberButton (already uses blue/violet)</h2>
         <div className="flex flex-wrap gap-3">
           <CyberButton variant="default">Primary Action</CyberButton>
           <CyberButton variant="outline">Secondary</CyberButton>
@@ -138,7 +138,7 @@ export const ButtonComparison: Story = {
       </div>
 
       <div>
-        <h2 className="text-lg font-bold text-foreground mb-3">❌ Current - Hardcoded neon gradients (to be replaced)</h2>
+        <h2 className="text-lg font-bold text-foreground mb-3">Current - Hardcoded neon gradients (to be replaced)</h2>
         <div className="flex flex-wrap gap-3">
           <button className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-brand-500 to-brand-400 text-white text-xs font-bold rounded-xl hover:shadow-md shadow-brand-500/20 transition">
             <CheckCircle2 className="w-3.5 h-3.5" /> Take Task

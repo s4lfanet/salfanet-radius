@@ -286,7 +286,7 @@ export default function FreeRADIUSStatusPage() {
                             <Zap className="w-4 h-4 text-amber-500" />
                             {t('radius.requestStats')}
                         </h3>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
                                 <span className="text-sm text-muted-foreground">{t('radius.authRequests')}</span>
                                 <span className="text-sm font-bold text-foreground">{status.totalAuthRequests?.toLocaleString() || 0}</span>

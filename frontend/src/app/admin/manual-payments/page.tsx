@@ -599,7 +599,7 @@ export default function ManualPaymentsPage() {
 
               <div className="border-t pt-4">
                 <h4 className="font-semibold mb-3">{t('manualPayment.invoiceInfo')}</h4>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label className="text-muted-foreground">{t('manualPayment.invoiceNumber')}</Label>
                     <div className="mt-1 font-mono">{selectedPayment.invoice.invoiceNumber}</div>
@@ -625,7 +625,7 @@ export default function ManualPaymentsPage() {
 
               <div className="border-t pt-4">
                 <h4 className="font-semibold mb-3">{t('manualPayment.transferDetail')}</h4>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label className="text-muted-foreground">{t('manualPayment.bank')}</Label>
                     <div className="mt-1 font-medium">{selectedPayment.bankName}</div>

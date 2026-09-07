@@ -414,14 +414,14 @@ ${firewallNatScript}
           </div>
         </div>
 
-        {/* ⚠️ IMPORTANT WARNING BOX - only shown when server IP is not explicitly configured */}
+        {/* IMPORTANT WARNING BOX - only shown when server IP is not explicitly configured */}
         {!settings.isolationServerIp && (
         <div className="bg-gradient-to-r from-red-500/10 to-pink-500/10 border-2 border-red-500/50 rounded-lg p-4 mb-4">
           <div className="flex items-start gap-3">
             <AlertCircle className="w-6 h-6 text-[#ff6b8a] flex-shrink-0 mt-0.5 drop-" />
             <div className="flex-1">
               <h3 className="font-bold text-foreground mb-2 flex items-center gap-2">
-                ⚠️ Server IP belum dikonfigurasi!
+                Server IP belum dikonfigurasi!
               </h3>
               <div className="space-y-2 text-sm text-muted-foreground/90">
                 <p>
@@ -434,8 +434,8 @@ ${firewallNatScript}
                   <strong className="text-[#ff6b8a]">Atur "IP Server (untuk MikroTik NAT)" di halaman Pengaturan Isolasi agar script benar!</strong>
                 </p>
                 <ul className="list-disc list-inside space-y-1 ml-4">
-                  <li>✅ Contoh benar: <code className="bg-black/30 px-2 py-0.5 rounded text-green-500">103.50.100.150</code></li>
-                  <li>❌ Contoh salah: <code className="bg-black/30 px-2 py-0.5 rounded text-red-500">billing.domain.com</code></li>
+                  <li>Contoh benar: <code className="bg-black/30 px-2 py-0.5 rounded text-green-500">103.50.100.150</code></li>
+                  <li>Contoh salah: <code className="bg-black/30 px-2 py-0.5 rounded text-red-500">billing.domain.com</code></li>
                 </ul>
                 <p className="mt-3">
                   <strong>Cara cek IP server:</strong>
@@ -611,7 +611,7 @@ ${firewallNatScript}
 
         {/* Tips */}
         <div className="mt-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-          <h3 className="font-semibold text-amber-800 dark:text-amber-300 mb-2">💡 {t('isolation.tipsTitle')}</h3>
+          <h3 className="font-semibold text-amber-800 dark:text-amber-300 mb-2">{t('isolation.tipsTitle')}</h3>
           <ul className="text-sm text-amber-700 dark:text-amber-400 space-y-1 list-disc list-inside">
             <li>{t('isolation.tipBackup')}</li>
             <li>{t('isolation.tipTestFirst')}</li>

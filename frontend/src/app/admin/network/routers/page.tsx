@@ -502,7 +502,7 @@ export default function RouterPage() {
                     {[
                       { step: 1, icon: '🔌', color: 'border-border bg-primary/10', title: 'Sambungkan VPN', desc: 'Pastikan NAS/router sudah tersambung ke VPN (L2TP, WireGuard, atau SSTP) melalui menu VPN Client.', link: '/admin/network/vpn-client', linkLabel: '→ Menu VPN Client' },
                       { step: 2, icon: '➕', color: 'border-brand-500/40 bg-brand-500/5', title: 'Tambah NAS/Router', desc: 'Klik "+ Tambah Router/NAS". Isi Nama, IP VPN NAS (mis. 10.20.30.10), username & password Winbox/API MikroTik.', link: null, linkLabel: null },
-                      { step: 3, icon: '🔬', color: 'border-green-500/40 bg-green-500/5', title: 'Test & Simpan', desc: 'Klik "Test Koneksi" untuk verifikasi API MikroTik dapat diakses. Simpan jika berhasil. NAS terdaftar sebagai RADIUS client.', link: null, linkLabel: null },
+                      { step: 3, icon: '', color: 'border-green-500/40 bg-green-500/5', title: 'Test & Simpan', desc: 'Klik "Test Koneksi" untuk verifikasi API MikroTik dapat diakses. Simpan jika berhasil. NAS terdaftar sebagai RADIUS client.', link: null, linkLabel: null },
                       { step: 4, icon: '📜', color: 'border-amber-500/40 bg-amber-500/5', title: 'Generate RADIUS Script', desc: 'Klik "RADIUS Script" pada kartu NAS. Copy script RouterOS yang dihasilkan dan paste di terminal/WinBox MikroTik NAS tersebut.', link: null, linkLabel: null },
                     ].map(item => (
                       <div key={item.step} className={`rounded-xl border ${item.color} p-4`}>
@@ -524,7 +524,7 @@ export default function RouterPage() {
 
                   {/* Troubleshooting: unknown client */}
                   <div className="mt-3 p-4 rounded-xl border border-amber-500/30 bg-amber-500/5">
-                    <p className="text-xs font-bold text-amber-400 mb-2">⚠️ Troubleshooting - FreeRADIUS: &quot;unknown client&quot;</p>
+                    <p className="text-xs font-bold text-amber-400 mb-2">Troubleshooting - FreeRADIUS: &quot;unknown client&quot;</p>
                     <p className="text-xs text-muted-foreground mb-3">Jika FreeRADIUS menolak request NAS dengan error <code className="bg-slate-800 px-1 rounded text-amber-300">Ignoring request from unknown client X.X.X.X</code>, lakukan langkah berikut:</p>
                     <ol className="text-xs text-muted-foreground space-y-1.5 list-decimal list-inside">
                       <li>Pastikan NAS sudah ditambahkan lewat halaman ini (bukan langsung ke database). Jika baru saja di-INSERT manual ke DB, hapus dan tambah ulang via UI.</li>
@@ -728,7 +728,7 @@ export default function RouterPage() {
 
                       {/* Status Info */}
                       {status && (status.identity || status.uptime) && (
-                        <div className="mt-4 pt-4 border-t border-border grid grid-cols-2 gap-4">
+                        <div className="mt-4 pt-4 border-t border-border grid grid-cols-1 sm:grid-cols-2 gap-4">
                           {status.identity && (
                             <div>
                               <p className="text-brand-500 text-xs uppercase tracking-wider mb-1">{t('network.routerIdentityLabel')}</p>
@@ -758,7 +758,7 @@ export default function RouterPage() {
         {/* Add/Edit Modal */}
         {showModal && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-2.5 sm:p-4">
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-border rounded-2xl max-w-lg w-full p-6  max-h-[90vh] overflow-y-auto">
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-border rounded-2xl max-w-[calc(100%-2rem)] sm:max-w-lg w-full p-4 sm:p-6  max-h-[90vh] overflow-y-auto">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-gradient-to-br from-brand-500 to-primary rounded-lg flex items-center justify-center">
                   <Server className="w-5 h-5 text-white" />
@@ -886,7 +886,7 @@ export default function RouterPage() {
 
                 {/* Credentials - only for MikroTik */}
                 {formData.type === 'mikrotik' && (
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-brand-500 mb-2">{t('network.username')} *</label>
                       <input

@@ -618,7 +618,7 @@ export default function WhatsAppProvidersPage() {
           </ModalHeader>
           <form onSubmit={handleSubmit}>
             <ModalBody className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <ModalLabel required>{t('whatsapp.providerName')}</ModalLabel>
                   <ModalInput type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="MPWA Device 1" required />
@@ -636,7 +636,7 @@ export default function WhatsAppProvidersPage() {
                   </ModalSelect>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <div className="flex items-center justify-between mb-0.5">
                     <ModalLabel required>{t('whatsapp.baseUrl')}</ModalLabel>

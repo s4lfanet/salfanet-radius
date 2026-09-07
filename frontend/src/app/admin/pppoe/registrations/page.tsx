@@ -382,7 +382,7 @@ export default function RegistrationsPage() {
                   </div>
                   {getStatusBadge(reg.status)}
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mb-2">
                   <div>
                     <span className="text-muted-foreground">{t('pppoe.contact')}:</span>
                     <p className="font-medium">{reg.phone}</p>
@@ -394,7 +394,7 @@ export default function RegistrationsPage() {
                     <p className="text-[10px] text-success font-medium">Rp {reg.profile.price.toLocaleString()}</p>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mb-3">
                   {reg.latitude && reg.longitude && (
                     <div>
                       <span className="text-muted-foreground">{t('pppoe.gpsLocation')}:</span>
@@ -603,7 +603,7 @@ export default function RegistrationsPage() {
 
                 {/* Username & Password override (PPPoE only) */}
                 {connectionType === 'PPPOE' && (
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div>
                       <ModalLabel>Username (opsional)</ModalLabel>
                       <ModalInput type="text" placeholder="Auto: nama-nomor" value={customUsername} onChange={(e) => setCustomUsername(e.target.value)} />
@@ -636,17 +636,17 @@ export default function RegistrationsPage() {
                   <div className="space-y-2">
                     <label className={`flex items-center p-2.5 border rounded-lg cursor-pointer transition-all ${subscriptionType === 'POSTPAID' ? 'border-brand-500 bg-brand-500/10 ' : 'border-border hover:border-border'}`}>
                       <input type="radio" name="subscriptionType" value="POSTPAID" checked={subscriptionType === 'POSTPAID'} onChange={(e) => setSubscriptionType(e.target.value as 'POSTPAID')} className="w-4 h-4 text-brand-500 border-border bg-card focus:ring-brand-500" />
-                      <div className="ml-3 flex-1"><div className="text-xs font-medium text-foreground">📅 {t('pppoe.postpaid')}</div><div className="text-[10px] text-muted-foreground">{t('pppoe.monthlyBillingDesc')}</div></div>
+                      <div className="ml-3 flex-1"><div className="text-xs font-medium text-foreground">{t('pppoe.postpaid')}</div><div className="text-[10px] text-muted-foreground">{t('pppoe.monthlyBillingDesc')}</div></div>
                     </label>
                     <label className={`flex items-center p-2.5 border rounded-lg cursor-pointer transition-all ${subscriptionType === 'PREPAID' ? 'border-brand-500 bg-brand-500/10 ' : 'border-border hover:border-border'}`}>
                       <input type="radio" name="subscriptionType" value="PREPAID" checked={subscriptionType === 'PREPAID'} onChange={(e) => setSubscriptionType(e.target.value as 'PREPAID')} className="w-4 h-4 text-brand-500 border-border bg-card focus:ring-brand-500" />
-                      <div className="ml-3 flex-1"><div className="text-xs font-medium text-foreground">⏰ {t('pppoe.prepaid')}</div><div className="text-[10px] text-muted-foreground">{t('pppoe.prepaidValidityDesc')}</div></div>
+                      <div className="ml-3 flex-1"><div className="text-xs font-medium text-foreground">{t('pppoe.prepaid')}</div><div className="text-[10px] text-muted-foreground">{t('pppoe.prepaidValidityDesc')}</div></div>
                     </label>
                   </div>
                 </div>
                 {subscriptionType === 'POSTPAID' && (
                   <div>
-                    <ModalLabel required>📅 {t('pppoe.billingDate')}</ModalLabel>
+                    <ModalLabel required>{t('pppoe.billingDate')}</ModalLabel>
                     <ModalSelect value={billingDay} onChange={(e) => setBillingDay(e.target.value)}>
                       {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (<option key={day} value={day} className="dark:bg-card">{t('pppoe.dayOf')} {day}</option>))}
                     </ModalSelect>
@@ -664,7 +664,7 @@ export default function RegistrationsPage() {
                     {areas.map((a) => <option key={a.id} value={a.id} className="dark:bg-card">{a.name}</option>)}
                   </ModalSelect>
                   {selectedRegistration.area && (
-                    <p className="text-[10px] text-brand-500 mt-1">💡 Dipilih saat daftar: <strong>{selectedRegistration.area.name}</strong></p>
+                    <p className="text-[10px] text-brand-500 mt-1">Dipilih saat daftar: <strong>{selectedRegistration.area.name}</strong></p>
                   )}
                 </div>
                 <div>
@@ -677,7 +677,7 @@ export default function RegistrationsPage() {
                 </div>
                 {subscriptionType === 'PREPAID' && (
                   <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 space-y-1">
-                    <div className="text-xs font-medium text-green-500">💡 Rincian Tagihan Prepaid:</div>
+                    <div className="text-xs font-medium text-green-500">Rincian Tagihan Prepaid:</div>
                     <div className="flex justify-between text-xs text-green-500"><span>{t('pppoe.installationFee')}:</span><span>Rp {(installationFee ? parseFloat(installationFee) : 0).toLocaleString('id-ID')}</span></div>
                     <div className="flex justify-between text-xs text-green-500"><span>{t('pppoe.packageFee')}:</span><span>Rp {selectedRegistration.profile.price.toLocaleString('id-ID')}</span></div>
                     <div className="flex justify-between text-sm font-bold text-green-500 pt-1 border-t border-green-500/30"><span>{t('pppoe.totalBilling')}:</span><span>Rp {((installationFee ? parseFloat(installationFee) : 0) + selectedRegistration.profile.price).toLocaleString('id-ID')}</span></div>

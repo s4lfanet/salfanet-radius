@@ -126,7 +126,7 @@ export default function AdminPaymentProofsPage() {
                 : 'border border-border bg-card text-muted-foreground hover:bg-muted'
             }`}
           >
-            {s === 'pending' ? '⏳ Menunggu' : s === 'approved' ? '✅ Disetujui' : '❌ Ditolak'}
+            {s === 'pending' ? 'Menunggu' : s === 'approved' ? 'Disetujui' : 'Ditolak'}
           </button>
         ))}
       </div>
@@ -256,7 +256,7 @@ export default function AdminPaymentProofsPage() {
       {/* Image Modal */}
       {viewImage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setViewImage(null)}>
-          <div className="relative max-w-2xl w-full">
+          <div className="relative max-w-[calc(100%-2rem)] sm:max-w-2xl w-full">
             <button onClick={() => setViewImage(null)}
               className="absolute -top-10 right-0 text-white hover:text-gray-300">
               <X className="w-6 h-6" />

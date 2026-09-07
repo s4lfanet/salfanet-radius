@@ -261,7 +261,7 @@ function AddPppoeUserModal({ isOpen, onClose, onSuccess, profiles, routers, area
         </ModalHeader>
         <form onSubmit={handleSubmit}>
           <ModalBody className="space-y-4 max-h-[60vh] overflow-y-auto">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><ModalLabel required>{t('pppoe.username')}</ModalLabel><ModalInput type="text" value={formData.username} onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))} required /></div>
               <div><ModalLabel required>{t('pppoe.password')}</ModalLabel>
                 <div className="relative"><ModalInput type={showPassword ? 'text' : 'password'} value={formData.password} onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))} required className="pr-8" />
@@ -272,7 +272,7 @@ function AddPppoeUserModal({ isOpen, onClose, onSuccess, profiles, routers, area
             <div><ModalLabel required>{t('pppoe.profile')}</ModalLabel><ModalSelect value={formData.profileId} onChange={(e) => setFormData(prev => ({ ...prev, profileId: e.target.value }))} required><option value="" className="dark:bg-card">{t('common.select')}</option>{profiles.map((p) => <option key={p.id} value={p.id} className="dark:bg-card">{p.name} - Rp {p.price.toLocaleString('id-ID')}</option>)}</ModalSelect></div>
             <div><ModalLabel>NAS ({t('common.optional')})</ModalLabel><ModalSelect value={formData.routerId} onChange={(e) => setFormData(prev => ({ ...prev, routerId: e.target.value }))}><option value="" className="dark:bg-card">{t('pppoe.global')}</option>{routers.map((r) => <option key={r.id} value={r.id} className="dark:bg-card">{r.name} ({r.ipAddress})</option>)}</ModalSelect></div>
             <div><ModalLabel>Area <span className="text-muted-foreground text-[10px]">({t('common.optional')})</span></ModalLabel><ModalSelect value={formData.areaId} onChange={(e) => setFormData(prev => ({ ...prev, areaId: e.target.value }))}><option value="" className="dark:bg-card">-- Pilih Area --</option>{areas.map((a) => <option key={a.id} value={a.id} className="dark:bg-card">{a.name}</option>)}</ModalSelect></div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><ModalLabel required>{t('common.name')}</ModalLabel><ModalInput type="text" value={formData.name} onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))} required /></div>
               <div><ModalLabel required>{t('common.phone')}</ModalLabel><ModalInput type="tel" value={formData.phone} onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))} required /></div>
             </div>
@@ -285,21 +285,21 @@ function AddPppoeUserModal({ isOpen, onClose, onSuccess, profiles, routers, area
                   <button type="button" onClick={async () => { if (navigator.geolocation) { navigator.geolocation.getCurrentPosition((p) => { setFormData(prev => ({ ...prev, latitude: p.coords.latitude.toFixed(6), longitude: p.coords.longitude.toFixed(6) })); }, async () => { await showError(t('pppoe.gpsFailed')); }, { enableHighAccuracy: true, timeout: 10000 }); } }} className="inline-flex items-center px-2 py-0.5 text-[10px] bg-green-100 text-green-600 border border-green-300 rounded hover:bg-green-200 dark:bg-green-500/20 dark:text-green-500 dark:border-green-500/50 dark:hover:bg-green-500/30"><MapPin className="h-2.5 w-2.5 mr-1" />{t('pppoe.autoGps')}</button>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <ModalInput type="number" step="any" value={formData.latitude} onChange={(e) => setFormData(prev => ({ ...prev, latitude: e.target.value }))} placeholder={t('pppoe.latitude')} />
                 <ModalInput type="number" step="any" value={formData.longitude} onChange={(e) => setFormData(prev => ({ ...prev, longitude: e.target.value }))} placeholder={t('pppoe.longitude')} />
               </div>
             </div>
             <div>
               <ModalLabel required>{t('pppoe.subscriptionType')}</ModalLabel>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <label className={`flex items-center p-2 border-2 rounded-lg cursor-pointer transition-all ${formData.subscriptionType === 'POSTPAID' ? 'border-primary bg-primary/10 dark:border-brand-500 dark:bg-brand-500/10 dark:' : 'border-border hover:border-primary/50 dark:border-border dark:hover:border-brand-500/50'}`}>
                   <input type="radio" name="subscriptionType" value="POSTPAID" checked={formData.subscriptionType === 'POSTPAID'} onChange={(e) => setFormData(prev => ({ ...prev, subscriptionType: e.target.value as 'POSTPAID' }))} className="w-3 h-3 accent-primary dark:text-brand-500 border-border dark:border-border focus:ring-primary dark:focus:ring-brand-500" />
                   <div className="ml-2 flex-1"><div className="text-[10px] font-medium text-foreground"><Calendar className="w-3 h-3 inline mr-0.5" />{t('pppoe.postpaid')}</div><div className="text-[9px] text-muted-foreground">{t('pppoe.fixedDueDate')}</div></div>
                 </label>
                 <label className={`flex items-center p-2 border-2 rounded-lg cursor-pointer transition-all ${formData.subscriptionType === 'PREPAID' ? 'border-primary bg-primary/10 dark:border-violet-500 dark:bg-primary/10 dark:' : 'border-border hover:border-primary/50 dark:border-border dark:hover:border-border'}`}>
                   <input type="radio" name="subscriptionType" value="PREPAID" checked={formData.subscriptionType === 'PREPAID'} onChange={(e) => setFormData(prev => ({ ...prev, subscriptionType: e.target.value as 'PREPAID' }))} className="w-3 h-3 accent-primary dark:text-primary border-border dark:border-border focus:ring-primary dark:focus:ring-primary" />
-                  <div className="ml-2 flex-1"><div className="text-[10px] font-medium text-foreground">⏰ {t('pppoe.prepaid')}</div><div className="text-[9px] text-muted-foreground">{t('pppoe.followsPayment')}</div></div>
+                  <div className="ml-2 flex-1"><div className="text-[10px] font-medium text-foreground">{t('pppoe.prepaid')}</div><div className="text-[9px] text-muted-foreground">{t('pppoe.followsPayment')}</div></div>
                 </label>
               </div>
             </div>
@@ -313,7 +313,7 @@ function AddPppoeUserModal({ isOpen, onClose, onSuccess, profiles, routers, area
                 <p className="text-[10px] text-muted-foreground mt-1">{t('pppoe.leaveEmptyForAuto')}</p>
               </div>
             )}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><ModalLabel>{t('pppoe.staticIp')}</ModalLabel><ModalInput type="text" value={formData.ipAddress} onChange={(e) => setFormData(prev => ({ ...prev, ipAddress: e.target.value }))} placeholder="10.10.10.2" /></div>
               <div><ModalLabel>MAC Address</ModalLabel><ModalInput type="text" value={formData.macAddress} onChange={(e) => setFormData(prev => ({ ...prev, macAddress: e.target.value }))} placeholder="AA:BB:CC:DD:EE:FF" /></div>
             </div>
@@ -367,9 +367,9 @@ function AddPppoeUserModal({ isOpen, onClose, onSuccess, profiles, routers, area
                     onClose={() => setInstallCameraOpen(false)}
                   />
                 ) : (
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <label htmlFor={uploadingInstallation ? undefined : 'installationUploadAdd'} className={`flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs border border-border dark:border-brand-500/30 rounded hover:bg-muted dark:hover:bg-brand-500/10 text-muted-foreground ${uploadingInstallation ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer'}`}>
-                    <ImageIcon className="w-3 h-3" /> {uploadingInstallation ? '⏳ Mengupload...' : 'Galeri'}
+                    <ImageIcon className="w-3 h-3" /> {uploadingInstallation ? 'Mengupload...' : 'Galeri'}
                   </label>
                   <button type="button" onClick={() => setInstallCameraOpen(true)} disabled={uploadingInstallation} className={`flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs border border-primary/30 dark:border-brand-500/40 rounded hover:bg-primary/5 dark:hover:bg-brand-500/10 text-primary/70 dark:text-brand-500/70 ${uploadingInstallation ? 'opacity-50 cursor-not-allowed' : ''}`}>
                     <Camera className="w-3 h-3" /> Kamera
@@ -2213,7 +2213,7 @@ export default function PppoeUsersPage() {
             <p className="text-xs text-muted-foreground mb-4">{t('pppoe.deleteConfirm')}</p>
             <div className="text-left">
               <label className="block text-xs font-medium text-muted-foreground mb-1">
-                🔒 Password Superadmin
+                Password Superadmin
               </label>
               <input
                 type="password"
@@ -2247,7 +2247,7 @@ export default function PppoeUsersPage() {
             <p className="text-xs text-muted-foreground mb-4">{selectedUsers.size} pelanggan akan dihapus permanen.</p>
             <div className="text-left">
               <label className="block text-xs font-medium text-muted-foreground mb-1">
-                🔒 Password Superadmin
+                Password Superadmin
               </label>
               <input
                 type="password"
@@ -2438,7 +2438,7 @@ export default function PppoeUsersPage() {
             <ModalDescription>{t('pppoe.syncPppoeDesc')}</ModalDescription>
           </ModalHeader>
           <ModalBody className="space-y-4 max-h-[60vh] overflow-y-auto">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <ModalLabel required>{t('pppoe.selectRouter')}</ModalLabel>
                 <ModalSelect value={syncRouterId} onChange={(e) => { setSyncRouterId(e.target.value); setSyncPreview(null); setSyncResult(null); }}>
@@ -2541,7 +2541,7 @@ export default function PppoeUsersPage() {
                 <ModalSelect value={selectedProfileForExtend} onChange={(e) => setSelectedProfileForExtend(e.target.value)}>
                   {profiles.map((p) => (<option key={p.id} value={p.id} className="dark:bg-card">{p.name} - Rp {p.price.toLocaleString('id-ID')}{p.id === selectedUserForExtend.profile?.id ? ` ${t('pppoe.currentPackageLabel')}` : ''}</option>))}
                 </ModalSelect>
-                <p className="text-[10px] text-muted-foreground mt-1">{selectedProfileForExtend !== selectedUserForExtend.profile?.id ? `⚠️ ${t('pppoe.packageWillChange')}` : t('pppoe.extendSamePackage')}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">{selectedProfileForExtend !== selectedUserForExtend.profile?.id ? `${t('pppoe.packageWillChange')}` : t('pppoe.extendSamePackage')}</p>
               </div>
               <div className="bg-primary/10 dark:bg-brand-500/10 border border-primary/30 dark:border-brand-500/30 rounded-lg p-3 text-xs"><p className="text-primary dark:text-brand-500">ℹ️ {t('pppoe.extendPaymentInfo')}</p></div>
             </ModalBody>
@@ -2566,8 +2566,8 @@ export default function PppoeUsersPage() {
                 <div>
                   <ModalLabel required>{t('pppoe.statusLabel')}</ModalLabel>
                   <ModalSelect value={broadcastData.status} onChange={(e) => setBroadcastData({ ...broadcastData, status: e.target.value })}>
-                    <option value="in_progress" className="dark:bg-card">🔧 {t('pppoe.outageInProgress')}</option>
-                    <option value="resolved" className="dark:bg-card">✅ {t('pppoe.outageResolved')}</option>
+                    <option value="in_progress" className="dark:bg-card">{t('pppoe.outageInProgress')}</option>
+                    <option value="resolved" className="dark:bg-card">{t('pppoe.outageResolved')}</option>
                   </ModalSelect>
                 </div>
                 {broadcastData.status === 'in_progress' ? (
@@ -2579,7 +2579,7 @@ export default function PppoeUsersPage() {
                   </>
                 ) : (
                   <>
-                    <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3"><p className="text-xs text-green-500">✅ {t('pppoe.repairCompletedInfo').replace('{count}', String(selectedUsers.size))}</p></div>
+                    <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3"><p className="text-xs text-green-500">{t('pppoe.repairCompletedInfo').replace('{count}', String(selectedUsers.size))}</p></div>
                     <div><ModalLabel required>{t('pppoe.information')}</ModalLabel><ModalTextarea value={broadcastData.description} onChange={(e) => setBroadcastData({ ...broadcastData, description: e.target.value })} placeholder={t('pppoe.repairInfoPlaceholder')} rows={4} /></div>
                   </>
                 )}

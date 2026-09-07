@@ -89,14 +89,14 @@ export default function WhatsAppHistoryPage() {
     try { responseData = JSON.parse(viewingItem.response); } catch { responseData = viewingItem.response; }
     return createPortal(
       <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setViewingItem(null)}>
-        <div className="bg-card dark:bg-[#1e1b2e] border border-border dark:border-border rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="bg-card dark:bg-[#1e1b2e] border border-border dark:border-border rounded-lg max-w-[calc(100%-2rem)] sm:max-w-2xl w-full mx-4 max-h-[90vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center justify-between p-5 border-b border-border">
             <h2 className="text-lg font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500">{t('whatsapp.messageDetail')}</h2>
             <button onClick={() => setViewingItem(null)} className="text-muted-foreground hover:text-foreground transition-colors text-xl leading-none">&times;</button>
           </div>
           <div className="p-5 overflow-y-auto flex-1 space-y-3 text-sm">
             <div className="flex gap-2"><span className="font-semibold text-gray-400 min-w-[80px]">{t('whatsapp.numberLabel')}:</span><span className="text-gray-200">{viewingItem.phone}</span></div>
-            <div className="flex gap-2"><span className="font-semibold text-gray-400 min-w-[80px]">{t('whatsapp.statusLabel')}:</span><span className={viewingItem.status === 'sent' ? 'text-green-400' : 'text-red-400'}>{viewingItem.status === 'sent' ? `✅ ${t('whatsapp.sentStatus')}` : `❌ ${t('whatsapp.failedStatus')}`}</span></div>
+            <div className="flex gap-2"><span className="font-semibold text-gray-400 min-w-[80px]">{t('whatsapp.statusLabel')}:</span><span className={viewingItem.status === 'sent' ? 'text-green-400' : 'text-red-400'}>{viewingItem.status === 'sent' ? `${t('whatsapp.sentStatus')}` : `${t('whatsapp.failedStatus')}`}</span></div>
             {viewingItem.providerName && <div className="flex gap-2"><span className="font-semibold text-gray-400 min-w-[80px]">{t('whatsapp.providerLabel')}:</span><span className="text-gray-200">{viewingItem.providerName} <span className="text-primary">({viewingItem.providerType?.toUpperCase()})</span></span></div>}
             <div className="flex gap-2"><span className="font-semibold text-gray-400 min-w-[80px]">{t('whatsapp.timeLabel')}:</span><span className="text-gray-200">{formatWIB(viewingItem.sentAt, 'dd/MM/yyyy HH:mm:ss')}</span></div>
             <div className="mt-4"><div className="font-semibold text-gray-400 mb-2">{t('whatsapp.messageLabel')}:</div><div className="whitespace-pre-wrap bg-gray-800 border border-gray-700 p-3 rounded text-xs max-h-32 overflow-auto text-gray-200">{viewingItem.message}</div></div>

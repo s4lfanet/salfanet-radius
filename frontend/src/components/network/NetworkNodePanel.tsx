@@ -150,7 +150,7 @@ function OLTEditForm({ data, onChange }: { data: EntityFormData; onChange: (n: s
       <FieldInput label="Brand" name="brand" value={data.brand || ''} onChange={onChange} />
       <FieldInput label="Model" name="model" value={data.model || ''} onChange={onChange} />
       <FieldSelect label="Status" name="status" value={data.status || 'active'} onChange={onChange} options={STATUS_OPTIONS} />
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <FieldInput label="Latitude" name="latitude" value={data.latitude || ''} onChange={onChange} type="number" />
         <FieldInput label="Longitude" name="longitude" value={data.longitude || ''} onChange={onChange} type="number" />
       </div>
@@ -166,7 +166,7 @@ function OTBEditForm({ data, onChange }: { data: EntityFormData; onChange: (n: s
       <FieldSelect label="Status" name="status" value={data.status || 'active'} onChange={onChange} options={STATUS_OPTIONS} />
       <FieldInput label="Port Count" name="portCount" value={data.portCount || 8} onChange={onChange} type="number" />
       <FieldInput label="Address" name="address" value={data.address || ''} onChange={onChange} />
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <FieldInput label="Latitude" name="latitude" value={data.latitude || ''} onChange={onChange} type="number" />
         <FieldInput label="Longitude" name="longitude" value={data.longitude || ''} onChange={onChange} type="number" />
       </div>
@@ -181,7 +181,7 @@ function JCEditForm({ data, onChange }: { data: EntityFormData; onChange: (n: st
       <FieldSelect label="Type" name="type" value={data.closureType || 'dome'} onChange={onChange} options={JC_TYPES} />
       <FieldSelect label="Status" name="status" value={data.status || 'active'} onChange={onChange} options={STATUS_OPTIONS} />
       <FieldInput label="Splice Capacity" name="spliceCapacity" value={data.spliceCapacity || ''} onChange={onChange} type="number" />
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <FieldInput label="Latitude" name="latitude" value={data.latitude || ''} onChange={onChange} type="number" />
         <FieldInput label="Longitude" name="longitude" value={data.longitude || ''} onChange={onChange} type="number" />
       </div>
@@ -204,7 +204,7 @@ function ODCEditForm({ data, onChange, olts }: { data: EntityFormData; onChange:
       <FieldInput label="PON Port" name="ponPort" value={data.ponPort || ''} onChange={onChange} type="number" />
       <FieldInput label="Port Count" name="portCount" value={data.portCount || 8} onChange={onChange} type="number" />
       <FieldSelect label="Status" name="status" value={data.status || 'active'} onChange={onChange} options={STATUS_OPTIONS} />
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <FieldInput label="Latitude" name="latitude" value={data.latitude || ''} onChange={onChange} type="number" />
         <FieldInput label="Longitude" name="longitude" value={data.longitude || ''} onChange={onChange} type="number" />
       </div>
@@ -227,7 +227,7 @@ function ODPEditForm({ data, onChange, odcs }: { data: EntityFormData; onChange:
       <FieldInput label="Port Count" name="portCount" value={data.portCount || 8} onChange={onChange} type="number" />
       <FieldSelect label="Splitter Ratio" name="splitterRatio" value={data.splitterRatio || '1:8'} onChange={onChange} options={['1:2','1:4','1:8','1:16','1:32','1:64']} />
       <FieldSelect label="Status" name="status" value={data.status || 'active'} onChange={onChange} options={STATUS_OPTIONS} />
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         <FieldInput label="Latitude" name="latitude" value={data.latitude || ''} onChange={onChange} type="number" />
         <FieldInput label="Longitude" name="longitude" value={data.longitude || ''} onChange={onChange} type="number" />
       </div>

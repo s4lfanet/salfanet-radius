@@ -273,7 +273,7 @@ export function SplitterDiagram({
       {/* Tooltip */}
       {hoveredPort && (
         <div className="mt-3 p-3 bg-gray-100 rounded-md border border-gray-300">
-          <div className="grid grid-cols-2 gap-2 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
             <div>
               <span className="font-medium text-gray-700">Port:</span>
               <span className="ml-2 text-gray-900">{hoveredPort.number}</span>

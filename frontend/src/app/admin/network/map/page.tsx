@@ -955,10 +955,10 @@ export default function NetworkMapPage() {
             onChange={(e) => setSelectedMapLayer(e.target.value as 'street' | 'satellite' | 'topo' | 'dark')}
             className="px-3 py-1.5 border rounded-lg text-sm bg-card border-border"
           >
-            <option value="street">🗺️ Street</option>
-            <option value="satellite">🛰️ Satellite</option>
+            <option value="street">Street</option>
+            <option value="satellite">Satellite</option>
             <option value="topo">🏔️ Topographic</option>
-            <option value="dark">🌙 Dark Mode</option>
+            <option value="dark">Dark Mode</option>
           </select>
 
           <div className="h-6 border-l border-border" />
@@ -1249,7 +1249,7 @@ export default function NetworkMapPage() {
                         {connectedOdcs.length > 0 && (
                           <div className="border-t border-gray-100 pt-3 mt-3">
                             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                              📦 Terhubung ke {connectedOdcs.length} ODC:
+                              Terhubung ke {connectedOdcs.length} ODC:
                             </p>
                             <div className="flex flex-wrap gap-1.5">
                               {connectedOdcs.map(odc => (
@@ -1266,7 +1266,7 @@ export default function NetworkMapPage() {
                         {connectedRouters.length > 0 && (
                           <div className="border-t border-gray-100 pt-3 mt-3">
                             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                              📡 Uplink dari {connectedRouters.length} Router:
+                              Uplink dari {connectedRouters.length} Router:
                             </p>
                             <div className="flex flex-wrap gap-1.5">
                               {connectedRouters.map(r => (
@@ -1526,7 +1526,7 @@ export default function NetworkMapPage() {
 
                         {/* Package & Router */}
                         <div className="bg-gray-50 rounded-lg p-2.5 mb-3 border border-gray-100">
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             {customer.profile && (
                               <div>
                                 <p className="text-[10px] text-muted-foreground uppercase font-semibold tracking-wider mb-0.5">Paket</p>
@@ -1577,7 +1577,7 @@ export default function NetworkMapPage() {
                         )}
 
                         {/* Dates */}
-                        <div className="border-t border-gray-100 pt-3 mb-3 grid grid-cols-2 gap-2 text-xs">
+                        <div className="border-t border-gray-100 pt-3 mb-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                           <div>
                             <p className="text-muted-foreground text-[10px] uppercase tracking-wider mb-0.5">Terdaftar</p>
                             <p className="font-medium text-foreground text-xs">{formatDate(customer.createdAt)}</p>

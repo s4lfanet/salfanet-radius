@@ -726,7 +726,7 @@ export default function OLTsPage() {
                                 className="text-[9px] px-1.5 py-0.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded font-medium hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition-colors cursor-pointer inline-flex items-center gap-0.5"
                                 title="View dying gasp ONUs"
                               >
-                                ⚠️ {olt.onu_stats.dying_gasp} Dying Gasp
+                                {olt.onu_stats.dying_gasp} Dying Gasp
                               </Link>
                             )}
                             {olt.onu_stats.los > 0 && (
@@ -735,7 +735,7 @@ export default function OLTsPage() {
                                 className="text-[9px] px-1.5 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded font-medium hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors cursor-pointer inline-flex items-center gap-0.5"
                                 title="View LOS ONUs"
                               >
-                                📡 {olt.onu_stats.los} LOS
+                                {olt.onu_stats.los} LOS
                               </Link>
                             )}
                             {olt.onu_stats.unconfig > 0 && (
@@ -744,7 +744,7 @@ export default function OLTsPage() {
                                 className="text-[9px] px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-primary rounded font-medium hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors cursor-pointer inline-flex items-center gap-0.5"
                                 title="View unconfigured ONUs"
                               >
-                                🔧 {olt.onu_stats.unconfig} Unconfig
+                                {olt.onu_stats.unconfig} Unconfig
                               </Link>
                             )}
                             {olt.onu_stats.offline > 0 && (
@@ -847,7 +847,7 @@ export default function OLTsPage() {
               </div>
 
               {/* Info Grid */}
-              <div className="grid grid-cols-2 gap-2 mb-2 pb-2 border-b border-border">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2 pb-2 border-b border-border">
                 <div>
                   <div className="text-[9px] text-gray-400 uppercase mb-0.5">{t('common.location')}</div>
                   <a
@@ -884,7 +884,7 @@ export default function OLTsPage() {
               {(olt.username || olt.password || olt.snmpCommunity || olt.snmp_community) && (
                 <div className="mb-2 pb-2 border-b border-border">
                   <div className="text-[9px] text-gray-400 uppercase mb-1">Credentials</div>
-                  <div className="grid grid-cols-2 gap-2 text-[10px]">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px]">
                     {olt.username && (
                       <div>
                         <span className="text-muted-foreground">Username:</span>
@@ -942,7 +942,7 @@ export default function OLTsPage() {
                         className="text-[9px] px-1.5 py-0.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded font-medium hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition-colors cursor-pointer"
                         title="View dying gasp ONUs"
                       >
-                        ⚠️ {olt.onu_stats.dying_gasp} Dying Gasp
+                        {olt.onu_stats.dying_gasp} Dying Gasp
                       </Link>
                     )}
                     {olt.onu_stats.los > 0 && (
@@ -951,7 +951,7 @@ export default function OLTsPage() {
                         className="text-[9px] px-1.5 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded font-medium hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors cursor-pointer"
                         title="View LOS ONUs"
                       >
-                        📡 {olt.onu_stats.los} LOS
+                        {olt.onu_stats.los} LOS
                       </Link>
                     )}
                     {olt.onu_stats.unconfig > 0 && (
@@ -960,7 +960,7 @@ export default function OLTsPage() {
                         className="text-[9px] px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-primary rounded font-medium hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors cursor-pointer"
                         title="View unconfigured ONUs"
                       >
-                        🔧 {olt.onu_stats.unconfig} Unconfig
+                        {olt.onu_stats.unconfig} Unconfig
                       </Link>
                     )}
                     {olt.onu_stats.offline > 0 && (
@@ -1029,7 +1029,7 @@ export default function OLTsPage() {
       {/* Add/Edit Dialog */}
       {isDialogOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-card rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-card rounded-lg shadow-xl max-w-[calc(100%-2rem)] sm:max-w-lg w-full max-h-[90vh] overflow-y-auto">
             <div className="px-4 py-3 border-b dark:border-gray-800 flex items-center justify-between">
               <div>
                 <h2 className="text-sm font-semibold">{editingOlt ? t('olt.edit') : t('olt.add')}</h2>
@@ -1043,7 +1043,7 @@ export default function OLTsPage() {
               </button>
             </div>
             <form onSubmit={handleSubmit} className="p-4 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[10px] font-medium mb-1">{t('olt.name')} *</label>
                   <input
@@ -1068,7 +1068,7 @@ export default function OLTsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[10px] font-medium mb-1">{t('olt.vendor')} *</label>
                   <select
@@ -1133,7 +1133,7 @@ export default function OLTsPage() {
               </div>
 
               {/* Model Profile Helper */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[10px] font-medium mb-1">{t('network.username')}</label>
                   <input
@@ -1168,7 +1168,7 @@ export default function OLTsPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -1278,7 +1278,7 @@ export default function OLTsPage() {
                     </button>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <input
                     type="number"
                     step="any"
@@ -1462,7 +1462,7 @@ export default function OLTsPage() {
 
               <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded p-3">
                 <p className="text-[10px] text-yellow-800 dark:text-yellow-200 font-medium mb-1">
-                  ⚠️ Important Notes:
+                  Important Notes:
                 </p>
                 <ul className="text-[10px] text-yellow-700 dark:text-yellow-300 space-y-1 list-disc list-inside">
                   <li>Type must be: huawei, zte, fiberhome, nokia, or other</li>

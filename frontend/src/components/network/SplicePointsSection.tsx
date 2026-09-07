@@ -473,7 +473,7 @@ export default function SplicePointsSection({
 
             <form onSubmit={handleCreateSplice} className="p-4 space-y-4">
               {/* Tray & Type Selection */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[10px] font-medium mb-1">Splice Tray</label>
                   <select
@@ -513,7 +513,7 @@ export default function SplicePointsSection({
               </div>
 
               {/* Core Selection */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Incoming Core */}
                 <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg space-y-2">
                   <h4 className="text-[10px] font-semibold text-blue-700 dark:text-blue-400">Incoming Core</h4>
@@ -592,7 +592,7 @@ export default function SplicePointsSection({
               {/* Attenuation */}
               <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                 <h4 className="text-[10px] font-semibold text-green-700 dark:text-green-400 mb-2">Attenuation Measurement</h4>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[9px] font-medium mb-1">
                       Insertion Loss (dB) <span className="text-red-500">*</span>
@@ -623,7 +623,7 @@ export default function SplicePointsSection({
               </div>
 
               {/* Additional Info */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[10px] font-medium mb-1">Spliced By</label>
                   <input

@@ -79,8 +79,8 @@ function DialogContent({
             "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
             "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
             "data-[state=closed]:slide-out-to-bottom-4 data-[state=open]:slide-in-from-bottom-4",
-              "[&>*:not([data-slot=dialog-header]):not([data-slot=dialog-footer]):not([data-slot=dialog-close]):not(.absolute)]:px-6",
-              "[&>*:not([data-slot=dialog-header]):not([data-slot=dialog-footer]):not([data-slot=dialog-close]):not(.absolute)]:py-4",
+              "[&>*:not([data-slot=dialog-header]):not([data-slot=dialog-footer]):not([data-slot=dialog-close]):not(.absolute)]:px-4 sm:[&>*:not([data-slot=dialog-header]):not([data-slot=dialog-footer]):not([data-slot=dialog-close]):not(.absolute)]:px-6",
+              "[&>*:not([data-slot=dialog-header]):not([data-slot=dialog-footer]):not([data-slot=dialog-close]):not(.absolute)]:py-3 sm:[&>*:not([data-slot=dialog-header]):not([data-slot=dialog-footer]):not([data-slot=dialog-close]):not(.absolute)]:py-4",
           className
         )}
         {...props}
@@ -119,7 +119,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="dialog-header"
       className={cn(
-        "flex flex-col gap-2 text-center sm:text-left p-6 pb-4",
+        "flex flex-col gap-2 text-center sm:text-left p-4 sm:p-6 pb-3 sm:pb-4",
         "border-b border-border dark:border-[#bc13fe]/30",
         "bg-slate-100 dark:bg-[#1a0f35]",
         className
@@ -134,7 +134,7 @@ function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="dialog-footer"
       className={cn(
-        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end p-6 pt-4",
+        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end p-4 sm:p-6 pt-3 sm:pt-4",
         "border-t border-border dark:border-[#bc13fe]/30",
         "bg-slate-50 dark:bg-[#1a0f35]",
         className
@@ -178,7 +178,7 @@ function DialogBody({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="dialog-body"
-      className={cn("p-6", className)}
+      className={cn("p-4 sm:p-6", className)}
       {...props}
     />
   )

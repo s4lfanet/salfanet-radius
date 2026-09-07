@@ -94,7 +94,7 @@ export function ODPDiagram({
             </div>
             <p className="text-sm text-gray-600 mt-1">{node.name}</p>
             {node.address && (
-              <p className="text-xs text-gray-500 mt-1">📍 {node.address}</p>
+              <p className="text-xs text-gray-500 mt-1">{node.address}</p>
             )}
           </div>
           <div className="text-right">
@@ -364,7 +364,7 @@ export function ODPDiagram({
       {/* Hover Tooltip */}
       {hoveredPort && (
         <div className="mt-3 p-3 bg-emerald-50 rounded-md border border-emerald-200">
-          <div className="grid grid-cols-2 gap-2 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
             <div>
               <span className="font-medium text-gray-700">{t('network.common.port')}:</span>
               <span className="ml-2 text-gray-900">

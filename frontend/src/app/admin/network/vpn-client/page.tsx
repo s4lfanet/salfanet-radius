@@ -996,8 +996,8 @@ ${vpnCmd}
                     {[
                       { step: 1, icon: '🖥️', color: 'border-border bg-primary/10', title: 'VPN Server Dulu', desc: 'Pastikan VPN Server sudah dikonfigurasi di menu VPN Server (MikroTik CHR atau WireGuard VPS).', link: '/admin/network/vpn-server', linkLabel: '→ Menu VPN Server' },
                       { step: 2, icon: '➕', color: 'border-brand-500/40 bg-brand-500/5', title: 'Buat VPN Client', desc: 'Klik "+ Tambah VPN Client", pilih protokol (WireGuard/L2TP/SSTP/PPTP), dan nama NAS. Sistem otomatis generate user & konfigurasi di CHR.', link: null, linkLabel: null },
-                      { step: 3, icon: '📋', color: 'border-green-500/40 bg-green-500/5', title: 'Apply Script ke NAS', desc: 'Copy script RouterOS yang dihasilkan → paste di terminal MikroTik/WinBox pada router/NAS pelanggan. VPN akan tersambung otomatis.', link: null, linkLabel: null },
-                      { step: 4, icon: '📡', color: 'border-amber-500/40 bg-amber-500/5', title: 'Tandai RADIUS Server', desc: 'Centang "Jadikan RADIUS Server" pada client yang jalan di VPS/Raspberry Pi. Lalu daftarkan NAS di menu NAS/Router.', link: '/admin/network/routers', linkLabel: '→ Menu NAS/Router' },
+                      { step: 3, icon: '', color: 'border-green-500/40 bg-green-500/5', title: 'Apply Script ke NAS', desc: 'Copy script RouterOS yang dihasilkan → paste di terminal MikroTik/WinBox pada router/NAS pelanggan. VPN akan tersambung otomatis.', link: null, linkLabel: null },
+                      { step: 4, icon: '', color: 'border-amber-500/40 bg-amber-500/5', title: 'Tandai RADIUS Server', desc: 'Centang "Jadikan RADIUS Server" pada client yang jalan di VPS/Raspberry Pi. Lalu daftarkan NAS di menu NAS/Router.', link: '/admin/network/routers', linkLabel: '→ Menu NAS/Router' },
                     ].map(item => (
                       <div key={item.step} className={`rounded-xl border ${item.color} p-4`}>
                         <div className="flex items-center gap-2 mb-2">
@@ -1013,7 +1013,7 @@ ${vpnCmd}
                     ))}
                   </div>
                   <div className="mt-4 p-3 rounded-xl border border-amber-500/20 bg-amber-500/5">
-                    <p className="text-xs text-amber-400/90"><span className="font-bold">💡 Tips protokol:</span> Gunakan <strong>WireGuard</strong> untuk RouterOS 7+ (lebih cepat &amp; modern). Gunakan <strong>L2TP/SSTP</strong> untuk RouterOS 6 atau jika WireGuard tidak support. PPTP sudah deprecated, hindari untuk keamanan.</p>
+                    <p className="text-xs text-amber-400/90"><span className="font-bold">Tips protokol:</span> Gunakan <strong>WireGuard</strong> untuk RouterOS 7+ (lebih cepat &amp; modern). Gunakan <strong>L2TP/SSTP</strong> untuk RouterOS 6 atau jika WireGuard tidak support. PPTP sudah deprecated, hindari untuk keamanan.</p>
                   </div>
                 </div>
               )}
@@ -1103,7 +1103,7 @@ ${vpnCmd}
                         </div>
                       ) : (
                         <div className="space-y-2">
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div>
                               <label className="text-xs text-muted-foreground mb-1 block">IP Mulai <span className="text-gray-500">(IP lengkap, mis. 10.200.0.2)</span></label>
                               <input type="text" value={wgPoolForm.poolStart} onChange={(e) => setWgPoolForm(p => ({...p, poolStart: e.target.value}))} className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground font-mono text-sm focus:border-teal-400 focus:ring-1 focus:ring-teal-400/30" placeholder="mis. 10.200.0.2" />
@@ -1186,7 +1186,7 @@ ${vpnCmd}
                         </div>
                       ) : (
                         <div className="space-y-2">
-                          <div className="grid grid-cols-2 gap-2">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div>
                               <label className="text-xs text-muted-foreground mb-1 block">IP Mulai <span className="text-gray-500">(IP lengkap, mis. 10.201.0.10)</span></label>
                               <input type="text" value={l2tpPoolForm.poolStart} onChange={(e) => setL2tpPoolForm(p => ({...p, poolStart: e.target.value}))} className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground font-mono text-sm" placeholder="mis. 10.201.0.10" />
@@ -1434,7 +1434,7 @@ ${vpnCmd}
         {/* Add Modal */}
         {showModal && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-2.5 sm:p-4">
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-border rounded-2xl max-w-lg w-full p-6 ">
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-border rounded-2xl max-w-[calc(100%-2rem)] sm:max-w-lg w-full p-4 sm:p-6 ">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-gradient-to-br from-brand-500 to-primary rounded-lg flex items-center justify-center">
                   <Plus className="w-5 h-5 text-white" />
@@ -1456,7 +1456,7 @@ ${vpnCmd}
                     <option value="" className="bg-slate-800">{t('network.selectVpnClient')}</option>
                     {/* VPS WireGuard option */}
                     {formData.vpnType === 'wireguard' && wgServerInfoLoading && (
-                      <option disabled className="bg-slate-800">⏳ Memeriksa VPS WireGuard...</option>
+                      <option disabled className="bg-slate-800">Memeriksa VPS WireGuard...</option>
                     )}
                     {formData.vpnType === 'wireguard' && wgServerInfo?.installed && (
                       <option value="__vps_wg__" className="bg-slate-800">
@@ -1465,7 +1465,7 @@ ${vpnCmd}
                     )}
                     {/* VPS L2TP option */}
                     {formData.vpnType === 'l2tp' && l2tpServerInfoLoading && (
-                      <option disabled className="bg-slate-800">⏳ Memeriksa VPS L2TP...</option>
+                      <option disabled className="bg-slate-800">Memeriksa VPS L2TP...</option>
                     )}
                     {formData.vpnType === 'l2tp' && l2tpServerInfo?.installed && (
                       <option value="__vps_l2tp__" className="bg-slate-800">
@@ -1489,13 +1489,13 @@ ${vpnCmd}
                   </select>
                   {formData.vpnType === 'wireguard' && !wgServerInfoLoading && wgServerInfo && !wgServerInfo.installed && vpnServers.filter(s => s.wgEnabled).length === 0 && (
                     <p className="text-xs text-amber-400 mt-1.5">
-                      ⚠️ WireGuard belum terinstall di VPS dan tidak ada CHR dengan WireGuard aktif.
+                      WireGuard belum terinstall di VPS dan tidak ada CHR dengan WireGuard aktif.
                       <a href="/admin/network/vpn-server" className="text-brand-500 underline ml-1">Setup di menu VPN Server</a>.
                     </p>
                   )}
                   {formData.vpnType === 'l2tp' && !l2tpServerInfoLoading && l2tpServerInfo && !l2tpServerInfo.installed && vpnServers.filter(s => s.l2tpEnabled).length === 0 && (
                     <p className="text-xs text-amber-400 mt-1.5">
-                      ⚠️ L2TP belum terinstall di VPS dan tidak ada CHR dengan L2TP aktif.
+                      L2TP belum terinstall di VPS dan tidak ada CHR dengan L2TP aktif.
                       <a href="/admin/network/vpn-server" className="text-brand-500 underline ml-1">Setup di menu VPN Server</a>.
                     </p>
                   )}
@@ -1505,7 +1505,7 @@ ${vpnCmd}
                     return true
                   }).length === 0 && (
                     <p className="text-xs text-amber-400 mt-1.5 flex items-center gap-1">
-                      ⚠️ Tidak ada CHR yang mengaktifkan protokol <strong>{formData.vpnType.toUpperCase()}</strong>.
+                      Tidak ada CHR yang mengaktifkan protokol <strong>{formData.vpnType.toUpperCase()}</strong>.
                       <span> Setup di</span><a href="/admin/network/vpn-server" className="text-brand-500 underline ml-1">menu VPN Server</a>.
                     </p>
                   )}
@@ -1515,7 +1515,7 @@ ${vpnCmd}
                   <label className="block text-sm font-medium text-brand-500 mb-2">
                     VPN Protocol <span className="text-red-400">*</span>
                   </label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {(['wireguard', 'l2tp', 'pptp', 'sstp'] as const).map((type) => (
                       <button
                         key={type}
@@ -1534,7 +1534,7 @@ ${vpnCmd}
                     <p className="text-xs text-brand-500/80 mt-2 flex items-center gap-1"><Wifi className="w-3 h-3" /> WireGuard memerlukan RouterOS 7+ di NAS. Sistem akan menambah peer ke CHR secara otomatis.</p>
                   )}
                   {formData.vpnType === 'pptp' && (
-                    <p className="text-xs text-amber-400/80 mt-2">⚠️ PPTP sudah deprecated dan kurang aman. Gunakan WireGuard atau L2TP jika memungkinkan.</p>
+                    <p className="text-xs text-amber-400/80 mt-2">PPTP sudah deprecated dan kurang aman. Gunakan WireGuard atau L2TP jika memungkinkan.</p>
                   )}
                 </div>
 
@@ -1631,7 +1631,7 @@ ${vpnCmd}
         {/* Credentials Modal */}
         {showCredentials && credentials && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-2.5 sm:p-4">
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-border rounded-2xl max-w-4xl w-full p-6  max-h-[90vh] overflow-y-auto">
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-border rounded-2xl max-w-[calc(100%-2rem)] sm:max-w-4xl w-full p-4 sm:p-6  max-h-[90vh] overflow-y-auto">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-gradient-to-br from-brand-500 to-primary rounded-lg flex items-center justify-center">
                   <Shield className="w-5 h-5 text-white" />
@@ -1679,7 +1679,7 @@ ${vpnCmd}
                   {credentials.radiusServerIp && (
                     <div className="col-span-2 mt-1 p-3 bg-primary/10 border border-border rounded-lg">
                       <p className="text-primary text-xs uppercase tracking-wider mb-2 font-bold">RADIUS Configuration</p>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <p className="text-primary text-xs uppercase tracking-wider mb-1">RADIUS Server IP</p>
                           <p className="font-mono text-sm text-amber-300">{credentials.radiusServerIp}</p>
@@ -1763,7 +1763,7 @@ ${vpnCmd}
                 {/* Important Notes */}
                 <div className="p-5 bg-amber-500/10 border border-amber-500/30 rounded-xl">
                   <h4 className="text-sm font-bold text-amber-400 mb-3 uppercase tracking-wider flex items-center gap-2">
-                    <span>⚠️</span> {t('network.importantNotes')}
+                    <span></span> {t('network.importantNotes')}
                   </h4>
                   <ul className="text-xs sm:text-sm text-foreground space-y-2">
                     <li className="flex items-start gap-2">
@@ -1816,14 +1816,14 @@ ${vpnCmd}
               </p>
 
               <div className="p-4 rounded-xl border border-brand-500/30 bg-muted/50 dark:bg-slate-900/60 mb-4">
-                <p className="text-xs font-bold text-brand-500 mb-3">🔑 SSH Credentials VPS RADIUS</p>
+                <p className="text-xs font-bold text-brand-500 mb-3">SSH Credentials VPS RADIUS</p>
                 <input
                     className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground text-sm mb-2"
                     placeholder="IP VPS RADIUS (contoh: 103.151.140.110)"
                     value={applyRoutingForm.host}
                     onChange={(e) => setApplyRoutingForm(p => ({...p, host: e.target.value}))}
                   />
-                <div className="grid grid-cols-2 gap-2 mb-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
                   <input
                     className="px-3 py-2 bg-input border border-border rounded-lg text-foreground text-sm"
                     placeholder="SSH Port"
@@ -1866,7 +1866,7 @@ ${vpnCmd}
                   disabled={applyRoutingRunning}
                   className="flex-1 px-4 py-2.5 text-sm font-bold bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black rounded-xl hover: transition-all disabled:opacity-50"
                 >
-                  {applyRoutingRunning ? 'Menjalankan...' : '🚀 Apply Routing'}
+                  {applyRoutingRunning ? 'Menjalankan...' : 'Apply Routing'}
                 </button>
               </div>
             </div>

@@ -338,7 +338,7 @@ export default function TechnicianGenieACSPage() {
                     </span>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   <div>
                     <span className="text-muted-foreground/70">PPPoE: </span>
                     <span className="text-foreground/80">{d.pppoeUsername || '-'}</span>
@@ -446,7 +446,7 @@ export default function TechnicianGenieACSPage() {
                           </span>
                         )}
                       </div>
-                      <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                         <div>
                           <p className="text-muted-foreground/70">{t('techPortal.username')}</p>
                           <p className="font-medium text-foreground break-all">{detailDevice.pppoeUsername || '-'}</p>
@@ -469,7 +469,7 @@ export default function TechnicianGenieACSPage() {
                         )}
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                       {[
                         [t('techPortal.manufacturer'), detailDevice.manufacturer],
                         [t('techPortal.model'), detailDevice.model],

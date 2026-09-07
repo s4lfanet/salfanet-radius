@@ -290,7 +290,7 @@ export default function RenewalPage() {
             </div>
             <span className="text-xs font-bold text-primary uppercase tracking-wider">Info Langganan</span>
           </div>
-          <div className="grid grid-cols-2 gap-3 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div>
               <span className="text-muted-foreground block text-[10px] uppercase font-bold tracking-wide">Username</span>
               <span className="font-mono text-white">{user.username}</span>

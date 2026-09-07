@@ -348,7 +348,7 @@ export default function EVoucherManagementPage() {
                 </div>
                 {getStatusBadge(order.status)}
               </div>
-              <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mb-3">
                 <div>
                   <div className="text-[10px] text-muted-foreground">{t('evoucher.customer')}</div>
                   <div className="font-medium">{order.customerName}</div>

@@ -867,7 +867,7 @@ export default function KeuanganPage() {
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSaveTransaction} className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs">{t('common.type')} *</Label>
                 <Select value={transactionForm.type} onValueChange={(v: "INCOME" | "EXPENSE") => setTransactionForm({ ...transactionForm, type: v })}>
@@ -890,7 +890,7 @@ export default function KeuanganPage() {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs">{t('keuangan.amount')} *</Label>
                 <Input

@@ -681,7 +681,7 @@ export default function AdminTicketsPage() {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs text-muted-foreground mb-1 block">Nama <span className="text-red-400">*</span></label>
                       <input value={form.customerName} onChange={e => setForm(f => ({ ...f, customerName: e.target.value }))} placeholder="Nama pelanggan" className="w-full px-3 py-2 text-xs bg-background border border-border rounded-lg text-foreground focus:ring-1 focus:ring-primary/40 outline-none" />
@@ -701,7 +701,7 @@ export default function AdminTicketsPage() {
                     <label className="text-xs text-muted-foreground mb-1 block flex items-center gap-1">
                       <MapPin className="w-3 h-3" /> Koordinat Lokasi
                     </label>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <input
                         type="text"
                         inputMode="decimal"
@@ -798,7 +798,7 @@ export default function AdminTicketsPage() {
                 {/* Infrastructure Section */}
                 <div className="bg-muted/40 rounded-xl p-4 space-y-3">
                   <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Infrastruktur Jaringan</p>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs text-muted-foreground mb-1 block">Router/NAS</label>
                       <div className="relative">
@@ -845,7 +845,7 @@ export default function AdminTicketsPage() {
                 {/* Ticket Info Section */}
                 <div className="bg-muted/40 rounded-xl p-4 space-y-3">
                   <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Detail Tiket</p>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs text-muted-foreground mb-1 block">Kategori</label>
                       <div className="relative">

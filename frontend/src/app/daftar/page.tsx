@@ -318,7 +318,7 @@ function DaftarPageInner() {
                   Lokasi GPS <span className="text-pink-500">*</span>
                 </label>
                 <div className="space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {/* Auto GPS Button */}
                     <button
                       type="button"
@@ -360,7 +360,7 @@ function DaftarPageInner() {
                       {submitting ? (
                         <><Loader2 className="w-3.5 h-3.5 animate-spin" />Mengambil...</>
                       ) : (
-                        <><MapPin className="w-3.5 h-3.5" />📍 Otomatis</>
+                        <><MapPin className="w-3.5 h-3.5" />Otomatis</>
                       )}
                     </button>
 
@@ -371,7 +371,7 @@ function DaftarPageInner() {
                       className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-bold border-2 border-brand-500 text-brand-500 hover:bg-brand-500/10 rounded-xl transition-all"
                     >
                       <MapPin className="w-3.5 h-3.5" />
-                      🗺️ Manual
+                      Manual
                     </button>
                   </div>
 
@@ -382,13 +382,13 @@ function DaftarPageInner() {
                         Lokasi GPS Tersimpan
                       </p>
                       <p className="text-[10px] text-brand-500 mt-1 font-mono">
-                        📍 Lat: {formData.latitude.toFixed(6)}, Lng: {formData.longitude.toFixed(6)}
+                        Lat: {formData.latitude.toFixed(6)}, Lng: {formData.longitude.toFixed(6)}
                       </p>
                     </div>
                   )}
                 </div>
                 <p className="text-[10px] text-muted-foreground/60 mt-1.5">
-                  💡 Pilih "Otomatis" untuk GPS real-time atau "Manual" untuk pilih di peta
+                  Pilih "Otomatis" untuk GPS real-time atau "Manual" untuk pilih di peta
                 </p>
               </div>
             </div>

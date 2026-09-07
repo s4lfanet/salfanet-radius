@@ -321,7 +321,7 @@ export default function SecuritySettingsPage() {
 
           <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
             <p className="text-sm text-red-400">
-              ⚠️ Disabling 2FA will make your account less secure. You will only need your password to log in.
+              Disabling 2FA will make your account less secure. You will only need your password to log in.
             </p>
           </div>
 

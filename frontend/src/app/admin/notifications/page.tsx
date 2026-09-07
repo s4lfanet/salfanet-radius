@@ -72,7 +72,7 @@ export default function NotificationsPage() {
       });
 
       toast({
-        title: "✅ " + t('notifications.markedAsRead'),
+        title: "" + t('notifications.markedAsRead'),
         description: `${notificationIds.length} ${t('notifications.notificationMarked')}`,
       });
 
@@ -81,7 +81,7 @@ export default function NotificationsPage() {
       console.error('Mark as read error:', error);
       toast({
         variant: "destructive",
-        title: "❌ " + t('common.error'),
+        title: "" + t('common.error'),
         description: t('notifications.markReadFailed'),
       });
     }
@@ -95,7 +95,7 @@ export default function NotificationsPage() {
       });
 
       toast({
-        title: "✅ " + t('notifications.allMarkedAsRead'),
+        title: "" + t('notifications.allMarkedAsRead'),
         description: t('notifications.allNotificationsMarked'),
       });
 
@@ -104,7 +104,7 @@ export default function NotificationsPage() {
       console.error('Mark all as read error:', error);
       toast({
         variant: "destructive",
-        title: "❌ " + t('common.error'),
+        title: "" + t('common.error'),
         description: t('notifications.markAllFailed'),
       });
     }
@@ -126,7 +126,7 @@ export default function NotificationsPage() {
       console.error('Delete notification error:', error);
       toast({
         variant: "destructive",
-        title: "❌ " + t('common.error'),
+        title: "" + t('common.error'),
         description: t('notifications.deleteFailed'),
       });
     }
@@ -151,7 +151,7 @@ export default function NotificationsPage() {
       console.error('Delete selected error:', error);
       toast({
         variant: "destructive",
-        title: "❌ " + t('common.error'),
+        title: "" + t('common.error'),
         description: t('notifications.deleteFailed'),
       });
     }
@@ -167,7 +167,7 @@ export default function NotificationsPage() {
       });
       
       toast({
-        title: "✅ " + t('notifications.markedAsRead'),
+        title: "" + t('notifications.markedAsRead'),
         description: `${selectedIds.length} ${t('notifications.notificationsMarked')}`,
       });
       
@@ -177,7 +177,7 @@ export default function NotificationsPage() {
       console.error('Mark selected as read error:', error);
       toast({
         variant: "destructive",
-        title: "❌ " + t('common.error'),
+        title: "" + t('common.error'),
         description: t('notifications.markReadFailed'),
       });
     }
@@ -235,16 +235,16 @@ export default function NotificationsPage() {
       case 'invoice_overdue': return '💸';
       case 'invoice_generated': return '🧾';
       case 'new_registration': return '👤';
-      case 'payment_received': return '✅';
-      case 'manual_payment_submitted': return '📄';
-      case 'manual_payment_approved': return '✅';
-      case 'manual_payment_rejected': return '❌';
-      case 'package_change_request': return '📦';
+      case 'payment_received': return '';
+      case 'manual_payment_submitted': return '';
+      case 'manual_payment_approved': return '';
+      case 'manual_payment_rejected': return '';
+      case 'package_change_request': return '';
       case 'agent_deposit': return '💰';
       case 'agent_voucher_generated': return '🎟️';
       case 'agent_balance_adjustment': return '💳';
-      case 'user_expired': return '⏰';
-      case 'system_alert': return '⚠️';
+      case 'user_expired': return '';
+      case 'system_alert': return '';
       default: return '📢';
     }
   };

@@ -170,7 +170,7 @@ export default function TechnicianLoginPage() {
         <div className="absolute top-0 right-0 w-40 h-40 sm:w-72 sm:h-72 bg-blue-100/60 dark:bg-blue-900/20 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-56 h-56 bg-cyan-100/50 dark:bg-cyan-900/20 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="max-w-lg w-full relative z-10">
+        <div className="max-w-[calc(100%-2rem)] sm:max-w-lg w-full relative z-10">
           <div className="mb-2">
             <span className="text-xs font-semibold uppercase tracking-widest text-blue-500 dark:text-blue-400">Portal Teknisi</span>
           </div>

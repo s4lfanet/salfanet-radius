@@ -5,11 +5,11 @@
  * Sends ESC/POS commands for printing receipts without a print dialog.
  *
  * Browser support:
- * - Chrome/Edge Android: ✅ Full support (Web Bluetooth)
- * - Chrome/Edge desktop: ✅ Full support (Web Bluetooth)
- * - Safari iOS: ❌ Not supported (fallback to browser print dialog)
- * - Firefox: ❌ Not supported (fallback to browser print dialog)
- * - Salfanet Android APK (WebView): ✅ Full support via native BluetoothPrinterBridge
+ * - Chrome/Edge Android: Full support (Web Bluetooth)
+ * - Chrome/Edge desktop: Full support (Web Bluetooth)
+ * - Safari iOS: Not supported (fallback to browser print dialog)
+ * - Firefox: Not supported (fallback to browser print dialog)
+ * - Salfanet Android APK (WebView): Full support via native BluetoothPrinterBridge
  *
  * In the Salfanet Android APK, Web Bluetooth is not available in WebView.
  * Instead, a native Kotlin BluetoothPrinterBridge is injected as `AndroidBluetoothPrinter`

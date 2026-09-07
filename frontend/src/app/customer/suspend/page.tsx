@@ -180,7 +180,7 @@ export default function CustomerSuspendPage() {
               </CyberButton>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-2 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
             <div>
               <p className="text-muted-foreground/40 text-xs">Mulai</p>
               <p className="text-foreground font-medium">{fmt(current.startDate)}</p>
@@ -211,7 +211,7 @@ export default function CustomerSuspendPage() {
         <CyberCard className="p-4 space-y-4">
           <p className="text-sm font-semibold text-brand-500">Ajukan Suspend Baru</p>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-muted-foreground/60 mb-1 block">Tanggal Mulai *</label>
               <div className="relative">
