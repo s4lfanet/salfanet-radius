@@ -6,6 +6,7 @@ import {
   Receipt, CheckCircle, Clock, AlertCircle, Loader2,
   RefreshCw, CreditCard, ExternalLink,
   Banknote, ShieldCheck, CalendarClock, Printer, FileText, Check,
+  XCircle, Hourglass, CircleDollarSign,
 } from 'lucide-react';
 import { Pagination } from '@/components/Pagination';
 import { CyberCard, CyberButton, SimpleModal, ModalHeader, ModalTitle, ModalDescription, ModalBody, ModalFooter, ModalButton } from '@/components/cyberpunk';
@@ -57,11 +58,11 @@ const STATUS_TABS: { key: StatusFilter; label: string; icon: React.ElementType }
 ];
 
 const getStatusBadge = (inv: Invoice) => {
-  if (inv.status === 'PAID')    return { label: 'Lunas',       cls: 'bg-green-500/20 text-green-400 border-green-500/30' };
-  if (inv.status === 'OVERDUE') return { label: 'Jatuh Tempo', cls: 'bg-red-500/20 text-red-400 border-red-500/30' };
-  if (inv.manualPaymentStatus === 'pending')  return { label: 'Menunggu Konfirmasi', cls: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' };
-  if (inv.manualPaymentStatus === 'rejected') return { label: 'Ditolak',            cls: 'bg-red-500/20 text-red-400 border-red-500/30' };
-  return { label: 'Belum Bayar', cls: 'bg-orange-500/20 text-orange-400 border-orange-500/30' };
+  if (inv.status === 'PAID')    return { label: 'Lunas',       Icon: CheckCircle,    cls: 'bg-green-500/20 text-green-400 border-green-500/30' };
+  if (inv.status === 'OVERDUE') return { label: 'Jatuh Tempo', Icon: AlertCircle,    cls: 'bg-red-500/20 text-red-400 border-red-500/30' };
+  if (inv.manualPaymentStatus === 'pending')  return { label: 'Menunggu Konfirmasi', Icon: Hourglass, cls: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' };
+  if (inv.manualPaymentStatus === 'rejected') return { label: 'Ditolak',            Icon: XCircle,   cls: 'bg-red-500/20 text-red-400 border-red-500/30' };
+  return { label: 'Belum Bayar', Icon: CircleDollarSign, cls: 'bg-orange-500/20 text-orange-400 border-orange-500/30' };
 };
 
 const getPaymentSourceBadge = (src: string | null) => {
@@ -368,7 +369,8 @@ export default function CustomerInvoicesPage() {
 
                   {/* Right: status badge + pay button */}
                   <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border whitespace-nowrap ${statusBadge.cls}`}>
+                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border whitespace-nowrap inline-flex items-center gap-1 ${statusBadge.cls}`}>
+                      {statusBadge.Icon && <statusBadge.Icon className="w-3 h-3" />}
                       {statusBadge.label}
                     </span>
                     {payable && (

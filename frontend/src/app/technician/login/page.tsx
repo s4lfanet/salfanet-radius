@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin, ApiError } from '@/lib/api';
-import { User, Lock, Loader2, Wrench } from 'lucide-react';
+import { User, Lock, Loader2, Wrench, AlertCircle } from 'lucide-react';
 
 export default function TechnicianLoginPage() {
   const { t } = useTranslation();
@@ -111,7 +111,8 @@ export default function TechnicianLoginPage() {
 
           {/* Error */}
           {error && (
-            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/50 rounded-xl">
+            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/50 rounded-xl flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
               <p className="text-xs text-red-600 dark:text-red-400 font-medium">{error}</p>
             </div>
           )}

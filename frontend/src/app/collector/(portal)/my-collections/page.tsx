@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Wallet, Loader2, TrendingUp, Calendar } from 'lucide-react';
+import { Wallet, Loader2, TrendingUp, Calendar, Receipt, Banknote, ArrowRightLeft } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
 
 interface MonthlyData {
@@ -90,19 +90,19 @@ export default function CollectorMyCollectionsPage() {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="card p-4 border-l-4 border-emerald-500">
-          <div className="text-xs text-muted-foreground mb-1">Total Transaksi</div>
+          <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><Receipt className="w-3.5 h-3.5" />Total Transaksi</div>
           <div className="text-2xl font-bold text-emerald-600">{data.total_count}</div>
         </div>
         <div className="card p-4 border-l-4 border-blue-500">
-          <div className="text-xs text-muted-foreground mb-1">Total Nominal</div>
+          <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><Wallet className="w-3.5 h-3.5" />Total Nominal</div>
           <div className="text-lg font-bold text-blue-600">{fmtRp(data.total_amount)}</div>
         </div>
         <div className="card p-4 border-l-4 border-cyan-500">
-          <div className="text-xs text-muted-foreground mb-1">Tunai</div>
+          <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><Banknote className="w-3.5 h-3.5" />Tunai</div>
           <div className="text-lg font-bold text-cyan-600">{fmtRp(data.monthly.reduce((s, m) => s + m.cash_amount, 0))}</div>
         </div>
         <div className="card p-4 border-l-4 border-purple-500">
-          <div className="text-xs text-muted-foreground mb-1">Transfer</div>
+          <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><ArrowRightLeft className="w-3.5 h-3.5" />Transfer</div>
           <div className="text-lg font-bold text-purple-600">{fmtRp(data.monthly.reduce((s, m) => s + m.transfer_amount, 0))}</div>
         </div>
       </div>

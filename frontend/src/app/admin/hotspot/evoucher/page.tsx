@@ -20,6 +20,7 @@ import {
   Filter,
   Trash2,
   type LucideIcon,
+  Ticket,
 } from 'lucide-react';
 
 interface Order {
@@ -329,7 +330,7 @@ export default function EVoucherManagementPage() {
             <RefreshCw className="w-5 h-5 animate-spin mx-auto text-primary" />
           </div>
         ) : filteredOrders.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground text-xs">{t('evoucher.noOrdersFound')}</div>
+          <div className="text-center py-8 text-muted-foreground"><Ticket className="w-8 h-8 mx-auto mb-2 opacity-40" /><p className="text-xs">{t('evoucher.noOrdersFound')}</p></div>
         ) : (
           filteredOrders.map((order) => (
             <div key={order.id} className="bg-card rounded-xl border border-border p-3">

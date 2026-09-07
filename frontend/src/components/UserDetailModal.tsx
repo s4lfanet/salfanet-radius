@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Loader2, CheckCircle2, XCircle, Clock, Eye, EyeOff, MapPin, Map, Camera, ImageIcon, ZoomIn } from 'lucide-react';
+import { X, Loader2, CheckCircle2, XCircle, Clock, Eye, EyeOff, MapPin, Map, Camera, ImageIcon, ZoomIn, IdCard, Wrench, Puzzle, CalendarClock, FileX, Plus } from 'lucide-react';
 import { formatWIB, formatLocalDate, todayWIBStr, nowWIB, isExpiredWIB } from '@/lib/timezone';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError, showWarning, showConfirm } from '@/lib/sweetalert';
@@ -776,7 +776,7 @@ export default function UserDetailModal({
 
               {/* Dokumen KTP */}
               <div className="border border-border dark:border-[#bc13fe]/30 rounded-lg p-4 space-y-3">
-                <p className="text-sm font-semibold text-foreground dark:text-[#e0d0ff]">Dokumen Identitas (KTP)</p>
+                <p className="text-sm font-semibold text-foreground dark:text-[#e0d0ff] flex items-center gap-1.5"><IdCard className="w-4 h-4 text-brand-500 shrink-0" />Dokumen Identitas (KTP)</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className={labelCls}>No. NIK KTP</label>
@@ -811,7 +811,7 @@ export default function UserDetailModal({
                 </div>
               </div>
               <div className="border border-border dark:border-[#00f7ff]/20 rounded-lg p-4 space-y-3">
-                <p className="text-sm font-semibold text-foreground dark:text-[#e0d0ff]">Foto Instalasi</p>
+                <p className="text-sm font-semibold text-foreground dark:text-[#e0d0ff] flex items-center gap-1.5"><Wrench className="w-4 h-4 text-brand-500 shrink-0" />Foto Instalasi</p>
                 <div>
                   <input type="file" accept="image/*" onChange={handleUploadInstallation} disabled={uploadingInstallation} className="sr-only" id="installationUploadEdit" />
                   {installCameraOpen ? (
@@ -1000,6 +1000,7 @@ export default function UserDetailModal({
                 </div>
               ) : invoices.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground dark:text-[#e0d0ff]/50">
+                  <FileX className="w-8 h-8 mx-auto mb-2 opacity-40" />
                   <p>{t('userModal.noInvoices')}</p>
                 </div>
               ) : (
@@ -1063,7 +1064,7 @@ export default function UserDetailModal({
               {/* KTP Section */}
               <div className="border border-border dark:border-[#bc13fe]/30 rounded-xl p-4 space-y-3">
                 <div className="flex items-center gap-2 min-w-0">
-                  <p className="text-sm font-semibold text-foreground dark:text-[#e0d0ff] shrink-0">Foto KTP</p>
+                  <p className="text-sm font-semibold text-foreground dark:text-[#e0d0ff] shrink-0 flex items-center gap-1.5"><IdCard className="w-4 h-4 text-brand-500 shrink-0" />Foto KTP</p>
                   {formData.idCardNumber && (
                     <span className="ml-auto min-w-0 truncate text-xs text-muted-foreground dark:text-[#e0d0ff]/50 font-mono bg-muted dark:bg-[#0a0520]/60 px-2 py-0.5 rounded">
                       NIK: {formData.idCardNumber}
@@ -1097,7 +1098,7 @@ export default function UserDetailModal({
               {/* Installation Photos Section */}
               <div className="border border-border dark:border-[#00f7ff]/20 rounded-xl p-4 space-y-3">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold text-foreground dark:text-[#e0d0ff]">Foto Instalasi</p>
+                  <p className="text-sm font-semibold text-foreground dark:text-[#e0d0ff] flex items-center gap-1.5"><Wrench className="w-4 h-4 text-brand-500 shrink-0" />Foto Instalasi</p>
                   {formData.installationPhotos.length > 0 && (
                     <span className="ml-auto text-xs bg-primary/10 dark:bg-[#00f7ff]/10 text-primary dark:text-[#00f7ff] px-2 py-0.5 rounded-full">
                       {formData.installationPhotos.length} foto
@@ -1243,18 +1244,19 @@ function CustomerAddonsTab({ userId }: { userId: string }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground dark:text-[#e0d0ff]">Layanan Tambahan Aktif</h3>
+        <h3 className="text-sm font-semibold text-foreground dark:text-[#e0d0ff] flex items-center gap-1.5"><Puzzle className="w-4 h-4 text-brand-500 shrink-0" />Layanan Tambahan Aktif</h3>
         <button
           onClick={() => setShowModal(true)}
-          className="inline-flex items-center px-3 py-1.5 text-xs bg-primary text-white dark:bg-[#00f7ff] dark:text-[#0a0520] rounded hover:opacity-90 transition"
+          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-primary text-white dark:bg-[#00f7ff] dark:text-[#0a0520] rounded hover:opacity-90 transition"
         >
-          + Tambah
+          <Plus className="w-3.5 h-3.5" /> Tambah
         </button>
       </div>
 
       {active.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg border border-border dark:border-[#bc13fe]/20">
-          Belum ada layanan tambahan aktif
+          <Puzzle className="w-8 h-8 mx-auto mb-2 opacity-40" />
+          <p>Belum ada layanan tambahan aktif</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -1417,16 +1419,16 @@ function PaymentPromiseTab({ userId, userStatus }: { userId: string; userStatus:
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground dark:text-[#e0d0ff]">Janji Bayar</h3>
+        <h3 className="text-sm font-semibold text-foreground dark:text-[#e0d0ff] flex items-center gap-1.5"><CalendarClock className="w-4 h-4 text-brand-500 shrink-0" />Janji Bayar</h3>
         {!activePromise && (
           <button
             onClick={() => {
               setPromiseDate(formatWIB(new Date(nowWIB().getTime() + 86400000), 'yyyy-MM-dd'));
               setShowModal(true);
             }}
-            className="inline-flex items-center px-3 py-1.5 text-xs bg-primary text-white dark:bg-[#00f7ff] dark:text-[#0a0520] rounded hover:opacity-90 transition"
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-primary text-white dark:bg-[#00f7ff] dark:text-[#0a0520] rounded hover:opacity-90 transition"
           >
-            + Buat Janji Bayar
+            <Plus className="w-3.5 h-3.5" /> Buat Janji Bayar
           </button>
         )}
       </div>
@@ -1458,7 +1460,8 @@ function PaymentPromiseTab({ userId, userStatus }: { userId: string; userStatus:
         </div>
       ) : (
         <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg border border-border dark:border-[#bc13fe]/20">
-          Tidak ada janji bayar aktif
+          <CalendarClock className="w-8 h-8 mx-auto mb-2 opacity-40" />
+          <p>Tidak ada janji bayar aktif</p>
         </div>
       )}
 

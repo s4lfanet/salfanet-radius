@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Building2, Save, Loader2, Plus, Trash2 } from 'lucide-react';
+import { Building2, Save, Loader2, Plus, Trash2, Landmark } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
@@ -105,8 +105,9 @@ export default function BankAccountsPage() {
           <form onSubmit={handleSubmit} className="bg-card rounded-lg border border-border p-3">
             <div className="space-y-4">
               {bankAccounts.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground text-sm">
-                  Belum ada rekening bank. Klik tombol di bawah untuk menambahkan.
+                <div className="text-center py-8 text-muted-foreground">
+                  <Landmark className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                  <p className="text-sm">Belum ada rekening bank. Klik tombol di bawah untuk menambahkan.</p>
                 </div>
               )}
 

@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { CheckCircle, Upload, AlertTriangle, Loader2 } from 'lucide-react';
+import { CheckCircle, Upload, AlertTriangle, Loader2, Landmark } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/sweetalert';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
@@ -342,7 +342,8 @@ function PayManualPageContent() {
             <CardContent>
               {bankAccounts.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  Tidak ada rekening tujuan tersedia
+                  <Landmark className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                  <p className="text-sm">Tidak ada rekening tujuan tersedia</p>
                 </div>
               ) : (
                 <div className="space-y-3">

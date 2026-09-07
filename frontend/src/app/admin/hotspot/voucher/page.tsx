@@ -959,7 +959,7 @@ export default function HotspotVoucherPage() {
         {/* Mobile Card View */}
         <div className="block md:hidden space-y-3 p-3">
           {vouchers.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-xs">{t('table.noResults')}</div>
+            <div className="text-center py-8 text-muted-foreground"><Ticket className="w-8 h-8 mx-auto mb-2 opacity-40" /><p className="text-xs">{t('table.noResults')}</p></div>
           ) : (
             vouchers.map((v) => (
               <div key={v.id} className="bg-card rounded-xl border border-border p-3 space-y-2">

@@ -607,7 +607,7 @@ export default function AgentDashboardPage() {
       <div className="bg-gradient-to-r from-primary to-cyan-600 rounded-2xl shadow-lg p-4 lg:p-5 text-white">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <p className="text-xs lg:text-sm opacity-90 uppercase tracking-wider">{t('agent.portal.yourBalance')}</p>
+            <p className="text-xs lg:text-sm opacity-90 uppercase tracking-wider flex items-center gap-1.5"><Wallet className="w-4 h-4" />{t('agent.portal.yourBalance')}</p>
             <p className="text-2xl lg:text-3xl font-bold mt-1">{formatCurrency(agent.balance || 0)}</p>
             {agent.minBalance > 0 && (
               <p className="text-[10px] lg:text-xs opacity-75 mt-1">{t('agent.portal.minBalance')}: {formatCurrency(agent.minBalance)}</p>
