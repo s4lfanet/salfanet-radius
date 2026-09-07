@@ -22,6 +22,7 @@ import {
   Upload,
   FileText,
   Image as ImageIcon,
+  Ticket as TicketIcon,
 } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
 import { showSuccess, showError } from '@/lib/sweetalert';
@@ -316,7 +317,8 @@ export default function AdminTicketsPage() {
       <div className="relative z-10 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-        <div className="min-w-0">
+        <div className="min-w-0 flex items-center gap-2">
+          <TicketIcon className="w-5 h-5 sm:w-6 sm:h-6 text-brand-500 shrink-0" />
           <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-">
             {t('ticket.tickets')}
           </h1>

@@ -398,7 +398,7 @@ export default function AgentPage() {
         {/* Mobile Card View */}
         <div className="block md:hidden space-y-3">
           {agents.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-xs">{t('agent.noAgentsFound')}</div>
+            <div className="text-center py-8 text-muted-foreground"><Users className="w-8 h-8 mx-auto mb-2 opacity-40" /><p className="text-xs">{t('agent.noAgentsFound')}</p></div>
           ) : (
             agents.map((agent) => (
               <div key={agent.id} className="bg-card rounded-xl border border-border p-3">

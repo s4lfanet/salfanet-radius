@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
-import { Plus, Edit2, Trash2, Eye, X, RefreshCw, FileCode } from 'lucide-react';
+import { Plus, Edit2, Trash2, Eye, X, RefreshCw, FileCode , LayoutTemplate} from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { renderVoucherTemplate } from '@/lib/utils/templateRenderer';
 import { apiAdmin } from '@/lib/api';
@@ -239,7 +239,7 @@ export default function VoucherTemplatesPage() {
           {loading ? (
             <div className="text-center py-8 text-xs text-muted-foreground">{t('common.loading')}</div>
           ) : templates.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-xs">{t('hotspot.noTemplates')}</div>
+            <div className="text-center py-8 text-muted-foreground"><LayoutTemplate className="w-8 h-8 mx-auto mb-2 opacity-40" /><p className="text-xs">{t('hotspot.noTemplates')}</p></div>
           ) : (
             templates.map((template) => (
               <div key={template.id} className="bg-card rounded-xl border border-border p-3">

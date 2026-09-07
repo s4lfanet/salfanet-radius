@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, TrendingUp, Wallet, Calendar, DollarSign, CheckCircle2, XCircle, Loader2, AlertCircle, Download } from 'lucide-react';
+import { ArrowLeft, Plus, TrendingUp, Wallet, Calendar, DollarSign, CheckCircle2, XCircle, Loader2, AlertCircle, Download, Receipt } from 'lucide-react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { formatWIB } from '@/lib/timezone';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -355,8 +355,9 @@ export default function BalanceManagementPage() {
         {/* Mobile Card View */}
         <div className="block md:hidden space-y-3 p-3">
           {transactions.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-sm">
-              {t('pppoe.noTransactions')}
+            <div className="text-center py-8 text-muted-foreground">
+              <Receipt className="w-8 h-8 mx-auto mb-2 opacity-40" />
+              <p className="text-sm">{t('pppoe.noTransactions')}</p>
             </div>
           ) : (
             transactions.map((transaction) => (

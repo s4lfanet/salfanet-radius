@@ -5,7 +5,8 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
     Database, Plus, Trash2, Search, Edit2, Check, X,
-    Loader2
+    Loader2,
+    KeyRound,
 } from 'lucide-react';
 import { Pagination } from '@/components/Pagination';
 import { useToast } from '@/components/cyberpunk/CyberToast';
@@ -142,7 +143,7 @@ export default function RadCheckPage() {
                             <Loader2 className="w-6 h-6 animate-spin" />
                         </div>
                     ) : items.length === 0 ? (
-                        <div className="text-center py-8 text-muted-foreground text-sm">{t('radius.noRecords')}</div>
+                        <div className="text-center py-8 text-muted-foreground text-sm"><KeyRound className="w-8 h-8 mx-auto mb-2 opacity-40" /><p>{t('radius.noRecords')}</p></div>
                     ) : (
                         items.map((item) => (
                             <div key={item.id} className="bg-card rounded-xl border border-border p-3">

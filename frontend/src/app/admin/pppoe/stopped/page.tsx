@@ -4,7 +4,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useState } from 'react';
 import {
-  Users, Trash2, Download, Search, RefreshCcw, Plus, Shield, FileText,
+  Users, Trash2, Download, Search, RefreshCcw, Plus, Shield, FileText, UserX,
 } from 'lucide-react';
 import { Pagination } from '@/components/Pagination';
 import { formatWIB } from '@/lib/timezone';
@@ -292,8 +292,9 @@ export default function StoppedSubscriptionsPage() {
               {t('pppoe.loadingData')}
             </div>
           ) : paginatedUsers.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-xs">
-              {users.length === 0 ? t('pppoe.noStoppedCustomers') : t('pppoe.noMatchingData')}
+            <div className="text-center py-8 text-muted-foreground">
+              <UserX className="w-8 h-8 mx-auto mb-2 opacity-40" />
+              <p className="text-xs">{users.length === 0 ? t('pppoe.noStoppedCustomers') : t('pppoe.noMatchingData')}</p>
             </div>
           ) : (
             paginatedUsers.map((user) => (

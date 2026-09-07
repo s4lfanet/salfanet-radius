@@ -435,7 +435,7 @@ export default function HotspotProfilePage() {
         {/* Mobile Card View */}
         <div className="block md:hidden space-y-3">
           {profiles.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-xs">{t('hotspot.noProfiles')}</div>
+            <div className="text-center py-8 text-muted-foreground"><Wifi className="w-8 h-8 mx-auto mb-2 opacity-40" /><p className="text-xs">{t('hotspot.noProfiles')}</p></div>
           ) : (
             profiles.map((profile) => (
               <div key={profile.id} className="bg-card rounded-xl border border-border p-3">

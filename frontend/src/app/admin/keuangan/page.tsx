@@ -47,6 +47,7 @@ import {
   Calendar,
   Tag,
   Search,
+  Inbox,
 } from "lucide-react";
 
 interface Category {
@@ -723,8 +724,9 @@ export default function KeuanganPage() {
         {/* Mobile Card View */}
         <div className="block sm:hidden divide-y divide-border">
           {transactions.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground text-xs">
-              {t('common.noData')}
+            <div className="text-center py-8 text-muted-foreground">
+              <Inbox className="w-8 h-8 mx-auto mb-2 opacity-40" />
+              <p className="text-xs">{t('common.noData')}</p>
             </div>
           ) : (
             transactions.map((tx) => (
@@ -788,8 +790,9 @@ export default function KeuanganPage() {
             <TableBody>
               {transactions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground text-xs">
-                    {t('common.noData')}
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    <Inbox className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                    <p className="text-xs">{t('common.noData')}</p>
                   </TableCell>
                 </TableRow>
               ) : (

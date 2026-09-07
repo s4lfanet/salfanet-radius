@@ -33,7 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { CheckCircle, XCircle, Eye, Trash2, Search, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CheckCircle, XCircle, Eye, Trash2, Search, RefreshCw, ChevronLeft, ChevronRight, ReceiptText } from 'lucide-react';
 import { format } from 'date-fns';
 import { apiAdmin } from '@/lib/api';
 import { id as localeId } from 'date-fns/locale';
@@ -344,7 +344,8 @@ export default function ManualPaymentsPage() {
             <div className="text-center py-8">{t('common.loading')}</div>
           ) : filteredPayments.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              {t('manualPayment.noData')}
+              <ReceiptText className="w-8 h-8 mx-auto mb-2 opacity-40" />
+              <p className="text-sm">{t('manualPayment.noData')}</p>
             </div>
           ) : (
             <>
