@@ -465,7 +465,7 @@ export default function UserDetailModal({
                     <p className="text-[10px] text-muted-foreground mt-1">IP Address otomatis dari IP Pool MikroTik/RADIUS</p>
                   )}
                 </div>
-                <div className="col-span-2">
+                <div className="sm:col-span-2">
                   <label className={labelCls}>{t('userModal.address')}</label>
                   <textarea
                     value={formData.address}
@@ -476,10 +476,10 @@ export default function UserDetailModal({
                 </div>
 
                 {/* GPS Location */}
-                <div className="col-span-2">
-                  <div className="flex items-center justify-between mb-2 min-w-0">
+                <div className="sm:col-span-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
                     <label className="block text-sm font-medium text-foreground dark:text-[#e0d0ff]">{t('userModal.gpsLocation')}</label>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       {onLatLngChange && (
                         <button
                           type="button"
@@ -487,7 +487,7 @@ export default function UserDetailModal({
                             // Notify parent to open map picker with current values
                             onLatLngChange(formData.latitude, formData.longitude);
                           }}
-                          className="inline-flex items-center px-3 py-1 text-xs bg-primary/10 text-primary dark:bg-[#00f7ff]/20 dark:text-[#00f7ff] border border-primary/50 dark:border-[#00f7ff]/50 rounded hover:bg-primary/20 dark:hover:bg-[#00f7ff]/30 transition"
+                          className="shrink-0 inline-flex items-center px-3 py-1 text-xs bg-primary/10 text-primary dark:bg-[#00f7ff]/20 dark:text-[#00f7ff] border border-primary/50 dark:border-[#00f7ff]/50 rounded hover:bg-primary/20 dark:hover:bg-[#00f7ff]/30 transition"
                         >
                           <Map className="h-3 w-3 mr-1" />
                           Pilih di Peta
@@ -535,7 +535,7 @@ export default function UserDetailModal({
                             await showError('Geolocation tidak didukung oleh browser ini.');
                           }
                         }}
-                        className="inline-flex items-center px-3 py-1 text-xs bg-green-100 text-green-600 dark:bg-[#00ff88]/20 dark:text-[#00ff88] border border-green-300 dark:border-[#00ff88]/50 rounded hover:bg-green-200 dark:hover:bg-[#00ff88]/30 transition"
+                        className="shrink-0 inline-flex items-center px-3 py-1 text-xs bg-green-100 text-green-600 dark:bg-[#00ff88]/20 dark:text-[#00ff88] border border-green-300 dark:border-[#00ff88]/50 rounded hover:bg-green-200 dark:hover:bg-[#00ff88]/30 transition"
                       >
                         <MapPin className="h-3 w-3 mr-1" />
                         GPS Auto
@@ -591,7 +591,7 @@ export default function UserDetailModal({
                 </div>
 
                 {/* Subscription Type */}
-                <div className="col-span-2">
+                <div className="sm:col-span-2">
                   <label className={labelCls2}>{t('userModal.subscriptionType')}</label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <label className={`flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all ${formData.subscriptionType === 'POSTPAID' ? 'border-primary dark:border-[#00f7ff] bg-primary/10 dark:bg-[#00f7ff]/10 shadow-md dark:' : 'border-border dark:border-[#bc13fe]/30 hover:border-primary/50 dark:hover:border-[#00f7ff]/50'}`}>
@@ -660,7 +660,7 @@ export default function UserDetailModal({
                 )}
 
                 {/* Expired At - Shows for both PREPAID and POSTPAID */}
-                <div className={formData.subscriptionType === 'POSTPAID' ? '' : 'col-span-2'}>
+                <div className={formData.subscriptionType === 'POSTPAID' ? '' : 'sm:col-span-2'}>
                   <label className={labelCls}>
                     Tanggal Isolir
                   </label>
@@ -700,7 +700,7 @@ export default function UserDetailModal({
                 </div>
 
                 {/* Aksi Jatuh Tempo */}
-                <div className="col-span-2">
+                <div className="sm:col-span-2">
                   <label className={labelCls}>Aksi Jatuh Tempo</label>
                   <select
                     value={formData.autoIsolationEnabled ? 'isolate' : 'keep'}
@@ -717,7 +717,7 @@ export default function UserDetailModal({
 
                 {/* Diskon Tagihan */}
                 <div>
-                  <label className={labelCls}>💰 Diskon Tagihan (Rp/bulan)</label>
+                  <label className={labelCls}>Diskon Tagihan (Rp/bulan)</label>
                   <input
                     type="number"
                     min="0"
@@ -742,7 +742,7 @@ export default function UserDetailModal({
                 </div>
 
                 {/* Teknisi Pemasang */}
-                <div className="col-span-2">
+                <div className="sm:col-span-2">
                   <label className={labelCls}>Teknisi Pemasang</label>
                   <div className="flex items-center gap-2 p-3 bg-muted/50 dark:bg-[#bc13fe]/10 rounded-lg border border-border dark:border-[#bc13fe]/20">
                     <span className="text-sm font-medium text-foreground dark:text-[#e0d0ff]">
@@ -776,7 +776,7 @@ export default function UserDetailModal({
 
               {/* Dokumen KTP */}
               <div className="border border-border dark:border-[#bc13fe]/30 rounded-lg p-4 space-y-3">
-                <p className="text-sm font-semibold text-foreground dark:text-[#e0d0ff]">🪪 Dokumen Identitas (KTP)</p>
+                <p className="text-sm font-semibold text-foreground dark:text-[#e0d0ff]">Dokumen Identitas (KTP)</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className={labelCls}>No. NIK KTP</label>
@@ -899,16 +899,16 @@ export default function UserDetailModal({
                       key={session.id}
                       className="p-4 border border-border dark:border-[#bc13fe]/30 rounded-lg bg-muted/30 dark:bg-[#0a0520]/30"
                     >
-                      <div className="flex items-start justify-between mb-2 min-w-0">
-                        <div>
-                          <div className="flex items-center gap-2">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
                             {session.isOnline ? (
-                              <span className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                              <span className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded shrink-0">
                                 <CheckCircle2 className="w-3 h-3" />
                                 {t('userModal.online')}
                               </span>
                             ) : (
-                              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded shrink-0">
                                 {t('userModal.offline')}
                               </span>
                             )}
@@ -916,19 +916,19 @@ export default function UserDetailModal({
                               {session.durationFormatted}
                             </span>
                           </div>
-                          <p className="text-sm font-medium mt-1">
+                          <p className="text-sm font-medium mt-1 truncate">
                             {formatWIB(session.startTime, 'dd MMM yyyy HH:mm')}
                             {session.stopTime && (
                               <> - {formatWIB(session.stopTime, 'HH:mm')}</>
                             )}
                           </p>
                           {session.macAddress && session.macAddress !== '-' && (
-                            <p className="text-xs text-gray-500 mt-1 font-mono">
+                            <p className="text-xs text-gray-500 mt-1 font-mono truncate">
                               MAC: {session.macAddress}
                             </p>
                           )}
                         </div>
-                        <div className="text-right text-xs text-gray-500">
+                        <div className="text-right text-xs text-gray-500 shrink-0">
                           <div>↓ {session.download}</div>
                           <div>↑ {session.upload}</div>
                           <div className="font-medium text-foreground">
@@ -963,23 +963,23 @@ export default function UserDetailModal({
                   {authLogs.map((log) => (
                     <div
                       key={log.id}
-                      className="flex items-center justify-between p-3 border border-border rounded-lg"
+                      className="flex items-center justify-between gap-2 p-3 border border-border rounded-lg"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
                         {log.success ? (
-                          <CheckCircle2 className="w-5 h-5 text-green-600" />
+                          <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
                         ) : (
-                          <XCircle className="w-5 h-5 text-red-600" />
+                          <XCircle className="w-5 h-5 text-red-600 shrink-0" />
                         )}
-                        <div>
-                          <p className="text-sm font-medium">{log.reply}</p>
-                          <p className="text-xs text-gray-500">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{log.reply}</p>
+                          <p className="text-xs text-gray-500 truncate">
                             {formatLocalDate(log.authdate, 'dd MMM yyyy HH:mm:ss')}
                           </p>
                         </div>
                       </div>
                       <span
-                        className={`text-xs px-2 py-1 rounded ${log.success
+                        className={`text-xs px-2 py-1 rounded shrink-0 ${log.success
                           ? 'bg-green-50 text-green-700'
                           : 'bg-red-50 text-red-700'
                           }`}
@@ -1009,9 +1009,9 @@ export default function UserDetailModal({
                       key={invoice.id}
                       className="p-4 border border-border dark:border-[#bc13fe]/30 rounded-lg bg-muted/30 dark:bg-[#0a0520]/30"
                     >
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="font-medium">{invoice.invoiceNumber}</p>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium truncate">{invoice.invoiceNumber}</p>
                           <p className="text-sm text-gray-500 mt-1">
                             Due: {formatWIB(invoice.dueDate, 'dd MMM yyyy')}
                           </p>
@@ -1021,8 +1021,8 @@ export default function UserDetailModal({
                             </p>
                           )}
                         </div>
-                        <div className="text-right">
-                          <p className="font-bold text-lg">
+                        <div className="text-right shrink-0">
+                          <p className="font-bold text-base sm:text-lg">
                             {new Intl.NumberFormat('id-ID', {
                               style: 'currency',
                               currency: 'IDR',
@@ -1062,11 +1062,10 @@ export default function UserDetailModal({
             <div className="space-y-6">
               {/* KTP Section */}
               <div className="border border-border dark:border-[#bc13fe]/30 rounded-xl p-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-base">🪪</span>
-                  <p className="text-sm font-semibold text-foreground dark:text-[#e0d0ff]">Foto KTP</p>
+                <div className="flex items-center gap-2 min-w-0">
+                  <p className="text-sm font-semibold text-foreground dark:text-[#e0d0ff] shrink-0">Foto KTP</p>
                   {formData.idCardNumber && (
-                    <span className="ml-auto text-xs text-muted-foreground dark:text-[#e0d0ff]/50 font-mono bg-muted dark:bg-[#0a0520]/60 px-2 py-0.5 rounded">
+                    <span className="ml-auto min-w-0 truncate text-xs text-muted-foreground dark:text-[#e0d0ff]/50 font-mono bg-muted dark:bg-[#0a0520]/60 px-2 py-0.5 rounded">
                       NIK: {formData.idCardNumber}
                     </span>
                   )}
@@ -1098,7 +1097,6 @@ export default function UserDetailModal({
               {/* Installation Photos Section */}
               <div className="border border-border dark:border-[#00f7ff]/20 rounded-xl p-4 space-y-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-base"></span>
                   <p className="text-sm font-semibold text-foreground dark:text-[#e0d0ff]">Foto Instalasi</p>
                   {formData.installationPhotos.length > 0 && (
                     <span className="ml-auto text-xs bg-primary/10 dark:bg-[#00f7ff]/10 text-primary dark:text-[#00f7ff] px-2 py-0.5 rounded-full">
@@ -1261,10 +1259,10 @@ function CustomerAddonsTab({ userId }: { userId: string }) {
       ) : (
         <div className="space-y-2">
           {active.map(a => (
-            <div key={a.id} className="flex items-center justify-between p-3 bg-muted/30 dark:bg-[#bc13fe]/10 rounded-lg border border-border dark:border-[#bc13fe]/20">
-              <div>
-                <div className="text-sm font-medium text-foreground dark:text-[#e0d0ff]">{a.addonType?.name || a.addonName}</div>
-                <div className="text-xs text-muted-foreground">
+            <div key={a.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-muted/30 dark:bg-[#bc13fe]/10 rounded-lg border border-border dark:border-[#bc13fe]/20">
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-medium text-foreground dark:text-[#e0d0ff] truncate">{a.addonType?.name || a.addonName}</div>
+                <div className="text-xs text-muted-foreground truncate">
                   {a.addonType?.isRecurring ? 'Bulanan' : 'Sekali'} · Mulai {a.startDate ? formatWIB(a.startDate, 'd MMM yyyy') : '-'}
                   {a.notes ? ` · ${a.notes}` : ''}
                 </div>
@@ -1272,11 +1270,11 @@ function CustomerAddonsTab({ userId }: { userId: string }) {
                   <div className="text-[10px] text-amber-500 mt-0.5">Harga custom</div>
                 )}
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
                 <span className="text-sm font-bold text-primary dark:text-[#00f7ff]">Rp {Number(a.effectivePrice || a.priceOverride || a.addonType?.price || 0).toLocaleString('id-ID')}</span>
                 <button
                   onClick={() => handleRemove(a.id, a.addonType?.name || a.addonName)}
-                  className="px-2 py-1 text-xs bg-destructive/10 text-destructive border border-destructive/30 rounded hover:bg-destructive/20 transition"
+                  className="shrink-0 px-2 py-1 text-xs bg-destructive/10 text-destructive border border-destructive/30 rounded hover:bg-destructive/20 transition"
                 >
                   Hentikan
                 </button>
@@ -1435,10 +1433,10 @@ function PaymentPromiseTab({ userId, userStatus }: { userId: string; userStatus:
 
       {activePromise ? (
         <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 rounded-lg">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 rounded">AKTIF</span>
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 rounded shrink-0">AKTIF</span>
                 <span className="text-sm font-medium text-foreground dark:text-[#e0d0ff]">
                   Janji bayar hingga {formatWIB(activePromise.promiseDate, 'd MMMM yyyy')}
                 </span>
@@ -1452,7 +1450,7 @@ function PaymentPromiseTab({ userId, userStatus }: { userId: string; userStatus:
             </div>
             <button
               onClick={() => handleCancel(activePromise.id)}
-              className="px-2 py-1 text-xs bg-destructive/10 text-destructive border border-destructive/30 rounded hover:bg-destructive/20 transition"
+              className="shrink-0 px-2 py-1 text-xs bg-destructive/10 text-destructive border border-destructive/30 rounded hover:bg-destructive/20 transition self-start"
             >
               Batalkan
             </button>
