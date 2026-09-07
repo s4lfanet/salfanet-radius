@@ -52,6 +52,81 @@ export async function runHotspotSync(): Promise<{ expired: number; total: number
       data: { status: 'EXPIRED' },
     });
 
+    // 4. Create synthetic radacct entries for ACTIVE vouchers not in radacct
+    // When MikroTik hotspot accounting is not configured (or just migrated to
+    // RADIUS mode), radacct is empty but vouchers are actually active.
+    // Create synthetic radacct rows so dashboard, sessions page, and billing
+    // can display them with proper status.
+    let syntheticCreated = 0;
+    try {
+      const activeVouchers = await prisma.hotspotVoucher.findMany({
+        where: {
+          status: 'ACTIVE',
+          firstLoginAt: { not: null },
+        },
+        select: {
+          id: true,
+          code: true,
+          firstLoginAt: true,
+          expiresAt: true,
+          routerId: true,
+        },
+      });
+
+      if (activeVouchers.length > 0) {
+        const voucherCodes = activeVouchers.map(v => v.code);
+        const existingRadacct = await prisma.radacct.findMany({
+          where: { username: { in: voucherCodes } },
+          select: { username: true },
+        });
+        const radacctUsernames = new Set(existingRadacct.map(r => r.username));
+
+        const missingVouchers = activeVouchers.filter(v => !radacctUsernames.has(v.code));
+
+        for (const voucher of missingVouchers) {
+          try {
+            const router = voucher.routerId
+              ? await prisma.router.findUnique({
+                  where: { id: voucher.routerId },
+                  select: { nasname: true, ipAddress: true },
+                })
+              : null;
+            if (!router) continue;
+            const nasIp = router.nasname || router.ipAddress || '';
+
+            await prisma.$executeRaw`
+              INSERT INTO radacct (
+                acctsessionid, acctuniqueid, username, realm,
+                nasipaddress, nasportid, nasporttype,
+                acctstarttime, acctupdatetime, acctstoptime,
+                acctsessiontime, acctauthentic, connectinfo_start,
+                acctinputoctets, acctoutputoctets,
+                calledstationid, callingstationid, acctterminatecause,
+                servicetype, framedprotocol, framedipaddress
+              ) VALUES (
+                ${'hs-sync-' + Date.now() + '-' + voucher.code},
+                ${'hs-' + voucher.code + '-' + Date.now()},
+                ${voucher.code},
+                NULL,
+                ${nasIp},
+                '', 'Ethernet',
+                ${voucher.firstLoginAt}, ${now}, NULL,
+                0, 'RADIUS', '',
+                0, 0,
+                '', '', '',
+                'Framed-User', 'PPP', ''
+              )
+            `;
+            syntheticCreated++;
+          } catch (e: any) {
+            console.error(`[HOTSPOT_SYNC] Failed to create synthetic radacct for ${voucher.code}:`, e?.message);
+          }
+        }
+      }
+    } catch (e: any) {
+      errors.push(`Synthetic radacct: ${e?.message || 'Unknown'}`);
+    }
+
     // Count active vouchers for reporting
     const activeCount = await prisma.hotspotVoucher.count({
       where: { status: 'ACTIVE' },
@@ -62,11 +137,12 @@ export async function runHotspotSync(): Promise<{ expired: number; total: number
       total: activeCount,
       activated,
       mikrotikUpdated,
+      syntheticCreated,
       errors,
     };
   } catch (error: any) {
     errors.push(error?.message || 'Unknown error');
-    return { expired: 0, total: 0, activated: 0, mikrotikUpdated: 0, errors };
+    return { expired: 0, total: 0, activated: 0, mikrotikUpdated: 0, syntheticCreated: 0, errors };
   }
 }
 
