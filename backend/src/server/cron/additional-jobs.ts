@@ -75,13 +75,15 @@ export async function runHotspotSync(): Promise<{ expired: number; total: number
 
       if (activeVouchers.length > 0) {
         const voucherCodes = activeVouchers.map(v => v.code);
-        const existingRadacct = await prisma.radacct.findMany({
-          where: { username: { in: voucherCodes } },
+        // Only check for ACTIVE radacct entries (acctstoptime IS NULL).
+        // Vouchers with only stopped entries need a new synthetic active entry.
+        const existingActiveRadacct = await prisma.radacct.findMany({
+          where: { username: { in: voucherCodes }, acctstoptime: null },
           select: { username: true },
         });
-        const radacctUsernames = new Set(existingRadacct.map(r => r.username));
+        const radacctActiveUsernames = new Set(existingActiveRadacct.map(r => r.username));
 
-        const missingVouchers = activeVouchers.filter(v => !radacctUsernames.has(v.code));
+        const missingVouchers = activeVouchers.filter(v => !radacctActiveUsernames.has(v.code));
 
         for (const voucher of missingVouchers) {
           try {
@@ -514,6 +516,11 @@ export async function runPppoeSessionSync(): Promise<{ synced: number; closed: n
       ...pppoeUsers.map(u => u.username),
       ...hotspotVouchers.map(v => v.code),
     ]);
+    // Build set of PPPoE-only usernames (not hotspot vouchers)
+    // Hotspot vouchers use /ip/hotspot/active, not /ppp/active — so they
+    // should NOT be closed as stale by this PPPoE-only sync job.
+    const pppoeUsernames = new Set(pppoeUsers.map(u => u.username));
+    const hotspotVoucherCodes = new Set(hotspotVouchers.map(v => v.code));
 
     // Klasifikasi sesi
     let closed = 0;
@@ -524,6 +531,8 @@ export async function runPppoeSessionSync(): Promise<{ synced: number; closed: n
 
     for (const session of openSessions) {
       const isRegistered = registeredUsernames.has(session.username);
+      const isHotspotVoucher = hotspotVoucherCodes.has(session.username);
+      const isPppoeUser = pppoeUsernames.has(session.username);
       const nasIp = session.nasipaddress;
       const routerActive = routerActiveMap.get(nasIp);
       const routerSucceeded = routerActive !== undefined;
@@ -533,6 +542,12 @@ export async function runPppoeSessionSync(): Promise<{ synced: number; closed: n
         // Orphaned — username tidak terdaftar di pppoe_users maupun hotspot_vouchers
         // Aman untuk close terlepas dari MikroTik API status
         toCloseOrphaned.push(session.radacctid);
+      } else if (isHotspotVoucher && !isPppoeUser) {
+        // Hotspot voucher — skip stale-close entirely.
+        // Hotspot vouchers use /ip/hotspot/active (not /ppp/active), so
+        // checking PPP active would incorrectly mark them as stale.
+        // Hotspot session cleanup is handled by hotspot_sync cronjob instead.
+        synced++;
       } else if (routerSucceeded && !isOnMikrotik) {
         // Stale — router API berhasil, user terdaftar, tapi tidak di PPP active MikroTik
         toCloseStale.push(session.radacctid);
