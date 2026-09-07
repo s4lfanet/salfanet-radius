@@ -12,18 +12,38 @@ function isValidIp(host: string): boolean {
   return false;
 }
 
-// Auto-detect server IP from network interfaces (first non-internal IPv4)
-// This returns the actual IP that MikroTik can reach via local network/VPN,
-// NOT a Cloudflare proxy IP (which doesn't work for RADIUS UDP traffic).
+// Auto-detect server IP from network interfaces
+// Priority: private/local IPs (192.168.x.x, 10.x.x.x, 172.16-31.x.x) over public IPs
+// because MikroTik typically reaches the VPS via local network/VPN, not public IP.
+// Public IPs often point to Cloudflare proxy or NAT gateway which don't work for RADIUS UDP.
+function isPrivateIp(ip: string): boolean {
+  if (ip.startsWith('10.')) return true;
+  if (ip.startsWith('192.168.')) return true;
+  if (ip.startsWith('172.')) {
+    const second = parseInt(ip.split('.')[1], 10);
+    return second >= 16 && second <= 31;
+  }
+  return false;
+}
+
 function getServerIp(): string {
   const interfaces = os.networkInterfaces();
+  const allIps: { ip: string; private: boolean; internal: boolean }[] = [];
   for (const name of Object.keys(interfaces)) {
+    // Skip docker/bridge/veth interfaces — they're not reachable from MikroTik
+    if (/^(docker|br-|veth|virbr)/.test(name)) continue;
     for (const iface of interfaces[name] || []) {
       if (iface.family === 'IPv4' && !iface.internal) {
-        return iface.address;
+        allIps.push({ ip: iface.address, private: isPrivateIp(iface.address), internal: iface.internal });
       }
     }
   }
+  // Prefer private IPs (MikroTik reaches VPS via local network)
+  const privateIp = allIps.find(i => i.private);
+  if (privateIp) return privateIp.ip;
+  // Fallback to first non-internal IP
+  const firstIp = allIps[0];
+  if (firstIp) return firstIp.ip;
   return '127.0.0.1';
 }
 
@@ -53,12 +73,20 @@ export async function POST(
     }
 
     // Determine RADIUS server IP based on connection type
-    // Priority: RADIUS_SERVER_IP env → VPS_IP env → auto-detect from network interfaces
+    // Priority: auto-detect private IP from network interfaces → RADIUS_SERVER_IP env → VPS_IP env
     // IMPORTANT: Jangan pakai domain (NEXTAUTH_URL hostname) karena:
     // 1. Domain bisa resolve ke Cloudflare proxy IP (104.x.x.x) yang tidak support RADIUS UDP
     // 2. MikroTik /radius add butuh IP asli yang reachable via local network/VPN
     // 3. Cloudflare proxy hanya untuk HTTP/HTTPS, bukan UDP 1812/1813/3799
-    let radiusServerIp = process.env.RADIUS_SERVER_IP || process.env.VPS_IP || getServerIp();
+    //
+    // LOGIC: Auto-detect private IP (192.168.x.x, 10.x.x.x) lebih diprioritaskan
+    // dari env RADIUS_SERVER_IP karena MikroTik biasanya di jaringan lokal yang sama
+    // dengan VPS. Env RADIUS_SERVER_IP sering diset ke IP publik (untuk Cloudflare/NAT)
+    // yang TIDAK bisa dipakai untuk RADIUS UDP traffic.
+    const detectedIp = getServerIp();
+    const envRadiusIp = process.env.RADIUS_SERVER_IP || process.env.VPS_IP;
+    // Use detected private IP if available, otherwise fall back to env
+    let radiusServerIp = isPrivateIp(detectedIp) ? detectedIp : (envRadiusIp || detectedIp);
     let nasSrcAddress = ''; // VPN IP of the router (NAS), used as src-address in /radius add
 
     // LOGIC:
