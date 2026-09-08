@@ -507,7 +507,7 @@ export async function runPppoeSessionSync(): Promise<{ synced: number; closed: n
     });
 
     if (routers.length === 0) {
-      return { synced: 0, closed: 0, orphaned: 0, total: 0, errors };
+      return { synced: 0, closed: 0, orphaned: 0, total: 0, created: 0, errors };
     }
 
     // Per-router fetch PPP active — track which routers succeeded
@@ -539,7 +539,7 @@ export async function runPppoeSessionSync(): Promise<{ synced: number; closed: n
     });
 
     if (openSessions.length === 0) {
-      return { synced: 0, closed: 0, orphaned: 0, total: 0, errors };
+      return { synced: 0, closed: 0, orphaned: 0, total: 0, created: 0, errors };
     }
 
     // Ambil daftar username yang terdaftar di pppoe_users dan hotspot_vouchers
