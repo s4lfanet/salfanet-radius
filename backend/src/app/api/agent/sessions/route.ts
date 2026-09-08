@@ -340,11 +340,17 @@ export async function GET(request: NextRequest) {
         s.routerName = s.routerName || live.routerName;
       }
 
-      // Remove synthetic voucher sessions not connected to MikroTik.
+      // Remove synthetic sessions not connected to MikroTik.
+      // This applies to both:
+      //   - API-level synthetic sessions (id starts with 'voucher-')
+      //   - Cron-level synthetic radacct entries (acctSessionId starts with 'hs-sync-')
       // Only show sessions where the device is actually active on MikroTik.
       // When the device reconnects, it will reappear via liveMap enrichment.
       allSessions = allSessions.filter((s: any) => {
-        if (typeof s.id === 'string' && s.id.startsWith('voucher-')) {
+        const isSynthetic =
+          (typeof s.id === 'string' && s.id.startsWith('voucher-')) ||
+          (typeof s.acctSessionId === 'string' && s.acctSessionId.startsWith('hs-sync-'));
+        if (isSynthetic) {
           return liveMap.has(s.username);
         }
         return true;
