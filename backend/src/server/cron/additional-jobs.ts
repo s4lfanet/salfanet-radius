@@ -8,6 +8,7 @@ import { nowWIB } from '@/lib/timezone';
 import { listPppActive } from '@/server/services/mikrotik/ppp-secret.service';
 import { fetchAllVoucherStatusesFromMikrotik } from '@/server/services/mikrotik/hotspot-voucher.service';
 import { syncVoucherStatusFromRadius } from '@/server/services/radius/hotspot-sync.service';
+import { fetchLiveHotspotTrafficMap } from '@/server/services/radius/live-hotspot-traffic';
 
 // ─── hotspot_sync ───────────────────────────────────────────────────────────
 /**
@@ -16,7 +17,7 @@ import { syncVoucherStatusFromRadius } from '@/server/services/radius/hotspot-sy
  *   2. Sync status dari RADIUS radacct (acctstoptime IS NULL) — untuk radius mode
  *   3. Expire voucher yang sudah lewat masa berlakunya (expiresAt < now)
  */
-export async function runHotspotSync(): Promise<{ expired: number; total: number; activated: number; mikrotikUpdated: number; syntheticCreated: number; timeoutUpdated: number; errors: string[] }> {
+export async function runHotspotSync(): Promise<{ expired: number; total: number; activated: number; mikrotikUpdated: number; syntheticCreated: number; syntheticClosed: number; timeoutUpdated: number; errors: string[] }> {
   const errors: string[] = [];
   const now = nowWIB();
 
@@ -58,6 +59,7 @@ export async function runHotspotSync(): Promise<{ expired: number; total: number
     // Create synthetic radacct rows so dashboard, sessions page, and billing
     // can display them with proper status.
     let syntheticCreated = 0;
+    let syntheticClosed = 0;
     try {
       const activeVouchers = await prisma.hotspotVoucher.findMany({
         where: {
@@ -79,22 +81,39 @@ export async function runHotspotSync(): Promise<{ expired: number; total: number
         // Vouchers with only stopped entries need a new synthetic active entry.
         const existingActiveRadacct = await prisma.radacct.findMany({
           where: { username: { in: voucherCodes }, acctstoptime: null },
-          select: { username: true },
+          select: { username: true, acctsessionid: true, radacctid: true },
         });
         const radacctActiveUsernames = new Set(existingActiveRadacct.map(r => r.username));
 
-        const missingVouchers = activeVouchers.filter(v => !radacctActiveUsernames.has(v.code));
+        // Fetch routers with API credentials for MikroTik live check
+        const routerIds = [...new Set(activeVouchers.map(v => v.routerId).filter(Boolean))] as string[];
+        const routers = await prisma.router.findMany({
+          where: { id: { in: routerIds }, isActive: true, username: { not: '' }, password: { not: '' } },
+          select: { id: true, name: true, nasname: true, ipAddress: true, port: true, username: true, password: true },
+        });
+
+        // Fetch actually-connected hotspot users from MikroTik
+        // Only create synthetic radacct for vouchers that are TRULY connected
+        const liveMap = routers.length > 0
+          ? await fetchLiveHotspotTrafficMap(routers, new Set(voucherCodes))
+          : new Map();
+        const connectedUsernames = new Set(liveMap.keys());
+
+        // Create synthetic radacct only for vouchers that are:
+        // 1. Missing from active radacct
+        // 2. Actually connected to MikroTik (verified via /ip/hotspot/active)
+        const missingVouchers = activeVouchers.filter(
+          v => !radacctActiveUsernames.has(v.code) && connectedUsernames.has(v.code)
+        );
 
         for (const voucher of missingVouchers) {
           try {
             const router = voucher.routerId
-              ? await prisma.router.findUnique({
-                  where: { id: voucher.routerId },
-                  select: { nasname: true, ipAddress: true },
-                })
+              ? routers.find(r => r.id === voucher.routerId)
               : null;
             if (!router) continue;
             const nasIp = router.nasname || router.ipAddress || '';
+            const live = liveMap.get(voucher.code);
 
             await prisma.$executeRaw`
               INSERT INTO radacct (
@@ -113,15 +132,37 @@ export async function runHotspotSync(): Promise<{ expired: number; total: number
                 ${nasIp},
                 '', 'Ethernet',
                 ${voucher.firstLoginAt}, ${now}, NULL,
-                0, 'RADIUS', '',
-                0, 0,
-                '', '', '',
-                'Framed-User', 'PPP', ''
+                ${live?.uptimeSeconds || 0}, 'RADIUS', '',
+                ${live?.uploadBytes || 0}, ${live?.downloadBytes || 0},
+                '', ${live?.macAddress || ''}, '',
+                'Framed-User', 'PPP', ${live?.ipAddress || ''}
               )
             `;
             syntheticCreated++;
           } catch (e: any) {
             console.error(`[HOTSPOT_SYNC] Failed to create synthetic radacct for ${voucher.code}:`, e?.message);
+          }
+        }
+
+        // Close synthetic radacct entries for vouchers NOT connected to MikroTik.
+        // This removes "ghost" sessions where the device disconnected but the
+        // database still shows ACTIVE status with an open radacct entry.
+        const ghostSessions = existingActiveRadacct.filter(
+          r => r.acctsessionid?.startsWith('hs-sync-') && !connectedUsernames.has(r.username)
+        );
+        for (const ghost of ghostSessions) {
+          try {
+            await prisma.radacct.update({
+              where: { radacctid: ghost.radacctid },
+              data: {
+                acctstoptime: now,
+                acctupdatetime: now,
+                acctterminatecause: 'Hotspot-Disconnect',
+              },
+            });
+            syntheticClosed++;
+          } catch (e: any) {
+            console.error(`[HOTSPOT_SYNC] Failed to close ghost radacct for ${ghost.username}:`, e?.message);
           }
         }
       }
@@ -151,12 +192,13 @@ export async function runHotspotSync(): Promise<{ expired: number; total: number
       activated,
       mikrotikUpdated,
       syntheticCreated,
+      syntheticClosed,
       timeoutUpdated,
       errors,
     };
   } catch (error: any) {
     errors.push(error?.message || 'Unknown error');
-    return { expired: 0, total: 0, activated: 0, mikrotikUpdated: 0, syntheticCreated: 0, timeoutUpdated: 0, errors };
+    return { expired: 0, total: 0, activated: 0, mikrotikUpdated: 0, syntheticCreated: 0, syntheticClosed: 0, timeoutUpdated: 0, errors };
   }
 }
 
