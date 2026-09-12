@@ -17,7 +17,7 @@ import { fetchLiveHotspotTrafficMap } from '@/server/services/radius/live-hotspo
  *   2. Sync status dari RADIUS radacct (acctstoptime IS NULL) — untuk radius mode
  *   3. Expire voucher yang sudah lewat masa berlakunya (expiresAt < now)
  */
-export async function runHotspotSync(): Promise<{ expired: number; total: number; activated: number; mikrotikUpdated: number; syntheticCreated: number; syntheticClosed: number; timeoutUpdated: number; errors: string[] }> {
+export async function runHotspotSync(): Promise<{ expired: number; expiredSessionsClosed: number; total: number; activated: number; mikrotikUpdated: number; syntheticCreated: number; syntheticClosed: number; timeoutUpdated: number; errors: string[] }> {
   const errors: string[] = [];
   const now = nowWIB();
 
@@ -52,6 +52,35 @@ export async function runHotspotSync(): Promise<{ expired: number; total: number
       },
       data: { status: 'EXPIRED' },
     });
+
+    // 3a. Close open radacct entries for EXPIRED vouchers
+    // Vouchers that just expired (or were already expired) may still have
+    // open synthetic or real radacct entries. Close them so monitoring,
+    // dashboard, and sessions page no longer show them as online.
+    let expiredSessionsClosed = 0;
+    try {
+      const expiredVouchers = await prisma.hotspotVoucher.findMany({
+        where: { status: 'EXPIRED' },
+        select: { code: true },
+      });
+      const expiredCodes = expiredVouchers.map(v => v.code);
+      if (expiredCodes.length > 0) {
+        const closeResult = await prisma.radacct.updateMany({
+          where: {
+            username: { in: expiredCodes },
+            acctstoptime: null,
+          },
+          data: {
+            acctstoptime: now,
+            acctupdatetime: now,
+            acctterminatecause: 'Voucher-Expired',
+          },
+        });
+        expiredSessionsClosed = closeResult.count;
+      }
+    } catch (e: any) {
+      errors.push(`Close expired sessions: ${e?.message || 'Unknown'}`);
+    }
 
     // 4. Create synthetic radacct entries for ACTIVE vouchers not in radacct
     // When MikroTik hotspot accounting is not configured (or just migrated to
@@ -188,6 +217,7 @@ export async function runHotspotSync(): Promise<{ expired: number; total: number
 
     return {
       expired: expired.count,
+      expiredSessionsClosed,
       total: activeCount,
       activated,
       mikrotikUpdated,
@@ -198,7 +228,7 @@ export async function runHotspotSync(): Promise<{ expired: number; total: number
     };
   } catch (error: any) {
     errors.push(error?.message || 'Unknown error');
-    return { expired: 0, total: 0, activated: 0, mikrotikUpdated: 0, syntheticCreated: 0, syntheticClosed: 0, timeoutUpdated: 0, errors };
+    return { expired: 0, expiredSessionsClosed: 0, total: 0, activated: 0, mikrotikUpdated: 0, syntheticCreated: 0, syntheticClosed: 0, timeoutUpdated: 0, errors };
   }
 }
 
