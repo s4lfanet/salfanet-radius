@@ -134,6 +134,14 @@ verify_session.py
 vps_audit.py
 AUTOCHANGELOG.md
 
+# Debug/test scripts yang tidak perlu di-repo
+deploy/test-cwd.js
+deploy/test-wrapper.js
+scripts/check-baileys.js
+scripts/sync-readme-changelog.mjs
+backend/scripts/test-login.sh
+globals.css
+
 # Debug/temp files dari investigasi (jangan di-commit)
 .check-*
 .debug-*
@@ -155,3 +163,14 @@ google-services.json
 google-services-desktop.json
 *-adminsdk-*.json
 GoogleService-Info.plist
+
+# AI agent / IDE config — local only, tidak perlu di-push ke GitHub
+.agent/
+.agents/
+.claude/
+.devin/
+.cursor/
+.codeium/
+.github/
+skill-lock.json
+skills-lock.json
