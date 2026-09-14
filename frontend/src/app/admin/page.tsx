@@ -25,6 +25,7 @@ import {
   ShieldBan,
   UserX,
   UserPlus,
+  AlertTriangle,
 } from 'lucide-react';
 import { formatWIB, getTimezoneInfo, nowWIB } from '@/lib/timezone';
 import { useTranslation } from '@/hooks/useTranslation';
