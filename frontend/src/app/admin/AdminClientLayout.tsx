@@ -191,6 +191,12 @@ const menuGroups: MenuGroup[] = [
         href: '/admin/payment-proofs',
         requiredPermission: 'keuangan.view',
       },
+      {
+        titleKey: 'nav.laporan',
+        icon: <BarChart3 className="w-4 h-4" />,
+        href: '/admin/laporan',
+        requiredPermission: 'reports.view',
+      },
     ],
   },
   {
@@ -290,19 +296,6 @@ const menuGroups: MenuGroup[] = [
           { titleKey: 'nav.jointClosures', href: '/admin/network/fiber-joint-closures', requiredPermission: 'network.view' },
           { titleKey: 'nav.fiberOdcs', href: '/admin/network/fiber-odcs', requiredPermission: 'network.view' },
           { titleKey: 'nav.fiberOdps', href: '/admin/network/fiber-odps', requiredPermission: 'network.view' },
-        ],
-      },
-    ],
-  },
-  {
-    titleKey: 'nav.catReports',
-    items: [
-      {
-        titleKey: 'nav.laporan',
-        icon: <BarChart3 className="w-4 h-4" />,
-        requiredPermission: 'reports.view',
-        children: [
-          { titleKey: 'nav.laporanData', href: '/admin/laporan', requiredPermission: 'reports.view' },
         ],
       },
     ],
