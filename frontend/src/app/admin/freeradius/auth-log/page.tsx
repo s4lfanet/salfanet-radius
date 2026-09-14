@@ -14,8 +14,6 @@ interface AuthLogEntry {
   username: string;
   reply: string;
   authdate: string;
-  nasipaddress: string | null;
-  nasportid: string | null;
 }
 
 interface AuthLogResponse {
@@ -163,20 +161,18 @@ export default function RadiusAuthLogPage() {
                 <th className="px-3 py-2 text-left font-medium">Waktu</th>
                 <th className="px-3 py-2 text-left font-medium">Username</th>
                 <th className="px-3 py-2 text-left font-medium">Status</th>
-                <th className="px-3 py-2 text-left font-medium">NAS IP</th>
-                <th className="px-3 py-2 text-left font-medium">Port</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-white/5">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-3 py-8 text-center text-gray-400">
+                  <td colSpan={3} className="px-3 py-8 text-center text-gray-400">
                     <Loader2 className="w-4 h-4 animate-spin mx-auto" />
                   </td>
                 </tr>
               ) : entries.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-3 py-8 text-center text-gray-400">
+                  <td colSpan={3} className="px-3 py-8 text-center text-gray-400">
                     Tidak ada log autentikasi
                   </td>
                 </tr>
@@ -200,12 +196,6 @@ export default function RadiusAuthLogPage() {
                           {isAccepted ? <ShieldCheck className="w-3 h-3" /> : <ShieldX className="w-3 h-3" />}
                           {entry.reply}
                         </span>
-                      </td>
-                      <td className="px-3 py-2 whitespace-nowrap text-gray-500 dark:text-gray-400 font-mono">
-                        {entry.nasipaddress || '-'}
-                      </td>
-                      <td className="px-3 py-2 whitespace-nowrap text-gray-500 dark:text-gray-400 font-mono">
-                        {entry.nasportid || '-'}
                       </td>
                     </tr>
                   );

@@ -38,8 +38,6 @@ export async function GET(request: NextRequest) {
           username: true,
           reply: true,
           authdate: true,
-          nasipaddress: true,
-          nasportid: true,
         },
       }),
       prisma.radpostauth.count({ where }),
