@@ -62,27 +62,50 @@ export async function GET() {
                         const activeTime = activeTimeOutput.trim();
                         
                         if (activeTime && activeTime !== 'n/a') {
-                            // Remove non-standard timezone abbreviation (e.g. "WIB") before parsing
+                            // systemctl outputs local time with timezone abbreviation (e.g. "Thu 2026-09-10 09:59:22 WIB")
+                            // new Date() cannot reliably parse non-standard TZ abbreviations, so:
+                            // 1. Strip the TZ abbreviation
+                            // 2. Parse the remaining local datetime
+                            // 3. Use Date.parse on the full string as fallback (works for some timezone names)
+                            const tzMatch = activeTime.match(/\s([A-Z]{2,5})$/);
                             const cleanedTime = activeTime.replace(/\s+[A-Z]{2,5}$/, '');
                             
-                            // Parse the timestamp
-                            startTime = new Date(cleanedTime).toISOString();
+                            // Try parsing the cleaned local time, then adjust based on known TZ offset
+                            // WIB = UTC+7, WITA = UTC+8, WIT = UTC+9
+                            const tzOffsetMap: Record<string, number> = { WIB: 7, WITA: 8, WIT: 9 };
+                            const tzAbbr = tzMatch?.[1] || '';
+                            const tzOffsetHours = tzOffsetMap[tzAbbr] ?? 7; // default WIB
                             
-                            // Calculate uptime
-                            const startMs = new Date(cleanedTime).getTime();
+                            const parsedLocal = new Date(cleanedTime);
+                            if (!isNaN(parsedLocal.getTime())) {
+                                // parsedLocal was interpreted as if the string were in the server's local TZ.
+                                // But the systemctl output is in the system's local timezone already,
+                                // and Date.parse handles it correctly when we strip the abbreviation
+                                // because the system TZ matches. Use it directly.
+                                startTime = parsedLocal.toISOString();
+                            } else {
+                                // Fallback: parse manually assuming it's "DDD YYYY-MM-DD HH:MM:SS"
+                                const m = cleanedTime.match(/^(\w{3})\s+(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})$/);
+                                if (m) {
+                                    const dt = new Date(Date.UTC(+m[2], +m[3]-1, +m[4], +m[5]-tzOffsetHours, +m[6], +m[7]));
+                                    startTime = dt.toISOString();
+                                }
+                            }
+                            
+                            // Calculate uptime from the correct start time
+                            const startMs = new Date(startTime).getTime();
                             const nowMs = Date.now();
-                            const uptimeSeconds = Math.floor((nowMs - startMs) / 1000);
+                            const uptimeSeconds = Math.max(0, Math.floor((nowMs - startMs) / 1000));
                             
-                            // Format uptime as HH:MM:SS or DD-HH:MM:SS
                             const days = Math.floor(uptimeSeconds / 86400);
                             const hours = Math.floor((uptimeSeconds % 86400) / 3600);
                             const minutes = Math.floor((uptimeSeconds % 3600) / 60);
                             const seconds = uptimeSeconds % 60;
                             
                             if (days > 0) {
-                                uptime = `${days}-${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                                uptime = `${days}h ${String(hours).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s`;
                             } else {
-                                uptime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                                uptime = `${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s`;
                             }
                         }
                     } catch (err) {
@@ -90,22 +113,26 @@ export async function GET() {
                         // Fallback to ps method
                         try {
                             const { stdout: startOutput } = await execAsync(`ps -p ${pid} -o lstart --no-headers 2>/dev/null`);
-                            startTime = new Date(startOutput.trim()).toISOString();
-                            
-                            // Calculate uptime manually
-                            const startMs = new Date(startOutput.trim()).getTime();
-                            const nowMs = Date.now();
-                            const uptimeSeconds = Math.floor((nowMs - startMs) / 1000);
-                            
-                            const days = Math.floor(uptimeSeconds / 86400);
-                            const hours = Math.floor((uptimeSeconds % 86400) / 3600);
-                            const minutes = Math.floor((uptimeSeconds % 3600) / 60);
-                            const seconds = uptimeSeconds % 60;
-                            
-                            if (days > 0) {
-                                uptime = `${days}-${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-                            } else {
-                                uptime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                            // ps lstart format: "Thu Sep 10 09:59:22 2026" — this is in system local time
+                            // new Date() parses this correctly in the server's local timezone
+                            const parsedDate = new Date(startOutput.trim());
+                            if (!isNaN(parsedDate.getTime())) {
+                                startTime = parsedDate.toISOString();
+                                
+                                const startMs = parsedDate.getTime();
+                                const nowMs = Date.now();
+                                const uptimeSeconds = Math.max(0, Math.floor((nowMs - startMs) / 1000));
+                                
+                                const days = Math.floor(uptimeSeconds / 86400);
+                                const hours = Math.floor((uptimeSeconds % 86400) / 3600);
+                                const minutes = Math.floor((uptimeSeconds % 3600) / 60);
+                                const seconds = uptimeSeconds % 60;
+                                
+                                if (days > 0) {
+                                    uptime = `${days}h ${String(hours).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s`;
+                                } else {
+                                    uptime = `${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}m ${String(seconds).padStart(2, '0')}s`;
+                                }
                             }
                         } catch { }
                     }
