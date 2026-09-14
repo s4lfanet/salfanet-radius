@@ -5,45 +5,30 @@ import {
   Users,
   Wifi,
   Activity,
-  Clock,
   Loader2,
   Server,
   Database,
   Zap,
   CheckCircle2,
   XCircle,
-  RotateCw,
   RefreshCw,
-  ShieldBan,
-  UserX,
+  ShieldCheck,
   Ticket,
   Receipt,
   TrendingUp,
   DollarSign,
-  BarChart3,
   PieChart as PieChartIcon,
   Store,
-  ShieldCheck,
-  ShieldX,
-  LogIn,
-  CreditCard,
-  Settings,
-  MessageSquare,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Network,
-  Globe,
-  FileText,
-  UserPlus,
   CalendarClock,
-  AlertTriangle,
+  ShieldBan,
+  UserX,
+  UserPlus,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatWIB, getTimezoneInfo, nowWIB } from '@/lib/timezone';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useApiQuery, useApiMutation, buildQueryKey } from '@/lib/api/hooks';
+import { useApiQuery } from '@/lib/api/hooks';
 import {
   UserStatusPieChart,
   ChartCard,
@@ -102,44 +87,6 @@ interface ActivityLogEntry {
   status: 'success' | 'warning' | 'error';
   ipAddress?: string;
   createdAt: string;
-}
-
-const MODULE_CONFIG: Record<string, { label: string; color: string; Icon: React.ComponentType<{ className?: string }> }> = {
-  auth:        { label: 'Login',     color: 'text-blue-400 bg-blue-500/20 border-blue-500/30',        Icon: LogIn },
-  payment:     { label: 'Bayar',     color: 'text-emerald-400 bg-emerald-500/20 border-emerald-500/30', Icon: CreditCard },
-  pppoe:       { label: 'PPPoE',     color: 'text-cyan-400 bg-cyan-500/20 border-cyan-500/30',         Icon: Network },
-  hotspot:     { label: 'Hotspot',   color: 'text-primary bg-primary/10 border-border',   Icon: Wifi },
-  voucher:     { label: 'Voucher',   color: 'text-amber-400 bg-amber-500/20 border-amber-500/30',      Icon: Ticket },
-  invoice:     { label: 'Tagihan',   color: 'text-pink-400 bg-pink-500/20 border-pink-500/30',         Icon: FileText },
-  transaction: { label: 'Transaksi', color: 'text-teal-400 bg-teal-500/20 border-teal-500/30',         Icon: Receipt },
-  settings:    { label: 'Setting',   color: 'text-orange-400 bg-orange-500/20 border-orange-500/30',   Icon: Settings },
-  system:      { label: 'Sistem',    color: 'text-red-400 bg-red-500/20 border-red-500/30',            Icon: Server },
-  whatsapp:    { label: 'WA',        color: 'text-green-400 bg-green-500/20 border-green-500/30',      Icon: MessageSquare },
-  network:     { label: 'Jaringan',  color: 'text-indigo-400 bg-indigo-500/20 border-indigo-500/30',  Icon: Globe },
-  session:     { label: 'Sesi',      color: 'text-slate-400 bg-slate-500/20 border-slate-500/30',     Icon: Clock },
-  user:        { label: 'User',      color: 'text-fuchsia-400 bg-fuchsia-500/20 border-fuchsia-500/30',Icon: Users },
-  agent:       { label: 'Agen',      color: 'text-lime-400 bg-lime-500/20 border-lime-500/30',        Icon: Store },
-};
-
-const ACTIVITY_TABS = [
-  { key: 'all',     label: 'Semua' },
-  { key: 'auth',    label: 'Login' },
-  { key: 'payment', label: 'Pembayaran' },
-  { key: 'pppoe',   label: 'PPPoE' },
-  { key: 'system',  label: 'Sistem' },
-  { key: 'settings',label: 'Setting' },
-];
-
-function timeAgo(isoString: string): string {
-  const diff = nowWIB().getTime() - new Date(isoString).getTime();
-  const s = Math.floor(diff / 1000);
-  if (s < 60) return `${s}d`;
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}j`;
-  const d = Math.floor(h / 24);
-  return `${d}hr`;
 }
 
 interface RadiusStatus {
@@ -218,11 +165,7 @@ export default function AdminDashboard() {
   }
   // Month filter for revenue stats
   const [dashboardMonth, setDashboardMonth] = useState<string>(() => formatWIB(nowWIB(), 'yyyy-MM'));
-  const [activityModule, setActivityModule] = useState('all');
-  const [activityOffset, setActivityOffset] = useState(0);
-  const [activityLog, setActivityLog] = useState<ActivityLogEntry[]>([]);
   const { t } = useTranslation();
-  const { addToast, confirm } = useToast();
 
   // ─── React Query: Dashboard stats (30s polling) ───────────────────────────
   const dashboardQuery = useApiQuery<DashboardStatsResponse>('/api/dashboard/stats', {
@@ -244,49 +187,24 @@ export default function AdminDashboard() {
     staleTime: 0,
   });
 
-  // ─── React Query: Activity log (manual refresh + load more) ───────────────
+  // ─── React Query: Activity log total count ────────────────────────────────
   const activityQuery = useApiQuery<ActivityLogResponse>('/api/admin/activity-logs', {
-    params: { module: activityModule, limit: 20, offset: activityOffset },
-    staleTime: 0,
+    params: { limit: 1, offset: 0 },
+    staleTime: 30000,
   });
-
-  // Sync accumulated activity log (reset on offset 0, append on load more)
-  useEffect(() => {
-    if (activityQuery.data?.success) {
-      setActivityLog(prev =>
-        activityOffset === 0 ? activityQuery.data.activities : [...prev, ...activityQuery.data.activities],
-      );
-    }
-  }, [activityQuery.data, activityOffset]);
-
-  // ─── React Query: Restart RADIUS mutation ─────────────────────────────────
-  const restartRadiusMutation = useApiMutation<{ success: boolean; error?: string }, { action: string }>(
-    '/api/system/radius',
-    {
-      method: 'POST',
-      invalidateQueries: [
-        buildQueryKey('/api/system/radius'),
-        buildQueryKey('/api/dashboard/stats', { month: dashboardMonth }),
-      ],
-    },
-  );
 
   // Derive state from queries
   const stats = dashboardQuery.data?.stats ?? null;
   const systemStatus = dashboardQuery.data?.systemStatus ?? null;
   const agentSales = dashboardQuery.data?.agentSales ?? [];
   const agentSalesTotal = dashboardQuery.data?.agentSalesTotal ?? { count: 0, revenue: 0 };
-  const radiusAuthLog = dashboardQuery.data?.radiusAuthLog ?? [];
   const radiusAuthStats = dashboardQuery.data?.radiusAuthStats ?? { acceptToday: 0, rejectToday: 0 };
   const periodLabel = dashboardQuery.data?.periodLabel ?? '';
   const analyticsData = analyticsQuery.data?.data ?? null;
   const radiusStatus = radiusStatusQuery.data ?? null;
   const activityTotal = activityQuery.data?.total ?? 0;
-  const activityHasMore = activityQuery.data?.hasMore ?? false;
   const loading = dashboardQuery.isPending;
   const analyticsLoading = analyticsQuery.isFetching;
-  const activityLoading = activityQuery.isFetching;
-  const restarting = restartRadiusMutation.isPending;
 
   // Clock tick (local, 1s)
   useEffect(() => {
@@ -309,42 +227,6 @@ export default function AdminDashboard() {
     const d = new Date(Date.UTC(y, m - 1 + delta, 1));
     const next = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
     setDashboardMonth(next);
-  };
-
-  // Refresh activity log (reset to first page)
-  const refreshActivityLog = () => {
-    if (activityOffset === 0) {
-      activityQuery.refetch();
-    } else {
-      setActivityOffset(0);
-    }
-  };
-
-  // Load more activities
-  const loadMoreActivities = () => {
-    setActivityOffset(activityOffset + 20);
-  };
-
-  const handleRestartRadius = async () => {
-    if (!await confirm({
-      title: t('system.restartRadius'),
-      message: t('system.restartRadiusWarning'),
-      confirmText: t('common.yes') + ', ' + t('system.restart'),
-      cancelText: t('common.cancel'),
-      variant: 'danger',
-    })) return;
-
-    try {
-      const data = await restartRadiusMutation.mutateAsync({ action: 'restart' });
-
-      if (data.success) {
-        addToast({ type: 'success', title: t('notifications.success'), description: t('notifications.radiusRestarted') });
-      } else {
-        addToast({ type: 'error', title: t('notifications.error'), description: data.error || t('errors.restartFailed') });
-      }
-    } catch (error: unknown) {
-      addToast({ type: 'error', title: t('notifications.error'), description: (error instanceof Error ? error.message : String(error)) || t('errors.restartFailed') });
-    }
   };
 
   // Define stat cards with data
@@ -632,105 +514,29 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Activity Log - compact panel beside charts */}
-          <div className="bg-card/60 rounded-xl border border-white/10 flex flex-col overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-between p-3 border-b border-white/10">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-brand-500/10 border border-brand-500/20">
-                  <Activity className="w-3.5 h-3.5 text-brand-500" />
-                </div>
-                <div>
-                  <h2 className="text-xs font-semibold text-foreground">{t('dashboard.activityLog')}</h2>
-                  <p className="text-[10px] text-muted-foreground/40">
-                    {activityTotal > 0 ? t('dashboard.activityCount', { count: String(activityTotal) }) : t('dashboard.activitySubtitle')}
-                  </p>
-                </div>
+          {/* Activity Log - link to dedicated page */}
+          <a
+            href="/admin/logs/activity"
+            className="bg-card/60 rounded-xl border border-white/10 p-4 flex flex-col justify-between hover:border-brand-500/40 transition-all group"
+          >
+            <div className="flex items-center gap-2 mb-3">
+              <div className="p-1.5 rounded-lg bg-brand-500/10 border border-brand-500/20">
+                <Activity className="w-3.5 h-3.5 text-brand-500" />
               </div>
-              <div className="flex items-center gap-1.5">
-                {/* Filter tabs */}
-                <div className="flex items-center gap-0.5 flex-wrap">
-                  {ACTIVITY_TABS.map((tab) => (
-                    <button
-                      key={tab.key}
-                      onClick={() => {
-                        setActivityModule(tab.key);
-                        setActivityOffset(0);
-                      }}
-                      className={`px-1.5 py-0.5 text-[9px] font-medium rounded transition-all border ${
-                        activityModule === tab.key
-                          ? 'bg-brand-500/20 text-brand-500 border-brand-500/40'
-                          : 'bg-white/5 text-muted-foreground border-white/10 hover:text-white/70'
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  onClick={() => refreshActivityLog()}
-                  disabled={activityLoading}
-                  className="p-1 text-muted-foreground hover:text-brand-500 bg-white/5 border border-white/10 rounded transition-all"
-                >
-                  <RefreshCw className={`w-3 h-3 ${activityLoading ? 'animate-spin' : ''}`} />
-                </button>
+              <div>
+                <h2 className="text-xs font-semibold text-foreground">{t('dashboard.activityLog')}</h2>
+                <p className="text-[10px] text-muted-foreground/60">{t('dashboard.activitySubtitle')}</p>
               </div>
             </div>
-
-            {/* Entries list */}
-            <div className="flex-1 overflow-y-auto divide-y divide-white/5 max-h-[250px]">
-              {activityLoading && activityLog.length === 0 ? (
-                <div className="flex items-center justify-center py-10">
-                  <Loader2 className="h-4 w-4 animate-spin text-brand-500" />
-                </div>
-              ) : activityLog.length === 0 ? (
-                <div className="text-center py-10">
-                  <Activity className="h-5 w-5 mx-auto mb-1 text-muted-foreground/20" />
-                  <p className="text-[10px] text-muted-foreground/40">{t('dashboard.noActivities')}</p>
-                </div>
-              ) : (
-                activityLog.map((entry) => {
-                  const cfg = MODULE_CONFIG[entry.module] || { label: entry.module, color: 'text-slate-400 bg-slate-500/20 border-slate-500/30', Icon: Activity };
-                  const IconComp = cfg.Icon;
-                  return (
-                    <div key={entry.id} className={`flex items-center gap-2 px-3 py-2 hover:bg-white/[0.03] transition-colors ${
-                      entry.status === 'error' ? 'bg-red-500/5' : entry.status === 'warning' ? 'bg-amber-500/5' : ''
-                    }`}>
-                      <div className={`w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 border ${cfg.color}`}>
-                        <IconComp className="w-3 h-3" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[11px] font-medium text-foreground truncate">{entry.description}</p>
-                        <p className="text-[10px] text-muted-foreground/40 truncate">{entry.username} &bull; {entry.action}</p>
-                      </div>
-                      <div className="flex flex-col items-end flex-shrink-0">
-                        <span className="text-[9px] text-muted-foreground/40">{timeAgo(entry.createdAt)}</span>
-                        <span className={`text-[9px] font-medium ${
-                          entry.status === 'success' ? 'text-green-400' : entry.status === 'warning' ? 'text-amber-400' : 'text-red-400'
-                        }`}>
-                          {entry.status === 'success' ? 'OK' : entry.status === 'warning' ? 'warn' : 'err'}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] text-muted-foreground">
+                {activityTotal > 0 ? t('dashboard.activityCount', { count: String(activityTotal) }) : t('dashboard.noActivities')}
+              </span>
+              <span className="text-[10px] text-brand-500 group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
+                {t('dashboard.viewAll') || 'Lihat semua'} <ChevronRight className="w-3 h-3" />
+              </span>
             </div>
-
-            {/* Load More */}
-            {activityHasMore && (
-              <div className="p-2 border-t border-white/5 text-center">
-                <button
-                  onClick={() => loadMoreActivities()}
-                  disabled={activityLoading}
-                  className="flex items-center gap-1 mx-auto px-2.5 py-1 text-[10px] font-medium bg-brand-500/10 border border-brand-500/30 text-brand-500 rounded-lg hover:bg-brand-500/20 disabled:opacity-50 transition-all"
-                >
-                  {activityLoading ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <ChevronDown className="w-2.5 h-2.5" />}
-                  {t('dashboard.loadMore')}
-                </button>
-              </div>
-            )}
-          </div>
+          </a>
         </div>
 
         {/* Agent Voucher Sales + RADIUS Auth Log Row */}
@@ -788,8 +594,11 @@ export default function AdminDashboard() {
             )}
           </div>
 
-          {/* RADIUS Auth Log */}
-          <div className="bg-card/60 rounded-xl border border-white/10 p-3 sm:p-4">
+          {/* RADIUS Auth Log - link to dedicated page */}
+          <a
+            href="/admin/freeradius/logs"
+            className="bg-card/60 rounded-xl border border-white/10 p-3 sm:p-4 hover:border-brand-500/40 transition-all group"
+          >
             <div className="flex items-center justify-between mb-3 min-w-0">
               <div>
                 <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
@@ -798,55 +607,34 @@ export default function AdminDashboard() {
                 </h2>
                 <p className="text-[10px] text-muted-foreground mt-0.5">{t('dashboard.radiusAuthLogSubtitle')}</p>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-1 text-[10px] font-medium bg-green-500/20 text-green-400 rounded-lg border border-green-500/30">
-                  &#10003; {radiusAuthStats.acceptToday} {t('dashboard.todayAccepted')}
-                </span>
-                <span className="px-2 py-1 text-[10px] font-medium bg-red-500/20 text-red-400 rounded-lg border border-red-500/30">
-                  &#10007; {radiusAuthStats.rejectToday} {t('dashboard.todayRejected')}
-                </span>
-              </div>
             </div>
-            {radiusAuthLog.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <ShieldX className="h-5 w-5 mx-auto mb-1 opacity-50" />
-                <p className="text-xs">{t('dashboard.noAuthLogs')}</p>
-              </div>
-            ) : (
-              <div className="space-y-1.5 max-h-[280px] overflow-y-auto">
-                {radiusAuthLog.map((entry, i) => {
-                  const isAccepted = entry.reply === 'Access-Accept';
-                  return (
-                    <div key={i} className="flex items-center justify-between p-2 bg-white/5 rounded-lg">
-                      <div className="flex items-center gap-2 min-w-0">
-                        {isAccepted ? (
-                          <ShieldCheck className="w-3.5 h-3.5 text-green-400 flex-shrink-0" />
-                        ) : (
-                          <ShieldX className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
-                        )}
-                        <span className="text-xs font-medium text-foreground truncate">{entry.username}</span>
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                        <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
-                          isAccepted ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
-                        }`}>
-                          {isAccepted ? t('dashboard.loginSuccess') : t('dashboard.loginFailed')}
-                        </span>
-                        <span className="text-[9px] text-muted-foreground/40">
-                          {entry.authdate ? formatWIB(entry.authdate, 'HH:mm:ss') : ''}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="px-2 py-1 text-[10px] font-medium bg-green-500/20 text-green-400 rounded-lg border border-green-500/30">
+                &#10003; {radiusAuthStats.acceptToday} {t('dashboard.todayAccepted')}
+              </span>
+              <span className="px-2 py-1 text-[10px] font-medium bg-red-500/20 text-red-400 rounded-lg border border-red-500/30">
+                &#10007; {radiusAuthStats.rejectToday} {t('dashboard.todayRejected')}
+              </span>
+            </div>
+            <div className="flex items-center justify-end">
+              <span className="text-[10px] text-brand-500 group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
+                {t('dashboard.viewAll') || 'Lihat semua'} <ChevronRight className="w-3 h-3" />
+              </span>
+            </div>
+          </a>
         </div>
 
-        {/* System Status */}
-        <div className="bg-card/60 rounded-xl border border-border p-3 sm:p-4">
-          <h2 className="text-sm font-semibold text-foreground mb-3">{t('dashboard.systemStatus')}</h2>
+        {/* System Status - link to dedicated page */}
+        <a
+          href="/admin/system"
+          className="bg-card/60 rounded-xl border border-border p-3 sm:p-4 hover:border-brand-500/40 transition-all group block"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-foreground">{t('dashboard.systemStatus')}</h2>
+            <span className="text-[10px] text-brand-500 group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
+              {t('dashboard.viewAll') || 'Lihat semua'} <ChevronRight className="w-3 h-3" />
+            </span>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
             {/* RADIUS Server */}
             <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
@@ -873,19 +661,6 @@ export default function AdminDashboard() {
                   )}
                 </div>
               </div>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={handleRestartRadius}
-                disabled={restarting}
-                className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
-              >
-                {restarting ? (
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                ) : (
-                  <RotateCw className="h-3 w-3" />
-                )}
-              </Button>
             </div>
 
             {/* Database */}
@@ -942,7 +717,7 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
-        </div>
+        </a>
 
 
       </div>
