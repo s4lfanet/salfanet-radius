@@ -192,7 +192,7 @@ const menuGroups: MenuGroup[] = [
         requiredPermission: 'keuangan.view',
       },
       {
-        titleKey: 'nav.laporan',
+        titleKey: 'nav.laporanData',
         icon: <BarChart3 className="w-4 h-4" />,
         href: '/admin/laporan',
         requiredPermission: 'reports.view',
