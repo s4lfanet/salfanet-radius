@@ -6,13 +6,8 @@ import {
   Wifi,
   Activity,
   Loader2,
-  Server,
-  Database,
-  Zap,
   CheckCircle2,
-  XCircle,
   RefreshCw,
-  ShieldCheck,
   Ticket,
   Receipt,
   TrendingUp,
@@ -78,23 +73,6 @@ interface RecentActivity {
   status: 'success' | 'warning' | 'error';
 }
 
-interface ActivityLogEntry {
-  id: string;
-  username: string;
-  userRole?: string;
-  action: string;
-  description: string;
-  module: string;
-  status: 'success' | 'warning' | 'error';
-  ipAddress?: string;
-  createdAt: string;
-}
-
-interface RadiusStatus {
-  status: 'running' | 'stopped';
-  uptime: string;
-}
-
 interface AnalyticsData {
   users?: {
     byStatus: { name: string; value: number }[];
@@ -111,21 +89,12 @@ interface AgentSaleEntry {
   revenue: number;
 }
 
-interface RadiusAuthEntry {
-  username: string;
-  reply: string;
-  authdate: string;
-}
-
 interface DashboardStatsResponse {
   success: boolean;
   stats: DashboardStats;
   activities: RecentActivity[];
-  systemStatus: { radius: boolean; database: boolean; api: boolean };
   agentSales: AgentSaleEntry[];
   agentSalesTotal: { count: number; revenue: number };
-  radiusAuthLog: RadiusAuthEntry[];
-  radiusAuthStats: { acceptToday: number; rejectToday: number };
   periodLabel?: string;
 }
 
@@ -136,9 +105,7 @@ interface AnalyticsResponse {
 
 interface ActivityLogResponse {
   success: boolean;
-  activities: ActivityLogEntry[];
   total: number;
-  hasMore: boolean;
 }
 
 type IconElement = React.ReactElement<{ className?: string }>;
@@ -175,12 +142,6 @@ export default function AdminDashboard() {
     staleTime: 0,
   });
 
-  // ─── React Query: RADIUS status (30s polling) ─────────────────────────────
-  const radiusStatusQuery = useApiQuery<RadiusStatus>('/api/system/radius', {
-    refetchInterval: 30000,
-    staleTime: 0,
-  });
-
   // ─── React Query: Analytics (5min polling) ────────────────────────────────
   const analyticsQuery = useApiQuery<AnalyticsResponse>('/api/dashboard/analytics', {
     params: { type: 'all' },
@@ -188,22 +149,12 @@ export default function AdminDashboard() {
     staleTime: 0,
   });
 
-  // ─── React Query: Activity log total count ────────────────────────────────
-  const activityQuery = useApiQuery<ActivityLogResponse>('/api/admin/activity-logs', {
-    params: { limit: 1, offset: 0 },
-    staleTime: 30000,
-  });
-
   // Derive state from queries
   const stats = dashboardQuery.data?.stats ?? null;
-  const systemStatus = dashboardQuery.data?.systemStatus ?? null;
   const agentSales = dashboardQuery.data?.agentSales ?? [];
   const agentSalesTotal = dashboardQuery.data?.agentSalesTotal ?? { count: 0, revenue: 0 };
-  const radiusAuthStats = dashboardQuery.data?.radiusAuthStats ?? { acceptToday: 0, rejectToday: 0 };
   const periodLabel = dashboardQuery.data?.periodLabel ?? '';
   const analyticsData = analyticsQuery.data?.data ?? null;
-  const radiusStatus = radiusStatusQuery.data ?? null;
-  const activityTotal = activityQuery.data?.total ?? 0;
   const loading = dashboardQuery.isPending;
   const analyticsLoading = analyticsQuery.isFetching;
 
@@ -515,33 +466,10 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Activity Log - link to dedicated page */}
-          <a
-            href="/admin/logs/activity"
-            className="bg-card/60 rounded-xl border border-white/10 p-4 flex flex-col justify-between hover:border-brand-500/40 transition-all group"
-          >
-            <div className="flex items-center gap-2 mb-3">
-              <div className="p-1.5 rounded-lg bg-brand-500/10 border border-brand-500/20">
-                <Activity className="w-3.5 h-3.5 text-brand-500" />
-              </div>
-              <div>
-                <h2 className="text-xs font-semibold text-foreground">{t('dashboard.activityLog')}</h2>
-                <p className="text-[10px] text-muted-foreground/60">{t('dashboard.activitySubtitle')}</p>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] text-muted-foreground">
-                {activityTotal > 0 ? t('dashboard.activityCount', { count: String(activityTotal) }) : t('dashboard.noActivities')}
-              </span>
-              <span className="text-[10px] text-brand-500 group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
-                {t('dashboard.viewAll') || 'Lihat semua'} <ChevronRight className="w-3 h-3" />
-              </span>
-            </div>
-          </a>
         </div>
 
-        {/* Agent Voucher Sales + RADIUS Auth Log Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Agent Voucher Sales Row */}
+        <div className="grid grid-cols-1 gap-4">
 
           {/* Agent Voucher Sales */}
           <div className="bg-card/60 rounded-xl border border-white/10 p-3 sm:p-4">
@@ -594,132 +522,7 @@ export default function AdminDashboard() {
               </div>
             )}
           </div>
-
-          {/* RADIUS Auth Log - link to dedicated page */}
-          <a
-            href="/admin/freeradius/logs"
-            className="bg-card/60 rounded-xl border border-white/10 p-3 sm:p-4 hover:border-brand-500/40 transition-all group"
-          >
-            <div className="flex items-center justify-between mb-3 min-w-0">
-              <div>
-                <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-brand-500" />
-                  {t('dashboard.radiusAuthLog')}
-                </h2>
-                <p className="text-[10px] text-muted-foreground mt-0.5">{t('dashboard.radiusAuthLogSubtitle')}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="px-2 py-1 text-[10px] font-medium bg-green-500/20 text-green-400 rounded-lg border border-green-500/30">
-                &#10003; {radiusAuthStats.acceptToday} {t('dashboard.todayAccepted')}
-              </span>
-              <span className="px-2 py-1 text-[10px] font-medium bg-red-500/20 text-red-400 rounded-lg border border-red-500/30">
-                &#10007; {radiusAuthStats.rejectToday} {t('dashboard.todayRejected')}
-              </span>
-            </div>
-            <div className="flex items-center justify-end">
-              <span className="text-[10px] text-brand-500 group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
-                {t('dashboard.viewAll') || 'Lihat semua'} <ChevronRight className="w-3 h-3" />
-              </span>
-            </div>
-          </a>
         </div>
-
-        {/* System Status - link to dedicated page */}
-        <a
-          href="/admin/system"
-          className="bg-card/60 rounded-xl border border-border p-3 sm:p-4 hover:border-brand-500/40 transition-all group block"
-        >
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-foreground">{t('dashboard.systemStatus')}</h2>
-            <span className="text-[10px] text-brand-500 group-hover:translate-x-0.5 transition-transform flex items-center gap-1">
-              {t('dashboard.viewAll') || 'Lihat semua'} <ChevronRight className="w-3 h-3" />
-            </span>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
-            {/* RADIUS Server */}
-            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                radiusStatus?.status === 'running' ? 'bg-green-500/20' : 'bg-red-500/20'
-              }`}>
-                <Server className={`w-4 h-4 ${
-                  radiusStatus?.status === 'running' ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400'
-                }`} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-foreground">{t('system.radius')}</p>
-                <div className="flex items-center gap-1">
-                  {radiusStatus?.status === 'running' ? (
-                    <>
-                      <CheckCircle2 className="w-2.5 h-2.5 text-green-500 dark:text-green-400" />
-                      <span className="text-[10px] text-green-500 dark:text-green-400 truncate">{radiusStatus.uptime}</span>
-                    </>
-                  ) : (
-                    <>
-                      <XCircle className="w-2.5 h-2.5 text-red-500 dark:text-red-400" />
-                      <span className="text-[10px] text-red-500 dark:text-red-400">{t('system.offline')}</span>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Database */}
-            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                systemStatus?.database ? 'bg-green-500/20' : 'bg-red-500/20'
-              }`}>
-                <Database className={`w-4 h-4 ${
-                  systemStatus?.database ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400'
-                }`} />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs font-medium text-foreground">{t('system.database')}</p>
-                <div className="flex items-center gap-1">
-                  {systemStatus?.database ? (
-                    <>
-                      <CheckCircle2 className="w-2.5 h-2.5 text-green-500 dark:text-green-400" />
-                      <span className="text-[10px] text-green-500 dark:text-green-400">{t('system.connected')}</span>
-                    </>
-                  ) : (
-                    <>
-                      <XCircle className="w-2.5 h-2.5 text-red-500 dark:text-red-400" />
-                      <span className="text-[10px] text-red-500 dark:text-red-400">{t('system.disconnected')}</span>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* API */}
-            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                systemStatus?.api ? 'bg-green-500/20' : 'bg-red-500/20'
-              }`}>
-                <Zap className={`w-4 h-4 ${
-                  systemStatus?.api ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400'
-                }`} />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs font-medium text-foreground">{t('system.api')}</p>
-                <div className="flex items-center gap-1">
-                  {systemStatus?.api ? (
-                    <>
-                      <CheckCircle2 className="w-2.5 h-2.5 text-green-500 dark:text-green-400" />
-                      <span className="text-[10px] text-green-500 dark:text-green-400">{t('system.running')}</span>
-                    </>
-                  ) : (
-                    <>
-                      <XCircle className="w-2.5 h-2.5 text-red-500 dark:text-red-400" />
-                      <span className="text-[10px] text-red-500 dark:text-red-400">{t('system.stopped')}</span>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </a>
-
 
       </div>
     </div>

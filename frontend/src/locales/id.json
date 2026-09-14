@@ -443,6 +443,7 @@
     "radTest": "RadTest",
     "radCheck": "RadCheck",
     "radiusLogs": "Log Langsung",
+    "radiusAuthLog": "Log Autentikasi",
     "radiusBackup": "Backup & Restore FreeRADIUS",
     "ipPool": "IP Pool",
     "dataUsage": "Data Usage",
