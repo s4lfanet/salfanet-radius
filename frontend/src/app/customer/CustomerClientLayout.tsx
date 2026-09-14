@@ -312,7 +312,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {companyLogo ? (
-                <div className="w-12 h-12 rounded-lg bg-sidebar p-1 border border-brand-400/30 flex items-center justify-center overflow-hidden">
+                <div className="w-12 h-12 rounded-lg bg-white/90 p-1 border border-brand-400/30 flex items-center justify-center overflow-hidden">
                   <Image unoptimized src={companyLogo} alt={companyName} width={48} height={48} className="max-w-full max-h-full w-auto h-auto object-contain" decoding="async" />
                 </div>
               ) : (
@@ -496,7 +496,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
                 <Menu className="w-5 h-5 text-primary" />
               </button>
               {companyLogo ? (
-                <div className="w-8 h-8 rounded-lg bg-card p-1 border border-border flex items-center justify-center overflow-hidden">
+                <div className="w-8 h-8 rounded-lg bg-white/90 p-1 border border-border flex items-center justify-center overflow-hidden">
                   <Image unoptimized src={companyLogo} alt={companyName} width={32} height={32} className="w-full h-full object-contain" decoding="async" />
                 </div>
               ) : (

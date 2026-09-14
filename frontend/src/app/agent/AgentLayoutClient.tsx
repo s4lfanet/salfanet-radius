@@ -106,7 +106,7 @@ function AgentSidebar({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {company.logo ? (
-                <div className="w-12 h-12 rounded-lg bg-sidebar p-1 border border-brand-400/30 flex items-center justify-center overflow-hidden">
+                <div className="w-12 h-12 rounded-lg bg-white/90 p-1 border border-brand-400/30 flex items-center justify-center overflow-hidden">
                   <Image unoptimized src={company.logo} alt={company.name || 'Logo'} width={48} height={48} className="max-w-full max-h-full w-auto h-auto object-contain" />
                 </div>
               ) : (

@@ -993,7 +993,7 @@ function AdminLayoutContent({
           <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-sidebar-border bg-sidebar-accent/50">
             <div className="flex items-center gap-3">
               {company.logo ? (
-                <div className="w-12 h-12 rounded-lg bg-sidebar p-1 border border-brand-400/30 flex items-center justify-center overflow-hidden">
+                <div className="w-12 h-12 rounded-lg bg-white/90 p-1 border border-brand-400/30 flex items-center justify-center overflow-hidden">
                   <Image
                     unoptimized
                     src={company.logo}
