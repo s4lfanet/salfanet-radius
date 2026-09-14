@@ -303,7 +303,6 @@ const menuGroups: MenuGroup[] = [
         requiredPermission: 'reports.view',
         children: [
           { titleKey: 'nav.laporanData', href: '/admin/laporan', requiredPermission: 'reports.view' },
-          { titleKey: 'nav.laporanAnalitik', href: '/admin/laporan/analitik', requiredPermission: 'reports.view' },
         ],
       },
     ],

@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import Link from 'next/link';
-import { Loader2, Download, FileText, Users, CreditCard, Filter, RefreshCw, FileSpreadsheet, BarChart3, TrendingUp, Calendar, Activity } from 'lucide-react';
+import { Loader2, Download, FileText, Users, CreditCard, Filter, RefreshCw, FileSpreadsheet, BarChart3, TrendingUp, Calendar } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB, todayWIBStr, firstOfMonthWIBStr } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api';
@@ -196,13 +195,6 @@ export default function LaporanPage() {
           </h1>
           <p className="text-sm text-slate-400 mt-1">{t('laporan.subtitle')}</p>
         </div>
-        <Link
-          href="/admin/laporan/analitik"
-          className="flex items-center gap-2 px-4 py-2 rounded-xl border border-brand-500/40 text-brand-500 text-sm font-semibold hover:bg-brand-500/10 transition-all"
-        >
-          <Activity className="w-4 h-4" />
-          {t('laporan.advancedAnalytics')}
-        </Link>
       </div>
 
       {/* ── Filter Card ── */}
