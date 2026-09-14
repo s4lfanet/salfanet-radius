@@ -257,7 +257,7 @@ export default function LaporanPage() {
           {/* Status filter (invoice & customer only) */}
           {reportType !== 'payment' && (
             <div>
-              <label className="block text-xs font-bold text-brand-500 mb-2 uppercase tracking-wider">Status</label>
+              <label className="block text-xs font-bold text-brand-500 mb-2 uppercase tracking-wider">{t('laporan.statusLabel')}</label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
@@ -377,7 +377,7 @@ export default function LaporanPage() {
                         title={col === 'Catatan' ? String(row[col] ?? '') : undefined}
                       >
                         {col === 'Status'
-                          ? <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getStatusBadge(String(row[col]))}`}>{String(row[col] ?? '-')}</span>
+                          ? <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getStatusBadge(String(row[col]))}`}>{translateStatus(row[col])}</span>
                           : String(row[col] ?? '-')
                         }
                       </td>
@@ -427,6 +427,26 @@ function SummaryCard({ label, value, icon, color }: { label: string; value: Reac
       <p className="text-xl font-bold text-foreground">{value}</p>
     </div>
   );
+}
+
+// ── Status translation ──────────────────────────────────────────────────────
+const STATUS_TRANSLATIONS: Record<string, string> = {
+  PAID: 'Lunas',
+  PENDING: 'Belum Bayar',
+  OVERDUE: 'Jatuh Tempo',
+  CANCELLED: 'Dibatalkan',
+  active: 'Aktif',
+  isolated: 'Isolir',
+  stopped: 'Berhenti',
+  expired: 'Kedaluwarsa',
+  SUCCESS: 'Berhasil',
+  FAILED: 'Gagal',
+  PENDING_PAYMENT: 'Menunggu Bayar',
+};
+
+function translateStatus(val: unknown): string {
+  const s = String(val ?? '-');
+  return STATUS_TRANSLATIONS[s] || s;
 }
 
 // ── Status helpers ────────────────────────────────────────────────────────────

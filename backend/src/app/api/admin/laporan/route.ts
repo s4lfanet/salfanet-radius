@@ -13,6 +13,43 @@ function formatDate(date: Date | null | undefined): string {
   return formatWIB(date, 'dd/MM/yyyy');
 }
 
+// ── Enum translations ────────────────────────────────────────────────────────
+const INVOICE_TYPE_LABELS: Record<string, string> = {
+  MONTHLY: 'Bulanan',
+  INSTALLATION: 'Pemasangan',
+  ADDON: 'Tambahan',
+  TOPUP: 'Top Up',
+  RENEWAL: 'Perpanjangan',
+};
+
+const SUBSCRIPTION_TYPE_LABELS: Record<string, string> = {
+  POSTPAID: 'Pascabayar',
+  PREPAID: 'Prabayar',
+};
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  CASH: 'Tunai',
+  TRANSFER: 'Transfer',
+  CASHBACK: 'Cashback',
+  EWALLET: 'E-Wallet',
+  QRIS: 'QRIS',
+  VOUCHER: 'Voucher',
+  AGENT_DEPOSIT: 'Deposit Agen',
+  MANUAL: 'Manual',
+};
+
+function translateInvoiceType(type: string): string {
+  return INVOICE_TYPE_LABELS[type] || type;
+}
+
+function translateSubscriptionType(type: string): string {
+  return SUBSCRIPTION_TYPE_LABELS[type] || type;
+}
+
+function translatePaymentMethod(method: string): string {
+  return PAYMENT_METHOD_LABELS[method] || method;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const authCheck = await requirePermission('reports.view');
@@ -70,7 +107,7 @@ export async function GET(request: NextRequest) {
         'Jumlah': inv.amount,
         'Jumlah (Rp)': formatRupiah(inv.amount),
         'Status': inv.status,
-        'Jenis': inv.invoiceType,
+        'Jenis': translateInvoiceType(inv.invoiceType),
         'Jatuh Tempo': formatDate(inv.dueDate),
         'Dibayar': formatDate(inv.paidAt),
         'Dibuat': formatDate(inv.createdAt),
@@ -116,7 +153,7 @@ export async function GET(request: NextRequest) {
         'Telepon': pay.invoice?.customerPhone || '-',
         'Jumlah': pay.amount,
         'Jumlah (Rp)': formatRupiah(pay.amount),
-        'Metode': pay.method,
+        'Metode': translatePaymentMethod(pay.method),
         'Status': pay.status,
         'Tanggal Bayar': formatDate(pay.paidAt),
         'Catatan': pay.notes || '-',
@@ -157,7 +194,7 @@ export async function GET(request: NextRequest) {
         'Telepon': c.phone,
         'Email': c.email || c.pppoeCustomer?.email || '-',
         'Status': c.status,
-        'Jenis': c.subscriptionType,
+        'Jenis': translateSubscriptionType(c.subscriptionType),
         'Paket': c.profile?.name || '-',
         'Harga Paket': c.profile?.price ? formatRupiah(c.profile.price) : '-',
         'Area': c.area?.name || '-',
