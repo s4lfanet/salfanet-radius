@@ -11,6 +11,7 @@ import {
   runInvoiceGenerate,
   runInvoiceStatusUpdate,
   runInvoiceReminder,
+  runInvoiceAutoCancel,
   runAutoRenewal,
   runDisconnectSessions,
   runSuspendCheck,
@@ -138,6 +139,9 @@ export async function POST(request: NextRequest) {
           break
         case 'invoice_status_update':
           result = await runInvoiceStatusUpdate()
+          break
+        case 'invoice_auto_cancel':
+          result = await runInvoiceAutoCancel()
           break
         case 'invoice_reminder':
           result = await runInvoiceReminder()
