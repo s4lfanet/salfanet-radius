@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.19.0 — Payment Webhook Fixes & HOTSPOT Isolation/Reactivation Support + Notification & Push Notification System Audit + Bulk Import Fixes, Null-Safe Profile Access & Auto-Refresh + Import Audit Fixes & Optional Profile + Mobile Scroll Fix (All Portals) + Semantic Color Token Migration & Responsive Layout Improvements + Collector Portal + APK Download Audit + Backend Security/Validation Fixes + MikroTik Local-Only Voucher Sync + QRIS Mandiri Payment + Auto-Update System + Phase 7 (React Query) + Phase 6D (UI State & Error Handling) + Phase 6C (API Client Correctness) + Phase 6B (Type-Safety) + Phase 6A (API Contract Audit) + Phase 5 (frontend audit) + Phase 2 (111 batches, ~510 fetch calls migrated) + Phase 3 architecture improvements
+> **Version:** 5.21.0 — Hotspot Session Sync Fixes + Dashboard Log Centralization + Invoice/PWA Fixes
 
 ---
 
@@ -1074,6 +1074,56 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.21.0 — 2026-09-15 — Hotspot Session Sync Fixes + Dashboard Log Centralization + Invoice/PWA Fixes
+
+### Summary
+Perbaikan besar pada sinkronisasi sesi hotspot voucher dengan RADIUS (ghost session, timeleft, expired voucher), sentralisasi log aktivitas/RADIUS/system status ke halaman terpisah, fix generate tagihan PREPAID per bulan, dan PWA icon otomatis dari company logo.
+
+### Hotspot Voucher Session Sync
+- **[CRITICAL]** Voucher EXPIRED masih terbaca online di monitoring — synthetic radacct tidak pernah ditutup
+- **[FIX]** Cron menutup radacct voucher EXPIRED — voucher kadaluarsa hilang dari active session dan ditolak RADIUS
+- **[FIX]** `pppoe_session_sync` salah menutup radacct voucher hotspot sebagai "stale"
+- **[FIX]** Synthetic radacct hanya dibuat untuk voucher yang benar-benar terhubung di MikroTik active list
+- **[FIX]** `timeleft` voucher dipertahankan saat migrasi RADIUS dan re-authentication — tidak reset ke validity penuh
+- **[FIX]** Waiting voucher mendapat full profile validity sebagai `Session-Timeout`; active voucher memakai sisa waktu dari DB
+
+### RADIUS & Session Monitoring
+- **[FIX]** Bulk migrate/sync RADIUS sekarang benar-benar disable PPP secrets + sync profile attributes (radreply)
+- **[FIX]** PPPoE active sessions tidak tampil di dashboard untuk router mode RADIUS
+- **[FIX]** Uptime & start time FreeRADIUS salah parsing timezone WIB
+- **[FIX]** Audit API role agent/technician/customer setelah migrasi RADIUS
+- **[FEATURE]** RADIUS server memilih IP private/local VPS, bukan IP publik — NAS MikroTik dikenali FreeRADIUS
+
+### Dashboard & Navigasi
+- **[FEATURE]** Activity Log, RADIUS Auth Log, dan System Status dipindah dari dashboard ke halaman terpusat
+- **[FEATURE]** Halaman baru `/admin/freeradius/auth-log` — log autentikasi RADIUS dari tabel `radpostauth` (stats accept/reject, filter, search, pagination)
+- **[UI]** Kategori menu sidebar default expanded
+- **[UI]** Menu Laporan dipindah ke kategori Keuangan, label diubah jadi "Export Data"
+- **[CHORE]** Halaman analitik laporan dihapus — tidak relevan untuk perusahaan kecil
+
+### Billing
+- **[CRITICAL]** Generate tagihan PREPAID mengabaikan bulan target — `dueDate = user.expiredAt` mentah, sehingga generate Oktober membuat invoice due November dan generate November di-skip sebagai duplikat
+- **[FIX]** PREPAID `dueDate` = tanggal expired di bulan target (manual generate + cron `invoice_generate`)
+- **[FIX]** Filter bulan list invoice untuk tagihan belum bayar memakai `dueDate` (periode tagihan), bukan `createdAt`
+- **[UI]** Setelah generate sukses, filter bulan otomatis pindah ke bulan target
+
+### PWA
+- **[FEATURE]** Icon PWA otomatis dari company logo — endpoint `/api/pwa/icon` resize logo via `sharp`
+- **[FIX]** Logo tersimpan sebagai `/api/uploads/...` tidak dikenali resolver — selalu jatuh ke icon statis
+- **[FEATURE]** Icon maskable (padding zona aman + background opak) dan apple-touch-icon 180px dinamis
+- **[CHORE]** Bump service worker cache ke v30
+
+### UI & Laporan
+- **[UI]** Redesign modal Detail/Edit Pelanggan — seksi berkelompok (Akun & Koneksi, Data Pelanggan, Langganan & Tagihan, Dokumen, Pendaftaran), pill status, tab underline, footer sticky; hapus 60 override warna hardcoded yang rusak di dark mode
+- **[FIX]** Background logo login semua role + sidebar jadi `bg-white/90` — logo gelap terlihat di kedua tema
+- **[FIX]** Data laporan/export diterjemahkan ke Bahasa Indonesia (status invoice/pelanggan, tipe langganan, metode pembayaran)
+
+### Cleanup
+- **[CHORE]** Hapus konfigurasi AI agent, script debug, dan file non-production dari repo
+- **[CHORE]** Bump root & frontend package.json version ke 5.21.0
+
+---
+
 ### v5.20.0 — 2026-09-07 — Bulk Edit PPPoE + Migrasi Local→RADIUS + UI Icon Audit
 
 ### Summary
@@ -1110,6 +1160,8 @@ Tiga fitur besar: (1) Bulk edit pelanggan PPPoE untuk Router/Hari Tagihan/Auto I
 - **[CHORE]** Bump service worker cache ke v28
 - **[CHORE]** Bump root & frontend package.json version ke 5.20.0
 
+---
+
 ### v5.19.1 — 2026-09-06 — Rekap Voucher Rombak + PPPoE Profile Sync + CSP Fix
 
 ### Summary
@@ -1142,6 +1194,8 @@ Rombak total laporan Rekap Voucher agar support penjualan harian/mingguan/bulana
 - **[CHORE]** Update `.gitignore` untuk mencegah file debug/temp ter-commit lagi
 - **[CHORE]** Update README — tambah info Rekap Voucher di feature table
 
+---
+
 ### v5.19.0 — 2026-09-01 — Payment Webhook Fixes & HOTSPOT Isolation/Reactivation Support
 
 ### Summary
@@ -1171,6 +1225,8 @@ Audit dan perbaikan menyeluruh untuk payment webhook (Midtrans), payment success
 - `backend/src/app/api/pppoe/users/[id]/extend/route.ts` — HOTSPOT re-enable + kick
 - `frontend/src/app/payment/success/page.tsx` — polling retry
 - `frontend/src/locales/id.json` — payment translation keys
+
+---
 
 ### v5.18.0 — 2026-08-31 — Notification & Push Notification System Audit
 
@@ -1243,53 +1299,7 @@ git pull origin master
 bash frontend/vps-install/updater.sh --branch master
 ```
 
-### v5.17.0 — 2026-08-30 — Bulk Import Fixes, Null-Safe Profile Access & Auto-Refresh
-
-### Summary
-Perbaikan komprehensif untuk fitur import pelanggan PPPoE: error 400 saat import, crash frontend saat menampilkan/mengedit user tanpa profile, data tidak auto-refresh setelah import, serta cleanup project dari file temporary.
-
-### Fixes
-- **[CRITICAL]** `TypeError: Cannot read properties of null (reading 'name')` — frontend crash saat menampilkan user tanpa profile di card view, table view, dan CSV export. Ditambahkan optional chaining (`?.`) dan fallback values
-- **[CRITICAL]** `TypeError: Cannot read properties of null (reading 'id')` — frontend crash saat membuka modal edit pelanggan (`UserDetailModal`) dan extend modal untuk user tanpa profile. `user.profile.id` diubah ke `user.profile?.id || ''`
-- **[FIX]** Bulk import 400 Bad Request — ditambahkan detailed error logging di setiap validation point di backend route, frontend error parsing diperbaiki untuk menampilkan pesan spesifik dari backend
-- **[FIX]** Data tidak auto-refresh setelah import — `invalidateQueries` dengan `staleTime: 30000` tidak memaksa refetch. Diubah ke `refetchQueries` yang memaksa immediate refetch regardless of staleTime
-- **[FIX]** Backend env variables truncated saat PM2 restart — `awk` memotong `DATABASE_URL` dan `NEXTAUTH_SECRET` di karakter `&`. Diganti dengan `sed` untuk extraction yang reliable
-- **[FIX]** Excel parsing debug logs — ditambahkan logging untuk file name, size, row count, dan sample data untuk diagnosing import issues
-- **[FIX]** PM2 frontend NEXTAUTH_SECRET kosong setelah restart — fix dengan script bash yang extract env dari `.env` file menggunakan `sed` dan restart PM2 dengan `delete` + `start` (bukan `restart --update-env`)
-
-### Features
-- **[FEATURE]** Import dialog file preview — parse CSV/Excel client-side, tampilkan file name, row count summary (valid/without profile/skipped), dan preview table dengan status indicators
-- **[FEATURE]** Collapsible import column guide dengan 3-tier status (Wajib/Disarankan/Opsional), MAC Address & Komentar columns, legend, descriptions dan tips
-- **[FEATURE]** PPPoE sync audit — compare DB vs MikroTik PPP secrets (username, password, profile, status) dengan fix actions
-- **[FEATURE]** Cloudflare 524 timeout fix — web update berjalan sebagai detached background process dengan status polling
-
-### Cleanup
-- Removed `check-encoding.ps1` — temporary PowerShell script untuk check BOM/encoding
-- Removed `fix-encoding.ps1` — temporary PowerShell script untuk fix BOM/encoding
-- Removed `AUTOCHANGELOG.md` — auto-generated changelog, redundant dengan CHANGELOG.md
-- Updated `.gitignore` — pattern `deploy-*.sh`, `restart-*.sh`, `fix-fe-env.sh`, `check-encoding.ps1`, `fix-encoding.ps1`, `AUTOCHANGELOG.md`
-
-### Files Changed
-- `frontend/src/app/admin/pppoe/users/page.tsx` — null-safe `profile?.name`, `profile?.id`, `profile?.groupName` di card/table/extend/CSV; `refetchQueries` menggantikan `invalidateQueries`
-- `frontend/src/components/UserDetailModal.tsx` — `profile` type nullable, `profile?.id` di form init
-- `frontend/src/lib/api/pppoe.ts` — improved error parsing untuk bulk upload
-- `backend/src/app/api/pppoe/users/bulk/route.ts` — detailed error logging di semua 400 responses, Excel parsing debug logs
-- `.gitignore` — temp script patterns
-- `package.json` — version bump to 5.17.0
-- `README.md` — version update
-- `CHANGELOG.md` — this entry
-
-### Deployment
-```bash
-cd /var/www/salfanet-radius
-git pull origin master
-cd frontend && pnpm install --no-frozen-lockfile && pnpm build
-# Restart frontend dengan env yang benar (delete + start, bukan restart)
-export NEXTAUTH_SECRET=$(sed -n 's/^NEXTAUTH_SECRET=//p' frontend/.env | tr -d '"' | tr -d "'")
-export NEXTAUTH_URL=$(sed -n 's/^NEXTAUTH_URL=//p' frontend/.env | tr -d '"' | tr -d "'")
-pm2 delete salfanet-frontend && pm2 start ecosystem.config.js --only salfanet-frontend
-pm2 save
-```
+---
 
 <!-- AUTO-CHANGELOG:END -->
 
