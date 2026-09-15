@@ -755,7 +755,7 @@ export async function runSuspendCheck(): Promise<{ suspended: number; total: num
         const connType = user.connectionType || 'PPPOE';
         if (connType === 'HOTSPOT') {
           try {
-            const { manageHotspotUser, kickHotspotSession } = await import('./mikrotik/arp-hotspot.service');
+            const { manageHotspotUser, kickHotspotSession } = await import('@/server/services/mikrotik/arp-hotspot.service');
             await manageHotspotUser(user.router.id, 'update', {
               username: user.username, password: user.password, disabled: true, comment: 'Manual suspend',
             });
