@@ -2742,8 +2742,8 @@ function ONUConfigEditModal({
   onSuccess: () => void;
 }) {
   const isZTE = (vendor ?? '').toLowerCase() === 'zte';
-  // Interface name format: gpon-onu_frame/slot/port:onuId
-  const ponPort = onu.port;
+  // DB port is zero-based, ZTE CLI is one-based — use port + 1
+  const ponPort = onu.port + 1;
   const interfaceName = `gpon-onu_${onu.frame}/${onu.slot}/${ponPort}:${onu.onuId}`;
 
   const [description, setDescription] = useState(onu.description ?? '');
@@ -2752,36 +2752,67 @@ function ONUConfigEditModal({
   const [secondaryVlan, setSecondaryVlan] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [preview, setPreview] = useState<string[] | null>(null);
+  const [committed, setCommitted] = useState(false);
 
-  const handleSave = async () => {
-    setError(null);
+  const buildPayload = (commit: boolean) => {
     const vlan1 = parseInt(primaryVlan);
     const vlan2 = secondaryVlan ? parseInt(secondaryVlan) : undefined;
+    return {
+      description: description || undefined,
+      tcontProfile: tcontProfile || undefined,
+      primaryVlan: isNaN(vlan1) ? undefined : vlan1,
+      secondaryVlan: vlan2,
+      commit,
+    };
+  };
+
+  const validate = (): string | null => {
+    const vlan1 = parseInt(primaryVlan);
     if (!primaryVlan || isNaN(vlan1) || vlan1 < 1 || vlan1 > 4094) {
-      setError('Primary VLAN wajib diisi (1-4094)');
-      return;
+      return 'Primary VLAN wajib diisi (1-4094)';
     }
-    if (secondaryVlan && (isNaN(vlan2!) || vlan2! < 1 || vlan2! > 4094)) {
-      setError('Secondary VLAN harus 1-4094');
-      return;
+    if (secondaryVlan) {
+      const vlan2 = parseInt(secondaryVlan);
+      if (isNaN(vlan2) || vlan2 < 1 || vlan2 > 4094) return 'Secondary VLAN harus 1-4094';
     }
+    return null;
+  };
+
+  // Step 1: Preview (dry-run)
+  const handlePreview = async () => {
+    setError(null);
+    setPreview(null);
+    setCommitted(false);
+    const vErr = validate();
+    if (vErr) { setError(vErr); return; }
+    setSaving(true);
+    try {
+      const res = await apiAdmin<{ success?: boolean; error?: string; commands?: string[]; dryRun?: boolean }>(
+        `/api/olt/${oltId}/onus/${onu.id}/config`,
+        { method: 'POST', body: JSON.stringify(buildPayload(false)) }
+      );
+      if (!res.success) throw new Error(res.error ?? 'Gagal preview config');
+      setPreview(res.commands ?? []);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Step 2: Commit (execute)
+  const handleCommit = async () => {
+    setError(null);
     setSaving(true);
     try {
       const res = await apiAdmin<{ success?: boolean; error?: string; output?: string }>(
         `/api/olt/${oltId}/onus/${onu.id}/config`,
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            interfaceName,
-            description: description || undefined,
-            tcontProfile: tcontProfile || undefined,
-            primaryVlan: vlan1,
-            secondaryVlan: vlan2,
-          }),
-        }
+        { method: 'POST', body: JSON.stringify(buildPayload(true)) }
       );
-      if (!res.success) throw new Error(res.error ?? 'Gagal update config ONU');
+      if (!res.success) throw new Error(res.error ?? 'Gagal eksekusi config ONU');
       await showSuccess(`Config ONU ${onu.serialNumber ?? interfaceName} diperbarui`);
+      setCommitted(true);
       onSuccess();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
@@ -2807,7 +2838,7 @@ function ONUConfigEditModal({
             </div>
           )}
           <div className="space-y-1.5">
-            <Label className="text-xs">Interface</Label>
+            <Label className="text-xs">Interface (dari DB, port+1)</Label>
             <code className="block text-xs font-mono text-cyan-600 dark:text-cyan-400 bg-slate-50 dark:bg-slate-900 rounded p-2 border border-slate-200 dark:border-slate-800">
               {interfaceName}
             </code>
@@ -2816,7 +2847,7 @@ function ONUConfigEditModal({
             <Label className="text-xs">Description / Name</Label>
             <Input
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => { setDescription(e.target.value); setPreview(null); setCommitted(false); }}
               placeholder="cth: Pelanggan-A"
               className="text-sm"
             />
@@ -2825,7 +2856,7 @@ function ONUConfigEditModal({
             <Label className="text-xs">T-CONT Profile</Label>
             <Input
               value={tcontProfile}
-              onChange={(e) => setTcontProfile(e.target.value)}
+              onChange={(e) => { setTcontProfile(e.target.value); setPreview(null); setCommitted(false); }}
               placeholder="cth: 1G, 500M"
               className="text-sm"
             />
@@ -2837,7 +2868,7 @@ function ONUConfigEditModal({
               <Input
                 type="number"
                 value={primaryVlan}
-                onChange={(e) => setPrimaryVlan(e.target.value)}
+                onChange={(e) => { setPrimaryVlan(e.target.value); setPreview(null); setCommitted(false); }}
                 placeholder="cth: 100"
                 className="text-sm"
               />
@@ -2847,7 +2878,7 @@ function ONUConfigEditModal({
               <Input
                 type="number"
                 value={secondaryVlan}
-                onChange={(e) => setSecondaryVlan(e.target.value)}
+                onChange={(e) => { setSecondaryVlan(e.target.value); setPreview(null); setCommitted(false); }}
                 placeholder="opsional"
                 className="text-sm"
               />
@@ -2857,6 +2888,17 @@ function ONUConfigEditModal({
             ⚠ Aksi ini akan <b>menimpa</b> T-CONT, GEM port, dan service-port yang ada.
             PPPoE/WiFi/TR-069 tidak diubah — gunakan register ulang atau GenieACS untuk perubahan layer-2/3.
           </div>
+
+          {/* Command Preview (dry-run) */}
+          {preview && (
+            <div className="space-y-1.5">
+              <Label className="text-xs text-cyan-600 dark:text-cyan-400">Preview Command (dry-run)</Label>
+              <pre className="text-[11px] font-mono bg-gray-950 text-green-300 rounded-lg p-3 overflow-auto max-h-40 whitespace-pre-wrap border border-slate-700">
+                {preview.join('\n')}
+              </pre>
+            </div>
+          )}
+
           {error && (
             <div className="text-xs p-2 rounded bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400">
               {error}
@@ -2864,10 +2906,18 @@ function ONUConfigEditModal({
           )}
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={onClose} disabled={saving}>Batal</Button>
-            <Button onClick={handleSave} disabled={saving || !isZTE}>
-              {saving ? <RefreshCw className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
-              {saving ? 'Menyimpan...' : 'Simpan Config'}
-            </Button>
+            {!preview ? (
+              <Button onClick={handlePreview} disabled={saving || !isZTE}>
+                {saving ? <RefreshCw className="h-4 w-4 animate-spin mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
+                {saving ? 'Loading...' : 'Preview Command'}
+              </Button>
+            ) : (
+              <Button onClick={handleCommit} disabled={saving || committed || !isZTE}
+                className={committed ? 'bg-green-600 hover:bg-green-600' : ''}>
+                {saving ? <RefreshCw className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
+                {committed ? 'Tersimpan' : saving ? 'Menyimpan...' : 'Konfirmasi & Eksekusi'}
+              </Button>
+            )}
           </div>
         </div>
       </div>

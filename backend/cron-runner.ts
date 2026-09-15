@@ -111,6 +111,8 @@ const CRON_JOB_DEFS: CronJobDef[] = [
   { type: 'external_task_processor', name: 'External Task Processor', description: 'Process external task outbox (MikroTik, WhatsApp, Email, CoA)', defaultSchedule: '* * * * *' },
   { type: 'financial_reconciliation', name: 'Financial Reconciliation', description: 'Reconcile invoice-payment consistency', defaultSchedule: '0 5 * * *' },
   { type: 'hotspot_voucher_sync',  name: 'Hotspot Voucher Sync',  description: 'Sync voucher status dari MikroTik API + RADIUS radacct', defaultSchedule: '*/5 * * * *' },
+  { type: 'olt_poll',              name: 'OLT Poll',              description: 'Polling semua OLT (status, ONU, optical power)', defaultSchedule: '*/5 * * * *' },
+  { type: 'acs_alert',             name: 'ACS Alert',             description: 'Deteksi RX degradation & offline ONU via GenieACS', defaultSchedule: '*/3 * * * *' },
 ]
 
 // ─── Schedule config ────────────────────────────────────────────────────────
