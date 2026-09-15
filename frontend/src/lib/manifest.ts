@@ -40,14 +40,14 @@ export async function generateManifest(config: ManifestConfig) {
     categories: ['business', 'utilities'],
     icons: [
       { src: '/api/pwa/icon?size=192', sizes: '192x192', type: 'image/png', purpose: 'any' },
-      { src: '/api/pwa/icon?size=192', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+      { src: '/api/pwa/icon?size=192&maskable=1', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
       { src: '/api/pwa/icon?size=512', sizes: '512x512', type: 'image/png', purpose: 'any' },
-      { src: '/api/pwa/icon?size=512', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+      { src: '/api/pwa/icon?size=512&maskable=1', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
     ],
     shortcuts: config.shortcuts?.map(s => ({
       name: s.name,
       url: s.url,
-      icons: [{ src: '/pwa/icon-192.png', sizes: '192x192', type: 'image/png' }],
+      icons: [{ src: '/api/pwa/icon?size=192', sizes: '192x192', type: 'image/png' }],
     })),
   };
 }
