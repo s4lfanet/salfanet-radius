@@ -435,6 +435,7 @@
     "email": "Email",
     "emailHistory": "Riwayat Email",
     "telegram": "Telegram Auto-Backup",
+    "telegramBot": "Telegram Bot 2-Arah",
     "database": "Database",
     "cronJobs": "Cron Jobs",
     "freeradius": "FreeRADIUS",

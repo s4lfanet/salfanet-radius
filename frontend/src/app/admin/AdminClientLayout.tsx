@@ -395,6 +395,12 @@ const menuGroups: MenuGroup[] = [
         requiredPermission: 'settings.view',
       },
       {
+        titleKey: 'nav.telegramBot',
+        icon: <Send className="w-4 h-4" />,
+        href: '/admin/settings/telegram-bot',
+        requiredPermission: 'settings.view',
+      },
+      {
         titleKey: 'nav.isolationTemplates',
         icon: <FileText className="w-4 h-4" />,
         href: '/admin/settings/isolation/templates',
