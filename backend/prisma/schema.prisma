@@ -1891,6 +1891,28 @@ model telegramBackupSettings {
   @@map("telegram_backup_settings")
 }
 
+/// Telegram Bot 2-arah untuk teknisi/admin (cek redaman, cek pelanggan).
+/// Terpisah dari telegramBackupSettings (yang khusus notifikasi backup).
+model telegramBotSettings {
+  id              String   @id @default(cuid())
+  enabled         Boolean  @default(false)
+  botToken        String
+  // Secret token untuk verifikasi webhook (X-Telegram-Bot-Api-Secret-Token).
+  // Mencegah pesan Telegram palsu yang bisa memicu perintah bot tanpa auth.
+  webhookSecret   String
+  // Daftar chat ID yang diizinkan memakai bot (CSV). Kosong = semua user.
+  // Format: "123456789,987654321" (chat ID numerik Telegram).
+  allowedChatIds  String?  @db.Text
+  // Toggle per-fitur: '1' = aktif, '0' = nonaktif
+  enableRedaman    Boolean  @default(true) // /redaman <username|serial>
+  enableCekPelanggan Boolean @default(true) // /cekpelanggan <nama>
+  enableStart      Boolean  @default(true) // /start, /help
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("telegram_bot_settings")
+}
+
 model activityLog {
   id          String   @id @default(cuid())
   userId      String?
