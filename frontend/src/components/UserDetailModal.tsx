@@ -269,38 +269,71 @@ export default function UserDetailModal({
   };
 
   // Theme-aware class constants
-  const inputCls = "w-full px-3 py-2 border border-border dark:border-[#bc13fe]/40 bg-background dark:bg-[#0a0520]/50 text-foreground dark:text-[#e0d0ff] rounded-lg focus:border-primary dark:focus:border-[#00f7ff] focus:ring-1 focus:ring-primary dark:focus:ring-[#00f7ff] focus:outline-none transition-all placeholder:text-muted-foreground dark:placeholder:text-[#e0d0ff]/30";
+  const inputCls = "w-full px-3 py-2 text-sm border border-border bg-background text-foreground rounded-lg focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition-colors placeholder:text-muted-foreground/60 disabled:opacity-60 disabled:cursor-not-allowed";
   const selectCls = inputCls;
   const textareaCls = inputCls;
-  const labelCls = "block text-sm font-medium mb-1 text-foreground dark:text-[#e0d0ff]";
-  const labelCls2 = "block text-sm font-medium mb-2 text-foreground dark:text-[#e0d0ff]";
+  const labelCls = "block text-xs font-medium mb-1.5 text-muted-foreground";
+  const labelCls2 = "block text-xs font-medium mb-2 text-muted-foreground";
+  const hintCls = "text-[11px] text-muted-foreground/80 mt-1.5 leading-snug";
+  const sectionCls = "grid grid-cols-1 md:grid-cols-[200px_1fr] gap-4 md:gap-8 py-6 border-b border-border last:border-b-0";
+  const sectionHeadCls = "md:sticky md:top-0 md:self-start";
+  const sectionTitleCls = "text-sm font-semibold text-foreground";
+  const sectionDescCls = "text-xs text-muted-foreground mt-1 leading-relaxed";
+  const smallBtnCls = "inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border border-border bg-background text-foreground hover:bg-muted transition-colors";
 
   if (!isOpen || !user) return null;
 
-  return createPortal(
-    <div className="fixed inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm modal-overlay p-2 sm:p-4 animate-in fade-in-0 duration-200" style={{ zIndex: 9999 }}>
-      <div className="bg-card dark:bg-gradient-to-br dark:from-[#0a0520] dark:to-[#1a0f35] rounded-xl shadow-xl dark: w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col border border-border dark:border-[#bc13fe]/50 animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-4 duration-300">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-border dark:border-[#bc13fe]/30 bg-slate-100 dark:bg-[#1a0f35]">
-          <div className="min-w-0">
-            <h2 className="text-lg sm:text-2xl font-bold modal-title-override truncate">
-              Detail Pelanggan
-            </h2>
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-[#e0d0ff]/70 mt-1 truncate">
-              {user.username}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground dark:text-[#e0d0ff] dark:hover:text-[#00f7ff] dark:hover:bg-[#bc13fe]/20 shrink-0"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+  const statusMeta: Record<string, { label: string; cls: string; dot: string }> = {
+    active:   { label: 'Aktif',     cls: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20', dot: 'bg-emerald-500' },
+    isolated: { label: 'Isolir',    cls: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20',                 dot: 'bg-red-500' },
+    stopped:  { label: 'Berhenti',  cls: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',         dot: 'bg-slate-400' },
+    expired:  { label: 'Kedaluwarsa', cls: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',       dot: 'bg-amber-500' },
+    blocked:  { label: 'Diblokir',  cls: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20',                 dot: 'bg-red-500' },
+  };
+  const st = statusMeta[user.status] || { label: user.status, cls: 'bg-muted text-muted-foreground border-border', dot: 'bg-muted-foreground' };
+  const initials = (user.name || user.username).split(/\s+/).map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
+  const connLabel = user.connectionType === 'STATIC_IP' ? 'Static IP' : user.connectionType === 'HOTSPOT' ? 'Hotspot' : 'PPPoE';
 
-        {/* Tabs */}
-        <div className="border-b border-border dark:border-[#bc13fe]/30">
-          <div className="flex px-2 sm:px-6 overflow-x-auto gap-1 [&::-webkit-scrollbar]:h-1">
+  return createPortal(
+    <div className="fixed inset-0 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-[2px] modal-overlay p-0 sm:p-4 animate-in fade-in-0 duration-200" style={{ zIndex: 9999 }} onClick={onClose}>
+      <div
+        className="bg-card rounded-t-2xl sm:rounded-2xl shadow-2xl w-full max-w-4xl h-[94vh] sm:h-auto sm:max-h-[90vh] overflow-hidden flex flex-col border border-border animate-in fade-in-0 slide-in-from-bottom-6 sm:zoom-in-95 duration-250"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header — identity strip */}
+        <div className="px-4 sm:px-6 pt-4 sm:pt-5 pb-0 border-b border-border">
+          <div className="flex items-start gap-3 sm:gap-4">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-600 dark:text-brand-400 flex items-center justify-center text-sm sm:text-base font-semibold shrink-0 select-none">
+              {initials}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-base sm:text-lg font-semibold text-foreground truncate leading-tight">{user.name}</h2>
+                <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium border ${st.cls}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
+                  {st.label}
+                </span>
+              </div>
+              <div className="mt-1 flex items-center gap-x-2 gap-y-0.5 flex-wrap text-xs text-muted-foreground">
+                <span className="font-mono text-foreground/80">{user.username}</span>
+                <span aria-hidden className="text-border">·</span>
+                <span>{user.profile?.name || 'Tanpa paket'}</span>
+                <span aria-hidden className="text-border">·</span>
+                <span>{connLabel}</span>
+                {user.area?.name && (<><span aria-hidden className="text-border">·</span><span>{user.area.name}</span></>)}
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              aria-label="Tutup"
+              className="p-2 -mr-2 -mt-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Tabs */}
+          <div className="mt-4 -mx-4 sm:-mx-6 px-4 sm:px-6 flex overflow-x-auto gap-0.5 [&::-webkit-scrollbar]:hidden">
             {[
               { id: 'info', label: t('userModal.userInfo') },
               { id: 'sessions', label: t('userModal.sessions') },
@@ -313,186 +346,136 @@ export default function UserDetailModal({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`shrink-0 px-3 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm font-medium border-b-2 transition-all whitespace-nowrap ${activeTab === tab.id
-                  ? 'border-primary text-primary dark:border-[#00f7ff] dark:text-[#00f7ff] bg-primary/10 dark:bg-[#00f7ff]/10'
-                  : 'border-transparent text-muted-foreground dark:text-[#e0d0ff]/60 hover:text-foreground dark:hover:text-[#e0d0ff] hover:bg-muted dark:hover:bg-[#bc13fe]/10'
-                  }`}
+                className={`relative shrink-0 px-3 py-2.5 text-xs sm:text-[13px] font-medium whitespace-nowrap transition-colors -mb-px ${activeTab === tab.id
+ ? 'text-brand-600 dark:text-brand-400'
+ : 'text-muted-foreground hover:text-foreground'
+ }`}
               >
                 {tab.label}
+                {activeTab === tab.id && <span className="absolute left-2 right-2 bottom-0 h-0.5 rounded-full bg-brand-500" />}
               </button>
             ))}
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div className={`flex-1 overflow-y-auto ${activeTab === 'info' ? 'px-4 sm:px-6' : 'p-4 sm:p-6'}`}>
           {activeTab === 'info' && (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className={labelCls}>{t('userModal.username')}</label>
-                  <input
-                    type="text"
-                    value={formData.username}
-                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                    className={inputCls}
-                    required
-                  />
+            <form id="user-detail-form" onSubmit={handleSubmit}>
+
+              {/* ── Akun & Koneksi ── */}
+              <section className={sectionCls}>
+                <div className={sectionHeadCls}>
+                  <h3 className={sectionTitleCls}>Akun &amp; Koneksi</h3>
+                  <p className={sectionDescCls}>Kredensial PPPoE, paket layanan, dan penempatan di jaringan.</p>
                 </div>
-                <div>
-                  <label className={labelCls}>{t('userModal.password')}</label>
-                  <div className="relative">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelCls}>{t('userModal.username')}</label>
+                    <input type="text" value={formData.username} onChange={(e) => setFormData({ ...formData, username: e.target.value })} className={`${inputCls} font-mono`} required />
+                  </div>
+                  <div>
+                    <label className={labelCls}>{t('userModal.password')}</label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={formData.password}
+                        onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        className={`${inputCls} pr-10 font-mono`}
+                        placeholder={t('userModal.passwordPlaceholder')}
+                        autoComplete="new-password"
+                      />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? 'Sembunyikan' : 'Tampilkan'} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted">
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className={labelCls}>{t('userModal.profile')}</label>
+                    <select value={formData.profileId} onChange={(e) => setFormData({ ...formData, profileId: e.target.value })} className={selectCls} required>
+                      <option value="">{t('userModal.selectProfile')}</option>
+                      {profiles.map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Tipe Koneksi</label>
+                    <select value={formData.connectionType} onChange={(e) => setFormData({ ...formData, connectionType: e.target.value as 'PPPOE' | 'STATIC_IP' | 'HOTSPOT' })} className={selectCls}>
+                      <option value="PPPOE">PPPoE</option>
+                      <option value="STATIC_IP">Static IP (ARP)</option>
+                      <option value="HOTSPOT">Hotspot</option>
+                    </select>
+                    {(formData.connectionType !== 'PPPOE') && (
+                      <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-1.5">Mengubah tipe koneksi akan sync ulang konfigurasi MikroTik (hapus entry lama, buat entry baru).</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className={labelCls}>{t('userModal.router')}</label>
+                    <select value={formData.routerId} onChange={(e) => setFormData({ ...formData, routerId: e.target.value })} className={selectCls}>
+                      <option value="">{t('userModal.autoAssign')}</option>
+                      {routers.map((r) => (<option key={r.id} value={r.id}>{r.name}</option>))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Area</label>
+                    <select value={formData.areaId} onChange={(e) => setFormData({ ...formData, areaId: e.target.value })} className={selectCls}>
+                      <option value="">Pilih Area</option>
+                      {areas.map((a) => (<option key={a.id} value={a.id}>{a.name}</option>))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelCls}>{t('userModal.ipAddress')}</label>
                     <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className={`${inputCls} pr-10`}
-                      placeholder={t('userModal.passwordPlaceholder')}
-                      autoComplete="new-password"
+                      type="text"
+                      value={formData.ipAddress}
+                      onChange={(e) => setFormData({ ...formData, ipAddress: e.target.value })}
+                      className={`${inputCls} font-mono`}
+                      placeholder={formData.connectionType === 'PPPOE' ? 'Otomatis dari IP Pool' : t('userModal.ipPlaceholder')}
+                      disabled={formData.connectionType === 'PPPOE'}
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-accent rounded"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
+                    {formData.connectionType === 'PPPOE' && (<p className={hintCls}>IP diberikan otomatis dari IP Pool MikroTik/RADIUS.</p>)}
+                  </div>
+                  <div>
+                    <label className={labelCls}>MAC Address</label>
+                    <input type="text" value={formData.macAddress} onChange={(e) => setFormData({ ...formData, macAddress: e.target.value })} placeholder="AA:BB:CC:DD:EE:FF" className={`${inputCls} font-mono`} />
                   </div>
                 </div>
-                <div>
-                  <label className={labelCls}>{t('userModal.name')}</label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className={inputCls}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className={labelCls}>{t('userModal.phone')}</label>
-                  <input
-                    type="text"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className={inputCls}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className={labelCls}>{t('userModal.email')}</label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className={inputCls}
-                  />
-                </div>
-                <div>
-                  <label className={labelCls}>{t('userModal.profile')}</label>
-                  <select
-                    value={formData.profileId}
-                    onChange={(e) => setFormData({ ...formData, profileId: e.target.value })}
-                    className={selectCls}
-                    required
-                  >
-                    <option value="">{t('userModal.selectProfile')}</option>
-                    {profiles.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className={labelCls}>{t('userModal.router')}</label>
-                  <select
-                    value={formData.routerId}
-                    onChange={(e) => setFormData({ ...formData, routerId: e.target.value })}
-                    className={selectCls}
-                  >
-                    <option value="">{t('userModal.autoAssign')}</option>
-                    {routers.map((r) => (
-                      <option key={r.id} value={r.id}>
-                        {r.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className={labelCls}>Area</label>
-                  <select
-                    value={formData.areaId}
-                    onChange={(e) => setFormData({ ...formData, areaId: e.target.value })}
-                    className={selectCls}
-                  >
-                    <option value="">Pilih Area</option>
-                    {areas.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className={labelCls}>Tipe Koneksi</label>
-                  <select
-                    value={formData.connectionType}
-                    onChange={(e) => setFormData({ ...formData, connectionType: e.target.value as 'PPPOE' | 'STATIC_IP' | 'HOTSPOT' })}
-                    className={selectCls}
-                  >
-                    <option value="PPPOE">PPPoE</option>
-                    <option value="STATIC_IP">Static IP (ARP)</option>
-                    <option value="HOTSPOT">Hotspot</option>
-                  </select>
-                  {(formData.connectionType !== 'PPPOE') && (
-                    <p className="text-[10px] text-amber-500 mt-1">
-                      Mengubah tipe koneksi akan sync ulang konfigurasi MikroTik (hapus entry lama, buat entry baru).
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label className={labelCls}>{t('userModal.ipAddress')}</label>
-                  <input
-                    type="text"
-                    value={formData.ipAddress}
-                    onChange={(e) => setFormData({ ...formData, ipAddress: e.target.value })}
-                    className={inputCls}
-                    placeholder={formData.connectionType === 'PPPOE' ? 'Otomatis dari IP Pool' : t('userModal.ipPlaceholder')}
-                    disabled={formData.connectionType === 'PPPOE'}
-                  />
-                  {formData.connectionType === 'PPPOE' && (
-                    <p className="text-[10px] text-muted-foreground mt-1">IP Address otomatis dari IP Pool MikroTik/RADIUS</p>
-                  )}
-                </div>
-                <div className="sm:col-span-2">
-                  <label className={labelCls}>{t('userModal.address')}</label>
-                  <textarea
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    className={textareaCls}
-                    rows={2}
-                  />
-                </div>
+              </section>
 
-                {/* GPS Location */}
-                <div className="sm:col-span-2">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                    <label className="block text-sm font-medium text-foreground dark:text-[#e0d0ff]">{t('userModal.gpsLocation')}</label>
-                    <div className="flex gap-2 flex-wrap">
-                      {onLatLngChange && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            // Notify parent to open map picker with current values
-                            onLatLngChange(formData.latitude, formData.longitude);
-                          }}
-                          className="shrink-0 inline-flex items-center px-3 py-1 text-xs bg-primary/10 text-primary dark:bg-[#00f7ff]/20 dark:text-[#00f7ff] border border-primary/50 dark:border-[#00f7ff]/50 rounded hover:bg-primary/20 dark:hover:bg-[#00f7ff]/30 transition"
-                        >
-                          <Map className="h-3 w-3 mr-1" />
-                          Pilih di Peta
-                        </button>
-                      )}
+              {/* ── Data Pelanggan ── */}
+              <section className={sectionCls}>
+                <div className={sectionHeadCls}>
+                  <h3 className={sectionTitleCls}>Data Pelanggan</h3>
+                  <p className={sectionDescCls}>Identitas, kontak, dan lokasi pemasangan.</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelCls}>{t('userModal.name')}</label>
+                    <input type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className={inputCls} required />
+                  </div>
+                  <div>
+                    <label className={labelCls}>{t('userModal.phone')}</label>
+                    <input type="text" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className={inputCls} required />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className={labelCls}>{t('userModal.email')}</label>
+                    <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className={inputCls} />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className={labelCls}>{t('userModal.address')}</label>
+                    <textarea value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} className={textareaCls} rows={2} />
+                  </div>
+
+                  {/* GPS Location */}
+                  <div className="sm:col-span-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                      <label className={`${labelCls} mb-0`}>{t('userModal.gpsLocation')}</label>
+                      <div className="flex gap-2 flex-wrap">
+                        {onLatLngChange && (
+                          <button type="button" onClick={() => { onLatLngChange(formData.latitude, formData.longitude); }} className={smallBtnCls}>
+                            <Map className="h-3.5 w-3.5" />
+                            Pilih di Peta
+                          </button>
+                        )}
                       <button
                         type="button"
                         onClick={async () => {
@@ -535,102 +518,82 @@ export default function UserDetailModal({
                             await showError('Geolocation tidak didukung oleh browser ini.');
                           }
                         }}
-                        className="shrink-0 inline-flex items-center px-3 py-1 text-xs bg-green-100 text-green-600 dark:bg-[#00ff88]/20 dark:text-[#00ff88] border border-green-300 dark:border-[#00ff88]/50 rounded hover:bg-green-200 dark:hover:bg-[#00ff88]/30 transition"
+                        className={smallBtnCls}
                       >
-                        <MapPin className="h-3 w-3 mr-1" />
+                        <MapPin className="h-3.5 w-3.5" />
                         GPS Auto
                       </button>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <input
-                      type="number"
-                      step="any"
-                      value={formData.latitude}
-                      onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
-                      placeholder="Latitude"
-                      className={`${inputCls} text-sm`}
-                    />
-                    <input
-                      type="number"
-                      step="any"
-                      value={formData.longitude}
-                      onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
-                      placeholder="Longitude"
-                      className={`${inputCls} text-sm`}
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground dark:text-[#e0d0ff]/50 mt-1">
-                    {t('userModal.gpsNote')}
-                  </p>
-                  {/* GPS Map Preview */}
-                  {formData.latitude && formData.longitude && (
-                    <div className="mt-3 rounded-lg overflow-hidden border border-border dark:border-[#bc13fe]/30">
-                      <iframe
-                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${Number(formData.longitude) - 0.005}%2C${Number(formData.latitude) - 0.005}%2C${Number(formData.longitude) + 0.005}%2C${Number(formData.latitude) + 0.005}&layer=mapnik&marker=${formData.latitude}%2C${formData.longitude}`}
-                        className="w-full h-[200px] border-0"
-                        title="GPS Location Map"
-                        loading="lazy"
-                      />
-                      <div className="flex items-center justify-between p-2 bg-muted/50 dark:bg-[#0a0520]">
-                        <span className="text-[10px] font-mono text-muted-foreground">
-                          {Number(formData.latitude).toFixed(6)}, {Number(formData.longitude).toFixed(6)}
-                        </span>
-                        <a
-                          href={`https://www.google.com/maps?q=${formData.latitude},${formData.longitude}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center px-2 py-1 text-[10px] bg-primary/10 text-primary dark:bg-[#00f7ff]/20 dark:text-[#00f7ff] border border-primary/30 dark:border-[#00f7ff]/30 rounded hover:bg-primary/20 transition"
-                        >
-                          <MapPin className="h-2.5 w-2.5 mr-1" />
-                          Google Maps ↗
-                        </a>
                       </div>
                     </div>
-                  )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <input type="number" step="any" value={formData.latitude} onChange={(e) => setFormData({ ...formData, latitude: e.target.value })} placeholder="Latitude" className={`${inputCls} font-mono`} />
+                      <input type="number" step="any" value={formData.longitude} onChange={(e) => setFormData({ ...formData, longitude: e.target.value })} placeholder="Longitude" className={`${inputCls} font-mono`} />
+                    </div>
+                    <p className={hintCls}>{t('userModal.gpsNote')}</p>
+                    {/* GPS Map Preview */}
+                    {formData.latitude && formData.longitude && (
+                      <div className="mt-3 rounded-lg overflow-hidden border border-border">
+                        <iframe
+                          src={`https://www.openstreetmap.org/export/embed.html?bbox=${Number(formData.longitude) - 0.005}%2C${Number(formData.latitude) - 0.005}%2C${Number(formData.longitude) + 0.005}%2C${Number(formData.latitude) + 0.005}&layer=mapnik&marker=${formData.latitude}%2C${formData.longitude}`}
+                          className="w-full h-[180px] border-0"
+                          title="GPS Location Map"
+                          loading="lazy"
+                        />
+                        <div className="flex items-center justify-between px-3 py-2 bg-muted/40 border-t border-border">
+                          <span className="text-[11px] font-mono text-muted-foreground">
+                            {Number(formData.latitude).toFixed(6)}, {Number(formData.longitude).toFixed(6)}
+                          </span>
+                          <a href={`https://www.google.com/maps?q=${formData.latitude},${formData.longitude}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] font-medium text-brand-600 dark:text-brand-400 hover:underline">
+                            <MapPin className="h-3 w-3" />
+                            Buka di Google Maps
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
+              </section>
 
+              {/* ── Langganan & Tagihan ── */}
+              <section className={sectionCls}>
+                <div className={sectionHeadCls}>
+                  <h3 className={sectionTitleCls}>Langganan &amp; Tagihan</h3>
+                  <p className={sectionDescCls}>Skema pembayaran, jatuh tempo, dan tindakan otomatis saat terlambat.</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Subscription Type */}
                 <div className="sm:col-span-2">
                   <label className={labelCls2}>{t('userModal.subscriptionType')}</label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <label className={`flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all ${formData.subscriptionType === 'POSTPAID' ? 'border-primary dark:border-[#00f7ff] bg-primary/10 dark:bg-[#00f7ff]/10 shadow-md dark:' : 'border-border dark:border-[#bc13fe]/30 hover:border-primary/50 dark:hover:border-[#00f7ff]/50'}`}>
-                      <input
-                        type="radio"
-                        name="subscriptionType"
-                        value="POSTPAID"
-                        checked={formData.subscriptionType === 'POSTPAID'}
-                        onChange={(e) => setFormData({ ...formData, subscriptionType: e.target.value as 'POSTPAID' })}
-                        className="w-4 h-4 accent-primary dark:accent-[#00f7ff] border-border dark:border-[#bc13fe]/50 focus:ring-primary dark:focus:ring-[#00f7ff]"
-                      />
-                      <div className="ml-3 flex-1">
-                        <div className="text-sm font-medium text-foreground dark:text-[#e0d0ff]">{t('userModal.postpaid')}</div>
-                        <div className="text-xs text-muted-foreground dark:text-[#e0d0ff]/50">Tagihan bulanan, tanggal tetap</div>
-                      </div>
-                    </label>
-                    <label className={`flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all ${formData.subscriptionType === 'PREPAID' ? 'border-primary dark:border-[#bc13fe] bg-primary/10 dark:bg-[#bc13fe]/10 shadow-md dark:' : 'border-border dark:border-[#bc13fe]/30 hover:border-primary/50 dark:hover:border-[#bc13fe]/50'}`}>
-                      <input
-                        type="radio"
-                        name="subscriptionType"
-                        value="PREPAID"
-                        checked={formData.subscriptionType === 'PREPAID'}
-                        onChange={(e) => setFormData({ ...formData, subscriptionType: e.target.value as 'PREPAID' })}
-                        className="w-4 h-4 accent-primary dark:accent-[#bc13fe] border-border dark:border-[#bc13fe]/50 focus:ring-primary dark:focus:ring-[#bc13fe]"
-                      />
-                      <div className="ml-3 flex-1">
-                        <div className="text-sm font-medium text-foreground dark:text-[#e0d0ff]">{t('userModal.prepaid')}</div>
-                        <div className="text-xs text-muted-foreground dark:text-[#e0d0ff]/50">Bayar dimuka, validitas terbatas</div>
-                      </div>
-                    </label>
+                    {([
+                      { v: 'POSTPAID', title: t('userModal.postpaid'), desc: 'Tagihan bulanan, tanggal tetap' },
+                      { v: 'PREPAID',  title: t('userModal.prepaid'),  desc: 'Bayar di muka, validitas terbatas' },
+                    ] as const).map(opt => {
+                      const on = formData.subscriptionType === opt.v;
+                      return (
+                        <label key={opt.v} className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${on ? 'border-brand-500 bg-brand-500/5' : 'border-border hover:border-brand-500/40 hover:bg-muted/40'}`}>
+                          <input
+                            type="radio"
+                            name="subscriptionType"
+                            value={opt.v}
+                            checked={on}
+                            onChange={(e) => setFormData({ ...formData, subscriptionType: e.target.value as 'PREPAID' | 'POSTPAID' })}
+                            className="mt-0.5 w-4 h-4 accent-brand-500 shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className={`text-sm font-medium ${on ? 'text-brand-600 dark:text-brand-400' : 'text-foreground'}`}>{opt.title}</div>
+                            <div className="text-xs text-muted-foreground mt-0.5">{opt.desc}</div>
+                          </div>
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
 
                 {/* Billing Day - POSTPAID Only */}
                 {formData.subscriptionType === 'POSTPAID' && (
                   <div>
-                    <label className={labelCls}>
-                      Tanggal Tagihan
-                    </label>
+                    <label className={labelCls}>Tanggal Tagihan</label>
                     <select
                       value={formData.billingDay}
                       onChange={(e) => {
@@ -648,55 +611,22 @@ export default function UserDetailModal({
                       className={selectCls}
                     >
                       {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                        <option key={day} value={day} className="bg-background dark:bg-[#0a0520]">
-                          Tanggal {day}
-                        </option>
+                        <option key={day} value={day}>Tanggal {day}</option>
                       ))}
                     </select>
-                    <p className="text-xs text-muted-foreground dark:text-[#e0d0ff]/50 mt-1">
-                      Tanggal jatuh tempo bulanan. Ubah tanggal → otomatis update expired ke bulan depan.
-                    </p>
+                    <p className={hintCls}>Jatuh tempo bulanan. Mengubah tanggal akan menggeser tanggal isolir ke bulan depan.</p>
                   </div>
                 )}
 
                 {/* Expired At - Shows for both PREPAID and POSTPAID */}
                 <div className={formData.subscriptionType === 'POSTPAID' ? '' : 'sm:col-span-2'}>
-                  <label className={labelCls}>
-                    Tanggal Isolir
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.expiredAt}
-                    onChange={(e) => setFormData({ ...formData, expiredAt: e.target.value })}
-                    className={inputCls}
-                  />
-                  <p className="text-xs text-muted-foreground dark:text-[#e0d0ff]/50 mt-1">
-                    {formData.subscriptionType === 'POSTPAID' 
-                      ? 'Untuk testing: expiredAt = tanggal tagihan bulan depan (auto calculated)' 
-                      : 'Tanggal kadaluarsa paket. Kosongkan untuk auto dari profile.'}
+                  <label className={labelCls}>Tanggal Isolir</label>
+                  <input type="date" value={formData.expiredAt} onChange={(e) => setFormData({ ...formData, expiredAt: e.target.value })} className={inputCls} />
+                  <p className={hintCls}>
+                    {formData.subscriptionType === 'POSTPAID'
+                      ? 'Dihitung otomatis dari tanggal tagihan bulan depan.'
+                      : 'Tanggal kedaluwarsa paket. Kosongkan untuk mengikuti profil.'}
                   </p>
-                </div>
-
-                {/* MAC Address & Comment */}
-                <div>
-                  <label className={labelCls}>MAC Address</label>
-                  <input
-                    type="text"
-                    value={formData.macAddress}
-                    onChange={(e) => setFormData({ ...formData, macAddress: e.target.value })}
-                    placeholder="AA:BB:CC:DD:EE:FF"
-                    className={inputCls}
-                  />
-                </div>
-                <div>
-                  <label className={labelCls}>Komentar / Catatan</label>
-                  <input
-                    type="text"
-                    value={formData.comment}
-                    onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
-                    placeholder="Catatan tambahan..."
-                    className={inputCls}
-                  />
                 </div>
 
                 {/* Aksi Jatuh Tempo */}
@@ -707,76 +637,35 @@ export default function UserDetailModal({
                     onChange={(e) => setFormData({ ...formData, autoIsolationEnabled: e.target.value === 'isolate' })}
                     className={selectCls}
                   >
-                    <option value="isolate">ISOLIR INTERNET (Suspend) - isolir otomatis saat expired</option>
-                    <option value="keep">TETAP TERHUBUNG (No Action) - tidak isolir meski expired</option>
+                    <option value="isolate">Isolir otomatis saat lewat jatuh tempo</option>
+                    <option value="keep">Tetap terhubung, tanpa isolir otomatis</option>
                   </select>
-                  <p className="text-xs text-muted-foreground dark:text-[#e0d0ff]/50 mt-1">
-                    Pilih tindakan otomatis saat tanggal tagihan / expired terlewati.
-                  </p>
+                  <p className={hintCls}>Tindakan yang dijalankan sistem saat tanggal tagihan / isolir terlewati.</p>
                 </div>
 
                 {/* Diskon Tagihan */}
                 <div>
                   <label className={labelCls}>Diskon Tagihan (Rp/bulan)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.discount}
-                    onChange={(e) => setFormData({ ...formData, discount: parseInt(e.target.value) || 0 })}
-                    placeholder="0"
-                    className={inputCls}
-                  />
-                  <p className="text-xs text-muted-foreground dark:text-[#e0d0ff]/50 mt-1">
-                    Diskon dikurangi dari harga paket setiap bulan.
-                  </p>
+                  <input type="number" min="0" value={formData.discount} onChange={(e) => setFormData({ ...formData, discount: parseInt(e.target.value) || 0 })} placeholder="0" className={inputCls} />
+                  <p className={hintCls}>Dikurangi dari harga paket setiap bulan.</p>
                 </div>
                 <div>
                   <label className={labelCls}>Alasan Diskon</label>
-                  <input
-                    type="text"
-                    value={formData.discountNote}
-                    onChange={(e) => setFormData({ ...formData, discountNote: e.target.value })}
-                    placeholder="Mis: Promo loyalitas, kerabat, dll"
-                    className={inputCls}
-                  />
+                  <input type="text" value={formData.discountNote} onChange={(e) => setFormData({ ...formData, discountNote: e.target.value })} placeholder="Mis: promo loyalitas, kerabat" className={inputCls} />
                 </div>
-
-                {/* Teknisi Pemasang */}
-                <div className="sm:col-span-2">
-                  <label className={labelCls}>Teknisi Pemasang</label>
-                  <div className="flex items-center gap-2 p-3 bg-muted/50 dark:bg-[#bc13fe]/10 rounded-lg border border-border dark:border-[#bc13fe]/20">
-                    <span className="text-sm font-medium text-foreground dark:text-[#e0d0ff]">
-                      {user?.registeredByTechnician?.name || 'System / Admin'}
-                    </span>
-                    {user?.createdAt && (
-                      <span className="text-xs text-muted-foreground dark:text-[#e0d0ff]/50">
-                        · Terdaftar: {formatWIB(user.createdAt, 'dd MMM yyyy')}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground dark:text-[#e0d0ff]/50 mt-1">
-                    Teknisi yang melakukan pendaftaran/PSB pelanggan ini.
-                  </p>
                 </div>
+              </section>
 
-                {/* Tanggal Register */}
-                <div>
-                  <label className={labelCls}>Tanggal Register</label>
-                  <input
-                    type="date"
-                    value={formData.registeredAt}
-                    onChange={(e) => setFormData({ ...formData, registeredAt: e.target.value })}
-                    className={inputCls}
-                  />
-                  <p className="text-xs text-muted-foreground dark:text-[#e0d0ff]/50 mt-1">
-                    Tanggal pelanggan terdaftar. Ubah jika perlu koreksi data historis.
-                  </p>
+              {/* ── Dokumen ── */}
+              <section className={sectionCls}>
+                <div className={sectionHeadCls}>
+                  <h3 className={sectionTitleCls}>Dokumen</h3>
+                  <p className={sectionDescCls}>Identitas resmi pelanggan dan bukti foto pemasangan di lokasi.</p>
                 </div>
-              </div>
-
+                <div className="space-y-5">
               {/* Dokumen KTP */}
-              <div className="border border-border dark:border-[#bc13fe]/30 rounded-lg p-4 space-y-3">
-                <p className="text-sm font-semibold text-foreground dark:text-[#e0d0ff] flex items-center gap-1.5"><IdCard className="w-4 h-4 text-brand-500 shrink-0" />Dokumen Identitas (KTP)</p>
+              <div className="space-y-3">
+                <p className="text-xs font-medium text-foreground flex items-center gap-1.5"><IdCard className="w-3.5 h-3.5 text-brand-500 shrink-0" />Identitas (KTP)</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className={labelCls}>No. NIK KTP</label>
@@ -786,11 +675,11 @@ export default function UserDetailModal({
                       onChange={(e) => setFormData({ ...formData, idCardNumber: e.target.value })}
                       placeholder="3201234567890123"
                       maxLength={16}
-                      className={`${inputCls} text-sm`}
+                      className={`${inputCls} font-mono`}
                     />
                   </div>
                   <div>
-                    <label className={labelCls}>Upload Foto KTP</label>
+                    <label className={labelCls}>Foto KTP</label>
                     <CameraPhotoInput
                       photoUrl={formData.idCardPhoto}
                       onRemove={() => setFormData({ ...formData, idCardPhoto: '' })}
@@ -810,8 +699,9 @@ export default function UserDetailModal({
                   </div>
                 </div>
               </div>
-              <div className="border border-border dark:border-[#00f7ff]/20 rounded-lg p-4 space-y-3">
-                <p className="text-sm font-semibold text-foreground dark:text-[#e0d0ff] flex items-center gap-1.5"><Wrench className="w-4 h-4 text-brand-500 shrink-0" />Foto Instalasi</p>
+              {/* Foto Instalasi */}
+              <div className="space-y-3">
+                <p className="text-xs font-medium text-foreground flex items-center gap-1.5"><Wrench className="w-3.5 h-3.5 text-brand-500 shrink-0" />Foto Instalasi</p>
                 <div>
                   <input type="file" accept="image/*" onChange={handleUploadInstallation} disabled={uploadingInstallation} className="sr-only" id="installationUploadEdit" />
                   {installCameraOpen ? (
@@ -820,125 +710,127 @@ export default function UserDetailModal({
                       onClose={() => setInstallCameraOpen(false)}
                     />
                   ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <label htmlFor={uploadingInstallation ? undefined : 'installationUploadEdit'} className={`flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs border border-border dark:border-[#00f7ff]/30 rounded hover:bg-muted dark:hover:bg-[#00f7ff]/10 text-muted-foreground dark:text-[#e0d0ff]/70 ${uploadingInstallation ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer'}`}>
-                      <ImageIcon className="w-3 h-3" /> {uploadingInstallation ? 'Mengupload...' : 'Galeri'}
+                  <div className="flex flex-wrap gap-2">
+                    <label htmlFor={uploadingInstallation ? undefined : 'installationUploadEdit'} className={`${smallBtnCls} ${uploadingInstallation ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer'}`}>
+                      <ImageIcon className="w-3.5 h-3.5" /> {uploadingInstallation ? 'Mengunggah...' : 'Dari Galeri'}
                     </label>
-                    <button type="button" onClick={() => setInstallCameraOpen(true)} disabled={uploadingInstallation} className={`flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs border border-primary/30 dark:border-[#00f7ff]/40 rounded hover:bg-primary/5 dark:hover:bg-[#00f7ff]/10 text-primary/70 dark:text-[#00f7ff]/70 ${uploadingInstallation ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                      <Camera className="w-3 h-3" /> Kamera
+                    <button type="button" onClick={() => setInstallCameraOpen(true)} disabled={uploadingInstallation} className={`${smallBtnCls} ${uploadingInstallation ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                      <Camera className="w-3.5 h-3.5" /> Ambil Foto
                     </button>
                   </div>
                   )}
-                  <p className="text-[9px] text-muted-foreground dark:text-[#e0d0ff]/40 mt-1">Bisa upload beberapa foto. Maks. 5MB per foto. Kamera otomatis mengambil GPS.</p>
+                  <p className={hintCls}>Bisa lebih dari satu foto, maks. 5MB per foto. Kamera otomatis menyimpan koordinat GPS.</p>
                 </div>
                 {formData.installationPhotos.length > 0 && (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                     {formData.installationPhotos.map((photo, index) => (
-                      <div key={index} className="relative">
+                      <div key={index} className="relative group aspect-square">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={photo} alt={`Instalasi ${index + 1}`} className="w-full h-16 object-cover rounded border border-border dark:border-[#00f7ff]/20" loading="lazy" />
-                        <button type="button" onClick={() => setFormData(prev => ({ ...prev, installationPhotos: prev.installationPhotos.filter((_, i) => i !== index) }))} className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px] hover:bg-red-600">×</button>
+                        <img src={photo} alt={`Instalasi ${index + 1}`} className="w-full h-full object-cover rounded-md border border-border" loading="lazy" />
+                        <button type="button" aria-label="Hapus foto" onClick={() => setFormData(prev => ({ ...prev, installationPhotos: prev.installationPhotos.filter((_, i) => i !== index) }))} className="absolute -top-1.5 -right-1.5 bg-card text-muted-foreground hover:text-red-600 border border-border shadow-sm rounded-full w-5 h-5 flex items-center justify-center transition-colors">
+                          <X className="w-3 h-3" />
+                        </button>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
+                </div>
+              </section>
+
+              {/* ── Pendaftaran ── */}
+              <section className={sectionCls}>
+                <div className={sectionHeadCls}>
+                  <h3 className={sectionTitleCls}>Pendaftaran</h3>
+                  <p className={sectionDescCls}>Riwayat PSB dan catatan internal.</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className={labelCls}>Teknisi Pemasang</label>
+                    <div className="px-3 py-2 text-sm rounded-lg border border-dashed border-border bg-muted/30 text-foreground">
+                      {user?.registeredByTechnician?.name || 'System / Admin'}
+                    </div>
+                    <p className={hintCls}>Teknisi yang melakukan pendaftaran pelanggan ini.</p>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Tanggal Register</label>
+                    <input type="date" value={formData.registeredAt} onChange={(e) => setFormData({ ...formData, registeredAt: e.target.value })} className={inputCls} />
+                    <p className={hintCls}>Ubah hanya untuk koreksi data historis.</p>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className={labelCls}>Catatan Internal</label>
+                    <input type="text" value={formData.comment} onChange={(e) => setFormData({ ...formData, comment: e.target.value })} placeholder="Catatan tambahan untuk tim" className={inputCls} />
+                  </div>
+                </div>
+              </section>
 
               {/* Force Sync MikroTik */}
               {formData.connectionType === 'PPPOE' && formData.routerId && (
-                <label className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 rounded-lg cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formData.forceSyncMikrotik}
-                    onChange={(e) => setFormData({ ...formData, forceSyncMikrotik: e.target.checked })}
-                    className="w-4 h-4 accent-amber-500"
-                  />
-                  <div>
-                    <span className="text-sm font-medium text-amber-700 dark:text-amber-400">
-                      Sync PPPoE Secret ke MikroTik
-                    </span>
-                    <p className="text-[10px] text-amber-600/70 dark:text-amber-400/60 mt-0.5">
-                      Centang jika PPPoE secret belum ada di MikroTik (local-auth) atau perlu di-update. Akan membuat/update PPP secret dengan username, password, dan profile paket yang dipilih.
-                    </p>
-                  </div>
-                </label>
+                <div className="py-5">
+                  <label className="flex items-start gap-3 p-3.5 rounded-lg border border-amber-500/30 bg-amber-500/5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.forceSyncMikrotik}
+                      onChange={(e) => setFormData({ ...formData, forceSyncMikrotik: e.target.checked })}
+                      className="mt-0.5 w-4 h-4 accent-amber-500 shrink-0"
+                    />
+                    <div className="min-w-0">
+                      <span className="text-sm font-medium text-amber-700 dark:text-amber-400">Sinkronkan PPPoE secret ke MikroTik</span>
+                      <p className="text-[11px] text-amber-700/80 dark:text-amber-400/70 mt-1 leading-snug">
+                        Centang jika secret belum ada di router (local-auth) atau perlu diperbarui. Sistem akan membuat/memperbarui PPP secret sesuai username, password, dan paket yang dipilih.
+                      </p>
+                    </div>
+                  </label>
+                </div>
               )}
-
-              <div className="flex justify-end gap-2 pt-4 border-t border-border dark:border-[#bc13fe]/30">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-4 py-2 bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-border rounded-lg transition-all dark:text-[#e0d0ff] dark:bg-[#bc13fe]/20 dark:hover:bg-[#bc13fe]/30 dark:border-[#bc13fe]/50"
-                >
-                  {t('common.cancel')}
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg shadow-md transition-all dark:bg-gradient-to-r dark:from-[#00f7ff] dark:to-[#bc13fe] dark:text-white dark:hover:from-[#00f7ff]/80 dark:hover:to-[#bc13fe]/80 dark:"
-                >
-                  {t('common.saveChanges')}
-                </button>
-              </div>
             </form>
           )}
 
           {activeTab === 'sessions' && (
             <div>
               {loading ? (
-                <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary dark:text-[#00f7ff]" />
-                </div>
+                <div className="flex justify-center py-12"><Loader2 className="w-5 h-5 animate-spin text-brand-500" /></div>
               ) : sessions.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground dark:text-[#e0d0ff]/50">
-                  <Clock className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                  <p>{t('userModal.noSessions')}</p>
+                <div className="text-center py-12 text-muted-foreground">
+                  <Clock className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                  <p className="text-sm">{t('userModal.noSessions')}</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="divide-y divide-border rounded-lg border border-border overflow-hidden">
                   {sessions.map((session) => (
-                    <div
-                      key={session.id}
-                      className="p-4 border border-border dark:border-[#bc13fe]/30 rounded-lg bg-muted/30 dark:bg-[#0a0520]/30"
-                    >
-                      <div className="flex items-start justify-between gap-2 mb-2">
+                    <div key={session.id} className="p-3.5 sm:p-4 bg-card hover:bg-muted/30 transition-colors">
+                      <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 flex-wrap">
                             {session.isOnline ? (
-                              <span className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-1 rounded shrink-0">
-                                <CheckCircle2 className="w-3 h-3" />
+                              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full shrink-0">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                 {t('userModal.online')}
                               </span>
                             ) : (
-                              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded shrink-0">
+                              <span className="text-[11px] font-medium text-muted-foreground bg-muted border border-border px-2 py-0.5 rounded-full shrink-0">
                                 {t('userModal.offline')}
                               </span>
                             )}
-                            <span className="text-xs text-gray-500">
-                              {session.durationFormatted}
-                            </span>
+                            <span className="text-xs text-muted-foreground tabular-nums">{session.durationFormatted}</span>
                           </div>
-                          <p className="text-sm font-medium mt-1 truncate">
+                          <p className="text-sm font-medium text-foreground mt-1.5 truncate tabular-nums">
                             {formatWIB(session.startTime, 'dd MMM yyyy HH:mm')}
-                            {session.stopTime && (
-                              <> - {formatWIB(session.stopTime, 'HH:mm')}</>
-                            )}
+                            {session.stopTime && (<span className="text-muted-foreground"> – {formatWIB(session.stopTime, 'HH:mm')}</span>)}
                           </p>
                           {session.macAddress && session.macAddress !== '-' && (
-                            <p className="text-xs text-gray-500 mt-1 font-mono truncate">
-                              MAC: {session.macAddress}
-                            </p>
+                            <p className="text-[11px] text-muted-foreground mt-1 font-mono truncate">{session.macAddress}</p>
                           )}
                         </div>
-                        <div className="text-right text-xs text-gray-500 shrink-0">
+                        <div className="text-right text-xs text-muted-foreground shrink-0 tabular-nums leading-relaxed">
                           <div>↓ {session.download}</div>
                           <div>↑ {session.upload}</div>
-                          <div className="font-medium text-foreground">
-                            Total: {session.total}
-                          </div>
+                          <div className="font-medium text-foreground mt-0.5">{session.total}</div>
                         </div>
                       </div>
                       {session.terminateCause && !session.isOnline && (
-                        <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-border">
-                          Terminate: {session.terminateCause}
+                        <div className="text-[11px] text-muted-foreground mt-2.5 pt-2 border-t border-border/60">
+                          Putus: {session.terminateCause}
                         </div>
                       )}
                     </div>
@@ -951,39 +843,32 @@ export default function UserDetailModal({
           {activeTab === 'auth' && (
             <div>
               {loading ? (
-                <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary dark:text-[#00f7ff]" />
-                </div>
+                <div className="flex justify-center py-12"><Loader2 className="w-5 h-5 animate-spin text-brand-500" /></div>
               ) : authLogs.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground dark:text-[#e0d0ff]/50">
-                  <XCircle className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                  <p>{t('userModal.noAuthLogs')}</p>
+                <div className="text-center py-12 text-muted-foreground">
+                  <XCircle className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                  <p className="text-sm">{t('userModal.noAuthLogs')}</p>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="divide-y divide-border rounded-lg border border-border overflow-hidden">
                   {authLogs.map((log) => (
-                    <div
-                      key={log.id}
-                      className="flex items-center justify-between gap-2 p-3 border border-border rounded-lg"
-                    >
+                    <div key={log.id} className="flex items-center justify-between gap-3 px-3.5 py-3 bg-card hover:bg-muted/30 transition-colors">
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         {log.success ? (
-                          <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />
+                          <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
                         ) : (
-                          <XCircle className="w-5 h-5 text-red-600 shrink-0" />
+                          <XCircle className="w-4 h-4 text-red-500 shrink-0" />
                         )}
                         <div className="min-w-0">
-                          <p className="text-sm font-medium truncate">{log.reply}</p>
-                          <p className="text-xs text-gray-500 truncate">
+                          <p className="text-sm font-medium text-foreground truncate">{log.reply}</p>
+                          <p className="text-[11px] text-muted-foreground truncate tabular-nums">
                             {formatLocalDate(log.authdate, 'dd MMM yyyy HH:mm:ss')}
                           </p>
                         </div>
                       </div>
-                      <span
-                        className={`text-xs px-2 py-1 rounded shrink-0 ${log.success
-                          ? 'bg-green-50 text-green-700'
-                          : 'bg-red-50 text-red-700'
-                          }`}
-                      >
+                      <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full border shrink-0 ${log.success
+                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                        : 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20'}`}>
                         {log.success ? t('userModal.success') : t('userModal.rejected')}
                       </span>
                     </div>
@@ -996,54 +881,44 @@ export default function UserDetailModal({
           {activeTab === 'invoices' && (
             <div>
               {loading ? (
-                <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary dark:text-[#00f7ff]" />
-                </div>
+                <div className="flex justify-center py-12"><Loader2 className="w-5 h-5 animate-spin text-brand-500" /></div>
               ) : invoices.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground dark:text-[#e0d0ff]/50">
+                <div className="text-center py-12 text-muted-foreground">
                   <FileX className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                  <p>{t('userModal.noInvoices')}</p>
+                  <p className="text-sm">{t('userModal.noInvoices')}</p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {invoices.map((invoice) => (
-                    <div
-                      key={invoice.id}
-                      className="p-4 border border-border dark:border-[#bc13fe]/30 rounded-lg bg-muted/30 dark:bg-[#0a0520]/30"
-                    >
-                      <div className="flex items-start justify-between gap-2">
+                <div className="divide-y divide-border rounded-lg border border-border overflow-hidden">
+                  {invoices.map((invoice) => {
+                    const invStatus: Record<string, { label: string; cls: string }> = {
+                      PAID:      { label: 'Lunas',        cls: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' },
+                      PENDING:   { label: 'Belum Bayar',  cls: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' },
+                      OVERDUE:   { label: 'Jatuh Tempo',  cls: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20' },
+                      CANCELLED: { label: 'Dibatalkan',   cls: 'bg-muted text-muted-foreground border-border' },
+                    };
+                    const is = invStatus[invoice.status] || { label: invoice.status, cls: 'bg-muted text-muted-foreground border-border' };
+                    return (
+                      <div key={invoice.id} className="flex items-start justify-between gap-3 px-3.5 py-3.5 bg-card hover:bg-muted/30 transition-colors">
                         <div className="min-w-0 flex-1">
-                          <p className="font-medium truncate">{invoice.invoiceNumber}</p>
-                          <p className="text-sm text-gray-500 mt-1">
-                            Due: {formatWIB(invoice.dueDate, 'dd MMM yyyy')}
+                          <p className="text-sm font-medium text-foreground font-mono truncate">{invoice.invoiceNumber}</p>
+                          <p className="text-xs text-muted-foreground mt-1 tabular-nums">
+                            Jatuh tempo {formatWIB(invoice.dueDate, 'dd MMM yyyy')}
                           </p>
                           {invoice.paidAt && (
-                            <p className="text-xs text-green-600 mt-1">
-                              Paid: {formatWIB(invoice.paidAt, 'dd MMM yyyy')}
+                            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5 tabular-nums">
+                              Dibayar {formatWIB(invoice.paidAt, 'dd MMM yyyy')}
                             </p>
                           )}
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="font-bold text-base sm:text-lg">
-                            {new Intl.NumberFormat('id-ID', {
-                              style: 'currency',
-                              currency: 'IDR',
-                              minimumFractionDigits: 0,
-                            }).format(invoice.amount)}
+                          <p className="text-sm sm:text-base font-semibold text-foreground tabular-nums">
+                            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(invoice.amount)}
                           </p>
-                          <span
-                            className={`inline-block text-xs px-2 py-1 rounded mt-1 ${invoice.status === 'PAID'
-                              ? 'bg-green-50 text-green-700'
-                              : invoice.status === 'PENDING'
-                                ? 'bg-yellow-50 text-yellow-700'
-                                : 'bg-red-50 text-red-700'
-                              }`}
-                          >
-                            {invoice.status}
-                          </span>
+                          <span className={`inline-block text-[11px] font-medium px-2 py-0.5 rounded-full border mt-1.5 ${is.cls}`}>{is.label}</span>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -1062,11 +937,11 @@ export default function UserDetailModal({
           {activeTab === 'photos' && (
             <div className="space-y-6">
               {/* KTP Section */}
-              <div className="border border-border dark:border-[#bc13fe]/30 rounded-xl p-4 space-y-3">
+              <div className="border border-border rounded-xl p-4 space-y-3">
                 <div className="flex items-center gap-2 min-w-0">
-                  <p className="text-sm font-semibold text-foreground dark:text-[#e0d0ff] shrink-0 flex items-center gap-1.5"><IdCard className="w-4 h-4 text-brand-500 shrink-0" />Foto KTP</p>
+                  <p className="text-sm font-semibold text-foreground shrink-0 flex items-center gap-1.5"><IdCard className="w-4 h-4 text-brand-500 shrink-0" />Foto KTP</p>
                   {formData.idCardNumber && (
-                    <span className="ml-auto min-w-0 truncate text-xs text-muted-foreground dark:text-[#e0d0ff]/50 font-mono bg-muted dark:bg-[#0a0520]/60 px-2 py-0.5 rounded">
+                    <span className="ml-auto min-w-0 truncate text-xs text-muted-foreground font-mono bg-muted px-2 py-0.5 rounded">
                       NIK: {formData.idCardNumber}
                     </span>
                   )}
@@ -1077,7 +952,7 @@ export default function UserDetailModal({
                     <img
                       src={formData.idCardPhoto}
                       alt="Foto KTP"
-                      className="w-full max-h-64 object-contain rounded-lg border border-border dark:border-[#bc13fe]/30 bg-black/5 dark:bg-black/30"
+                      className="w-full max-h-64 object-contain rounded-lg border border-border bg-black/5 dark:bg-black/30"
                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                       loading="lazy"
                     />
@@ -1088,7 +963,7 @@ export default function UserDetailModal({
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center gap-2 h-32 rounded-lg border-2 border-dashed border-border dark:border-[#bc13fe]/30 text-muted-foreground dark:text-[#e0d0ff]/40">
+                  <div className="flex flex-col items-center justify-center gap-2 h-32 rounded-lg border-2 border-dashed border-border text-muted-foreground">
                     <ImageIcon className="w-8 h-8 opacity-30" />
                     <p className="text-xs">Belum ada foto KTP</p>
                   </div>
@@ -1096,11 +971,11 @@ export default function UserDetailModal({
               </div>
 
               {/* Installation Photos Section */}
-              <div className="border border-border dark:border-[#00f7ff]/20 rounded-xl p-4 space-y-3">
+              <div className="border border-border rounded-xl p-4 space-y-3">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-semibold text-foreground dark:text-[#e0d0ff] flex items-center gap-1.5"><Wrench className="w-4 h-4 text-brand-500 shrink-0" />Foto Instalasi</p>
+                  <p className="text-sm font-semibold text-foreground flex items-center gap-1.5"><Wrench className="w-4 h-4 text-brand-500 shrink-0" />Foto Instalasi</p>
                   {formData.installationPhotos.length > 0 && (
-                    <span className="ml-auto text-xs bg-primary/10 dark:bg-[#00f7ff]/10 text-primary dark:text-[#00f7ff] px-2 py-0.5 rounded-full">
+                    <span className="ml-auto text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
                       {formData.installationPhotos.length} foto
                     </span>
                   )}
@@ -1117,7 +992,7 @@ export default function UserDetailModal({
                         <img
                           src={photo}
                           alt={`Instalasi ${index + 1}`}
-                          className="w-full aspect-[4/3] object-cover rounded-lg border border-border dark:border-[#00f7ff]/20"
+                          className="w-full aspect-[4/3] object-cover rounded-lg border border-border"
                           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                           loading="lazy"
                         />
@@ -1133,14 +1008,14 @@ export default function UserDetailModal({
                     ))}
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center gap-2 h-32 rounded-lg border-2 border-dashed border-border dark:border-[#00f7ff]/20 text-muted-foreground dark:text-[#e0d0ff]/40">
+                  <div className="flex flex-col items-center justify-center gap-2 h-32 rounded-lg border-2 border-dashed border-border text-muted-foreground">
                     <Camera className="w-8 h-8 opacity-30" />
                     <p className="text-xs">Belum ada foto instalasi</p>
                   </div>
                 )}
               </div>
 
-              <p className="text-[10px] text-muted-foreground dark:text-[#e0d0ff]/30 text-center">
+              <p className="text-[10px] text-muted-foreground text-center">
                 Untuk menambah / menghapus foto, buka tab Info Pengguna
               </p>
             </div>
@@ -1170,6 +1045,31 @@ export default function UserDetailModal({
             </div>
           )}
         </div>
+
+        {/* Footer — only for the editable info tab */}
+        {activeTab === 'info' && (
+          <div className="px-4 sm:px-6 py-3 border-t border-border bg-card flex items-center justify-between gap-3 shrink-0">
+            <p className="hidden sm:block text-[11px] text-muted-foreground">
+              Perubahan disimpan ke database dan disinkronkan ke RADIUS.
+            </p>
+            <div className="flex items-center gap-2 ml-auto">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-3.5 py-2 text-sm font-medium rounded-lg border border-border text-foreground hover:bg-muted transition-colors"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                type="submit"
+                form="user-detail-form"
+                className="px-4 py-2 text-sm font-medium rounded-lg bg-brand-500 text-white hover:bg-brand-600 active:bg-brand-700 transition-colors"
+              >
+                {t('common.saveChanges')}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>,
     document.body
@@ -1244,26 +1144,26 @@ function CustomerAddonsTab({ userId }: { userId: string }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground dark:text-[#e0d0ff] flex items-center gap-1.5"><Puzzle className="w-4 h-4 text-brand-500 shrink-0" />Layanan Tambahan Aktif</h3>
+        <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5"><Puzzle className="w-4 h-4 text-brand-500 shrink-0" />Layanan Tambahan Aktif</h3>
         <button
           onClick={() => setShowModal(true)}
-          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-primary text-white dark:bg-[#00f7ff] dark:text-[#0a0520] rounded hover:opacity-90 transition"
+          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-primary text-white rounded hover:opacity-90 transition"
         >
           <Plus className="w-3.5 h-3.5" /> Tambah
         </button>
       </div>
 
       {active.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg border border-border dark:border-[#bc13fe]/20">
+        <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg border border-border">
           <Puzzle className="w-8 h-8 mx-auto mb-2 opacity-40" />
           <p>Belum ada layanan tambahan aktif</p>
         </div>
       ) : (
         <div className="space-y-2">
           {active.map(a => (
-            <div key={a.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-muted/30 dark:bg-[#bc13fe]/10 rounded-lg border border-border dark:border-[#bc13fe]/20">
+            <div key={a.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-muted/30 rounded-lg border border-border">
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-foreground dark:text-[#e0d0ff] truncate">{a.addonType?.name || a.addonName}</div>
+                <div className="text-sm font-medium text-foreground truncate">{a.addonType?.name || a.addonName}</div>
                 <div className="text-xs text-muted-foreground truncate">
                   {a.addonType?.isRecurring ? 'Bulanan' : 'Sekali'} · Mulai {a.startDate ? formatWIB(a.startDate, 'd MMM yyyy') : '-'}
                   {a.notes ? ` · ${a.notes}` : ''}
@@ -1273,7 +1173,7 @@ function CustomerAddonsTab({ userId }: { userId: string }) {
                 )}
               </div>
               <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
-                <span className="text-sm font-bold text-primary dark:text-[#00f7ff]">Rp {Number(a.effectivePrice || a.priceOverride || a.addonType?.price || 0).toLocaleString('id-ID')}</span>
+                <span className="text-sm font-bold text-primary">Rp {Number(a.effectivePrice || a.priceOverride || a.addonType?.price || 0).toLocaleString('id-ID')}</span>
                 <button
                   onClick={() => handleRemove(a.id, a.addonType?.name || a.addonName)}
                   className="shrink-0 px-2 py-1 text-xs bg-destructive/10 text-destructive border border-destructive/30 rounded hover:bg-destructive/20 transition"
@@ -1303,15 +1203,15 @@ function CustomerAddonsTab({ userId }: { userId: string }) {
       {/* Assign Modal */}
       {showModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-background dark:bg-[#0a0520] border border-border dark:border-[#bc13fe]/30 rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-foreground dark:text-[#e0d0ff] mb-4">Tambah Layanan Tambahan</h3>
+          <div className="bg-background border border-border rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-foreground mb-4">Tambah Layanan Tambahan</h3>
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium mb-1">Jenis Layanan *</label>
                 <select
                   value={form.addonTypeId}
                   onChange={e => setForm(f => ({ ...f, addonTypeId: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-[#0a0520] dark:border-[#bc13fe]/30"
+                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded"
                 >
                   <option value="">-- Pilih layanan --</option>
                   {addonTypes.filter(t => t.isActive).map(t => (
@@ -1327,7 +1227,7 @@ function CustomerAddonsTab({ userId }: { userId: string }) {
                     value={form.priceOverride}
                     onChange={e => setForm(f => ({ ...f, priceOverride: e.target.value }))}
                     placeholder={`Default: Rp ${Number(selectedType.price).toLocaleString('id-ID')}`}
-                    className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-[#0a0520] dark:border-[#bc13fe]/30"
+                    className="w-full px-3 py-2 text-sm bg-background border border-border rounded"
                   />
                 </div>
               )}
@@ -1337,7 +1237,7 @@ function CustomerAddonsTab({ userId }: { userId: string }) {
                   type="date"
                   value={form.startDate}
                   onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-[#0a0520] dark:border-[#bc13fe]/30"
+                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded"
                 />
               </div>
               <div>
@@ -1347,13 +1247,13 @@ function CustomerAddonsTab({ userId }: { userId: string }) {
                   value={form.notes}
                   onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
                   placeholder="Catatan tambahan..."
-                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-[#0a0520] dark:border-[#bc13fe]/30"
+                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded"
                 />
               </div>
             </div>
             <div className="flex gap-2 mt-5">
               <button onClick={() => setShowModal(false)} className="flex-1 px-4 py-2 text-sm border border-border rounded hover:bg-muted transition">Batal</button>
-              <button onClick={handleAssign} disabled={saving} className="flex-1 px-4 py-2 text-sm bg-primary text-white dark:bg-[#00f7ff] dark:text-[#0a0520] rounded hover:opacity-90 transition disabled:opacity-50">
+              <button onClick={handleAssign} disabled={saving} className="flex-1 px-4 py-2 text-sm bg-primary text-white rounded hover:opacity-90 transition disabled:opacity-50">
                 {saving ? 'Menyimpan...' : 'Tambahkan'}
               </button>
             </div>
@@ -1419,14 +1319,14 @@ function PaymentPromiseTab({ userId, userStatus }: { userId: string; userStatus:
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-foreground dark:text-[#e0d0ff] flex items-center gap-1.5"><CalendarClock className="w-4 h-4 text-brand-500 shrink-0" />Janji Bayar</h3>
+        <h3 className="text-sm font-semibold text-foreground flex items-center gap-1.5"><CalendarClock className="w-4 h-4 text-brand-500 shrink-0" />Janji Bayar</h3>
         {!activePromise && (
           <button
             onClick={() => {
               setPromiseDate(formatWIB(new Date(nowWIB().getTime() + 86400000), 'yyyy-MM-dd'));
               setShowModal(true);
             }}
-            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-primary text-white dark:bg-[#00f7ff] dark:text-[#0a0520] rounded hover:opacity-90 transition"
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs bg-primary text-white rounded hover:opacity-90 transition"
           >
             <Plus className="w-3.5 h-3.5" /> Buat Janji Bayar
           </button>
@@ -1439,7 +1339,7 @@ function PaymentPromiseTab({ userId, userStatus }: { userId: string; userStatus:
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-2 flex-wrap">
                 <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 rounded shrink-0">AKTIF</span>
-                <span className="text-sm font-medium text-foreground dark:text-[#e0d0ff]">
+                <span className="text-sm font-medium text-foreground">
                   Janji bayar hingga {formatWIB(activePromise.promiseDate, 'd MMMM yyyy')}
                 </span>
               </div>
@@ -1459,7 +1359,7 @@ function PaymentPromiseTab({ userId, userStatus }: { userId: string; userStatus:
           </div>
         </div>
       ) : (
-        <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg border border-border dark:border-[#bc13fe]/20">
+        <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg border border-border">
           <CalendarClock className="w-8 h-8 mx-auto mb-2 opacity-40" />
           <p>Tidak ada janji bayar aktif</p>
         </div>
@@ -1475,10 +1375,10 @@ function PaymentPromiseTab({ userId, userStatus }: { userId: string; userStatus:
                   {formatWIB(p.promiseDate, 'd MMM yyyy')}
                 </span>
                 <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                  p.status === 'active' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
-                  p.status === 'fulfilled' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                  'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                }`}>{p.status}</span>
+ p.status === 'active' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+ p.status === 'fulfilled' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+ 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+ }`}>{p.status}</span>
               </div>
             ))}
           </div>
@@ -1488,8 +1388,8 @@ function PaymentPromiseTab({ userId, userStatus }: { userId: string; userStatus:
       {/* Create Promise Modal */}
       {showModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-background dark:bg-[#0a0520] border border-border dark:border-[#bc13fe]/30 rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-foreground dark:text-[#e0d0ff] mb-4">Buat Janji Bayar</h3>
+          <div className="bg-background border border-border rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-foreground mb-4">Buat Janji Bayar</h3>
             <p className="text-xs text-muted-foreground mb-4">
               Pelanggan berjanji membayar tagihan pada tanggal tertentu. Akses internet akan dibuka hingga tanggal janji. Jika tidak dibayar hingga tanggal janji, pelanggan akan diisolir otomatis.
             </p>
@@ -1501,7 +1401,7 @@ function PaymentPromiseTab({ userId, userStatus }: { userId: string; userStatus:
                   value={promiseDate}
                   onChange={e => setPromiseDate(e.target.value)}
                   min={formatWIB(new Date(nowWIB().getTime() + 86400000), 'yyyy-MM-dd')}
-                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-[#0a0520] dark:border-[#bc13fe]/30"
+                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded"
                 />
               </div>
               <div>
@@ -1511,13 +1411,13 @@ function PaymentPromiseTab({ userId, userStatus }: { userId: string; userStatus:
                   onChange={e => setPromiseNotes(e.target.value)}
                   placeholder="Mis: Janji bayar tanggal gajian..."
                   rows={3}
-                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-[#0a0520] dark:border-[#bc13fe]/30"
+                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded"
                 />
               </div>
             </div>
             <div className="flex gap-2 mt-5">
               <button onClick={() => setShowModal(false)} className="flex-1 px-4 py-2 text-sm border border-border rounded hover:bg-muted transition">Batal</button>
-              <button onClick={handleCreate} disabled={saving} className="flex-1 px-4 py-2 text-sm bg-primary text-white dark:bg-[#00f7ff] dark:text-[#0a0520] rounded hover:opacity-90 transition disabled:opacity-50">
+              <button onClick={handleCreate} disabled={saving} className="flex-1 px-4 py-2 text-sm bg-primary text-white rounded hover:opacity-90 transition disabled:opacity-50">
                 {saving ? 'Menyimpan...' : 'Buat Janji'}
               </button>
             </div>
