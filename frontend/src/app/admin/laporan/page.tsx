@@ -8,7 +8,7 @@ import { apiAdmin } from '@/lib/api';
 import { showError } from '@/lib/sweetalert';
 
 // ── Types ────────────────────────────────────────────────────────────────────
-type ReportType = 'invoice' | 'payment' | 'customer';
+type ReportType = 'invoice' | 'payment' | 'customer' | 'profile';
 
 interface Summary {
   total: number;
@@ -44,6 +44,7 @@ export default function LaporanPage() {
     invoice: t('laporan.typeInvoice'),
     payment: t('laporan.typePayment'),
     customer: t('laporan.typeCustomer'),
+    profile: t('laporan.typeProfile') || 'Pendapatan per Paket',
   };
 
   const INVOICE_STATUSES = [
@@ -209,7 +210,7 @@ export default function LaporanPage() {
           <div>
             <label className="block text-xs font-bold text-brand-500 mb-2 uppercase tracking-wider">{t('laporan.reportType')}</label>
             <div className="flex gap-2 flex-wrap">
-              {(['invoice', 'payment', 'customer'] as ReportType[]).map((t) => (
+              {(['invoice', 'payment', 'customer', 'profile'] as ReportType[]).map((t) => (
                 <button
                   key={t}
                   onClick={() => { setReportType(t); setStatus('all'); setLoaded(false); }}
@@ -222,6 +223,7 @@ export default function LaporanPage() {
                   {t === 'invoice' && <FileText className="w-3.5 h-3.5 inline mr-1" />}
                   {t === 'payment' && <CreditCard className="w-3.5 h-3.5 inline mr-1" />}
                   {t === 'customer' && <Users className="w-3.5 h-3.5 inline mr-1" />}
+                  {t === 'profile' && <BarChart3 className="w-3.5 h-3.5 inline mr-1" />}
                   {TYPE_LABELS[t]}
                 </button>
               ))}
@@ -255,7 +257,7 @@ export default function LaporanPage() {
           </div>
 
           {/* Status filter (invoice & customer only) */}
-          {reportType !== 'payment' && (
+          {reportType !== 'payment' && reportType !== 'profile' && (
             <div>
               <label className="block text-xs font-bold text-brand-500 mb-2 uppercase tracking-wider">{t('laporan.statusLabel')}</label>
               <select
@@ -342,6 +344,13 @@ export default function LaporanPage() {
               <SummaryCard label={t('laporan.active')} value={summary.active ?? 0} icon={<TrendingUp className="w-5 h-5" />} color="green" />
               <SummaryCard label={t('laporan.isolated')} value={summary.isolated ?? 0} icon={<Users className="w-5 h-5" />} color="yellow" />
               <SummaryCard label={t('laporan.stoppedExpired')} value={(summary.stopped ?? 0) + (summary.expired ?? 0)} icon={<Users className="w-5 h-5" />} color="red" />
+            </>
+          )}
+          {reportType === 'profile' && (
+            <>
+              <SummaryCard label="Jumlah Paket" value={summary.total} icon={<BarChart3 className="w-5 h-5" />} color="cyan" />
+              <SummaryCard label="Pendapatan (Lunas)" value={formatRupiah(summary.totalAmount ?? 0)} icon={<TrendingUp className="w-5 h-5" />} color="green" />
+              <SummaryCard label="Tertunggak" value={formatRupiah(summary.paidAmount ?? 0)} icon={<CreditCard className="w-5 h-5" />} color="yellow" />
             </>
           )}
         </div>

@@ -216,7 +216,95 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, rows, summary, type });
     }
 
-    return NextResponse.json({ error: 'Invalid type. Use: invoice | payment | customer' }, { status: 400 });
+    // ── PROFILE / PACKAGE REVENUE REPORT ──────────────────────────────────
+    // Pendapatan per paket/profile — dari invoice yang punya customer (pppoeUser),
+    // dikelompokkan berdasarkan profile pelanggan saat ini.
+    if (type === 'profile') {
+      const invoices = await prisma.invoice.findMany({
+        where: {
+          createdAt: { gte: from, lte: to },
+          userId: { not: null },
+        },
+        select: {
+          amount: true,
+          status: true,
+          user: { select: { profile: { select: { id: true, name: true, price: true } } } },
+        },
+        take: 20000,
+      });
+
+      const byProfile = new Map<string, {
+        name: string;
+        price: number;
+        customerCount: Set<string>;
+        totalInvoice: number;
+        paidCount: number;
+        paidAmount: number;
+        unpaidCount: number;
+        unpaidAmount: number;
+      }>();
+
+      // Jumlah pelanggan aktif per profile (independen dari invoice, agar akurat)
+      const profileCustomerCounts = await prisma.pppoeUser.groupBy({
+        by: ['profileId'],
+        where: { profileId: { not: null } },
+        _count: { _all: true },
+      });
+      const customerCountMap = new Map(
+        profileCustomerCounts.map((r) => [r.profileId as string, r._count._all])
+      );
+
+      for (const inv of invoices) {
+        const profile = inv.user?.profile;
+        const key = profile?.id ?? 'unknown';
+        const name = profile?.name ?? 'Tanpa Paket';
+        if (!byProfile.has(key)) {
+          byProfile.set(key, {
+            name,
+            price: profile?.price ?? 0,
+            customerCount: new Set(),
+            totalInvoice: 0,
+            paidCount: 0,
+            paidAmount: 0,
+            unpaidCount: 0,
+            unpaidAmount: 0,
+          });
+        }
+        const entry = byProfile.get(key)!;
+        entry.totalInvoice += 1;
+        if (inv.status === 'PAID') {
+          entry.paidCount += 1;
+          entry.paidAmount += inv.amount;
+        } else if (inv.status === 'PENDING' || inv.status === 'OVERDUE') {
+          entry.unpaidCount += 1;
+          entry.unpaidAmount += inv.amount;
+        }
+      }
+
+      const rows = Array.from(byProfile.entries())
+        .map(([profileId, e]) => ({
+          'Paket': e.name,
+          'Harga': e.price,
+          'Harga (Rp)': formatRupiah(e.price),
+          'Jumlah Pelanggan': customerCountMap.get(profileId) ?? 0,
+          'Total Invoice': e.totalInvoice,
+          'Lunas': e.paidCount,
+          'Pendapatan (Rp)': formatRupiah(e.paidAmount),
+          'Belum Bayar': e.unpaidCount,
+          'Tertunggak (Rp)': formatRupiah(e.unpaidAmount),
+        }))
+        .sort((a, b) => (b['Pendapatan (Rp)'] > a['Pendapatan (Rp)'] ? 1 : -1));
+
+      const summary = {
+        total: rows.length,
+        totalAmount: Array.from(byProfile.values()).reduce((s, e) => s + e.paidAmount, 0),
+        paidAmount: Array.from(byProfile.values()).reduce((s, e) => s + e.unpaidAmount, 0),
+      };
+
+      return NextResponse.json({ success: true, rows, summary, type });
+    }
+
+    return NextResponse.json({ error: 'Invalid type. Use: invoice | payment | customer | profile' }, { status: 400 });
   } catch (error: any) {
     console.error('[LAPORAN API] Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
