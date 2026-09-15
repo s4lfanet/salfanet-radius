@@ -187,7 +187,7 @@ export async function runAutoIsolir(): Promise<{ isolated: number; total: number
         } else if (connType === 'HOTSPOT') {
           // Hotspot: disable hotspot user
           try {
-            const { manageHotspotUser, kickHotspotSession } = await import('./mikrotik/arp-hotspot.service');
+            const { manageHotspotUser, kickHotspotSession } = await import('@/server/services/mikrotik/arp-hotspot.service');
             const r = await manageHotspotUser(user.router!.id, 'update', {
               username: user.username, password: user.password, disabled: true, comment: 'Auto-isolir'
             });
@@ -305,7 +305,7 @@ export async function runAutoStop(): Promise<{ stopped: number; total: number; e
           }
         } else if (connType === 'HOTSPOT') {
           try {
-            const { manageHotspotUser, kickHotspotSession } = await import('./mikrotik/arp-hotspot.service');
+            const { manageHotspotUser, kickHotspotSession } = await import('@/server/services/mikrotik/arp-hotspot.service');
             const r = await manageHotspotUser(user.router!.id, 'update', { username: user.username, password: user.password, disabled: true });
             console.log(`[AUTO_STOP] Hotspot disable for ${user.username}: ${r.message}`);
             const kicked = await kickHotspotSession(user.router!.id, user.username);
