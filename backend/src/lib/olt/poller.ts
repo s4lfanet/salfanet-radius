@@ -86,9 +86,26 @@ export async function pollOLTWithOptions(
       }
     }
 
+    // If SNMP failed or not enabled, try a lightweight SSH/Telnet connectivity test.
+    // Do NOT assume online just because credentials are configured — actually test
+    // the connection before marking the OLT as online.
     if (!isOnline && (sshConfig || telnetConfig)) {
-      // Fallback: if SNMP fails, try SSH/Telnet
-      isOnline = true;
+      try {
+        if (telnetConfig) {
+          // Quick Telnet test: execute a single harmless command
+          const { executeCommand } = await import('./telnet');
+          const r = await executeCommand(telnetConfig, 'show version');
+          if (r.success) isOnline = true;
+        } else if (sshConfig) {
+          // Quick SSH test: execute a single harmless command
+          const { executeCommand: sshExec } = await import('./ssh');
+          const r = await sshExec(sshConfig, 'show version');
+          if (r.success) isOnline = true;
+        }
+      } catch {
+        // Connection test failed — OLT is genuinely unreachable
+        isOnline = false;
+      }
     }
 
     // Get performance metrics
@@ -374,6 +391,42 @@ async function checkAlerts(
   const dyingGaspOnus = onus.filter((o) => o.status === 'dying_gasp');
   for (const onu of dyingGaspOnus) {
     await createAlertIfNotExists(oltId, onu.id, 'dying_gasp', 'critical', `ONU ${onu.serialNumber ?? onu.onuId} is sending dying gasp`);
+  }
+
+  // Alert: Low signal (RX power degradation)
+  // Threshold: <= -30 dBm = warning, <= -32 dBm = critical
+  for (const onu of onus) {
+    if (onu.status !== 'online' || onu.rxPower === null || onu.rxPower === undefined) continue;
+    const rx = onu.rxPower;
+    if (rx <= -32) {
+      await createAlertIfNotExists(oltId, onu.id, 'low_signal', 'critical',
+        `ONU ${onu.serialNumber ?? onu.onuId} RX power critical: ${rx} dBm`);
+    } else if (rx <= -30) {
+      await createAlertIfNotExists(oltId, onu.id, 'low_signal', 'warning',
+        `ONU ${onu.serialNumber ?? onu.onuId} RX power low: ${rx} dBm`);
+    }
+  }
+
+  // Alert: Mass outage — >=5 ONU offline/los/dying_gasp on same PON
+  const offlineOnus = onus.filter((o) =>
+    o.status === 'offline' || o.status === 'los' || o.status === 'dying_gasp'
+  );
+  if (offlineOnus.length >= 5) {
+    // Group by PON (frame/slot/port)
+    const byPon = new Map<string, typeof onus>();
+    for (const onu of offlineOnus) {
+      const key = `${onu.frame}/${onu.slot}/${onu.port}`;
+      const arr = byPon.get(key) ?? [];
+      arr.push(onu);
+      byPon.set(key, arr);
+    }
+    for (const [ponKey, ponOnus] of byPon) {
+      if (ponOnus.length >= 5) {
+        const serials = ponOnus.slice(0, 5).map((o) => o.serialNumber ?? `ONU${o.onuId}`).join(', ');
+        await createAlertIfNotExists(oltId, null, 'onu_offline', 'critical',
+          `Mass outage on PON ${ponKey}: ${ponOnus.length} ONUs offline. Affected: ${serials}${ponOnus.length > 5 ? ` +${ponOnus.length - 5} more` : ''}`);
+      }
+    }
   }
 
   // Run custom rules

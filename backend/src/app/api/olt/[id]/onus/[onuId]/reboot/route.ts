@@ -123,7 +123,8 @@ export async function POST(
 function buildRebootCommand(vendor: string, frame: number, slot: number, port: number, onuId: number): string {
   switch (vendor) {
     case 'zte':
-      return `pon onu reset gpon-onu_${frame}/${slot}/${port}:${onuId}`;
+      // DB port is zero-based, ZTE CLI is one-based
+      return `pon onu reset gpon-onu_${frame}/${slot}/${port + 1}:${onuId}`;
     case 'fiberhome':
       return `reset onu ${frame}/${slot}/${port}/${onuId}`;
     case 'bdcom':

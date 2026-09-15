@@ -24,6 +24,8 @@ import {
 } from '@/server/cron/additional-jobs'
 import { fetchAllVoucherStatusesFromMikrotik } from '@/server/services/mikrotik/hotspot-voucher.service'
 import { syncVoucherStatusFromRadius } from '@/server/services/radius/hotspot-sync.service'
+import { pollAllOLTs } from '@/lib/olt/poller'
+import { runAcsAlert } from '@/lib/genieacs/acs-alert'
 import { timingSafeEqual } from 'crypto'
 
 /**
@@ -199,6 +201,13 @@ export async function POST(request: NextRequest) {
             mikrotik: await fetchAllVoucherStatusesFromMikrotik(),
             radius: await syncVoucherStatusFromRadius(),
           }
+          break
+        case 'olt_poll':
+          await pollAllOLTs()
+          result = { success: true, message: 'OLT polling completed' }
+          break
+        case 'acs_alert':
+          result = await runAcsAlert()
           break
         default:
           result = { success: true, message: `Job ${jobType} not yet implemented` }

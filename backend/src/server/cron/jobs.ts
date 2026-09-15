@@ -41,6 +41,8 @@ export const CRON_JOB_DEFS: CronJobDef[] = [
   { type: 'external_task_processor', name: 'External Task Processor', description: 'Process external task outbox (MikroTik, WhatsApp, Email, CoA)', defaultSchedule: '* * * * *', defaultScheduleLabel: 'Every minute' },
   { type: 'financial_reconciliation', name: 'Financial Reconciliation', description: 'Reconcile invoice-payment consistency and detect financial anomalies', defaultSchedule: '0 5 * * *', defaultScheduleLabel: 'Daily at 5 AM' },
   { type: 'hotspot_voucher_sync',    name: 'Hotspot Voucher Sync',    description: 'Sync voucher status dari MikroTik local-only routers', defaultSchedule: '*/5 * * * *',  defaultScheduleLabel: 'Every 5 minutes' },
+  { type: 'olt_poll',                name: 'OLT Poll',                description: 'Polling semua OLT (status, ONU, optical power)',        defaultSchedule: '*/5 * * * *',  defaultScheduleLabel: 'Every 5 minutes' },
+  { type: 'acs_alert',               name: 'ACS Alert',               description: 'Deteksi RX degradation & offline ONU via GenieACS',     defaultSchedule: '*/3 * * * *',  defaultScheduleLabel: 'Every 3 minutes' },
 ];
 
 export const CRON_JOB_MAP = new Map(CRON_JOB_DEFS.map(j => [j.type, j]));
