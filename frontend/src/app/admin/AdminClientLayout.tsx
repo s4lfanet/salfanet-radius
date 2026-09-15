@@ -420,7 +420,7 @@ function CategoryItem({ titleKey, items, pendingCount, manualPaymentsCount, unre
   const hasActiveItem = items.some(item =>
     item.href === pathname || item.href === fullPath || item.children?.some(c => c.href === pathname || c.href === fullPath)
   );
-  const [isOpen, setIsOpen] = useState(hasActiveItem);
+  const [isOpen, setIsOpen] = useState(true);
 
   const visibleItems = items
     .filter(item => !item.requiredPermission || userPermissions.includes(item.requiredPermission))
