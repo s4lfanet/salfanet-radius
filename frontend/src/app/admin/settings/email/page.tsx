@@ -27,6 +27,7 @@ import { Pagination } from '@/components/Pagination';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { showSuccess, showError } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';
+import { Toggle } from '@/components/ui/toggle';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface EmailSettings {
@@ -548,16 +549,7 @@ export default function EmailSettingsPage() {
                       {t('emailSettings.smtp.enableEmailDesc')}
                     </p>
                   </div>
-                  <button
-                    onClick={() => setSettings({ ...settings, enabled: !settings.enabled })}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.enabled ? 'bg-green-600' : 'bg-muted/80'
-                      }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-card transition-transform ${settings.enabled ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                    />
-                  </button>
+                  <Toggle checked={settings.enabled} onChange={(v) => setSettings({ ...settings, enabled: v })} />
                 </div>
 
                 {/* SMTP Configuration */}

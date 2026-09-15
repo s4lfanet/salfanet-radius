@@ -8,6 +8,7 @@ import { formatWIB } from '@/lib/timezone';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import { apiAdmin } from '@/lib/api';
+import { Toggle } from '@/components/ui/toggle';
 import {
   SimpleModal,
   ModalHeader,
@@ -310,16 +311,7 @@ export default function BalanceManagementPage() {
                 : t('pppoe.autoRenewalInactiveDesc')}
             </p>
           </div>
-          <button
-            onClick={handleToggleAutoRenewal}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${user.autoRenewal ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'
-              }`}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${user.autoRenewal ? 'translate-x-6' : 'translate-x-1'
-                }`}
-            />
-          </button>
+          <Toggle checked={!!user.autoRenewal} onChange={() => handleToggleAutoRenewal()} />
         </div>
       </div>
 

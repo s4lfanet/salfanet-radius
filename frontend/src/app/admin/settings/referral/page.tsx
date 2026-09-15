@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
+import { Toggle } from '@/components/ui/toggle';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import { CyberCard, CyberButton } from '@/components/cyberpunk';
 import {
@@ -106,16 +107,7 @@ export default function ReferralSettingsPage() {
               </p>
             </div>
           </div>
-          <button
-            onClick={() => setConfig({ ...config, enabled: !config.enabled })}
-            className={`relative w-12 h-6 rounded-full transition-colors ${
-              config.enabled ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'
-            }`}
-          >
-            <span className={`absolute top-[3px] left-[3px] w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-transform ${
-              config.enabled ? 'translate-x-[24px]' : 'translate-x-0'
-            }`} />
-          </button>
+          <Toggle checked={config.enabled} onChange={(v) => setConfig({ ...config, enabled: v })} />
         </div>
       </CyberCard>
 
