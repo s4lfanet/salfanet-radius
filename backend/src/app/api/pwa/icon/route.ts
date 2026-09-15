@@ -25,14 +25,34 @@ function fallbackIcon(size: number): Buffer {
   return Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
 }
 
-async function resizeToSquare(inputBuffer: Buffer, size: number): Promise<Buffer> {
+async function resizeToSquare(inputBuffer: Buffer, size: number, maskable: boolean): Promise<Buffer> {
   // dynamic import to avoid build-time errors on environments without sharp
   const sharp = (await import('sharp')).default;
-  return sharp(inputBuffer)
-    .resize(size, size, {
-      fit: 'contain',
-      background: { r: 3, g: 19, b: 29, alpha: 1 }, // #03131d — matches app bg
+  const image = sharp(inputBuffer);
+  if (maskable) {
+    // Maskable icons are cropped by the OS — pad onto an opaque white
+    // background (logos uploaded here are typically dark-on-transparent)
+    // and shrink to the safe zone (~80%).
+    const inner = Math.round(size * 0.8);
+    const resized = await image
+      .resize(inner, inner, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .png()
+      .toBuffer();
+    return sharp({
+      create: {
+        width: size,
+        height: size,
+        channels: 4,
+        background: { r: 255, g: 255, b: 255, alpha: 1 },
+      },
     })
+      .composite([{ input: resized, gravity: 'center' }])
+      .png()
+      .toBuffer();
+  }
+  // 'any' purpose — keep transparency, pad to square
+  return image
+    .resize(size, size, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
     .png()
     .toBuffer();
 }
@@ -49,18 +69,19 @@ async function fetchExternalImage(url: string): Promise<Buffer | null> {
 }
 
 function getLogoPath(logoValue: string): string | null {
-  // Logo stored as relative path like /uploads/logos/xxx.png → resolve to disk
-  if (logoValue.startsWith('/uploads/') || logoValue.startsWith('uploads/')) {
-    const uploadDir = process.env.UPLOAD_DIR || '/var/data/salfanet/uploads';
-    const rel = logoValue.replace(/^\/uploads\//, '');
-    const candidates = [
-      path.join(uploadDir, rel),
-      path.join(process.cwd(), 'public', logoValue),
-      path.join('/var/www/salfanet-radius/public', logoValue),
-    ];
-    for (const p of candidates) {
-      if (existsSync(p)) return p;
-    }
+  // Logo stored as /api/uploads/... (DB format), /uploads/..., or uploads/...
+  const match = logoValue.match(/^\/?(?:api\/)?uploads\/(.+)$/);
+  if (!match) return null;
+  const uploadDir = process.env.UPLOAD_DIR || '/var/data/salfanet/uploads';
+  const rel = match[1];
+  const candidates = [
+    path.join(uploadDir, rel),
+    path.join(process.cwd(), 'public', 'uploads', rel),
+    path.join('/var/www/salfanet-radius/public', 'uploads', rel),
+    path.join('/var/www/salfanet-radius/frontend/public', 'uploads', rel),
+  ];
+  for (const p of candidates) {
+    if (existsSync(p)) return p;
   }
   return null;
 }
@@ -68,9 +89,10 @@ function getLogoPath(logoValue: string): string | null {
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const rawSize = parseInt(searchParams.get('size') || '192', 10);
-  const size = rawSize === 512 ? 512 : 192;
+  const size = rawSize === 512 ? 512 : rawSize === 180 ? 180 : 192;
+  const maskable = searchParams.get('maskable') === '1';
 
-  const cacheKey = `icon-${size}`;
+  const cacheKey = `icon-${size}-${maskable ? 'm' : 'a'}`;
   const cached = iconCache.get(cacheKey);
 
   // ETag check
@@ -114,7 +136,7 @@ export async function GET(req: NextRequest) {
   let finalBuffer: Buffer;
   try {
     if (iconBuffer) {
-      finalBuffer = await resizeToSquare(iconBuffer, size);
+      finalBuffer = await resizeToSquare(iconBuffer, size, maskable);
     } else {
       finalBuffer = fallbackIcon(size);
     }

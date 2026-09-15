@@ -9,8 +9,8 @@ export default function Head() {
       <meta name="theme-color" content="#06b6d4" />
       <meta name="mobile-web-app-capable" content="yes" />
       <link rel="manifest" href="/manifest.json" />
-      <link rel="apple-touch-icon" href="/pwa/icon-192.svg" />
-      <link rel="icon" href="/pwa/icon-192.svg" type="image/svg+xml" />
+      <link rel="apple-touch-icon" href="/api/pwa/icon?size=180&maskable=1" />
+      <link rel="icon" href="/api/pwa/icon?size=192" type="image/png" />
     </>
   );
 }
