@@ -207,6 +207,96 @@ export async function runInvoiceGenerate(): Promise<{ generated: number; skipped
 }
 
 /**
+ * Auto-Cancel Stale Invoices — cancel PENDING/OVERDUE invoices for customers
+ * who have already renewed past the invoice's due date.
+ *
+ * Scenario: customer pays invoice A (extends expiry to Nov 3). Invoice A was
+ * for October. Later, an old October invoice (PENDING/OVERDUE, dueDate Oct 3)
+ * still exists because it was never marked PAID — it was superseded by the
+ * renewal. This cron cancels those stale invoices so they don't clutter the
+ * dashboard or trigger false overdue reminders.
+ *
+ * Logic: invoice is PENDING/OVERDUE AND user.status='active' AND
+ *        user.expiredAt > invoice.dueDate (user already renewed past due date)
+ */
+export async function runInvoiceAutoCancel(): Promise<{ cancelled: number; total: number; details: string[] }> {
+  const now = await nowWIBAsync();
+  const details: string[] = [];
+
+  // Find stale invoices: PENDING/OVERDUE where the customer has already
+  // renewed (expiredAt > invoice.dueDate) and is still active.
+  // Only applies to PREPAID users (expiredAt is not null).
+  const staleInvoices = await prisma.invoice.findMany({
+    where: {
+      status: { in: ['PENDING', 'OVERDUE'] },
+      user: {
+        status: 'active',
+        expiredAt: { not: null },
+      },
+    },
+    select: {
+      id: true,
+      invoiceNumber: true,
+      amount: true,
+      dueDate: true,
+      status: true,
+      customerName: true,
+      userId: true,
+      user: {
+        select: {
+          name: true,
+          username: true,
+          expiredAt: true,
+          status: true,
+        },
+      },
+    },
+  });
+
+  // Filter: only cancel invoices where user.expiredAt > invoice.dueDate
+  // (the user has already renewed past this invoice's due date)
+  const toCancel = staleInvoices.filter((inv) => {
+    if (!inv.user?.expiredAt) return false;
+    return inv.user.expiredAt > inv.dueDate;
+  });
+
+  if (toCancel.length === 0) {
+    return { cancelled: 0, total: staleInvoices.length, details: [] };
+  }
+
+  // Cancel the stale invoices
+  const ids = toCancel.map((inv) => inv.id);
+  const result = await prisma.invoice.updateMany({
+    where: { id: { in: ids } },
+    data: { status: 'CANCELLED' },
+  });
+
+  // Log each cancellation
+  for (const inv of toCancel) {
+    const detail = `${inv.invoiceNumber} (${inv.customerName || inv.user?.username || 'unknown'}, due ${formatInTimeZone(inv.dueDate, WIB_TIMEZONE, 'yyyy-MM-dd')}, user expired ${inv.user?.expiredAt ? formatInTimeZone(inv.user.expiredAt, WIB_TIMEZONE, 'yyyy-MM-dd') : 'null'})`;
+    details.push(detail);
+    console.log(`[INVOICE_AUTO_CANCEL] Cancelled ${detail}`);
+  }
+
+  // Log to activity log
+  try {
+    const { logActivity } = await import('@/server/services/activity-log.service');
+    await logActivity({
+      username: 'system',
+      action: 'auto_cancel_stale_invoice',
+      description: `Auto-cancelled ${result.count} stale invoice(s): ${details.join('; ').slice(0, 500)}`,
+      module: 'invoice',
+      metadata: { cancelledIds: ids, count: result.count },
+    });
+  } catch (e) {
+    console.warn('[INVOICE_AUTO_CANCEL] Failed to log activity:', e);
+  }
+
+  console.log(`[INVOICE_AUTO_CANCEL] cancelled=${result.count} of ${staleInvoices.length} checked`);
+  return { cancelled: result.count, total: staleInvoices.length, details };
+}
+
+/**
  * Invoice Status Update — change PENDING → OVERDUE when dueDate < now.
  */
 export async function runInvoiceStatusUpdate(): Promise<{ updated: number }> {

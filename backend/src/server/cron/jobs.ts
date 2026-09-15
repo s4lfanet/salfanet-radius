@@ -25,6 +25,7 @@ export const CRON_JOB_DEFS: CronJobDef[] = [
   { type: 'invoice_generate',      name: 'Invoice Generate',       description: 'Generate invoice bulanan (postpaid)',        defaultSchedule: '0 7 * * *',   defaultScheduleLabel: 'Daily at 7 AM' },
   { type: 'invoice_reminder',      name: 'Invoice Reminder',       description: 'Kirim reminder invoice jatuh tempo',         defaultSchedule: '0 * * * *',   defaultScheduleLabel: 'Every hour' },
   { type: 'invoice_status_update', name: 'Invoice Status Update',  description: 'Update status invoice (overdue/paid)',       defaultSchedule: '0 * * * *',   defaultScheduleLabel: 'Every hour' },
+  { type: 'invoice_auto_cancel',  name: 'Invoice Auto-Cancel',    description: 'Batalkan invoice basi (pelanggan sudah perpanjang)', defaultSchedule: '0 6 * * *',   defaultScheduleLabel: 'Daily at 6 AM' },
   { type: 'notification_check',    name: 'Notification Check',     description: 'Cek notifikasi expired/overdue/pending',     defaultSchedule: '0 */6 * * *',  defaultScheduleLabel: 'Every 6 hours' },
   { type: 'session_monitor',       name: 'Session Monitor',        description: 'Monitor sesi mencurigakan',                  defaultSchedule: '*/15 * * * *', defaultScheduleLabel: 'Every 15 minutes' },
   { type: 'disconnect_sessions',   name: 'Disconnect Sessions',    description: 'Disconnect sesi user yang sudah isolir/stop',defaultSchedule: '*/5 * * * *',  defaultScheduleLabel: 'Every 5 minutes' },

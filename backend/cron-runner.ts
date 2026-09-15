@@ -94,6 +94,7 @@ const CRON_JOB_DEFS: CronJobDef[] = [
   { type: 'invoice_generate',      name: 'Invoice Generate',       description: 'Generate invoice bulanan', defaultSchedule: '0 7 * * *' },
   { type: 'invoice_reminder',      name: 'Invoice Reminder',       description: 'Reminder invoice jatuh tempo', defaultSchedule: '0 * * * *' },
   { type: 'invoice_status_update', name: 'Invoice Status Update',  description: 'Update status invoice', defaultSchedule: '0 * * * *' },
+  { type: 'invoice_auto_cancel',  name: 'Invoice Auto-Cancel',    description: 'Batalkan invoice basi (pelanggan sudah perpanjang)', defaultSchedule: '0 6 * * *' },
   { type: 'notification_check',    name: 'Notification Check',     description: 'Cek notifikasi expired/overdue', defaultSchedule: '0 */6 * * *' },
   { type: 'session_monitor',       name: 'Session Monitor',        description: 'Monitor sesi mencurigakan', defaultSchedule: '*/15 * * * *' },
   { type: 'disconnect_sessions',   name: 'Disconnect Sessions',    description: 'Disconnect sesi stop/blocked', defaultSchedule: '*/5 * * * *' },
