@@ -6,6 +6,56 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.21.0] — 2026-09-15 — Hotspot Session Sync Fixes + Dashboard Log Centralization + Invoice/PWA Fixes
+
+### Summary
+Perbaikan besar pada sinkronisasi sesi hotspot voucher dengan RADIUS (ghost session, timeleft, expired voucher), sentralisasi log aktivitas/RADIUS/system status ke halaman terpisah, fix generate tagihan PREPAID per bulan, dan PWA icon otomatis dari company logo.
+
+### Hotspot Voucher Session Sync
+- **[CRITICAL]** Voucher EXPIRED masih terbaca online di monitoring — synthetic radacct tidak pernah ditutup
+- **[FIX]** Cron menutup radacct voucher EXPIRED — voucher kadaluarsa hilang dari active session dan ditolak RADIUS
+- **[FIX]** `pppoe_session_sync` salah menutup radacct voucher hotspot sebagai "stale"
+- **[FIX]** Synthetic radacct hanya dibuat untuk voucher yang benar-benar terhubung di MikroTik active list
+- **[FIX]** `timeleft` voucher dipertahankan saat migrasi RADIUS dan re-authentication — tidak reset ke validity penuh
+- **[FIX]** Waiting voucher mendapat full profile validity sebagai `Session-Timeout`; active voucher memakai sisa waktu dari DB
+
+### RADIUS & Session Monitoring
+- **[FIX]** Bulk migrate/sync RADIUS sekarang benar-benar disable PPP secrets + sync profile attributes (radreply)
+- **[FIX]** PPPoE active sessions tidak tampil di dashboard untuk router mode RADIUS
+- **[FIX]** Uptime & start time FreeRADIUS salah parsing timezone WIB
+- **[FIX]** Audit API role agent/technician/customer setelah migrasi RADIUS
+- **[FEATURE]** RADIUS server memilih IP private/local VPS, bukan IP publik — NAS MikroTik dikenali FreeRADIUS
+
+### Dashboard & Navigasi
+- **[FEATURE]** Activity Log, RADIUS Auth Log, dan System Status dipindah dari dashboard ke halaman terpusat
+- **[FEATURE]** Halaman baru `/admin/freeradius/auth-log` — log autentikasi RADIUS dari tabel `radpostauth` (stats accept/reject, filter, search, pagination)
+- **[UI]** Kategori menu sidebar default expanded
+- **[UI]** Menu Laporan dipindah ke kategori Keuangan, label diubah jadi "Export Data"
+- **[CHORE]** Halaman analitik laporan dihapus — tidak relevan untuk perusahaan kecil
+
+### Billing
+- **[CRITICAL]** Generate tagihan PREPAID mengabaikan bulan target — `dueDate = user.expiredAt` mentah, sehingga generate Oktober membuat invoice due November dan generate November di-skip sebagai duplikat
+- **[FIX]** PREPAID `dueDate` = tanggal expired di bulan target (manual generate + cron `invoice_generate`)
+- **[FIX]** Filter bulan list invoice untuk tagihan belum bayar memakai `dueDate` (periode tagihan), bukan `createdAt`
+- **[UI]** Setelah generate sukses, filter bulan otomatis pindah ke bulan target
+
+### PWA
+- **[FEATURE]** Icon PWA otomatis dari company logo — endpoint `/api/pwa/icon` resize logo via `sharp`
+- **[FIX]** Logo tersimpan sebagai `/api/uploads/...` tidak dikenali resolver — selalu jatuh ke icon statis
+- **[FEATURE]** Icon maskable (padding zona aman + background opak) dan apple-touch-icon 180px dinamis
+- **[CHORE]** Bump service worker cache ke v30
+
+### UI & Laporan
+- **[UI]** Redesign modal Detail/Edit Pelanggan — seksi berkelompok (Akun & Koneksi, Data Pelanggan, Langganan & Tagihan, Dokumen, Pendaftaran), pill status, tab underline, footer sticky; hapus 60 override warna hardcoded yang rusak di dark mode
+- **[FIX]** Background logo login semua role + sidebar jadi `bg-white/90` — logo gelap terlihat di kedua tema
+- **[FIX]** Data laporan/export diterjemahkan ke Bahasa Indonesia (status invoice/pelanggan, tipe langganan, metode pembayaran)
+
+### Cleanup
+- **[CHORE]** Hapus konfigurasi AI agent, script debug, dan file non-production dari repo
+- **[CHORE]** Bump root & frontend package.json version ke 5.21.0
+
+---
+
 ## [5.20.0] — 2026-09-07 — Bulk Edit PPPoE + Migrasi Local→RADIUS + UI Icon Audit
 
 ### Summary
