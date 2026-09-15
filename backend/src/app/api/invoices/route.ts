@@ -84,13 +84,15 @@ export async function GET(request: NextRequest) {
 
     const where: any = {};
 
-    // Month filter — applies to paidAt for PAID invoices, createdAt for others
+    // Month filter — PAID invoices by paidAt (kapan dibayar), others by dueDate
+    // (periode tagihan). dueDate dipakai karena invoice Oktober bisa digenerate
+    // lebih awal (createdAt September) tapi tetap "tagihan Oktober".
     if (monthParam && /^\d{4}-\d{2}$/.test(monthParam)) {
       const [y, m] = monthParam.split('-').map(Number);
       const start = startOfDayWIBtoUTC(new Date(Date.UTC(y, m - 1, 1)));
       const end = endOfDayWIBtoUTC(new Date(Date.UTC(y, m, 0))); // last day of month
       const isPaidTab = status === 'PAID';
-      where[isPaidTab ? 'paidAt' : 'createdAt'] = { gte: start, lte: end };
+      where[isPaidTab ? 'paidAt' : 'dueDate'] = { gte: start, lte: end };
     }
 
     if (status && status !== 'all') {

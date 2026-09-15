@@ -761,6 +761,9 @@ export default function InvoicesPage() {
       });
       if (data.success) {
         setGenResult(data);
+        // Arahkan filter bulan ke bulan target agar tagihan yang baru
+        // digenerate langsung terlihat di list
+        setInvoiceMonth(genMonth);
       } else {
         await showError(data.error || 'Gagal generate tagihan');
       }

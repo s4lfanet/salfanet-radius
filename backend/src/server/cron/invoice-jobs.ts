@@ -85,7 +85,13 @@ export async function runInvoiceGenerate(): Promise<{ generated: number; skipped
 
       if (subscriptionType === 'PREPAID') {
         if (!user.expiredAt) { skipped++; continue; }
-        dueDate = user.expiredAt;
+        // Due date = tanggal expired (hari, WIB) di bulan berjalan — bukan expiredAt
+        // mentah. Kalau expiredAt dipakai apa adanya, invoice bisa jatuh di bulan lain
+        // dari bulan generate sehingga dedup per-bulan salah menganggapnya duplikat.
+        const expDay = parseInt(formatInTimeZone(user.expiredAt, WIB_TIMEZONE, 'd'), 10);
+        const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+        const day = Math.min(expDay, daysInMonth);
+        dueDate = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
         invoiceType = 'RENEWAL';
       } else {
         const billingDay = (user as any).billingDay ?? 1;

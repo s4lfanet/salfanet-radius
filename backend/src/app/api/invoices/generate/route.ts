@@ -5,6 +5,8 @@ import { nanoid } from 'nanoid';
 import { randomBytes } from 'crypto';
 import { badRequest } from '@/lib/api-response';
 import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
+import { formatInTimeZone } from 'date-fns-tz';
+import { WIB_TIMEZONE } from '@/lib/timezone';
 
 /**
  * POST /api/invoices/generate
@@ -115,7 +117,13 @@ export async function POST(request: NextRequest) {
             skipped++;
             continue;
           }
-          dueDate = user.expiredAt;
+          // Due date = tanggal expired (hari) di bulan target, bukan expiredAt mentah.
+          // Kalau pakai expiredAt apa adanya, generate "Oktober" untuk pelanggan yang
+          // expired 3 Nov menghasilkan invoice due 3 Nov — lalu generate "November"
+          // di-skip dedup dan tagihan Oktober tidak pernah ada.
+          const expDay = parseInt(formatInTimeZone(new Date(user.expiredAt), WIB_TIMEZONE, 'd'), 10);
+          const daysInMonth = new Date(year, month, 0).getDate();
+          dueDate = new Date(year, month - 1, Math.min(expDay, daysInMonth), 23, 59, 59, 999);
           invoiceType = 'RENEWAL';
         } else {
           // POSTPAID: due date = billingDay of targetMonth
