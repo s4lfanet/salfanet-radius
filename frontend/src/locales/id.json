@@ -4277,6 +4277,7 @@
     "typeInvoice": "Invoice",
     "typePayment": "Pembayaran",
     "typeCustomer": "Pelanggan",
+    "typeProfile": "Pendapatan per Paket",
     "loading": "Memuat...",
     "showData": "Tampilkan Data",
     "exporting": "Mengekspor...",
