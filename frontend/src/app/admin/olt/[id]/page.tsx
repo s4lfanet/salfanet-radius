@@ -19,7 +19,7 @@ import {
   Server, RefreshCw, AlertCircle, Wifi, WifiOff,
   Thermometer, Clock, Activity, ArrowLeft, Save, TestTube,
   Power, Download, CheckCircle, Signal, Plus, X, Cpu, Zap,
-  Eye, UserPlus, Trash2,
+  Eye, UserPlus, Trash2, Settings,
 } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
 import { showError, showSuccess, showInfo, showWarning, showConfirm } from '@/lib/sweetalert';
@@ -1728,6 +1728,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
   const [registeringOnu, setRegisteringOnu] = useState<ONU | null>(null);
   const [detailOnu, setDetailOnu] = useState<ONU | null>(null);
   const [assigningOnu, setAssigningOnu] = useState<ONU | null>(null);
+  const [editingConfigOnu, setEditingConfigOnu] = useState<ONU | null>(null);
 
   // Settings state
   const [settings, setSettings] = useState({
@@ -2321,6 +2322,14 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                               Assign
                             </button>
                             <button
+                              onClick={() => setEditingConfigOnu(onu)}
+                              disabled={deletingOnu === onu.id || rebootingOnu !== null || batchRebooting}
+                              className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-cyan-600 text-white rounded-md hover:bg-cyan-700 disabled:opacity-50 transition-colors"
+                            >
+                              <Settings className="w-3 h-3" />
+                              Config
+                            </button>
+                            <button
                               onClick={() => setConfirmReboot(onu.id)}
                               disabled={deletingOnu === onu.id || rebootingOnu !== null || batchRebooting}
                               className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-orange-500 text-white rounded-md hover:bg-orange-600 disabled:opacity-50 transition-colors"
@@ -2702,6 +2711,166 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
           onSuccess={fetchOLT}
         />
       )}
+
+      {editingConfigOnu && (
+        <ONUConfigEditModal
+          oltId={id}
+          onu={editingConfigOnu}
+          vendor={olt?.vendor ?? null}
+          onClose={() => setEditingConfigOnu(null)}
+          onSuccess={async () => { setEditingConfigOnu(null); await handleSyncOLT({ silent: true }); }}
+        />
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// ONU Config Edit Modal — edit T-CONT/GEM/service-port ONU yang sudah terdaftar
+// ============================================================================
+function ONUConfigEditModal({
+  oltId,
+  onu,
+  vendor,
+  onClose,
+  onSuccess,
+}: {
+  oltId: string;
+  onu: ONU;
+  vendor: string | null;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const isZTE = (vendor ?? '').toLowerCase() === 'zte';
+  // Interface name format: gpon-onu_frame/slot/port:onuId
+  const ponPort = onu.port;
+  const interfaceName = `gpon-onu_${onu.frame}/${onu.slot}/${ponPort}:${onu.onuId}`;
+
+  const [description, setDescription] = useState(onu.description ?? '');
+  const [tcontProfile, setTcontProfile] = useState('1G');
+  const [primaryVlan, setPrimaryVlan] = useState('');
+  const [secondaryVlan, setSecondaryVlan] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSave = async () => {
+    setError(null);
+    const vlan1 = parseInt(primaryVlan);
+    const vlan2 = secondaryVlan ? parseInt(secondaryVlan) : undefined;
+    if (!primaryVlan || isNaN(vlan1) || vlan1 < 1 || vlan1 > 4094) {
+      setError('Primary VLAN wajib diisi (1-4094)');
+      return;
+    }
+    if (secondaryVlan && (isNaN(vlan2!) || vlan2! < 1 || vlan2! > 4094)) {
+      setError('Secondary VLAN harus 1-4094');
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await apiAdmin<{ success?: boolean; error?: string; output?: string }>(
+        `/api/olt/${oltId}/onus/${onu.id}/config`,
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            interfaceName,
+            description: description || undefined,
+            tcontProfile: tcontProfile || undefined,
+            primaryVlan: vlan1,
+            secondaryVlan: vlan2,
+          }),
+        }
+      );
+      if (!res.success) throw new Error(res.error ?? 'Gagal update config ONU');
+      await showSuccess(`Config ONU ${onu.serialNumber ?? interfaceName} diperbarui`);
+      onSuccess();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(2,6,23,0.72)' }}>
+      <div className="w-full max-w-md rounded-xl shadow-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-2">
+            <Settings className="h-4 w-4 text-cyan-500" />
+            <span className="text-sm font-bold text-foreground">Edit Config ONU</span>
+          </div>
+          <button onClick={onClose} className="text-slate-500 hover:text-slate-900 dark:hover:text-white text-xl leading-none">×</button>
+        </div>
+        <div className="p-5 space-y-4">
+          {!isZTE && (
+            <div className="text-xs p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 text-amber-700 dark:text-amber-400">
+              ⚠ Edit config ONU saat ini hanya didukung untuk OLT ZTE. Vendor terdeteksi: {vendor ?? 'unknown'}.
+            </div>
+          )}
+          <div className="space-y-1.5">
+            <Label className="text-xs">Interface</Label>
+            <code className="block text-xs font-mono text-cyan-600 dark:text-cyan-400 bg-slate-50 dark:bg-slate-900 rounded p-2 border border-slate-200 dark:border-slate-800">
+              {interfaceName}
+            </code>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Description / Name</Label>
+            <Input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="cth: Pelanggan-A"
+              className="text-sm"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">T-CONT Profile</Label>
+            <Input
+              value={tcontProfile}
+              onChange={(e) => setTcontProfile(e.target.value)}
+              placeholder="cth: 1G, 500M"
+              className="text-sm"
+            />
+            <p className="text-[10px] text-muted-foreground">Profile T-CONT yang ada di OLT (cek "show gpon profile tcont").</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Primary VLAN *</Label>
+              <Input
+                type="number"
+                value={primaryVlan}
+                onChange={(e) => setPrimaryVlan(e.target.value)}
+                placeholder="cth: 100"
+                className="text-sm"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Secondary VLAN</Label>
+              <Input
+                type="number"
+                value={secondaryVlan}
+                onChange={(e) => setSecondaryVlan(e.target.value)}
+                placeholder="opsional"
+                className="text-sm"
+              />
+            </div>
+          </div>
+          <div className="text-[10px] text-muted-foreground p-2 rounded bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+            ⚠ Aksi ini akan <b>menimpa</b> T-CONT, GEM port, dan service-port yang ada.
+            PPPoE/WiFi/TR-069 tidak diubah — gunakan register ulang atau GenieACS untuk perubahan layer-2/3.
+          </div>
+          {error && (
+            <div className="text-xs p-2 rounded bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400">
+              {error}
+            </div>
+          )}
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={onClose} disabled={saving}>Batal</Button>
+            <Button onClick={handleSave} disabled={saving || !isZTE}>
+              {saving ? <RefreshCw className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
+              {saving ? 'Menyimpan...' : 'Simpan Config'}
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

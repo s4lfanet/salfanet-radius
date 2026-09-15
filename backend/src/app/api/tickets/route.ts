@@ -303,6 +303,7 @@ export async function PUT(req: NextRequest) {
       assignedToType,
       subject,
       description,
+      estimatedRepair,
     } = body;
 
     if (!id) {
@@ -343,6 +344,7 @@ export async function PUT(req: NextRequest) {
     if (assignedToType !== undefined) updateData.assignedToType = assignedToType || null;
     if (subject !== undefined) updateData.subject = subject;
     if (description !== undefined) updateData.description = description;
+    if (estimatedRepair !== undefined) updateData.estimatedRepair = estimatedRepair || null;
 
     const ticket = await prisma.ticket.update({
       where: { id },

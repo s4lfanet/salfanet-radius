@@ -19,7 +19,7 @@ function renderWithLinks(text: string) {
 import Link from 'next/link';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError } from '@/lib/sweetalert';
-import { ArrowLeft, Send, User, Clock, Lock, MessageCircle, Edit2, Save } from 'lucide-react';
+import { ArrowLeft, Send, User, Clock, Lock, MessageCircle, Edit2, Save, X } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
@@ -50,6 +50,7 @@ interface TicketDetail {
   customerEmail?: string;
   assignedToId?: string;
   assignedToType?: string;
+  estimatedRepair?: string | null;
   category?: {
     id: string;
     name: string;
@@ -73,6 +74,8 @@ export default function AdminTicketDetailPage() {
   const [editingPriority, setEditingPriority] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<TicketStatus>('OPEN');
   const [selectedPriority, setSelectedPriority] = useState<TicketPriority>('MEDIUM');
+  const [editingETA, setEditingETA] = useState(false);
+  const [etaValue, setEtaValue] = useState('');
 
   const ticketQueryKey = buildQueryKey('/api/tickets', { id: ticketId });
   const messagesQueryKey = buildQueryKey('/api/tickets/messages', { ticketId, includeInternal: true });
@@ -96,6 +99,7 @@ export default function AdminTicketDetailPage() {
     if (ticket) {
       setSelectedStatus(ticket.status);
       setSelectedPriority(ticket.priority);
+      setEtaValue(ticket.estimatedRepair || '');
     }
   }, [ticket]);
 
@@ -164,6 +168,24 @@ export default function AdminTicketDetailPage() {
       await showSuccess(t('ticket.priorityUpdated') || 'Priority updated successfully');
     } catch (error: unknown) {
       console.error('Failed to update priority:', error);
+      await showError((error instanceof Error ? error.message : String(error)) || t('ticket.updateFailed'));
+    }
+  };
+
+  const handleUpdateETA = async () => {
+    try {
+      await apiAdmin('/api/tickets', {
+        method: 'PUT',
+        body: JSON.stringify({
+          id: ticketId,
+          estimatedRepair: etaValue,
+        }),
+      });
+      queryClient.invalidateQueries({ queryKey: ticketQueryKey });
+      setEditingETA(false);
+      await showSuccess('Perkiraan perbaikan diperbarui');
+    } catch (error: unknown) {
+      console.error('Failed to update ETA:', error);
       await showError((error instanceof Error ? error.message : String(error)) || t('ticket.updateFailed'));
     }
   };
@@ -472,6 +494,45 @@ export default function AdminTicketDetailPage() {
                 <span className="text-foreground">
                   {ticket.assignedToId ? `${ticket.assignedToType} #${ticket.assignedToId}` : t('ticket.unassigned')}
                 </span>
+              </div>
+              {/* Perkiraan Perbaikan (ETA) */}
+              <div>
+                <span className="text-muted-foreground block mb-1">Perkiraan Perbaikan:</span>
+                {editingETA ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={etaValue}
+                      onChange={(e) => setEtaValue(e.target.value)}
+                      placeholder="cth: 2 jam, Besok sore, 3 Nov 2026"
+                      className="flex-1 border border-border rounded px-2 py-1 text-sm bg-background text-foreground"
+                      autoFocus
+                    />
+                    <button onClick={handleUpdateETA} className="text-green-600 hover:text-green-700">
+                      <Save size={16} />
+                    </button>
+                    <button
+                      onClick={() => { setEditingETA(false); setEtaValue(ticket.estimatedRepair || ''); }}
+                      className="text-red-500 hover:text-red-600"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setEditingETA(true)}
+                    className="inline-flex items-center gap-1 text-foreground hover:text-primary"
+                  >
+                    {ticket.estimatedRepair ? (
+                      <span className="px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs">
+                        {ticket.estimatedRepair}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground italic">Belum ditentukan</span>
+                    )}
+                    <Edit2 size={12} className="text-muted-foreground" />
+                  </button>
+                )}
               </div>
             </div>
           </div>
