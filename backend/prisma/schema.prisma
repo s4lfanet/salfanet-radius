@@ -2250,6 +2250,9 @@ model ticket {
   closedAt       DateTime?
   resolvedAt     DateTime?
   lastResponseAt DateTime?
+  /// Perkiraan waktu perbaikan (ETA repair) — diisi teknisi/admin.
+  /// Format ISO string atau teks bebas seperti "2 jam", "Besok sore".
+  estimatedRepair String?         @db.VarChar(255)
   latitude       Float?
   longitude      Float?
   locationTag    String?         @db.VarChar(500)

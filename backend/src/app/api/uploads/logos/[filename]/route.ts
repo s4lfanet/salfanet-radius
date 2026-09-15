@@ -49,13 +49,26 @@ export async function GET(
 
     const contentType = contentTypes[ext];
 
+    // Security headers — SVG can carry <script>; sandbox isolates it from
+    // the app origin so any embedded script cannot access cookies/storage.
+    const isSvg = ext === '.svg';
+    const headers: Record<string, string> = {
+      'Content-Type': contentType,
+      'Cache-Control': 'public, max-age=31536000, immutable',
+      'X-Content-Type-Options': 'nosniff',
+    };
+    if (isSvg) {
+      // Treat the response as opaque content: no scripts run, no same-origin
+      // access, no form submission, no popups. Logo still renders as <img src>.
+      headers['Content-Security-Policy'] =
+        "default-src 'none'; img-src 'self'; style-src 'none'; script-src 'none'; sandbox";
+      headers['Content-Disposition'] = `inline; filename="${filename}"`;
+    }
+
     // Return file with proper headers
     return new NextResponse(fileBuffer, {
       status: 200,
-      headers: {
-        'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=31536000, immutable',
-      },
+      headers,
     });
   } catch (error) {
     console.error('Error serving logo:', error);

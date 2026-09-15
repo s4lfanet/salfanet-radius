@@ -55,7 +55,23 @@ export async function POST(request: NextRequest) {
 
     // Convert file to buffer and save
     const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    let buffer = Buffer.from(bytes);
+
+    // Sanitize SVG: strip <script>, event handlers (on*=), and javascript: URLs.
+    // Defense-in-depth even though serve route also sets CSP sandbox.
+    if (file.type === 'image/svg+xml') {
+      let svg = buffer.toString('utf8');
+      svg = svg.replace(/<script[\s\S]*?<\/script>/gi, '');
+      svg = svg.replace(/\son\w+\s*=\s*"[^"]*"/gi, '');
+      svg = svg.replace(/\son\w+\s*=\s*'[^']*'/gi, '');
+      svg = svg.replace(/\son\w+\s*=\s*[^\s>]+/gi, '');
+      svg = svg.replace(/xlink:href\s*=\s*"\s*javascript:[^"]*"/gi, 'xlink:href="#"');
+      svg = svg.replace(/xlink:href\s*=\s*'\s*javascript:[^']*'/gi, "xlink:href='#'");
+      svg = svg.replace(/href\s*=\s*"\s*javascript:[^"]*"/gi, 'href="#"');
+      svg = svg.replace(/href\s*=\s*'\s*javascript:[^']*'/gi, "href='#'");
+      buffer = Buffer.from(svg, 'utf8');
+    }
+
     await writeFile(filepath, buffer);
 
     // Return API URL (served via API route)
