@@ -8,6 +8,7 @@ import { ModalInput, ModalSelect, ModalLabel } from '@/components/cyberpunk';
 import { todayWIBStr, parseDateAsWIB } from '@/lib/timezone';
 import { pppoeApi, networkApi, buildUrl } from '@/lib/api';
 import type { PppoeUser } from '@/lib/api';
+import { Toggle } from '@/components/ui/toggle';
 
 interface Profile { id: string; name: string; groupName: string; price: number; }
 interface Router { id: string; name: string; nasname: string; ipAddress: string; authMode?: string; }
@@ -521,9 +522,7 @@ export default function NewPppoeUserPage() {
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Tipe Koneksi</p>
                 <div className={`rounded-xl border p-3 flex items-start gap-3 cursor-pointer transition-all select-none ${hasPppoeAccount ? 'border-primary/50 bg-primary/5' : 'border-amber-400/50 bg-amber-50 dark:bg-amber-950/20'}`}
                   onClick={() => setHasPppoeAccount(!hasPppoeAccount)}>
-                  <div className={`mt-0.5 w-8 h-4 rounded-full flex-shrink-0 relative transition-colors ${hasPppoeAccount ? 'bg-primary' : 'bg-amber-400'}`}>
-                    <span className={`absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-all ${hasPppoeAccount ? 'left-4' : 'left-0.5'}`} />
-                  </div>
+                  <Toggle checked={hasPppoeAccount} onChange={setHasPppoeAccount} className="mt-0.5" />
                   <div>
                     {hasPppoeAccount ? (
                       <>

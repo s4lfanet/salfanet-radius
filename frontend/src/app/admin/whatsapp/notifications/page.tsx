@@ -5,6 +5,7 @@ import { Bell } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';
+import { Toggle } from '@/components/ui/toggle';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface ReminderSettings {
@@ -169,12 +170,7 @@ export default function NotificationSettingsPage() {
                 <p className="text-xs font-medium text-foreground">{t('whatsapp.enableAutoReminder')}</p>
                 <p className="text-[10px] text-muted-foreground dark:text-muted-foreground">{t('whatsapp.enableAutoReminderDesc')}</p>
               </div>
-              <button
-                onClick={() => setEnabled(!enabled)}
-                className={`relative w-10 h-5 rounded-full transition-colors ${enabled ? 'bg-teal-600' : 'bg-muted/80'}`}
-              >
-                <span className={`absolute top-[2px] left-[2px] w-[16px] h-[16px] bg-card rounded-full shadow transition-transform ${enabled ? 'translate-x-[20px]' : 'translate-x-0'}`} />
-              </button>
+              <Toggle checked={enabled} onChange={setEnabled} />
             </div>
 
             {/* Reminder Time */}
@@ -272,12 +268,7 @@ export default function NotificationSettingsPage() {
                 <p className="text-xs font-medium text-foreground">{t('whatsapp.enableOtp')}</p>
                 <p className="text-[10px] text-muted-foreground dark:text-muted-foreground">{t('whatsapp.enableOtpDesc')}</p>
               </div>
-              <button
-                onClick={() => setOtpEnabled(!otpEnabled)}
-                className={`relative w-10 h-5 rounded-full transition-colors ${otpEnabled ? 'bg-teal-600' : 'bg-muted/80'}`}
-              >
-                <span className={`absolute top-[2px] left-[2px] w-[16px] h-[16px] bg-card rounded-full shadow transition-transform ${otpEnabled ? 'translate-x-[20px]' : 'translate-x-0'}`} />
-              </button>
+              <Toggle checked={otpEnabled} onChange={setOtpEnabled} />
             </div>
 
             {/* OTP Expiry */}
@@ -385,12 +376,7 @@ export default function NotificationSettingsPage() {
                 <p className="text-xs font-medium text-foreground">{t('whatsapp.randomOrder')}</p>
                 <p className="text-[10px] text-muted-foreground dark:text-muted-foreground">{t('whatsapp.randomOrderDesc')}</p>
               </div>
-              <button
-                onClick={() => setRandomize(!randomize)}
-                className={`relative w-10 h-5 rounded-full transition-colors ${randomize ? 'bg-teal-600' : 'bg-muted/80'}`}
-              >
-                <span className={`absolute top-[2px] left-[2px] w-[16px] h-[16px] bg-card rounded-full shadow transition-transform ${randomize ? 'translate-x-[20px]' : 'translate-x-0'}`} />
-              </button>
+              <Toggle checked={randomize} onChange={setRandomize} />
             </div>
 
             {/* Info Box */}

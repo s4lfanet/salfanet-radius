@@ -22,6 +22,7 @@ import { showSuccess, showError } from '@/lib/sweetalert'
 import { usePermissions } from '@/hooks/usePermissions'
 import { PERMISSIONS } from '@/lib/permissions'
 import { useTranslation } from '@/hooks/useTranslation'
+import { Toggle } from '@/components/ui/toggle'
 
 interface BotSettings {
   enabled: boolean
@@ -246,13 +247,7 @@ export default function TelegramBotSettingsPage() {
             <label className="text-sm font-semibold">Aktifkan Bot</label>
             <p className="text-xs text-muted-foreground">Izinkan bot menerima dan memproses pesan</p>
           </div>
-          <button
-            type="button"
-            onClick={() => setForm({ ...form, enabled: !form.enabled })}
-            className={`relative h-6 w-11 rounded-full transition-colors ${form.enabled ? 'bg-teal-600' : 'bg-muted'}`}
-          >
-            <span className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white transition-transform ${form.enabled ? 'translate-x-5' : ''}`} />
-          </button>
+          <Toggle checked={form.enabled} onChange={(v) => setForm({ ...form, enabled: v })} />
         </div>
 
         {/* Bot Token */}
@@ -342,48 +337,33 @@ export default function TelegramBotSettingsPage() {
             <Activity className="w-3.5 h-3.5" /> Perintah yang Diaktifkan
           </label>
           <div className="space-y-2.5">
-            <label className="flex items-center justify-between p-3 rounded-lg border border-input bg-background cursor-pointer hover:bg-muted/30">
+            <div className="flex items-center justify-between p-3 rounded-lg border border-input bg-background cursor-pointer hover:bg-muted/30" onClick={() => setForm({ ...form, enableRedaman: !form.enableRedaman })}>
               <div>
                 <p className="text-sm font-medium flex items-center gap-1.5">
                   <Search className="w-3.5 h-3.5 text-teal-600" /> /redaman
                 </p>
                 <p className="text-xs text-muted-foreground">Cek redaman/sinyal ONU via GenieACS</p>
               </div>
-              <input
-                type="checkbox"
-                checked={form.enableRedaman}
-                onChange={(e) => setForm({ ...form, enableRedaman: e.target.checked })}
-                className="w-4 h-4 accent-teal-600"
-              />
-            </label>
-            <label className="flex items-center justify-between p-3 rounded-lg border border-input bg-background cursor-pointer hover:bg-muted/30">
+              <Toggle checked={form.enableRedaman} onChange={(v) => setForm({ ...form, enableRedaman: v })} />
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-lg border border-input bg-background cursor-pointer hover:bg-muted/30" onClick={() => setForm({ ...form, enableCekPelanggan: !form.enableCekPelanggan })}>
               <div>
                 <p className="text-sm font-medium flex items-center gap-1.5">
                   <Users className="w-3.5 h-3.5 text-teal-600" /> /cekpelanggan
                 </p>
                 <p className="text-xs text-muted-foreground">Cari detail pelanggan (nama/username/ID/HP)</p>
               </div>
-              <input
-                type="checkbox"
-                checked={form.enableCekPelanggan}
-                onChange={(e) => setForm({ ...form, enableCekPelanggan: e.target.checked })}
-                className="w-4 h-4 accent-teal-600"
-              />
-            </label>
-            <label className="flex items-center justify-between p-3 rounded-lg border border-input bg-background cursor-pointer hover:bg-muted/30">
+              <Toggle checked={form.enableCekPelanggan} onChange={(v) => setForm({ ...form, enableCekPelanggan: v })} />
+            </div>
+            <div className="flex items-center justify-between p-3 rounded-lg border border-input bg-background cursor-pointer hover:bg-muted/30" onClick={() => setForm({ ...form, enableStart: !form.enableStart })}>
               <div>
                 <p className="text-sm font-medium flex items-center gap-1.5">
                   <Bot className="w-3.5 h-3.5 text-teal-600" /> /start, /help
                 </p>
                 <p className="text-xs text-muted-foreground">Tampilkan daftar perintah</p>
               </div>
-              <input
-                type="checkbox"
-                checked={form.enableStart}
-                onChange={(e) => setForm({ ...form, enableStart: e.target.checked })}
-                className="w-4 h-4 accent-teal-600"
-              />
-            </label>
+              <Toggle checked={form.enableStart} onChange={(v) => setForm({ ...form, enableStart: v })} />
+            </div>
           </div>
         </div>
 

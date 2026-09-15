@@ -20,6 +20,7 @@ import {
 } from '@/components/cyberpunk';
 import { formatWIB } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api';
+import { Toggle } from '@/components/ui/toggle';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface GenieACSDevice {
@@ -1428,9 +1429,7 @@ export default function GenieACSDevicesPage() {
                   <p className="text-xs font-medium text-foreground">{t('genieacs.wifiStatus')}</p>
                   <p className="text-[10px] text-muted-foreground">{t('genieacs.enableDisableWifi')}</p>
                 </div>
-                <button type="button" onClick={() => setEditWifiData({ ...editWifiData, enabled: !editWifiData.enabled })} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${editWifiData.enabled ? 'bg-success' : 'bg-muted-foreground/30'}`}>
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${editWifiData.enabled ? 'translate-x-6' : 'translate-x-1'}`} />
-                </button>
+                <Toggle checked={editWifiData.enabled} onChange={(v) => setEditWifiData({ ...editWifiData, enabled: v })} />
               </div>
             </ModalBody>
             <ModalFooter>
@@ -1534,20 +1533,14 @@ export default function GenieACSDevicesPage() {
                 <p className="text-xs font-medium text-foreground">WAN Enable</p>
                 <p className="text-[10px] text-muted-foreground">Aktifkan koneksi</p>
               </div>
-              <button type="button" onClick={() => setEditWanData({ ...editWanData, enable: !editWanData.enable })}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${editWanData.enable ? 'bg-success' : 'bg-muted-foreground/30'}`}>
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${editWanData.enable ? 'translate-x-6' : 'translate-x-1'}`} />
-              </button>
+              <Toggle checked={editWanData.enable} onChange={(v) => setEditWanData({ ...editWanData, enable: v })} />
             </div>
             <div className="flex items-center justify-between p-3 bg-muted/50 border border-border rounded-lg">
               <div>
                 <p className="text-xs font-medium text-foreground">NAT Enable</p>
                 <p className="text-[10px] text-muted-foreground">Network Address Translation</p>
               </div>
-              <button type="button" onClick={() => setEditWanData({ ...editWanData, natEnabled: !editWanData.natEnabled })}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${editWanData.natEnabled ? 'bg-success' : 'bg-muted-foreground/30'}`}>
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${editWanData.natEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
-              </button>
+              <Toggle checked={editWanData.natEnabled} onChange={(v) => setEditWanData({ ...editWanData, natEnabled: v })} />
             </div>
           </div>
           {/* TR-069 path reference */}

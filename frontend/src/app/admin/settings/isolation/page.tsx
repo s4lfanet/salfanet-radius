@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
+import { Toggle } from '@/components/ui/toggle';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import {
   Shield,
@@ -182,15 +183,7 @@ export default function IsolationSettingsPage() {
                   {t('isolation.autoIsolateDesc')}
                 </p>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={settings.isolationEnabled}
-                  onChange={(e) => setSettings({ ...settings, isolationEnabled: e.target.checked })}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 dark:peer-focus:ring-primary/30 rounded-full peer dark:bg-input peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
-              </label>
+              <Toggle checked={settings.isolationEnabled} onChange={(v) => setSettings({ ...settings, isolationEnabled: v })} />
             </div>
 
             {/* Grace Period */}
@@ -299,15 +292,7 @@ export default function IsolationSettingsPage() {
                   {t('isolation.allowDnsDesc')}
                 </p>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={settings.isolationAllowDns}
-                  onChange={(e) => setSettings({ ...settings, isolationAllowDns: e.target.checked })}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 dark:peer-focus:ring-primary/30 rounded-full peer dark:bg-input peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
-              </label>
+              <Toggle checked={settings.isolationAllowDns} onChange={(v) => setSettings({ ...settings, isolationAllowDns: v })} />
             </div>
 
             {/* Allow Payment Page */}
@@ -321,15 +306,7 @@ export default function IsolationSettingsPage() {
                   {t('isolation.allowPaymentDesc')}
                 </p>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={settings.isolationAllowPayment}
-                  onChange={(e) => setSettings({ ...settings, isolationAllowPayment: e.target.checked })}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 dark:peer-focus:ring-primary/30 rounded-full peer dark:bg-input peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
-              </label>
+              <Toggle checked={settings.isolationAllowPayment} onChange={(v) => setSettings({ ...settings, isolationAllowPayment: v })} />
             </div>
           </div>
         </div>
@@ -398,15 +375,7 @@ export default function IsolationSettingsPage() {
                   {t('isolation.whatsappNotificationDesc')}
                 </p>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={settings.isolationNotifyWhatsapp}
-                  onChange={(e) => setSettings({ ...settings, isolationNotifyWhatsapp: e.target.checked })}
-                  className="sr-only peer"
-                />
-                <div className="w-9 h-5 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/20 dark:peer-focus:ring-primary/30 rounded-full peer dark:bg-input peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
-              </label>
+              <Toggle checked={settings.isolationNotifyWhatsapp} onChange={(v) => setSettings({ ...settings, isolationNotifyWhatsapp: v })} />
             </div>
 
             {/* Email Notification */}
@@ -420,15 +389,7 @@ export default function IsolationSettingsPage() {
                   {t('isolation.emailNotificationDesc')}
                 </p>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={settings.isolationNotifyEmail}
-                  onChange={(e) => setSettings({ ...settings, isolationNotifyEmail: e.target.checked })}
-                  className="sr-only peer"
-                />
-                <div className="w-9 h-5 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/20 dark:peer-focus:ring-primary/30 rounded-full peer dark:bg-input peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
-              </label>
+              <Toggle checked={settings.isolationNotifyEmail} onChange={(v) => setSettings({ ...settings, isolationNotifyEmail: v })} />
             </div>
           </div>
         </div>

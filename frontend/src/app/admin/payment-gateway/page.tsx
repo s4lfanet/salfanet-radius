@@ -9,6 +9,7 @@ import {
   Copy, Check, List, RefreshCw, Search, X, QrCode
 } from 'lucide-react';
 import { Pagination } from '@/components/Pagination';
+import { Toggle } from '@/components/ui/toggle';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
@@ -464,10 +465,7 @@ export default function PaymentGatewayPage() {
                   <p className="text-xs font-medium">{t('paymentGateway.enableMidtrans')}</p>
                   <p className="text-[10px] text-muted-foreground">{t('paymentGateway.snapDesc')}</p>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" checked={midtransForm.isActive} onChange={(e) => setMidtransForm({ ...midtransForm, isActive: e.target.checked })} className="sr-only peer" />
-                  <div className="w-8 h-4 bg-muted-foreground/30 peer-focus:ring-2 peer-focus:ring-primary/30 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-primary"></div>
-                </label>
+                <Toggle checked={midtransForm.isActive} onChange={(v) => setMidtransForm({ ...midtransForm, isActive: v })} />
               </div>
               <div>
                 <label className="text-[11px] font-medium text-foreground">{t('paymentGateway.environmentLabel')}</label>
@@ -509,10 +507,7 @@ export default function PaymentGatewayPage() {
                   <p className="text-xs font-medium">{t('paymentGateway.enableXendit')}</p>
                   <p className="text-[10px] text-muted-foreground">{t('paymentGateway.paymentGatewayId')}</p>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" checked={xenditForm.isActive} onChange={(e) => setXenditForm({ ...xenditForm, isActive: e.target.checked })} className="sr-only peer" />
-                  <div className="w-8 h-4 bg-muted-foreground/30 peer-focus:ring-2 peer-focus:ring-primary/30 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-primary"></div>
-                </label>
+                <Toggle checked={xenditForm.isActive} onChange={(v) => setXenditForm({ ...xenditForm, isActive: v })} />
               </div>
               <div>
                 <label className="text-[11px] font-medium text-foreground">{t('paymentGateway.environmentLabel')}</label>
@@ -554,10 +549,7 @@ export default function PaymentGatewayPage() {
                   <p className="text-xs font-medium">{t('paymentGateway.enableDuitku')}</p>
                   <p className="text-[10px] text-muted-foreground">{t('paymentGateway.paymentGatewayId')}</p>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" checked={duitkuForm.isActive} onChange={(e) => setDuitkuForm({ ...duitkuForm, isActive: e.target.checked })} className="sr-only peer" />
-                  <div className="w-8 h-4 bg-muted-foreground/30 peer-focus:ring-2 peer-focus:ring-primary/30 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-primary"></div>
-                </label>
+                <Toggle checked={duitkuForm.isActive} onChange={(v) => setDuitkuForm({ ...duitkuForm, isActive: v })} />
               </div>
               <div>
                 <label className="text-[11px] font-medium text-foreground">{t('paymentGateway.environmentLabel')}</label>
@@ -594,10 +586,7 @@ export default function PaymentGatewayPage() {
                   <p className="text-xs font-medium">{t('paymentGateway.enableTripay')}</p>
                   <p className="text-[10px] text-muted-foreground">{t('paymentGateway.paymentGatewayId')}</p>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" checked={tripayForm.isActive} onChange={(e) => setTripayForm({ ...tripayForm, isActive: e.target.checked })} className="sr-only peer" />
-                  <div className="w-8 h-4 bg-muted-foreground/30 peer-focus:ring-2 peer-focus:ring-primary/30 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-primary"></div>
-                </label>
+                <Toggle checked={tripayForm.isActive} onChange={(v) => setTripayForm({ ...tripayForm, isActive: v })} />
               </div>
               <div>
                 <label className="text-[11px] font-medium text-foreground">{t('paymentGateway.environmentLabel')}</label>
@@ -643,10 +632,7 @@ export default function PaymentGatewayPage() {
                   <p className="text-xs font-medium">QRIS Mandiri (Tanpa Pihak Ke-3)</p>
                   <p className="text-[10px] text-muted-foreground">Gunakan QRIS dari rekening bank Anda sendiri - tanpa biaya admin</p>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" checked={qrisForm.enabled} onChange={(e) => setQrisForm({ ...qrisForm, enabled: e.target.checked })} className="sr-only peer" />
-                  <div className="w-8 h-4 bg-muted-foreground/30 peer-focus:ring-2 peer-focus:ring-primary/30 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-teal-500"></div>
-                </label>
+                <Toggle checked={qrisForm.enabled} onChange={(v) => setQrisForm({ ...qrisForm, enabled: v })} />
               </div>
 
               <div className="p-2.5 bg-info/10 border border-info/20 rounded-lg">

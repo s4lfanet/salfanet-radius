@@ -6,6 +6,7 @@ import { Clock, Play, RefreshCw, CheckCircle, XCircle, Loader2, Activity, Settin
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatWIB } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api';
+import { Toggle } from '@/components/ui/toggle';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface CronJob {
@@ -134,14 +135,10 @@ function ScheduleEditor({ config, onSave, onClose }: {
 
         <div className="space-y-3">
           {/* Enabled toggle */}
-          <label className="flex items-center gap-3 cursor-pointer">
-            <div className="relative">
-              <input type="checkbox" className="sr-only" checked={enabled} onChange={e => setEnabled(e.target.checked)} />
-              <div className={`w-10 h-5 rounded-full transition-colors ${enabled ? 'bg-primary' : 'bg-muted'}`} />
-              <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${enabled ? 'translate-x-5' : ''}`} />
-            </div>
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setEnabled(!enabled)}>
+            <Toggle checked={enabled} onChange={setEnabled} />
             <span className="text-sm font-medium text-foreground">Job Enabled</span>
-          </label>
+          </div>
 
           {isDynamic ? (
             <div className="p-3 bg-muted/50 rounded-lg text-xs text-muted-foreground">

@@ -12,6 +12,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { PERMISSIONS } from '@/lib/permissions';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
+import { Toggle } from '@/components/ui/toggle';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface TelegramSettings {
@@ -223,18 +224,11 @@ export default function TelegramSettingsPage() {
                 <label className="font-medium text-foreground">{t('settings.enableAutoBackup')}</label>
                 <p className="text-sm text-muted-foreground">{t('settings.autoBackupDesc')}</p>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={telegramSettings.enabled}
-                  onChange={(e) =>
-                    setTelegramSettings({ ...telegramSettings, enabled: e.target.checked })
-                  }
-                  className="sr-only peer"
-                  disabled={!canEdit}
-                />
-                <div className="w-11 h-6 bg-gray-300 peer-focus:ring-4 peer-focus:ring-primary/20 dark:peer-focus:ring-primary/30 rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
-              </label>
+              <Toggle
+                checked={telegramSettings.enabled}
+                onChange={(v) => setTelegramSettings({ ...telegramSettings, enabled: v })}
+                disabled={!canEdit}
+              />
             </div>
 
             {/* Bot Token */}
