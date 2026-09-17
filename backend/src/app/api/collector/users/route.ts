@@ -72,8 +72,11 @@ export async function GET(req: NextRequest) {
         : true
     );
 
+    // userId is non-null here — every row came from `where: { userId: { in: userIds } }`
+    // above; the `if (!inv.userId) continue` is just to satisfy the nullable column type
     const invoiceMap = new Map<string, typeof allInvoices>();
     for (const inv of displayInvoices) {
+      if (!inv.userId) continue;
       const arr = invoiceMap.get(inv.userId) || [];
       arr.push(inv);
       invoiceMap.set(inv.userId, arr);
@@ -82,6 +85,7 @@ export async function GET(req: NextRequest) {
     // Build is_paid map from ALL invoices (not just filtered)
     const allInvoiceMap = new Map<string, typeof allInvoices>();
     for (const inv of allInvoices) {
+      if (!inv.userId) continue;
       const arr = allInvoiceMap.get(inv.userId) || [];
       arr.push(inv);
       allInvoiceMap.set(inv.userId, arr);

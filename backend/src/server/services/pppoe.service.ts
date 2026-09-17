@@ -118,6 +118,7 @@ export interface UpdatePppoeUserInput {
   discount?: number | string;
   discountNote?: string | null;
   connectionType?: string;  // PPPOE | STATIC_IP | HOTSPOT — changing this triggers MikroTik sync
+  forceSyncMikrotik?: boolean;  // explicit "force sync" checkbox from the edit page
 }
 
 // â”€â”€â”€ List â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

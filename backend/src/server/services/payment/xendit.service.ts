@@ -56,7 +56,10 @@ export async function createXenditInvoice(params: {
         reminderTime: 1,
         successRedirectUrl: `${baseUrl}/payment/success?token=${params.invoiceToken}`,
         failureRedirectUrl: `${baseUrl}/payment/failed?token=${params.invoiceToken}`,
-        callbackUrl: `${baseUrl}/api/payment/webhook`
+        // xendit-node v7's CreateInvoiceRequest has no per-invoice callback/webhook
+        // URL field — Xendit only supports a single account-level webhook URL,
+        // configured in the Xendit Dashboard → Settings → Webhooks, pointed at
+        // /api/payment/webhook (which already verifies x-callback-token).
       }
     })
 

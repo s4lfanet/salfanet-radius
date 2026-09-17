@@ -70,7 +70,9 @@ function getRedis(): import('ioredis').Redis | null {
       enableOfflineQueue: false,
       lazyConnect: false,
     });
-    _redis.on('error', () => { /* silent — fallback to memory */ });
+    // Non-null: just assigned above (require('ioredis') is untyped `any`,
+    // so the constructor call doesn't narrow away the declared `| null`)
+    _redis!.on('error', () => { /* silent — fallback to memory */ });
     return _redis;
   } catch {
     return null;

@@ -62,7 +62,8 @@ async function testInvoiceUpdateManyIdempotency() {
       userId: testUser.id,
       amount: 50000,
       status: 'PENDING',
-      description: 'Test concurrency invoice',
+      dueDate: new Date(),
+      notes: 'Test concurrency invoice',
     },
   });
 
@@ -123,7 +124,8 @@ async function testTenConcurrentCallbacks() {
       userId: testUser.id,
       amount: 50000,
       status: 'PENDING',
-      description: 'Test concurrency 10 invoice',
+      dueDate: new Date(),
+      notes: 'Test concurrency 10 invoice',
     },
   });
 

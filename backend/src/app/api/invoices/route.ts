@@ -397,7 +397,9 @@ export async function PUT(request: NextRequest) {
             if (pkgItem) {
               isPackageChange = true;
               targetProfileId = pkgItem.metadata.newPackageId;
-              const foundProfile = await prisma.pppoeProfile.findUnique({ where: { id: targetProfileId } });
+              // targetProfileId is a string here — just reassigned from metadata.newPackageId,
+              // which the .find() predicate above already checked is truthy
+              const foundProfile = await prisma.pppoeProfile.findUnique({ where: { id: targetProfileId as string } });
               if (foundProfile) {
                 targetProfile = foundProfile as any;
                 console.log(`  - Package change: ${pkgItem.metadata.oldPackageName} → ${pkgItem.metadata.newPackageName} (expiry PRESERVED)`);

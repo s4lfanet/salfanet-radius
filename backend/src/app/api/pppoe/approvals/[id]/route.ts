@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     const err = error as { code?: string; message?: string };
     if (err.code === 'NOT_FOUND') return notFound(err.message);
-    if (err.code === 'INVALID_STATE') return badRequest(err.message);
+    if (err.code === 'INVALID_STATE') return badRequest(err.message || 'Invalid state');
     console.error('Approval action error:', error);
     return serverError();
   }

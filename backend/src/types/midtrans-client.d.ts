@@ -1,4 +1,4 @@
-// Mirrored at backend/src/types/midtrans-client.d.ts — separate tsconfig
+// Mirrored at frontend/src/types/midtrans-client.d.ts — separate tsconfig
 // per app, so each needs its own copy. Keep both in sync.
 declare module 'midtrans-client' {
   interface CoreApiOptions {

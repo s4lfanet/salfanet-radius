@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Plus, Loader2, Trash2, Edit, Ticket, RefreshCw, ChevronDown, ChevronRight, UploadCloud } from "lucide-react"
+import { Plus, Loader2, Trash2, Edit, Ticket, RefreshCw, ChevronDown, ChevronRight, UploadCloud, Wifi } from "lucide-react"
 import { useTranslation } from '@/hooks/useTranslation'
 import { showSuccess, showError } from '@/lib/sweetalert'
 import { apiAdmin } from '@/lib/api'
