@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
             phone: true,
             username: true,
             customerId: true,
+            areaId: true,
             area: { select: { name: true } },
             profile: { select: { name: true } },
           },

@@ -54,6 +54,7 @@ export async function GET(
             username: true,
             address: true,
             customerId: true,
+            areaId: true,
             area: { select: { name: true } },
             profile: { select: { name: true, price: true } }
           }
