@@ -78,17 +78,19 @@ export async function GET(req: NextRequest) {
   }
 
   // 2. ONT removal tasks assigned to this technician
+  // Note: ontRemovalTask has no assignedToType — assignedTechnicianId is a
+  // plain id resolved against either the technician or adminUser table
+  // (see schema comment on the model), and it has no customerName/
+  // customerAddress columns — those come from pppoeUser via `username`.
   const ontTasks = await prisma.ontRemovalTask.findMany({
     where: {
-      assignedToId: tech.id,
-      assignedToType: tech.type === 'admin_user' ? 'ADMIN' : 'TECHNICIAN',
-      status: { in: ['PENDING', 'IN_PROGRESS'] },
+      assignedTechnicianId: tech.id,
+      status: 'PENDING',
       updatedAt: { gte: sinceDate },
     },
     select: {
       id: true,
-      customerName: true,
-      customerAddress: true,
+      username: true,
       status: true,
       updatedAt: true,
     },
@@ -96,12 +98,22 @@ export async function GET(req: NextRequest) {
     take: 5,
   });
 
+  const ontUsernames = [...new Set(ontTasks.map((t) => t.username))];
+  const ontCustomers = ontUsernames.length
+    ? await prisma.pppoeUser.findMany({
+        where: { username: { in: ontUsernames } },
+        select: { username: true, name: true, address: true },
+      })
+    : [];
+  const ontCustomerByUsername = new Map(ontCustomers.map((c) => [c.username, c]));
+
   for (const task of ontTasks) {
+    const customer = ontCustomerByUsername.get(task.username);
     notifications.push({
       id: `ont-${task.id}`,
       type: 'ont_task',
       title: 'Tugas Lepas ONT',
-      message: `${task.customerName}${task.customerAddress ? ` — ${task.customerAddress}` : ''}`,
+      message: `${customer?.name || task.username}${customer?.address ? ` — ${customer.address}` : ''}`,
       link: `/technician/ont-removal-tasks`,
       createdAt: task.updatedAt.toISOString(),
       priority: 'NORMAL',

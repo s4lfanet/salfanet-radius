@@ -52,36 +52,7 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  // 2. Recent ONT removal tasks assigned to this collector
-  const ontTasks = await prisma.ontRemovalTask.findMany({
-    where: {
-      assignedToId: collector.id,
-      assignedToType: 'ADMIN',
-      status: { in: ['PENDING', 'IN_PROGRESS'] },
-      updatedAt: { gte: since },
-    },
-    select: {
-      id: true,
-      customerName: true,
-      customerAddress: true,
-      status: true,
-      updatedAt: true,
-    },
-    orderBy: { updatedAt: 'desc' },
-    take: 5,
-  });
-
-  for (const task of ontTasks) {
-    events.push({
-      id: `ont-${task.id}`,
-      type: 'ont_task',
-      title: 'Tugas Lepas ONT',
-      message: `${task.customerName}${task.customerAddress ? ` — ${task.customerAddress}` : ''}`,
-      timestamp: task.updatedAt.toISOString(),
-    });
-  }
-
-  // 3. Tickets assigned to this collector
+  // 2. Tickets assigned to this collector
   const assignedTickets = await prisma.ticket.findMany({
     where: {
       assignedToId: collector.id,
