@@ -48,7 +48,7 @@ export async function POST(request: Request) {
       let success = 0, failed = 0;
       for (const u of users) {
         try {
-          const mtProfile = await getMikrotikProfileName(u.profileId);
+          const mtProfile = u.profileId ? await getMikrotikProfileName(u.profileId) : null;
           const secretDisabled = disabled || u.status === 'isolated';
           const r = await managePppSecret(router.id, 'create', {
             username: u.username,
