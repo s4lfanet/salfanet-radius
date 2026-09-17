@@ -377,7 +377,7 @@ function EmptyRow({ cols }: { cols: number }) {
   );
 }
 
-function TableSkeleton({ cols }: { cols: number }) {
+function TableSkeleton({ cols: _cols }: { cols: number }) {
   return (
     <div className="p-4 space-y-2">
       {Array.from({ length: 5 }).map((_, i) => (

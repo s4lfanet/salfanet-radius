@@ -459,7 +459,7 @@ function translateStatus(val: unknown): string {
 }
 
 // ── Status helpers ────────────────────────────────────────────────────────────
-function getStatusClass(s: string): string { return ''; }
+function getStatusClass(_s: string): string { return ''; }
 function getStatusBadge(s: string): string {
   const map: Record<string, string> = {
     PAID:    'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30',

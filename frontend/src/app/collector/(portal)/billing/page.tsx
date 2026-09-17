@@ -89,7 +89,7 @@ export default function CollectorBillingPage() {
       await printInvoiceStandard(invoiceId, (type, title, desc) => {
         if (type === 'error') alert(`${title}${desc ? ': ' + desc : ''}`);
       });
-    } catch (err) {
+    } catch (_err) {
       alert('Gagal mencetak invoice');
     } finally {
       setActionLoading(null);
@@ -103,7 +103,7 @@ export default function CollectorBillingPage() {
       await printInvoiceThermal(invoiceId, (type, title, desc) => {
         if (type === 'error') alert(`${title}${desc ? ': ' + desc : ''}`);
       });
-    } catch (err) {
+    } catch (_err) {
       alert('Gagal mencetak struk');
     } finally {
       setActionLoading(null);

@@ -150,12 +150,12 @@ export function ODPDiagramV2({
     }
   };
 
-  const inputPorts = node.ports.filter((p) => p.number <= node.inputPorts);
+  const _inputPorts = node.ports.filter((p) => p.number <= node.inputPorts);
   const outputPorts = node.ports.filter((p) => p.number > node.inputPorts);
   
   // Statistics
   const assignedPorts = outputPorts.filter(p => p.status === 'ASSIGNED').length;
-  const availablePorts = outputPorts.filter(p => p.status === 'AVAILABLE').length;
+  const _availablePorts = outputPorts.filter(p => p.status === 'AVAILABLE').length;
   const utilizationPercent = Math.round((assignedPorts / outputPorts.length) * 100);
 
   return (

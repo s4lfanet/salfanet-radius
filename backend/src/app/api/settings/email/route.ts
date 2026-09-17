@@ -30,7 +30,7 @@ export async function GET() {
     }
 
     // Don't send password to client
-    const { smtpPassword, ...rest } = settings;
+    const { smtpPassword: _smtpPassword, ...rest } = settings;
     return NextResponse.json({
       ...rest,
       smtpPassword: '********', // Masked

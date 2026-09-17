@@ -99,7 +99,7 @@ export async function PUT(request: NextRequest) {
         // Test 3: PPP profile write (try to add then immediately remove a test profile)
         const testProfileName = `__salfanet_test_${Date.now()}`;
         try {
-          const addResult = await api.write('/ppp/profile/add', [`=name=${testProfileName}`]);
+          const _addResult = await api.write('/ppp/profile/add', [`=name=${testProfileName}`]);
           // If add succeeded, clean up
           try {
             const testProfile = await api.write('/ppp/profile/print');

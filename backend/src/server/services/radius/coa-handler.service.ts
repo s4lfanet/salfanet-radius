@@ -103,7 +103,7 @@ export async function sendCoADisconnect(
         if (session?.callingstationid) {
           coaAttributes.push(`Calling-Station-Id=${session.callingstationid}`)
         }
-      } catch (e) {
+      } catch (_e) {
         // MAC not critical, continue without it
       }
     }
@@ -131,12 +131,12 @@ export async function sendCoADisconnect(
     
     console.log(`[CoA] Sending to ${nasIpAddress}:3799...`)
     
-    const { stdout, stderr } = await execAsync(command, { timeout: 8000 })
+    const { stdout, stderr: _stderr } = await execAsync(command, { timeout: 8000 })
     
     // Cleanup temp file
     try { 
       await unlink(tmpFile) 
-    } catch (e) {
+    } catch (_e) {
       // Ignore cleanup errors
     }
     

@@ -106,7 +106,7 @@ export default function PPPoEProfilesPage() {
   const profiles = profilesData?.profiles || [];
 
   // ─── React Query: Routers (reference data - 5min stale) ─────────────────────
-  const routersQueryKey = buildQueryKey('/api/pppoe/profiles/sync-mikrotik');
+  const _routersQueryKey = buildQueryKey('/api/pppoe/profiles/sync-mikrotik');
   const { data: routersData, refetch: refetchRouters } = useApiQuery<RouterListResponse>('/api/pppoe/profiles/sync-mikrotik', { staleTime: 5 * 60 * 1000 });
   const routers = routersData?.routers || [];
 
@@ -135,7 +135,7 @@ export default function PPPoEProfilesPage() {
   const [syncIpPoolName, setSyncIpPoolName] = useState('');
   const [syncLocalAddress, setSyncLocalAddress] = useState('');
   const [syncPoolRanges, setSyncPoolRanges] = useState('');
-  const [syncLockedRouter, setSyncLockedRouter] = useState(false);
+  const [_syncLockedRouter, setSyncLockedRouter] = useState(false);
 
   // Import state
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -197,7 +197,7 @@ export default function PPPoEProfilesPage() {
     e.preventDefault();
     setIsSaving(true);
     try {
-      const method = editingProfile ? 'PUT' : 'POST';
+      const _method = editingProfile ? 'PUT' : 'POST';
       const generatedGroupName = formData.groupName.trim() || getAutoGroupName(formData.name);
       const rateLimit = buildRateLimit(formData, showBurst);
       const dlMbps = speedToMbps(formData.downloadSpeed, formData.speedUnit);

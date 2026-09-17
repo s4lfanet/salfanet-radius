@@ -50,7 +50,7 @@ export async function POST(
         publicIp = cloud[0]['public-address'];
         detectionMethod = 'IP Cloud DDNS';
       }
-    } catch (e) {
+    } catch (_e) {
       console.log('IP Cloud not available');
     }
 
@@ -73,7 +73,7 @@ export async function POST(
             }
           }
         }
-      } catch (e) {
+      } catch (_e) {
         console.log('PPPoE check failed');
       }
     }
@@ -88,7 +88,7 @@ export async function POST(
         ]);
         
         if (routes && routes.length > 0) {
-          const gateway = routes[0].gateway;
+          const _gateway = routes[0].gateway;
           const gatewayInterface = routes[0]['gateway-interface'] || routes[0].interface;
           
           if (gatewayInterface) {
@@ -106,7 +106,7 @@ export async function POST(
             }
           }
         }
-      } catch (e) {
+      } catch (_e) {
         console.log('Route check failed');
       }
     }
@@ -143,7 +143,7 @@ export async function POST(
             break;
           }
         }
-      } catch (e) {
+      } catch (_e) {
         console.log('All IPs check failed');
       }
     }

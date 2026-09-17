@@ -130,9 +130,9 @@ export async function PUT(
   const authCheck = await requirePermission('routers.manage');
   if (!authCheck.authorized) return authCheck.response;
   try {
-    const { id: routerId } = await params;
+    const { id: _routerId } = await params;
     const body = await request.json();
-    const { connectionId, oltId, uplinkPort, priority, isActive } = body;
+    const { connectionId, oltId: _oltId, uplinkPort, priority, isActive } = body;
 
     if (!connectionId) {
       return NextResponse.json({ error: 'Connection ID is required' }, { status: 400 });
@@ -173,7 +173,7 @@ export async function PUT(
 // DELETE - Remove uplink connection
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params: _params }: { params: Promise<{ id: string }> }
 ) {
   const authCheck = await requirePermission('routers.manage');
   if (!authCheck.authorized) return authCheck.response;

@@ -176,7 +176,7 @@ export default function GenieACSDevicesPage() {
   const [paramBrowserData, setParamBrowserData] = useState<{path:string;value:string;type:string;writable:boolean}[]>([]);
   const [loadingParams, setLoadingParams] = useState(false);
   const [paramSearch, setParamSearch] = useState('');
-  const [paramExpandedPrefixes, setParamExpandedPrefixes] = useState<Set<string>>(new Set(['InternetGatewayDevice', 'Device', 'VirtualParameters']));
+  const [_paramExpandedPrefixes, _setParamExpandedPrefixes] = useState<Set<string>>(new Set(['InternetGatewayDevice', 'Device', 'VirtualParameters']));
   const [paramSelected, setParamSelected] = useState<Set<string>>(new Set());
   const [showGenModal, setShowGenModal] = useState(false);
   const [genTarget, setGenTarget] = useState<'vp' | 'provision'>('vp');

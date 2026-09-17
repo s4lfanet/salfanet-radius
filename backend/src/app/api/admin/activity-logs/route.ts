@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   try {
     const authCheck = await requirePermission('users.view');
     if (!authCheck.authorized) return authCheck.response;
-    const session = authCheck.session;
+    const _session = authCheck.session;
 
     const { searchParams } = new URL(request.url);
     const moduleName = searchParams.get('module') || 'all';

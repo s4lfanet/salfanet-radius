@@ -139,7 +139,7 @@ export default function PppoeUserDetailPage({ params }: { params: Promise<{ id: 
     setSendingWA(true);
     setWaResult(null);
     try {
-      const data = await apiAdmin('/api/pppoe/users/send-notification', {
+      const _data = await apiAdmin('/api/pppoe/users/send-notification', {
         method: 'POST',
         body: JSON.stringify({ userIds: [user.id], notificationType: 'invoice', notificationMethod: 'whatsapp' }),
       });

@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
  * GET /api/addon-types
  * List all addon types ordered by name ASC.
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const authCheck = await requirePermission('customers.view');
     if (!authCheck.authorized) return authCheck.response;

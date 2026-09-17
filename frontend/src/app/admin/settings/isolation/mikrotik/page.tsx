@@ -102,7 +102,7 @@ export default function MikroTikSetupPage() {
     return parts.join('.');
   };
 
-  const getNetworkAddress = (cidr: string) => {
+  const _getNetworkAddress = (cidr: string) => {
     return cidr.split('/')[0].replace(/\.\d+$/, '.0/24');
   };
 
@@ -123,7 +123,7 @@ add name=isolir \\
 
   // Script 2b: RADIUS Attributes - address-list agar IP langsung masuk ke isolir list
   // Ini penting! Tanpa ini, user yang belum reconnect bisa masih akses internet penuh.
-  const addressListScript = `/ip firewall address-list
+  const _addressListScript = `/ip firewall address-list
 # Catatan: address-list 'isolir' akan diisi otomatis oleh RADIUS via Mikrotik-Address-List
 # attribute saat user login ulang dengan profile isolir.
 # Untuk user yang SEDANG ONLINE saat diisolir, sistem menambahkan IP secara langsung via API.

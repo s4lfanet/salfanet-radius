@@ -64,7 +64,7 @@ export default function RadCheckPage() {
                 await apiAdmin(`/api/freeradius/radcheck?id=${id}`, { method: 'DELETE' });
                 addToast({ type: 'success', title: 'Deleted!', description: 'Item has been deleted.' });
                 queryClient.invalidateQueries({ queryKey: radcheckQueryKey });
-            } catch (err) {
+            } catch (_err) {
                 addToast({ type: 'error', title: 'Error', description: 'Failed to delete item' });
             }
         }
@@ -86,7 +86,7 @@ export default function RadCheckPage() {
             setShowAdd(false);
             setNewItem({ username: '', attribute: 'Cleartext-Password', op: ':=', value: '' });
             queryClient.invalidateQueries({ queryKey: radcheckQueryKey });
-        } catch (err) {
+        } catch (_err) {
             addToast({ type: 'error', title: 'Error', description: 'Failed to create item' });
         }
     };

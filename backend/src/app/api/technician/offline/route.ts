@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
   });
   const localRouters = routers.filter(r => (r.authMode || 'local') !== 'radius');
   const localRouterIds = localRouters.map(r => r.id);
-  const routerMap = new Map(routers.map(r => [r.id, r]));
+  const _routerMap = new Map(routers.map(r => [r.id, r]));
 
   // Check MikroTik /ppp/active for ALL routers (not just local-auth)
   // RADIUS-mode routers may have active PPP sessions not in radacct

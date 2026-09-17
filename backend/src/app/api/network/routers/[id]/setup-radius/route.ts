@@ -4,7 +4,7 @@ import { prisma } from '@/server/db/client';
 import * as os from 'os';
 
 // Check if a string is a valid IP address (IPv4)
-function isValidIp(host: string): boolean {
+function _isValidIp(host: string): boolean {
   const ipv4 = /^(\d{1,3}\.){3}\d{1,3}$/;
   if (ipv4.test(host)) {
     return host.split('.').every(octet => parseInt(octet) >= 0 && parseInt(octet) <= 255);
@@ -168,7 +168,7 @@ export async function POST(
 
       // Auth mode configuration
       const authMode = router.authMode || 'radius';
-      const authModeComment = `# Authentication Mode: ${authMode.toUpperCase()}`;
+      const _authModeComment = `# Authentication Mode: ${authMode.toUpperCase()}`;
       const authModeConfig = authMode === 'local'
         ? `# LOCAL ONLY — tidak menggunakan RADIUS untuk autentikasi
 /ppp aaa set use-radius=no accounting=yes interim-update=5m`
@@ -276,7 +276,7 @@ ${authMode !== 'local' ? '# /ip firewall filter print where comment~"SALFANET-RA
           },
         });
       }
-    } catch (dbError) {
+    } catch (_dbError) {
       console.log('RADIUS DB sync skipped');
     }
 

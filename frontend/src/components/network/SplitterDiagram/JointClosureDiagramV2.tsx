@@ -54,11 +54,11 @@ export function JointClosureDiagramV2({
   node,
   width = 900,
   height = 700,
-  interactive = true,
-  showLabels = true,
-  onPortClick,
-  onPortHover,
-  selectedPorts = [],
+  interactive: _interactive = true,
+  showLabels: _showLabels = true,
+  onPortClick: _onPortClick,
+  onPortHover: _onPortHover,
+  selectedPorts: _selectedPorts = [],
   showSpliceDetail = true,
   selectedCable,
   selectedSplice,
@@ -68,8 +68,8 @@ export function JointClosureDiagramV2({
 }: JointClosureDiagramV2Props) {
   const [hoveredCable, setHoveredCable] = React.useState<CableBranch | null>(null);
   const [hoveredSplice, setHoveredSplice] = React.useState<SpliceConnection | null>(null);
-  const [expandedTrays, setExpandedTrays] = React.useState<number[]>([1]);
-  const { t } = useTranslation();
+  const [_expandedTrays, _setExpandedTrays] = React.useState<number[]>([1]);
+  const { t: _t } = useTranslation();
 
   const cables = node.cables || [];
   const splices = node.splices || [];
@@ -106,7 +106,7 @@ export function JointClosureDiagramV2({
     }
   };
 
-  const getCoreStatusColor = (status: string): string => {
+  const _getCoreStatusColor = (status: string): string => {
     switch (status) {
       case 'AVAILABLE': return '#10b981';
       case 'ASSIGNED': return '#3b82f6';
@@ -120,7 +120,7 @@ export function JointClosureDiagramV2({
   // Calculate totals
   const totalSplices = splices.length;
   const activeSplices = splices.filter(s => s.status === 'ACTIVE').length;
-  const totalCables = cables.length;
+  const _totalCables = cables.length;
   const totalUpstreamCores = upstreamCables.reduce((sum, c) => sum + c.tubeCount * c.coresPerTube, 0);
   const totalDownstreamCores = downstreamCables.reduce((sum, c) => sum + c.tubeCount * c.coresPerTube, 0);
 

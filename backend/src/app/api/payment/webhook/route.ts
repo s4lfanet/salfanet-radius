@@ -1793,7 +1793,7 @@ async function handleInvoicePayment(
               if (connType === 'HOTSPOT') {
                 // Hotspot: re-enable hotspot user + kick active session
                 try {
-                  const { manageHotspotUser, kickHotspotSession } = await import('@/server/services/mikrotik/arp-hotspot.service');
+                  const { manageHotspotUser, kickHotspotSession: _kickHotspotSession } = await import('@/server/services/mikrotik/arp-hotspot.service');
                   const r = await manageHotspotUser(user.routerId, 'update', {
                     username: user.username,
                     password: user.password,

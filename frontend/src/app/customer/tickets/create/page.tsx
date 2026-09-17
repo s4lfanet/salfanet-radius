@@ -64,7 +64,7 @@ export default function CreateTicketPage() {
         customerPhone: user.phone || '',
         customerEmail: user.email || '',
       }));
-    } catch (error) {
+    } catch (_error) {
       router.push('/customer/login');
       return;
     }
@@ -189,7 +189,7 @@ export default function CreateTicketPage() {
 
         setUploadedFiles(prev => [...prev, { url: data.url, name: file.name, type: data.fileType }]);
       }
-    } catch (err) {
+    } catch (_err) {
       toastError('Gagal mengupload file');
     } finally {
       setUploading(false);

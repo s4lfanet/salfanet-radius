@@ -210,7 +210,7 @@ function AgentLayoutInner({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [agent, setAgent] = useState<AgentData | null>(null);
   const [company, setCompany] = useState<{ name: string; logo: string | null }>({ name: '', logo: null });
-  const [mounted, setMounted] = useState(false);
+  const [_mounted, setMounted] = useState(false);
   const [now, setNow] = useState<Date | null>(null);
   const { t } = useTranslation();
   const { isDark, toggleTheme } = useTheme();

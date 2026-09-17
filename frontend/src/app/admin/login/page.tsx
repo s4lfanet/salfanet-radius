@@ -23,9 +23,9 @@ if (typeof window !== 'undefined') {
 }
 
 function LoginForm() {
-  const router = useRouter();
+  const _router = useRouter();
   const searchParams = useSearchParams();
-  const { data: session, status } = useSession();
+  const { data: _session, status } = useSession();
   const { t } = useTranslation();
 
   // ── UI state ──────────────────────────────────────────────────────────

@@ -16,7 +16,7 @@ function PaymentPendingContent() {
   const [checking, setChecking] = useState(false);
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [autoRefresh, _setAutoRefresh] = useState(true);
 
   useEffect(() => {
     if (token || orderId) fetchInvoiceStatus();

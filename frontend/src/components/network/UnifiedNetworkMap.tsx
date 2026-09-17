@@ -239,7 +239,7 @@ export default function UnifiedNetworkMap({
   connectMode, connectSource, onConnectNodeClick, connections, showConnections,
   flyToLocation, userLocation,
 }: UnifiedNetworkMapProps) {
-  const { t } = useTranslation();
+  const { t: _t } = useTranslation();
   const [entities, setEntities] = useState<MapEntity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

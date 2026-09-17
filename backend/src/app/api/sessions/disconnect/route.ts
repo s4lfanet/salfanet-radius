@@ -209,7 +209,7 @@ export async function POST(request: NextRequest) {
     if (!authCheck.authorized) return authCheck.response;
 
     const body = await request.json();
-    const { sessionIds, usernames, useCoA } = body; // Support both session IDs or usernames, useCoA for PPPoE
+    const { sessionIds, usernames, useCoA: _useCoA } = body; // Support both session IDs or usernames, useCoA for PPPoE
 
     if (!sessionIds && !usernames) {
       return NextResponse.json(

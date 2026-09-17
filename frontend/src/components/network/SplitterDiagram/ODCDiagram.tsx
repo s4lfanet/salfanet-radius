@@ -77,7 +77,7 @@ export function ODCDiagram({
 
   // Calculate output port grid
   const portsPerRow = Math.min(8, outputPorts.length);
-  const numRows = Math.ceil(outputPorts.length / portsPerRow);
+  const _numRows = Math.ceil(outputPorts.length / portsPerRow);
 
   return (
     <div className="odc-diagram-container border rounded-lg p-4 bg-white shadow-sm">
@@ -158,7 +158,7 @@ export function ODCDiagram({
         )}
 
         {/* Input Port */}
-        {inputPorts.map((port, idx) => {
+        {inputPorts.map((port, _idx) => {
           const x = centerX;
           const y = centerY - cabinetHeight / 2 - 40;
           return (

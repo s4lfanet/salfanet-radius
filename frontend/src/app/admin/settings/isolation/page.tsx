@@ -41,7 +41,7 @@ interface IsolationSettings {
 }
 
 export default function IsolationSettingsPage() {
-  const router = useRouter();
+  const _router = useRouter();
   const { t } = useTranslation();
   const { addToast, confirm } = useToast();
   const queryClient = useQueryClient();

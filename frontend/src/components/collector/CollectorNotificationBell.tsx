@@ -30,7 +30,7 @@ function urlBase64ToUint8Array(base64String: string) {
 export default function CollectorNotificationBell() {
   const [bellOpen, setBellOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotifEvent[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, _setLoading] = useState(false);
   const [pushSupported, setPushSupported] = useState(false);
   const [pushSubscribed, setPushSubscribed] = useState(false);
   const [pushLoading, setPushLoading] = useState(false);

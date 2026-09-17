@@ -19,7 +19,7 @@ export function JointClosureDiagram({
   selectedPorts = [],
 }: DiagramProps) {
   const [hoveredPort, setHoveredPort] = React.useState<Port | null>(null);
-  const [hoveredConnection, setHoveredConnection] = React.useState<FiberConnection | null>(null);
+  const [_hoveredConnection, _setHoveredConnection] = React.useState<FiberConnection | null>(null);
   const { t } = useTranslation();
 
   const handlePortClick = (port: Port) => {

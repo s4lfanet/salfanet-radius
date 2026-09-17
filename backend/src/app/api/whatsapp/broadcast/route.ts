@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     const session = authCheck.session;
 
     const body: BroadcastRequest = await request.json();
-    const { userIds, message, subject, channel = 'whatsapp', delay = 2000 } = body;
+    const { userIds, message, subject, channel = 'whatsapp', delay: _delay = 2000 } = body;
 
     if (!userIds || userIds.length === 0) {
       return NextResponse.json(
@@ -325,7 +325,7 @@ export async function POST(request: NextRequest) {
 
     // Log activity
     try {
-      const totalSent = results.whatsapp.sent + results.email.sent;
+      const _totalSent = results.whatsapp.sent + results.email.sent;
       const totalFailed = results.whatsapp.failed + results.email.failed;
 
       await logActivity({

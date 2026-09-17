@@ -471,7 +471,7 @@ export async function sendDirectConnectionRequest(
       headers: { Authorization: `Basic ${basic}` },
       signal: controller.signal,
     });
-    const body1 = await resp1.text().catch(() => '');
+    const _body1 = await resp1.text().catch(() => '');
     if (resp1.status === 200) {
       clearTimeout(timer);
       console.log(`[GenieACS] direct CR sent (basic auth) device=${deviceID} status=200`);

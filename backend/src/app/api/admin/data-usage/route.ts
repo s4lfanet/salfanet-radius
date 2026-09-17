@@ -38,13 +38,13 @@ export async function GET(request: NextRequest) {
     }));
 
     return NextResponse.json({ success: true, data });
-  } catch (err) {
+  } catch (_err) {
     return NextResponse.json({ success: false, error: 'Failed to fetch usage data' }, { status: 500 });
   }
 }
 
 // POST /api/admin/data-usage — trigger manual aggregation
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   const authCheck = await requirePermission('settings.edit');
   if (!authCheck.authorized) return authCheck.response;
 
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
       success: true,
       data: { processed: records.length, period_start: periodStart, period_end: periodEnd },
     });
-  } catch (err) {
+  } catch (_err) {
     return NextResponse.json({ success: false, error: 'Failed to aggregate usage' }, { status: 500 });
   }
 }

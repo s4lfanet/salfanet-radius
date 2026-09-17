@@ -210,7 +210,7 @@ export async function reloadFreeRadius(): Promise<void> {
     }
 
     // Restart FreeRADIUS service (PM2 runs as root, no sudo needed)
-    const { stdout, stderr } = await execAsync('systemctl restart freeradius', {
+    const { stdout: _stdout, stderr } = await execAsync('systemctl restart freeradius', {
       timeout: 10000, // 10 second timeout
     });
 

@@ -225,7 +225,7 @@ export async function deleteBackup(id: string) {
       try {
         await fs.unlink(backup.filepath);
         console.log('[Delete] File deleted:', backup.filepath);
-      } catch (err) {
+      } catch (_err) {
         console.error('[Delete] File not found or already deleted:', backup.filepath);
       }
     }
@@ -266,7 +266,7 @@ export async function getDatabaseHealth() {
     throw new Error('DATABASE_URL not configured');
   }
 
-  const { user, password, host, database } = parseDbUrl(dbUrl);
+  const { user: _user, password: _password, host: _host, database } = parseDbUrl(dbUrl);
 
   try {
     // Get database size

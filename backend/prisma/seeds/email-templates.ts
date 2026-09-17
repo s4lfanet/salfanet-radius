@@ -1232,7 +1232,7 @@ export const emailTemplates = [
   },
 ];
 
-export async function seedEmailTemplates(force = false) {
+export async function seedEmailTemplates(_force = false) {
   console.log(`🌱 Seeding email templates (always updates subject and htmlBody)...`);
   
   for (const template of emailTemplates) {

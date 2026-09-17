@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
 
           try {
             conn.close();
-          } catch (e) {
+          } catch (_e) {
             // Ignore close errors
           }
 

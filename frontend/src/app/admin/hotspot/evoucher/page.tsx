@@ -110,7 +110,7 @@ export default function EVoucherManagementPage() {
       } else {
         showError(data.error || t('common.failed'));
       }
-    } catch (error) {
+    } catch (_error) {
       showError(t('common.failed'));
     }
   };
@@ -126,7 +126,7 @@ export default function EVoucherManagementPage() {
       } else {
         showError(data.error || t('common.failed'));
       }
-    } catch (error) {
+    } catch (_error) {
       showError(t('common.failed'));
     }
   };
@@ -170,7 +170,7 @@ export default function EVoucherManagementPage() {
       } else {
         await showError(data.error || t('evoucher.failedDeleteOrders'));
       }
-    } catch (error) {
+    } catch (_error) {
       await showError(t('evoucher.failedDeleteOrders'));
     }
   };

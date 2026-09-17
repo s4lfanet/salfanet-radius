@@ -7,7 +7,7 @@ export async function GET() {
   try {
     const authCheck = await requirePermission('settings.view');
     if (!authCheck.authorized) return authCheck.response;
-    const session = authCheck.session;
+    const _session = authCheck.session;
 
     const company = await prisma.company.findFirst({
       select: {
@@ -44,7 +44,7 @@ export async function PUT(request: NextRequest) {
   try {
     const authCheck = await requirePermission('settings.edit');
     if (!authCheck.authorized) return authCheck.response;
-    const session = authCheck.session;
+    const _session = authCheck.session;
 
     const body = await request.json();
     const { enabled, rewardAmount, rewardType, rewardBoth, referredAmount } = body;

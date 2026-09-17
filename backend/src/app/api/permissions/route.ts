@@ -5,7 +5,7 @@ import { requirePermission } from '@/server/middleware/api-auth';
 /**
  * GET /api/permissions - Get all permissions grouped by category
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const authCheck = await requirePermission('users.permissions');
     if (!authCheck.authorized) return authCheck.response;

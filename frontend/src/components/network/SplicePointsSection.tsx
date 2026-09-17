@@ -6,7 +6,7 @@ import { apiAdmin } from '@/lib/api';
 import { Plus, Trash2, Link2, X, Zap, Settings, AlertTriangle, RefreshCcw } from 'lucide-react';
 
 // Fiber color coding (TIA-598-D standard)
-const FIBER_COLORS: Record<string, string> = {
+const _FIBER_COLORS: Record<string, string> = {
   Blue: '#0047AB',
   Orange: '#FF8C00',
   Green: '#228B22',

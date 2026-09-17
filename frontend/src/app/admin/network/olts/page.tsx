@@ -106,7 +106,7 @@ interface OLT {
   };
 }
 
-interface Router {
+interface _Router {
   id: string;
   name: string;
   nasname: string;
@@ -165,14 +165,14 @@ export default function OLTsPage() {
   const olts = (oltsQuery.data?.olts || []) as unknown as OLT[];
   // API Router is structurally compatible with local Router (superset of fields)
   const routers = routersQuery.data?.routers || [];
-  const oltProfiles = profilesQuery.data?.profiles || [];
+  const _oltProfiles = profilesQuery.data?.profiles || [];
   const loading = oltsQuery.isLoading || routersQuery.isLoading || profilesQuery.isLoading;
   const [oltStatusMap, setOltStatusMap] = useState<Record<string, OLTStatus>>({});
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingOlt, setEditingOlt] = useState<OLT | null>(null);
   const [showMapPicker, setShowMapPicker] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
-  const [connectionTestResult, setConnectionTestResult] = useState<ConnectionTestResult | null>(null);
+  const [_connectionTestResult, setConnectionTestResult] = useState<ConnectionTestResult | null>(null);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);

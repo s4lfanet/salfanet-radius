@@ -26,7 +26,7 @@ async function verifyTechnicianAuth(req: NextRequest) {
     });
 
     return technician;
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }

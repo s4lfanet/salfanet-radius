@@ -64,7 +64,7 @@ export async function syncVoucherToRadius(
   voucherIdOrCode: string, 
   customPassword?: string,
   customGroupProfile?: string,
-  options?: { nasIpAddress?: string; lockMac?: boolean }
+  _options?: { nasIpAddress?: string; lockMac?: boolean }
 ) {
   try {
     // Try to find by ID first, then by code

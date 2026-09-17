@@ -191,7 +191,7 @@ function getDeviceStatus(lastInform: string | null): string {
 }
 
 // GET - Fetch devices from GenieACS
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   const authCheck = await requirePermission('settings.genieacs');
   if (!authCheck.authorized) return authCheck.response;
   try {

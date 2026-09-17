@@ -4,7 +4,7 @@ import { ok, serverError } from '@/lib/api-response';
 import { prisma } from '@/server/db/client';
 
 // GET — list pending approvals
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   const authCheck = await requirePermission('customers.view');
   if (!authCheck.authorized) return authCheck.response;
 

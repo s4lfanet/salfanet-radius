@@ -385,7 +385,7 @@ export default function HotspotVoucherPage() {
   }
 
   const handleDownloadTemplate = async () => { try { const res = await fetch(buildUrl('/api/hotspot/voucher/bulk?type=template'), { credentials: 'include' }); const blob = await res.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'voucher-template.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a); window.URL.revokeObjectURL(url); } catch (e) { console.error(e); await showError(t('common.failed')); } }
-  const handleExportData = async () => { try { const res = await fetch(buildUrl('/api/hotspot/voucher/bulk?type=export'), { credentials: 'include' }); const blob = await res.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `vouchers-${new Date().toISOString().split('T')[0]}.csv`; document.body.appendChild(a); a.click(); document.body.removeChild(a); window.URL.revokeObjectURL(url); } catch (e) { console.error(e); await showError(t('common.failed')); } }
+  const _handleExportData = async () => { try { const res = await fetch(buildUrl('/api/hotspot/voucher/bulk?type=export'), { credentials: 'include' }); const blob = await res.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `vouchers-${new Date().toISOString().split('T')[0]}.csv`; document.body.appendChild(a); a.click(); document.body.removeChild(a); window.URL.revokeObjectURL(url); } catch (e) { console.error(e); await showError(t('common.failed')); } }
   
   const handleExportExcel = async () => {
     try {

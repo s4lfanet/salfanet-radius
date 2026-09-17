@@ -44,7 +44,7 @@ function getNativeBridge(): Window['AndroidBluetoothPrinter'] | null {
   return null;
 }
 
-function isAndroidWebView(): boolean {
+function _isAndroidWebView(): boolean {
   if (typeof navigator === 'undefined') return false;
   return /SalfanetApp\//.test(navigator.userAgent);
 }

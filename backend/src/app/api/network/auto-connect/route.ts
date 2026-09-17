@@ -29,7 +29,7 @@ function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number)
 }
 
 // Device type → table name mapping
-const DEVICE_TABLES: Record<string, string> = {
+const _DEVICE_TABLES: Record<string, string> = {
   OLT: 'network_olts',
   OTB: 'network_otbs',
   JOINT_CLOSURE: 'network_joint_closures',

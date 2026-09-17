@@ -81,8 +81,8 @@ export default function ActivityLogsPage() {
     refetch();
   };
 
-  const hasNext = offset + PAGE_SIZE < total;
-  const hasPrev = offset > 0;
+  const _hasNext = offset + PAGE_SIZE < total;
+  const _hasPrev = offset > 0;
 
   if (hasPermission && !hasPermission('settings.view')) {
     return (

@@ -589,7 +589,7 @@ const gradleProperties = () =>
 const gradleWrapperProperties = () =>
   `distributionBase=GRADLE_USER_HOME\ndistributionPath=wrapper/dists\ndistributionUrl=https\\://services.gradle.org/distributions/gradle-8.4-bin.zip\nnetworkTimeout=10000\nvalidateDistributionUrl=true\nzipStoreBase=GRADLE_USER_HOME\nzipStorePath=wrapper/dists\n`;
 
-const androidManifest = (pkg: string) => `<?xml version="1.0" encoding="utf-8"?>
+const androidManifest = (_pkg: string) => `<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -656,7 +656,7 @@ const themesXml = () => `<?xml version="1.0" encoding="utf-8"?>
 
 // ─── QRIS Listener app generators ─────────────────────────────────────────────
 
-function qrisListenerManifest(pkg: string): string {
+function qrisListenerManifest(_pkg: string): string {
   return `<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.INTERNET" />
@@ -2229,7 +2229,7 @@ async function detectJavaHome(): Promise<string> {
 
 // ─── GET: check environment ───────────────────────────────────────────────────
 
-export async function GET(req: NextRequest) {
+export async function GET(_req: NextRequest) {
   const authCheck = await requirePermission('settings.view');
   if (!authCheck.authorized) return authCheck.response;
 

@@ -126,7 +126,7 @@ export default function CustomerLoginPage() {
       } else {
         setError(data.error || 'Kode OTP salah');
       }
-    } catch (err: unknown) {
+    } catch (_err: unknown) {
       setError('Terjadi kesalahan. Silakan coba lagi.');
     } finally {
       setLoading(false);

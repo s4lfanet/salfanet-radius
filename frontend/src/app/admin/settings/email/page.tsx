@@ -274,8 +274,8 @@ export default function EmailSettingsPage() {
   const [templates, setTemplates] = useState<Record<string, EmailTemplate>>({});
   const [savingTemplate, setSavingTemplate] = useState<string | null>(null);
   const [activeTemplateTab, setActiveTemplateTab] = useState<string>('registration-approval');
-  const [previewTemplate, setPreviewTemplate] = useState<string | null>(null);
-  const [previewHtml, setPreviewHtml] = useState<string>('');
+  const [_previewTemplate, _setPreviewTemplate] = useState<string | null>(null);
+  const [_previewHtml, _setPreviewHtml] = useState<string>('');
 
   useEffect(() => {
     if (settingsData) {
@@ -846,7 +846,7 @@ function TemplatesTab({
     return titleMap[type] || templateConfig[type as keyof typeof templateConfig]?.title || type;
   };
 
-  const getTemplateDesc = (type: string): string => {
+  const _getTemplateDesc = (type: string): string => {
     const descMap: Record<string, string> = {
       'registration-confirmation': t('emailSettings.templates.registrationConfirmationDesc'),
       'registration-approval': t('emailSettings.templates.registrationApprovalDesc'),

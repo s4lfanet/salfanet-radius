@@ -98,7 +98,7 @@ export async function runReconciliation(batchSize = 500): Promise<Reconciliation
 
   // Build lookup maps for SalfaNet users
   const salfaNetUsernames = new Set(salfaNetUsers.map(u => u.username));
-  const salfaNetUserMap = new Map(salfaNetUsers.map(u => [u.username, u]));
+  const _salfaNetUserMap = new Map(salfaNetUsers.map(u => [u.username, u]));
 
   // Build lookup maps for RADIUS — read in batches using cursor pagination
   const radiusUsernames = new Set<string>();

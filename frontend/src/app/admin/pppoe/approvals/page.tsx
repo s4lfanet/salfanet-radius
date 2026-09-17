@@ -41,7 +41,7 @@ function formatIDR(n: number) {
 }
 
 export default function ApprovalsPage() {
-  const { t } = useTranslation();
+  const { t: _t } = useTranslation();
   const queryClient = useQueryClient();
   const [rejecting, setRejecting] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');

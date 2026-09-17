@@ -250,7 +250,7 @@ export function generatePDFBuffer(
     columnStyles: {
       0: { halign: 'center', cellWidth: 12 } // No column
     },
-    didDrawPage: (data) => {
+    didDrawPage: (_data) => {
       // Footer with page number
       doc.setFontSize(8);
       doc.setTextColor(150, 150, 150);

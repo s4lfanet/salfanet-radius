@@ -87,7 +87,7 @@ interface OLTDetail {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Card type visual metadata */
-const CARD_META: Record<string, { label: string; color: string; portRows: number; portCols: number }> = {
+const _CARD_META: Record<string, { label: string; color: string; portRows: number; portCols: number }> = {
   MCUD1:   { label: 'MCUD1',   color: '#2563eb', portRows: 0, portCols: 0 },
   MCUD:    { label: 'MCUD',    color: '#2563eb', portRows: 0, portCols: 0 },
   GTGQ:    { label: 'GTGQ',    color: '#15803d', portRows: 4, portCols: 4 },  // 16-port GPON
@@ -444,9 +444,9 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
     return rows;
   }, [visibleSlots]);
 
-  const activeCardsCount = diagramSlots.filter((slot) => slot.present && slot.type !== 'empty').length;
+  const _activeCardsCount = diagramSlots.filter((slot) => slot.present && slot.type !== 'empty').length;
 
-  const formatUptime = (secs: number | null) => {
+  const _formatUptime = (secs: number | null) => {
     if (!secs) return 'N/A';
     const d = Math.floor(secs / 86400), h = Math.floor((secs % 86400) / 3600), m = Math.floor((secs % 3600) / 60);
     return `${d}d ${h}h ${m}m`;
@@ -1821,7 +1821,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
       } else {
         showError(data.message || 'Connection failed');
       }
-    } catch (e) {
+    } catch (_e) {
       showError('Test failed');
     } finally {
       setTesting(null);
@@ -1866,7 +1866,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
         setConfirmReboot(null);
         await handleSyncOLT({ silent: true });
       }
-    } catch (e) {
+    } catch (_e) {
       showError('Reboot request failed');
     } finally {
       setRebootingOnu(null);
@@ -1890,7 +1890,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
           showWarning(data.message ?? 'ONU deleted, but sync failed');
         }
       }
-    } catch (e) {
+    } catch (_e) {
       showError('Delete ONU request failed');
     } finally {
       setDeletingOnu(null);
@@ -1969,7 +1969,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
     return { label: 'Poor', color: 'text-red-600' };
   };
 
-  const formatBytes = (bytes: number) => {
+  const _formatBytes = (bytes: number) => {
     if (!bytes) return '0 B';
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -1977,7 +1977,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
   };
 
-  const formatTimestamp = (ts: string) => {
+  const _formatTimestamp = (ts: string) => {
     const d = new Date(ts);
     return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
   };
@@ -1990,7 +1990,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
     return `${d}d ${h}h ${m}m`;
   };
 
-  const getStatusColor = (status: string) => {
+  const _getStatusColor = (status: string) => {
     switch (status) {
       case 'online':       return 'text-green-600';
       case 'dying_gasp':   return 'text-red-600';

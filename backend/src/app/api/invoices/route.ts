@@ -196,7 +196,7 @@ export async function POST(request: NextRequest) {
   if (!authCheck.authorized) return authCheck.response;
   try {
     const body = await request.json();
-    const { userId, amount, dueDate, notes } = body;
+    const { userId, amount, dueDate, notes: _notes } = body;
 
     if (!userId || !amount) return badRequest('User ID and amount are required');
 
@@ -463,7 +463,7 @@ export async function PUT(request: NextRequest) {
 
             if (!existingTransaction) {
               // Use raw SQL with NOW() to avoid timezone conversion
-              const paidDate = updateData.paidAt || new Date();
+              const _paidDate = updateData.paidAt || new Date();
               await prisma.$executeRaw`
                 INSERT INTO transactions (id, categoryId, type, amount, description, date, reference, notes, createdAt, updatedAt)
                 VALUES (${nanoid()}, ${pppoeCategory.id}, 'INCOME', ${existingInvoice.amount}, 

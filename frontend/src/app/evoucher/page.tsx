@@ -71,7 +71,7 @@ export default function EVoucherPage() {
       const data = await res.json();
       if (res.ok) router.push(data.order.paymentLink);
       else await showError(data.error || 'Gagal membuat pesanan');
-    } catch (error) {
+    } catch (_error) {
       await showError('Gagal membuat pesanan. Silakan coba lagi.');
     } finally { setPurchasing(false); }
   };

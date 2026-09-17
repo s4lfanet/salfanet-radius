@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
         sseManager.removeClient('voucher-updates', controller)
         try {
           controller.close()
-        } catch (e) {
+        } catch (_e) {
           // Already closed
         }
       })

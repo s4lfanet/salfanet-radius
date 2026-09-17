@@ -136,7 +136,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
       // Update local state
       setNotifHistory(prev => prev.map(n => ({ ...n, isRead: true })));
       setUnreadCount(0);
-    } catch (e) {
+    } catch (_e) {
       // silent - best-effort
     }
   }, [notifHistory]);

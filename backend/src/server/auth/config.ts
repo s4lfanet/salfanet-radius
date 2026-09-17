@@ -245,7 +245,7 @@ export async function verifyAuth(request: NextRequest | Request) {
     const authHeader = request.headers.get('authorization');
     
     if (authHeader && authHeader.startsWith('Bearer ')) {
-      const apiToken = authHeader.substring(7);
+      const _apiToken = authHeader.substring(7);
       
       // Validate API token (if you implement API token system)
       // For now, this is a placeholder for future API token implementation

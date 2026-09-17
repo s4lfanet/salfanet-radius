@@ -81,7 +81,7 @@ function fmtDate(val: string) {
 
 export default function AgentTicketsPage() {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t: _t } = useTranslation();
 
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -160,7 +160,7 @@ export default function AgentTicketsPage() {
     }
     setCreating(true);
     try {
-      const token = localStorage.getItem('agentToken');
+      const _token = localStorage.getItem('agentToken');
       let finalDescription = form.description;
       if (locationTag || (latitude && longitude)) {
         finalDescription += '\n\n---';
@@ -204,7 +204,7 @@ export default function AgentTicketsPage() {
     if (!msg) return;
     setSendingReply(ticketId);
     try {
-      const token = localStorage.getItem('agentToken');
+      const _token = localStorage.getItem('agentToken');
       const data = await apiAgent<{ success: boolean; error?: string }>(
         `/api/agent/tickets/${ticketId}`,
         {

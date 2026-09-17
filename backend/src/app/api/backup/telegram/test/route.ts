@@ -2,7 +2,7 @@
 import { requirePermission } from '@/server/middleware/api-auth';
 
 // Telegram test API (placeholder for future implementation)
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const authCheck = await requirePermission('settings.edit');
     if (!authCheck.authorized) return authCheck.response;

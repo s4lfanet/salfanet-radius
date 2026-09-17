@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ success: false, error: 'Invalid path' }, { status: 400 });
-  } catch (err) {
+  } catch (_err) {
     return NextResponse.json({ success: false, error: 'Failed to fetch data usage' }, { status: 500 });
   }
 }
@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: false, error: 'Invalid path' }, { status: 400 });
-  } catch (err) {
+  } catch (_err) {
     return NextResponse.json({ success: false, error: 'Failed to aggregate usage' }, { status: 500 });
   }
 }

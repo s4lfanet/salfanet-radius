@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
   try {
     const authCheck = await requirePermission('reports.view');
     if (!authCheck.authorized) return authCheck.response;
-    const session = authCheck.session;
+    const _session = authCheck.session;
 
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type') || 'invoice'; // invoice | payment | customer

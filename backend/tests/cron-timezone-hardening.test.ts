@@ -29,7 +29,7 @@ function readRepoFile(relPath: string): string {
   return fs.readFileSync(path.join(REPO_ROOT, relPath), 'utf-8');
 }
 
-function fileExists(relPath: string): boolean {
+function _fileExists(relPath: string): boolean {
   return fs.existsSync(path.join(SRC_ROOT, relPath));
 }
 

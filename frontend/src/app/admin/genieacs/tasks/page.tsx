@@ -67,7 +67,7 @@ export default function GenieACSTasksPage() {
         });
         invalidateTasks();
         addToast({ type: 'success', title: t('common.success'), description: t('common.taskDeleted'), duration: 2000 });
-      } catch (error) {
+      } catch (_error) {
         addToast({ type: 'error', title: t('common.error'), description: t('genieacs.failedDeleteTask') });
       }
     }
@@ -80,7 +80,7 @@ export default function GenieACSTasksPage() {
       });
       addToast({ type: 'success', title: t('common.success'), description: t('genieacs.taskWillBeRetried'), duration: 2000 });
       invalidateTasks();
-    } catch (error) {
+    } catch (_error) {
       addToast({ type: 'error', title: t('common.error'), description: t('genieacs.failedRetryTask') });
     }
   };

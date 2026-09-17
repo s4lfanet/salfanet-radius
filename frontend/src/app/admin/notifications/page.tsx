@@ -42,7 +42,7 @@ export default function NotificationsPage() {
   const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  const [filter, _setFilter] = useState<'all' | 'unread'>('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 

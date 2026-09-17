@@ -310,7 +310,7 @@ function PhysicalTraceTab() {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function TracePage() {
-  const { t } = useTranslation();
+  const { t: _t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabId>('logical');
 
   return (

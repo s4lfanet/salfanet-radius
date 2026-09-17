@@ -385,7 +385,7 @@ export default function StoppedSubscriptionsPage() {
                   </td>
                 </tr>
               ) : (
-                paginatedUsers.map((user, index) => (
+                paginatedUsers.map((user, _index) => (
                   <tr key={user.id} className="hover:bg-muted">
                     <td className="px-2 py-2 text-center">
                       <input 

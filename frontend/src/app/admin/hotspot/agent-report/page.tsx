@@ -73,7 +73,7 @@ const MONTH_NAMES_ID = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
 const DAY_NAMES_ID = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
 
 export default function AgentReportPage() {
-  const { t } = useTranslation();
+  const { t: _t } = useTranslation();
   const [reportType, setReportType] = useState<'daily' | 'monthly'>('daily');
   const [dateValue, setDateValue] = useState<string>(() => todayWIBStr());
   const [monthValue, setMonthValue] = useState<string>(() => formatWIB(nowWIB(), 'yyyy-MM'));

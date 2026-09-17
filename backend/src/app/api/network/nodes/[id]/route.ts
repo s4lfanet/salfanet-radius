@@ -68,8 +68,8 @@ export async function PUT(
       address,
       status,
       upstreamId,
-      capacity,
-      usedPorts,
+      capacity: _capacity,
+      usedPorts: _usedPorts,
       metadata,
     } = body;
 

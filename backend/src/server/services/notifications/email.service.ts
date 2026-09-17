@@ -1116,7 +1116,7 @@ export const EmailService = {
       });
 
       // If no specific template, use inline template
-      const formatCurrency = (amount: number) => 
+      const _formatCurrency = (amount: number) => 
         new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
 
       const formatDate = (date: Date) => 

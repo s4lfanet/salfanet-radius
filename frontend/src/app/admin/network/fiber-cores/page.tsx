@@ -53,7 +53,7 @@ interface FiberCable {
   totalCores: number;
 }
 
-const STATUSES = ['AVAILABLE', 'ASSIGNED', 'RESERVED', 'DAMAGED'] as const;
+const _STATUSES = ['AVAILABLE', 'ASSIGNED', 'RESERVED', 'DAMAGED'] as const;
 
 export default function FiberCoresPage() {
   const { t } = useTranslation();
@@ -112,7 +112,7 @@ export default function FiberCoresPage() {
   const [assignToType, setAssignToType] = useState('ODP');
   const [assignToId, setAssignToId] = useState('');
 
-  const handleSelectAll = () => {
+  const _handleSelectAll = () => {
     if (selectedCores.size === filteredCores.length) {
       setSelectedCores(new Set());
     } else {

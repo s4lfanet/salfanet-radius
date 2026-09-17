@@ -1079,7 +1079,7 @@ export default function UserDetailModal({
 // ─── Customer Add-ons Tab ────────────────────────────────────────────────────
 
 function CustomerAddonsTab({ userId }: { userId: string }) {
-  const { t } = useTranslation();
+  const { t: _t } = useTranslation();
   const [addons, setAddons] = useState<any[]>([]);
   const [addonTypes, setAddonTypes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1108,7 +1108,7 @@ function CustomerAddonsTab({ userId }: { userId: string }) {
     if (!form.addonTypeId) { await showError('Pilih jenis layanan tambahan'); return; }
     setSaving(true);
     try {
-      const data = await apiAdmin(`/api/pppoe/users/${userId}/addons`, {
+      const _data = await apiAdmin(`/api/pppoe/users/${userId}/addons`, {
         method: 'POST',
         body: JSON.stringify({
           addonTypeId: form.addonTypeId,
@@ -1266,7 +1266,7 @@ function CustomerAddonsTab({ userId }: { userId: string }) {
 
 // ─── Payment Promise (Janji Bayar) Tab ───────────────────────────────────────
 
-function PaymentPromiseTab({ userId, userStatus }: { userId: string; userStatus: string }) {
+function PaymentPromiseTab({ userId, userStatus: _userStatus }: { userId: string; userStatus: string }) {
   const [promises, setPromises] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -1302,7 +1302,7 @@ function PaymentPromiseTab({ userId, userStatus }: { userId: string; userStatus:
     finally { setSaving(false); }
   };
 
-  const handleCancel = async (promiseId: string) => {
+  const handleCancel = async (_promiseId: string) => {
     const confirmed = await showConfirm('Batalkan janji bayar? Pelanggan akan diisolir kembali.');
     if (!confirmed) return;
     try {

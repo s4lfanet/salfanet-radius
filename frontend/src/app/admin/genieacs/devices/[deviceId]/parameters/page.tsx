@@ -24,7 +24,7 @@ interface ModalState {
   name: string;
 }
 
-const TYPES = ['xsd:string', 'xsd:boolean', 'xsd:int', 'xsd:unsignedInt', 'xsd:dateTime'];
+const _TYPES = ['xsd:string', 'xsd:boolean', 'xsd:int', 'xsd:unsignedInt', 'xsd:dateTime'];
 
 /** Generate a GenieACS provision script from selected parameters */
 function buildProvisionScript(params: FlatParameter[]): string {
@@ -216,7 +216,7 @@ export default function DeviceParametersPage({ params }: { params: Promise<{ dev
   }
 
   const totalParams = parameters.filter((p) => !p.object).length;
-  const selectedParams = filtered.filter((p) => selected.has(p.path));
+  const _selectedParams = filtered.filter((p) => selected.has(p.path));
 
   return (
     <div className="flex flex-col gap-4 h-full">

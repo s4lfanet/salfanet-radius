@@ -1191,7 +1191,7 @@ export default function PppoeUsersPage() {
       await showError(t('pppoe.downloadTemplateFailed'));
     }
   };
-  const handleExportData = async () => { try { const exportParams = new URLSearchParams({ type: 'export' }); if (filterPaymentStatus) exportParams.set('paymentStatus', filterPaymentStatus); const res = await fetch(buildUrl(`/api/pppoe/users/bulk?${exportParams}`), { credentials: 'include' }); const blob = await res.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `pppoe-export-${new Date().toISOString().split('T')[0]}.csv`; document.body.appendChild(a); a.click(); document.body.removeChild(a); window.URL.revokeObjectURL(url); } catch (error) { console.error('Export error:', error); await showError(t('pppoe.exportFailed')); } };
+  const _handleExportData = async () => { try { const exportParams = new URLSearchParams({ type: 'export' }); if (filterPaymentStatus) exportParams.set('paymentStatus', filterPaymentStatus); const res = await fetch(buildUrl(`/api/pppoe/users/bulk?${exportParams}`), { credentials: 'include' }); const blob = await res.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `pppoe-export-${new Date().toISOString().split('T')[0]}.csv`; document.body.appendChild(a); a.click(); document.body.removeChild(a); window.URL.revokeObjectURL(url); } catch (error) { console.error('Export error:', error); await showError(t('pppoe.exportFailed')); } };
 
   const handleExportExcel = async () => {
     try {
@@ -1209,7 +1209,7 @@ export default function PppoeUsersPage() {
     } catch (error) { console.error('Export error:', error); await showError(t('pppoe.exportFailed')); }
   };
 
-  const handleExportPDF = async () => {
+  const _handleExportPDF = async () => {
     try {
       const params = new URLSearchParams();
       params.set('format', 'pdf');

@@ -351,7 +351,7 @@ export const NotificationService = {
     const historyId = Math.random().toString(36).substring(2, 15);
 
     // Create history record
-    const history = await prisma.cronHistory.create({
+    const _history = await prisma.cronHistory.create({
       data: {
         id: historyId,
         jobType: 'notification_check',

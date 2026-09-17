@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
     if (!auth.authorized) return auth.response;
     const { agentId } = auth;
 
-    const { searchParams } = new URL(request.url);
+    const { searchParams: _searchParams } = new URL(request.url);
 
     // Get all vouchers for this agent
     const vouchers = await prisma.hotspotVoucher.findMany({
@@ -240,7 +240,7 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    const syntheticSessions = orphanedVouchers.map((voucher, i) => {
+    const syntheticSessions = orphanedVouchers.map((voucher, _i) => {
         const effectiveStartMs = new Date(voucher.firstLoginAt!).getTime();
         const effectiveStartTime = new Date(effectiveStartMs).toISOString();
         // firstLoginAt is TRUE UTC, so use nowUtc (TRUE UTC) for duration

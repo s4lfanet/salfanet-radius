@@ -85,6 +85,6 @@ export async function getOnuOpticalInfoSSH(
   return null;
 }
 
-export async function getTrafficStats(config: SNMPConfig): Promise<{ rxBytes?: bigint; txBytes?: bigint }> {
+export async function getTrafficStats(_config: SNMPConfig): Promise<{ rxBytes?: bigint; txBytes?: bigint }> {
   return {};
 }

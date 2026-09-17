@@ -264,7 +264,7 @@ function isTruthyValue(val: unknown): boolean {
 }
 
 // Helper to detect band from standard or frequency
-function detectBand(wlan: Record<string, unknown>, index: number): string {
+function detectBand(wlan: Record<string, unknown>, _index: number): string {
   // Check OperatingFrequencyBand first
   const freqBand = safeString(getNestedValue(wlan, 'OperatingFrequencyBand') as unknown);
   if (freqBand.includes('5')) return '5GHz';

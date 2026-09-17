@@ -251,7 +251,7 @@ export default function PaymentHistoryPage() {
     await printInvoiceThermal(payment.id, toast, token);
   };
 
-  const handlePrintInvoice = async (payment: PaymentHistory) => {
+  const _handlePrintInvoice = async (payment: PaymentHistory) => {
     try {
       const data = await apiCustomer<{
         success: boolean;
@@ -472,8 +472,8 @@ export default function PaymentHistoryPage() {
 
   const pendingPayments = payments.filter(p => p.status === 'PENDING' || p.status === 'OVERDUE');
   const paidPayments = payments.filter(p => p.status === 'PAID');
-  const totalPaidAmount = paidPayments.reduce((s, p) => s + p.amount, 0);
-  const totalPendingAmount = pendingPayments.reduce((s, p) => s + p.amount, 0);
+  const _totalPaidAmount = paidPayments.reduce((s, p) => s + p.amount, 0);
+  const _totalPendingAmount = pendingPayments.reduce((s, p) => s + p.amount, 0);
 
   return (
     <div className="p-4 lg:p-6 space-y-5 w-full">

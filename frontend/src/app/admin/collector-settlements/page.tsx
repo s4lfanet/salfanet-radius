@@ -34,8 +34,8 @@ export default function AdminCollectorSettlementsPage() {
   const today = new Date().toISOString().slice(0, 10);
   const [mode, setMode] = useState<'daily' | 'range'>('daily');
   const [date, setDate] = useState(today);
-  const [dateFrom, setDateFrom] = useState(today.slice(0, 7) + '-01');
-  const [dateTo, setDateTo] = useState(today);
+  const [_dateFrom, _setDateFrom] = useState(today.slice(0, 7) + '-01');
+  const [_dateTo, _setDateTo] = useState(today);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<SettlementCollector[]>([]);

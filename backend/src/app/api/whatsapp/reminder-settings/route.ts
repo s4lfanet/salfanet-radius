@@ -6,7 +6,7 @@ import { requirePermission } from '@/server/middleware/api-auth'
 /**
  * GET /api/whatsapp/reminder-settings - Get current reminder settings
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const authCheck = await requirePermission('whatsapp.view');
     if (!authCheck.authorized) return authCheck.response;

@@ -58,7 +58,7 @@ export default function SplitterSection({
   onConfigUpdate,
   className = ''
 }: Props) {
-  const [loading, setLoading] = useState(false);
+  const [_loading, _setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
 

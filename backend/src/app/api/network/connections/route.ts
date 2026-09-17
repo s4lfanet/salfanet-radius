@@ -24,7 +24,7 @@ const CONNECTION_COLORS: Record<string, string> = {
   'DEFAULT': '#6b7280',                // gray fallback
 };
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   const authCheck = await requirePermission('network.view');
   if (!authCheck.authorized) return authCheck.response;
   try {

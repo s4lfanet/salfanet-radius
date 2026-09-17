@@ -26,7 +26,7 @@ interface BotSettings {
 
 export default function TelegramBotSettingsPage() {
   const { hasPermission, loading: permLoading } = usePermissions()
-  const { t } = useTranslation()
+  const { t: _t } = useTranslation()
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)

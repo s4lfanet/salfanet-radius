@@ -164,7 +164,7 @@ function errMsg(e: unknown): string {
 }
 
 /** @deprecated panel redundansi dihapus */
-function RedundancyInfoPanel(_props: Record<string, unknown>) {
+function _RedundancyInfoPanel(_props: Record<string, unknown>) {
   return null;
 }
 
@@ -196,12 +196,12 @@ export default function VpnClientPage() {
     localNetworks: '', // IP lokal di balik NAS (misal: 192.168.75.0/24,136.1.1.100/32)
   });
   // WireGuard NAS Peers (VPS as WG server)
-  const [wgPeers, setWgPeers] = useState<{ publicKey: string; endpoint?: string; allowedIps?: string; lastHandshake?: string }[]>([]);
-  const [wgLoading, setWgLoading] = useState(false);
-  const [wgAddingPeer, setWgAddingPeer] = useState(false);
+  const [_wgPeers, setWgPeers] = useState<{ publicKey: string; endpoint?: string; allowedIps?: string; lastHandshake?: string }[]>([]);
+  const [_wgLoading, _setWgLoading] = useState(false);
+  const [_wgAddingPeer, setWgAddingPeer] = useState(false);
   const [wgNewPeerName, setWgNewPeerName] = useState('');
-  const [wgGeneratedScript, setWgGeneratedScript] = useState<string | null>(null);
-  const [showWgSection, setShowWgSection] = useState(false);
+  const [_wgGeneratedScript, setWgGeneratedScript] = useState<string | null>(null);
+  const [_showWgSection, setShowWgSection] = useState(false);
   // VPS Pool Config edit states
   const [wgPoolEdit, setWgPoolEdit] = useState(false);
   const [wgPoolForm, setWgPoolForm] = useState({ poolStart: '', poolEnd: '', gatewayIp: '' });
@@ -326,7 +326,7 @@ export default function VpnClientPage() {
   };
 
   // ── WireGuard NAS Peer handlers (VPS as WG server) ─────────────────────
-  const handleWgAddPeer = async () => {
+  const _handleWgAddPeer = async () => {
     if (!wgNewPeerName.trim()) { showError('Nama NAS wajib diisi'); return; }
     setWgAddingPeer(true);
     try {
@@ -386,7 +386,7 @@ export default function VpnClientPage() {
     }
   };
 
-  const handleWgRemovePeer = async (pubKey: string) => {
+  const _handleWgRemovePeer = async (pubKey: string) => {
     const confirmed = await showConfirm('Hapus peer WireGuard ini? Koneksi NAS akan terputus.', 'Hapus Peer WireGuard');
     if (!confirmed) return;
     try {
@@ -870,7 +870,7 @@ ${vpnCmd}
     try {
       await navigator.clipboard.writeText(text);
       showSuccess(t('network.copiedToClipboard'), t('network.copied'));
-    } catch (error) {
+    } catch (_error) {
       showError(t('network.failedCopy'), t('network.copyFailed'));
     }
   };

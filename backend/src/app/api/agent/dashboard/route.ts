@@ -76,8 +76,8 @@ export async function GET(request: NextRequest) {
     // Use company timezone for month/day calculation (UTC stored in DB)
     const now = nowWIB();
     const currentMonthStr = formatInTimeZone(now, WIB_TIMEZONE, 'yyyy-MM');
-    const currentYear = parseInt(currentMonthStr.substring(0, 4));
-    const currentMonth = parseInt(currentMonthStr.substring(5, 7)) - 1;
+    const _currentYear = parseInt(currentMonthStr.substring(0, 4));
+    const _currentMonth = parseInt(currentMonthStr.substring(5, 7)) - 1;
     const todayStr = formatInTimeZone(now, WIB_TIMEZONE, 'yyyy-MM-dd');
 
     // Calculate voucher statistics based on status

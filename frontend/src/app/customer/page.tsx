@@ -159,7 +159,7 @@ export default function CustomerDashboard() {
   const [editingWifi, setEditingWifi] = useState<number | null>(null); // WLAN index being edited
   const [wifiForm, setWifiForm] = useState({ ssid: '', password: '' });
   const [updatingWifi, setUpdatingWifi] = useState(false);
-  const [companyName, setCompanyName] = useState('SALFANET RADIUS');
+  const [_companyName, setCompanyName] = useState('SALFANET RADIUS');
   const [connectedDevices, setConnectedDevices] = useState<ConnectedDevice[]>([]);
   const [generatingPayment, setGeneratingPayment] = useState<string | null>(null);
   const [paymentGateways, setPaymentGateways] = useState<PaymentGatewayInfo[]>([]);
@@ -217,7 +217,7 @@ export default function CustomerDashboard() {
     }
   };
 
-  const handleRegeneratePayment = async (invoiceId: string, invoiceNumber: string) => {
+  const handleRegeneratePayment = async (invoiceId: string, _invoiceNumber: string) => {
     if (paymentGateways.length === 0) {
       toast('warning', 'Gateway Tidak Tersedia', t('customer.noGatewayAvailable'));
       return;
@@ -290,7 +290,7 @@ export default function CustomerDashboard() {
         return;
       }
       const userData = localStorage.getItem('customer_user');
-      if (userData) { try { setUser(JSON.parse(userData)); } catch (e) { router.push('/customer/login'); } }
+      if (userData) { try { setUser(JSON.parse(userData)); } catch (_e) { router.push('/customer/login'); } }
       else router.push('/customer/login');
     } finally { setLoading(false); }
   };
@@ -349,7 +349,7 @@ export default function CustomerDashboard() {
       } else if (wifiData.reason === 'not_configured') {
         // GenieACS not set up - silently skip, no device info available
       }
-    } catch (error) { 
+    } catch (_error) { 
       // Silently ignore - WiFi info is non-critical for dashboard
     }
     finally { setLoadingOnt(false); }
@@ -400,7 +400,7 @@ export default function CustomerDashboard() {
     }
   };
 
-  const handleLogout = () => {
+  const _handleLogout = () => {
     localStorage.removeItem('customer_token');
     localStorage.removeItem('customer_user');
     router.push('/customer/login');

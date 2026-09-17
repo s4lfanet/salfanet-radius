@@ -220,7 +220,7 @@ export async function runInvoiceGenerate(): Promise<{ generated: number; skipped
  *        user.expiredAt > invoice.dueDate (user already renewed past due date)
  */
 export async function runInvoiceAutoCancel(): Promise<{ cancelled: number; total: number; details: string[] }> {
-  const now = await nowWIBAsync();
+  const _now = await nowWIBAsync();
   const details: string[] = [];
 
   // Find stale invoices: PENDING/OVERDUE where the customer has already

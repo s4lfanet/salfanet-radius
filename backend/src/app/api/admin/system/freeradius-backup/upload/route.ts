@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     // Validate archive can actually be read (basic integrity check)
     const appDir = getAppDir();
     const backupDir = getBackupDir(appDir);
-    const destPath = path.join(backupDir, safeName);
+    const _destPath = path.join(backupDir, safeName);
 
     // Prevent overwrite with dup name
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);

@@ -10,7 +10,7 @@ import { badRequest, serverError } from '@/lib/api-response';
  * Previously delegated to NestJS backend — now native.
  */
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   const authCheck = await requirePermission('settings.cron');
   if (!authCheck.authorized) return authCheck.response;
   try {

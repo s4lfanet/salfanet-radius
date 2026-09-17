@@ -6,7 +6,7 @@ export async function GET() {
   try {
     const authCheck = await requirePermission('invoices.view');
     if (!authCheck.authorized) return authCheck.response;
-    const session = authCheck.session;
+    const _session = authCheck.session;
 
     const orders = await prisma.voucherOrder.findMany({
       include: {

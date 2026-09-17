@@ -83,7 +83,7 @@ interface JcDetail {
 
 export default function NetworkDiagramsPage() {
   const [selectedTab, setSelectedTab] = React.useState<'otb' | 'jc' | 'odc' | 'odp'>('otb');
-  const [selectedPort, setSelectedPort] = React.useState<Port | null>(null);
+  const [_selectedPort, setSelectedPort] = React.useState<Port | null>(null);
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
@@ -282,7 +282,7 @@ export default function NetworkDiagramsPage() {
   };
 
   // Sample JC data
-  const sampleJC: SplitterNode = {
+  const _sampleJC: SplitterNode = {
     id: 'jc-001',
     code: 'JC-GATSU-001',
     name: 'Joint Closure Gatot Subroto 001',
@@ -328,7 +328,7 @@ export default function NetworkDiagramsPage() {
   };
 
   // Sample ODC data
-  const sampleODC: SplitterNode = {
+  const _sampleODC: SplitterNode = {
     id: 'odc-001',
     code: 'ODC-GATSU-001',
     name: 'ODC Gatot Subroto 001',
@@ -369,7 +369,7 @@ export default function NetworkDiagramsPage() {
   };
 
   // Sample ODP data
-  const sampleODP: SplitterNode = {
+  const _sampleODP: SplitterNode = {
     id: 'odp-001',
     code: 'ODP-GATSU-001A',
     name: 'ODP Gatot Subroto Zone A',
@@ -418,7 +418,7 @@ export default function NetworkDiagramsPage() {
     );
   }
 
-  const currentJC = getCurrentJC();
+  const _currentJC = getCurrentJC();
   const currentODC = getCurrentODC();
   const currentODP = getCurrentODP();
 

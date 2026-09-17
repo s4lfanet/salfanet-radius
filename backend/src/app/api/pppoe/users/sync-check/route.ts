@@ -9,7 +9,7 @@ import { requirePermission } from '@/server/middleware/api-auth';
  * Only checks routers with authMode = local (not radius).
  * Returns list of users missing from MikroTik.
  */
-export async function GET(request: Request) {
+export async function GET(_request: Request) {
   const authCheck = await requirePermission('customers.view');
   if (!authCheck.authorized) return authCheck.response;
 

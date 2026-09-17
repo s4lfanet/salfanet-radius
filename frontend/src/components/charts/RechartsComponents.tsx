@@ -160,7 +160,7 @@ export function UserStatusPieChart({ data, loading, height = 200 }: UserStatusPi
   if (loading) return <div className="flex items-center justify-center" style={{ height: h }}><span className="text-xs text-muted-foreground">Memuat...</span></div>;
   if (!data || data.length === 0) return <div className="flex items-center justify-center" style={{ height: h }}><span className="text-xs text-muted-foreground">No data available</span></div>;
 
-  const total = data.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
+  const _total = data.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
 
   return (
     <ResponsiveContainer width="100%" height={h}>

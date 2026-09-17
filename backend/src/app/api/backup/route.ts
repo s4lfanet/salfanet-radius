@@ -6,7 +6,7 @@ import { requirePermission } from '@/server/middleware/api-auth';
  * GET /api/backup
  * Get list of all backups
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const authCheck = await requirePermission('settings.view');
     if (!authCheck.authorized) return authCheck.response;
@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
  * POST /api/backup
  * Create a new backup
  */
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const authCheck = await requirePermission('settings.edit');
     if (!authCheck.authorized) return authCheck.response;

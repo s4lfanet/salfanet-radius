@@ -219,7 +219,7 @@ export async function manageHotspotUser(
     const menu = api.write.bind(api)
 
     // For update with username change, delete old and create new
-    const lookupName = action === 'update' && params.oldUsername ? params.oldUsername : params.username
+    const _lookupName = action === 'update' && params.oldUsername ? params.oldUsername : params.username
 
     if (action === 'delete') {
       const users = await safePrint(menu, '/ip/hotspot/user/print', [`?name=${params.username}`])

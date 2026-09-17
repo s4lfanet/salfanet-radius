@@ -3,7 +3,7 @@ import { requirePermission } from '@/server/middleware/api-auth';
 import { seedParameterDisplayConfig } from '../../../../../../../prisma/seeds/parameter-display-config';
 
 // POST - Reset to default configurations
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   const authCheck = await requirePermission('settings.genieacs');
   if (!authCheck.authorized) return authCheck.response;
   try {

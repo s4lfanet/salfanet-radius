@@ -148,7 +148,7 @@ export function getCidrRange(cidr: string): { startIp: string; endIp: string; ga
 
     const mask = parseInt(subnetMask);
     const hostBits = 32 - mask;
-    const numHosts = Math.pow(2, hostBits) - 2; // Exclude network and broadcast
+    const _numHosts = Math.pow(2, hostBits) - 2; // Exclude network and broadcast
 
     // Convert network address to number
     const networkParts = networkAddr.split('.').map(x => parseInt(x));

@@ -61,7 +61,7 @@ async function syncIsolationRouteOnVps(oldPool: string | null, newPool: string):
 }
 
 // GET - Get isolation settings
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   const authCheck = await requirePermission('settings.view');
   if (!authCheck.authorized) return authCheck.response;
   try {
@@ -196,7 +196,7 @@ export async function PUT(request: NextRequest) {
       INSERT INTO radgroupreply (groupname, attribute, op, value)
       VALUES ('isolir', 'Mikrotik-Group', ':=', 'isolir')
     `;
-    const ipPool = isolationIpPool ?? company.isolationIpPool ?? '192.168.200.0/24';
+    const _ipPool = isolationIpPool ?? company.isolationIpPool ?? '192.168.200.0/24';
     const poolName = 'pool-isolir';
     await prisma.$executeRaw`
       DELETE FROM radgroupreply

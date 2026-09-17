@@ -133,7 +133,7 @@ function parseInterfaceStatus(output: string): Record<string, string> {
  *   Pvid            : 1
  *   Tagged Vlan     : 100 200 300
  */
-function parseVlanPort(output: string): Record<string, string> {
+function _parseVlanPort(output: string): Record<string, string> {
   const result: Record<string, string> = {};
 
   // Try key:value format (e.g. "Mode : Hybrid" or "Tagged vlan : 100 200")

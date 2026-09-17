@@ -295,7 +295,7 @@ function OTBForm({ lat, lng, olts, cables, onSubmit, loading }: { lat: number; l
 }
 
 // ─── JC Form ──────────────────────────────────────────────────────────────────
-function JCForm({ lat, lng, otbs, cables, odcsList, jcsList, onSubmit, loading }: {
+function JCForm({ lat, lng, otbs: _otbs, cables: _cables, odcsList: _odcsList, jcsList: _jcsList, onSubmit, loading }: {
   lat: number; lng: number;
   otbs: EntityOption[]; cables: CableOption[]; odcsList: EntityOption[]; jcsList: EntityOption[];
   onSubmit: (d: NodeFormData) => void; loading: boolean;
@@ -746,7 +746,7 @@ export default function AddNodePanel({ lat, lng, onClose, onCreated, initialNode
     setLoading(true);
     try {
       // Strip UI-only fields before sending to API
-      const { outputRows, feederCables, ...apiBody } = formData;
+      const { outputRows: _outputRows, feederCables, ...apiBody } = formData;
 
       const data = await apiAdmin<Record<string, unknown>>(getApiUrl(selectedType), {
         method: 'POST',

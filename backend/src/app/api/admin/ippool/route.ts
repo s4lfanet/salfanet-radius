@@ -4,7 +4,7 @@ import { requirePermission } from '@/server/middleware/api-auth';
 import { reloadFreeRadius } from '@/server/services/radius/freeradius.service';
 
 // GET /api/admin/ippool — list pools
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   const authCheck = await requirePermission('settings.view');
   if (!authCheck.authorized) return authCheck.response;
 
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       end_ip: p.end_ip,
     }));
     return NextResponse.json({ success: true, data });
-  } catch (err) {
+  } catch (_err) {
     return NextResponse.json({ success: false, error: 'Failed to list pools' }, { status: 500 });
   }
 }
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       success: true,
       data: { pool_name, total_ips: ips.length, start_ip: `${network}.${start}`, end_ip: `${network}.${end}` },
     });
-  } catch (err) {
+  } catch (_err) {
     return NextResponse.json({ success: false, error: 'Failed to create pool' }, { status: 500 });
   }
 }
@@ -90,7 +90,7 @@ export async function DELETE(request: NextRequest) {
     // Reload FreeRADIUS after pool deletion
     try { await reloadFreeRadius(); } catch (e) { console.warn('FreeRADIUS reload failed after pool delete:', e); }
     return NextResponse.json({ success: true, data: { pool_name: poolName, deleted: result.count } });
-  } catch (err) {
+  } catch (_err) {
     return NextResponse.json({ success: false, error: 'Failed to delete pool' }, { status: 500 });
   }
 }

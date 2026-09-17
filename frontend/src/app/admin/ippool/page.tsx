@@ -88,7 +88,7 @@ interface PoolMappingResponse {
 }
 
 export default function IPPoolPage() {
-  const { t } = useTranslation();
+  const { t: _t } = useTranslation();
   const queryClient = useQueryClient();
   const [details, setDetails] = useState<PoolDetails | null>(null);
   const [selectedPool, setSelectedPool] = useState<string | null>(null);
@@ -120,7 +120,7 @@ export default function IPPoolPage() {
       const data = await apiAdmin<PoolDetailsResponse>(`${API_BASE}/${encodeURIComponent(poolName)}`);
       setDetails(data.data || null);
       setSelectedPool(poolName);
-    } catch (err: unknown) {
+    } catch (_err: unknown) {
       showError('Failed to load pool details');
     }
   };
