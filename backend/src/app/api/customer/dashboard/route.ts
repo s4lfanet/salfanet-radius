@@ -49,6 +49,7 @@ export async function GET(request: NextRequest) {
         expiredAt: true,
         balance: true,
         autoRenewal: true,
+        routerId: true,
         profile: {
           select: {
             id: true,
