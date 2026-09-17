@@ -8,7 +8,10 @@
     "build": "next build && node scripts/postbuild.js",
     "start": "next start -p 3001",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "tsx prisma/seeds/seed-all.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",
