@@ -278,7 +278,7 @@ export async function GET(request: NextRequest) {
     const coreId = searchParams.get('coreId');
     const customerId = searchParams.get('customerId');
     const odpId = searchParams.get('odpId');
-    const portNumber = searchParams.get('portNumber');
+    const _portNumber = searchParams.get('portNumber');
     const deviceType = searchParams.get('deviceType');
     const deviceId = searchParams.get('deviceId');
     const direction = (searchParams.get('direction') || 'both') as 'upstream' | 'downstream' | 'both';

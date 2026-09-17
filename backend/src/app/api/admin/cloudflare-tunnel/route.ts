@@ -16,7 +16,7 @@ export async function GET() {
   try {
     const authCheck = await requirePermission('settings.view');
     if (!authCheck.authorized) return authCheck.response;
-    const session = authCheck.session;
+    const _session = authCheck.session;
 
     const company = await prisma.company.findFirst();
 
@@ -127,14 +127,14 @@ export async function POST(req: NextRequest) {
   try {
     const authCheck = await requirePermission('settings.edit');
     if (!authCheck.authorized) return authCheck.response;
-    const session = authCheck.session;
+    const _session = authCheck.session;
 
     const body = await req.json();
     const { action } = body;
 
     switch (action) {
       case 'save_config': {
-        const { tunnelDomain, tunnelToken, localPort } = body;
+        const { tunnelDomain, tunnelToken, localPort: _localPort } = body;
         if (!tunnelDomain || typeof tunnelDomain !== 'string') {
           return NextResponse.json({ error: 'tunnelDomain is required' }, { status: 400 });
         }
@@ -207,7 +207,7 @@ export async function POST(req: NextRequest) {
             'DEBIAN_FRONTEND=noninteractive apt-get install -y cloudflared',
           ];
 
-          const { stdout, stderr } = await execAsync(commands.join(' && '), { timeout: 120000 });
+          const { stdout: _stdout, stderr: _stderr } = await execAsync(commands.join(' && '), { timeout: 120000 });
           const versionOut = await execAsync('cloudflared --version 2>&1');
 
           return NextResponse.json({

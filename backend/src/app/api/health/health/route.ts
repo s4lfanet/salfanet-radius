@@ -36,7 +36,7 @@ export async function GET() {
       database: 'connected',
       version: process.env.APP_VERSION || process.env.npm_package_version || 'unknown',
     }, { status: 200 });
-  } catch (error) {
+  } catch (_error) {
     return NextResponse.json({
       status: 'unhealthy',
       timestamp: new Date().toISOString(),

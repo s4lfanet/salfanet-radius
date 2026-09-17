@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     // Verify admin authentication
     const authCheck = await requirePermission('settings.view');
     if (!authCheck.authorized) return authCheck.response;
-    const session = authCheck.session;
+    const _session = authCheck.session;
 
     // Get current isolation settings
     const settings = await getIsolationSettings();

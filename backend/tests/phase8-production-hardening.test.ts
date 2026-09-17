@@ -4,7 +4,7 @@ import path from 'path';
 
 const ROOT = path.resolve(__dirname, '..');
 const SRC_ROOT = path.join(ROOT, 'src');
-const SCHEMA_PATH = path.join(ROOT, 'prisma', 'schema.prisma');
+const _SCHEMA_PATH = path.join(ROOT, 'prisma', 'schema.prisma');
 const MIGRATIONS_DIR = path.join(ROOT, 'prisma', 'migrations');
 
 function readFile(absPath: string): string {

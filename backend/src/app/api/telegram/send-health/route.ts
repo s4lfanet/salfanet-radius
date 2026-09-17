@@ -4,7 +4,7 @@ import { prisma } from '@/server/db/client';
 import { sendHealthReport } from '@/server/services/notifications/telegram.service';
 
 // POST - Send health check to Telegram
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const authCheck = await requirePermission('settings.edit');
     if (!authCheck.authorized) return authCheck.response;

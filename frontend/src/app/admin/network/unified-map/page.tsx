@@ -160,7 +160,7 @@ export default function UnifiedMapPage() {
     setAddMode(false);
   };
 
-  const handleNodeCreated = (newEntity: Record<string, unknown>) => {
+  const handleNodeCreated = (_newEntity: Record<string, unknown>) => {
     setAddCoords(null);
     setInitialNodeType(null);
     setPendingNodeType(null);
@@ -227,7 +227,7 @@ export default function UnifiedMapPage() {
     }
   };
 
-  const deleteConnection = async (fromId: string, toId: string) => {
+  const _deleteConnection = async (fromId: string, toId: string) => {
     const confirmed = await showConfirm('Semua segment antara kedua device ini akan dihapus.', 'Hapus Koneksi?', 'Hapus', 'Batal');
     if (!confirmed) return;
 

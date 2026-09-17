@@ -48,7 +48,7 @@ const ROLES = {
 type RoleKey = keyof typeof ROLES;
 
 function mainActivity(pkg: string, appLabel: string, startUrl: string, baseUrl: string): string {
-  const escapedBaseUrl = baseUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const _escapedBaseUrl = baseUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return `package ${pkg}
 
 import android.Manifest
@@ -295,7 +295,7 @@ class MainActivity : AppCompatActivity() {
 }
 
 function appBuildGradle(pkg: string, appName: string, color: string): string {
-  const colorHex = color.replace('#', '');
+  const _colorHex = color.replace('#', '');
   return `plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
@@ -368,7 +368,7 @@ include ':app'
 `;
 }
 
-function androidManifest(pkg: string): string {
+function androidManifest(_pkg: string): string {
   return `<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 

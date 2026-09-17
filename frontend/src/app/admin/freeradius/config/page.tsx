@@ -23,7 +23,7 @@ interface ConfigGroup {
 export default function RadiusConfigPage() {
     const { t } = useTranslation();
     const { addToast, confirm } = useToast();
-    const queryClient = useQueryClient();
+    const _queryClient = useQueryClient();
     const [selectedFile, setSelectedFile] = useState<string | null>(null);
     const [content, setContent] = useState('');
     const [originalContent, setOriginalContent] = useState('');

@@ -52,7 +52,7 @@ class SSEManager {
     channelClients.forEach((controller) => {
       try {
         controller.enqueue(encoded)
-      } catch (error) {
+      } catch (_error) {
         // Client disconnected, remove it
         channelClients.delete(controller)
         disconnected++
@@ -69,14 +69,14 @@ class SSEManager {
    * Send keep-alive ping to all clients
    */
   sendKeepAlive() {
-    this.clients.forEach((channelClients, channel) => {
+    this.clients.forEach((channelClients, _channel) => {
       const encoder = new TextEncoder()
       const ping = encoder.encode(': ping\n\n')
       
       channelClients.forEach((controller) => {
         try {
           controller.enqueue(ping)
-        } catch (error) {
+        } catch (_error) {
           channelClients.delete(controller)
         }
       })

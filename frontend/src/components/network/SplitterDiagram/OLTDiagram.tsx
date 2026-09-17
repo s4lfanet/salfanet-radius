@@ -298,7 +298,7 @@ export function OLTDiagram({
           <text x={0} y={0} className="text-xs font-semibold fill-white">
             {t('network.diagram.legend')}:
           </text>
-          {Object.entries(PORT_STATUS_LABELS).map(([status, label], index) => {
+          {Object.entries(PORT_STATUS_LABELS).map(([status, _label], index) => {
             const x = (index % 3) * 200;
             const y = Math.floor(index / 3) * 20 + 20;
             return (

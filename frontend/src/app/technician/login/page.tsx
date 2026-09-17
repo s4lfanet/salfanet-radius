@@ -8,7 +8,7 @@ import { apiAdmin, ApiError } from '@/lib/api';
 import { User, Lock, Loader2, Wrench, AlertCircle } from 'lucide-react';
 
 export default function TechnicianLoginPage() {
-  const { t } = useTranslation();
+  const { t: _t } = useTranslation();
   const router = useRouter();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');

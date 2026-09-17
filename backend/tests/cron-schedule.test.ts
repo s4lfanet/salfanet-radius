@@ -128,7 +128,7 @@ function testTimezoneDifference() {
 
   // They should be different (7 hours apart)
   const diffMs = Math.abs(nextJakarta.getTime() - nextUTC.getTime());
-  const diffHours = diffMs / (60 * 60 * 1000);
+  const _diffHours = diffMs / (60 * 60 * 1000);
 
   // The difference should be a multiple of 7 hours (timezone offset)
   // But since they're on different days, let's just verify they're different

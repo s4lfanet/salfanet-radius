@@ -752,7 +752,7 @@ export default function ParameterConfigPage() {
                     try {
                       const coding = JSON.parse(e.target.value);
                       setEditingConfig({ ...editingConfig, colorCoding: coding });
-                    } catch (err) {
+                    } catch (_err) {
                       // Invalid JSON, ignore
                     }
                   }}

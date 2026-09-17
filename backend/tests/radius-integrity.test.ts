@@ -33,7 +33,7 @@ function findUnsafeDeletes(content: string): string[] {
   return matches;
 }
 
-function findUnsafeDeleteMany(content: string): string[] {
+function _findUnsafeDeleteMany(content: string): string[] {
   // Find radcheck/radreply/radusergroup deleteMany without nas_identifier
   const lines = content.split('\n');
   const unsafe: string[] = [];

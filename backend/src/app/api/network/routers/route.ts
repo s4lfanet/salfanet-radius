@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
         await conn.connect();
       
         // Get router identity
-        const identity = await conn.write('/system/identity/print');
+        const _identity = await conn.write('/system/identity/print');
         
         conn.close();
       } catch (apiError: any) {

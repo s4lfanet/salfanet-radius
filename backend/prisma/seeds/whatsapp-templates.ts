@@ -716,7 +716,7 @@ _{{companyName}}_`,
   },
 ];
 
-export async function seedWhatsAppTemplates(force = false) {
+export async function seedWhatsAppTemplates(_force = false) {
   console.log(`🌱 Seeding WhatsApp templates (always updates message content)...`);
   
   for (const template of whatsappTemplates) {

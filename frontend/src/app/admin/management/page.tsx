@@ -113,7 +113,7 @@ export default function ManagementPage() {
 
       const submitData = { ...formData };
       if (editingUser && !submitData.password) {
-        const { password, ...rest } = submitData;
+        const { password: _password, ...rest } = submitData;
         Object.assign(submitData, rest);
         delete (submitData as { password?: string }).password;
       }

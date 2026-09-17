@@ -235,7 +235,7 @@ async function parsePeerNamesFromConf(): Promise<Map<string, { name: string; vpn
  * Sync WG peers from conf into the DB so they appear in router VPN-client dropdown.
  * Safe to call every time GET is invoked — no-op if already in DB.
  */
-async function syncPeersToDB(
+async function _syncPeersToDB(
   info: Record<string, any>,
   confPeers: Map<string, { name: string; vpnIp: string }>,
 ): Promise<void> {

@@ -74,7 +74,7 @@ export default function PaymentPage() {
       if ((data.paymentGateways || []).some((g: PaymentGateway) => g.provider === 'duitku')) {
         fetchDuitkuMethods(data.invoice?.amount || 10000);
       }
-    } catch (err) { setError('Failed to load invoice'); } finally { setLoading(false); }
+    } catch (_err) { setError('Failed to load invoice'); } finally { setLoading(false); }
   };
 
   const fetchDuitkuMethods = async (amount: number) => {

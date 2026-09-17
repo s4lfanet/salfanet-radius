@@ -61,7 +61,7 @@ interface TicketDetail {
 export default function AdminTicketDetailPage() {
   const { t } = useTranslation();
   const params = useParams();
-  const router = useRouter();
+  const _router = useRouter();
   const ticketId = params.id as string;
   const queryClient = useQueryClient();
 

@@ -130,7 +130,7 @@ export default function FiberCablesPage() {
         outerDiameter: formData.outerDiameter ? parseFloat(formData.outerDiameter) : null,
       };
 
-      const data = await apiAdmin<{ error?: string }>(url, {
+      const _data = await apiAdmin<{ error?: string }>(url, {
         method,
         body: JSON.stringify(body),
       });

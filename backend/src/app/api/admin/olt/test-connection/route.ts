@@ -9,7 +9,7 @@ type TestResult = { method: string; success: boolean; message: string; time: num
 export async function POST(request: NextRequest) {
   const authCheck = await requirePermission('settings.edit');
   if (!authCheck.authorized) return authCheck.response;
-  const session = authCheck.session;
+  const _session = authCheck.session;
 
   try {
     const { ipAddress, vendor, username, password, sshEnabled, telnetEnabled } = await request.json();

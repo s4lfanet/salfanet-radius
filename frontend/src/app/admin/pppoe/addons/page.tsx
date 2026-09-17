@@ -19,8 +19,8 @@ interface AddonType {
 }
 
 export default function AddonTypesPage() {
-  const { hasPermission, loading: permLoading } = usePermissions();
-  const { t } = useTranslation();
+  const { hasPermission: _hasPermission, loading: permLoading } = usePermissions();
+  const { t: _t } = useTranslation();
   const queryClient = useQueryClient();
   const addonsQueryKey = buildQueryKey('/api/addon-types');
   const { data: addonsData, isLoading: loading, refetch } = useApiQuery<{ addons: AddonType[] }>('/api/addon-types');

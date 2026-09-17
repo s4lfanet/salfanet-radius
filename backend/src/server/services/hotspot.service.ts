@@ -239,7 +239,7 @@ export async function generateVouchers(data: GenerateVouchersInput, session: Ses
     prefix = '',
     voucherType = 'same',
     codeType = 'alpha-upper',
-    lockMac = false,
+    lockMac: _lockMac = false,
     batchCode: inputBatchCode,
   } = data;
 
@@ -352,7 +352,7 @@ export async function generateVouchers(data: GenerateVouchersInput, session: Ses
       }
     }
     // Fire-and-forget: sync each router group in background
-    for (const [rid, vids] of routerGroups) {
+    for (const [_rid, vids] of routerGroups) {
       (async () => {
         for (const vid of vids) {
           await syncVoucherToAssignedRouter(vid).catch(err => {

@@ -9,7 +9,7 @@ import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 // Fiber color coding (TIA-598-D standard)
-const FIBER_COLORS: Record<string, string> = {
+const _FIBER_COLORS: Record<string, string> = {
   Blue: '#0047AB',
   Orange: '#FF8C00',
   Green: '#228B22',

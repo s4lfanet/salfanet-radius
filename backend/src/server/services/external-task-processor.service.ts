@@ -183,7 +183,7 @@ async function executeSyncMikrotik(payload: any, action: 'create' | 'update' | '
         effectiveDisabled = true;
       }
     }
-  } catch (e) {
+  } catch (_e) {
     // If DB lookup fails, use payload values as-is
   }
 

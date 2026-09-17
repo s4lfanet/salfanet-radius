@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     const authCheck = await requirePermission('customers.view');
     if (!authCheck.authorized) return authCheck.response;
-    const session = authCheck.session;
+    const _session = authCheck.session;
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');

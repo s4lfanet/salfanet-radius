@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     let syncedCount = 0;
-    const errors: string[] = [];
+    const _errors: string[] = [];
 
     for (const profile of profiles) {
 

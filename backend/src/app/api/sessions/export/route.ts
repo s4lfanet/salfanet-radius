@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const format = searchParams.get('format') || 'excel';
-  const type = searchParams.get('type'); // pppoe or hotspot
+  const _type = searchParams.get('type'); // pppoe or hotspot
   const routerId = searchParams.get('routerId');
   const username = searchParams.get('username');
   const startDate = searchParams.get('startDate');

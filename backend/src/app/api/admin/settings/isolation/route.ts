@@ -4,12 +4,12 @@ import { requirePermission } from '@/server/middleware/api-auth';
 import { clearIsolationSettingsCache, getCidrRange } from '@/server/services/isolation.service';
 
 // GET - Get current isolation settings
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Verify admin authentication
     const authCheck = await requirePermission('settings.view');
     if (!authCheck.authorized) return authCheck.response;
-    const session = authCheck.session;
+    const _session = authCheck.session;
 
     // Get isolation settings
     const company = await prisma.company.findFirst({
@@ -69,7 +69,7 @@ export async function PUT(request: NextRequest) {
     // Verify admin authentication
     const authCheck = await requirePermission('settings.edit');
     if (!authCheck.authorized) return authCheck.response;
-    const session = authCheck.session;
+    const _session = authCheck.session;
 
     const body = await request.json();
     const {

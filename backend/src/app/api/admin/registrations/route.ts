@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
   try {
     const authCheck = await requirePermission('registrations.view');
     if (!authCheck.authorized) return authCheck.response;
-    const session = authCheck.session;
+    const _session = authCheck.session;
 
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get('status');

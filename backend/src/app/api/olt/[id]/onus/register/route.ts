@@ -78,7 +78,7 @@ function parseZteTrafficProfiles(output: string): string[] {
   return [...profiles].sort((a, b) => a.localeCompare(b));
 }
 
-function extractCommandSection(output: string, index: number, command: string): string {
+function _extractCommandSection(output: string, index: number, command: string): string {
   const startToken = `__COPILOT_CMD_${index}_START__`;
   const endToken = `__COPILOT_CMD_${index}_END__`;
   const start = output.indexOf(startToken);

@@ -372,7 +372,7 @@ export default function KeuanganPage() {
       } else {
         await showError(data.error);
       }
-    } catch (error) {
+    } catch (_error) {
       await showError(t('keuangan.failedDeleteTransaction'));
     }
   };
@@ -418,7 +418,7 @@ export default function KeuanganPage() {
     setSearchQuery("");
   };
 
-  const formatDateLocal = (date: Date) => {
+  const _formatDateLocal = (date: Date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");

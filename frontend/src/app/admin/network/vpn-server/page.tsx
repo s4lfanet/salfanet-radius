@@ -119,7 +119,7 @@ interface WgPeerAddResponse {
 }
 
 /** @deprecated panel redundansi dihapus */
-function VpnServerRedundancyPanel(_props: Record<string, unknown>) {
+function _VpnServerRedundancyPanel(_props: Record<string, unknown>) {
   return null;
 }
 
@@ -147,13 +147,13 @@ export default function VpnServerPage() {
   const [l2tpStatus, setL2tpStatus] = useState<VpnControlStatus | null>(null);
   const [l2tpLoading, setL2tpLoading] = useState(false);
   const [l2tpLogs, setL2tpLogs] = useState<string[]>([]);
-  const [l2tpConnections, setL2tpConnections] = useState<string>('');
+  const [_l2tpConnections, setL2tpConnections] = useState<string>('');
 
   // PPTP VPN Control States
-  const [showPptpControl, setShowPptpControl] = useState(false);
-  const [pptpStatus, setPptpStatus] = useState<VpnControlStatus | null>(null);
-  const [pptpLoading, setPptpLoading] = useState(false);
-  const [pptpLogs, setPptpLogs] = useState<string[]>([]);
+  const [_showPptpControl, _setShowPptpControl] = useState(false);
+  const [_pptpStatus, setPptpStatus] = useState<VpnControlStatus | null>(null);
+  const [_pptpLoading, setPptpLoading] = useState(false);
+  const [_pptpLogs, setPptpLogs] = useState<string[]>([]);
 
   // WireGuard VPN Server States
   const [showWgPanel, setShowWgPanel] = useState(false);
@@ -166,14 +166,14 @@ export default function VpnServerPage() {
   const [wgGeneratedScript, setWgGeneratedScript] = useState<string | null>(null);
 
   // --- Modal States --------------------------------------------------------
-  const [showL2tpSshModal, setShowL2tpSshModal] = useState(false);
-  const [pendingL2tpAction, setPendingL2tpAction] = useState('');
-  const [pendingL2tpServer, setPendingL2tpServer] = useState<VpnServer | null>(null);
+  const [_showL2tpSshModal, _setShowL2tpSshModal] = useState(false);
+  const [_pendingL2tpAction, _setPendingL2tpAction] = useState('');
+  const [_pendingL2tpServer, _setPendingL2tpServer] = useState<VpnServer | null>(null);
   const [l2tpSshForm, setL2tpSshForm] = useState({ host: '', port: '22', username: 'root', password: '', vpnServerIp: '', l2tpUsername: '', l2tpPassword: '' });
-  const [showPptpSshModal, setShowPptpSshModal] = useState(false);
-  const [pendingPptpAction, setPendingPptpAction] = useState('');
-  const [pendingPptpServer, setPendingPptpServer] = useState<VpnServer | null>(null);
-  const [pptpSshForm, setPptpSshForm] = useState({ host: '', port: '22', username: 'root', password: '', pptpServer: '', pptpUser: '', pptpPass: '' });
+  const [_showPptpSshModal, _setShowPptpSshModal] = useState(false);
+  const [_pendingPptpAction, _setPendingPptpAction] = useState('');
+  const [_pendingPptpServer, _setPendingPptpServer] = useState<VpnServer | null>(null);
+  const [pptpSshForm, _setPptpSshForm] = useState({ host: '', port: '22', username: 'root', password: '', pptpServer: '', pptpUser: '', pptpPass: '' });
   const [showTestPasswordModal, setShowTestPasswordModal] = useState(false);
   const [testPasswordServer, setTestPasswordServer] = useState<VpnServer | null>(null);
   const [testPasswordValue, setTestPasswordValue] = useState('');
@@ -358,7 +358,7 @@ export default function VpnServerPage() {
     } catch (e: unknown) { showError('Gagal: ' + errMsg(e)); } finally { setPptpLoading(false); }
   };
 
-  const handleConnectPptp = async () => {
+  const _handleConnectPptp = async () => {
     const { host, port, username, password } = pptpSshForm;
     if (!host || !username || !password) { addToast({ type: 'error', title: 'SSH credentials wajib diisi' }); return; }
     const server = editingServer!;
@@ -500,7 +500,7 @@ export default function VpnServerPage() {
       if (!data.success) throw new Error(data.error || 'Gagal tambah peer');
 
       // Build RouterOS 7 WireGuard setup script
-      const parts = data.vpnIp.split('.');
+      const _parts = data.vpnIp.split('.');
       const script = `# WireGuard NAS Setup - ${wgNewPeerName}
 # Generated: ${new Date().toISOString().split('T')[0]}
 # ────────────────────────────────────────────────

@@ -2,7 +2,7 @@
 import { getBackupHistory } from '@/server/services/backup.service';
 import { requirePermission } from '@/server/middleware/api-auth';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Check authentication
     const authCheck = await requirePermission('settings.view');

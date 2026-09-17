@@ -60,7 +60,7 @@ interface Invoice {
   } | null;
 }
 
-interface Stats {
+interface _Stats {
   total: number;
   unpaid: number;
   paid: number;
@@ -255,7 +255,7 @@ export default function InvoicesPage() {
       setCopiedId(invoice.id);
       setTimeout(() => setCopiedId(null), 2000);
       showToast(t('invoices.paymentLinkCopied'), 'success');
-    } catch (error) {
+    } catch (_error) {
       showToast(t('common.failedToCopy'), 'error');
     }
   };
@@ -394,7 +394,7 @@ export default function InvoicesPage() {
     } catch (error) { console.error('PDF error:', error); await showError(t('invoices.pdfExportFailed')); }
   };
 
-  const handlePrintInvoice = async (invoice: Invoice) => {
+  const _handlePrintInvoice = async (invoice: Invoice) => {
     try {
       const data = await invoiceApi.getPdf(invoice.id);
       if (!data.success || !data.data) { await showError(t('invoices.failedGetInvoiceData')); return; }

@@ -149,7 +149,7 @@ interface PingResult {
 }
 
 export default function NetworkMapPage() {
-  const router = useRouter();
+  const _router = useRouter();
   const { t } = useTranslation();
   const { addToast } = useToast();
   const queryClient = useQueryClient();
@@ -417,7 +417,7 @@ export default function NetworkMapPage() {
   };
 
   // Ping OLT from router
-  const pingOltFromRouter = async (routerId: string) => {
+  const _pingOltFromRouter = async (routerId: string) => {
     try {
       const data = await apiAdmin<{ results: PingResult[] }>(`/api/network/routers/${routerId}/ping-olt`, {
         method: 'POST',
@@ -1125,7 +1125,7 @@ export default function NetworkMapPage() {
             {showRouters && routersWithGps.map(r => {
               const routerIcon = createIconWithLabel(routerSvg, r.shortname || r.name, '#6366f1', 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', 38);
               const connections = routerOltConnections[r.id] || [];
-              const pingResults = routerPingStatus[r.id] || [];
+              const _pingResults = routerPingStatus[r.id] || [];
 
               return (
                 <Marker

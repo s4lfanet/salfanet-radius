@@ -155,7 +155,7 @@ expect eof
 
     await writeFile(scriptPath, expectScript);
     await execAsync(`chmod +x ${scriptPath}`);
-    const { stdout, stderr } = await execAsync(scriptPath, { timeout: ((config.timeout || 30) + 15) * 1000 });
+    const { stdout, stderr: _stderr } = await execAsync(scriptPath, { timeout: ((config.timeout || 30) + 15) * 1000 });
     await unlink(scriptPath).catch(() => {});
 
     return { success: true, output: stdout };
@@ -218,11 +218,11 @@ expect {
 `;
     await writeFile(scriptPath, expectScript);
     await execAsync(`chmod +x ${scriptPath}`);
-    const { stdout } = await execAsync(`${scriptPath}`, { timeout: 18000 });
+    const { stdout: _stdout } = await execAsync(`${scriptPath}`, { timeout: 18000 });
     await unlink(scriptPath).catch(() => {});
     // If expect exited 0, telnet auth succeeded (or banner received)
     return true;
-  } catch (error: any) {
+  } catch (_error: any) {
     await unlink(scriptPath).catch(() => {});
     // exit code 1 from the script = failed login; exec timeout = network issue
     // If port was open but auth failed, still return false

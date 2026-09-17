@@ -49,7 +49,7 @@ export default function WhatsAppProvidersPage() {
   const [qrImage, setQrImage] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
   const [qrConnected, setQrConnected] = useState(false);
-  const [qrPollingRef, setQrPollingRef] = useState<ReturnType<typeof setInterval> | null>(null);
+  const [_qrPollingRef, setQrPollingRef] = useState<ReturnType<typeof setInterval> | null>(null);
   const showQrModalRef = useRef(false);
   const [providerStatuses, setProviderStatuses] = useState<Record<string, ProviderStatus>>({});
   const [restartingProvider, setRestartingProvider] = useState<string | null>(null);
@@ -286,7 +286,7 @@ export default function WhatsAppProvidersPage() {
     setRestartingProvider(provider.id);
 
     try {
-      const data = await apiAdmin(`/api/whatsapp/providers/${provider.id}/restart`, {
+      const _data = await apiAdmin(`/api/whatsapp/providers/${provider.id}/restart`, {
         method: 'POST'
       });
 

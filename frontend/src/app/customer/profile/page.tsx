@@ -50,7 +50,7 @@ export default function CustomerProfilePage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
-  const fetchCustomerProfile = async (token: string) => {
+  const fetchCustomerProfile = async (_token: string) => {
     try {
       const data = await apiCustomer<{ success: boolean; user: {
         id: string; username: string; name: string; email: string | null; phone: string | null;

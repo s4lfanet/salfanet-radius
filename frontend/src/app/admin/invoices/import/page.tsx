@@ -57,7 +57,7 @@ export default function ImportInvoicePage() {
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewRows, setPreviewRows] = useState<PreviewRow[]>([]);
-  const [headers, setHeaders] = useState<string[]>([]);
+  const [_headers, setHeaders] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [importResult, setImportResult] = useState<ImportResponse | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);

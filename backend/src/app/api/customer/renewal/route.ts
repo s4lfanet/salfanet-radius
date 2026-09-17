@@ -454,7 +454,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const now = new Date();
+    const _now = new Date();
     const expiredAt = user.expiredAt ? new Date(user.expiredAt) : null;
 
     if (!expiredAt) {

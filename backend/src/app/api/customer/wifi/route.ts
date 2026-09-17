@@ -506,7 +506,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { deviceId, wlanIndex, ssid, password, securityMode = 'WPA2-PSK', enabled = true } = body;
+    const { deviceId, wlanIndex, ssid, password, securityMode: _securityMode = 'WPA2-PSK', enabled: _enabled = true } = body;
 
     console.log('[Customer WiFi] Update request:', {
       wlanIndex,
@@ -636,7 +636,7 @@ export async function POST(request: NextRequest) {
     const basePath = `InternetGatewayDevice.LANDevice.1.WLANConfiguration.${wlanIndex}`;
 
     // Like gembok-bill: Send SEPARATE tasks for SSID and password
-    const tasks = [];
+    const _tasks = [];
 
     // Task 1: Update SSID (always)
     const ssidTask = {

@@ -155,7 +155,7 @@ interface CyberTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaEl
 }
 
 const CyberTextarea = React.forwardRef<HTMLTextAreaElement, CyberTextareaProps>(
-  ({ className, variant = 'default', neonColor = 'cyan', label, error, ...props }, ref) => {
+  ({ className, variant: _variant = 'default', neonColor = 'cyan', label, error, ...props }, ref) => {
     const [isFocused, setIsFocused] = React.useState(false);
 
     const colorMap = {
@@ -229,7 +229,7 @@ interface CyberSelectProps extends React.SelectHTMLAttributes<HTMLSelectElement>
 }
 
 const CyberSelect = React.forwardRef<HTMLSelectElement, CyberSelectProps>(
-  ({ className, variant = 'default', neonColor = 'cyan', label, error, options, ...props }, ref) => {
+  ({ className, variant: _variant = 'default', neonColor = 'cyan', label, error, options, ...props }, ref) => {
     const [isFocused, setIsFocused] = React.useState(false);
 
     const colorMap = {

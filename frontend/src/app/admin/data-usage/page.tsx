@@ -64,14 +64,14 @@ interface AggregateResponse {
 const API_BASE = '/api/admin/data-usage';
 
 export default function DataUsagePage() {
-  const { t } = useTranslation();
+  const { t: _t } = useTranslation();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<'top' | 'monthly' | 'user'>('top');
   const [topDays, setTopDays] = useState(30);
   const [topLimit, setTopLimit] = useState(20);
   const [searchUser, setSearchUser] = useState('');
   const [searchUserQuery, setSearchUserQuery] = useState('');
-  const [now] = useState(new Date());
+  const [_now] = useState(new Date());
 
   // ─── React Query: Top consumers ─────────────────────────────────────────────
   const topQuery = useApiQuery<TopConsumersResponse>(
@@ -108,7 +108,7 @@ export default function DataUsagePage() {
         queryClient.invalidateQueries({ queryKey: buildQueryKey(`${API_BASE}/monthly`) });
         queryClient.invalidateQueries({ queryKey: buildQueryKey(API_BASE) });
       }
-    } catch (err: unknown) {
+    } catch (_err: unknown) {
       showError('Failed to trigger aggregation');
     }
   };

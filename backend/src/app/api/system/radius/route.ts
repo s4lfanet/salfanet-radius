@@ -6,7 +6,7 @@ import { requirePermission } from '@/server/middleware/api-auth';
 
 const execAsync = promisify(exec);
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   const authCheck = await requirePermission('settings.view');
   if (!authCheck.authorized) return authCheck.response;
   try {

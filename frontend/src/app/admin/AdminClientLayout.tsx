@@ -384,7 +384,7 @@ function CategoryItem({ titleKey, items, pendingCount, manualPaymentsCount, unre
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const fullPath = searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname;
-  const hasActiveItem = items.some(item =>
+  const _hasActiveItem = items.some(item =>
     item.href === pathname || item.href === fullPath || item.children?.some(c => c.href === pathname || c.href === fullPath)
   );
   const [isOpen, setIsOpen] = useState(true);

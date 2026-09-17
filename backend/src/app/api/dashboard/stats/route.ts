@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     const startOfMonth = new Date(Date.UTC(selectedYear, selectedMonth, 1));
     const startOfNextMonth = new Date(Date.UTC(selectedYear, selectedMonth + 1, 1));
     // last day of selected month (handles 28/29/30/31 days correctly)
-    const endOfMonth = new Date(Date.UTC(selectedYear, selectedMonth + 1, 0, 23, 59, 59, 999));
+    const _endOfMonth = new Date(Date.UTC(selectedYear, selectedMonth + 1, 0, 23, 59, 59, 999));
     const MONTH_NAMES_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
     const periodLabel = `${MONTH_NAMES_ID[selectedMonth]} ${selectedYear}`;
     const isCurrentMonth = (monthKey === wibMonthStr);
@@ -471,7 +471,7 @@ export async function GET(request: NextRequest) {
         },
       });
       radiusStatus = !!recentRadacct;
-    } catch (error) {
+    } catch (_error) {
       radiusStatus = false;
     }
 

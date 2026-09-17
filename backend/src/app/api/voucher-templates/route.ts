@@ -3,7 +3,7 @@ import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
 
 // GET all templates
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const authCheck = await requirePermission('vouchers.view');
     if (!authCheck.authorized) return authCheck.response;

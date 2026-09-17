@@ -47,7 +47,7 @@ export default function CustomerSuspendPage() {
     fetchCurrent(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const fetchCurrent = async (tkn: string) => {
+  const fetchCurrent = async (_tkn: string) => {
     setLoading(true);
     try {
       const data = await apiCustomer<{ data?: SuspendRequest | null }>('/api/customer/suspend-request');
@@ -79,7 +79,7 @@ export default function CustomerSuspendPage() {
     setSubmitting(true);
     setMsg(null);
     try {
-      const data = await apiCustomer<{ message?: string }>('/api/customer/suspend-request', {
+      const _data = await apiCustomer<{ message?: string }>('/api/customer/suspend-request', {
         method: 'POST',
         body: JSON.stringify(form),
       });

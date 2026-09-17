@@ -227,7 +227,7 @@ export default function PaymentGatewayPage() {
       setCopied('webhook');
       await showToast(t('paymentGateway.webhookCopied'), 'success');
       setTimeout(() => setCopied(null), 2000);
-    } catch (err) {
+    } catch (_err) {
       await showError(t('paymentGateway.failedCopyWebhook'));
     }
   };

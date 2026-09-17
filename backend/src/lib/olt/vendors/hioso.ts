@@ -139,7 +139,7 @@ export function signalLevel(rxDbm: number | null): 'ok' | 'warn' | 'critical' | 
 function parseOnuStatusWalk(
   walkResults: Record<string, string>,
   baseOid: string,
-  profile: HiosoProfile,
+  _profile: HiosoProfile,
 ): Array<{ board: number; pon: number; onuId: number; status: string }> {
   const onus: Array<{ board: number; pon: number; onuId: number; status: string }> = [];
 
@@ -340,7 +340,7 @@ export async function discoverONUs(config: TelnetConfig): Promise<any[]> {
 }
 
 // Telnet SSH stub — Hioso uses Telnet CLI, no SSH in practice
-export async function discoverONUsSSH(config: any): Promise<any[]> {
+export async function discoverONUsSSH(_config: any): Promise<any[]> {
   return []; // Hioso does not support SSH polling in standard config
 }
 

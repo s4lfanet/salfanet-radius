@@ -11,7 +11,7 @@ import * as fs from 'fs/promises';
 export const maxDuration = 300;
 
 // POST - Test auto backup by creating a real backup and sending it to Telegram
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const authCheck = await requirePermission('settings.edit');
     if (!authCheck.authorized) return authCheck.response;
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function formatFileSize(bytes: number): string {
+function _formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];

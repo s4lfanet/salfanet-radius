@@ -92,7 +92,7 @@ export async function runAutoIsolir(): Promise<{ isolated: number; total: number
   for (const user of expiredUsers) {
     try {
       const nasIdentifier = user.router?.id || null;
-      const authMode = user.router?.authMode || 'local';
+      const _authMode = user.router?.authMode || 'local';
 
       // 1. Update DB status — ATOMIC conditional update.
       // Only update if status is still 'active' — prevents double-isolation

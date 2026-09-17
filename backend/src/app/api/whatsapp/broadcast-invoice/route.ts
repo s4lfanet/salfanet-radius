@@ -213,7 +213,7 @@ export async function POST(request: NextRequest) {
     if (channel === 'email' || channel === 'both') {
       const emailsToSend = invoiceDataList
         .filter(({ invoice }) => invoice.customerEmail || invoice.user?.email)
-        .map(({ invoice, isOverdue, daysOverdue, dueDateStr }) => ({
+        .map(({ invoice, isOverdue, daysOverdue, dueDateStr: _dueDateStr }) => ({
           email: (invoice.customerEmail || invoice.user?.email)!,
           invoiceId: invoice.id,
           invoiceNumber: invoice.invoiceNumber,
@@ -288,7 +288,7 @@ export async function POST(request: NextRequest) {
 
     // Log activity
     try {
-      const totalSent = results.whatsapp.sent + results.email.sent;
+      const _totalSent = results.whatsapp.sent + results.email.sent;
       const totalFailed = results.whatsapp.failed + results.email.failed;
 
       await logActivity({

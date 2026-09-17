@@ -170,7 +170,7 @@ export function SimpleModal({
     );
 }
 
-export function ModalHeader({ children, onClose, className }: ModalHeaderProps) {
+export function ModalHeader({ children, onClose: _onClose, className }: ModalHeaderProps) {
     return (
         <div className={cn(
             'px-5 py-4 border-b border-border dark:border-border',

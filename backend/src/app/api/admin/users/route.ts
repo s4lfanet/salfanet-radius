@@ -7,7 +7,7 @@ import { isSuperAdmin } from '@/server/auth/permissions';
 /**
  * GET /api/admin/users - Get all admin users
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   // Check permission
   const authCheck = await requirePermission('users.view');
   if (!authCheck.authorized) return authCheck.response;

@@ -40,7 +40,7 @@ export default function AgentSessionsPage() {
   const router = useRouter();
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
-  const [agent, setAgent] = useState<AgentData | null>(null);
+  const [_agent, setAgent] = useState<AgentData | null>(null);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredSessions, setFilteredSessions] = useState<Session[]>([]);

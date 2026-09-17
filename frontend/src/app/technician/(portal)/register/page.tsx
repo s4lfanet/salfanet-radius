@@ -29,7 +29,7 @@ interface Area {
   name: string;
 }
 
-function formatSpeed(kbps: number) {
+function _formatSpeed(kbps: number) {
   return kbps >= 1000 ? `${kbps / 1000} Mbps` : `${kbps} Kbps`;
 }
 
@@ -573,7 +573,7 @@ export default function TechnicianRegisterPage() {
                           } catch { addToast({ type: 'error', title: 'Upload foto instalasi gagal' }); return null; }
                           finally { setUploadingInstallation(false); }
                         }}
-                        onGpsCapture={(lat, lng) => setForm((f) => ({ ...f }))}
+                        onGpsCapture={(_lat, _lng) => setForm((f) => ({ ...f }))}
                         theme="light"
                         hint="Bisa tambah beberapa foto. Maks. 5MB per foto. Kamera HP otomatis mengambil GPS."
                       />

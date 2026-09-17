@@ -151,7 +151,7 @@ export default function ODCsPage() {
       } else {
         await showError(result.error || t('common.failedDeleteOdc'));
       }
-    } catch (error) {
+    } catch (_error) {
       await showError(t('common.failedDeleteOdc'));
     }
   };

@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
     select: { id: true, name: true, nasname: true, ipAddress: true, port: true, username: true, password: true, authMode: true },
   });
 
-  const localRouters = routers.filter(r => (r.authMode || 'local') !== 'radius');
+  const _localRouters = routers.filter(r => (r.authMode || 'local') !== 'radius');
 
   // 2. Get RADIUS accounting sessions from radacct (for radius-auth routers)
   const onlineSessions = await prisma.radacct.findMany({
@@ -125,9 +125,9 @@ export async function GET(req: NextRequest) {
   const radacctSessions: MergedSession[] = onlineSessions.map((s) => {
     const startMs = s.acctstarttime ? new Date(s.acctstarttime).getTime() : now;
     const durationSec = Math.max(0, Math.floor((now - startMs) / 1000));
-    const hours = Math.floor(durationSec / 3600);
-    const mins = Math.floor((durationSec % 3600) / 60);
-    const secs = durationSec % 60;
+    const _hours = Math.floor(durationSec / 3600);
+    const _mins = Math.floor((durationSec % 3600) / 60);
+    const _secs = durationSec % 60;
     const dl = Number(s.acctoutputoctets ?? 0);
     const ul = Number(s.acctinputoctets ?? 0);
     return {

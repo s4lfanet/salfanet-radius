@@ -66,7 +66,7 @@ export async function GET() {
                         });
                     }
                 }
-            } catch (err) {
+            } catch (_err) {
                 // If dir doesn't exist or access denied, valid case (maybe not installed fully)
                 // On Windows Dev, we will return mock data later
             }

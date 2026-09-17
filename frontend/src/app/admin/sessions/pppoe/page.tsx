@@ -62,7 +62,7 @@ export default function PPPoESessionsPage() {
   const queryClient = useQueryClient();
   const [selectedSessions, setSelectedSessions] = useState<Set<string>>(new Set());
   const [disconnecting, setDisconnecting] = useState(false);
-  const [routerFilter, setRouterFilter] = useState<string>('');
+  const [routerFilter, _setRouterFilter] = useState<string>('');
   const [searchFilter, setSearchFilter] = useState<string>('');
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -79,7 +79,7 @@ export default function PPPoESessionsPage() {
     routerId: routerFilter || undefined,
     search: searchFilter || undefined,
   };
-  const { data: sessionsData, isLoading: loading, refetch: refetchSessions } = useApiQuery<{ sessions: Session[]; stats: Stats; pagination: Pagination }>(
+  const { data: sessionsData, isLoading: loading, refetch: _refetchSessions } = useApiQuery<{ sessions: Session[]; stats: Stats; pagination: Pagination }>(
     '/api/sessions',
     { params: sessionParams, refetchInterval: 10000, staleTime: 30000 }
   );
@@ -180,7 +180,7 @@ export default function PPPoESessionsPage() {
     }
   };
 
-  const handleExportExcel = async () => {    try {
+  const _handleExportExcel = async () => {    try {
       const params = new URLSearchParams();
       params.set('format', 'excel');
       params.set('mode', 'active');

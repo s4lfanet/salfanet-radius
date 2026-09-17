@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type'); // 'pppoe' | 'hotspot' | null (both)
     const routerId = searchParams.get('routerId');
     const search = searchParams.get('search');
-    const useLiveTraffic = searchParams.get('live') === 'true';
+    const _useLiveTraffic = searchParams.get('live') === 'true';
     const page = Number.parseInt(searchParams.get('page') || '1', 10);
     const limit = Number.parseInt(searchParams.get('limit') || '0', 10);
 
@@ -297,7 +297,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const syntheticHotspotSessions = orphanedActiveVouchers.map((voucher, i) => {
+    const syntheticHotspotSessions = orphanedActiveVouchers.map((voucher, _i) => {
         const effectiveStartMs = new Date(voucher.firstLoginAt!).getTime();
         const effectiveStartTime = new Date(effectiveStartMs).toISOString();
         // firstLoginAt is TRUE UTC (stored via Prisma), so use nowUtc (TRUE UTC)

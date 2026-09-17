@@ -43,7 +43,7 @@ export async function POST(
     }
 
     // Get company info
-    const company = await prisma.company.findFirst();
+    const _company = await prisma.company.findFirst();
 
     // Resend WhatsApp notification
     try {

@@ -35,7 +35,7 @@ function getApiBase(type: MapEntity['type']): string {
   }
 }
 
-function getIdParam(type: MapEntity['type']): string {
+function _getIdParam(type: MapEntity['type']): string {
   return type === 'OLT' ? 'oltId' : 'id';
 }
 

@@ -37,7 +37,7 @@ export default function AgentVouchersPage() {
   const router = useRouter();
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
-  const [agent, setAgent] = useState<AgentData | null>(null);
+  const [_agent, setAgent] = useState<AgentData | null>(null);
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [selectedVouchers, setSelectedVouchers] = useState<string[]>([]);
@@ -185,7 +185,7 @@ export default function AgentVouchersPage() {
       setWhatsappPhone('');
       setSelectedVouchers([]);
       await showSuccess(t('agent.portal.whatsappOpened'));
-    } catch (error) {
+    } catch (_error) {
       await showError(t('agent.portal.whatsappSentError'));
     } finally {
       setSendingWhatsApp(false);

@@ -121,7 +121,7 @@ function DaftarPageInner() {
       } else {
         addToast({ type: 'error', title: 'Gagal', description: data.error || 'Gagal mengirim pendaftaran' });
       }
-    } catch (error) {
+    } catch (_error) {
       addToast({ type: 'error', title: 'Error', description: 'Gagal mengirim pendaftaran' });
     } finally {
       setSubmitting(false);

@@ -59,7 +59,7 @@ export async function POST(req: Request) {
                 success: true,
                 content
             });
-        } catch (err: any) {
+        } catch (_err: any) {
             // Fallback for Windows Dev Environment
             if (process.platform === 'win32') {
                 // Return some realistic looking mock content based on file type

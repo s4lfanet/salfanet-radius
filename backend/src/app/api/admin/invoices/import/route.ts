@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
   // Auth check
   const authCheck = await requirePermission('invoices.edit');
   if (!authCheck.authorized) return authCheck.response;
-  const session = authCheck.session;
+  const _session = authCheck.session;
 
   try {
     const formData = await request.formData();

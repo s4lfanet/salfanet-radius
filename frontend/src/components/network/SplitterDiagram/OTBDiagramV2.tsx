@@ -63,7 +63,7 @@ export function OTBDiagramV2({
   const [hoveredPort, setHoveredPort] = React.useState<Port | null>(null);
   const [hoveredTube, setHoveredTube] = React.useState<TubeVisualization | null>(null);
   const [hoveredCore, setHoveredCore] = React.useState<CoreVisualization | null>(null);
-  const { t } = useTranslation();
+  const { t: _t } = useTranslation();
 
   const handlePortClick = (port: Port) => {
     if (interactive && onPortClick) {
@@ -112,7 +112,7 @@ export function OTBDiagramV2({
     }
   };
 
-  const inputPorts = node.ports.filter((p) => p.number <= node.inputPorts);
+  const _inputPorts = node.ports.filter((p) => p.number <= node.inputPorts);
   const outputPorts = node.ports.filter((p) => p.number > node.inputPorts);
   const incomingCable = node.incomingCable;
   const tubes = incomingCable?.tubes || [];
@@ -320,7 +320,7 @@ export function OTBDiagramV2({
         {/* OLT Input Section - supports multiple OLTs */}
         {(() => {
           // Determine OLT sources: from feeder cable assignments or single upstream
-          const feederAssignments: FeederCableAssignment[] = node.metadata?.feederCableAssignments ?? [];
+          const _feederAssignments: FeederCableAssignment[] = node.metadata?.feederCableAssignments ?? [];
           const outputSegs: OutputSegment[] = node.metadata?.outputSegments ?? [];
           const cableCoreCount = totalCores || (incomingCable?.tubeCount ?? 0) * (incomingCable?.coresPerTube ?? 0);
           const jcCount = outputSegs.length;

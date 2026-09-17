@@ -103,7 +103,7 @@ interface AnalyticsResponse {
   data: AnalyticsData;
 }
 
-interface ActivityLogResponse {
+interface _ActivityLogResponse {
   success: boolean;
   total: number;
 }

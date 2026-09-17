@@ -4,7 +4,7 @@ import { prisma } from '@/server/db/client';
 import crypto from 'crypto';
 
 // GET - List all templates
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   const authCheck = await requirePermission('settings.view');
   if (!authCheck.authorized) return authCheck.response;
   try {

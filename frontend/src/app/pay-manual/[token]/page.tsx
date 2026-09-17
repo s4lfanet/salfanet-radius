@@ -30,7 +30,7 @@ export default function PayManualPage({ params }: { params: Promise<{ token: str
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [userId, setUserId] = useState<string>('');
-  const [token, setToken] = useState<string>('');
+  const [_token, setToken] = useState<string>('');
   const [uploadingImage, setUploadingImage] = useState(false);
   const [proofImageUrl, setProofImageUrl] = useState<string>('');
   
@@ -54,7 +54,7 @@ export default function PayManualPage({ params }: { params: Promise<{ token: str
         showError(data.error || 'Token tidak valid', 'Invoice Tidak Ditemukan');
         router.push('/');
       }
-    } catch (error) {
+    } catch (_error) {
       showError('Gagal memuat invoice', 'Error');
     } finally {
       setLoading(false);
@@ -70,7 +70,7 @@ export default function PayManualPage({ params }: { params: Promise<{ token: str
       if (company.bankAccounts) {
         setBankAccounts(company.bankAccounts);
       }
-    } catch (error) {
+    } catch (_error) {
       // Silent fail - bank accounts are optional
     }
   }, []);
@@ -87,7 +87,7 @@ export default function PayManualPage({ params }: { params: Promise<{ token: str
           fetchInvoice(tokenValue),
           fetchBankAccounts()
         ]);
-      } catch (error) {
+      } catch (_error) {
         setLoading(false);
       }
     };

@@ -87,7 +87,7 @@ export default function AgentDashboardPage() {
   });
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
-  const [deposits, setDeposits] = useState<Deposit[]>([]);
+  const [_deposits, setDeposits] = useState<Deposit[]>([]);
   const [generating, setGenerating] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<string>('');
   const [quantity, setQuantity] = useState(1);
@@ -119,15 +119,15 @@ export default function AgentDashboardPage() {
 
   // WhatsApp functionality
   const [selectedVouchers, setSelectedVouchers] = useState<string[]>([]);
-  const [showWhatsAppDialog, setShowWhatsAppDialog] = useState(false);
+  const [_showWhatsAppDialog, setShowWhatsAppDialog] = useState(false);
   const [whatsappPhone, setWhatsappPhone] = useState('');
-  const [sendingWhatsApp, setSendingWhatsApp] = useState(false);
+  const [_sendingWhatsApp, setSendingWhatsApp] = useState(false);
 
   // Filter & Pagination
   const [filterStatus, setFilterStatus] = useState('');
   const [filterProfile, setFilterProfile] = useState('');
   const [searchCode, setSearchCode] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
+  const [_currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
 
   useEffect(() => {
@@ -222,17 +222,17 @@ export default function AgentDashboardPage() {
     }
   };
 
-  const handleFilter = () => {
+  const _handleFilter = () => {
     setCurrentPage(1);
     loadDashboard(1, filterStatus, filterProfile, searchCode);
   };
 
-  const handlePageChange = (newPage: number) => {
+  const _handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
     loadDashboard(newPage, filterStatus, filterProfile, searchCode);
   };
 
-  const handleClearFilter = () => {
+  const _handleClearFilter = () => {
     setFilterStatus('');
     setFilterProfile('');
     setSearchCode('');
@@ -240,13 +240,13 @@ export default function AgentDashboardPage() {
     loadDashboard(1, '', '', '');
   };
 
-  const handleLogout = () => {
+  const _handleLogout = () => {
     localStorage.removeItem('agentData');
     localStorage.removeItem('agentToken');
     router.push('/agent');
   };
 
-  const handleSelectVoucher = (voucherId: string) => {
+  const _handleSelectVoucher = (voucherId: string) => {
     setSelectedVouchers(prev =>
       prev.includes(voucherId)
         ? prev.filter(id => id !== voucherId)
@@ -254,12 +254,12 @@ export default function AgentDashboardPage() {
     );
   };
 
-  const handleSelectAll = () => {
+  const _handleSelectAll = () => {
     const waitingVouchers = vouchers.filter(v => v.status === 'WAITING').map(v => v.id);
     setSelectedVouchers(waitingVouchers.length === selectedVouchers.length ? [] : waitingVouchers);
   };
 
-  const handleSendWhatsApp = async () => {
+  const _handleSendWhatsApp = async () => {
     if (selectedVouchers.length === 0) {
       await showError('Pilih voucher terlebih dahulu');
       return;
@@ -267,7 +267,7 @@ export default function AgentDashboardPage() {
     setShowWhatsAppDialog(true);
   };
 
-  const handleWhatsAppSubmit = async () => {
+  const _handleWhatsAppSubmit = async () => {
     if (!whatsappPhone) {
       await showError('Masukkan nomor WhatsApp');
       return;

@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ success: false, error: 'Invalid path' }, { status: 400 });
-  } catch (err) {
+  } catch (_err) {
     return NextResponse.json({ success: false, error: 'Failed to fetch data' }, { status: 500 });
   }
 }
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: false, error: 'Invalid path' }, { status: 400 });
-  } catch (err) {
+  } catch (_err) {
     return NextResponse.json({ success: false, error: 'Failed to create mapping' }, { status: 500 });
   }
 }
@@ -158,7 +158,7 @@ export async function PUT(request: NextRequest) {
     }
 
     return NextResponse.json({ success: false, error: 'Invalid path' }, { status: 400 });
-  } catch (err) {
+  } catch (_err) {
     return NextResponse.json({ success: false, error: 'Failed to expand pool' }, { status: 500 });
   }
 }
@@ -187,7 +187,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     return NextResponse.json({ success: false, error: 'Invalid path' }, { status: 400 });
-  } catch (err) {
+  } catch (_err) {
     return NextResponse.json({ success: false, error: 'Failed to delete mapping' }, { status: 500 });
   }
 }

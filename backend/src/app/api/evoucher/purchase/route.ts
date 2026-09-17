@@ -20,7 +20,7 @@ async function sendPaymentLinkNotification(order: any, notificationMethod: strin
       DAYS: 'Hari',
       MONTHS: 'Bulan'
     };
-    const duration = `${order.profile.validityValue} ${validityUnit[order.profile.validityUnit] || order.profile.validityUnit}`;
+    const _duration = `${order.profile.validityValue} ${validityUnit[order.profile.validityUnit] || order.profile.validityUnit}`;
     
     // Format expiry time (24 hours from now)
     const expiryDate = new Date(Date.now() + 24 * 60 * 60 * 1000);

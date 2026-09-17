@@ -48,7 +48,7 @@ export default function CustomerTicketsPage() {
     try {
       const user = JSON.parse(userData);
       setCustomerId(user.id);
-    } catch (error) {
+    } catch (_error) {
       router.push('/customer/login');
     }
   }, [router]);

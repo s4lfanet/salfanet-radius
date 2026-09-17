@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
       const expiresAt = new Date(now.getTime() + intervalMs);
 
       // Update using Prisma - store as server local time (WIB)
-      const updated = await prisma.hotspotVoucher.update({
+      const _updated = await prisma.hotspotVoucher.update({
         where: { id: voucher.id },
         data: {
           firstLoginAt: now,

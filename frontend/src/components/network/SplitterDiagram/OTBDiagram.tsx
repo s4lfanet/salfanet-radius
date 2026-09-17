@@ -77,7 +77,7 @@ export function OTBDiagram({
   };
 
   // Get all ports
-  const inputPorts = node.ports.filter((p) => p.number <= node.inputPorts);
+  const _inputPorts = node.ports.filter((p) => p.number <= node.inputPorts);
   const outputPorts = node.ports.filter((p) => p.number > node.inputPorts);
 
   // Calculate layout
@@ -87,7 +87,7 @@ export function OTBDiagram({
   const footerHeight = 100;
 
   // Input port (from OLT feeder cable)
-  const inputX = padding + 50;
+  const _inputX = padding + 50;
   const inputY = headerHeight + 80;
 
   // Splitter box position
@@ -100,7 +100,7 @@ export function OTBDiagram({
   const outputStartY = splitterY + splitterHeight + 60;
   const outputSpacing = 50;
   const portsPerRow = Math.min(12, Math.ceil(outputPorts.length / 4)); // Max 12 ports per row
-  const rows = Math.ceil(outputPorts.length / portsPerRow);
+  const _rows = Math.ceil(outputPorts.length / portsPerRow);
   const totalPortsWidth = (portsPerRow - 1) * outputSpacing;
   const outputStartX = centerX - totalPortsWidth / 2;
 
@@ -339,7 +339,7 @@ export function OTBDiagram({
           <text x={0} y={0} className="text-xs font-semibold fill-white">
             {t('network.diagram.legend')}:
           </text>
-          {Object.entries(PORT_STATUS_LABELS).map(([status, label], index) => {
+          {Object.entries(PORT_STATUS_LABELS).map(([status, _label], index) => {
             const x = (index % 3) * 200;
             const y = Math.floor(index / 3) * 20 + 20;
             return (

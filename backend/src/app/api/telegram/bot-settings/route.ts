@@ -11,7 +11,7 @@ import {
 } from '@/server/services/notifications/telegram-bot.service'
 
 // ─── GET: ambil settings + webhook status ────────────────────────────────────
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const auth = await requirePermission('settings.view')
     if (!auth.authorized) return auth.response
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     let webhookInfo: any = null
     try {
       webhookInfo = await getWebhookInfo(settings.botToken)
-    } catch (e) {
+    } catch (_e) {
       // Bot token invalid atau network error — ignore
     }
 

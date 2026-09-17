@@ -2,7 +2,7 @@
 import { createBackup } from '@/server/services/backup.service';
 import { requirePermission } from '@/server/middleware/api-auth';
 
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const authCheck = await requirePermission('settings.edit');
     if (!authCheck.authorized) return authCheck.response;

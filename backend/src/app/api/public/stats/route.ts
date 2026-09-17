@@ -5,7 +5,7 @@ import { prisma } from "@/server/db/client";
 export const dynamic = 'force-dynamic';
 export const revalidate = 60; // Cache for 1 minute
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Only show safe, marketing-friendly numbers
     const totalUsers = await prisma.pppoeUser.count({
