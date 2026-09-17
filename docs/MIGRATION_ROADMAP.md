@@ -1,9 +1,19 @@
-# Salfanet Radius — Migration Roadmap
+# Salfanet Radius — Migration Roadmap (Historical — NestJS backend since removed)
 
-> **Status**: Phase 1 ✅ | Phase 2 ✅ | Phase 3 ✅ Complete (Batch 1-13) | Phase 4 ✅ Complete | Phase 5 ✅ Complete | Phase 6 ✅ Complete | Phase 7 ✅ Complete | Phase 8 ✅ Complete | VPS Deploy ✅ Done | Post-Migration Cleanup ✅ Partial — MIGRATION DONE
-> **Last updated**: 2026-08-12
-> **Target**: Frontend (Next.js) + Backend (NestJS) + API contract — independently buildable & deployable
-> **VPS**: `192.168.54.129` — Backend `:3001`, Frontend `:3000`, Swagger `/api/docs`
+> ⚠️ **This entire document describes a NestJS backend that no longer exists.**
+> Everything below was completed as described (Phases 1–8, VPS deploy), but the
+> NestJS backend was subsequently **removed in full** shortly after, in favor of
+> a second plain Next.js app for the API (commits `d184fc7c` "hapus semua
+> delegasi ke NestJS backend — full Next.js native" and `0b602579` "refactor:
+> split menjadi 2 Next.js apps — frontend UI + backend API"). Kept here as
+> historical record of *why* the current `backend/` app is structured the way
+> it is (module boundaries, `/api/*` conventions, cron job list). For the
+> **current** architecture, see [ARCHITECTURE.md](ARCHITECTURE.md).
+>
+> **Status**: Phase 1 ✅ | Phase 2 ✅ | Phase 3 ✅ Complete (Batch 1-13) | Phase 4 ✅ Complete | Phase 5 ✅ Complete | Phase 6 ✅ Complete | Phase 7 ✅ Complete | Phase 8 ✅ Complete | VPS Deploy ✅ Done | Post-Migration Cleanup ✅ Partial — MIGRATION DONE, then NestJS itself later removed
+> **Last updated**: 2026-08-12 (superseded 2026-08 — see banner above)
+> **Target** *(at the time)*: Frontend (Next.js) + Backend (NestJS) + API contract — independently buildable & deployable
+> **VPS**: `192.168.54.129` — Backend `:3001`, Frontend `:3000`, Swagger `/api/docs` *(Swagger no longer applies — current backend has no `/api/docs`)*
 
 ---
 

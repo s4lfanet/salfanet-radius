@@ -1,9 +1,14 @@
 # Architecture — Salfanet Radius
 
+> Last updated: 2026-09-17 (v5.21.0)
+
 ## Overview
 
 Salfanet Radius is an ISP/RTRW.NET billing and RADIUS management system
-built as a pnpm monorepo with Next.js frontend and NestJS backend.
+built as a pnpm monorepo with **two independent Next.js applications**
+(no NestJS — that backend was built during Migration Phases 1–8, then
+fully removed in favor of native Next.js API routes; see
+[MIGRATION_ROADMAP.md](MIGRATION_ROADMAP.md) for that history).
 
 ## System Architecture
 
@@ -12,174 +17,158 @@ built as a pnpm monorepo with Next.js frontend and NestJS backend.
                     │   Nginx     │ :80/:443
                     └──────┬──────┘
                            │
-              ┌────────────┼────────────┐
-              │            │            │
-         /api/v1/*    /api/docs     /* (other)
-              │            │            │
-              ▼            │            ▼
-     ┌──────────────┐      │     ┌──────────────┐
-     │  NestJS      │:3001 │     │  Next.js     │:3000
-     │  Backend     │      │     │  Frontend    │
-     │  + Cron Jobs │      │     │  (standalone)│
-     └──────┬───────┘      │     └──────┬───────┘
-            │              │            │
-            │              │            │ (legacy fallback)
-            │              │            ▼
-            │              │     ┌──────────────┐
-            │              │     │  Legacy API  │
-            │              │     │  Routes      │
-            │              │     │  (/api/*)    │
-            │              │     └──────────────┘
-            │              │
-            ▼              ▼
-     ┌──────────┐   ┌──────────────┐
-     │ Database │   │  Swagger UI  │
-     │ (MySQL)  │   │  /api/docs   │
-     └──────────┘   └──────────────┘
+              ┌────────────┴────────────┐
+              │                         │
+           /api/*                  /* (pages)
+              │                         │
+              ▼                         ▼
+     ┌──────────────┐          ┌──────────────┐
+     │  Next.js     │:3001     │  Next.js     │:3000
+     │  Backend     │          │  Frontend    │
+     │  (API only)  │          │  (UI, cluster)│
+     │  + cron jobs │          └──────────────┘
+     └──────┬───────┘
             │
-            │
-     ┌──────┴───────┐
-     │   External   │
-     │   Services   │
-     ├──────────────┤
-     │ FreeRADIUS   │
-     │ MikroTik API │
-     │ GenieACS     │
-     │ WhatsApp     │:4000 (Baileys)
-     │ SMTP         │
-     │ Payment GWs  │
-     └──────────────┘
+            ▼
+     ┌──────────┐        ┌──────────────┐
+     │ Database │        │  External    │
+     │ (MySQL)  │        │  Services    │
+     └──────────┘        ├──────────────┤
+                          │ FreeRADIUS   │
+                          │ MikroTik API │
+                          │ GenieACS     │
+                          │ WhatsApp     │:4000 (Baileys)
+                          │ SMTP         │
+                          │ Payment GWs  │
+                          │ Telegram     │
+                          └──────────────┘
 ```
+
+In production, Nginx routes `/api/*` to the backend (port 3001) and
+everything else to the frontend (port 3000). In local dev, the frontend's
+`next.config.ts` proxies `/api/*` to `BACKEND_URL` (default
+`http://localhost:3001`) via `rewrites()`; `/api/auth/*` (NextAuth) always
+stays on the frontend.
 
 ## Monorepo Structure
 
 ```
 salfanet-radius/
-├── frontend/          # Next.js — UI + legacy API routes
-├── backend/           # NestJS — API + cron + business logic
+├── frontend/          # Next.js — UI (179 pages across 6 portals)
+├── backend/           # Next.js — API routes (466 route.ts) + cron + services
 ├── packages/          # @salfanet/shared-types
 ├── deploy/            # PM2, Nginx, deploy scripts
-├── docs/              # Migration roadmap, architecture
+├── docs/              # Architecture, roadmaps, feature docs
 └── pnpm-workspace.yaml
 ```
 
-## Backend (NestJS)
+## Backend (Next.js, API-only)
 
-### Module Structure
-
-The backend follows NestJS module pattern with 46 feature modules:
+### Structure
 
 ```
-backend/src/
-├── modules/
-│   ├── auth/              # JWT auth, login, guards
-│   ├── pppoe/             # PPPoE user management
-│   ├── hotspot/           # Hotspot voucher management
-│   ├── invoices/          # Billing & invoices
-│   ├── sessions/          # RADIUS session monitoring
-│   ├── network/           # Router management
-│   ├── mikrotik/          # MikroTik API integration
-│   ├── freeradius/        # FreeRADIUS config & control
-│   ├── genieacs/          # TR-069 CPE management
-│   ├── olt/               # OLT/ONU management
-│   ├── vpn/               # VPN server/client management
-│   ├── whatsapp/          # WhatsApp messaging
-│   ├── email/             # Email notifications
-│   ├── push/              # Web push notifications
-│   ├── telegram/          # Telegram backup/health
-│   ├── cron/              # 17 scheduled jobs (@nestjs/schedule)
-│   ├── payment-gateway/   # Midtrans/Xendit/Duitku/Tripay
-│   ├── dashboard/         # Statistics & analytics
-│   ├── tickets/           # Support tickets
-│   ├── customer-portal/   # Customer self-service
-│   ├── agent-portal/      # Agent/reseller portal
-│   ├── technician-portal/ # Technician portal
-│   ├── export/            # PDF/Excel exports
-│   ├── extras/            # Misc admin endpoints
-│   └── ... (20+ more)
-├── common/
-│   ├── guards/            # AdminGuard, AgentGuard, CustomerGuard, etc.
-│   ├── decorators/        # @Public, @CurrentUser, @Permissions
-│   ├── interceptors/      # ResponseTransformInterceptor
-│   └── filters/           # GlobalExceptionFilter
-├── prisma/                # PrismaService
-└── main.ts                # Bootstrap (port 3001, /api/v1 prefix)
+backend/
+├── src/
+│   ├── app/api/            # Route handlers (route.ts), ~40 top-level groups:
+│   │                       #   pppoe, hotspot, invoices, sessions, network,
+│   │                       #   olt, genieacs, radius, freeradius, whatsapp,
+│   │                       #   telegram, payment(-gateway), push, tickets,
+│   │                       #   admin, agent, technician, collector, customer,
+│   │                       #   cron, settings, dashboard, ...
+│   ├── features/           # Feature-scoped business logic (barrel exports):
+│   │                       #   agents, billing, hotspot, network,
+│   │                       #   notifications, pppoe, reports
+│   ├── server/
+│   │   ├── auth/           # NextAuth config, JWT (agent/technician/customer)
+│   │   ├── cron/           # Cron job definitions + runner (see below)
+│   │   ├── cache/          # Redis cache (redis.ts) with graceful degradation
+│   │   ├── db/             # Prisma client singleton
+│   │   ├── middleware/     # api-auth, agent-auth, rate-limit
+│   │   └── services/       # mikrotik, radius, payment, notifications, ...
+│   └── lib/                # genieacs, network, olt, utils, validators
+├── cron-runner.ts          # tsx entrypoint for PM2 `salfanet-cron` process
+├── wa-service.js           # Baileys WhatsApp gateway (separate PM2 process)
+└── prisma/                 # Schema (single source of truth for DB)
 ```
 
 ### API Conventions
 
-- **Base URL**: `/api/v1/*`
-- **Swagger docs**: `/api/docs`
-- **Response format**: `{ success: boolean, data: any }` (via ResponseTransformInterceptor)
-- **Auth**: JWT Bearer token (AdminGuard, AgentGuard, CustomerGuard, TechnicianGuard)
-- **Public routes**: `@Public()` decorator
-- **Validation**: class-validator + class-transformer (global ValidationPipe)
-- **Throttling**: @nestjs/throttler (100 req/min)
+- **Base URL**: `/api/*` (no versioning — this is not the old NestJS `/api/v1/*`)
+- **Response format**: plain JSON per route; most return `{ success, data }` or `{ success, error }`
+- **Auth**: NextAuth JWT (admin, via `getServerSession`), Bearer token (customer/agent, from `localStorage`), signed cookie (technician/collector)
+- **Validation**: zod schemas per route (`src/lib/validators/`)
 
-### Cron Jobs (17)
+### Cron Jobs (24)
 
-All cron jobs run via `@nestjs/schedule` in the backend process:
+Cron jobs are plain async functions in `backend/src/server/cron/`, scheduled
+via `node-cron` in `cron-runner.ts` (PM2 process `salfanet-cron`, separate
+from the API server). Definitions and default schedules live in
+`backend/src/server/cron/jobs.ts`; schedules can be overridden per-job from
+the admin UI (`cronScheduleConfig` table) and are distributed-locked via
+`cronLock` to avoid double-runs if PM2 restarts.
 
-| Job | Schedule | Description |
+| Job | Default Schedule | Description |
 |-----|----------|-------------|
-| hotspot_sync | `* * * * *` | Voucher status sync |
-| pppoe_auto_isolir | `0 * * * *` | Expired user isolation |
-| invoice_reminder | `0 * * * *` | WhatsApp + Email reminders |
-| disconnect_sessions | `*/5 * * * *` | MikroTik session disconnect |
-| pppoe_session_sync | `*/5 * * * *` | MikroTik ↔ radacct sync |
-| freeradius_health | `*/5 * * * *` | Service check + auto-restart |
-| ... | ... | (17 total) |
+| hotspot_sync | `* * * * *` | Sync voucher hotspot aktif/expired |
+| external_task_processor | `* * * * *` | Process MikroTik/WhatsApp/Email/CoA outbox |
+| agent_sales | `*/5 * * * *` | Record agent voucher sales |
+| disconnect_sessions | `*/5 * * * *` | Disconnect isolir/stop sessions |
+| radius_sync_retry | `*/5 * * * *` | Retry failed FreeRADIUS syncs |
+| pppoe_session_sync | `*/5 * * * *` | Sync MikroTik ↔ radacct |
+| freeradius_health | `*/5 * * * *` | FreeRADIUS service health check |
+| hotspot_voucher_sync | `*/5 * * * *` | Sync voucher status from local-only NAS |
+| olt_poll | `*/5 * * * *` | Poll all OLT (status, ONU, optical power) |
+| acs_alert | `*/3 * * * *` | RX degradation & offline ONU via GenieACS |
+| session_monitor | `*/15 * * * *` | Detect suspicious sessions |
+| pppoe_auto_isolir | `0 * * * *` | Isolate expired prepaid users |
+| invoice_reminder | `0 * * * *` | Due-date reminders |
+| invoice_status_update | `0 * * * *` | Update invoice status (overdue/paid) |
+| suspend_check | `0 * * * *` | Check users needing suspend |
+| financial_reconciliation | `0 5 * * *` | Reconcile invoice/payment consistency |
+| invoice_auto_cancel | `0 6 * * *` | Cancel stale invoices for renewed customers |
+| radius_reconciliation | `0 6 * * *` | Detect SalfaNet ↔ FreeRADIUS drift |
+| invoice_generate | `0 7 * * *` | Generate monthly (postpaid) invoices |
+| auto_renewal | `0 8 * * *` | Auto-renew prepaid from balance |
+| activity_log_cleanup | `0 2 * * *` | Delete activity log >30 days |
+| webhook_log_cleanup | `0 3 * * *` | Delete webhook log >7 days |
+| cron_history_cleanup | `0 4 * * *` | Delete cron history >30 days |
+| notification_check | `0 */6 * * *` | Check expired/overdue/pending notifications |
 
 ## Frontend (Next.js)
 
-### Architecture
+### Structure
 
-- **App Router** with standalone output
-- **5 portals**: Admin, Customer, Agent, Technician, Public
-- **Centralized API client**: `src/lib/api-client.ts`
-  - `apiFetch()` — server-side (server components, layouts)
-  - `apiFetchAuth()` — client-side with Bearer token
-  - `getCompanyInfo()` — public company info for layouts
-- **NEXT_PUBLIC_API_URL** env var: if set → NestJS backend, if empty → legacy routes
+- **App Router**, `output: 'standalone'`
+- **6 portals**: Admin, Customer, Agent, Technician, Collector, plus public pages (`/daftar`, `/pay`, `/pay-manual`, `/evoucher`)
+- **Centralized API client**: `src/lib/api/client.ts` — resolves server vs. client base URL, handles the 3 auth modes (admin cookie / customer bearer / agent bearer), and a debounced global 401 → redirect handler
+- **Route protection**: `src/middleware.ts` guards `/admin/*` via NextAuth JWT; other portals (agent/customer/technician/collector) use client-side token checks in their layout components
 
-### Layout Files
+### Layouts
 
-All 5 layout files use `getCompanyInfo()` instead of direct Prisma access:
 - `src/app/layout.tsx` (root)
-- `src/app/admin/layout.tsx`
-- `src/app/agent/layout.tsx`
-- `src/app/customer/layout.tsx`
-- `src/app/technician/layout.tsx`
-
-### Legacy Code (During Migration)
-
-- `src/app/api/` — Legacy Next.js API routes (fallback)
-- `src/server/` — Legacy services
-- `src/cron/` — Legacy cron runner
-- `prisma/` — Shared Prisma schema
-
-These are kept until Phase 7 regression testing is verified on VPS.
+- `src/app/admin/AdminClientLayout.tsx`
+- `src/app/agent/*`, `src/app/customer/*`, `src/app/technician/*`, `src/app/collector/*`
 
 ## Database
 
 - **Engine**: MySQL 8.0
 - **ORM**: Prisma 6.x
-- **Schema**: `frontend/prisma/schema.prisma` (~45 models)
-- **Key models**: user, pppoeUser, hotspotVoucher, invoice, router, radacct, radcheck, company, agent, etc.
+- **Schema**: `backend/prisma/schema.prisma` (119 models) — single schema shared by both apps at build time (frontend does not hold its own copy)
+- **Schema deploy mechanism**: `prisma db push --accept-data-loss` on the VPS (see `frontend/vps-install/updater.sh`), **not** `prisma migrate deploy`. The `backend/prisma/migrations/` folder exists but is best-effort/informational — `db push` against `schema.prisma` is the source of truth for what's actually applied in production.
+- **RADIUS tables**: `radcheck`, `radreply`, `radusergroup`, `radgroupcheck`, `radgroupreply`, `radacct`, `radpostauth`, `radippool`, `cui`, `nasreload` — standard FreeRADIUS SQL schema, extended with app-specific models (pppoeUser, hotspotVoucher, invoice, router, company, agent, ticket, network* (OLT/ODC/ODP/fiber), genieacs*, etc.)
 
 ## External Services
 
 | Service | Purpose | Protocol |
 |---------|---------|----------|
 | FreeRADIUS | RADIUS authentication | RADIUS (UDP 1812/1813) |
-| MikroTik | Router management | RouterOS API (TCP 8728) |
+| MikroTik | Router management, CoA | RouterOS API (TCP 8728) |
 | GenieACS | TR-069 CPE management | HTTP (NBI 7557, CWMP 7547) |
-| WhatsApp (Baileys) | Messaging | HTTP (port 4000) |
+| WhatsApp (Baileys native + Fonnte/WAHA/GOWA/MPWA/Wablas/Kirimi.id) | Messaging | HTTP / Baileys socket (port 4000) |
+| Telegram | 2-way technician bot | Bot API webhook |
 | SMTP | Email notifications | SMTP (TCP 587/465) |
-| Midtrans | Payment gateway | HTTP REST |
-| Xendit | Payment gateway | HTTP REST |
-| Duitku | Payment gateway | HTTP REST |
-| Tripay | Payment gateway | HTTP REST |
+| Midtrans / Xendit / Duitku / Tripay | Payment gateways | HTTP REST |
+| Redis | Non-realtime cache (profiles, areas, routers) | TCP 6379, graceful degradation if unavailable |
 
 ## Deployment
 
@@ -187,34 +176,30 @@ See [deploy/README.md](../deploy/README.md) for detailed deployment instructions
 
 ### PM2 Processes
 
-| Process | Port | Description |
-|---------|------|-------------|
-| salfanet-frontend | 3000 | Next.js standalone |
-| salfanet-backend | 3001 | NestJS API + cron |
-| salfanet-cron | — | Legacy cron (fallback) |
-| salfanet-wa | 4000 | Baileys WhatsApp |
+| Process | Mode | Port | Description |
+|---------|------|------|--------------|
+| salfanet-frontend | cluster | 3000 | Next.js standalone (UI + NextAuth) |
+| salfanet-backend | fork | 3001 | Next.js standalone (API + Prisma + services) |
+| salfanet-cron | fork | — | Cron runner (`tsx cron-runner.ts`) |
+| salfanet-wa | fork | 4000 (internal) | Baileys WhatsApp gateway |
 
 ### Nginx Routing
 
 | Path | Target |
 |------|--------|
-| `/api/v1/*` | Backend (port 3001) |
-| `/api/docs` | Swagger UI (port 3001) |
-| `/api/*` | Legacy routes (port 3000) |
+| `/api/*` | Backend (port 3001) |
 | `/*` | Frontend (port 3000) |
 
 ## Testing
 
 ```bash
-# E2E tests (46 tests)
-cd backend && pnpm test:e2e
-
-# Backend build
-cd backend && pnpm build
-
-# Frontend build
-cd frontend && pnpm build
+cd backend && pnpm test        # vitest — security/integrity/concurrency suites (backend/tests/)
+cd backend && pnpm typecheck   # tsc --noEmit (build itself has ignoreBuildErrors: true)
+cd frontend && pnpm build      # standalone build
+cd backend && pnpm build       # standalone build
 ```
 
-See [deploy/REGRESSION_TEST_CHECKLIST.md](../deploy/REGRESSION_TEST_CHECKLIST.md)
-for manual VPS testing checklist.
+> **Note**: both `next.config.ts` set `typescript: { ignoreBuildErrors: true }`
+> (pnpm workspace hoisting can miss `@types/react` at build time). This means
+> `pnpm build` will **not** fail on type errors — run `pnpm typecheck` separately
+> in CI/pre-merge to catch them.

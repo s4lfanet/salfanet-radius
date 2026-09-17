@@ -9,12 +9,14 @@
 
 **Salfanet Radius** adalah sistem billing ISP/RTRW.NET berbasis web dengan integrasi FreeRADIUS penuh. Mendukung PPPoE dan Hotspot, cocok untuk ISP kecil-menengah di Indonesia.
 
-- **Version**: 2.21.0
+- **Version**: 5.21.0
 - **Status**: Production-ready, deployed di VPS
-- **Last Updated**: April 22, 2026
-- **Latest Commit**: `62b0c88` — fix: PATCH WG updates wg0.conf Address and info.subnet when gatewayIp changes
+- **Last Updated**: September 17, 2026
+- **Latest Commit**: `8b5e20d6` — chore(olt): remove dead recharts imports from OLT detail page
 - **GitHub**: https://github.com/s4lfanet/salfanet-radius (public)
 - **Live URL**: https://radius.hotspotapp.net
+- **Architecture**: 2 independent Next.js apps (frontend :3000 UI, backend :3001 API-only) — **bukan NestJS**. Backend NestJS sempat dibangun penuh (lihat `MIGRATION_ROADMAP.md`) lalu dihapus total di komit `d184fc7c`/`0b602579` demi Next.js native. Lihat `ARCHITECTURE.md` untuk struktur terkini.
+- **Untuk history lengkap Sep 2026 ke sini, lihat `CHANGELOG.md` — bagian di bawah ini (April 2026 ke belakang) sudah lama tidak di-update dan bisa jadi usang untuk detail file/line, tapi arsitektur & known-issues umumnya masih relevan.**
 
 ### Recent Patch Log (April 22, 2026 — VPS Built-in VPN Pool IP Config)
 

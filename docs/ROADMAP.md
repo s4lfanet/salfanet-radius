@@ -1,6 +1,6 @@
 # SALFANET RADIUS — Roadmap 2026
 
-> Last updated: **April 10, 2026** | Version: **2.17.0**  
+> Last updated: **April 10, 2026** | Version: **2.17.0** — *(feature list below predates v5.21.0; see [CHANGELOG.md](../CHANGELOG.md) for everything shipped since)*  
 > Legend: ✅ Done · 🔄 In Progress · 📅 Planned · 🐛 Bug/Debt · 🔒 Security
 
 ---
@@ -218,7 +218,7 @@ Middleware (`src/proxy.ts`) hanya melindungi page routes `/admin/*`, tidak melin
 |---|---------|----------|-------|
 | 9 | **Widget embed** | 2 hari | Status koneksi embed ke website ISP (iframe/JS snippet) |
 | 10 | **Public API** | 5–7 hari | REST API + API key management untuk integrasi pihak ketiga |
-| 11 | **SaaS multi-tenant architecture** | 2–4 minggu | NestJS backend + Next.js frontend, per-ISP isolation |
+| 11 | **SaaS multi-tenant architecture** | 2–4 minggu | Per-ISP isolation on top of the current 2-app Next.js stack (a NestJS split was tried and reverted — see MIGRATION_ROADMAP.md) |
 
 ---
 
