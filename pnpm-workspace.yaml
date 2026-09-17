@@ -9,7 +9,7 @@ allowBuilds:
   '@swc/core': true
   '@whiskeysockets/baileys': true
   'core-js': true
-  core-js-pure: set this to true or false
+  'core-js-pure': false
   'cpu-features': true
   'esbuild': true
   'prisma': true
@@ -17,3 +17,20 @@ allowBuilds:
   'sharp': true
   'ssh2': true
   'unrs-resolver': true
+# Transitive dependency pins for known vulnerabilities that the direct
+# dependency's own semver range doesn't reach (see `pnpm audit`). Each
+# entry here is the lowest version that fixes the relevant advisory.
+overrides:
+  # next-auth (4.24.x) pins its own nodemailer internally, independent of
+  # our direct dependency — collapses both to one patched version. Unused
+  # in practice (this app's authOptions never configures next-auth's
+  # EmailProvider), but pnpm audit flags it regardless since it's present
+  # in node_modules.
+  nodemailer: ^9.1.1
+  qs: ^6.16.0
+  fast-uri: ^3.1.6
+  js-yaml: ^4.3.2
+  serialize-javascript: ^7.0.3
+  deepmerge-ts: ^8.0.0
+  uuid: ^11.1.1
+  minimatch: ^10.2.6
