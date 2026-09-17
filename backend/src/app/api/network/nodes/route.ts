@@ -87,7 +87,6 @@ export async function POST(request: NextRequest) {
       address,
       status = 'active',
       upstreamId,
-      capacity,
       metadata,
     } = body;
 
@@ -109,20 +108,6 @@ export async function POST(request: NextRequest) {
         { error: `Node with code '${code}' already exists` },
         { status: 409 }
       );
-    }
-
-    // Calculate ports based on type and capacity
-    let availablePorts = 0;
-    if (type === 'OLT') {
-      availablePorts = capacity || 16; // Default OLT capacity
-    } else if (type === 'ODC') {
-      const ratio = metadata?.splitterRatio || '1:16';
-      availablePorts = parseInt(ratio.split(':')[1]);
-    } else if (type === 'ODP') {
-      availablePorts = 8; // Default ODP capacity
-    } else if (type === 'JOINT_CLOSURE') {
-      const ratio = metadata?.splitterRatio || '2:16';
-      availablePorts = parseInt(ratio.split(':')[1]);
     }
 
     // Create node

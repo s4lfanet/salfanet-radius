@@ -191,7 +191,7 @@ export default function KeuanganPage() {
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
   };
@@ -213,7 +213,6 @@ export default function KeuanganPage() {
   useEffect(() => {
     setPage(1);
     setExtraTransactions([]);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterType, filterCategory, startDate, endDate, debouncedSearch]);
 
   // Sync hasMore from query data (page 1)

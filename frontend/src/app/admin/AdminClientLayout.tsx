@@ -846,7 +846,6 @@ function AdminLayoutContent({
     const interval = setInterval(pollNotifications, 30000);
     return () => clearInterval(interval);
   // addToast intentionally excluded - we use addToastRef to prevent re-runs
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
 

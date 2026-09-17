@@ -2396,7 +2396,6 @@ export async function POST(req: NextRequest) {
     env,
     detached: true,
     stdio: ['ignore', logFd, logFd],
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   }) as any;
 
   proc.on('exit', (code: number | null) => {

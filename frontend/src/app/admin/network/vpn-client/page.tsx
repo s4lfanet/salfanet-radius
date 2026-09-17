@@ -276,7 +276,6 @@ export default function VpnClientPage() {
         setApplyRoutingForm(prev => ({ ...prev, ...parsed }));
       }
     } catch (e: unknown) { /* ignore - localStorage may be unavailable */ console.warn('Failed to restore routing SSH credentials from localStorage:', e); }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const toggleRoutingPanel = (clientId: string) => {

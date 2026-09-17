@@ -152,7 +152,6 @@ export default function RouterPage() {
     if (routersQuery.data?.routers && routersQuery.data.routers.length > 0) {
       checkRoutersStatus(routersQuery.data.routers.map((r) => r.id))
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [routersQuery.data])
 
   const checkRoutersStatus = async (routerIds: string[]) => {

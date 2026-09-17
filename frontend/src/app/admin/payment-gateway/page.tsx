@@ -114,7 +114,6 @@ export default function PaymentGatewayPage() {
         isActive: tripay.isActive
       });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [configsData]);
 
   // Fetch QRIS settings from /api/company
@@ -139,7 +138,6 @@ export default function PaymentGatewayPage() {
       }
     })();
     return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ─── React Query: Webhook logs (page + filter) ───────────────────────────────

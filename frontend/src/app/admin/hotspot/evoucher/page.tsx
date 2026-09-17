@@ -63,7 +63,6 @@ export default function EVoucherManagementPage() {
     if (ordersData?.success) {
       calculateStats(ordersData.orders || []);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ordersData]);
 
   useEffect(() => {

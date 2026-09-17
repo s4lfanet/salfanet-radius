@@ -402,7 +402,6 @@ export function generateInvoicePDF(invoiceData: {
   });
 
   // Totals
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const finalY = (doc as any).lastAutoTable.finalY + 5;
   const totalsX = pageWidth - margin - 80;
   

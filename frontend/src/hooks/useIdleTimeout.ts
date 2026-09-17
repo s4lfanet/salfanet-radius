@@ -61,7 +61,6 @@ export function useIdleTimeout({
     } else {
       await signOut({ callbackUrl: '/admin/login?reason=idle' });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // stable - uses onTimeoutRef
 
   const resetTimer = useCallback(() => {
@@ -82,7 +81,6 @@ export function useIdleTimeout({
       handleLogout();
     }, timeout);
   // onWarning/onTimeout intentionally excluded - accessed via refs to keep timer stable
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, timeout, warningTime, handleLogout, clearTimeouts]);
 
   const extendSession = useCallback(() => {
