@@ -348,7 +348,7 @@ export async function PUT(request: NextRequest) {
           // radius → local: create/enable PPP secrets (MikroTik becomes primary auth)
           // Use sync_mikrotik_create (idempotent upsert) — works even if secret was never created in radius mode
           for (const u of users) {
-            const mtProfile = await getMikrotikProfileName(u.profileId);
+            const mtProfile = u.profileId ? await getMikrotikProfileName(u.profileId) : null;
             const disabled = u.status === 'isolated';
             await enqueueTask(prisma, 'pppoe_user', u.id, 'sync_mikrotik_create', {
               routerId: id,
@@ -369,7 +369,7 @@ export async function PUT(request: NextRequest) {
           // local → radius: disable PPP secrets (RADIUS becomes primary, secret = backup)
           // Use sync_mikrotik_create (idempotent upsert) with disabled=true
           for (const u of users) {
-            const mtProfile = await getMikrotikProfileName(u.profileId);
+            const mtProfile = u.profileId ? await getMikrotikProfileName(u.profileId) : null;
             await enqueueTask(prisma, 'pppoe_user', u.id, 'sync_mikrotik_create', {
               routerId: id,
               username: u.username,

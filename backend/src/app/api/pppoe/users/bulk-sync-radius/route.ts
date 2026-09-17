@@ -12,42 +12,58 @@ import { disconnectMultiplePPPoEUsers } from '@/server/services/radius/coa-handl
 async function syncProfileToRadGroupReply(profileId: string) {
   const profile = await prisma.pppoeProfile.findUnique({
     where: { id: profileId },
-    select: { id: true, groupName: true, speed: true, ipPool: true, name: true },
+    select: {
+      id: true,
+      groupName: true,
+      name: true,
+      rateLimit: true,
+      downloadSpeed: true,
+      uploadSpeed: true,
+      radiusPoolName: true,
+    },
   });
   if (!profile || !profile.groupName) return;
 
-  // Upsert Mikrotik-Rate-Limit
-  if (profile.speed) {
-    const existingRate = await prisma.radgroupreply.findFirst({
-      where: { groupname: profile.groupName, attribute: 'Mikrotik-Rate-Limit' },
+  // Upsert Mikrotik-Rate-Limit (same fallback formula as /api/pppoe/profiles/sync-radius)
+  const rateLimit = profile.rateLimit || `${profile.downloadSpeed}M/${profile.uploadSpeed}M`;
+  const existingRate = await prisma.radgroupreply.findFirst({
+    where: { groupname: profile.groupName, attribute: 'Mikrotik-Rate-Limit' },
+  });
+  if (existingRate) {
+    await prisma.radgroupreply.update({
+      where: { id: existingRate.id },
+      data: { value: rateLimit },
     });
-    if (existingRate) {
-      await prisma.radgroupreply.update({
-        where: { id: existingRate.id },
-        data: { value: profile.speed },
-      });
-    } else {
-      await prisma.radgroupreply.create({
-        data: { groupname: profile.groupName, attribute: 'Mikrotik-Rate-Limit', op: ':=', value: profile.speed },
-      });
-    }
+  } else {
+    await prisma.radgroupreply.create({
+      data: { groupname: profile.groupName, attribute: 'Mikrotik-Rate-Limit', op: ':=', value: rateLimit },
+    });
   }
 
-  // Upsert Pool-Name if set
-  if (profile.ipPool) {
-    const existingPool = await prisma.radgroupreply.findFirst({
-      where: { groupname: profile.groupName, attribute: 'Pool-Name' },
-    });
+  // Upsert Pool-Name — priority: explicit radiusPoolName, else speed-tier fallback;
+  // only assign if the pool actually exists in radippool (same as /api/pppoe/profiles/sync-radius)
+  const downloadSpeed = profile.downloadSpeed || 10;
+  const poolName = profile.radiusPoolName || `${downloadSpeed}Mbps-Pool`;
+  const poolExists: Array<{ cnt: number }> = await prisma.$queryRaw`
+    SELECT COUNT(*) as cnt FROM radippool WHERE pool_name = ${poolName}
+  `;
+  const existingPool = await prisma.radgroupreply.findFirst({
+    where: { groupname: profile.groupName, attribute: 'Pool-Name' },
+  });
+  if (poolExists[0]?.cnt > 0) {
     if (existingPool) {
       await prisma.radgroupreply.update({
         where: { id: existingPool.id },
-        data: { value: profile.ipPool },
+        data: { value: poolName },
       });
     } else {
       await prisma.radgroupreply.create({
-        data: { groupname: profile.groupName, attribute: 'Pool-Name', op: ':=', value: profile.ipPool },
+        data: { groupname: profile.groupName, attribute: 'Pool-Name', op: ':=', value: poolName },
       });
     }
+  } else if (existingPool) {
+    // Pool doesn't exist — remove stale Pool-Name mapping
+    await prisma.radgroupreply.delete({ where: { id: existingPool.id } });
   }
 }
 
