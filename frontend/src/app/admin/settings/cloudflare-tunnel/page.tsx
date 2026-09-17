@@ -1,30 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-  Cloud,
-  CheckCircle2,
-  Circle,
-  Copy,
-  Check,
-  ExternalLink,
-  Globe,
-  Shield,
-  Server,
-  RefreshCw,
-  Save,
-  AlertTriangle,
-  Info,
-  Terminal,
-  Power,
-  Play,
-  Square,
-  ToggleRight,
-  ToggleLeft,
-  Loader2,
-  Wifi,
-  WifiOff,
-} from 'lucide-react';
+import { Cloud, CheckCircle2, Circle, Copy, Check, ExternalLink, Globe, Server, RefreshCw, Save, AlertTriangle, Info, Terminal, Power, Play, Square, ToggleRight, ToggleLeft, Loader2, Wifi, WifiOff } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 

@@ -1,4 +1,4 @@
-import { type NextRequest, NextResponse } from 'next/server';
+import { type NextRequest } from 'next/server';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { ok, fail } from '@/lib/genieacs/helpers';
 import {

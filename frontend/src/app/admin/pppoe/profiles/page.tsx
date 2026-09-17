@@ -1,7 +1,7 @@
 'use client';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useState, useRef } from 'react';
-import { Plus, Pencil, Trash2, CheckCircle2, XCircle, FileText, RefreshCw, Download, Upload, ChevronRight, ChevronDown, Eye, Radio, Wifi, WifiOff, RotateCcw } from 'lucide-react';
+import { Plus, Pencil, Trash2, CheckCircle2, XCircle, FileText, RefreshCw, Download, Upload, ChevronRight, ChevronDown, Eye, Radio, Wifi, RotateCcw } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
   SimpleModal,

@@ -1,23 +1,8 @@
 'use client';
 
 import React from 'react';
-import { 
-  DiagramProps, 
-  Port, 
-  PortStatus,
-  DEFAULT_COLORS, 
-  PORT_STATUS_LABELS, 
-  FIBER_COLORS as UI_FIBER_COLORS,
-  TubeVisualization,
-  CoreVisualization,
-} from './types';
-import { 
-  FIBER_COLORS, 
-  getFiberColor, 
-  getFullCoreIdentifier,
-  getSplitterLoss,
-  getFBTUnevenLossBoth,
-} from '@/lib/network/fiber-core-types';
+import { DiagramProps, Port, PortStatus, DEFAULT_COLORS, PORT_STATUS_LABELS, FIBER_COLORS as UI_FIBER_COLORS } from './types';
+import { getSplitterLoss, getFBTUnevenLossBoth } from '@/lib/network/fiber-core-types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 

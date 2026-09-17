@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Clock, Play, RefreshCw, CheckCircle, XCircle, Loader2, Activity, Settings2, RotateCcw, Pencil, X, Zap } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';

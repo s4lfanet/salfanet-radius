@@ -1,6 +1,5 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { requirePermission } from '@/server/middleware/api-auth';
-import { prisma } from '@/server/db/client';
 import { seedParameterDisplayConfig } from '../../../../../../../prisma/seeds/parameter-display-config';
 
 // POST - Reset to default configurations

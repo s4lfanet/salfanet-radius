@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { ok, badRequest, unauthorized, serverError } from '@/lib/api-response';
+import { ok, badRequest, serverError } from '@/lib/api-response';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { getFailedSyncs, manualRetry } from '@/server/services/radius/radius-sync-queue.service';
 import { runReconciliation } from '@/server/services/radius/radius-reconciliation.service';

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Loader2, Pencil, Trash2, ToggleLeft, ToggleRight, Code2, Cpu, X, Lightbulb, Palette } from "lucide-react";
+import { Plus, Loader2, Pencil, Trash2, ToggleLeft, ToggleRight, Code2, Cpu, Lightbulb, Palette } from "lucide-react";
 import { SimpleModal, ModalHeader, ModalTitle, ModalDescription, ModalBody, ModalFooter, ModalButton, ModalInput, ModalLabel, ModalSelect, ModalTextarea } from '@/components/cyberpunk/SimpleModal';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from "@/hooks/useTranslation";

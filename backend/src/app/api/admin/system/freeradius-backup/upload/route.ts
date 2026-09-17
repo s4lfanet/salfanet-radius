@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requirePermission } from '@/server/middleware/api-auth';
-import { writeFileSync, existsSync } from 'fs';
+import { writeFileSync } from 'fs';
 import { execSync } from 'child_process';
 import path from 'path';
 import { getAppDir, getBackupDir } from '../route';

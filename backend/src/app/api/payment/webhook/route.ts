@@ -3,7 +3,7 @@ import { prisma } from '@/server/db/client';
 import { syncVoucherToRadius } from '@/server/services/radius/hotspot-sync.service';
 import { sendPaymentSuccess, sendVoucherPurchaseSuccess } from '@/server/services/notifications/whatsapp-templates.service';
 import { WhatsAppService } from '@/server/services/notifications/whatsapp.service';
-import { formatWIB, toUTC, nowWIB, getCurrentTimezone } from '@/lib/timezone';
+import { toUTC, nowWIB, getCurrentTimezone } from '@/lib/timezone';
 import { formatInTimeZone } from 'date-fns-tz';
 import { logActivity } from '@/server/services/activity-log.service';
 import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service';

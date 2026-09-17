@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { JointClosureDiagram, JointClosureDiagramV2, ODCDiagram, ODPDiagram } from '@/components/network/SplitterDiagram';
+import { JointClosureDiagramV2, ODCDiagram, ODPDiagram } from '@/components/network/SplitterDiagram';
 import OTBDiagramV2 from '@/components/network/SplitterDiagram/OTBDiagramV2';
 import { SplitterNode, Port, FiberConnection, FeederCableAssignment } from '@/components/network/SplitterDiagram/types';
 import { useTranslation } from '@/hooks/useTranslation';

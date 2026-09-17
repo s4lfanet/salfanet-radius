@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Power, RefreshCw, Wifi, Search, Download, Trash2, RotateCcw } from 'lucide-react';
+import { Power, RefreshCw, Wifi, Trash2, RotateCcw } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB } from '@/lib/timezone';

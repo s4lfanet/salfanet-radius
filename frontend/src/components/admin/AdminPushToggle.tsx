@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Bell, BellOff, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { apiAdmin } from '@/lib/api/client';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 
 function urlBase64ToUint8Array(base64String: string) {

@@ -1,32 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import {
-  LayoutDashboard,
-  Ticket,
-  Wifi,
-  WifiOff,
-  Shield,
-  Users,
-  UserPlus,
-  LogOut,
-  Menu,
-  X,
-  Wrench,
-  Phone,
-  Sun,
-  Moon,
-  Loader2,
-  ChevronRight,
-  User,
-  Bell,
-  BellOff,
-  Cpu,
-  Clock,
-  Unplug,
-} from 'lucide-react';
+import { LayoutDashboard, Ticket, Wifi, WifiOff, UserPlus, LogOut, Menu, X, Wrench, Phone, Sun, Moon, Loader2, ChevronRight, User, Bell, BellOff, Cpu, Clock, Unplug } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { onUnauthorized, apiAdmin } from '@/lib/api/client';
 import { useTranslation } from '@/hooks/useTranslation';

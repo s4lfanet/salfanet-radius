@@ -1,51 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense, useRef, TouchEvent } from 'react';
+import { useState, useEffect, useCallback, Suspense, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useSession, signOut, SessionProvider } from 'next-auth/react';
 import { useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
-import {
-  LayoutDashboard,
-  Users,
-  Wrench,
-  Wifi,
-  Receipt,
-  CreditCard,
-  Wallet,
-  Clock,
-  MessageSquare,
-  Network,
-  Settings,
-  Menu,
-  X,
-  ChevronDown,
-  Shield,
-  LogOut,
-
-  Router,
-  AlertTriangle,
-  Timer,
-  Server,
-  Bell,
-  UserCheck,
-  Sun,
-  Moon,
-  Gift,
-  Globe,
-  BarChart3,
-  FileText,
-  Activity,
-  Cable,
-  GitBranch,
-  Mail,
-  MessageCircle,
-  Send,
-  Smartphone,
-  Cloud,
-  Inbox,
-} from 'lucide-react';
+import { LayoutDashboard, Users, Wrench, Wifi, Receipt, CreditCard, Wallet, Clock, MessageSquare, Settings, Menu, X, ChevronDown, Shield, LogOut, Router, AlertTriangle, Timer, Server, Bell, UserCheck, Sun, Moon, Gift, Globe, BarChart3, FileText, Activity, Cable, GitBranch, Mail, MessageCircle, Send, Inbox } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiAdmin, onUnauthorized } from '@/lib/api';
 import { useAppStore } from '@/lib/store';

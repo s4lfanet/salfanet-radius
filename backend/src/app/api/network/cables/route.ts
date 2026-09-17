@@ -2,7 +2,7 @@
 import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { nanoid } from 'nanoid';
-import { FIBER_COLORS, CABLE_TYPES, CableType } from '@/lib/network/fiber-core-types';
+import { FIBER_COLORS } from '@/lib/network/fiber-core-types';
 
 // GET /api/network/cables - List all fiber cables with optional filters
 export async function GET(request: NextRequest) {

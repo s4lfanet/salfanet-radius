@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { DiagramProps, Port, PortStatus, DEFAULT_COLORS, PORT_STATUS_LABELS, FIBER_COLORS } from './types';
+import { DiagramProps, Port, PortStatus, DEFAULT_COLORS, PORT_STATUS_LABELS } from './types';
 import { useTranslation } from '@/hooks/useTranslation';
 
 /**

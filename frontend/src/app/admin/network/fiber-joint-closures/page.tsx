@@ -3,10 +3,7 @@
 import { useState } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
-import {
-  Plus, Pencil, Trash2, RefreshCcw, X, MapPin, Cable,
-  Activity, Circle, Link2, Box,
-} from 'lucide-react';
+import { Plus, Pencil, Trash2, RefreshCcw, MapPin, Cable, Circle, Link2 } from 'lucide-react';
 import MapPicker from '@/components/MapPicker';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';

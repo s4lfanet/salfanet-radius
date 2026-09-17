@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Server, RefreshCw, Wifi, WifiOff, Search, Loader2, Power, Trash2, Eye, Settings2, CheckCircle, XCircle, RotateCcw, X, Globe, Network, Activity, Smartphone, Monitor, Radio, Edit, Save, Lock, Signal, Thermometer, Info, Shield, List, Copy, ChevronDown, ChevronRight, Zap, Code2, Square, CheckSquare } from 'lucide-react';
+import { Server, RefreshCw, Wifi, WifiOff, Search, Loader2, Power, Trash2, Eye, Settings2, RotateCcw, X, Globe, Network, Activity, Smartphone, Monitor, Radio, Edit, Save, Lock, Info, List, Copy, Zap, Code2, CheckSquare } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import {
   SimpleModal,

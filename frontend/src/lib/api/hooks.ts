@@ -21,7 +21,7 @@ import {
   type UseMutationOptions,
   type QueryKey,
 } from '@tanstack/react-query';
-import { apiCall, apiAdmin, apiCustomer, apiAgent, type AuthMode } from '@/lib/api/client';
+import { apiCall, type AuthMode } from '@/lib/api/client';
 
 // ─── Query Key Helpers ──────────────────────────────────────────────────────
 

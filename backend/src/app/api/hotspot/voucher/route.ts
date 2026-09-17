@@ -3,7 +3,7 @@
 // Allow up to 5 minutes for large batch voucher generation (25k vouchers)
 export const maxDuration = 300;
 import { requirePermission } from '@/server/middleware/api-auth';
-import { ok, created, badRequest, unauthorized, notFound, serverError } from '@/lib/api-response';
+import { ok, created, badRequest, notFound, serverError } from '@/lib/api-response';
 import {
   listVouchers,
   generateVouchers,

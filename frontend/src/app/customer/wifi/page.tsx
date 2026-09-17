@@ -2,10 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Wifi, WifiOff, Router, RefreshCw, Pencil, Save, X,
-  Eye, EyeOff, Monitor, ServerCrash, Info, Radio, Power
-} from 'lucide-react';
+import { Wifi, WifiOff, Router, RefreshCw, Pencil, Save, Eye, EyeOff, Monitor, ServerCrash, Info, Radio, Power } from 'lucide-react';
 import { CyberCard, CyberButton } from '@/components/cyberpunk';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { showConfirm } from '@/lib/sweetalert';

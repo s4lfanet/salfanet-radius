@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError, showConfirm, showWarning } from '@/lib/sweetalert';
-import { Plus, Edit2, Trash2, Check, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, Check } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import {
@@ -17,7 +17,7 @@ import {
   ModalLabel,
   ModalButton,
 } from '@/components/cyberpunk';
-import { TICKET_CATEGORIES, getGroupStats } from '@/lib/ticketCategories';
+import { TICKET_CATEGORIES } from '@/lib/ticketCategories';
 
 interface Category {
   id: string;

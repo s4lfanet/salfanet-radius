@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { listPppSecrets, managePppSecret, getMikrotikProfileName, shouldCreatePppSecret } from '@/server/services/mikrotik/ppp-secret.service';
-import { reloadFreeRadius } from '@/server/services/radius/freeradius.service';
 import { requirePermission } from '@/server/middleware/api-auth';
 
 /**

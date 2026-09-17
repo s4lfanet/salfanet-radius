@@ -7,7 +7,6 @@
  */
 
 import { prisma } from '@/server/db/client'
-import { paymentRepository } from '@/server/db/repositories'
 import { nowWIB } from '@/lib/timezone'
 
 /** Get revenue totals grouped by month for the past N months */

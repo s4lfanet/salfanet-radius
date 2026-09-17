@@ -2,25 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import { 
-  FileText, 
-  Mail, 
-  MessageCircle, 
-  Globe,
-  Edit,
-  Eye,
-  Save,
-  X,
-  Plus,
-  Smartphone,
-  Monitor,
-  Tablet,
-  RefreshCw,
-  Code,
-  AlertCircle,
-  CheckCircle,
-  Loader2
-} from 'lucide-react';
+import { FileText, Mail, MessageCircle, Globe, Edit, Eye, Save, X, Smartphone, Monitor, Tablet, RefreshCw, Code, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';

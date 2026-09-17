@@ -1,29 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
-import {
-  Ticket,
-  MessageSquare,
-  Filter,
-  Search,
-  TrendingUp,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  Users,
-  Send,
-  X,
-  ChevronDown,
-  Loader2,
-  MapPin,
-  Navigation,
-  Upload,
-  FileText,
-  Image as ImageIcon,
-  Ticket as TicketIcon,
-} from 'lucide-react';
+import { Ticket, MessageSquare, Filter, Search, TrendingUp, Clock, CheckCircle, AlertCircle, Users, Send, X, ChevronDown, Loader2, MapPin, Navigation, Upload, FileText, Ticket as TicketIcon } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
 import { showSuccess, showError } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';

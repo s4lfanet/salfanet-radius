@@ -3,23 +3,7 @@
 import { useState, useCallback, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import {
-  ArrowLeft,
-  RefreshCw,
-  Power,
-  RotateCcw,
-  Download,
-  Loader2,
-  AlertCircle,
-  CheckCircle2,
-  Trash2,
-  Server,
-  Activity,
-  ListTodo,
-  ChevronDown,
-  ChevronUp,
-  LayoutList,
-} from 'lucide-react';
+import { ArrowLeft, RefreshCw, Power, RotateCcw, Loader2, AlertCircle, CheckCircle2, Trash2, Server, Activity, ListTodo, ChevronDown, ChevronUp, LayoutList } from 'lucide-react';
 import { DeviceStatusBadge } from '@/components/genieacs/DeviceStatusBadge';
 import { TaskStatusBadge } from '@/components/genieacs/TaskStatusBadge';
 import { formatWIB } from '@/lib/timezone';

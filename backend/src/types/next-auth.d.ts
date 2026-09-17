@@ -1,5 +1,5 @@
 import { DefaultSession, DefaultUser } from 'next-auth';
-import { JWT, DefaultJWT } from 'next-auth/jwt';
+import { DefaultJWT } from 'next-auth/jwt';
 
 // Mirrors frontend/src/types/next-auth.d.ts — kept in sync manually since
 // the two Next.js apps don't share a tsconfig. Both apps' authOptions

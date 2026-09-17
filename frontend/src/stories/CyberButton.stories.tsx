@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { CyberButton } from '@/components/cyberpunk';
-import { CheckCircle2, Trash2, AlertTriangle, Download, Loader2 } from 'lucide-react';
+import { CheckCircle2, Trash2, AlertTriangle, Download } from 'lucide-react';
 
 const meta: Meta<typeof CyberButton> = {
   title: 'Components/CyberButton',

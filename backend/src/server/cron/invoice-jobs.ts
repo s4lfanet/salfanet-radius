@@ -1,5 +1,5 @@
 import { prisma } from '@/server/db/client';
-import { nowWIB, nowWIBAsync, WIB_TIMEZONE } from '@/lib/timezone';
+import { nowWIBAsync, WIB_TIMEZONE } from '@/lib/timezone';
 import { formatInTimeZone } from 'date-fns-tz';
 import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
 import { nanoid } from 'nanoid';

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
-import { managePppSecret, kickPppoeSession } from '@/server/services/mikrotik/ppp-secret.service';
+import { managePppSecret } from '@/server/services/mikrotik/ppp-secret.service';
 import { disconnectMultiplePPPoEUsers } from '@/server/services/radius/coa-handler.service';
 
 /**

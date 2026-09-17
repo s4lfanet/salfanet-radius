@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
-import { Plus, Edit2, Trash2, Eye, X, RefreshCw, FileCode , LayoutTemplate} from 'lucide-react';
+import { Plus, Edit2, Trash2, Eye, RefreshCw, FileCode, LayoutTemplate } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { renderVoucherTemplate } from '@/lib/utils/templateRenderer';
 import { apiAdmin } from '@/lib/api';

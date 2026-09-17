@@ -4,14 +4,13 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { Plus, X, SlidersHorizontal, ChevronDown, Link2, Loader2, Trash2, Eye, EyeOff, Navigation } from 'lucide-react';
+import { Plus, X, SlidersHorizontal, ChevronDown, Link2, Loader2, Eye, EyeOff, Navigation } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import FilterPanel from '@/components/network/FilterPanel';
 import NetworkNodePanel, { type MapEntity } from '@/components/network/NetworkNodePanel';
 import type { ConnectionLine } from '@/components/network/UnifiedNetworkMap';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';
-import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 // Dynamic imports (client-side only) - prevents Lucide icon hydration mismatch
 const UnifiedNetworkMap = dynamic(

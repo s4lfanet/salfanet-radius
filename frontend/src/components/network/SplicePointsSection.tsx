@@ -2,11 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
-import { apiAdmin, ApiError } from '@/lib/api';
-import {
-  Plus, Trash2, Link2, Cable, X, Zap, Settings, Circle,
-  AlertTriangle, Check, RefreshCcw
-} from 'lucide-react';
+import { apiAdmin } from '@/lib/api';
+import { Plus, Trash2, Link2, X, Zap, Settings, AlertTriangle, RefreshCcw } from 'lucide-react';
 
 // Fiber color coding (TIA-598-D standard)
 const FIBER_COLORS: Record<string, string> = {

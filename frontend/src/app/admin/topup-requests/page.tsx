@@ -1,10 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, X, Eye, Download, Loader2, AlertCircle, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { Check, X, Eye, Loader2, AlertCircle, Clock, CheckCircle2, XCircle } from 'lucide-react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { formatWIB } from '@/lib/timezone';
-import Image from 'next/image';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';

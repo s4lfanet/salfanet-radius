@@ -8,27 +8,7 @@
  */
 
 import { apiAdmin } from './client';
-import type {
-  PppoeUser,
-  PppoeUserListResponse,
-  PppoeUserResponse,
-  PppoeUserCreateResponse,
-  PppoeUserDeleteResponse,
-  PppoeProfile,
-  PppoeProfileListResponse,
-  PppoeProfileResponse,
-  PppoeArea,
-  PppoeAreaListResponse,
-  PppoeAreaResponse,
-  PppoeOnlineStatusResponse,
-  SyncPreviewResponse,
-  SyncMikrotikImportResponse,
-  SyncAuditResponse,
-  SyncAuditFixResponse,
-  UpdateUserStatusResponse,
-  BulkUpdateStatusResponse,
-  Router,
-} from '@/types/api';
+import type { PppoeUser, PppoeUserListResponse, PppoeUserResponse, PppoeUserCreateResponse, PppoeUserDeleteResponse, PppoeProfile, PppoeProfileListResponse, PppoeProfileResponse, PppoeArea, PppoeAreaListResponse, PppoeAreaResponse, PppoeOnlineStatusResponse, SyncPreviewResponse, SyncMikrotikImportResponse, SyncAuditResponse, SyncAuditFixResponse, UpdateUserStatusResponse, BulkUpdateStatusResponse } from '@/types/api';
 
 // Re-export types for backward compatibility
 export type {

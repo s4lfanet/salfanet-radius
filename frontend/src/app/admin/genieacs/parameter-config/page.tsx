@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Edit, Plus, Trash2, Save, X, GripVertical, Eye, EyeOff, RotateCcw, Settings2, Loader2, AlertTriangle } from 'lucide-react';
+import { Edit, Plus, Trash2, Save, GripVertical, Eye, EyeOff, RotateCcw, Settings2, Loader2, AlertTriangle } from 'lucide-react';
 import { SimpleModal, ModalHeader, ModalTitle, ModalDescription, ModalBody, ModalFooter, ModalButton, ModalInput, ModalLabel, ModalSelect, ModalTextarea } from '@/components/cyberpunk/SimpleModal';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError, showConfirm, showWarning } from '@/lib/sweetalert';

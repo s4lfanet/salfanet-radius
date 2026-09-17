@@ -10,7 +10,7 @@ import { randomBytes } from 'crypto';
 import { nanoid } from 'nanoid';
 import { startOfDayWIBtoUTC, endOfDayWIBtoUTC, toUTC, nowWIB, WIB_TIMEZONE } from '@/lib/timezone';
 import { formatInTimeZone } from 'date-fns-tz';
-import { ok, created, badRequest, unauthorized, notFound, serverError } from '@/lib/api-response';
+import { ok, created, badRequest, notFound, serverError } from '@/lib/api-response';
 // Generate secure random token for payment link
 function generatePaymentToken(): string {
   return randomBytes(32).toString('hex');

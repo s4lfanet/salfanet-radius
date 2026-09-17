@@ -3,7 +3,7 @@
  * Supports: MA5608T, MA5680T, MA5683T, MA5800 series
  */
 
-import { SNMPConfig, snmpGet, snmpWalk } from '../snmp';
+import { SNMPConfig, snmpGet } from '../snmp';
 import { TelnetConfig, executeCommand } from '../telnet';
 import { SSHConfig, executeCommand as sshExecute } from '../ssh';
 

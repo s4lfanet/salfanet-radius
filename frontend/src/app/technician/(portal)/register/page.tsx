@@ -3,11 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useState, useEffect } from 'react';
-import {
-  UserPlus, User, Phone, Mail, MapPin, Package, FileText, Loader2,
-  CheckCircle, AlertCircle, Wifi, ChevronDown, Key, Globe, Calendar,
-  Hash, Monitor, CreditCard, Camera, X, Gift,
-} from 'lucide-react';
+import { UserPlus, User, Phone, Mail, MapPin, Package, FileText, Loader2, CheckCircle, AlertCircle, Wifi, ChevronDown, Key, Globe, Calendar, Hash, Monitor, CreditCard, X, Gift } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { CameraPhotoInput } from '@/components/CameraPhotoInput';

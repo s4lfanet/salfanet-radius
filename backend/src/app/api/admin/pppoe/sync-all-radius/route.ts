@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { ok, unauthorized, serverError } from '@/lib/api-response';
+import { ok, serverError } from '@/lib/api-response';
 import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { enqueueFailedSync, syncSingleUserToRadius } from '@/server/services/radius/radius-sync-queue.service';

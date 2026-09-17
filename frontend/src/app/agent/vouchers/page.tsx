@@ -5,12 +5,7 @@ import { isExpiredWIB, formatWIB } from '@/lib/timezone';
 import { apiAgent } from '@/lib/api';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import {
-  Search,
-  Filter,
-  MessageCircle,
-  X as CloseIcon,
-} from 'lucide-react';
+import { Search, Filter, MessageCircle } from 'lucide-react';
 import { Pagination } from '@/components/Pagination';
 
 interface AgentData {

@@ -1,12 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
+import { showSuccess, showError } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
-import {
-  RefreshCcw, Circle, Check, X, AlertTriangle,
-  Bookmark, Cable, Filter, Eye, Tag, Layers, Activity
-} from 'lucide-react';
+import { RefreshCcw, Circle, Check, X, AlertTriangle, Bookmark, Cable, Filter, Tag } from 'lucide-react';
 import { Pagination } from '@/components/Pagination';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';

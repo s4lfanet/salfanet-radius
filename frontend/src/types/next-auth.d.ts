@@ -1,5 +1,5 @@
 import { DefaultSession, DefaultUser } from 'next-auth';
-import { JWT, DefaultJWT } from 'next-auth/jwt';
+import { DefaultJWT } from 'next-auth/jwt';
 
 // Mirrored at backend/src/types/next-auth.d.ts — the backend also runs
 // NextAuth (verifying the same JWT this app issues) but is a separate

@@ -1,7 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { nanoid } from 'nanoid';
-import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
+import { rateLimit } from '@/server/middleware/rate-limit';
 
 /**
  * Customer Login for Mobile App

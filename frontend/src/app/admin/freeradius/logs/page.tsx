@@ -2,10 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import {
-    Terminal, Pause, Play, Download, Trash2,
-    Search, Filter, Activity
-} from 'lucide-react';
+import { Pause, Play, Download, Trash2, Search, Activity } from 'lucide-react';
 import { useApiQuery } from '@/lib/api/hooks';
 
 export default function RadiusLogsPage() {

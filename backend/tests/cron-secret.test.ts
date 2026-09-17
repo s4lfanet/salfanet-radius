@@ -6,7 +6,6 @@
  *
  * Run with: npx tsx tests/cron-secret.test.ts
  */
-import { CronExpressionParser } from 'cron-parser';
 
 let passed = 0;
 let failed = 0;

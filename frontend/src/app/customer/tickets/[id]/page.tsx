@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useToast } from '@/components/cyberpunk/CyberToast';
-import { ArrowLeft, Send, User, Clock, MapPin, Paperclip, FileText, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Send, User, Clock, MapPin, Paperclip, FileText } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
 import { apiCustomer, ApiError } from '@/lib/api';
 import { CyberCard } from '@/components/cyberpunk/CyberCard';

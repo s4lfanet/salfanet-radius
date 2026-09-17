@@ -8,19 +8,7 @@
  *
  * Run with: npx tsx tests/timezone.test.ts
  */
-import {
-  nowWIB,
-  formatWIB,
-  parseDateAsWIB,
-  toUTC,
-  isExpiredWIB,
-  daysUntilExpiry,
-  startOfDayWIBtoUTC,
-  endOfDayWIBtoUTC,
-  getCurrentTimezone,
-  setCurrentTimezone,
-  getTimezoneOffsetMs,
-} from '../src/lib/timezone';
+import { nowWIB, formatWIB, parseDateAsWIB, isExpiredWIB, daysUntilExpiry, startOfDayWIBtoUTC, endOfDayWIBtoUTC, getCurrentTimezone, setCurrentTimezone, getTimezoneOffsetMs } from '../src/lib/timezone';
 
 let passed = 0;
 let failed = 0;

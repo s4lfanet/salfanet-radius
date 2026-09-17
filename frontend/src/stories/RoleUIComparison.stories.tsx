@@ -1,10 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { CyberButton, CyberCard } from '@/components/cyberpunk';
-import {
-  LayoutDashboard, Users, Wifi, Wallet, Ticket, Shield,
-  CheckCircle2, XCircle, Clock, AlertTriangle, Loader2,
-  Search, Filter, RefreshCw, Plus, Download,
-} from 'lucide-react';
+import { CyberButton } from '@/components/cyberpunk';
+import { LayoutDashboard, Users, Wifi, Wallet, Ticket, Shield, CheckCircle2, XCircle, Clock, AlertTriangle, Search, Filter, RefreshCw, Plus } from 'lucide-react';
 
 const meta: Meta = {
   title: 'Patterns/Role UI Comparison',

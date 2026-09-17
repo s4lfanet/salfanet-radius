@@ -1,6 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
-import { toWIB, nowWIB, WIB_TIMEZONE } from '@/lib/timezone';
+import { nowWIB, WIB_TIMEZONE } from '@/lib/timezone';
 import { formatInTimeZone } from 'date-fns-tz';
 import { prisma } from '@/server/db/client';
 import { requireAgentAuth } from '@/server/middleware/agent-auth';
