@@ -60,8 +60,11 @@ export async function GET(req: NextRequest) {
     });
 
     // Group all invoices by userId
+    // (userId is non-null here — every row came from `where: { userId: { in: userIds } }`
+    // above; the `if (!inv.userId) continue` is just to satisfy the nullable column type)
     const allInvoicesByUser = new Map<string, typeof allInvoices>();
     for (const inv of allInvoices) {
+      if (!inv.userId) continue;
       const arr = allInvoicesByUser.get(inv.userId) || [];
       arr.push(inv);
       allInvoicesByUser.set(inv.userId, arr);
@@ -73,6 +76,7 @@ export async function GET(req: NextRequest) {
     // Group unpaid invoices by userId
     const invoicesByUser = new Map<string, typeof unpaidInvoices>();
     for (const inv of unpaidInvoices) {
+      if (!inv.userId) continue;
       const arr = invoicesByUser.get(inv.userId) || [];
       arr.push(inv);
       invoicesByUser.set(inv.userId, arr);
@@ -80,6 +84,7 @@ export async function GET(req: NextRequest) {
 
     const unpaidMap = new Map<string, number>();
     for (const inv of unpaidInvoices) {
+      if (!inv.userId) continue;
       unpaidMap.set(inv.userId, (unpaidMap.get(inv.userId) || 0) + inv.amount);
     }
 

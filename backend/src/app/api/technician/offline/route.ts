@@ -107,7 +107,7 @@ export async function GET(req: NextRequest) {
     name: string;
     phone: string;
     status: string;
-    expiredAt: string | null;
+    expiredAt: Date | null;
     profile: { id: string; name: string; groupName: string } | null;
     router: { id: string; name: string } | null;
     area: { id: string; name: string } | null;

@@ -659,7 +659,10 @@ async function createVoucherPayment(order: any, gateway: string) {
           reminderTime: 1,
           successRedirectUrl: `${baseUrl}/evoucher/pay/${order.paymentToken}?status=success`,
           failureRedirectUrl: `${baseUrl}/evoucher/pay/${order.paymentToken}?status=failed`,
-          callbackUrl: `${baseUrl}/api/payment/webhook`
+          // xendit-node v7's CreateInvoiceRequest has no per-invoice callback/webhook
+          // URL field — Xendit only supports a single account-level webhook URL,
+          // configured in the Xendit Dashboard → Settings → Webhooks, pointed at
+          // /api/payment/webhook (which already verifies x-callback-token).
         }
       });
 

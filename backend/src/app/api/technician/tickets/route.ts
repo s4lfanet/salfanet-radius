@@ -47,12 +47,12 @@ export async function GET(req: NextRequest) {
     scopeConditions.push({ assignedToId: null });
     scopeConditions.push({ assignedToId: tech.id, assignedToType: 'TECHNICIAN' });
   }
-  where.AND = [{ OR: scopeConditions }];
+  const andConditions: Record<string, unknown>[] = [{ OR: scopeConditions }];
 
   if (status) where.status = status;
   if (priority) where.priority = priority;
   if (search) {
-    where.AND.push({
+    andConditions.push({
       OR: [
         { ticketNumber: { contains: search } },
         { subject: { contains: search } },
@@ -61,6 +61,7 @@ export async function GET(req: NextRequest) {
       ],
     });
   }
+  where.AND = andConditions;
 
   const tickets = await prisma.ticket.findMany({
     where,

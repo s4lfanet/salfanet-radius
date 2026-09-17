@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
         select: { username: true, framedipaddress: true },
       })
     : [];
-  const onlineMap = new Map(activeSessions.map((s) => [s.username, s.framedipaddress]));
+  const onlineMap = new Map<string, string | null>(activeSessions.map((s) => [s.username, s.framedipaddress]));
 
   // Also check MikroTik /ppp/active for ALL routers (not just local-auth)
   // RADIUS-mode routers may have active PPP sessions not in radacct

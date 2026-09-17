@@ -1,6 +1,9 @@
 import { DefaultSession, DefaultUser } from 'next-auth';
 import { JWT, DefaultJWT } from 'next-auth/jwt';
 
+// Mirrored at backend/src/types/next-auth.d.ts — the backend also runs
+// NextAuth (verifying the same JWT this app issues) but is a separate
+// tsconfig/package, so it needs its own copy. Keep both in sync.
 declare module 'next-auth' {
   interface Session {
     user: {
