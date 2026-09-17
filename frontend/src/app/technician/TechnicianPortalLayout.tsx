@@ -322,7 +322,6 @@ function NotificationBell() {
     loadNotifications();
     const iv = setInterval(loadNotifications, 30000);
     return () => clearInterval(iv);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleOpen = () => {

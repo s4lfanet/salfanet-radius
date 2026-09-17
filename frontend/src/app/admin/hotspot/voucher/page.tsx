@@ -142,7 +142,6 @@ export default function HotspotVoucherPage() {
 
   // ─── React Query: Voucher templates (rarely change - 5min stale) ─────────────
   const { data: templatesData } = useApiQuery<VoucherTemplate[]>('/api/voucher-templates', { staleTime: 5 * 60 * 1000 })
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const templates: any[] = (templatesData || []).filter((t: any) => t.isActive)
 
   // ─── React Query: Company info (rarely change - 30min stale) ─────────────────

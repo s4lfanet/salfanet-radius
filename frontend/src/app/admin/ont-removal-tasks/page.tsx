@@ -60,7 +60,6 @@ export default function AdminOntRemovalTasksPage() {
     } finally {
       setLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
   const fetchTechnicians = useCallback(async () => {

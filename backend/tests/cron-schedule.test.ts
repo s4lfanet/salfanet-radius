@@ -169,7 +169,7 @@ function testAllProductionSchedules() {
     pppoe_session_sync: '*/5 * * * *',
   };
 
-  let allParsed = true;
+  let _allParsed = true;
   for (const [job, schedule] of Object.entries(schedules)) {
     try {
       const parser = CronExpressionParser.parse(schedule, { tz: 'Asia/Jakarta' });
@@ -177,7 +177,7 @@ function testAllProductionSchedules() {
       assert(true, `${job} (${schedule}) → next: ${next.toISOString()}`);
     } catch (err) {
       assert(false, `${job} (${schedule}) FAILED to parse: ${err}`);
-      allParsed = false;
+      _allParsed = false;
     }
   }
 }

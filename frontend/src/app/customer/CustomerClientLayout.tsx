@@ -98,7 +98,6 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
         if (parsed.lastChecked) lastCheckedRef.current = parsed.lastChecked;
       }
     } catch (e: unknown) { /* ignore - localStorage may be unavailable */ console.warn('Failed to load notifications from localStorage:', e); }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Auto-save whenever history / unread changes

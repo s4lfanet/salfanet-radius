@@ -101,7 +101,6 @@ export async function refreshTimezoneFromDB(): Promise<string> {
  * regardless of restarts. Guarded against duplicate registration (HMR / dev).
  */
 declare global {
-  // eslint-disable-next-line no-var
   var __salfanetTimezoneAutoRefreshStarted: boolean | undefined;
 }
 

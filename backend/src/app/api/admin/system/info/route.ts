@@ -59,14 +59,6 @@ export async function GET() {
   const gitBranch    = git('git rev-parse --abbrev-ref HEAD', appDir);
   const totalCommits = git('git rev-list --count HEAD', appDir);
 
-  // Auto-generate build number: count commits since last version tag
-  let buildNumber = 0;
-  try {
-    buildNumber = parseInt(
-      execSync('git rev-list --count HEAD --since="2 days ago"', { cwd: appDir, timeout: 5000, stdio: 'pipe' }).toString().trim()
-    ) || 0;
-  } catch { /* ignore */ }
-
   // Auto-version: package.json version + commit count as build suffix
   // e.g. "2.35.0" + 1500 total commits => "2.35.0+1500"
   const autoVersion = totalCommits !== 'unknown'

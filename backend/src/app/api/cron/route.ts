@@ -80,13 +80,13 @@ export async function POST(request: NextRequest) {
     // Timing-safe comparison to prevent timing attacks.
     const hasCronSecret = cronSecret && headerSecret && safeCompare(headerSecret, cronSecret)
 
-    let user = 'system'
+    let _user = 'system'
     if (!hasCronSecret) {
       const session = await getServerSession(authOptions)
       if (!session || (session as any).user?.role !== 'SUPER_ADMIN') {
         return unauthorized()
       }
-      user = (session as any).user?.email || 'admin'
+      _user = (session as any).user?.email || 'admin'
     }
 
     const body = await request.json().catch(() => ({}))

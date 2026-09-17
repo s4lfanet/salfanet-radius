@@ -252,7 +252,6 @@ export default function VpnServerPage() {
       }
       if (savedConf) setL2tpConfig(JSON.parse(savedConf));
     } catch {}
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleL2tpAction = async (action: string, server: VpnServer) => {

@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
 
     // Determine profile to use (new profile or current)
     let targetProfile = user.profile;
-    let profileChanged = false;
+    let _profileChanged = false;
     if (newProfileId && newProfileId !== user.profile?.id) {
       const newProfile = await prisma.pppoeProfile.findUnique({
         where: { id: newProfileId },
@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
         );
       }
       targetProfile = newProfile;
-      profileChanged = true;
+      _profileChanged = true;
     }
 
     if (!targetProfile) {

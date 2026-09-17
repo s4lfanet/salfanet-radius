@@ -85,7 +85,6 @@ export default function TechnicianOnlinePage() {
     fetchSessions(1);
     const interval = setInterval(() => fetchSessions(pageRef.current, true), 5000);
     return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchSessions]);
 
   return (
