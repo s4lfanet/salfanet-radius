@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Bell, Check, CheckCheck, Trash2, X, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
 import { formatWIB, nowWIB } from '@/lib/timezone';
-import Link from 'next/link';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { apiAgent } from '@/lib/api';
 

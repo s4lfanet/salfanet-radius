@@ -3,10 +3,7 @@
 import { useState, useEffect } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
-import {
-  RefreshCcw, Plus, Trash2, Eye, Link2, Cable, X,
-  Zap, Activity, AlertTriangle, Settings, Circle
-} from 'lucide-react';
+import { RefreshCcw, Plus, Trash2, Eye, Link2, Cable, X, Zap, Activity, Settings } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';

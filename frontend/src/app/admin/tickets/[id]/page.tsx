@@ -19,7 +19,7 @@ function renderWithLinks(text: string) {
 import Link from 'next/link';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError } from '@/lib/sweetalert';
-import { ArrowLeft, Send, User, Clock, Lock, MessageCircle, Edit2, Save, X } from 'lucide-react';
+import { ArrowLeft, Send, User, Clock, Lock, Edit2, Save, X } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';

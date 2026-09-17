@@ -1,6 +1,6 @@
 import { prisma } from '../db/client';
 import { randomUUID } from 'crypto';
-import { logCronLockAcquired, logCronLockDenied, logCronLockExpired, logCronHeartbeatFailure } from './monitoring.service';
+import { logCronLockAcquired, logCronLockDenied, logCronHeartbeatFailure } from './monitoring.service';
 
 /**
  * Atomic Cron Lock Service (MySQL-based distributed lock)

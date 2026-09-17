@@ -5,32 +5,7 @@ import { useRouter } from 'next/navigation';
 import { formatWIB } from '@/lib/timezone';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import { apiCustomer } from '@/lib/api';
-import { 
-  Receipt, 
-  CheckCircle, 
-  Clock, 
-  AlertCircle, 
-  Loader2, 
-  CreditCard,
-  Calendar,
-  RefreshCw,
-  Banknote,
-  FileText,
-  ExternalLink,
-  Eye,
-  X,
-  Hash,
-  Wallet,
-  Package,
-  Upload,
-  Building2,
-  Check,
-  ChevronRight,
-  ShieldCheck,
-  ImageIcon,
-  Info,
-  Printer,
-} from 'lucide-react';
+import { Receipt, CheckCircle, Clock, AlertCircle, Loader2, CreditCard, Calendar, RefreshCw, Banknote, FileText, ExternalLink, Eye, X, Hash, Wallet, Package, Upload, Building2, Check, ChevronRight, ShieldCheck, Info, Printer } from 'lucide-react';
 import { CyberCard, CyberButton, SimpleModal, ModalHeader, ModalTitle, ModalDescription, ModalBody, ModalFooter, ModalButton } from '@/components/cyberpunk';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { printInvoiceStandard, printInvoiceThermal } from '@/lib/invoice-print';

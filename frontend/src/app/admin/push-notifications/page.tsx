@@ -52,8 +52,6 @@ import {
 } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
-import { format } from 'date-fns';
-import { id as localeId } from 'date-fns/locale';
 import { formatWIB } from '@/lib/timezone';
 
 interface Area {

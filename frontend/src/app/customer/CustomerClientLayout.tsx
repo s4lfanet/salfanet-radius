@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Home, MessageSquare, User, Receipt, Shield, Menu, X, Package, Clock, LogOut, Bell, CheckCircle2, XCircle, RefreshCw, Trash2, Wifi, FileText, PauseCircle, Gift, Sun, Moon, RefreshCcw, MoreHorizontal, Gauge } from 'lucide-react';
+import { Home, MessageSquare, User, Receipt, Shield, Menu, X, Package, Clock, LogOut, Bell, CheckCircle2, XCircle, Trash2, Wifi, FileText, PauseCircle, Gift, Sun, Moon, RefreshCcw, Gauge } from 'lucide-react';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { onUnauthorized, apiCustomer } from '@/lib/api/client';

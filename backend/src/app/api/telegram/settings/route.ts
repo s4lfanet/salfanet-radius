@@ -1,7 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
-import { testTelegramConnection } from '@/server/services/notifications/telegram.service';
 
 // GET - Get current Telegram settings
 export async function GET(request: NextRequest) {

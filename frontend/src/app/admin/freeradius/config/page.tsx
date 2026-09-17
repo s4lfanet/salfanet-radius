@@ -2,15 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import {
-    FileText, Save, RotateCcw, CheckCircle, AlertTriangle,
-    Loader2, Settings, Folder, ChevronRight, ChevronDown,
-    FileCode, Terminal
-} from 'lucide-react';
+import { FileText, Save, RotateCcw, CheckCircle, AlertTriangle, Loader2, Settings, Folder, ChevronRight, ChevronDown, FileCode } from 'lucide-react';
 import { showConfirm } from '@/lib/sweetalert';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { apiAdmin } from '@/lib/api';
-import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
+import { useApiQuery, useQueryClient } from '@/lib/api/hooks';
 
 interface FileItem {
     name: string;

@@ -12,7 +12,7 @@
  * This file is kept for backward compatibility
  */
 
-import { toWIB, formatWIB, daysUntilExpiry, relativeWIB, nowWIB } from '@/lib/timezone'
+import { formatWIB, relativeWIB, nowWIB } from '@/lib/timezone';
 
 /**
  * Format datetime string (UTC from DB) to WIB display

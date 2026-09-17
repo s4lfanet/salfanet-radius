@@ -2,25 +2,7 @@
 
 import { useState, useCallback, useEffect, use, useMemo, useRef } from 'react';
 import Link from 'next/link';
-import {
-  ArrowLeft,
-  RefreshCw,
-  Search,
-  Filter,
-  Loader2,
-  AlertCircle,
-  Copy,
-  CheckSquare,
-  Square,
-  Code2,
-  Zap,
-  ChevronRight,
-  ChevronDown,
-  X,
-  Save,
-  Eye,
-  EyeOff,
-} from 'lucide-react';
+import { RefreshCw, Search, Filter, Loader2, AlertCircle, Copy, CheckSquare, Square, Code2, Zap, ChevronRight, ChevronDown, X, Save } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { apiAdmin } from '@/lib/api';
 

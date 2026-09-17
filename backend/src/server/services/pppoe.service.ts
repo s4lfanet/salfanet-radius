@@ -5,14 +5,11 @@
 
 import { prisma } from '@/server/db/client';
 import { logActivity } from '@/server/services/activity-log.service';
-import { sendAdminCreateUser } from '@/server/services/notifications/whatsapp-templates.service';
-import { changePPPoERateLimit } from '@/server/services/mikrotik/rate-limit';
-import { managePppSecret, shouldCreatePppSecret, getMikrotikProfileName, batchListPppActive, kickPppoeSession } from '@/server/services/mikrotik/ppp-secret.service';
-import { invalidateKey, invalidatePattern, CACHE_KEYS } from '@/server/cache/redis';
+import { shouldCreatePppSecret, getMikrotikProfileName, batchListPppActive } from '@/server/services/mikrotik/ppp-secret.service';
+import { invalidateKey, CACHE_KEYS } from '@/server/cache/redis';
 import { toUTC } from '@/lib/timezone';
 import { generateUniqueReferralCode } from '@/server/services/referral.service';
 import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
-import { reloadFreeRadius } from '@/server/services/radius/freeradius.service';
 import { randomBytes } from 'crypto';
 import type { NextRequest } from 'next/server';
 import type { Session } from 'next-auth';

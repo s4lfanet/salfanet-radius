@@ -1,6 +1,5 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/server/db/client";
-import { Prisma } from "@prisma/client";
 import { nanoid } from "nanoid";
 import { nowWIB } from "@/lib/timezone";
 

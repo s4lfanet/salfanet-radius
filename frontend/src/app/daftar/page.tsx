@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useToast, CyberToastProvider } from '@/components/cyberpunk/CyberToast';
-import { UserPlus, Loader2, Wifi, CheckCircle, MapPin, Phone, Mail, Home, Package, FileText, Gift, CreditCard, Camera, X, Map } from 'lucide-react';
+import { UserPlus, Loader2, Wifi, CheckCircle, MapPin, Phone, Mail, Home, Package, FileText, Gift, CreditCard, Camera, Map } from 'lucide-react';
 import MapPicker from '@/components/MapPicker';
 import { CameraPhotoInput } from '@/components/CameraPhotoInput';
 

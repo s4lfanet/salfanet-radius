@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
-import { Plus, Pencil, Trash2, Users, TrendingUp, Calendar, Eye, X, Wallet, DollarSign, RefreshCw } from 'lucide-react';
+import { Plus, Pencil, Trash2, Users, TrendingUp, Calendar, Eye, Wallet, DollarSign, RefreshCw } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
   SimpleModal,

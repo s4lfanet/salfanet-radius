@@ -3,9 +3,7 @@ import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useState } from 'react';
-import {
-  Users, Trash2, Download, Search, RefreshCcw, Plus, Shield, FileText, UserX,
-} from 'lucide-react';
+import { Users, Trash2, RefreshCcw, Shield, FileText, UserX } from 'lucide-react';
 import { Pagination } from '@/components/Pagination';
 import { formatWIB } from '@/lib/timezone';
 import { pppoeApi } from '@/lib/api';

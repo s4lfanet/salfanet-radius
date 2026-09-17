@@ -1,26 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  BookOpen,
-  Cpu,
-  Settings2,
-  FileCode2,
-  Sliders,
-  AlertTriangle,
-  ListChecks,
-  Code2,
-  Zap,
-  Wifi,
-  RefreshCw,
-  Server,
-  Shield,
-  Bug,
-  ChevronDown,
-  ChevronRight,
-  ExternalLink,
-  Lightbulb,
-} from 'lucide-react';
+import { BookOpen, Cpu, Settings2, FileCode2, Sliders, AlertTriangle, ListChecks, Code2, Wifi, Server, Shield, Bug, ChevronDown, ChevronRight } from 'lucide-react';
 import { GenieACSLayout } from '@/components/genieacs/GenieACSLayout';
 
 type SectionId =

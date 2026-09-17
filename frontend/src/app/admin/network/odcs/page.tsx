@@ -5,10 +5,7 @@ import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
-import {
-  Plus, Pencil, Trash2, Server, MapPin, Map, X, RefreshCcw,
-  Activity, Box, HardDrive,
-} from 'lucide-react';
+import { Plus, Pencil, Trash2, Server, MapPin, Map, RefreshCcw, Activity, Box, HardDrive } from 'lucide-react';
 import MapPicker from '@/components/MapPicker';
 import {
   SimpleModal,

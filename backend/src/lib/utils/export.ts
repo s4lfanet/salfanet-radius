@@ -1,7 +1,7 @@
 import ExcelJS from 'exceljs';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { formatWIB, getCurrentTimezone } from '@/lib/timezone';
+import { getCurrentTimezone } from '@/lib/timezone';
 import { formatInTimeZone } from 'date-fns-tz';
 
 // PDF Export Utils for server-side (Node.js)

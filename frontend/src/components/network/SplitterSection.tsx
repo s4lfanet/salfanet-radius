@@ -3,9 +3,7 @@
 import { useState, useEffect } from 'react';
 import { showSuccess, showError } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';
-import {
-  GitFork, Save, RefreshCcw, AlertCircle, Check, Cable
-} from 'lucide-react';
+import { GitFork, Save, AlertCircle } from 'lucide-react';
 
 interface SplitterPort {
   portNumber: number;

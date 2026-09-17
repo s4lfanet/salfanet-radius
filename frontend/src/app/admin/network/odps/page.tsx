@@ -3,10 +3,7 @@
 import { useState } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
-import {
-  Plus, Pencil, Trash2, Server, MapPin, Map, X, RefreshCcw,
-  Activity, Box, Users, HardDrive, Link as LinkIcon,
-} from 'lucide-react';
+import { Plus, Pencil, Trash2, Server, MapPin, Map, RefreshCcw, Activity, Box, Users, HardDrive, Link as LinkIcon } from 'lucide-react';
 import MapPicker from '@/components/MapPicker';
 import {
   SimpleModal,

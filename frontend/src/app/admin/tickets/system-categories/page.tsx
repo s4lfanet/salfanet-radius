@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslation } from '@/hooks/useTranslation';
-import { Tag, Info, Clock, AlertCircle, AlertTriangle, CheckCircle, ArrowRight } from 'lucide-react';
+import { Tag, Info } from 'lucide-react';
 import { TICKET_CATEGORIES, getGroupStats } from '@/lib/ticketCategories';
 
 export default function SystemTicketCategoriesPage() {

@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { RefreshCw, BarChart3, TrendingUp, Download, Upload, Users, Calendar, Zap } from 'lucide-react';
+import { RefreshCw, BarChart3, TrendingUp, Users, Calendar, Zap } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
 import { showSuccess, showError } from '@/lib/sweetalert';

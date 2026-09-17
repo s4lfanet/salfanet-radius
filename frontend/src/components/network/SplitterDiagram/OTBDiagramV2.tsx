@@ -13,7 +13,7 @@ import {
   FeederCableAssignment,
   OutputSegment,
 } from './types';
-import { FIBER_COLORS, getFiberColor, getFullCoreIdentifier } from '@/lib/network/fiber-core-types';
+import { getFullCoreIdentifier } from '@/lib/network/fiber-core-types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 

@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from 'react';
-import { WifiOff, Search, RefreshCw, Loader2, User as UserIcon } from 'lucide-react';
+import { WifiOff, Search, RefreshCw, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';

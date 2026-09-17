@@ -2,19 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import {
-  Copy,
-  Download,
-  CheckCircle,
-  AlertCircle,
-  Code,
-  BookOpen,
-  Server,
-  Wifi,
-  Shield,
-  RefreshCw,
-  Loader2
-} from 'lucide-react';
+import { Copy, Download, CheckCircle, AlertCircle, Code, BookOpen, Server, Wifi, Shield, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatWIB } from '@/lib/timezone';
 import { useApiQuery } from '@/lib/api/hooks';

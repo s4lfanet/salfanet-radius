@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
 import { TOTP } from 'otpauth';
 import { prisma } from '@/server/db/client';
 import { logActivity } from '@/server/services/activity-log.service';

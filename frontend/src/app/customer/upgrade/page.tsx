@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Package, Loader2, CheckCircle, Zap, AlertCircle, CreditCard, ArrowRight, Calendar, Wifi, Download, Upload } from 'lucide-react';
+import { Package, Loader2, CheckCircle, Zap, AlertCircle, CreditCard, ArrowRight, Calendar, Wifi } from 'lucide-react';
 import { CyberCard, CyberButton } from '@/components/cyberpunk';
-import { showSuccess, showError } from '@/lib/sweetalert';
+import { showSuccess } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB } from '@/lib/timezone';
 import { apiCustomer, ApiError } from '@/lib/api';

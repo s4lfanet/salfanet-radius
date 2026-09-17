@@ -2,21 +2,7 @@
  * Invoice & Billing API client.
  */
 import { apiAdmin } from './client';
-import type {
-  Invoice,
-  InvoiceListResponse,
-  InvoiceResponse,
-  InvoiceDeleteResponse,
-  InvoiceGenerateResponse,
-  InvoiceSendReminderResponse,
-  InvoicePdfResponse,
-  ManualPayment,
-  ManualPaymentListResponse,
-  ManualPaymentResponse,
-  Transaction,
-  TransactionListResponse,
-  TransactionResponse,
-} from '@/types/api';
+import type { Invoice, InvoiceListResponse, InvoiceResponse, InvoiceDeleteResponse, InvoiceGenerateResponse, InvoiceSendReminderResponse, InvoicePdfResponse, ManualPaymentListResponse, ManualPaymentResponse, TransactionListResponse } from '@/types/api';
 
 export type { Invoice };
 

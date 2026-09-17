@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { FileText, CreditCard, Upload, Calendar, Building2, User, ArrowLeft, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
+import { FileText, CreditCard, Upload, Building2, ArrowLeft, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import { showSuccess, showError, showWarning } from '@/lib/sweetalert';
 import { formatWIB, todayWIBStr } from '@/lib/timezone';
 

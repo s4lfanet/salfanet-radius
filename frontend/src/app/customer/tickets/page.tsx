@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Ticket, MessageSquare, Plus, Filter } from 'lucide-react';
 import { CyberCard, CyberButton } from '@/components/cyberpunk';

@@ -3,11 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '@/hooks/useTranslation';
-import {
-    Database, Plus, Trash2, Search, Edit2, Check, X,
-    Loader2,
-    KeyRound,
-} from 'lucide-react';
+import { Database, Plus, Trash2, Search, Loader2, KeyRound } from 'lucide-react';
 import { Pagination } from '@/components/Pagination';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { apiAdmin } from '@/lib/api';

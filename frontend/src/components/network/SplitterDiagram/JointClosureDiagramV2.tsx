@@ -1,15 +1,7 @@
 'use client';
 
 import React from 'react';
-import { 
-  DiagramProps, 
-  Port, 
-  DEFAULT_COLORS, 
-  PORT_STATUS_LABELS, 
-  TubeVisualization,
-  CoreVisualization,
-} from './types';
-import { FIBER_COLORS, getFiberColor, getFullCoreIdentifier } from '@/lib/network/fiber-core-types';
+import { DiagramProps, TubeVisualization } from './types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 

@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatDistanceToNow } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { formatWIB } from '@/lib/timezone';

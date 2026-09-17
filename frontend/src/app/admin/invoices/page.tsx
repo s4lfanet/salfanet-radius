@@ -27,7 +27,7 @@ import { Pagination } from '@/components/Pagination';
 import Link from 'next/link';
 import { invoiceApi, pppoeApi, apiAdmin, buildUrl } from '@/lib/api';
 import { useApiQuery, useApiMutation, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
-import type { InvoiceListResponse, InvoiceResponse, InvoiceDeleteResponse, InvoiceGenerateResponse, InvoiceSendReminderResponse, InvoicePdfResponse } from '@/types/api';
+import type { InvoiceListResponse, InvoiceResponse, InvoiceGenerateResponse, InvoiceSendReminderResponse } from '@/types/api';
 
 interface Invoice {
   id: string;

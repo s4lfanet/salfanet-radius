@@ -1,8 +1,8 @@
 'use client';
-import { showSuccess, showError, showWarning } from '@/lib/sweetalert';
+import { showError, showWarning } from '@/lib/sweetalert';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Wifi, ShoppingCart, Loader2, CheckCircle, Zap, Clock, Phone, User, ChevronLeft, Mail, Bell } from 'lucide-react';
+import { Wifi, ShoppingCart, Loader2, CheckCircle, Zap, Clock, Phone, User, Mail, Bell } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
 interface Profile {

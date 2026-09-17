@@ -3,13 +3,7 @@ import { requirePermission } from '@/server/middleware/api-auth';
 import { ok, created, badRequest, unauthorized, notFound, conflict, serverError } from '@/lib/api-response';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/server/db/client';
-import {
-  listPppoeUsers,
-  getPppoeUserById,
-  createPppoeUser,
-  updatePppoeUser,
-  deletePppoeUser,
-} from '@/server/services/pppoe.service';
+import { listPppoeUsers, createPppoeUser, updatePppoeUser, deletePppoeUser } from '@/server/services/pppoe.service';
 
 // GET - List PPPoE users (server-side pagination, search, filter)
 export async function GET(request: NextRequest) {

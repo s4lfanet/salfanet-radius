@@ -11,12 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Server, RefreshCw, AlertCircle, Wifi, WifiOff,
-  Thermometer, Clock, Activity, ArrowLeft, Save, TestTube,
-  Power, Download, CheckCircle, Signal, Plus, X, Cpu, Zap,
-  Eye, UserPlus, Trash2, Settings,
-} from 'lucide-react';
+import { Server, RefreshCw, AlertCircle, Wifi, WifiOff, Clock, Activity, ArrowLeft, Save, TestTube, Power, Download, Signal, Plus, X, Zap, Eye, UserPlus, Trash2, Settings } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
 import { showError, showSuccess, showInfo, showWarning, showConfirm } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';

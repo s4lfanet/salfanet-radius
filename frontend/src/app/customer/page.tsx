@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Wifi, Receipt, Loader2, ExternalLink, Edit2, X, Check, Package, Zap, FileText, MessageSquare, Gift, PauseCircle, Banknote, RefreshCw, Upload, Gauge } from 'lucide-react';
+import { User, Wifi, Receipt, Loader2, ExternalLink, Edit2, X, Check, Package, Zap, FileText, MessageSquare, Gift, Banknote, RefreshCw, Upload, Gauge } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
-import { CyberCard, CyberButton } from '@/components/cyberpunk';
+import { CyberCard } from '@/components/cyberpunk';
 import { formatWIB, nowWIB } from '@/lib/timezone';
 import { formatCurrency } from '@/lib/utils';
 import { apiCustomer, ApiError } from '@/lib/api';

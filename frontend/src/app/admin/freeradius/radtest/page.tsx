@@ -2,10 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import {
-    Play, Loader2, CheckCircle, XCircle, Key, User, Server,
-    Shield, RefreshCw, Terminal, Copy, Clock
-} from 'lucide-react';
+import { Play, Loader2, CheckCircle, XCircle, Key, User, Server, Shield, Terminal, Copy, Clock } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useApiMutation } from '@/lib/api/hooks';
 

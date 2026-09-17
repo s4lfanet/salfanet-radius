@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requirePermission } from '@/server/middleware/api-auth';
-import { existsSync, readFileSync, statSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 
 export const dynamic = 'force-dynamic';

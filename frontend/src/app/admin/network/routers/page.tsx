@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Server, Plus, Trash2, Edit, CheckCircle, XCircle, Copy, Loader2, Shield, Radio, Wifi, Activity, RefreshCw, Settings, X, ChevronDown, ChevronUp, Info, ArrowRightCircle, RefreshCcw } from 'lucide-react';
+import { Server, Plus, Trash2, Edit, CheckCircle, XCircle, Copy, Loader2, Shield, Radio, Wifi, Activity, RefreshCw, X, ChevronDown, ChevronUp, Info, ArrowRightCircle, RefreshCcw } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
 import { pppoeApi } from '@/lib/api/pppoe';
 import { useApiQuery, useApiMutation, useQueryClient, buildQueryKey } from '@/lib/api/hooks';

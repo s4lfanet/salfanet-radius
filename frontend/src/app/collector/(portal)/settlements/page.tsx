@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiAdmin } from '@/lib/api/client';
 import { formatWIB } from '@/lib/timezone';
-import { Wallet, Activity, ChevronDown, ChevronUp } from 'lucide-react';
+import { Activity, ChevronDown, ChevronUp } from 'lucide-react';
 
 const fmtRp = (v: number) => `Rp ${Number(v || 0).toLocaleString('id-ID')}`;
 const fmtTime = (d: string) => d ? formatWIB(d, 'dd MMM HH:mm') : '-';

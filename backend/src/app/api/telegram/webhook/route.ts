@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/server/db/client'
 import { getBotSettings, processTelegramUpdate } from '@/server/services/notifications/telegram-bot.service'
 import { timingSafeEqual } from 'crypto'
 

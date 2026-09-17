@@ -1,14 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { checkAuth } from '@/server/middleware/api-auth';
-import { 
-  sendCoARequest, 
-  sendDisconnectRequest, 
-  applyProfileChangeToActiveSessions,
-  testCoAConnection,
-  testLocalCoA,
-  isRadclientAvailable 
-} from '@/server/services/radius/coa.service';
+import { sendDisconnectRequest, applyProfileChangeToActiveSessions, testCoAConnection, testLocalCoA, isRadclientAvailable } from '@/server/services/radius/coa.service';
 
 /**
  * RADIUS CoA (Change of Authorization) API

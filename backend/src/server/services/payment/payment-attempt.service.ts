@@ -1,6 +1,5 @@
 import 'server-only'
 import { prisma } from '@/server/db/client'
-import { Prisma } from '@prisma/client'
 
 /**
  * Payment Attempt Service — Phase 1 Payment Integrity

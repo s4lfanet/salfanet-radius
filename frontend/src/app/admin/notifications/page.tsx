@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Bell, Check, CheckCheck, Trash2, Loader2, Filter, AlertCircle, UserPlus, DollarSign, Clock, AlertTriangle, Users, Briefcase, Wallet, Wrench, Receipt, CreditCard } from 'lucide-react';
+import { Bell, Check, CheckCheck, Trash2, Loader2, AlertCircle, UserPlus, DollarSign, Clock, AlertTriangle, Briefcase, Wallet, Receipt, CreditCard } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
 import Link from 'next/link';
 import { useToast } from '@/components/ui/use-toast';
