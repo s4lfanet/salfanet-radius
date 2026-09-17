@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 export type PushRole = 'customer' | 'agent' | 'admin' | 'technician';
 
@@ -68,7 +68,15 @@ async function registerServiceWorker() {
 }
 
 export function usePushNotification(role: PushRole = 'customer', extraBody?: Record<string, string>) {
-  const config = { ...ROLE_CONFIGS[role], extraBody: { ...ROLE_CONFIGS[role].extraBody, ...extraBody } };
+  // Memoized: without this, `config` is a new object every render, so the
+  // `refresh` useCallback below (and the useEffect that runs it) got a new
+  // identity every render too — re-running the subscription check +
+  // "silent sync" POST on every re-render of whatever mounts this hook,
+  // not just on mount/focus as intended.
+  const config = useMemo(
+    () => ({ ...ROLE_CONFIGS[role], extraBody: { ...ROLE_CONFIGS[role].extraBody, ...extraBody } }),
+    [role, extraBody]
+  );
 
   const [isSupported, setIsSupported] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
