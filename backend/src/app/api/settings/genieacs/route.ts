@@ -35,9 +35,7 @@ export async function GET() {
   if (!authCheck.authorized) return authCheck.response;
   try {
 
-    const settings = await prisma.genieacsSettings.findFirst({
-      where: { isActive: true },
-    });
+    const settings = await prisma.genieacsSettings.findFirst();
 
     if (!settings) {
       return NextResponse.json({ settings: null });
@@ -51,6 +49,7 @@ export async function GET() {
         username: settings.username,
         isActive: settings.isActive,
         hasPassword: !!settings.password,
+        nbiSecurityAcknowledged: settings.nbiSecurityAcknowledged,
       },
     });
   } catch (error) {
@@ -68,9 +67,15 @@ export async function POST(request: NextRequest) {
   if (!authCheck.authorized) return authCheck.response;
   try {
     const body = await request.json();
-    const { host, username, password } = body;
+    const { host, username, password, nbiSecurityAcknowledged } = body;
 
-    if (!host || !username || !password) {
+    // Check if settings exist first — password is only required when there's
+    // no existing one to fall back to (a fresh setup). On an update, omitting
+    // it means "keep the current password" (matches the frontend's "Password
+    // tidak berubah" placeholder, which never sends the field when unchanged).
+    const existingSettings = await prisma.genieacsSettings.findFirst();
+
+    if (!host || !username || (!password && !existingSettings)) {
       return NextResponse.json(
         { error: 'Host, username, and password are required' },
         { status: 400 }
@@ -87,23 +92,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Encrypt password
-    const encryptedPassword = encrypt(password);
-
-    // Check if settings exist
-    const existingSettings = await prisma.genieacsSettings.findFirst({
-      where: { isActive: true },
-    });
-
     let settings;
     if (existingSettings) {
-      // Update existing
+      // Update existing — never reset nbiSecurityAcknowledged to false on an
+      // unrelated field change; only set it true when explicitly passed.
       settings = await prisma.genieacsSettings.update({
         where: { id: existingSettings.id },
         data: {
           host,
           username,
-          password: encryptedPassword,
+          ...(password && { password: encrypt(password) }),
+          ...(nbiSecurityAcknowledged === true && { nbiSecurityAcknowledged: true }),
         },
       });
     } else {
@@ -113,8 +112,9 @@ export async function POST(request: NextRequest) {
           id: nanoid(),
           host,
           username,
-          password: encryptedPassword,
+          password: encrypt(password),
           isActive: true,
+          nbiSecurityAcknowledged: nbiSecurityAcknowledged === true,
         },
       });
     }
@@ -126,6 +126,7 @@ export async function POST(request: NextRequest) {
         host: settings.host,
         username: settings.username,
         isActive: settings.isActive,
+        nbiSecurityAcknowledged: settings.nbiSecurityAcknowledged,
       },
     });
   } catch (error) {
@@ -137,14 +138,44 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// PATCH - Acknowledge the NBI security warning without touching host/username/password.
+// Used when a settings row already exists; if none exists yet, the frontend
+// just dismisses the warning locally and the eventual first POST persists it.
+export async function PATCH(request: NextRequest) {
+  const authCheck = await requirePermission('settings.genieacs');
+  if (!authCheck.authorized) return authCheck.response;
+  try {
+    const body = await request.json();
+    if (body.nbiSecurityAcknowledged !== true) {
+      return NextResponse.json({ error: 'nbiSecurityAcknowledged must be true' }, { status: 400 });
+    }
+
+    const existingSettings = await prisma.genieacsSettings.findFirst();
+    if (!existingSettings) {
+      return NextResponse.json({ error: 'No GenieACS settings configured yet' }, { status: 404 });
+    }
+
+    await prisma.genieacsSettings.update({
+      where: { id: existingSettings.id },
+      data: { nbiSecurityAcknowledged: true },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error acknowledging GenieACS NBI security warning:', error);
+    return NextResponse.json(
+      { error: 'Failed to save acknowledgment' },
+      { status: 500 }
+    );
+  }
+}
+
 // Helper function to get decrypted credentials (for internal use only)
 export async function getGenieACSCredentials() {
   try {
-    const settings = await prisma.genieacsSettings.findFirst({
-      where: { isActive: true },
-    });
+    const settings = await prisma.genieacsSettings.findFirst();
 
-    if (!settings) {
+    if (!settings || !settings.host) {
       return null;
     }
 

@@ -1560,6 +1560,11 @@ model genieacsSettings {
   username  String
   password  String // Will be encrypted
   isActive  Boolean  @default(true)
+  // Admin has acknowledged that GenieACS NBI has no auth of its own — the
+  // username/password above only do anything if a reverse proxy in front of
+  // NBI actually enforces them. Gates the one-time warning modal on the
+  // settings page; does not affect NBI request behavior.
+  nbiSecurityAcknowledged Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
