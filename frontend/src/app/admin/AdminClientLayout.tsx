@@ -304,6 +304,7 @@ const menuGroups: MenuGroup[] = [
         children: [
           { titleKey: 'nav.company', href: '/admin/settings/company', requiredPermission: 'settings.company' },
           { titleKey: 'nav.footerSettings', href: '/admin/settings/footer', requiredPermission: 'settings.company' },
+          { titleKey: 'nav.promoBanner', href: '/admin/settings/promo-banner', requiredPermission: 'settings.company' },
           { titleKey: 'nav.database', href: '/admin/settings/database', requiredPermission: 'settings.view' },
           { titleKey: 'nav.security', href: '/admin/settings/security', requiredPermission: 'settings.view' },
           { titleKey: 'nav.cronJobs', href: '/admin/settings/cron', requiredPermission: 'settings.cron' },
