@@ -11,6 +11,7 @@ import { CyberCard } from '@/components/cyberpunk';
 import { formatWIB, nowWIB } from '@/lib/timezone';
 import { formatCurrency } from '@/lib/utils';
 import { apiCustomer, ApiError } from '@/lib/api';
+import PromoBannerSlider from '@/components/customer/PromoBannerSlider';
 
 // Hardcoded Indonesian translations
 const translations: Record<string, string> = {
@@ -478,6 +479,9 @@ export default function CustomerDashboard() {
           </div>
         </div>
       </div>
+
+      {/* -- Promo Banner Slider ------------------------------------------ */}
+      <PromoBannerSlider />
 
       {/* -- Quick Actions Grid ------------------------------------------ */}
       <div>

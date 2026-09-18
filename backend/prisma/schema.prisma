@@ -2306,6 +2306,20 @@ model ticketCategory {
   @@map("ticket_categories")
 }
 
+model promoBanner {
+  id        String   @id @default(cuid())
+  imageUrl  String
+  linkUrl   String?
+  title     String?
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, order])
+  @@map("promo_banners")
+}
+
 model suspendRequest {
   id          String    @id @default(cuid())
   userId      String
