@@ -327,7 +327,7 @@ export default function AdminDashboard() {
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
       </div>
 
-      <div className="relative z-10 space-y-6">
+      <div className="relative z-10 space-y-6 pb-8">
             {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="min-w-0">
