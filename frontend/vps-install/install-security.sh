@@ -150,6 +150,46 @@ configure_ufw() {
 }
 
 # ============================================================================
+# GENIEACS NBI FIREWALL — Port 7557 tidak punya auth bawaan sama sekali.
+# Kalau GenieACS jalan di VPS ini, blok akses eksternal ke port itu lewat UFW
+# (aplikasi ini selalu memanggil NBI dari localhost, jadi loopback tidak
+# terpengaruh). Idempotent — aman dipanggil berkali-kali (install & update).
+# ============================================================================
+
+secure_genieacs_nbi() {
+    print_step "Step 8d: Securing GenieACS NBI (port 7557)"
+
+    if ! ss -tln 2>/dev/null | grep -q ':7557 '; then
+        print_info "GenieACS NBI tidak terdeteksi berjalan di server ini — lewati"
+        return 0
+    fi
+
+    if ss -tln 2>/dev/null | grep ':7557 ' | grep -qE '127\.0\.0\.1:7557|\[::1\]:7557'; then
+        print_success "GenieACS NBI sudah localhost-only (127.0.0.1:7557) — tidak terjangkau dari luar"
+    else
+        print_warning "GenieACS NBI terdeteksi listen di semua interface (bukan cuma localhost)"
+        print_info "NBI tidak punya auth bawaan — port ini akan diblokir dari luar via firewall"
+        print_info "(Untuk proteksi lebih kuat, set NBI_INTERFACE=127.0.0.1 di config GenieACS lalu restart service-nya)"
+    fi
+
+    if [ "${IS_CONTAINER:-false}" = "true" ] || [ "${SKIP_UFW:-false}" = "true" ]; then
+        if ! command -v ufw &>/dev/null || ! ufw status 2>/dev/null | grep -q "Status: active"; then
+            print_info "UFW tidak aktif di container ini — lewati blokir NBI (amankan lewat firewall host Proxmox)"
+            return 0
+        fi
+    elif ! command -v ufw &>/dev/null; then
+        print_info "UFW belum terinstall — lewati blokir NBI (jalankan ulang installer untuk setup UFW lengkap)"
+        return 0
+    fi
+
+    # Hapus kemungkinan rule allow lama untuk 7557 (mis. dibuka manual saat troubleshooting), lalu deny eksplisit.
+    ufw delete allow 7557/tcp 2>/dev/null || true
+    ufw deny 7557/tcp comment 'GenieACS NBI - no built-in auth, block external' 2>/dev/null || true
+
+    print_success "Port 7557 (GenieACS NBI) diblokir dari akses eksternal"
+}
+
+# ============================================================================
 # DISK CLEANUP CRONJOB — Hapus log lama otomatis setiap hari jam 02:00
 # ============================================================================
 
@@ -260,12 +300,14 @@ CLEANUPSCRIPT
 install_security() {
     install_fail2ban
     configure_ufw
+    secure_genieacs_nbi
     setup_cleanup_cron
 
     echo ""
     print_success "Security setup selesai:"
     print_info "  • fail2ban aktif — ban SSH brute-force setelah 5x gagal (ban 2 jam)"
     print_info "  • UFW firewall aktif — default deny, only allow 22/80/443/1812-1813/3799"
+    print_info "  • GenieACS NBI (7557) diblokir dari luar jika terdeteksi berjalan di server ini"
     print_info "  • Disk cleanup cronjob — setiap hari jam 02:00 (log, tmp, apt cache)"
     echo ""
     print_info "Perintah berguna:"

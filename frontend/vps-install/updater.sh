@@ -500,6 +500,9 @@ if [ -n "$USE_BRANCH" ]; then
         source "$APP_DIR/frontend/vps-install/install-security.sh"
         # Hanya setup cleanup cron dan fail2ban (UFW sudah dikonfigurasi saat install)
         setup_cleanup_cron 2>/dev/null || true
+        # Idempotent — re-check tiap update kalau GenieACS baru dipasang/dipindah
+        # setelah install awal, atau NBI kebuka lagi karena config berubah.
+        secure_genieacs_nbi 2>/dev/null || true
         # Pastikan fail2ban running jika sudah terinstall
         if command -v fail2ban-client &>/dev/null; then
             systemctl is-active --quiet fail2ban || systemctl restart fail2ban 2>/dev/null || true
