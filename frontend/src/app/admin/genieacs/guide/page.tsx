@@ -466,34 +466,45 @@ journalctl -u genieacs-ui -f`}</CodeBlock>
     case 'security':
       return (
         <div className="space-y-3 text-sm text-muted-foreground">
+          <InfoBox type="warning">
+            <strong>Penting:</strong> GenieACS NBI (port 7557) tidak punya authentication bawaan sama sekali —
+            tidak ada tempat untuk &quot;konfigurasi username/password di GenieACS&quot;. Kredensial NBI yang
+            diisi di halaman <em>Pengaturan GenieACS</em> aplikasi ini hanya berarti sesuatu jika ada nginx/reverse
+            proxy di depan NBI yang benar-benar memvalidasinya — tanpa itu, siapa pun yang bisa menjangkau port 7557
+            tetap bebas masuk terlepas dari field itu diisi atau tidak.
+          </InfoBox>
           <h4 className="font-semibold text-foreground">Best Practices</h4>
           <ul className="ml-4 list-disc space-y-1">
-            <li><strong>HTTPS</strong> - Setup reverse proxy dengan SSL</li>
-            <li><strong>Authentication</strong> - Konfigurasi username/password di GenieACS</li>
-            <li><strong>Firewall</strong> - Hanya buka port yang necessary</li>
-            <li><strong>VPN</strong> - Untuk akses GenieACS yang aman</li>
+            <li><strong>Bind ke localhost</strong> - Set <code className="rounded bg-gray-200 px-1 dark:bg-gray-700">NBI_INTERFACE=127.0.0.1</code> jika GenieACS satu server dengan app ini</li>
+            <li><strong>Firewall</strong> - Kalau GenieACS di server terpisah, izinkan port 7557 hanya dari IP server app ini</li>
+            <li><strong>Nginx + Basic Auth + HTTPS</strong> - Kalau perlu akses dari luar, taruh reverse proxy dengan <code className="rounded bg-gray-200 px-1 dark:bg-gray-700">auth_basic</code> di depan NBI, jangan expose port 7557 mentah</li>
             <li><strong>Regular Updates</strong> - Update GenieACS secara berkala</li>
           </ul>
-          <h4 className="font-semibold text-foreground">Nginx Reverse Proxy (HTTPS)</h4>
+          <h4 className="font-semibold text-foreground">Nginx Reverse Proxy — Basic Auth + HTTPS (khusus NBI)</h4>
+          <p>Bind NBI ke localhost dulu, lalu proxy port 7557 lewat nginx dengan basic-auth di server block terpisah dari app ini:</p>
+          <CodeBlock lang="bash"># Buat credential (password diisi juga ke field Username/Password di
+# halaman Pengaturan GenieACS aplikasi ini)
+sudo htpasswd -c /etc/nginx/acs.htpasswd salfanet_admin</CodeBlock>
           <CodeBlock lang="nginx">{`server {
     listen 443 ssl http2;
-    server_name genieacs.yourdomain.com;
+    server_name acs.yourdomain.com;
 
-    ssl_certificate /etc/letsencrypt/live/genieacs.yourdomain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/genieacs.yourdomain.com/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/acs.yourdomain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/acs.yourdomain.com/privkey.pem;
 
     location / {
-        proxy_pass http://localhost:3000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-
-    location /api/ {
-        proxy_pass http://localhost:7557/;
+        auth_basic "GenieACS NBI";
+        auth_basic_user_file /etc/nginx/acs.htpasswd;
+        proxy_pass http://127.0.0.1:7557;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
     }
 }`}</CodeBlock>
+          <p>
+            Isi &quot;URL Server&quot; di Pengaturan GenieACS dengan <code className="rounded bg-gray-200 px-1 dark:bg-gray-700">https://acs.yourdomain.com</code> —
+            <strong> tanpa</strong> <code className="rounded bg-gray-200 px-1 dark:bg-gray-700">:7557</code>, karena port itu seharusnya
+            sudah dibatasi ke localhost/firewall dan tidak diakses langsung dari luar.
+          </p>
         </div>
       );
 

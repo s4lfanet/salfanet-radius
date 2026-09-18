@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Server, Loader2, Zap, Save, CheckCircle, Info, ExternalLink } from 'lucide-react';
+import { Server, Loader2, Zap, Save, CheckCircle, Info, ExternalLink, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
+import { NbiSecurityWarningModal } from '@/components/genieacs/NbiSecurityWarningModal';
 
 interface GenieACSSettings {
   id?: string;
@@ -15,6 +16,7 @@ interface GenieACSSettings {
   password: string;
   isActive: boolean;
   hasPassword?: boolean;
+  nbiSecurityAcknowledged?: boolean;
 }
 
 interface GenieACSSettingsResponse {
@@ -46,6 +48,8 @@ export default function GenieACSSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [deviceCount, setDeviceCount] = useState(0);
+  const [nbiWarningOpen, setNbiWarningOpen] = useState(false);
+  const [nbiWarningDismissedThisVisit, setNbiWarningDismissedThisVisit] = useState(false);
 
   useEffect(() => {
     if (settingsData?.settings) {
@@ -55,10 +59,39 @@ export default function GenieACSSettingsPage() {
         username: settingsData.settings.username ?? '',
         password: '',
         isActive: settingsData.settings.isActive ?? false,
-        hasPassword: settingsData.settings.hasPassword ?? false
+        hasPassword: settingsData.settings.hasPassword ?? false,
+        nbiSecurityAcknowledged: settingsData.settings.nbiSecurityAcknowledged ?? false
       });
     }
   }, [settingsData]);
+
+  // Show the NBI security warning once per visit until acknowledged (persisted
+  // to the DB once a settings row exists) — see NbiSecurityWarningModal.
+  useEffect(() => {
+    if (loading || nbiWarningDismissedThisVisit) return;
+    setNbiWarningOpen(!settings.nbiSecurityAcknowledged);
+  }, [loading, settings.nbiSecurityAcknowledged, nbiWarningDismissedThisVisit]);
+
+  const acknowledgeNbiWarning = async () => {
+    try {
+      if (settings.id) {
+        await apiAdmin('/api/settings/genieacs', {
+          method: 'PATCH',
+          body: JSON.stringify({ nbiSecurityAcknowledged: true }),
+        });
+        queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/settings/genieacs') });
+      }
+      // No settings row yet — nothing to persist against. The next successful
+      // save (handleSaveSettings) sends nbiSecurityAcknowledged: true too, so
+      // it's captured as soon as there's a row to attach it to.
+      setSettings((prev) => ({ ...prev, nbiSecurityAcknowledged: true }));
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : t('genieacs.securityAckFailed');
+      addToast({ type: 'warning', title: t('genieacs.attention'), description: msg });
+    } finally {
+      setNbiWarningOpen(false);
+    }
+  };
 
   useEffect(() => {
     setDeviceCount(devicesData?.devices?.length || 0);
@@ -72,11 +105,15 @@ export default function GenieACSSettingsPage() {
     }
     setSaving(true);
     try {
-      const payload: Record<string, string> = {
+      const payload: Record<string, string | boolean> = {
         host: settings.host,
         username: settings.username,
       };
       if (settings.password) payload.password = settings.password;
+      // Belt-and-suspenders: if the admin already acknowledged the NBI
+      // security warning locally before a settings row existed yet, this is
+      // where that finally gets persisted (PATCH can't target a nonexistent row).
+      if (settings.nbiSecurityAcknowledged) payload.nbiSecurityAcknowledged = true;
       await apiAdmin('/api/settings/genieacs', {
         method: 'POST',
         body: JSON.stringify(payload)
@@ -128,6 +165,11 @@ export default function GenieACSSettingsPage() {
 
   return (
     <div className="bg-background relative">
+      <NbiSecurityWarningModal
+        isOpen={nbiWarningOpen}
+        onClose={() => { setNbiWarningOpen(false); setNbiWarningDismissedThisVisit(true); }}
+        onAcknowledge={acknowledgeNbiWarning}
+      />
       <div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-0 left-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-primary/10 rounded-full blur-3xl"></div><div className="absolute top-1/3 right-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-brand-500/20 rounded-full blur-3xl"></div><div className="absolute bottom-0 left-1/2 w-48 h-48 sm:w-96 sm:h-96 bg-pink-500/20 rounded-full blur-3xl"></div><div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div></div>
       <div className="relative z-10 space-y-6 max-w-2xl">
         {/* Header */}
@@ -144,6 +186,14 @@ export default function GenieACSSettingsPage() {
               {settings.isActive ? t('genieacs.active') : t('genieacs.inactive')}
             </span>
           </div>
+          <button
+            type="button"
+            onClick={() => { setNbiWarningDismissedThisVisit(false); setNbiWarningOpen(true); }}
+            className="flex items-center gap-1 mt-2 text-xs text-destructive hover:underline"
+          >
+            <ShieldAlert className="w-3.5 h-3.5" />
+            {t('genieacs.securityReviewLink')}
+          </button>
         </div>
 
       {/* Quick Stats */}
