@@ -27,6 +27,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useApiQuery } from '@/lib/api/hooks';
 import {
   UserStatusPieChart,
+  UserGrowthChart,
   ChartCard,
 } from '@/components/charts';
 
@@ -76,10 +77,30 @@ interface RecentActivity {
 interface AnalyticsData {
   users?: {
     byStatus: { name: string; value: number }[];
+    growth?: { month: string; newUsers: number; totalUsers: number }[];
   };
   financial?: {
     incomeExpense: { month: string; income: number; expense: number }[];
   };
+}
+
+interface NewCustomer {
+  id: string;
+  name: string;
+  username: string;
+  phone: string;
+  status: string;
+  createdAt: string;
+  subscriptionType: string;
+  profile: { name: string } | null;
+  area: { name: string } | null;
+}
+
+interface NewCustomersResponse {
+  success: boolean;
+  month: string;
+  count: number;
+  customers: NewCustomer[];
 }
 
 interface AgentSaleEntry {
@@ -149,6 +170,13 @@ export default function AdminDashboard() {
     staleTime: 0,
   });
 
+  // ─── React Query: New customers for the selected month (same month-picker
+  // as dashboard stats above) ────────────────────────────────────────────────
+  const newCustomersQuery = useApiQuery<NewCustomersResponse>('/api/dashboard/new-customers', {
+    params: { month: dashboardMonth },
+    staleTime: 0,
+  });
+
   // Derive state from queries
   const stats = dashboardQuery.data?.stats ?? null;
   const agentSales = dashboardQuery.data?.agentSales ?? [];
@@ -157,6 +185,8 @@ export default function AdminDashboard() {
   const analyticsData = analyticsQuery.data?.data ?? null;
   const loading = dashboardQuery.isPending;
   const analyticsLoading = analyticsQuery.isFetching;
+  const newCustomers = newCustomersQuery.data?.customers ?? [];
+  const newCustomersLoading = newCustomersQuery.isFetching;
 
   // Clock tick (local, 1s)
   useEffect(() => {
@@ -332,7 +362,7 @@ export default function AdminDashboard() {
               </button>
             </div>
             <button
-              onClick={() => { dashboardQuery.refetch(); analyticsQuery.refetch(); }}
+              onClick={() => { dashboardQuery.refetch(); analyticsQuery.refetch(); newCustomersQuery.refetch(); }}
               disabled={loading || analyticsLoading}
               className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium bg-brand-500/10 border-2 border-brand-500/30 text-brand-500 rounded-lg hover:bg-brand-500/20 disabled:opacity-50 transition-all "
             >
@@ -466,6 +496,19 @@ export default function AdminDashboard() {
             </div>
           </div>
 
+          {/* Customer Growth Chart */}
+          <ChartCard
+            title={t('dashboard.customerGrowth')}
+            subtitle={t('dashboard.newVsTotalCustomers')}
+            action={<UserPlus className="w-4 h-4 text-muted-foreground" />}
+          >
+            <UserGrowthChart
+              data={analyticsData?.users?.growth || []}
+              loading={analyticsLoading}
+              height={220}
+            />
+          </ChartCard>
+
         </div>
 
         {/* Agent Voucher Sales Row */}
@@ -519,6 +562,71 @@ export default function AdminDashboard() {
                     {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(agentSalesTotal.revenue)}
                   </span>
                 </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* New Customers This Month */}
+        <div className="grid grid-cols-1 gap-4">
+          <div className="bg-card/60 rounded-xl border border-white/10 overflow-hidden">
+            <div className="flex items-center justify-between p-3 sm:p-4 border-b border-white/10 min-w-0">
+              <div>
+                <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <UserPlus className="w-4 h-4 text-primary" />
+                  {t('dashboard.newCustomers')}
+                </h2>
+                <p className="text-[10px] text-muted-foreground mt-0.5">{periodLabel}</p>
+              </div>
+              <span className="px-2 py-1 text-[10px] font-medium bg-primary/10 text-primary rounded-lg border border-border flex-shrink-0">
+                {newCustomers.length} {t('dashboard.customers')}
+              </span>
+            </div>
+
+            {newCustomersLoading ? (
+              <div className="flex items-center justify-center py-10">
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : newCustomers.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <UserPlus className="h-5 w-5 mx-auto mb-1 opacity-50" />
+                <p className="text-xs">{t('dashboard.noNewCustomers')}</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="border-b border-white/10">
+                      <th className="py-2 px-3 text-[10px] font-semibold text-muted-foreground uppercase whitespace-nowrap">{t('dashboard.customerName')}</th>
+                      <th className="py-2 px-3 text-[10px] font-semibold text-muted-foreground uppercase whitespace-nowrap">Username</th>
+                      <th className="py-2 px-3 text-[10px] font-semibold text-muted-foreground uppercase whitespace-nowrap">{t('dashboard.package')}</th>
+                      <th className="py-2 px-3 text-[10px] font-semibold text-muted-foreground uppercase whitespace-nowrap">Area</th>
+                      <th className="py-2 px-3 text-[10px] font-semibold text-muted-foreground uppercase whitespace-nowrap">{t('dashboard.registeredAt')}</th>
+                      <th className="py-2 px-3 text-[10px] font-semibold text-muted-foreground uppercase whitespace-nowrap">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {newCustomers.map((c) => {
+                      const statusStyle = c.status === 'active'
+                        ? 'text-success'
+                        : c.status === 'isolated' || c.status === 'suspended'
+                        ? 'text-warning'
+                        : c.status === 'blocked' || c.status === 'stop'
+                        ? 'text-destructive'
+                        : 'text-muted-foreground';
+                      return (
+                        <tr key={c.id} className="hover:bg-white/[0.03] transition-colors">
+                          <td className="py-2 px-3 text-xs font-medium text-foreground whitespace-nowrap">{c.name}</td>
+                          <td className="py-2 px-3 text-xs text-muted-foreground whitespace-nowrap">{c.username}</td>
+                          <td className="py-2 px-3 text-xs text-muted-foreground whitespace-nowrap">{c.profile?.name || '-'}</td>
+                          <td className="py-2 px-3 text-xs text-muted-foreground whitespace-nowrap">{c.area?.name || '-'}</td>
+                          <td className="py-2 px-3 text-xs text-muted-foreground whitespace-nowrap">{formatWIB(new Date(c.createdAt), 'dd MMM yyyy')}</td>
+                          <td className={`py-2 px-3 text-xs font-medium whitespace-nowrap ${statusStyle}`}>{c.status}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
