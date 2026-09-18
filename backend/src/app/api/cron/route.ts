@@ -119,6 +119,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Reconcile orphaned history rows for this same job type before starting a
+    // new run. A row can be left stuck at status='running' forever if the
+    // backend process (this very request handler) gets killed/restarted
+    // mid-execution — e.g. by a deploy — since nothing then ever runs the
+    // success/error update below for that row. Since this job type isn't
+    // triggered concurrently (cronLock above, or the cron-runner's own lock),
+    // any 'running' row still around when a fresh run starts is definitely
+    // orphaned, not actually in progress.
+    await prisma.cronHistory.updateMany({
+      where: { jobType, status: 'running' },
+      data: { status: 'error', completedAt: nowWIB(), error: 'Interrupted (process restarted before job finished)' },
+    })
+
     // Create history record
     const jobId = `cron_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
     const startedAt = nowWIB()
