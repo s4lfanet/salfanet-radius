@@ -35,6 +35,13 @@ interface UploadResponse {
   success: boolean;
   url: string;
   error?: string;
+  originalSize?: number;
+  finalSize?: number;
+}
+
+function formatSize(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)}KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
 }
 
 const emptyForm = { imageUrl: '', linkUrl: '', title: '', order: 0, isActive: true };
@@ -47,6 +54,7 @@ export default function PromoBannerPage() {
   const [formData, setFormData] = useState(emptyForm);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [compressionInfo, setCompressionInfo] = useState<string | null>(null);
 
   const bannersQueryKey = buildQueryKey('/api/settings/promo-banners');
   const { data, isLoading: loading } = useApiQuery<BannersResponse>('/api/settings/promo-banners', {
@@ -68,24 +76,30 @@ export default function PromoBannerPage() {
       setEditingBanner(null);
       setFormData({ ...emptyForm, order: banners.length });
     }
+    setCompressionInfo(null);
     setShowModal(true);
   };
 
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingBanner(null);
+    setCompressionInfo(null);
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
+    setCompressionInfo(null);
     try {
       const form = new FormData();
       form.append('file', file);
       const res = await apiAdmin<UploadResponse>('/api/upload/banner', { method: 'POST', body: form });
       if (res.success) {
         setFormData((prev) => ({ ...prev, imageUrl: res.url }));
+        if (res.originalSize && res.finalSize) {
+          setCompressionInfo(`Otomatis dikompres: ${formatSize(res.originalSize)} → ${formatSize(res.finalSize)}`);
+        }
       } else {
         await showError(res.error || 'Gagal upload gambar.');
       }
@@ -257,8 +271,9 @@ export default function PromoBannerPage() {
                     disabled={uploading}
                     className="block w-full text-sm text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-brand-500/10 file:text-brand-500 hover:file:bg-brand-500/20"
                   />
-                  {uploading && <p className="text-xs text-brand-500">Mengunggah gambar...</p>}
-                  <p className="text-[11px] text-muted-foreground">Rasio disarankan 21:9 (contoh 1260x540px) agar mengisi penuh tanpa bilah kosong. Gambar dengan rasio lain tetap ditampilkan utuh tanpa terpotong. Maksimal 5MB (PNG/JPG/WebP/GIF).</p>
+                  {uploading && <p className="text-xs text-brand-500">Mengunggah &amp; mengompres gambar...</p>}
+                  {compressionInfo && <p className="text-xs text-green-500">{compressionInfo}</p>}
+                  <p className="text-[11px] text-muted-foreground">Rasio disarankan 21:9 (contoh 1260x540px) agar mengisi penuh tanpa bilah kosong. Gambar dengan rasio lain tetap ditampilkan utuh tanpa terpotong. Ukuran file bebas (maks 20MB) &mdash; otomatis dikompres ke WebP saat diunggah.</p>
                 </div>
               </div>
               <div>

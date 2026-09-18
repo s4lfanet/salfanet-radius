@@ -3,7 +3,24 @@ import { requirePermission } from '@/server/middleware/api-auth';
 import { writeFile } from 'fs/promises';
 import path from 'path';
 import { nanoid } from 'nanoid';
+import sharp from 'sharp';
 import { getUploadDir } from '@/lib/upload-dir';
+
+// Raw upload is intentionally generous — the file is always re-encoded/
+// compressed below before it's written to disk, so admins don't need to
+// pre-shrink photos themselves. This cap only guards against absurd payloads.
+const MAX_RAW_SIZE = 20 * 1024 * 1024; // 20MB
+const MAX_WIDTH = 1920; // banners are wide, short — never need to be taller than this in practice
+const WEBP_QUALITY = 82;
+
+const allowedMimes: Record<string, true> = {
+  'image/png': true,
+  'image/jpeg': true,
+  'image/jpg': true,
+  'image/webp': true,
+  'image/avif': true,
+  'image/gif': true,
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,41 +36,45 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file type
-    const mimeToExtension: Record<string, string> = {
-      'image/png': 'png',
-      'image/jpeg': 'jpg',
-      'image/jpg': 'jpg',
-      'image/webp': 'webp',
-      'image/avif': 'avif',
-      'image/gif': 'gif',
-    };
-    const allowedTypes = Object.keys(mimeToExtension);
-    if (!allowedTypes.includes(file.type)) {
+    if (!allowedMimes[file.type]) {
       return NextResponse.json(
         { success: false, error: 'Invalid file type. Only PNG, JPG, WebP, AVIF, and GIF are allowed.' },
         { status: 400 }
       );
     }
 
-    // Validate file size (max 5MB — banners are wider/higher-res than a logo)
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
+    if (file.size > MAX_RAW_SIZE) {
       return NextResponse.json(
-        { success: false, error: 'File size too large. Maximum 5MB allowed.' },
+        { success: false, error: 'File size too large. Maximum 20MB allowed.' },
         { status: 400 }
       );
     }
 
-    const uploadsDir = getUploadDir('banners');
+    const originalBuffer = Buffer.from(await file.arrayBuffer());
 
-    const extension = mimeToExtension[file.type] || 'png';
+    // Animated GIFs are passed through as-is — re-encoding to static webp
+    // would silently drop the animation, which is surprising for an upload
+    // that just says "banner". Everything else is normalized to webp:
+    // auto-rotated (EXIF), capped to a sane max width, and compressed —
+    // this is what lets the raw upload limit be generous.
+    let outputBuffer: Buffer;
+    let extension: string;
+    if (file.type === 'image/gif') {
+      outputBuffer = originalBuffer;
+      extension = 'gif';
+    } else {
+      outputBuffer = await sharp(originalBuffer)
+        .rotate()
+        .resize({ width: MAX_WIDTH, withoutEnlargement: true })
+        .webp({ quality: WEBP_QUALITY })
+        .toBuffer();
+      extension = 'webp';
+    }
+
+    const uploadsDir = getUploadDir('banners');
     const filename = `banner-${nanoid(10)}.${extension}`;
     const filepath = path.join(uploadsDir, filename);
-
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    await writeFile(filepath, buffer);
+    await writeFile(filepath, outputBuffer);
 
     const url = `/api/uploads/banners/${filename}`;
 
@@ -61,6 +82,8 @@ export async function POST(request: NextRequest) {
       success: true,
       url,
       filename,
+      originalSize: originalBuffer.length,
+      finalSize: outputBuffer.length,
     });
   } catch (error: any) {
     console.error('Upload banner error:', error);
