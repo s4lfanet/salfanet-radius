@@ -42,7 +42,7 @@ export default function PromoBannerSlider() {
   if (banners.length === 0) return null;
 
   return (
-    <div className="relative w-full h-36 sm:h-44 md:h-52 lg:h-60 rounded-2xl overflow-hidden border border-white/10 bg-black/30">
+    <div className="relative w-full aspect-[21/9] rounded-2xl overflow-hidden border border-white/10 bg-black/30">
       {banners.map((banner, index) => {
         const isEager = index === 0;
         return (
@@ -83,9 +83,10 @@ export default function PromoBannerSlider() {
 }
 
 // Blurred cover backdrop + a contained foreground image, so the full banner
-// is always visible with no cropping regardless of the aspect ratio the
-// admin uploaded it at or which breakpoint's fixed-height box it lands in —
-// object-cover alone would crop a differently-shaped region at each height.
+// stays visible with no cropping regardless of the aspect ratio it was
+// uploaded at. The outer container uses a single aspect-ratio (not a fixed
+// pixel height) so it scales proportionally with screen width at every
+// breakpoint — same relative size and framing on mobile and desktop.
 function BannerImage({ banner, eager }: { banner: PromoBanner; eager: boolean }) {
   return (
     <div className="relative w-full h-full">
