@@ -191,9 +191,8 @@ export default function PromoBannerPage() {
                 key={banner.id}
                 className="bg-card dark:bg-[#1a1525]/80 backdrop-blur-sm border border-border rounded-lg overflow-hidden hover:border-primary/30 dark:hover:border-brand-500/50 transition-all"
               >
-                <div className="relative aspect-[16/7] bg-black/20">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={banner.imageUrl} alt={banner.title || 'Banner'} className="w-full h-full object-cover" />
+                <div className="relative h-32 bg-black/30">
+                  <BannerPreviewImage src={banner.imageUrl} alt={banner.title || 'Banner'} />
                   <div className="absolute top-2 left-2 flex items-center gap-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded">
                     <GripVertical size={12} />
                     Urutan {banner.order}
@@ -246,9 +245,8 @@ export default function PromoBannerPage() {
                 <ModalLabel required>Gambar Banner</ModalLabel>
                 <div className="mt-2 space-y-2">
                   {formData.imageUrl && (
-                    <div className="relative aspect-[16/7] bg-black/20 rounded-lg overflow-hidden border border-border">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                    <div className="relative h-40 bg-black/30 rounded-lg overflow-hidden border border-border">
+                      <BannerPreviewImage src={formData.imageUrl} alt="Preview" />
                     </div>
                   )}
                   <input
@@ -260,7 +258,7 @@ export default function PromoBannerPage() {
                     className="block w-full text-sm text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-brand-500/10 file:text-brand-500 hover:file:bg-brand-500/20"
                   />
                   {uploading && <p className="text-xs text-brand-500">Mengunggah gambar...</p>}
-                  <p className="text-[11px] text-muted-foreground">Rasio disarankan 16:7, maksimal 5MB (PNG/JPG/WebP/GIF).</p>
+                  <p className="text-[11px] text-muted-foreground">Gambar apa pun ditampilkan utuh tanpa terpotong (rasio bebas), maksimal 5MB (PNG/JPG/WebP/GIF). Rasio lebar seperti 16:9 akan mengisi ruang paling penuh.</p>
                 </div>
               </div>
               <div>
@@ -290,5 +288,19 @@ export default function PromoBannerPage() {
         </SimpleModal>
       </div>
     </div>
+  );
+}
+
+// Blurred cover backdrop + a contained foreground image — matches exactly how
+// PromoBannerSlider renders on the customer dashboard, so what's previewed
+// here is what customers will actually see (no surprise cropping either way).
+function BannerPreviewImage({ src, alt }: { src: string; alt: string }) {
+  return (
+    <>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt="" aria-hidden="true" className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-50" />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt={alt} className="relative w-full h-full object-contain" />
+    </>
   );
 }
