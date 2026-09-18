@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { getGenieACSCredentials } from '../route';
+import { normalizeRxPower, normalizeUptime } from '@/lib/genieacs/tr069-parser';
 
 // ─── Module-level in-memory device cache ─────────────────────────────────────
 // Survives across requests within the same PM2 cluster worker process.
@@ -316,11 +317,13 @@ async function fetchAndCacheDevices(host: string, username: string, password: st
           tr069IP = extractIPFromURL(tr069IP);
         }
 
-        // Get uptime - prefer formatted string from uptimeDevice
-        let uptime = getParameterValue(device, parameterPaths.uptime);
-        
-        // Get RX Power and format it
-        let rxPower = getParameterValue(device, parameterPaths.rxPower);
+        // Get uptime - prefer formatted string from uptimeDevice, normalize raw seconds otherwise
+        let uptime = normalizeUptime(getParameterValue(device, parameterPaths.uptime));
+
+        // Get RX Power and format it — raw TR-069 paths report in vendor-specific
+        // units (millidBm, 0.1nW, etc.), only VirtualParameters.redaman is
+        // pre-formatted; normalizeRxPower reconciles both into "X.XX dBm"
+        let rxPower = normalizeRxPower(getParameterValue(device, parameterPaths.rxPower));
 
         return {
           _id: String(device._id || ''),

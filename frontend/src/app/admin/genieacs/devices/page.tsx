@@ -844,7 +844,7 @@ export default function GenieACSDevicesPage() {
                         <p>
                           {device.rxPower && device.rxPower !== '-' ? (
                             <span className={`font-medium text-xs ${parseFloat(device.rxPower) > -25 ? 'text-success' : parseFloat(device.rxPower) > -28 ? 'text-warning' : 'text-destructive'}`}>
-                              {device.rxPower} dBm
+                              {device.rxPower}
                             </span>
                           ) : <span className="text-xs">-</span>}
                         </p>
@@ -943,7 +943,7 @@ export default function GenieACSDevicesPage() {
                         <td className="py-2 px-2 whitespace-nowrap">
                           {device.rxPower && device.rxPower !== '-' ? (
                             <span className={`font-medium ${parseFloat(device.rxPower) > -25 ? 'text-success' : parseFloat(device.rxPower) > -28 ? 'text-warning' : 'text-destructive'}`}>
-                              {device.rxPower} dBm
+                              {device.rxPower}
                             </span>
                           ) : '-'}
                         </td>
@@ -1142,7 +1142,7 @@ export default function GenieACSDevicesPage() {
                                 ? parseFloat(selectedDevice.rxPower) > -25 ? 'text-success' : parseFloat(selectedDevice.rxPower) > -28 ? 'text-warning' : 'text-destructive'
                                 : 'text-foreground'
                                 }`}>
-                                {selectedDevice.rxPower && selectedDevice.rxPower !== '-' ? `${selectedDevice.rxPower} dBm` : '-'}
+                                {selectedDevice.rxPower && selectedDevice.rxPower !== '-' ? selectedDevice.rxPower : '-'}
                               </span>
                             </div>
                             <InfoRow label={t('genieacs.txPower')} value={selectedDevice.txPower && selectedDevice.txPower !== '-' ? `${selectedDevice.txPower} dBm` : '-'} />

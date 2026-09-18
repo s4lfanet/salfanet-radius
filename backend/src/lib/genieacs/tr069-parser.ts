@@ -82,6 +82,22 @@ export function normalizeRxPower(raw: string): string {
   return raw;
 }
 
+/** Normalize raw uptime readings into a consistent "Xd HH:MM:SS" string.
+ * Some ONTs report a pre-formatted VirtualParameters.uptimeDevice string
+ * already in this shape (or bare "HH:MM:SS"); the standard TR-069
+ * DeviceInfo.UpTime path is always a raw seconds count and needs converting. */
+export function normalizeUptime(raw: string): string {
+  if (raw === '-' || !raw || raw === '0') return '-';
+  if (/\d+d\s+\d+:\d+:\d+/.test(raw) || /^\d+:\d{2}:\d{2}$/.test(raw)) return raw;
+  const seconds = parseInt(raw, 10);
+  if (isNaN(seconds) || seconds < 0) return raw;
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+  return `${days}d ${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
 /** Derive online/offline/unknown status from the device's last inform timestamp. */
 export function getDeviceStatus(lastInform: string | null): string {
   if (!lastInform) return 'unknown';
