@@ -121,16 +121,30 @@ export async function POST(request: NextRequest) {
 
     // Reconcile orphaned history rows for this same job type before starting a
     // new run. A row can be left stuck at status='running' forever if the
-    // backend process (this very request handler) gets killed/restarted
-    // mid-execution — e.g. by a deploy — since nothing then ever runs the
-    // success/error update below for that row. Since this job type isn't
-    // triggered concurrently (cronLock above, or the cron-runner's own lock),
-    // any 'running' row still around when a fresh run starts is definitely
-    // orphaned, not actually in progress.
-    await prisma.cronHistory.updateMany({
-      where: { jobType, status: 'running' },
-      data: { status: 'error', completedAt: nowWIB(), error: 'Interrupted (process restarted before job finished)' },
-    })
+    // backend process gets killed/restarted mid-execution — e.g. by a deploy —
+    // since nothing then ever runs the success/error update below for that row.
+    //
+    // In practice, near-simultaneous requests for the same jobType DO happen
+    // (e.g. cron-runner's own history row plus this route's, or two ticks
+    // racing a few ms apart), so a still-'running' row is not automatically
+    // orphaned just because a fresh run started — only rows well past any
+    // realistic job duration are. The `startedAt` cutoff avoids reconciling
+    // a row that's actually still in flight, which previously caused a real
+    // MySQL deadlock (P2034) when two updateMany calls raced on the same rows.
+    // Any failure here is logged and swallowed — it must never block the job
+    // itself from starting.
+    try {
+      await prisma.cronHistory.updateMany({
+        where: {
+          jobType,
+          status: 'running',
+          startedAt: { lt: new Date(Date.now() - 3 * 60 * 1000) },
+        },
+        data: { status: 'error', completedAt: nowWIB(), error: 'Interrupted (process restarted before job finished)' },
+      })
+    } catch (reconcileError) {
+      console.error(`[CRON] Reconciliation of orphaned '${jobType}' history rows failed (non-fatal):`, reconcileError)
+    }
 
     // Create history record
     const jobId = `cron_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
