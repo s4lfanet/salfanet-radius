@@ -21,13 +21,13 @@ import {
   UserX,
   UserPlus,
   AlertTriangle,
+  Wallet,
 } from 'lucide-react';
 import { formatWIB, getTimezoneInfo, nowWIB } from '@/lib/timezone';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useApiQuery } from '@/lib/api/hooks';
 import {
   UserStatusPieChart,
-  UserGrowthChart,
   ChartCard,
 } from '@/components/charts';
 
@@ -77,11 +77,26 @@ interface RecentActivity {
 interface AnalyticsData {
   users?: {
     byStatus: { name: string; value: number }[];
-    growth?: { month: string; newUsers: number; totalUsers: number }[];
   };
   financial?: {
     incomeExpense: { month: string; income: number; expense: number }[];
   };
+}
+
+interface PaymentActivity {
+  id: string;
+  invoiceNumber: string;
+  customerName: string;
+  customerUsername: string | null;
+  amount: number;
+  paidAt: string;
+  methodLabel: 'online' | 'transfer' | 'collector' | 'admin' | 'other';
+  actorLabel: string;
+}
+
+interface PaymentActivityResponse {
+  success: boolean;
+  activities: PaymentActivity[];
 }
 
 interface NewCustomer {
@@ -177,6 +192,14 @@ export default function AdminDashboard() {
     staleTime: 0,
   });
 
+  // ─── React Query: Recent payment activity (1min polling) — independent of
+  // the month picker above, always shows the latest settlements ───────────────
+  const paymentActivityQuery = useApiQuery<PaymentActivityResponse>('/api/dashboard/payment-activity', {
+    params: { limit: 15 },
+    refetchInterval: 60000,
+    staleTime: 0,
+  });
+
   // Derive state from queries
   const stats = dashboardQuery.data?.stats ?? null;
   const agentSales = dashboardQuery.data?.agentSales ?? [];
@@ -187,6 +210,8 @@ export default function AdminDashboard() {
   const analyticsLoading = analyticsQuery.isFetching;
   const newCustomers = newCustomersQuery.data?.customers ?? [];
   const newCustomersLoading = newCustomersQuery.isFetching;
+  const paymentActivities = paymentActivityQuery.data?.activities ?? [];
+  const paymentActivityLoading = paymentActivityQuery.isFetching;
 
   // Clock tick (local, 1s)
   useEffect(() => {
@@ -362,7 +387,7 @@ export default function AdminDashboard() {
               </button>
             </div>
             <button
-              onClick={() => { dashboardQuery.refetch(); analyticsQuery.refetch(); newCustomersQuery.refetch(); }}
+              onClick={() => { dashboardQuery.refetch(); analyticsQuery.refetch(); newCustomersQuery.refetch(); paymentActivityQuery.refetch(); }}
               disabled={loading || analyticsLoading}
               className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium bg-brand-500/10 border-2 border-brand-500/30 text-brand-500 rounded-lg hover:bg-brand-500/20 disabled:opacity-50 transition-all "
             >
@@ -496,18 +521,57 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Customer Growth Chart */}
-          <ChartCard
-            title={t('dashboard.customerGrowth')}
-            subtitle={t('dashboard.newVsTotalCustomers')}
-            action={<UserPlus className="w-4 h-4 text-muted-foreground" />}
-          >
-            <UserGrowthChart
-              data={analyticsData?.users?.growth || []}
-              loading={analyticsLoading}
-              height={220}
-            />
-          </ChartCard>
+          {/* Payment Activity Log */}
+          <div className="bg-card/60 rounded-xl border border-white/10 flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between p-3 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-success/10 border border-success/20">
+                  <Wallet className="w-3.5 h-3.5 text-success" />
+                </div>
+                <div>
+                  <h2 className="text-xs font-semibold text-foreground">{t('dashboard.paymentActivity')}</h2>
+                  <p className="text-[10px] text-muted-foreground">{t('dashboard.paymentActivitySubtitle')}</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto max-h-[236px] divide-y divide-white/5">
+              {paymentActivityLoading && paymentActivities.length === 0 ? (
+                <div className="flex items-center justify-center py-10">
+                  <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : paymentActivities.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-10 gap-1">
+                  <Wallet className="h-5 w-5 text-muted-foreground/40" />
+                  <p className="text-[10px] text-muted-foreground">{t('dashboard.noPaymentActivity')}</p>
+                </div>
+              ) : (
+                paymentActivities.map((activity) => {
+                  const dotColor = activity.methodLabel === 'online'
+                    ? 'bg-blue-400'
+                    : activity.methodLabel === 'collector'
+                    ? 'bg-success'
+                    : activity.methodLabel === 'transfer'
+                    ? 'bg-amber-400'
+                    : 'bg-muted-foreground';
+                  return (
+                    <div key={activity.id} className="flex items-center gap-2 px-3 py-2 hover:bg-white/[0.03] transition-colors">
+                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotColor}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] font-medium text-foreground truncate">{activity.customerName}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{activity.actorLabel}</p>
+                      </div>
+                      <div className="flex flex-col items-end flex-shrink-0 ml-2">
+                        <span className="text-[11px] font-semibold text-foreground">
+                          {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(activity.amount)}
+                        </span>
+                        <span className="text-[9px] text-muted-foreground">{formatWIB(new Date(activity.paidAt), 'dd MMM, HH:mm')}</span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
 
         </div>
 
