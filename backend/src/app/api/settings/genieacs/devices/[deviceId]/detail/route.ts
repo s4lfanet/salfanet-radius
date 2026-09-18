@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGenieACSCredentials } from '../../../route';
 import { requirePermission } from '@/server/middleware/api-auth';
+import { normalizeRxPower, normalizeUptime } from '@/lib/genieacs/tr069-parser';
 
 // Helper to extract raw value from GenieACS format (handles {_value: x} format)
 function extractRawValue(val: unknown): unknown {
@@ -851,10 +852,10 @@ export async function GET(
       pppoeUsername: getParameterValue(deviceRaw, parameterPaths.pppUsername),
       pppoeIP: getParameterValue(deviceRaw, parameterPaths.pppoeIP),
       tr069IP,
-      rxPower: getParameterValue(deviceRaw, parameterPaths.rxPower),
+      rxPower: normalizeRxPower(getParameterValue(deviceRaw, parameterPaths.rxPower)),
       txPower: getParameterValue(deviceRaw, parameterPaths.txPower),
       ponMode: getParameterValue(deviceRaw, parameterPaths.ponMode),
-      uptime: getParameterValue(deviceRaw, parameterPaths.uptime),
+      uptime: normalizeUptime(getParameterValue(deviceRaw, parameterPaths.uptime)),
       macAddress: getParameterValue(deviceRaw, parameterPaths.macAddress),
       softwareVersion: getParameterValue(deviceRaw, parameterPaths.softwareVersion),
       hardwareVersion: getParameterValue(deviceRaw, parameterPaths.hardwareVersion),
