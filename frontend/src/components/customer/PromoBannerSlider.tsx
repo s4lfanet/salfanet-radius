@@ -42,17 +42,9 @@ export default function PromoBannerSlider() {
   if (banners.length === 0) return null;
 
   return (
-    <div className="relative w-full aspect-[16/7] sm:aspect-[21/7] rounded-2xl overflow-hidden border border-white/10 bg-card/60">
+    <div className="relative w-full h-36 sm:h-44 md:h-52 lg:h-60 rounded-2xl overflow-hidden border border-white/10 bg-black/30">
       {banners.map((banner, index) => {
-        const content = (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={banner.imageUrl}
-            alt={banner.title || 'Promo'}
-            className="w-full h-full object-cover"
-            loading={index === 0 ? 'eager' : 'lazy'}
-          />
-        );
+        const isEager = index === 0;
         return (
           <div
             key={banner.id}
@@ -60,13 +52,13 @@ export default function PromoBannerSlider() {
           >
             {banner.linkUrl ? (
               <a href={banner.linkUrl} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
-                {content}
+                <BannerImage banner={banner} eager={isEager} />
               </a>
             ) : (
-              content
+              <BannerImage banner={banner} eager={isEager} />
             )}
             {banner.title && (
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-3 py-2">
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-3 py-2 pointer-events-none">
                 <p className="text-white text-xs sm:text-sm font-medium truncate">{banner.title}</p>
               </div>
             )}
@@ -86,6 +78,32 @@ export default function PromoBannerSlider() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// Blurred cover backdrop + a contained foreground image, so the full banner
+// is always visible with no cropping regardless of the aspect ratio the
+// admin uploaded it at or which breakpoint's fixed-height box it lands in —
+// object-cover alone would crop a differently-shaped region at each height.
+function BannerImage({ banner, eager }: { banner: PromoBanner; eager: boolean }) {
+  return (
+    <div className="relative w-full h-full">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={banner.imageUrl}
+        alt=""
+        aria-hidden="true"
+        className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-50"
+        loading={eager ? 'eager' : 'lazy'}
+      />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={banner.imageUrl}
+        alt={banner.title || 'Promo'}
+        className="relative w-full h-full object-contain"
+        loading={eager ? 'eager' : 'lazy'}
+      />
     </div>
   );
 }
