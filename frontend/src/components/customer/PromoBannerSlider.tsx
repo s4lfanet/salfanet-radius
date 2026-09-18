@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { ExternalLink } from 'lucide-react';
 
 interface PromoBanner {
   id: string;
@@ -59,7 +60,10 @@ export default function PromoBannerSlider() {
             )}
             {banner.title && (
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent px-3 py-2 pointer-events-none">
-                <p className="text-white text-xs sm:text-sm font-medium truncate">{banner.title}</p>
+                <div className="flex items-center gap-1.5">
+                  <p className="text-white text-xs sm:text-sm font-medium truncate">{banner.title}</p>
+                  {banner.linkUrl && <ExternalLink className="w-3 h-3 text-white/80 flex-shrink-0" />}
+                </div>
               </div>
             )}
           </div>
@@ -67,13 +71,13 @@ export default function PromoBannerSlider() {
       })}
 
       {banners.length > 1 && (
-        <div className="absolute bottom-2 right-3 flex items-center gap-1.5 z-10">
+        <div className="absolute top-2 right-2 flex items-center gap-1.5 z-10 bg-black/40 rounded-full px-2 py-1.5">
           {banners.map((banner, index) => (
             <button
               key={banner.id}
               onClick={() => goTo(index)}
               aria-label={`Slide ${index + 1}`}
-              className={`h-1.5 rounded-full transition-all ${index === active ? 'w-4 bg-white' : 'w-1.5 bg-white/50'}`}
+              className={`h-1.5 rounded-full transition-all ${index === active ? 'w-4 bg-white' : 'w-1.5 bg-white/60'}`}
             />
           ))}
         </div>
