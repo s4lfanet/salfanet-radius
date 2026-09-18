@@ -411,7 +411,7 @@ export default function AdminDashboard() {
                   <div className={`absolute -top-8 -right-8 w-24 h-24 ${card.bgGlow} rounded-full blur-2xl opacity-50 group-hover:opacity-80 transition-opacity`} />
                   <div className="relative flex items-center justify-between gap-2 min-w-0">
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] sm:text-[11px] font-medium text-muted-foreground uppercase tracking-wider truncate">
+                      <p className="text-[10px] sm:text-[11px] font-medium text-muted-foreground uppercase tracking-wider line-clamp-2 leading-tight" title={card.title}>
                         {card.title}
                       </p>
                       <p className="text-lg sm:text-2xl font-bold text-foreground mt-1 sm:mt-1.5 truncate">
