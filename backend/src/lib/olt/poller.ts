@@ -129,6 +129,13 @@ export async function pollOLTWithOptions(
       discoveredOnus = await vendor.discoverONUs(telnetConfig);
     }
 
+    // Re-check the OLT wasn't deleted while the SNMP/Telnet/SSH probes above
+    // were in flight (those can take tens of seconds) — writing ONU/metric
+    // rows for an oltId that no longer exists throws a foreign-key error for
+    // every single write below instead of one clean, expected abort.
+    const stillExists = await prisma.networkOLT.findUnique({ where: { id: oltId }, select: { id: true } });
+    if (!stillExists) return { success: false, error: 'OLT deleted during poll' };
+
     // Upsert ONU statuses
     const discoveredKeys = new Set<string>();
     for (const onu of discoveredOnus) {
