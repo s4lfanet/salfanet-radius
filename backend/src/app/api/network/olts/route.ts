@@ -105,6 +105,12 @@ export async function POST(request: NextRequest) {
         ...(sshPort !== undefined && sshPort !== '' && { sshPort: parseInt(String(sshPort)) || 22 }),
         ...(telnetPort !== undefined && telnetPort !== '' && { telnetPort: parseInt(String(telnetPort)) || 23 }),
         ...(snmpPort !== undefined && snmpPort !== '' && { snmpPort: parseInt(String(snmpPort)) || 161 }),
+        // Monitoring defaults to on for a newly added OLT — the whole point of
+        // adding one with credentials is to monitor it, and leaving this at
+        // the schema default (off) meant the poller cron silently skipped it
+        // forever, leaving the list stuck on the initial "Offline" value
+        // even after a successful manual connection test.
+        monitoringEnabled: body.monitoringEnabled !== undefined ? body.monitoringEnabled : true,
       },
     });
 
@@ -121,9 +127,21 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Poll once immediately so the list reflects real status right away
+    // instead of waiting for the next cron cycle (up to pollingInterval,
+    // default 300s) or staying stuck offline if monitoring were ever off.
+    try {
+      const { pollOLT } = await import('@/lib/olt/poller');
+      await pollOLT(oltId);
+    } catch (pollError) {
+      console.error('[Create OLT] Initial poll failed (non-fatal):', pollError);
+    }
+
+    const freshOlt = await prisma.networkOLT.findUnique({ where: { id: oltId } });
+
     return NextResponse.json({
       success: true,
-      olt: { ...olt, uptime: Number(olt.uptime) },
+      olt: freshOlt ? { ...freshOlt, uptime: Number(freshOlt.uptime) } : { ...olt, uptime: Number(olt.uptime) },
     });
   } catch (error: any) {
     console.error('Create OLT error:', error);
