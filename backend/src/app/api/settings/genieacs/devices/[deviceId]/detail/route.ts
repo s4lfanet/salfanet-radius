@@ -264,45 +264,51 @@ function isTruthyValue(val: unknown): boolean {
   return str === 'true' || str === '1' || str === 'yes' || str === 'on' || str === 'enabled';
 }
 
-// Helper to detect band from standard or frequency
-function detectBand(wlan: Record<string, unknown>, _index: number): string {
+// Helper to detect band from an UNAMBIGUOUS per-instance signal only.
+// Returns null when nothing conclusive is available — the caller resolves
+// those via extractWLANConfigs' cross-instance fallback.
+//
+// 802.11ax and 802.11n are NOT band-exclusive — WiFi 6 (ax) and n both run
+// on either 2.4GHz or 5GHz radios, so `Standard` alone can't tell them
+// apart. Treating "ax" as a definite 5GHz signal previously misclassified
+// EVERY SSID slot as 5GHz on WiFi 6 ONTs that report Standard="ax"
+// uniformly across both radios, hiding 2.4GHz whenever the two bands
+// share an SSID name with no "5G" hint and Channel isn't populated.
+function detectBand(wlan: Record<string, unknown>, _index: number): string | null {
   // Check OperatingFrequencyBand first
   const freqBand = safeString(getNestedValue(wlan, 'OperatingFrequencyBand') as unknown);
   if (freqBand.includes('5')) return '5GHz';
   if (freqBand.includes('2.4') || freqBand.includes('2G')) return '2.4GHz';
-  
-  // Check Standard (802.11a/ac/ax for 5GHz, 802.11b/g/n for 2.4GHz)
+
+  // Check Standard — only 802.11ac and bare "a" are 5GHz-exclusive
   const standard = safeString(getNestedValue(wlan, 'Standard') as unknown).toLowerCase();
-  if (standard.includes('ac') || standard.includes('ax') || standard === 'a' || standard.includes('5g')) return '5GHz';
-  if (standard.includes('b') || standard.includes('g') || standard.includes('2.4')) return '2.4GHz';
-  
+  if (standard.includes('ac') || standard === 'a') return '5GHz';
+  if (standard.includes('b') || standard.includes('g')) return '2.4GHz';
+
   // Check X_HW_OperatingFrequencyBand (Huawei specific)
   const hwFreq = safeString(getNestedValue(wlan, 'X_HW_OperatingFrequencyBand') as unknown);
   if (hwFreq.includes('5')) return '5GHz';
   if (hwFreq.includes('2')) return '2.4GHz';
-  
-  // Check RadioEnabled paths for 5G
-  const radio5g = getNestedValue(wlan, 'X_HW_Radio5GEnable') as unknown;
-  if (radio5g !== undefined) {
-    // This WLAN has 5G radio option, check if current config is for 5G
-    const ssid = safeString(getNestedValue(wlan, 'SSID') as unknown).toLowerCase();
-    if (ssid.includes('5g') || ssid.includes('_5') || ssid.includes('-5')) return '5GHz';
-  }
-  
+
   // Check SSID name for hints
   const ssid = safeString(getNestedValue(wlan, 'SSID') as unknown).toLowerCase();
   if (ssid.includes('5g') || ssid.includes('_5g') || ssid.includes('-5g') || ssid.includes(' 5g')) return '5GHz';
-  
-  // Fallback: typically index 1-2 are 2.4GHz, 3-4 are 5GHz for dual band
-  // But for Huawei HG8145V5 pattern: odd=2.4GHz, even=5GHz or by grouping
-  // More reliable: assume 2.4GHz unless proven otherwise
-  return '2.4GHz';
+
+  // Channel is a reliable signal when populated (many ONTs report 0/none)
+  const channel = parseInt(safeString(getNestedValue(wlan, 'Channel') as unknown)) || 0;
+  if (channel > 14) return '5GHz';
+  if (channel >= 1 && channel <= 14) return '2.4GHz';
+
+  return null;
 }
 
 // Extract all WLAN configurations
 function extractWLANConfigs(device: Record<string, unknown>): WLANConfig[] {
   const wlanConfigs: WLANConfig[] = [];
-  
+  // Entries whose band couldn't be determined from a per-instance signal —
+  // resolved via a cross-instance fallback after the main loop (see below).
+  const pendingBand: Array<{ index: number; entry: WLANConfig }> = [];
+
   // Try InternetGatewayDevice.LANDevice.1.WLANConfiguration
   const lanDevice = getNestedValue(device, 'InternetGatewayDevice.LANDevice.1') as Record<string, unknown>;
   if (lanDevice && typeof lanDevice === 'object') {
@@ -379,26 +385,42 @@ function extractWLANConfigs(device: Record<string, unknown>): WLANConfig[] {
               
               // Get BSSID
               const bssid = safeString(wlan['BSSID']);
-              
-              wlanConfigs.push({
+
+              const entry: WLANConfig = {
                 index,
                 ssid,
                 enabled,
                 channel: safeString(wlan['Channel']),
                 standard: safeString(wlan['Standard']),
                 security,
-                password: safeString(getNestedValue(wlan, 'PreSharedKey.1.PreSharedKey') as unknown) || 
+                password: safeString(getNestedValue(wlan, 'PreSharedKey.1.PreSharedKey') as unknown) ||
                           safeString(wlan['KeyPassphrase']) ||
                           safeString(wlan['X_HW_WPAKey']),
-                band,
+                band: band || '2.4GHz', // placeholder, replaced below if band is null
                 totalAssociations: totalAssoc,
                 bssid
-              });
+              };
+
+              wlanConfigs.push(entry);
+              if (band === null) pendingBand.push({ index, entry });
             }
           }
         }
       }
     }
+  }
+
+  // Fallback for instances with no unambiguous band signal: most dual-band
+  // multi-SSID ONTs list every 2.4GHz slot contiguously before every 5GHz
+  // slot, so split the undecided ones in half by index order as a last
+  // resort (entries already resolved above, e.g. via an SSID "5G" hint or
+  // Channel, are left untouched).
+  if (pendingBand.length >= 2) {
+    pendingBand.sort((a, b) => a.index - b.index);
+    const mid = Math.ceil(pendingBand.length / 2);
+    pendingBand.forEach(({ entry }, i) => {
+      entry.band = i < mid ? '2.4GHz' : '5GHz';
+    });
   }
 
   // Try Device.WiFi.SSID for newer TR-181 devices
