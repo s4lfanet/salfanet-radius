@@ -537,17 +537,26 @@ async function discoverPonV22(config: SNMPConfig, board: number, pon: number): P
   const nameWalk = await snmpWalk(config, `${base}${V22.onuName}.${idSuffix}`);
   if (!nameWalk.success || !nameWalk.results) return [];
 
+  // A single ONU's own 6 fields are fetched concurrently (they're independent
+  // GETs on the same logical target) — but ONUs themselves are still handled
+  // one at a time. A live test against a real ZTE C320 showed that firing
+  // several PON ports' SNMP walks at once made a full poll SLOWER, not
+  // faster (156s vs 132s sequential) — this OLT's embedded SNMP agent
+  // appears to serialize/degrade under concurrent load rather than pipeline
+  // it, so cross-port/cross-ONU concurrency is deliberately NOT used here.
   const onus: any[] = [];
   for (const [oid, nameVal] of Object.entries(nameWalk.results)) {
     const onuId = extractLastId(oid);
     if (onuId === null || onuId <= 0 || onuId > 128) continue;
 
-    const statusR = await snmpGet(config, `${base}${V22.onuStatus}.${idSuffix}.${onuId}`);
-    const serialR = await snmpGet(config, `${base}${V22.onuSerial}.${idSuffix}.${onuId}`);
-    const typeR   = await snmpGet(config, `${base}${V22.onuModel}.${typeSuffix}.${onuId}`);
-    const rxR     = await snmpGet(config, `${base}${V22.onuRxPower}.${idSuffix}.${onuId}.1`);
-    const txR     = await snmpGet(config, `${base}${V22.onuTxPower}.${idSuffix}.${onuId}.1`);
-    const distR   = await snmpGet(config, `${base}${V22.onuDistance}.${idSuffix}.${onuId}`);
+    const [statusR, serialR, typeR, rxR, txR, distR] = await Promise.all([
+      snmpGet(config, `${base}${V22.onuStatus}.${idSuffix}.${onuId}`),
+      snmpGet(config, `${base}${V22.onuSerial}.${idSuffix}.${onuId}`),
+      snmpGet(config, `${base}${V22.onuModel}.${typeSuffix}.${onuId}`),
+      snmpGet(config, `${base}${V22.onuRxPower}.${idSuffix}.${onuId}.1`),
+      snmpGet(config, `${base}${V22.onuTxPower}.${idSuffix}.${onuId}.1`),
+      snmpGet(config, `${base}${V22.onuDistance}.${idSuffix}.${onuId}`),
+    ]);
 
     const statusVal = statusR.success && statusR.value ? parseInt(statusR.value) : 0;
     let rxPower: number | null = null;
@@ -640,7 +649,10 @@ export async function discoverONUsSNMP(
       } catch { /* Telnet unavailable — global map stays null, per-port fallback used */ }
     }
 
-    // V2.1: walk PON port table to discover actual port count dynamically
+    // V2.1: walk PON port table to discover actual port count dynamically.
+    // Ports are scanned one at a time deliberately — see the note on
+    // discoverPonV22 above (a live test showed concurrent port scans made
+    // this OLT's SNMP agent slower, not faster).
     const ponPorts = mergePonPortsFromUncfgMap(await discoverPONPortsV21(config), globalUncfgMap);
     for (const { board, pon } of ponPorts) {
       try {
