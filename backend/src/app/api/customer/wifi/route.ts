@@ -195,55 +195,84 @@ function extractDeviceInfo(device: any) {
   // Extract WLAN configurations
   const wlanConfigs: any[] = [];
   const lanDevice = getNestedValue(device, 'InternetGatewayDevice.LANDevice.1');
-  
+
   if (lanDevice && lanDevice.WLANConfiguration) {
+    // Two passes: first collect every instance's raw fields plus a band
+    // guess wherever a signal is UNAMBIGUOUS, then fill in anything still
+    // undetermined using each entry's position among all instances.
+    //
+    // 802.11ax and 802.11n are NOT band-exclusive — WiFi 6 (ax) and n both
+    // run on either 2.4GHz or 5GHz radios, so `Standard` alone cannot tell
+    // them apart. Only 802.11ac (and bare "a") are 5GHz-only. Treating "ax"
+    // as a definite 5GHz signal (the previous logic) misclassified EVERY
+    // SSID slot as 5GHz on WiFi 6 ONTs that report Standard="ax" uniformly
+    // across both radios — which silently made 2.4GHz disappear entirely
+    // whenever the two bands share the same SSID name (no "5G" hint) and
+    // Channel isn't populated either.
+    const rawEntries: Array<{ index: number; wlanObj: any; ssid: string; band: string | null }> = [];
     for (const [key, wlan] of Object.entries(lanDevice.WLANConfiguration)) {
       if (!isNaN(parseInt(key)) && wlan && typeof wlan === 'object') {
         const wlanObj = wlan as any;
         const ssid = safeString(wlanObj.SSID);
         const index = parseInt(key);
+        const standard = safeString(wlanObj.Standard).toLowerCase();
+        const channel = parseInt(safeString(wlanObj.Channel)) || 0;
 
-        // Count actual AssociatedDevice entries (more reliable than TotalAssociations field)
-        const assocDeviceObj = wlanObj.AssociatedDevice;
-        let assocCount = parseInt(safeString(wlanObj.TotalAssociations)) || 0;
-        if (assocDeviceObj && typeof assocDeviceObj === 'object') {
-          let actualCount = 0;
-          for (const adKey of Object.keys(assocDeviceObj)) {
-            if (!isNaN(parseInt(adKey)) && !adKey.startsWith('_')) actualCount++;
-          }
-          assocCount = Math.max(assocCount, actualCount);
-        }
-        
-        // Include WLAN if it has an SSID name OR has connected devices
-        const hasValidSsid = ssid && ssid !== '-' && ssid !== '';
-        if (hasValidSsid || assocCount > 0) {
-          const enabled = isTruthyValue(wlanObj.Enable) || assocCount > 0;
-          
-          // Determine band: prefer Standard field, then SSID hint, then BSSID prefix
-          let band = '2.4GHz';
-          const standard = safeString(wlanObj.Standard).toLowerCase();
-          if (standard.includes('ac') || standard.includes('ax') || standard.includes('n5') || standard.includes('5ghz')) {
-            band = '5GHz';
-          }
-          if (ssid.toLowerCase().includes('5g') || ssid.toLowerCase().includes('_5g')) band = '5GHz';
-          // BSSID can hint at 5GHz (many ONTs use different OUI for 5GHz radio)
-          const channel = parseInt(safeString(wlanObj.Channel)) || 0;
-          if (channel > 14) band = '5GHz'; // channels > 14 are definitely 5GHz
+        let band: string | null = null;
+        if (standard.includes('ac') || standard === 'a') band = '5GHz';
+        else if (standard.includes('b') || standard.includes('g')) band = '2.4GHz';
+        if (!band && (ssid.toLowerCase().includes('5g') || ssid.toLowerCase().includes('_5g'))) band = '5GHz';
+        if (channel > 14) band = '5GHz';
+        else if (!band && channel >= 1 && channel <= 14) band = '2.4GHz';
 
-          wlanConfigs.push({
-            index,
-            ssid: hasValidSsid ? ssid : '',
-            enabled,
-            channel: safeString(wlanObj.Channel),
-            standard: safeString(wlanObj.Standard),
-            security: safeString(wlanObj.BeaconType) || safeString(wlanObj.IEEE11iEncryptionModes) || '-',
-            password: safeString(getNestedValue(wlanObj, 'PreSharedKey.1.PreSharedKey')) || 
-                     safeString(wlanObj.KeyPassphrase) || '-',
-            band,
-            totalAssociations: assocCount,
-            bssid: safeString(wlanObj.BSSID)
-          });
+        rawEntries.push({ index, wlanObj, ssid, band });
+      }
+    }
+
+    // Fallback for anything still undetermined: most dual-band multi-SSID
+    // ONTs list every 2.4GHz slot contiguously before every 5GHz slot (or
+    // vice versa isn't observed in practice here), so split the undecided
+    // entries in half by index order as a last resort.
+    const undetermined = rawEntries.filter(e => e.band === null).sort((a, b) => a.index - b.index);
+    if (undetermined.length >= 2) {
+      const mid = Math.ceil(undetermined.length / 2);
+      undetermined.forEach((entry, i) => {
+        entry.band = i < mid ? '2.4GHz' : '5GHz';
+      });
+    } else if (undetermined.length === 1) {
+      undetermined[0].band = '2.4GHz';
+    }
+
+    for (const { index, wlanObj, ssid, band } of rawEntries) {
+      // Count actual AssociatedDevice entries (more reliable than TotalAssociations field)
+      const assocDeviceObj = wlanObj.AssociatedDevice;
+      let assocCount = parseInt(safeString(wlanObj.TotalAssociations)) || 0;
+      if (assocDeviceObj && typeof assocDeviceObj === 'object') {
+        let actualCount = 0;
+        for (const adKey of Object.keys(assocDeviceObj)) {
+          if (!isNaN(parseInt(adKey)) && !adKey.startsWith('_')) actualCount++;
         }
+        assocCount = Math.max(assocCount, actualCount);
+      }
+
+      // Include WLAN if it has an SSID name OR has connected devices
+      const hasValidSsid = ssid && ssid !== '-' && ssid !== '';
+      if (hasValidSsid || assocCount > 0) {
+        const enabled = isTruthyValue(wlanObj.Enable) || assocCount > 0;
+
+        wlanConfigs.push({
+          index,
+          ssid: hasValidSsid ? ssid : '',
+          enabled,
+          channel: safeString(wlanObj.Channel),
+          standard: safeString(wlanObj.Standard),
+          security: safeString(wlanObj.BeaconType) || safeString(wlanObj.IEEE11iEncryptionModes) || '-',
+          password: safeString(getNestedValue(wlanObj, 'PreSharedKey.1.PreSharedKey')) ||
+                   safeString(wlanObj.KeyPassphrase) || '-',
+          band: band || '2.4GHz',
+          totalAssociations: assocCount,
+          bssid: safeString(wlanObj.BSSID)
+        });
       }
     }
   }
