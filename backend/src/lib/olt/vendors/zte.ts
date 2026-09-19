@@ -313,6 +313,75 @@ async function discoverPONPortsV21(config: SNMPConfig): Promise<Array<{board: nu
   return fallback;
 }
 
+// ── Real per-ONU status via Telnet (SNMP operState cannot tell this apart) ──
+//
+// Confirmed live against github.com/s4lfanet/nms-ztec320's reference NMS,
+// which correctly distinguishes Online from Dying Gasp for the exact same
+// OLT: the SNMP operState OID this file reads is IDENTICAL (5) for both —
+// verified on a port with 66 real ONUs including 3 the reference NMS shows
+// as Dying Gasp. That distinction only shows up in Telnet CLI output:
+//
+//   show gpon onu state gpon-olt_1/{board}/{pon}
+//   OnuIndex   Admin State  OMCC State  Phase State  Channel
+//   1/1/3:8     enable       disable     DyingGasp    1(GPON)
+//
+// One call per PORT returns every ONU's state at once (the same pattern
+// nms-ztec320's collect_all_onus() uses), so this costs one extra Telnet
+// round-trip per port — negligible next to the per-ONU cost of distance
+// below.
+async function fetchPonStateViaTelnet(
+  telnetConfig: TelnetConfig | null | undefined,
+  board: number,
+  pon: number,
+): Promise<Map<number, string> | null> {
+  if (!telnetConfig) return null;
+  try {
+    const result = await executeCommand(telnetConfig, `show gpon onu state gpon-olt_1/${board}/${pon}`);
+    if (!result.success || !result.output) return null;
+
+    const stateMap = new Map<number, string>();
+    for (const rawLine of result.output.split('\n')) {
+      const line = rawLine.trim();
+      if (!line || line.includes('---') || /^OnuIndex/i.test(line) || /^ONU\b/i.test(line)) continue;
+      const parts = line.split(/\s+/);
+      if (parts.length < 4) continue;
+      const idMatch = parts[0].match(/^\d+\/\d+\/\d+:(\d+)$/);
+      if (!idMatch) continue;
+      const onuId = parseInt(idMatch[1], 10);
+      const phase = parts[3].toLowerCase();
+      const status = /working|logging|active/.test(phase) ? 'online'
+                   : phase.includes('dyinggasp')            ? 'dying_gasp'
+                   : phase.includes('los')                  ? 'los'
+                   : 'offline';
+      stateMap.set(onuId, status);
+    }
+    return stateMap;
+  } catch {
+    return null; // Telnet unavailable — caller falls back to SNMP operState
+  }
+}
+
+// Real per-ONU distance via Telnet — the only source that has it (see the
+// module comment on the `distance` field in discoverPonV21 for why SNMP
+// doesn't). One call per ONU: `show gpon onu detail-info gpon-onu_1/{board}/
+// {pon}:{onuId}`, which includes a line like `ONU Distance: 623m`.
+async function fetchOnuDistanceViaTelnet(
+  telnetConfig: TelnetConfig,
+  board: number,
+  pon: number,
+  onuId: number,
+): Promise<number | null> {
+  try {
+    const iface = `gpon-onu_1/${board}/${pon}:${onuId}`;
+    const result = await executeCommand(telnetConfig, `show gpon onu detail-info ${iface}`);
+    if (!result.success || !result.output) return null;
+    const match = result.output.match(/ONU Distance:\s*(\d+)\s*m/i);
+    return match ? parseInt(match[1], 10) : null;
+  } catch {
+    return null;
+  }
+}
+
 // ── SNMP ONU Discovery — V2.1 ────────────────────────────────────────────────
 
 async function discoverPonV21(
@@ -325,15 +394,17 @@ async function discoverPonV21(
   const ponIndex = ponIndexV21(board, pon);
   const base = V21.base;
 
-  // Walk ALL OID subtrees for this PON port in PARALLEL (6 concurrent SNMP walks).
-  // This replaces N_onu × 5 sequential snmpGet calls with a single bulk walk pass.
-  const [regWalk, operWalk, serialWalk, rxWalk, descWalk, seenWalk] = await Promise.all([
+  // Walk ALL OID subtrees for this PON port in PARALLEL (6 concurrent SNMP walks),
+  // plus one Telnet call for real status (see telnetStateMap below) — all run
+  // together since none of them depend on each other.
+  const [regWalk, operWalk, serialWalk, rxWalk, descWalk, seenWalk, telnetStateMap] = await Promise.all([
     snmpWalk(config, `${base}${V21.onuRegStatus}.${ponIndex}`),    // reg status  (.ponIndex.slot.onuId)
     snmpWalk(config, `${base}${V21.onuOperState}.${ponIndex}`),    // oper state  (.ponIndex.slot.onuId)
     snmpWalk(config, `${base}${V21.onuSerial}.${ponIndex}`),       // serial      (.ponIndex.onuId)
     snmpWalk(config, `${base}${V21.onuRxPower}.${ponIndex}`),      // rx power    (.ponIndex.slot.onuId)
     snmpWalk(config, `${base}${V21.onuDescription}.${ponIndex}`),  // description (.ponIndex.onuId)
     snmpWalk(config, `${ZTE_V21_SEEN_ONU_TABLE}.${ponIndex}`),     // seen/uncfg  (.ponIndex.slot.onuId)
+    fetchPonStateViaTelnet(telnetConfig, board, pon),
   ]);
 
   // Build O(1) lookup maps keyed by "onuSlot.onuId" (3-component OIDs) or "onuId" (2-component OIDs)
@@ -377,18 +448,20 @@ async function discoverPonV21(
       // this table means the ONU is provisioned; regVal appears to be some
       // other per-ONU attribute (unconfirmed which), not a filter — the
       // previous `!== 1` check here silently dropped ~30% of every port's
-      // real ONUs. Actual online/offline/dying-gasp comes from operState
-      // below, which is the correct signal for that.
+      // real ONUs.
       registeredIds.add(onuId);
 
       const slotIdKey = `${onuId}.${gemPortIdx}`;
       const idKey     = `${onuId}`;
 
-      // Oper state
+      // Status: prefer Telnet's real Phase State (distinguishes Dying Gasp
+      // and LOS, which SNMP's operState cannot — see fetchPonStateViaTelnet).
+      // Fall back to the operState heuristic only when Telnet is unavailable.
       const operVal = parseInt(operMap.get(slotIdKey) ?? '0', 10);
-      const onuStatus = operVal === 5 || operVal === 4 ? 'online'
-                      : operVal === 0                   ? 'unknown'
-                      : 'offline';
+      const onuStatus = telnetStateMap?.get(onuId)
+        ?? (operVal === 5 || operVal === 4 ? 'online'
+          : operVal === 0                   ? 'unknown'
+          : 'offline');
 
       // Rx Power. Formula verified against 5 real ONUs on a live C320
       // (comparing raw SNMP values to the actual dBm shown by a reference
@@ -405,19 +478,22 @@ async function discoverPonV21(
       // (328) for every ONU on a port, and even across different ports,
       // while the OLT's own CLI (`show gpon onu detail-info`) reports a
       // real, differing per-ONU distance (e.g. 623m) for the same ONU. No
-      // scaling factor can fix a constant into varying real values, so this
-      // field is left null rather than showing a confidently wrong number.
-      // Getting the real value would require a per-ONU Telnet call, which
-      // this function deliberately avoids doing for every ONU during a bulk
-      // poll (see the serial-number comment below) — TODO: revisit if an
-      // accurate distance turns out to be worth the extra Telnet round-trips.
-      const distance: number | null = null;
+      // scaling factor can fix a constant into varying real values.
+      // Fetched via Telnet, one call per ONLINE ONU — the user explicitly
+      // accepted this cost over showing a confidently wrong number. Limited
+      // to 'online' ONUs (skips offline/dying_gasp/los/unregistered) since
+      // those still keep a stale-but-plausible last-known reading in the DB
+      // from when they WERE online, and re-querying a dark ONU for ranging
+      // data is a wasted round-trip. Sequential, not concurrent — see the
+      // module-level PON-port scanning note on why this OLT's SNMP agent
+      // degrades under concurrent load; Telnet sessions are assumed to have
+      // the same risk until proven otherwise, so this stays conservative.
+      let distance: number | null = null;
+      if (telnetConfig && onuStatus === 'online') {
+        distance = await fetchOnuDistanceViaTelnet(telnetConfig, board, pon, onuId);
+      }
 
       // Serial (hex bytes → ASCII). If SNMP hex can't be parsed, leave null.
-      // Do NOT fallback to per-ONU Telnet `show gpon onu detail-info` during polling —
-      // that would spawn N concurrent Telnet sessions (one per ONU with bad serial),
-      // which saturates the OLT's concurrent session limit and is the root cause of
-      // slow polling. Serial can be null; DB still tracks ONU status via onuId.
       const serialNumber = normalizeSerialNumber(hexBytesToSerial(serialMap.get(idKey) ?? ''));
 
       onus.push({
