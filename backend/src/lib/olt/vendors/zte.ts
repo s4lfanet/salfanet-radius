@@ -351,7 +351,7 @@ async function discoverPonV21(
   const registeredIds = new Set<number>();
 
   if (regWalk.success && regWalk.results) {
-    for (const [oid, regVal] of Object.entries(regWalk.results)) {
+    for (const [oid, _regVal] of Object.entries(regWalk.results)) {
       const parts = oid.split('.');
       // Verified against a live C320 V2.1.0: this OID's actual suffix is
       // `.ponIndex.{realOnuId}.{gemPortOrChannel}` — the LAST component is a
@@ -367,7 +367,15 @@ async function discoverPonV21(
       const onuId       = parseInt(parts[parts.length - 2], 10);
       const gemPortIdx  = parseInt(parts[parts.length - 1], 10);
       if (isNaN(onuId) || isNaN(gemPortIdx) || onuId <= 0 || onuId > 128) continue;
-      if (parseInt(regVal) !== 1) continue; // skip non-registered ONUs
+      // regVal is NOT an online/registered boolean gate — verified live on a
+      // port with 66 real ONUs (confirmed via CLI): 46 rows read 1, 20 read
+      // 2, yet ALL 66 report the SAME operState (online) and are real,
+      // provisioned ONUs the reference NMS counts. A row's mere presence in
+      // this table means the ONU is provisioned; regVal appears to be some
+      // other per-ONU attribute (unconfirmed which), not a filter — the
+      // previous `!== 1` check here silently dropped ~30% of every port's
+      // real ONUs. Actual online/offline/dying-gasp comes from operState
+      // below, which is the correct signal for that.
       registeredIds.add(onuId);
 
       const slotIdKey = `${onuId}.${gemPortIdx}`;
