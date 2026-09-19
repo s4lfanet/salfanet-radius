@@ -44,6 +44,8 @@ install_system_packages() {
         chrony \
         ntpdate \
         sshpass \
+        expect \
+        snmp \
         xl2tpd \
         strongswan \
         strongswan-pki \
@@ -53,7 +55,7 @@ install_system_packages() {
         return 1
     }
     
-    print_success "System updated and L2TP VPN client tools installed"
+    print_success "System updated, L2TP VPN client tools + OLT SNMP/Telnet tooling (snmp, expect) installed"
 }
 
 # ============================================================================

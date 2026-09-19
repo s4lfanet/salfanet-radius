@@ -109,9 +109,8 @@ export async function snmpWalk(config: SNMPConfig, oid: string): Promise<SNMPWal
 /**
  * Test SNMP connectivity
  */
-export async function testSNMP(config: SNMPConfig): Promise<boolean> {
-  const result = await snmpGet(config, '1.3.6.1.2.1.1.1.0'); // sysDescr
-  return result.success;
+export async function testSNMP(config: SNMPConfig): Promise<SNMPResult> {
+  return snmpGet(config, '1.3.6.1.2.1.1.1.0'); // sysDescr
 }
 
 /**
