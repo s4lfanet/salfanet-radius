@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   Server, RefreshCw, AlertCircle, Activity, WifiOff, Wifi,
   Thermometer, Clock, Search, Settings, Users, ChevronDown,
-  ArrowUpDown, Zap,
+  ArrowUpDown, Zap, Cpu, MemoryStick,
 } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
@@ -18,6 +18,8 @@ interface OLT {
   model: string | null;
   isOnline: boolean;
   temperature: number | null;
+  cpuUsage: number | null;
+  memoryUsage: number | null;
   uptime: bigint | number | null;
   totalOnu: number;
   onlineOnu: number;
@@ -44,6 +46,13 @@ function tempColor(t: number | null): string {
   if (t === null) return 'text-slate-400';
   if (t >= 65) return 'text-red-600 dark:text-red-400 font-bold';
   if (t >= 50) return 'text-amber-600 dark:text-amber-400';
+  return 'text-emerald-600 dark:text-emerald-400';
+}
+
+function usageColor(pct: number | null): string {
+  if (pct === null) return 'text-slate-400';
+  if (pct >= 90) return 'text-red-600 dark:text-red-400 font-bold';
+  if (pct >= 75) return 'text-amber-600 dark:text-amber-400';
   return 'text-emerald-600 dark:text-emerald-400';
 }
 
@@ -397,7 +406,7 @@ export default function OLTMonitoringPage() {
                 </div>
 
                 {/* Device Info */}
-                <div className="px-3 py-2 grid grid-cols-1 sm:grid-cols-3 gap-x-2 border-b border-slate-100 dark:border-slate-800 text-center">
+                <div className="px-3 py-2 grid grid-cols-3 sm:grid-cols-5 gap-x-2 gap-y-1.5 border-b border-slate-100 dark:border-slate-800 text-center">
                   <div>
                     <div className="text-[9px] text-slate-400 uppercase">Model</div>
                     <div className="text-[10px] font-medium text-muted-foreground truncate">{olt.model ?? '-'}</div>
@@ -408,6 +417,22 @@ export default function OLTMonitoringPage() {
                     </div>
                     <div className={`text-[10px] font-semibold ${tempColor(olt.temperature)}`}>
                       {olt.temperature !== null ? `${olt.temperature}°C` : 'N/A'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-center gap-0.5 text-[9px] text-slate-400 uppercase">
+                      <Cpu className="h-2.5 w-2.5" />CPU
+                    </div>
+                    <div className={`text-[10px] font-semibold ${usageColor(olt.cpuUsage)}`}>
+                      {olt.cpuUsage !== null ? `${olt.cpuUsage}%` : 'N/A'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-center gap-0.5 text-[9px] text-slate-400 uppercase">
+                      <MemoryStick className="h-2.5 w-2.5" />Mem
+                    </div>
+                    <div className={`text-[10px] font-semibold ${usageColor(olt.memoryUsage)}`}>
+                      {olt.memoryUsage !== null ? `${olt.memoryUsage}%` : 'N/A'}
                     </div>
                   </div>
                   <div>
