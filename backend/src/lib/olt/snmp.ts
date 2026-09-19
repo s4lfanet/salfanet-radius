@@ -88,6 +88,14 @@ export async function snmpWalk(config: SNMPConfig, oid: string): Promise<SNMPWal
     const lines = output.split('\n');
 
     for (const line of lines) {
+      // "No Such Instance"/"No Such Object" is SNMP's response for an empty
+      // subtree, not a data row — snmpGet already special-cases this, but
+      // snmpWalk didn't, so this exact line matched the generic value regex
+      // below and got stored as if it were a real result (keyed by the
+      // queried OID itself, with the error text as its "value"). For an
+      // empty/unprovisioned ZTE PON port, that phantom single row parsed as
+      // a fake onuId=1 — every genuinely empty port showed one ghost ONU.
+      if (/No Such (Instance|Object)/i.test(line)) continue;
       // Handle both ".1.3.6..." (with -On) and legacy "1.3.6..." numeric formats.
       // Type prefix may include hyphens (e.g. "Hex-STRING:", "Timeticks:").
       const match = line.match(/^\.?([\d][\d.]+)\s*=\s*(?:[\w-]+:\s*)?(.+)$/);
