@@ -127,21 +127,22 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Poll once immediately so the list reflects real status right away
-    // instead of waiting for the next cron cycle (up to pollingInterval,
-    // default 300s) or staying stuck offline if monitoring were ever off.
-    try {
-      const { pollOLT } = await import('@/lib/olt/poller');
-      await pollOLT(oltId);
-    } catch (pollError) {
-      console.error('[Create OLT] Initial poll failed (non-fatal):', pollError);
-    }
-
-    const freshOlt = await prisma.networkOLT.findUnique({ where: { id: oltId } });
+    // Poll once in the background so the list reflects real status shortly
+    // after creation instead of waiting for the next cron cycle — fire-and-
+    // forget, NOT awaited. A real device's SNMP/Telnet probes can take tens
+    // of seconds (or the full timeout if unreachable), and awaiting that
+    // here made the create request itself hang for just as long — which
+    // read as "clicking Create does nothing / doesn't save" even though the
+    // row was already inserted above, and could tempt an impatient user
+    // into deleting the OLT while this same poll was still writing to it
+    // (a real incident: caused FK constraint errors in production logs).
+    import('@/lib/olt/poller')
+      .then(({ pollOLT }) => pollOLT(oltId))
+      .catch((pollError) => console.error('[Create OLT] Background initial poll failed (non-fatal):', pollError));
 
     return NextResponse.json({
       success: true,
-      olt: freshOlt ? { ...freshOlt, uptime: Number(freshOlt.uptime) } : { ...olt, uptime: Number(olt.uptime) },
+      olt: { ...olt, uptime: Number(olt.uptime) },
     });
   } catch (error: any) {
     console.error('Create OLT error:', error);
