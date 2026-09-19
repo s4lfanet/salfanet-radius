@@ -1748,6 +1748,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
         const data = await res.json();
         const o = data.olt;
         setOlt(o);
+        return o;
         setSettings({
           vendor: o.vendor ?? 'huawei',
           model: o.model ?? '',
@@ -1831,26 +1832,42 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
   const handleSyncOLT = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
     setPolling(true);
     try {
+      const syncTriggeredAt = Date.now();
       const res = await fetch(`/api/olt/${id}/sync`, { method: 'POST' });
       const data = await res.json();
       if (!res.ok) {
         if (!silent) showError(`Sync failed: ${data.error ?? 'Unknown error'}`);
-      } else if (data.background) {
-        // Sync is running in background - auto-refresh after 30s
-        if (!silent) showInfo(data.message ?? 'Sync started - data will refresh automatically');
-        setTimeout(async () => {
-          await fetchOLT();
-          setPolling(false);
-        }, 30_000);
-        return; // don't clear polling yet - keep button disabled during wait
-      } else {
-        await fetchOLT();
-        if (!silent) showSuccess(data.message ?? 'OLT sync completed');
+        setPolling(false);
+        return;
       }
+      if (data.background) {
+        if (!silent) showInfo(data.message ?? 'Sync started - data will refresh automatically');
+        // Poll for completion instead of a fixed 30s timer — a Telnet-heavy
+        // discovery (per-ONU distance lookups included) can take anywhere
+        // from tens of seconds to a few minutes depending on how many ONUs
+        // the OLT has. A fixed delay either shows stale/incomplete data (too
+        // short) or feels unresponsive (padded long to be safe). Instead,
+        // re-fetch every 5s and keep waiting until lastPollAt actually
+        // advances past when this sync was triggered, capped at 5 minutes.
+        const deadline = Date.now() + 5 * 60 * 1000;
+        const checkDone = async () => {
+          const fresh = await fetchOLT();
+          const lastPollAtMs = fresh?.lastPollAt ? new Date(fresh.lastPollAt).getTime() : 0;
+          if (lastPollAtMs >= syncTriggeredAt || Date.now() >= deadline) {
+            setPolling(false);
+            return;
+          }
+          setTimeout(checkDone, 5000);
+        };
+        setTimeout(checkDone, 5000);
+        return; // keep `polling` true until checkDone finishes above
+      }
+      await fetchOLT();
+      if (!silent) showSuccess(data.message ?? 'OLT sync completed');
+      setPolling(false);
     } catch (e) {
       console.error('Sync failed', e);
       if (!silent) showError('Sync failed - check network connection');
-    } finally {
       setPolling(false);
     }
   }, [fetchOLT, id]);
@@ -1921,14 +1938,13 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
   const handleExportCSV = () => {
     if (!olt) return;
     const rows = [
-      ['Location', 'Serial Number', 'MAC', 'Status', 'RX Power (dBm)', 'TX Power (dBm)', 'Distance (m)', 'Customer', 'Username', 'Last Seen'],
+      ['Location', 'Serial Number', 'MAC', 'Status', 'RX Power (dBm)', 'Distance (m)', 'Customer', 'Username', 'Last Seen'],
       ...olt.onuStatuses.map((o) => [
         `${o.frame}/${o.slot}/${o.port}:${o.onuId}`,
         o.serialNumber ?? '',
         o.macAddress ?? '',
         o.status,
         o.rxPower?.toString() ?? '',
-        o.txPower?.toString() ?? '',
         o.distance?.toString() ?? '',
         o.customer?.name ?? '',
         o.customer?.username ?? '',
@@ -2189,7 +2205,6 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                   <th className="py-2.5 pr-4 font-medium">Status</th>
                   <th className="py-2.5 pr-4 font-medium">Signal</th>
                   <th className="py-2.5 pr-4 font-medium">RX Power</th>
-                  <th className="py-2.5 pr-4 font-medium">TX Power</th>
                   <th className="py-2.5 pr-4 font-medium">Distance</th>
                   <th className="py-2.5 pr-4 font-medium">Customer</th>
                   <th className="py-2.5 pr-4 font-medium">Last Seen</th>
@@ -2241,13 +2256,6 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                         {onu.rxPower !== null ? (
                           <span className={`font-mono text-xs font-medium ${onu.rxPower < -27 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
                             {onu.rxPower.toFixed(2)} dBm
-                          </span>
-                        ) : <span className="text-gray-400 text-xs">-</span>}
-                      </td>
-                      <td className="py-2.5 pr-4">
-                        {onu.txPower !== null ? (
-                          <span className="font-mono text-xs font-medium text-muted-foreground">
-                            {onu.txPower.toFixed(2)} dBm
                           </span>
                         ) : <span className="text-gray-400 text-xs">-</span>}
                       </td>
