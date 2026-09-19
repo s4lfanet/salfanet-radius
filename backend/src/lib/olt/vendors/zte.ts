@@ -353,13 +353,24 @@ async function discoverPonV21(
   if (regWalk.success && regWalk.results) {
     for (const [oid, regVal] of Object.entries(regWalk.results)) {
       const parts = oid.split('.');
-      const onuId   = parseInt(parts[parts.length - 1], 10);
-      const onuSlot = parseInt(parts[parts.length - 2], 10);
-      if (isNaN(onuId) || isNaN(onuSlot) || onuId <= 0 || onuId > 128) continue;
+      // Verified against a live C320 V2.1.0: this OID's actual suffix is
+      // `.ponIndex.{realOnuId}.{gemPortOrChannel}` — the LAST component is a
+      // constant (always "1" on this device, the GEM/channel index), and the
+      // per-ONU distinguishing ID is the one BEFORE it. The previous code had
+      // these two swapped, so every ONU on a port was pushed with the same
+      // constant onuId="1" — on a port with multiple real ONUs, they all
+      // collided on the same (oltId, frame, slot, port, onuId) DB key and
+      // only one survived, making a port with e.g. 21 real ONUs look like it
+      // had exactly one. (Confirmed live: port 8 has 5 real ONUs, and its
+      // regStatus walk is `.<ponIndex>.1.1`, `.2.1` .. `.5.1` — the "1..5" is
+      // the real ID, matching the CLI's `1/1/8:1` .. `1/1/8:5`.)
+      const onuId       = parseInt(parts[parts.length - 2], 10);
+      const gemPortIdx  = parseInt(parts[parts.length - 1], 10);
+      if (isNaN(onuId) || isNaN(gemPortIdx) || onuId <= 0 || onuId > 128) continue;
       if (parseInt(regVal) !== 1) continue; // skip non-registered ONUs
       registeredIds.add(onuId);
 
-      const slotIdKey = `${onuSlot}.${onuId}`;
+      const slotIdKey = `${onuId}.${gemPortIdx}`;
       const idKey     = `${onuId}`;
 
       // Oper state
@@ -400,15 +411,17 @@ async function discoverPonV21(
     }
   }
 
-  // Discover unregistered ONUs from seenWalk (already fetched above in parallel)
-  const unregisteredIds: number[] = [];
+  // Discover unregistered ONUs from seenWalk (already fetched above in parallel).
+  // Same OID shape as the regStatus table above (`.ponIndex.{realOnuId}.{subIndex}`,
+  // subIndex sometimes 1 *and* 2 for the same onu) — real ID is second-to-last.
+  const unregisteredIds = new Set<number>();
   if (seenWalk.success && seenWalk.results) {
     for (const oid of Object.keys(seenWalk.results)) {
       const parts = oid.split('.');
-      const onuId = parseInt(parts[parts.length - 1], 10);
+      const onuId = parseInt(parts[parts.length - 2], 10);
       if (isNaN(onuId) || onuId <= 0 || onuId > 128) continue;
       if (registeredIds.has(onuId)) continue;
-      unregisteredIds.push(onuId);
+      unregisteredIds.add(onuId);
     }
   }
 
