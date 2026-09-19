@@ -451,7 +451,16 @@ function extractDeviceInfo(device: any) {
   // devices per band (tie-break: lowest index = primary SSID).
   const activeWlanConfigs: any[] = [];
   for (const band of ['2.4GHz', '5GHz']) {
-    const candidates = wlanConfigs.filter(w => w.band === band && w.enabled);
+    let candidates = wlanConfigs.filter(w => w.band === band && w.enabled);
+    if (candidates.length === 0) {
+      // Many ONT firmwares never report a usable `Enable` value (missing,
+      // stale, or not refreshed by GenieACS), which made `enabled` false
+      // even for a radio that's actually broadcasting — silently dropping
+      // the whole band (this is what hid 2.4GHz on the customer WiFi page
+      // whenever nothing happened to be connected to it at the time).
+      // Fall back to any config for this band that at least has a real SSID.
+      candidates = wlanConfigs.filter(w => w.band === band && w.ssid);
+    }
     if (candidates.length === 0) continue;
     candidates.sort((a, b) => (b.totalAssociations - a.totalAssociations) || (a.index - b.index));
     activeWlanConfigs.push(candidates[0]);
