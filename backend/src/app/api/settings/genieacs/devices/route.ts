@@ -104,6 +104,7 @@ const parameterPaths = {
   ],
   rxPower: [
     'VirtualParameters.redaman',
+    'VirtualParameters.RXPower',
     'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.RXPower',
     'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.RXPower',
     'InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.RXPower',
@@ -169,7 +170,8 @@ const parameterPaths = {
   temp: [
     'VirtualParameters.temp',
     'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TransceiverTemperature',
-    'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.TransceiverTemperature'
+    'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.TransceiverTemperature',
+    'InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.TransceiverTemperature'
   ],
   userConnected: [
     'VirtualParameters.userconnected',

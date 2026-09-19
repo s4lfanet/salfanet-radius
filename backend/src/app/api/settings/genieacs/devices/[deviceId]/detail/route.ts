@@ -200,6 +200,35 @@ function extractWANConnections(device: Record<string, unknown>): WANConnection[]
   return connections;
 }
 
+// Use `fallback` only when the primary lookup came back empty ('-').
+function withFallback(primary: string, fallback: string | undefined): string {
+  if (primary !== '-' && primary !== '') return primary;
+  return fallback && fallback !== '-' && fallback !== '' ? fallback : primary;
+}
+
+// Picks the WAN connection that actually represents the customer's live
+// session, since its WANConnectionDevice index varies by ONT model/config —
+// some put it at .1, others (observed on a FiberHome HG6145D2) at .2, with
+// .1 reserved for a separate management/IP connection. The fixed-path
+// lookups in `parameterPaths` only ever check WANConnectionDevice.1, so
+// PPPoE username/IP/DNS silently showed "-" whenever a device used a
+// different index. Prefers an enabled PPPoE connection with a real
+// username, then any PPPoE connection with a username, then any connection
+// with a real external IP.
+function pickBestWanConnection(connections: WANConnection[]): WANConnection | null {
+  if (connections.length === 0) return null;
+  const hasUsername = (c: WANConnection) => c.username !== '-' && c.username !== '';
+  const hasIP = (c: WANConnection) => c.externalIPAddress !== '-' && c.externalIPAddress !== '';
+
+  return (
+    connections.find(c => c.connectionType === 'PPPoE' && c.enable && hasUsername(c)) ||
+    connections.find(c => c.connectionType === 'PPPoE' && hasUsername(c)) ||
+    connections.find(c => c.enable && hasIP(c)) ||
+    connections.find(c => hasIP(c)) ||
+    connections[0]
+  );
+}
+
 // Helper to extract IP from ConnectionRequestURL
 function extractIPFromURL(url: string): string {
   if (!url || url === '-') return '-';
@@ -664,12 +693,16 @@ const parameterPaths = {
   ],
   rxPower: [
     'VirtualParameters.redaman',
+    'VirtualParameters.RXPower',
     'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.RXPower',
     'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.RXPower',
+    'InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.RXPower',
   ],
   txPower: [
+    'VirtualParameters.TXPower',
     'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.TXPower',
     'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TXPower',
+    'InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.TXPower',
   ],
   pppoeIP: [
     'VirtualParameters.pppIP',
@@ -698,19 +731,23 @@ const parameterPaths = {
   ],
   ponMode: [
     'VirtualParameters.PonMode',
+    'VirtualParameters.getponmode',
     'InternetGatewayDevice.DeviceInfo.AccessType',
   ],
   temp: [
     'VirtualParameters.temp',
     'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TransceiverTemperature',
+    'InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.TransceiverTemperature',
   ],
   voltage: [
     'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TransceiverVoltage',
     'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.TransceiverVoltage',
+    'InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.TransceiverVoltage',
   ],
   biasCurrent: [
     'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TransceiverBiasCurrent',
     'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.TransceiverBiasCurrent',
+    'InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.TransceiverBiasCurrent',
   ],
   lanIP: [
     'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.IPInterface.1.IPInterfaceIPAddress',
@@ -830,7 +867,8 @@ export async function GET(
     // Extract WLAN configs and connected devices
     const wlanConfigs = extractWLANConfigs(deviceRaw);
     const wanConnections = extractWANConnections(deviceRaw);
-    
+    const bestWanConnection = pickBestWanConnection(wanConnections);
+
     // AssociatedDevice is the PRIMARY and ONLY source for WiFi clients (real-time connected devices)
     const wifiClients = extractAssociatedDevices(deviceRaw, wlanConfigs);
     
@@ -871,14 +909,14 @@ export async function GET(
       manufacturer,
       model,
       oui,
-      pppoeUsername: getParameterValue(deviceRaw, parameterPaths.pppUsername),
-      pppoeIP: getParameterValue(deviceRaw, parameterPaths.pppoeIP),
+      pppoeUsername: withFallback(getParameterValue(deviceRaw, parameterPaths.pppUsername), bestWanConnection?.username),
+      pppoeIP: withFallback(getParameterValue(deviceRaw, parameterPaths.pppoeIP), bestWanConnection?.externalIPAddress),
       tr069IP,
       rxPower: normalizeRxPower(getParameterValue(deviceRaw, parameterPaths.rxPower)),
       txPower: getParameterValue(deviceRaw, parameterPaths.txPower),
       ponMode: getParameterValue(deviceRaw, parameterPaths.ponMode),
       uptime: normalizeUptime(getParameterValue(deviceRaw, parameterPaths.uptime)),
-      macAddress: getParameterValue(deviceRaw, parameterPaths.macAddress),
+      macAddress: withFallback(getParameterValue(deviceRaw, parameterPaths.macAddress), bestWanConnection?.macAddress),
       softwareVersion: getParameterValue(deviceRaw, parameterPaths.softwareVersion),
       hardwareVersion: getParameterValue(deviceRaw, parameterPaths.hardwareVersion),
       temp: getParameterValue(deviceRaw, parameterPaths.temp),
@@ -890,7 +928,7 @@ export async function GET(
       dhcpEnabled: getParameterValue(deviceRaw, parameterPaths.dhcpEnabled),
       dhcpStart: getParameterValue(deviceRaw, parameterPaths.dhcpStart),
       dhcpEnd: getParameterValue(deviceRaw, parameterPaths.dhcpEnd),
-      dns1: getParameterValue(deviceRaw, parameterPaths.dns1),
+      dns1: withFallback(getParameterValue(deviceRaw, parameterPaths.dns1), bestWanConnection?.dnsServers),
       // System info
       memoryFree: getParameterValue(deviceRaw, parameterPaths.memoryFree),
       memoryTotal: getParameterValue(deviceRaw, parameterPaths.memoryTotal),
