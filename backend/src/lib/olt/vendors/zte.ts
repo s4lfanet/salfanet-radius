@@ -23,10 +23,16 @@ const V21 = {
   onuSerial:      '.3.28.1.1.5',    // Serial (Hex-STRING: 8 bytes = 4 ASCII vendor + 4 hex id)
   // zxAnGponOnuRegTable (3.50.12.1.1) — indexed by .{col}.{ponIndex}.{onuSlot}.{onuId}
   // VERIFIED WORKING on ZTE C320 V2.1.0 via live SNMP walk
-  onuRegStatus: '.3.50.12.1.1.1',   // Registration status: 1=registered/active
+  onuRegStatus: '.3.50.12.1.1.1',   // Row presence = provisioned. Value itself is NOT an
+                                     // online/registered gate — seen live holding both 1 and 2
+                                     // for equally-real, equally-online ONUs on the same port.
   onuOperState: '.3.50.12.1.1.6',   // Oper state: 5=working/online, others=offline
-  onuRxPower:   '.3.50.12.1.1.10',  // ONU RX power (raw positive int, dBm = -(raw/1000))
-  onuDistance:  '.3.50.12.1.1.21',  // ONU distance from OLT in meters (VERIFIED: 328m on test site)
+  onuRxPower:   '.3.50.12.1.1.10',  // ONU RX power (raw positive int; dBm = raw/500 - 30, verified
+                                     // against 5 real ONUs' live values on a reference NMS)
+  // NOTE: `.3.50.12.1.1.21` looked like a per-ONU distance OID (and is
+  // documented as such in some other ZTE tooling) but on this firmware it
+  // returns the SAME constant for every ONU on every port — confirmed not
+  // usable; see the `distance` comment in discoverPonV21 below.
   board1Base:  268500992,            // pon1 index = board1Base + 1*256 = 268501248
   board2Base:  268509184,            // pon1 index = board2Base + 1*256 = 268509440
   ponIncrement: 256,
@@ -319,15 +325,14 @@ async function discoverPonV21(
   const ponIndex = ponIndexV21(board, pon);
   const base = V21.base;
 
-  // Walk ALL OID subtrees for this PON port in PARALLEL (7 concurrent SNMP walks).
+  // Walk ALL OID subtrees for this PON port in PARALLEL (6 concurrent SNMP walks).
   // This replaces N_onu × 5 sequential snmpGet calls with a single bulk walk pass.
-  const [regWalk, operWalk, serialWalk, rxWalk, descWalk, distWalk, seenWalk] = await Promise.all([
+  const [regWalk, operWalk, serialWalk, rxWalk, descWalk, seenWalk] = await Promise.all([
     snmpWalk(config, `${base}${V21.onuRegStatus}.${ponIndex}`),    // reg status  (.ponIndex.slot.onuId)
     snmpWalk(config, `${base}${V21.onuOperState}.${ponIndex}`),    // oper state  (.ponIndex.slot.onuId)
     snmpWalk(config, `${base}${V21.onuSerial}.${ponIndex}`),       // serial      (.ponIndex.onuId)
     snmpWalk(config, `${base}${V21.onuRxPower}.${ponIndex}`),      // rx power    (.ponIndex.slot.onuId)
     snmpWalk(config, `${base}${V21.onuDescription}.${ponIndex}`),  // description (.ponIndex.onuId)
-    snmpWalk(config, `${base}${V21.onuDistance}.${ponIndex}`),     // distance    (.ponIndex.slot.onuId)
     snmpWalk(config, `${ZTE_V21_SEEN_ONU_TABLE}.${ponIndex}`),     // seen/uncfg  (.ponIndex.slot.onuId)
   ]);
 
@@ -337,13 +342,11 @@ async function discoverPonV21(
 
   const operMap   = new Map<string, string>();
   const rxMap     = new Map<string, string>();
-  const distMap   = new Map<string, string>();
   const serialMap = new Map<string, string>();
   const descMap   = new Map<string, string>();
 
   if (operWalk.success && operWalk.results)   for (const [k,v] of Object.entries(operWalk.results))   operMap.set(lastTwoKey(k), v);
   if (rxWalk.success && rxWalk.results)       for (const [k,v] of Object.entries(rxWalk.results))     rxMap.set(lastTwoKey(k), v);
-  if (distWalk.success && distWalk.results)   for (const [k,v] of Object.entries(distWalk.results))   distMap.set(lastTwoKey(k), v);
   if (serialWalk.success && serialWalk.results) for (const [k,v] of Object.entries(serialWalk.results)) serialMap.set(lastOneKey(k), v);
   if (descWalk.success && descWalk.results)   for (const [k,v] of Object.entries(descWalk.results))   descMap.set(lastOneKey(k), v);
 
@@ -387,15 +390,28 @@ async function discoverPonV21(
                       : operVal === 0                   ? 'unknown'
                       : 'offline';
 
-      // Rx Power
+      // Rx Power. Formula verified against 5 real ONUs on a live C320
+      // (comparing raw SNMP values to the actual dBm shown by a reference
+      // NMS for the same ONUs): dBm = raw/500 - 30, e.g. raw=7230 -> -15.54
+      // dBm (matched to 0.00, others matched within ~0.05 dB of live jitter).
+      // The previous `-(raw/1000)` formula was simply wrong (e.g. it turned
+      // that same raw=7230 into -7.23 dBm instead of the real -15.54 dBm).
       let rxPower: number | null = null;
-      const rxRaw = parseInt(rxMap.get(slotIdKey) ?? '0', 10);
-      if (!isNaN(rxRaw) && rxRaw > 0 && rxRaw < 50000) rxPower = -(rxRaw / 1000);
+      const rxRaw = parseInt(rxMap.get(slotIdKey) ?? '', 10);
+      if (!isNaN(rxRaw) && rxRaw > 0 && rxRaw < 50000) rxPower = Math.round((rxRaw / 500 - 30) * 100) / 100;
 
-      // Distance
-      let distance: number | null = null;
-      const distRaw = parseInt(distMap.get(slotIdKey) ?? '0', 10);
-      if (!isNaN(distRaw) && distRaw > 0 && distRaw < 100000) distance = distRaw;
+      // Distance: OID `.3.50.12.1.1.21` does NOT carry a per-ONU value on
+      // this firmware — verified live it returns the exact same raw number
+      // (328) for every ONU on a port, and even across different ports,
+      // while the OLT's own CLI (`show gpon onu detail-info`) reports a
+      // real, differing per-ONU distance (e.g. 623m) for the same ONU. No
+      // scaling factor can fix a constant into varying real values, so this
+      // field is left null rather than showing a confidently wrong number.
+      // Getting the real value would require a per-ONU Telnet call, which
+      // this function deliberately avoids doing for every ONU during a bulk
+      // poll (see the serial-number comment below) — TODO: revisit if an
+      // accurate distance turns out to be worth the extra Telnet round-trips.
+      const distance: number | null = null;
 
       // Serial (hex bytes → ASCII). If SNMP hex can't be parsed, leave null.
       // Do NOT fallback to per-ONU Telnet `show gpon onu detail-info` during polling —
