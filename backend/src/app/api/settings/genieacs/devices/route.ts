@@ -136,6 +136,7 @@ const parameterPaths = {
   ],
   ponMode: [
     'VirtualParameters.PonMode',
+    'VirtualParameters.getponmode',
     'InternetGatewayDevice.DeviceInfo.AccessType',
     'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.WANAccessType'
   ],
@@ -172,6 +173,12 @@ const parameterPaths = {
     'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TransceiverTemperature',
     'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.TransceiverTemperature',
     'InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.TransceiverTemperature'
+  ],
+  voltage: [
+    'VirtualParameters.voltage',
+    'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TransceiverVoltage',
+    'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.TransceiverVoltage',
+    'InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.TransceiverVoltage'
   ],
   userConnected: [
     'VirtualParameters.userconnected',
@@ -343,6 +350,7 @@ async function fetchAndCacheDevices(host: string, username: string, password: st
           macAddress: getParameterValue(device, parameterPaths.macAddress),
           softwareVersion: getParameterValue(device, parameterPaths.softwareVersion),
           temp: getParameterValue(device, parameterPaths.temp),
+          voltage: getParameterValue(device, parameterPaths.voltage),
           userConnected: getParameterValue(device, parameterPaths.userConnected),
           status: getDeviceStatus(device._lastInform),
           lastInform: device._lastInform ? String(device._lastInform) : null,
