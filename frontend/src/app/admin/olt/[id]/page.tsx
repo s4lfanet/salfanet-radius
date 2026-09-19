@@ -1921,13 +1921,14 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
   const handleExportCSV = () => {
     if (!olt) return;
     const rows = [
-      ['Location', 'Serial Number', 'MAC', 'Status', 'RX Power (dBm)', 'Distance (m)', 'Customer', 'Username', 'Last Seen'],
+      ['Location', 'Serial Number', 'MAC', 'Status', 'RX Power (dBm)', 'TX Power (dBm)', 'Distance (m)', 'Customer', 'Username', 'Last Seen'],
       ...olt.onuStatuses.map((o) => [
         `${o.frame}/${o.slot}/${o.port}:${o.onuId}`,
         o.serialNumber ?? '',
         o.macAddress ?? '',
         o.status,
         o.rxPower?.toString() ?? '',
+        o.txPower?.toString() ?? '',
         o.distance?.toString() ?? '',
         o.customer?.name ?? '',
         o.customer?.username ?? '',
@@ -2188,6 +2189,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                   <th className="py-2.5 pr-4 font-medium">Status</th>
                   <th className="py-2.5 pr-4 font-medium">Signal</th>
                   <th className="py-2.5 pr-4 font-medium">RX Power</th>
+                  <th className="py-2.5 pr-4 font-medium">TX Power</th>
                   <th className="py-2.5 pr-4 font-medium">Distance</th>
                   <th className="py-2.5 pr-4 font-medium">Customer</th>
                   <th className="py-2.5 pr-4 font-medium">Last Seen</th>
@@ -2239,6 +2241,13 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                         {onu.rxPower !== null ? (
                           <span className={`font-mono text-xs font-medium ${onu.rxPower < -27 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
                             {onu.rxPower.toFixed(2)} dBm
+                          </span>
+                        ) : <span className="text-gray-400 text-xs">-</span>}
+                      </td>
+                      <td className="py-2.5 pr-4">
+                        {onu.txPower !== null ? (
+                          <span className="font-mono text-xs font-medium text-muted-foreground">
+                            {onu.txPower.toFixed(2)} dBm
                           </span>
                         ) : <span className="text-gray-400 text-xs">-</span>}
                       </td>

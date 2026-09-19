@@ -1208,6 +1208,8 @@ model networkOLT {
   isOnline          Boolean   @default(false)
   uptime            BigInt    @default(0)
   temperature       Float?
+  cpuUsage          Float?
+  memoryUsage       Float?
   totalOnu          Int       @default(0)
   onlineOnu         Int       @default(0)
   offlineOnu        Int       @default(0)

@@ -154,6 +154,8 @@ export async function pollOLTWithOptions(
         isOnline,
         uptime,
         temperature,
+        cpuUsage,
+        memoryUsage,
         totalOnu,
         onlineOnu,
         offlineOnu,
