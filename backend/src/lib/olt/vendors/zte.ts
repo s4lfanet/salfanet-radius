@@ -5,7 +5,7 @@
  * ZTE C320 V2.1: base OID 1.3.6.1.4.1.3902.1012
  * ZTE C320 V2.2: base OID 1.3.6.1.4.1.3902.1082
  *
- * Reference: github.com/s4lfanet/go-api-c320
+ * Reference: github.com/s4lfanet/go-api-c320, github.com/s4lfanet/nms-ztec320
  */
 
 import { SNMPConfig, snmpGet, snmpWalk } from '../snmp';
@@ -44,6 +44,8 @@ const V22 = {
   onuSerial:  '.500.10.2.3.3.1.18', // Serial number
   onuStatus:  '.500.10.2.3.8.1.4',  // Online status (1=online)
   onuRxPower: '.500.20.2.2.2.1.10', // RX Power (×0.01 dBm), suffix .{x}.{id}.1
+  onuTxPower: '.500.20.2.2.2.1.14', // TX Power (×0.01 dBm), suffix .{x}.{id}.1 — same tree as RX
+  onuDistance: '.500.10.2.3.10.1.2', // Distance from OLT in meters, suffix .{x}.{id}
   onuModel:   '.3.50.11.2.1.17',    // ONU model (uses typeSuffix)
   board1IdBase:   285278464,   board2IdBase:   285278720,
   board1TypeBase: 268500992,   board2TypeBase: 268566528,
@@ -62,10 +64,20 @@ const ZTE_V21_PON_TABLE = '1.3.6.1.4.1.3902.1012.3.11.3.1.1';
 const C320_TEMP_V21     = '1.3.6.1.4.1.3902.1012.3.36.1.1.4';  // board temp table (likely unavailable)
 const C320_CPU_V21      = '1.3.6.1.4.1.3902.1012.3.38.1.1.4';  // board CPU table (likely unavailable)
 const C320_MEM_V21      = '1.3.6.1.4.1.3902.1012.3.38.1.1.3';  // board memory table (likely unavailable)
-// C320 V2.2 board OIDs
+// C320 V2.2 board OIDs (ONU/PON-tree fallback — see CARD_* below for the
+// dedicated chassis-health tree, which is more likely to actually respond)
 const C320_TEMP_V22     = '1.3.6.1.4.1.3902.1082.500.20.2.1.2.1.4';
 const C320_CPU_V22      = '1.3.6.1.4.1.3902.1082.500.20.2.1.2.1.2';
 const C320_MEM_V22      = '1.3.6.1.4.1.3902.1082.500.20.2.1.2.1.3';
+// C320 V2.2 dedicated card/board health tree (zxAnEsAsic..CardTable family).
+// Reference: github.com/s4lfanet/nms-ztec320 (a sibling ZTE C320 NMS project) —
+// documented there as the working OID tree for per-slot card CPU/memory/temp,
+// fan speed, and PSU voltage, distinct from the ONU/PON-data tree above.
+// Tried BEFORE the ONU-tree fallback since it's the tree actually meant for
+// chassis health rather than repurposed ONU-indexed OIDs.
+const CARD_CPU_V22      = '1.3.6.1.4.1.3902.1082.10.1.2.4.1.9.1.1';
+const CARD_MEM_V22      = '1.3.6.1.4.1.3902.1082.10.1.2.4.1.11.1.1';
+const CARD_TEMP_V22     = '1.3.6.1.4.1.3902.1082.10.10.2.1.6.1.2.1.1';
 // Generic ZTE C300/C600 fallback
 const ZTE_OIDS = {
   temperature: '1.3.6.1.4.1.3902.1015.1015.6.1.3.1.2.0',
@@ -161,13 +173,17 @@ async function walkFirstNumber(
 const isValidTemp = (n: number) => n >= 10 && n <= 85;
 
 export async function getTemperature(config: SNMPConfig): Promise<number | null> {
-  // 1) C320 V2.1
+  // 1) Dedicated card/board health tree (V2.2) — the tree actually meant
+  // for chassis health, tried before the repurposed ONU-tree OID below.
+  const tCard = await walkFirstNumber(config, CARD_TEMP_V22, isValidTemp);
+  if (tCard !== null) return tCard;
+  // 2) C320 V2.1
   const t21 = await walkFirstNumber(config, C320_TEMP_V21, isValidTemp);
   if (t21 !== null) return t21;
-  // 2) C320 V2.2
+  // 3) C320 V2.2 (ONU-tree fallback)
   const t22 = await walkFirstNumber(config, C320_TEMP_V22, isValidTemp);
   if (t22 !== null) return t22;
-  // 3) C300/C600 generic
+  // 4) C300/C600 generic
   const res = await snmpGet(config, ZTE_OIDS.temperature);
   if (res.success && res.value) {
     const n = parseFloat(res.value);
@@ -177,6 +193,8 @@ export async function getTemperature(config: SNMPConfig): Promise<number | null>
 }
 
 export async function getCpuUsage(config: SNMPConfig): Promise<number | null> {
+  const cCard = await walkFirstNumber(config, CARD_CPU_V22);
+  if (cCard !== null) return cCard;
   const c21 = await walkFirstNumber(config, C320_CPU_V21);
   if (c21 !== null) return c21;
   const c22 = await walkFirstNumber(config, C320_CPU_V22);
@@ -187,6 +205,8 @@ export async function getCpuUsage(config: SNMPConfig): Promise<number | null> {
 }
 
 export async function getMemoryUsage(config: SNMPConfig): Promise<number | null> {
+  const mCard = await walkFirstNumber(config, CARD_MEM_V22);
+  if (mCard !== null) return mCard;
   const m21 = await walkFirstNumber(config, C320_MEM_V21);
   if (m21 !== null) return m21;
   const m22 = await walkFirstNumber(config, C320_MEM_V22);
@@ -526,12 +546,24 @@ async function discoverPonV22(config: SNMPConfig, board: number, pon: number): P
     const serialR = await snmpGet(config, `${base}${V22.onuSerial}.${idSuffix}.${onuId}`);
     const typeR   = await snmpGet(config, `${base}${V22.onuModel}.${typeSuffix}.${onuId}`);
     const rxR     = await snmpGet(config, `${base}${V22.onuRxPower}.${idSuffix}.${onuId}.1`);
+    const txR     = await snmpGet(config, `${base}${V22.onuTxPower}.${idSuffix}.${onuId}.1`);
+    const distR   = await snmpGet(config, `${base}${V22.onuDistance}.${idSuffix}.${onuId}`);
 
     const statusVal = statusR.success && statusR.value ? parseInt(statusR.value) : 0;
     let rxPower: number | null = null;
     if (rxR.success && rxR.value) {
       const raw = parseInt(rxR.value);
       if (!isNaN(raw) && raw !== 0) rxPower = raw * 0.01;
+    }
+    let txPower: number | null = null;
+    if (txR.success && txR.value) {
+      const raw = parseInt(txR.value);
+      if (!isNaN(raw) && raw !== 0) txPower = raw * 0.01;
+    }
+    let distance: number | null = null;
+    if (distR.success && distR.value) {
+      const raw = parseInt(distR.value);
+      if (!isNaN(raw) && raw > 0 && raw < 100000) distance = raw;
     }
 
     onus.push({
@@ -541,6 +573,8 @@ async function discoverPonV22(config: SNMPConfig, board: number, pon: number): P
       status: statusVal === 1 ? 'online' : 'offline',
       onuType: typeR.value ?? null,
       rxPower,
+      txPower,
+      distance,
     });
   }
   return onus;
