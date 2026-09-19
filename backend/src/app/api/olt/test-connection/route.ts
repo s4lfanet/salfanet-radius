@@ -65,12 +65,15 @@ export async function POST(request: NextRequest) {
       let message = '';
 
       if (protocol === 'snmp') {
-        success = await testSNMP({
+        const snmpResult = await testSNMP({
           host: ipAddress,
           community: snmpCommunity ?? 'public',
           port: snmpPort,
         });
-        message = success ? 'SNMP connection successful' : 'SNMP connection failed';
+        success = snmpResult.success;
+        message = success
+          ? 'SNMP connection successful'
+          : `SNMP connection failed: ${snmpResult.error ?? 'unknown error'}`;
       } else if (protocol === 'ssh') {
         if (!username) {
           return NextResponse.json({ error: 'Username required for SSH' }, { status: 400 });
@@ -106,8 +109,13 @@ export async function POST(request: NextRequest) {
     // Always test SNMP
     const snmpStart = Date.now();
     try {
-      const snmpOk = await testSNMP({ host: ipAddress, community: snmpCommunity ?? 'public', port: snmpPort });
-      results.push({ method: 'SNMP', success: snmpOk, message: snmpOk ? 'Connected' : 'Failed', time: Date.now() - snmpStart });
+      const snmpResult = await testSNMP({ host: ipAddress, community: snmpCommunity ?? 'public', port: snmpPort });
+      results.push({
+        method: 'SNMP',
+        success: snmpResult.success,
+        message: snmpResult.success ? 'Connected' : (snmpResult.error ?? 'Failed'),
+        time: Date.now() - snmpStart,
+      });
     } catch (e: any) {
       results.push({ method: 'SNMP', success: false, message: e.message, time: Date.now() - snmpStart });
     }

@@ -613,7 +613,13 @@ fi
 # ─── Ensure required system packages ─────────────────────────────────────
 print_step "Checking system dependencies"
 MISSING_PKGS=""
-for pkg in sshpass xl2tpd; do
+# sshpass/xl2tpd: VPN client tooling. expect/snmp: required by the OLT
+# monitoring feature (backend spawns `telnet`-via-expect and `snmpget`/
+# `snmpwalk` as CLI subprocesses) — installs that predate this feature,
+# or that never went through install-system.sh's full package list,
+# would otherwise have Telnet connection tests succeed while every SNMP
+# test silently fails with "command not found".
+for pkg in sshpass xl2tpd expect snmp; do
     if ! dpkg -s "$pkg" &>/dev/null; then
         MISSING_PKGS="$MISSING_PKGS $pkg"
     fi
@@ -638,7 +644,7 @@ if [ -n "$MISSING_PKGS" ]; then
     print_info "Installing missing packages:$MISSING_PKGS"
     apt-get install -y $MISSING_PKGS || print_info "Warning: some packages could not be installed"
 else
-    print_success "System packages OK (sshpass, xl2tpd, wg tools if applicable)"
+    print_success "System packages OK (sshpass, xl2tpd, expect, snmp, wg tools if applicable)"
 fi
 
 # ─── Stop services ────────────────────────────────────────────────────────
