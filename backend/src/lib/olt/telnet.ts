@@ -39,6 +39,15 @@ function escapeExpectString(value: string): string {
 
 /**
  * Execute command via Telnet using expect script
+ *
+ * IMPORTANT: intentionally does NOT `expect eof` after sending "exit". Some
+ * ZTE firmware (confirmed on a live C320 V2.1.0) answers "exit" with a
+ * "confirm to logout without saving? [yes/no]:" prompt that this script
+ * never answers — waiting for eof after that just burns the full `timeout`
+ * (30s default) doing nothing, on EVERY single telnet command. The command's
+ * actual output was already captured by the earlier expect block (matched
+ * on the post-command "#"/">" prompt), so nothing is lost by letting the
+ * script end here — expect closes the spawned telnet session on exit.
  */
 export async function executeCommand(config: TelnetConfig, command: string): Promise<TelnetResult> {
   const scriptPath = join('/tmp', `telnet-${Date.now()}-${Math.random().toString(36).slice(2)}.exp`);
@@ -74,8 +83,6 @@ expect {
   ">" { send "exit\\r" }
   timeout { send "exit\\r" }
 }
-
-expect eof
 `;
 
     await writeFile(scriptPath, expectScript);
@@ -150,8 +157,11 @@ ${cmdLines}
 
 ${sendEnd ? 'send "end\\r"\nexpect {\n  -re {--More--} { send " "; exp_continue }\n  -re {[>#]} { }\n  timeout { exit 1 }\n  eof { exit 1 }\n}\n' : ''}
 send "exit\\r"
-expect eof
 `;
+    // No `expect eof` after "exit" — see executeCommand's comment above for
+    // why (some ZTE firmware's unanswered logout confirmation prompt turns
+    // that into a flat per-call timeout for no benefit; all command output
+    // was already captured above).
 
     await writeFile(scriptPath, expectScript);
     await execAsync(`chmod +x ${scriptPath}`);
@@ -169,6 +179,9 @@ expect eof
  * Test Telnet connectivity — check port open first, then try auth
  * Uses a minimal expect script: just connect, wait for any prompt/banner, and disconnect.
  * Avoids running `display version` which may hang on some OLT models.
+ * Does not `expect eof` after sending "exit" — see executeCommand's comment;
+ * success is already known once we see a shell prompt, so there's nothing
+ * to gain from waiting out a logout confirmation the script won't answer.
  */
 export async function testTelnet(config: TelnetConfig): Promise<boolean> {
   // 1. Fast TCP port check (3s timeout)
@@ -197,7 +210,7 @@ spawn telnet ${config.host} ${config.port || 23}
 expect {
   -re {(^|\r|\n)([Uu]sername|[Ll]ogin):} { send "${config.username}\\r" }
   -re {[Pp]assword:}            { send "${config.password}\\r" }
-  -re {[>#$]}                   { send "exit\\r"; expect eof; exit 0 }
+  -re {[>#$]}                   { send "exit\\r"; exit 0 }
   timeout                        { exit 1 }
   eof                            { exit 1 }
 }
@@ -211,7 +224,7 @@ expect {
 
 # Wait for any shell prompt — if we get it, auth succeeded
 expect {
-  -re {[>#$]} { send "exit\\r"; expect eof; exit 0 }
+  -re {[>#$]} { send "exit\\r"; exit 0 }
   timeout     { exit 0 }
   eof         { exit 0 }
 }
