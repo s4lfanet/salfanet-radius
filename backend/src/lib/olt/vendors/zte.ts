@@ -341,8 +341,22 @@ async function fetchPonStateViaTelnet(
 
     const stateMap = new Map<number, string>();
     for (const rawLine of result.output.split('\n')) {
-      const line = rawLine.trim();
-      if (!line || line.includes('---') || /^OnuIndex/i.test(line) || /^ONU\b/i.test(line)) continue;
+      // The device's own "--More--" pagination prompt (answered with a
+      // space to page through) can land on the SAME line as the next row of
+      // data once echoed back. The raw bytes aren't just "--More--" plus
+      // plain spaces though — the device also sends a backspace/space erase
+      // sequence (\x08 repeated) to visually wipe "--More--" off a real
+      // terminal, e.g. " --More--\x08 \x08\x08 ...1/1/1:45  enable...". A
+      // plain text-only `--More--` strip leaves those \x08 bytes behind,
+      // which `.trim()` does NOT treat as whitespace, so the row's onu-index
+      // still ends up mangled instead of "1/1/1:45" and silently fails to
+      // match below. Strip the backspace bytes FIRST, then the prompt text.
+      // Confirmed live: this exact sequence dropped one Dying Gasp ONU (of 3
+      // on a 66-ONU port) from the state map, falling back to SNMP's
+      // operState (which can't tell Dying Gasp apart from Online) and
+      // showing it as online instead.
+      const line = rawLine.replace(/\x08/g, '').replace(/--More--/g, '').trim();
+      if (!line || /^-+$/.test(line) || /^OnuIndex/i.test(line) || /^ONU\b/i.test(line)) continue;
       const parts = line.split(/\s+/);
       if (parts.length < 4) continue;
       const idMatch = parts[0].match(/^\d+\/\d+\/\d+:(\d+)$/);
