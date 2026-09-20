@@ -498,7 +498,7 @@ function NavItem({ item, pendingCount, manualPaymentsCount, unreadNotifications,
                     </span>
                   )}
                   {child.badge === 'manualPayments' && manualPaymentsCount > 0 && (
-                    <span className="bg-amber-500 text-black text-[9px] px-1.5 py-0.5 rounded-md font-bold min-w-[18px] text-center  animate-pulse">
+                    <span className="bg-amber-500 text-black text-[9px] px-1.5 py-0.5 rounded-md font-bold min-w-[18px] text-center animate-pulse">
                       {manualPaymentsCount}
                     </span>
                   )}
@@ -1132,11 +1132,11 @@ function AdminLayoutContent({
             <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-blue-400 rounded-br-lg" />
 
             <div className="flex items-center gap-4 mb-6">
-              <div className="p-3 bg-amber-500/10 rounded-xl border border-amber-500/30  animate-pulse flex items-center justify-center">
+              <div className="p-3 bg-amber-500/10 rounded-xl border border-amber-500/30 animate-pulse flex items-center justify-center">
                 <Timer className="w-6 h-6 text-amber-400" />
               </div>
               <div>
-                <h3 className="text-lg font-black text-foreground tracking-wider uppercase drop-">
+                <h3 className="text-lg font-black text-foreground tracking-wider uppercase">
                   {t('common.sessionTimeout')}
                 </h3>
                 <p className="text-[10px] text-brand-400/60 tracking-[0.2em] uppercase font-medium">
@@ -1151,7 +1151,7 @@ function AdminLayoutContent({
               </p>
               <div className="inline-flex items-center justify-center gap-3 px-6 py-4 bg-amber-500/10 border border-amber-500/30 rounded-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
                 <AlertTriangle className="w-5 h-5 text-amber-400 animate-pulse" />
-                <span className="text-2xl sm:text-3xl md:text-4xl font-mono font-black text-amber-400 tabular-nums drop-">
+                <span className="text-2xl sm:text-3xl md:text-4xl font-mono font-black text-amber-400 tabular-nums">
                   {idleCountdown}
                 </span>
                 <span className="text-xs text-amber-400 uppercase font-bold tracking-wider">{t('common.seconds')}</span>

@@ -37,9 +37,11 @@ export default function TechnicianDashboardPage() {
   const [filterStatus, setFilterStatus] = useState('');
   const [filterPriority, setFilterPriority] = useState('');
   const [showMyTasks, setShowMyTasks] = useState(false);
+  const [ticketsError, setTicketsError] = useState<string | null>(null);
 
   const loadTickets = async () => {
     setLoading(true);
+    setTicketsError(null);
     try {
       const params = new URLSearchParams();
       if (filterStatus) params.append('status', filterStatus);
@@ -47,8 +49,8 @@ export default function TechnicianDashboardPage() {
       if (showMyTasks) params.append('mine', 'true');
       const data = await apiAdmin<{ tickets: Ticket[] }>(`/api/technician/tickets?${params}`);
       setTickets(data.tickets || []);
-    } catch {
-      // silent
+    } catch (e: unknown) {
+      setTicketsError(e instanceof Error ? e.message : 'Gagal memuat daftar tugas');
     } finally {
       setLoading(false);
     }
@@ -157,8 +159,8 @@ export default function TechnicianDashboardPage() {
           <option value="MEDIUM">{t('technician.priorityMedium')}</option>
           <option value="LOW">{t('technician.priorityLow')}</option>
         </select>
-        <label className="flex items-center gap-1.5 cursor-pointer">
-          <input type="checkbox" checked={showMyTasks} onChange={(e) => setShowMyTasks(e.target.checked)} className="w-3.5 h-3.5 rounded border-border bg-input text-brand-500 focus:ring-brand-500/50" />
+        <label className="flex items-center gap-1.5 cursor-pointer py-2.5 min-h-[44px]">
+          <input type="checkbox" checked={showMyTasks} onChange={(e) => setShowMyTasks(e.target.checked)} className="w-4 h-4 rounded border-border bg-input text-brand-500 focus:ring-brand-500/50" />
           <span className="text-xs text-muted-foreground">{t('technician.myTasksOnly')}</span>
         </label>
         <button onClick={loadTickets} className="ml-auto p-2 bg-muted border border-border text-muted-foreground rounded-xl hover:bg-accent transition" title="Perbarui Data">
@@ -170,6 +172,15 @@ export default function TechnicianDashboardPage() {
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-8 h-8 animate-spin text-brand-500" />
+        </div>
+      ) : ticketsError ? (
+        <div className="text-center py-20 text-destructive">
+          <AlertTriangle className="w-12 h-12 mx-auto mb-3 opacity-50" />
+          <h3 className="text-base font-bold mb-1">Gagal memuat tugas</h3>
+          <p className="text-xs text-muted-foreground mb-4">{ticketsError}</p>
+          <button onClick={loadTickets} className="px-4 py-2 rounded-xl bg-destructive text-white text-sm font-semibold hover:brightness-110">
+            Coba Lagi
+          </button>
         </div>
       ) : tickets.length === 0 ? (
         <div className="text-center py-20 text-muted-foreground">
@@ -212,7 +223,7 @@ export default function TechnicianDashboardPage() {
                   <button
                     onClick={() => handleAction(ticket.id, 'claim')}
                     disabled={actionLoading === ticket.id}
-                    className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black text-xs font-bold rounded-xl hover: transition disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black text-xs font-bold rounded-xl hover:brightness-110 transition disabled:opacity-50"
                   >
                     {actionLoading === ticket.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                     {t('technician.takeTask')}
@@ -222,7 +233,7 @@ export default function TechnicianDashboardPage() {
                   <button
                     onClick={() => handleAction(ticket.id, 'update_status', 'RESOLVED')}
                     disabled={actionLoading === ticket.id}
-                    className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold rounded-xl hover: transition disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold rounded-xl hover:brightness-110 transition disabled:opacity-50"
                   >
                     {actionLoading === ticket.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                     Selesaikan

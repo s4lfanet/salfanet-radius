@@ -27,14 +27,18 @@ export default function CollectorBillingPage() {
   const [btPrinter, setBtPrinter] = useState<BluetoothPrinter | null>(null);
   const [btConnected, setBtConnected] = useState(false);
   const [showPrintMenu, setShowPrintMenu] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const printMenuRef = useRef<HTMLDivElement | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const res = await apiAdmin<{ users: any[] }>(`/api/collector/users?filter=${filter}`);
       setUsers(res.users || []);
-    } catch {}
+    } catch (e: unknown) {
+      setLoadError(e instanceof Error ? e.message : 'Gagal memuat data pelanggan');
+    }
     finally { setLoading(false); }
   }, [filter]);
 
@@ -351,6 +355,12 @@ export default function CollectorBillingPage() {
       </div>
 
       {/* List */}
+      {loadError && (
+        <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-3 mb-3 flex items-center justify-between gap-3">
+          <span className="text-sm text-destructive">Gagal memuat data: {loadError}{users.length > 0 ? ' — data di bawah mungkin tidak terbaru.' : ''}</span>
+          <button onClick={loadData} className="shrink-0 text-xs font-semibold text-destructive underline">Coba lagi</button>
+        </div>
+      )}
       {loading ? (
         <div className="text-center py-12 text-muted-foreground">Memuat...</div>
       ) : visible.length === 0 ? (
@@ -530,7 +540,7 @@ export default function CollectorBillingPage() {
                                                   setProofPreview(null);
                                                   setProofFile(null);
                                                 }}
-                                                className="px-2 py-1 text-[11px] rounded bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-all flex items-center gap-1"
+                                                className="px-3 py-2.5 min-h-[40px] text-xs rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-all flex items-center gap-1"
                                                 title="Bayar Tunai"
                                               >
                                                 <Wallet className="w-3 h-3" />
@@ -543,7 +553,7 @@ export default function CollectorBillingPage() {
                                                   setProofPreview(null);
                                                   setProofFile(null);
                                                 }}
-                                                className="px-2 py-1 text-[11px] rounded bg-blue-600 text-white font-medium hover:bg-blue-700 transition-all flex items-center gap-1"
+                                                className="px-3 py-2.5 min-h-[40px] text-xs rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-all flex items-center gap-1"
                                                 title="Upload Bukti Transfer"
                                               >
                                                 <Upload className="w-3 h-3" />

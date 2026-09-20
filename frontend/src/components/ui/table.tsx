@@ -9,8 +9,7 @@ function Table({ className, ...props }: React.ComponentProps<"table">) {
       className={cn(
         "relative w-full overflow-x-auto rounded-xl",
         "border-2 border-cyan-500/20",
-        "",
-        "hover:border-cyan-500/30 hover:",
+        "hover:border-cyan-500/30",
         "transition-all duration-300 backdrop-blur-sm"
       )}
     >
@@ -83,7 +82,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
       className={cn(
         "h-11 sm:h-12 px-3 sm:px-4 text-left align-middle",
         "font-bold text-xs uppercase tracking-wider",
-        "text-cyan-400 drop-",
+        "text-cyan-400",
         "whitespace-nowrap",
         "[&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
         className

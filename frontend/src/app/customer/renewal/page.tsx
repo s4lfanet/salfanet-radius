@@ -272,7 +272,7 @@ export default function RenewalPage() {
           <ChevronLeft className="w-4 h-4" />
         </button>
         <div>
-          <h1 className="text-lg font-bold text-primary drop-">Perpanjang Langganan</h1>
+          <h1 className="text-lg font-bold text-primary">Perpanjang Langganan</h1>
           <p className="text-xs text-accent mt-0.5">Perpanjang paket internet Anda</p>
         </div>
       </div>
@@ -289,11 +289,11 @@ export default function RenewalPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div>
               <span className="text-muted-foreground block text-[10px] uppercase font-bold tracking-wide">Username</span>
-              <span className="font-mono text-white">{user.username}</span>
+              <span className="font-mono text-foreground">{user.username}</span>
             </div>
             <div>
               <span className="text-muted-foreground block text-[10px] uppercase font-bold tracking-wide">Paket Saat Ini</span>
-              <span className="font-medium text-white">{user.profile?.name}</span>
+              <span className="font-medium text-foreground">{user.profile?.name}</span>
             </div>
             <div>
               <span className="text-muted-foreground block text-[10px] uppercase font-bold tracking-wide">Status</span>
@@ -304,7 +304,7 @@ export default function RenewalPage() {
             </div>
             <div>
               <span className="text-muted-foreground block text-[10px] uppercase font-bold tracking-wide">Berlaku Sampai</span>
-              <span className={`font-medium ${isExpired ? 'text-destructive' : 'text-white'}`}>
+              <span className={`font-medium ${isExpired ? 'text-destructive' : 'text-foreground'}`}>
                 {user.expiredAt ? formatWIB(user.expiredAt, 'd MMM yyyy') : '-'}
                 {daysLeft !== null && !isExpired && (
                   <span className="text-muted-foreground ml-1 text-[10px]">({daysLeft} hari lagi)</span>
@@ -358,7 +358,7 @@ export default function RenewalPage() {
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-bold text-white">{pkg.name}</p>
+                          <p className="text-sm font-bold text-foreground">{pkg.name}</p>
                           {pkg.id === user?.profile?.id && (
                             <span className="px-1.5 py-0.5 bg-primary/20 text-primary text-[9px] font-bold rounded border border-primary/30">Paket Saat Ini</span>
                           )}
@@ -367,7 +367,7 @@ export default function RenewalPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-bold text-white">{formatCurrency(pkg.price)}</p>
+                      <p className="text-sm font-bold text-foreground">{formatCurrency(pkg.price)}</p>
                       <p className="text-[9px] text-muted-foreground">/bulan</p>
                     </div>
                     {selectedPackageId === pkg.id && <Check className="w-4 h-4 text-cyan-400 ml-2" />}
@@ -387,15 +387,15 @@ export default function RenewalPage() {
               <div className="space-y-2 text-xs">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Paket</span>
-                  <span className="font-medium text-white">{selectedPkg.name}</span>
+                  <span className="font-medium text-foreground">{selectedPkg.name}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Harga</span>
-                  <span className="font-bold text-white">{formatCurrency(selectedPkg.price)}</span>
+                  <span className="font-bold text-foreground">{formatCurrency(selectedPkg.price)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Perpanjangan</span>
-                  <span className="text-white">+30 hari</span>
+                  <span className="text-foreground">+30 hari</span>
                 </div>
                 {user?.expiredAt && (
                   <div className="flex justify-between pt-1 border-t border-border/30">
@@ -441,11 +441,11 @@ export default function RenewalPage() {
             <div className="space-y-1 text-xs">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">No. Invoice</span>
-                <span className="font-mono font-bold text-white">{createdInvoice.invoiceNumber}</span>
+                <span className="font-mono font-bold text-foreground">{createdInvoice.invoiceNumber}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Jumlah</span>
-                <span className="font-bold text-white">{formatCurrency(createdInvoice.amount)}</span>
+                <span className="font-bold text-foreground">{formatCurrency(createdInvoice.amount)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Berlaku Baru s.d</span>
@@ -455,14 +455,14 @@ export default function RenewalPage() {
           </CyberCard>
 
           <div className="space-y-3">
-            <p className="text-xs font-bold text-white">Pilih Metode Pembayaran</p>
+            <p className="text-xs font-bold text-foreground">Pilih Metode Pembayaran</p>
             <button
               onClick={() => paymentGateways.length > 0 ? setStep('online-pay') : (createdInvoice.paymentLink ? window.open(createdInvoice.paymentLink, '_blank') : toast('warning', 'Tidak tersedia', 'Payment gateway tidak dikonfigurasi'))}
               className="w-full flex items-center gap-3 p-4 bg-cyan-500/10 hover:bg-cyan-500/20 border-2 border-cyan-500/40 rounded-xl transition-all text-left"
             >
               <div className="p-2 bg-cyan-500/20 rounded-lg border border-cyan-500/30 flex items-center justify-center"><CreditCard className="w-5 h-5 text-cyan-400" /></div>
               <div className="flex-1">
-                <p className="text-sm font-bold text-white">Bayar Online</p>
+                <p className="text-sm font-bold text-foreground">Bayar Online</p>
                 <p className="text-[10px] text-muted-foreground">Payment Gateway (Midtrans, Xendit, dll)</p>
               </div>
               <ChevronRight className="w-4 h-4 text-cyan-400" />
@@ -473,7 +473,7 @@ export default function RenewalPage() {
             >
               <div className="p-2 bg-primary/10 rounded-lg border border-border flex items-center justify-center"><Building2 className="w-5 h-5 text-primary" /></div>
               <div className="flex-1">
-                <p className="text-sm font-bold text-white">Transfer Manual</p>
+                <p className="text-sm font-bold text-foreground">Transfer Manual</p>
                 <p className="text-[10px] text-muted-foreground">Upload bukti transfer, tunggu konfirmasi admin</p>
               </div>
               <ChevronRight className="w-4 h-4 text-primary" />
@@ -489,7 +489,7 @@ export default function RenewalPage() {
             <button onClick={() => setStep('payment-choice')} className="p-1.5 rounded-lg border border-border/40 hover:bg-muted/20 transition">
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
-            <span className="text-sm font-bold text-white">Pilih Payment Gateway</span>
+            <span className="text-sm font-bold text-foreground">Pilih Payment Gateway</span>
           </div>
           <div className="space-y-2">
             {paymentGateways.map(gw => (
@@ -503,7 +503,7 @@ export default function RenewalPage() {
                 <div className="flex items-center gap-3">
                   <div className="p-1.5 bg-muted dark:bg-slate-800 rounded-lg border border-border/30 flex items-center justify-center"><CreditCard className="w-4 h-4 text-cyan-400" /></div>
                   <div className="text-left">
-                    <p className="text-sm font-bold text-white">{gw.name}</p>
+                    <p className="text-sm font-bold text-foreground">{gw.name}</p>
                     <p className="text-[10px] text-muted-foreground capitalize">{gw.provider}</p>
                   </div>
                 </div>
@@ -525,7 +525,7 @@ export default function RenewalPage() {
             <button onClick={() => setStep('payment-choice')} className="p-1.5 rounded-lg border border-border/40 hover:bg-muted/20 transition">
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
-            <span className="text-sm font-bold text-white">Upload Bukti Transfer</span>
+            <span className="text-sm font-bold text-foreground">Upload Bukti Transfer</span>
           </div>
 
           {/* Admin Bank Accounts - transfer destination */}
@@ -551,7 +551,7 @@ export default function RenewalPage() {
                     }`}
                   >
                     <div>
-                      <p className="text-xs font-bold text-white">{acc.bankName}</p>
+                      <p className="text-xs font-bold text-foreground">{acc.bankName}</p>
                       <p className="text-sm font-mono font-bold text-cyan-300 mt-0.5">{acc.accountNumber}</p>
                       <p className="text-[10px] text-muted-foreground">{acc.accountName}</p>
                     </div>
@@ -624,7 +624,7 @@ export default function RenewalPage() {
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-success/20 border-2 border-success/40 flex items-center justify-center ">
             <CheckCircle className="w-8 h-8 text-success" />
           </div>
-          <h3 className="text-base font-bold text-white mb-2">Pembayaran Dikirim!</h3>
+          <h3 className="text-base font-bold text-foreground mb-2">Pembayaran Dikirim!</h3>
           <p className="text-xs text-muted-foreground mb-1">
             {createdInvoice ? `Invoice ${createdInvoice.invoiceNumber}` : 'Invoice perpanjangan'} sedang diproses.
           </p>

@@ -12,22 +12,18 @@ const buttonVariants = cva(
         default: [
           "bg-gradient-to-r from-cyan-500 to-cyan-400 text-black",
           "border-2 border-cyan-400",
-          "",
-          "hover: hover:border-cyan-300",
+          "hover:border-cyan-300",
           "dark:neon-glow"
         ].join(" "),
         destructive: [
           "bg-gradient-to-r from-red-500 to-red-400 text-white",
           "border-2 border-red-400",
-          "",
-          "hover:"
+          "hover:border-red-300"
         ].join(" "),
         outline: [
           "bg-transparent text-cyan-400",
           "border-2 border-cyan-500/50",
-          "",
           "hover:bg-cyan-400/10 hover:border-cyan-400",
-          "hover:",
           "dark:neon-border"
         ].join(" "),
         secondary: [
@@ -43,20 +39,17 @@ const buttonVariants = cva(
         link: [
           "text-cyan-400 underline-offset-4",
           "hover:underline hover:text-cyan-300",
-          "drop-",
           "dark:neon-text"
         ].join(" "),
         success: [
           "bg-gradient-to-r from-green-500 to-green-400 text-black",
           "border-2 border-green-400",
-          "",
-          "hover:"
+          "hover:border-green-300"
         ].join(" "),
         warning: [
           "bg-gradient-to-r from-orange-500 to-orange-400 text-black",
           "border-2 border-orange-400",
-          "",
-          "hover:"
+          "hover:border-orange-300"
         ].join(" "),
       },
       size: {

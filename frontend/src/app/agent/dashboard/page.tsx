@@ -76,6 +76,7 @@ export default function AgentDashboardPage() {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [agent, setAgent] = useState<AgentData | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [stats, setStats] = useState({
     currentMonth: { total: 0, count: 0, income: 0 },
     allTime: { total: 0, count: 0, income: 0 },
@@ -174,6 +175,7 @@ export default function AgentDashboardPage() {
 
   const loadDashboard = async (page = 1, status = '', profileId = '', search = '') => {
     try {
+      setLoadError(null);
       const token = localStorage.getItem('agentToken');
       if (!token) { router.push('/agent'); return; }
       const params = new URLSearchParams({
@@ -217,6 +219,7 @@ export default function AgentDashboardPage() {
       }
     } catch (error) {
       console.error('Load dashboard error:', error);
+      setLoadError(error instanceof Error ? error.message : 'Gagal memuat dashboard');
     } finally {
       setLoading(false);
     }
@@ -597,7 +600,20 @@ export default function AgentDashboardPage() {
   }
 
   if (!agent) {
-    return null;
+    return (
+      <div className="min-h-[50vh] flex items-center justify-center p-4">
+        <div className="text-center max-w-sm">
+          <p className="text-destructive font-medium mb-1">Gagal memuat dashboard</p>
+          {loadError && <p className="text-xs text-muted-foreground mb-4">{loadError}</p>}
+          <button
+            onClick={() => loadDashboard()}
+            className="px-4 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:brightness-110"
+          >
+            Coba Lagi
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

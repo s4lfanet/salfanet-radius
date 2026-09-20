@@ -356,11 +356,11 @@ export default function AdminDashboard() {
             {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500">
               {t('dashboard.title')}
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-2 mt-1">
-              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse "></span>
+              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
               {tzInfo.name} &bull; {currentDate} &bull; {currentTime}
             </p>
           </div>
@@ -400,7 +400,7 @@ export default function AdminDashboard() {
         {/* Stats Grid - 4 columns */}
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-8 w-8 animate-spin text-brand-500 dark:text-brand-500 dark:drop-" />
+            <Loader2 className="h-8 w-8 animate-spin text-brand-500 dark:text-brand-500" />
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-6 gap-2 sm:gap-3">
@@ -430,7 +430,7 @@ export default function AdminDashboard() {
                   </div>
                 </>
               );
-              const cls = 'relative bg-card/60 rounded-xl border border-white/10 p-3 sm:p-4 hover:border-white/20 hover: transition-all group overflow-hidden';
+              const cls = 'relative bg-card/60 rounded-xl border border-white/10 p-3 sm:p-4 hover:border-white/20 transition-all group overflow-hidden';
               return card.href ? (
                 <a key={card.title} href={card.href} className={cls}>{inner}</a>
               ) : (
@@ -489,9 +489,9 @@ export default function AdminDashboard() {
                   const isOverdue = inv.status === 'OVERDUE';
                   const isUrgent = !isOverdue && inv.daysUntilDue <= 3;
                   const dotColor = isOverdue
-                    ? 'bg-red-400 '
+                    ? 'bg-red-400'
                     : isUrgent
-                    ? 'bg-amber-400 '
+                    ? 'bg-amber-400'
                     : 'bg-yellow-400/70';
                   const labelColor = isOverdue ? 'text-red-400' : isUrgent ? 'text-amber-400' : 'text-yellow-400';
                   const labelText = isOverdue
