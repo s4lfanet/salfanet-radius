@@ -123,10 +123,13 @@ function parseShowCard(output: string): CardInfo[] {
 /**
  * Derive uplink interface names for an SMXA slot.
  *
- * ZTE C320 SMXA (plain): exactly 1 GE port + 1 XGE port per slot, neither
- * one sub-numbered. Verified live against a production C320 via
- * `show interface ?`, which lists only `gei_1/{slot}` and `xgei_1/{slot}`
- * for an SMXA card — there is no `gei_1/{slot}/1`-style child interface.
+ * ZTE C320 SMXA (plain): 2 GE ports (positions 1 and 3) + 1 XGE port
+ * (position 2) per slot. `show interface ?` on the CLI only lists the
+ * family name (`gei_1/{slot}`, `xgei_1/{slot}`) and errors on any child
+ * interface typed by hand, which is misleading — the real per-port
+ * breakdown only shows up via SNMP ifName (1.3.6.1.2.1.31.1.1.1.1),
+ * verified live against a production C320: ifIndex 285278977-79 resolve
+ * to "gei_1/3/1", "xgei_1/3/2", "gei_1/3/3" for slot 3.
  *
  * SMXA-B: 3 GE + 2 XGE per slot (uses /port suffix for all) — not verified
  * live on this hardware, kept as the best-known layout for that variant.
@@ -148,8 +151,8 @@ function smxaUplinkPorts(slot: number, cardType: string): string[] {
       `xgei_1/${slot}/1`, `xgei_1/${slot}/2`,
     ];
   }
-  // SMXA (plain) and the generic fallback: 1 GE + 1 XGE, no sub-numbering.
-  return [`gei_1/${slot}`, `xgei_1/${slot}`];
+  // SMXA (plain) and the generic fallback: GE1, XGE2, GE3.
+  return [`gei_1/${slot}/1`, `xgei_1/${slot}/2`, `gei_1/${slot}/3`];
 }
 
 function parseUplinkPortStatusTable(output: string, ifaces: string[]): Map<string, UplinkPortState> {
@@ -217,7 +220,12 @@ async function fetchSNMPChassisData(snmpConfig: SNMPConfig): Promise<SNMPChassis
   const [ponResult, descrResult, adminResult, operResult, speedResult, aliasResult] =
     await Promise.all([
       snmpWalk(snmpConfig, ZTE_PON_TABLE),
-      snmpWalk(snmpConfig, '1.3.6.1.2.1.2.2.1.2'),    // ifDescr
+      // ifName, NOT ifDescr (1.3.6.1.2.1.2.2.1.2) — on this ZTE agent, ifDescr
+      // returns admin-assigned port labels ("Jalur ODC RW 03") instead of the
+      // real interface name, so matching against it always misses and every
+      // uplink port fell back to the "unknown/disabled" state. Verified live:
+      // ifName at this OID resolves to "gei_1/3/1", "xgei_1/3/2" etc.
+      snmpWalk(snmpConfig, '1.3.6.1.2.1.31.1.1.1.1'),  // ifName
       snmpWalk(snmpConfig, '1.3.6.1.2.1.2.2.1.7'),    // ifAdminStatus
       snmpWalk(snmpConfig, '1.3.6.1.2.1.2.2.1.8'),    // ifOperStatus
       snmpWalk(snmpConfig, '1.3.6.1.2.1.31.1.1.1.15'), // ifHighSpeed
@@ -256,7 +264,7 @@ function buildUplinkStatesFromSNMP(
   const stateMap = new Map<string, UplinkPortState>();
   const normalizeIface = (s: string) => s.toLowerCase().replace(/[-_]/g, '_');
 
-  // Build normalizedName → ifIndex from ifDescr walk
+  // Build normalizedName → ifIndex from the ifName walk
   const nameToIdx = new Map<string, string>();
   for (const [oid, name] of Object.entries(ifMib.descr)) {
     nameToIdx.set(normalizeIface(name), oid.split('.').pop() ?? '');
