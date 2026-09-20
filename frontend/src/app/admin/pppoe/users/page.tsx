@@ -1666,12 +1666,12 @@ export default function PppoeUsersPage() {
             {selectedUsers.size > 0 && (
               <div className="flex items-center gap-1 flex-wrap">
                 <span className="text-[10px] text-muted-foreground">{selectedUsers.size} {t('pppoe.selected')}</span>
-                <button onClick={() => handleBulkStatusChange('active')} className="px-1.5 py-0.5 text-[10px] bg-success text-white rounded flex items-center gap-0.5"><Shield className="h-2.5 w-2.5" />{t('pppoe.active')}</button>
-                <button onClick={() => handleBulkStatusChange('isolated')} className="px-1.5 py-0.5 text-[10px] bg-warning text-white rounded flex items-center gap-0.5"><ShieldOff className="h-2.5 w-2.5" />{t('pppoe.isolir')}</button>
-                <button onClick={() => handleBulkStatusChange('blocked')} className="px-1.5 py-0.5 text-[10px] bg-destructive text-destructive-foreground rounded flex items-center gap-0.5"><Ban className="h-2.5 w-2.5" />{t('pppoe.block')}</button>
-                <button onClick={handleExportSelected} className="px-1.5 py-0.5 text-[10px] bg-teal-600 text-white rounded flex items-center gap-0.5"><Download className="h-2.5 w-2.5" />{t('common.export')}</button>
-                <button onClick={handleBulkEdit} className="px-1.5 py-0.5 text-[10px] bg-blue-600 text-white rounded flex items-center gap-0.5"><Pencil className="h-2.5 w-2.5" />Edit</button>
-                <button onClick={handleBulkDelete} className="px-1.5 py-0.5 text-[10px] bg-muted text-foreground rounded flex items-center gap-0.5"><Trash2 className="h-2.5 w-2.5" />{t('common.delete')}</button>
+                <button onClick={() => handleBulkStatusChange('active')} className="px-2.5 py-2 min-h-[36px] text-xs bg-success text-white rounded-md flex items-center gap-1"><Shield className="h-3.5 w-3.5" />{t('pppoe.active')}</button>
+                <button onClick={() => handleBulkStatusChange('isolated')} className="px-2.5 py-2 min-h-[36px] text-xs bg-warning text-white rounded-md flex items-center gap-1"><ShieldOff className="h-3.5 w-3.5" />{t('pppoe.isolir')}</button>
+                <button onClick={() => handleBulkStatusChange('blocked')} className="px-2.5 py-2 min-h-[36px] text-xs bg-destructive text-destructive-foreground rounded-md flex items-center gap-1"><Ban className="h-3.5 w-3.5" />{t('pppoe.block')}</button>
+                <button onClick={handleExportSelected} className="px-2.5 py-2 min-h-[36px] text-xs bg-teal-600 text-white rounded-md flex items-center gap-1"><Download className="h-3.5 w-3.5" />{t('common.export')}</button>
+                <button onClick={handleBulkEdit} className="px-2.5 py-2 min-h-[36px] text-xs bg-blue-600 text-white rounded-md flex items-center gap-1"><Pencil className="h-3.5 w-3.5" />Edit</button>
+                <button onClick={handleBulkDelete} className="px-2.5 py-2 min-h-[36px] text-xs bg-destructive text-destructive-foreground rounded-md flex items-center gap-1"><Trash2 className="h-3.5 w-3.5" />{t('common.delete')}</button>
               </div>
             )}
           </div>

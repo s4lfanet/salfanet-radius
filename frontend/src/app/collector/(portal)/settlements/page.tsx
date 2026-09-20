@@ -21,23 +21,32 @@ export default function CollectorSettlementsPage() {
   const [rangeData, setRangeData] = useState<any>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [detailCache, setDetailCache] = useState<Record<string, any>>({});
+  const [dailyError, setDailyError] = useState<string | null>(null);
+  const [rangeError, setRangeError] = useState<string | null>(null);
+  const [detailError, setDetailError] = useState<string | null>(null);
 
   const fetchDaily = useCallback(async (d: string) => {
     setLoading(true);
+    setDailyError(null);
     try {
       const res = await apiAdmin<any>(`/api/collector/my-settlements?date=${d}`);
       setData(res);
-    } catch {}
+    } catch (e: unknown) {
+      setDailyError(e instanceof Error ? e.message : 'Gagal memuat setoran harian');
+    }
     finally { setLoading(false); }
   }, []);
 
   const fetchRange = useCallback(async () => {
     if (!dateFrom || !dateTo) return;
     setRangeLoading(true);
+    setRangeError(null);
     try {
       const res = await apiAdmin<any>(`/api/collector/my-settlements/range?date_from=${dateFrom}&date_to=${dateTo}`);
       setRangeData(res);
-    } catch {}
+    } catch (e: unknown) {
+      setRangeError(e instanceof Error ? e.message : 'Gagal memuat rekap rentang tanggal');
+    }
     finally { setRangeLoading(false); }
   }, [dateFrom, dateTo]);
 
@@ -46,11 +55,14 @@ export default function CollectorSettlementsPage() {
       setExpandedRow(r => r === d ? null : d);
       return;
     }
+    setDetailError(null);
     try {
       const res = await apiAdmin<any>(`/api/collector/my-settlements?date=${d}`);
       setDetailCache(c => ({ ...c, [d]: res }));
       setExpandedRow(r => r === d ? null : d);
-    } catch {}
+    } catch (e: unknown) {
+      setDetailError(e instanceof Error ? e.message : `Gagal memuat detail ${d}`);
+    }
   };
 
   useEffect(() => { fetchDaily(date) }, []);
@@ -165,6 +177,12 @@ export default function CollectorSettlementsPage() {
             </button>
           </div>
 
+          {dailyError && (
+            <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 mb-3 flex items-center justify-between gap-3">
+              <span className="text-sm text-destructive">Gagal memuat: {dailyError}{data ? ' — data di bawah mungkin bukan untuk tanggal ini.' : ''}</span>
+              <button onClick={() => fetchDaily(date)} className="shrink-0 text-xs font-semibold text-destructive underline">Coba lagi</button>
+            </div>
+          )}
           {loading ? (
             <div className="text-center py-8 text-muted-foreground">Memuat...</div>
           ) : data ? (
@@ -196,6 +214,12 @@ export default function CollectorSettlementsPage() {
             </button>
           </div>
 
+          {rangeError && (
+            <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 mb-3 flex items-center justify-between gap-3">
+              <span className="text-sm text-destructive">Gagal memuat: {rangeError}{rangeData ? ' — rekap di bawah mungkin bukan untuk rentang ini.' : ''}</span>
+              <button onClick={fetchRange} className="shrink-0 text-xs font-semibold text-destructive underline">Coba lagi</button>
+            </div>
+          )}
           {rangeLoading ? (
             <div className="text-center py-8 text-muted-foreground">Memuat...</div>
           ) : rangeData ? (
@@ -237,6 +261,14 @@ export default function CollectorSettlementsPage() {
                           <tr key={`${row.date}-detail`}>
                             <td colSpan={7} className="p-3 bg-accent/20">
                               {renderInvoices(detailCache[row.date].invoices)}
+                            </td>
+                          </tr>
+                        )}
+                        {expandedRow === row.date && !detailCache[row.date] && detailError && (
+                          <tr key={`${row.date}-detail-error`}>
+                            <td colSpan={7} className="p-3 bg-destructive/10 text-sm text-destructive text-center">
+                              {detailError}{' '}
+                              <button onClick={() => fetchDetailForDate(row.date)} className="font-semibold underline">Coba lagi</button>
                             </td>
                           </tr>
                         )}

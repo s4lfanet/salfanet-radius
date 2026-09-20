@@ -132,7 +132,7 @@ export default function TechnicianProfilePage() {
           </div>
         </div>
 
-        <button onClick={handleSaveProfile} disabled={saving} className="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-brand-500 to-[#00d4e6] hover: disabled:opacity-50 text-black text-sm font-bold rounded-xl transition-all">
+        <button onClick={handleSaveProfile} disabled={saving} className="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-brand-500 to-[#00d4e6] hover:brightness-110 disabled:opacity-50 text-black text-sm font-bold rounded-xl transition-all">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           {t('techPortal.save')}
         </button>
@@ -172,7 +172,7 @@ export default function TechnicianProfilePage() {
               <button onClick={() => { setShowPwForm(false); setPwForm({ currentPassword: '', newPassword: '', confirmPassword: '' }); }} className="flex-1 py-2.5 border border-border text-foreground text-sm font-bold rounded-xl hover:bg-accent transition">
                 {t('techPortal.cancel')}
               </button>
-              <button onClick={handleChangePassword} disabled={changingPw} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-primary to-pink-500 hover: disabled:opacity-50 text-white text-sm font-bold rounded-xl transition-all">
+              <button onClick={handleChangePassword} disabled={changingPw} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-primary to-pink-500 hover:brightness-110 disabled:opacity-50 text-white text-sm font-bold rounded-xl transition-all">
                 {changingPw ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
                 {t('techPortal.save')}
               </button>

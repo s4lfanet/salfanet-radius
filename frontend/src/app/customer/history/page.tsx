@@ -480,7 +480,7 @@ export default function PaymentHistoryPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-primary drop-">Riwayat Pembayaran</h1>
+          <h1 className="text-xl font-bold text-primary">Riwayat Pembayaran</h1>
           <p className="text-xs text-accent mt-1">Lihat status invoice Anda</p>
         </div>
         <button
@@ -496,7 +496,7 @@ export default function PaymentHistoryPage() {
       {payments.length === 0 && (
         <CyberCard className="p-6 sm:p-10 text-center bg-card border-2 border-primary/30">
           <Receipt className="w-14 h-14 mx-auto mb-3 text-primary/40" />
-          <h3 className="text-sm font-bold text-white mb-1">Tidak Ada Tagihan</h3>
+          <h3 className="text-sm font-bold text-foreground mb-1">Tidak Ada Tagihan</h3>
           <p className="text-xs text-muted-foreground">Belum ada tagihan yang dicatat</p>
         </CyberCard>
       )}
@@ -506,7 +506,7 @@ export default function PaymentHistoryPage() {
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <div className="p-1.5 bg-warning/20 rounded-lg border border-warning/30 flex items-center justify-center"><Clock className="w-4 h-4 text-warning" /></div>
-            <h2 className="text-sm font-bold text-warning drop-">
+            <h2 className="text-sm font-bold text-warning">
               Belum Bayar
               <span className="ml-2 px-2 py-0.5 bg-warning/20 text-warning text-[10px] rounded-full border border-warning/30">{pendingPayments.length}</span>
             </h2>
@@ -532,7 +532,7 @@ export default function PaymentHistoryPage() {
                         </div>
                         <div>
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <p className="font-mono text-xs font-bold text-white tracking-wide">{payment.invoiceNumber}</p>
+                            <p className="font-mono text-xs font-bold text-foreground tracking-wide">{payment.invoiceNumber}</p>
                             {invoiceLabel && (
                               <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded-md border ${
                                 payment.isPackageChange
@@ -562,14 +562,14 @@ export default function PaymentHistoryPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3 p-3 bg-muted/20 rounded-lg border border-border/50">
                       <div>
                         <p className="text-[10px] text-muted-foreground">Jatuh Tempo</p>
-                        <p className="text-xs font-semibold text-white flex items-center gap-1.5 mt-1">
+                        <p className="text-xs font-semibold text-foreground flex items-center gap-1.5 mt-1">
                           <Calendar className="w-3 h-3 text-accent" />
                           {formatDate(payment.dueDate)}
                         </p>
                       </div>
                       <div>
                         <p className="text-[10px] text-muted-foreground">Jumlah Tagihan</p>
-                        <p className="text-sm font-bold text-white mt-0.5">{formatCurrency(payment.amount)}</p>
+                        <p className="text-sm font-bold text-foreground mt-0.5">{formatCurrency(payment.amount)}</p>
                       </div>
                     </div>
 
@@ -632,7 +632,7 @@ export default function PaymentHistoryPage() {
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <div className="p-1.5 bg-success/20 rounded-lg border border-success/30 flex items-center justify-center"><CheckCircle className="w-4 h-4 text-success" /></div>
-          <h2 className="text-sm font-bold text-success drop-">
+          <h2 className="text-sm font-bold text-success">
             Lunas
             <span className="ml-2 px-2 py-0.5 bg-success/20 text-success text-[10px] rounded-full border border-success/30">{paidPayments.length}</span>
           </h2>
@@ -661,7 +661,7 @@ export default function PaymentHistoryPage() {
                         </div>
                         <div>
                           <div className="flex items-center gap-2 flex-wrap">
-                            <p className="font-mono text-xs font-bold text-white tracking-wide">{payment.invoiceNumber}</p>
+                            <p className="font-mono text-xs font-bold text-foreground tracking-wide">{payment.invoiceNumber}</p>
                             {invoiceLabel && (
                               <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md border ${
                                 payment.isPackageChange
@@ -683,7 +683,7 @@ export default function PaymentHistoryPage() {
                     <div className="space-y-2 p-3 bg-success/5 rounded-lg border border-success/10">
                       <div className="flex items-center justify-between">
                         <span className="text-[10px] text-muted-foreground">Jumlah</span>
-                        <span className="text-sm font-bold text-white">{formatCurrency(payment.amount)}</span>
+                        <span className="text-sm font-bold text-foreground">{formatCurrency(payment.amount)}</span>
                       </div>
                       {payment.paidAt && (
                         <div className="flex items-center justify-between">
@@ -791,7 +791,7 @@ export default function PaymentHistoryPage() {
                     >
                       <div className="p-2 bg-cyan-500/20 rounded-lg border border-cyan-500/30 flex items-center justify-center"><CreditCard className="w-5 h-5 text-cyan-400" /></div>
                       <div className="flex-1">
-                        <p className="text-sm font-bold text-white">Bayar Online</p>
+                        <p className="text-sm font-bold text-foreground">Bayar Online</p>
                         <p className="text-[10px] text-muted-foreground">Payment Gateway (Midtrans, Xendit, dll)</p>
                       </div>
                       <ChevronRight className="w-4 h-4 text-cyan-400" />
@@ -802,7 +802,7 @@ export default function PaymentHistoryPage() {
                     >
                       <div className="p-2 bg-primary/10 rounded-lg border border-border flex items-center justify-center"><Building2 className="w-5 h-5 text-primary" /></div>
                       <div className="flex-1">
-                        <p className="text-sm font-bold text-white">Transfer Manual</p>
+                        <p className="text-sm font-bold text-foreground">Transfer Manual</p>
                         <p className="text-[10px] text-muted-foreground">Upload bukti transfer, tunggu konfirmasi admin</p>
                       </div>
                       <ChevronRight className="w-4 h-4 text-primary" />
@@ -843,7 +843,7 @@ export default function PaymentHistoryPage() {
                         <div className="flex items-center gap-3">
                           <div className="p-1.5 bg-muted dark:bg-slate-800 rounded-lg border border-border/30 flex items-center justify-center"><CreditCard className="w-4 h-4 text-cyan-400" /></div>
                           <div className="text-left">
-                            <p className="text-sm font-bold text-white">{gw.name}</p>
+                            <p className="text-sm font-bold text-foreground">{gw.name}</p>
                             <p className="text-[10px] text-muted-foreground capitalize">{gw.provider}</p>
                           </div>
                         </div>
@@ -870,12 +870,12 @@ export default function PaymentHistoryPage() {
           <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm" onClick={() => !submittingOffline && setOfflineDialogVisible(false)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
             <div className="pointer-events-auto w-full max-w-md max-h-[90vh] flex flex-col">
-              <CyberCard className="bg-card/95 dark:bg-card/95 border border-border  overflow-hidden flex flex-col max-h-[90vh]">
+              <CyberCard className="bg-card/95 dark:bg-card/95 border border-border overflow-hidden flex flex-col max-h-[90vh]">
                 <div className="h-1 w-full bg-gradient-to-r from-primary to-primary flex-shrink-0" />
                 <div className="p-5 border-b border-border flex items-center justify-between flex-shrink-0">
                   <div>
-                    <h3 className="text-sm font-bold text-white">Pembayaran Offline</h3>
-                    <p className="text-[10px] text-muted-foreground">{selectedPaymentInvoice.invoiceNumber} ? {formatCurrency(selectedPaymentInvoice.amount)}</p>
+                    <h3 className="text-sm font-bold text-foreground">Pembayaran Offline</h3>
+                    <p className="text-[10px] text-muted-foreground">{selectedPaymentInvoice.invoiceNumber} · {formatCurrency(selectedPaymentInvoice.amount)}</p>
                   </div>
                   {!submittingOffline && <button onClick={() => setOfflineDialogVisible(false)} className="p-1.5 rounded-lg bg-muted/20 hover:bg-muted/40 border border-border/50" aria-label="Close"><X className="w-4 h-4 text-muted-foreground" /></button>}
                 </div>
@@ -883,7 +883,7 @@ export default function PaymentHistoryPage() {
                 <div className="overflow-y-auto flex-1 p-5 space-y-4">
                   {/* Bank/Method chips */}
                   <div>
-                    <p className="text-xs font-bold text-white mb-2">Metode Pembayaran *</p>
+                    <p className="text-xs font-bold text-foreground mb-2">Metode Pembayaran *</p>
                     <div className="flex flex-wrap gap-2 mb-2">
                       {BANK_OPTIONS.map(bank => (
                         <button
@@ -904,49 +904,49 @@ export default function PaymentHistoryPage() {
                       placeholder="Atau ketik nama bank/metode lain"
                       value={customBank}
                       onChange={e => { setCustomBank(e.target.value); setBankName(''); }}
-                      className="w-full px-3 py-2 bg-muted/20 border border-border/50 rounded-lg text-xs text-white placeholder-muted-foreground focus:outline-none focus:border-cyan-500/60"
+                      className="w-full px-3 py-2 bg-muted/20 border border-border/50 rounded-lg text-xs text-foreground placeholder-muted-foreground focus:outline-none focus:border-cyan-500/60"
                     />
                   </div>
 
                   {/* Account number (optional) */}
                   <div>
-                    <p className="text-xs font-bold text-white mb-1.5">No. Rekening / E-Wallet <span className="text-muted-foreground font-normal">(opsional)</span></p>
+                    <p className="text-xs font-bold text-foreground mb-1.5">No. Rekening / E-Wallet <span className="text-muted-foreground font-normal">(opsional)</span></p>
                     <input
                       type="text"
                       placeholder="Contoh: 1234567890"
                       value={accountNumber}
                       onChange={e => setAccountNumber(e.target.value)}
-                      className="w-full px-3 py-2 bg-muted/20 border border-border/50 rounded-lg text-xs text-white placeholder-muted-foreground focus:outline-none focus:border-cyan-500/60"
+                      className="w-full px-3 py-2 bg-muted/20 border border-border/50 rounded-lg text-xs text-foreground placeholder-muted-foreground focus:outline-none focus:border-cyan-500/60"
                     />
                   </div>
 
                   {/* Account name (required) */}
                   <div>
-                    <p className="text-xs font-bold text-white mb-1.5">Nama Lengkap Pengirim *</p>
+                    <p className="text-xs font-bold text-foreground mb-1.5">Nama Lengkap Pengirim *</p>
                     <input
                       type="text"
                       placeholder="Sesuai rekening/e-wallet"
                       value={accountName}
                       onChange={e => setAccountName(e.target.value)}
-                      className="w-full px-3 py-2 bg-muted/20 border border-border/50 rounded-lg text-xs text-white placeholder-muted-foreground focus:outline-none focus:border-cyan-500/60"
+                      className="w-full px-3 py-2 bg-muted/20 border border-border/50 rounded-lg text-xs text-foreground placeholder-muted-foreground focus:outline-none focus:border-cyan-500/60"
                     />
                   </div>
 
                   {/* Notes (optional) */}
                   <div>
-                    <p className="text-xs font-bold text-white mb-1.5">Catatan <span className="text-muted-foreground font-normal">(opsional)</span></p>
+                    <p className="text-xs font-bold text-foreground mb-1.5">Catatan <span className="text-muted-foreground font-normal">(opsional)</span></p>
                     <textarea
                       placeholder="Catatan tambahan..."
                       value={paymentNotes}
                       onChange={e => setPaymentNotes(e.target.value)}
                       rows={2}
-                      className="w-full px-3 py-2 bg-muted/20 border border-border/50 rounded-lg text-xs text-white placeholder-muted-foreground focus:outline-none focus:border-cyan-500/60 resize-none"
+                      className="w-full px-3 py-2 bg-muted/20 border border-border/50 rounded-lg text-xs text-foreground placeholder-muted-foreground focus:outline-none focus:border-cyan-500/60 resize-none"
                     />
                   </div>
 
                   {/* Proof upload */}
                   <div>
-                    <p className="text-xs font-bold text-white mb-1.5">Bukti Transfer *</p>
+                    <p className="text-xs font-bold text-foreground mb-1.5">Bukti Transfer *</p>
                     <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelect} />
                     {proofPreviewUrl ? (
                       <div className="relative rounded-lg overflow-hidden border border-success/30">
@@ -1024,7 +1024,7 @@ export default function PaymentHistoryPage() {
                         <Receipt className={`w-4 h-4 ${selectedDetail.status === 'PAID' ? 'text-success' : selectedDetail.status === 'OVERDUE' ? 'text-destructive' : 'text-warning'}`} />
                       </div>
                       <div>
-                        <h3 className="text-sm font-bold text-white">Detail Invoice</h3>
+                        <h3 className="text-sm font-bold text-foreground">Detail Invoice</h3>
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full border mt-0.5 ${
                           selectedDetail.status === 'PAID' ? 'bg-success/15 text-success border-success/30' :
                           selectedDetail.status === 'OVERDUE' ? 'bg-destructive/15 text-destructive border-destructive/30' :
@@ -1041,7 +1041,7 @@ export default function PaymentHistoryPage() {
                       <div className="p-1.5 bg-primary/20 rounded-lg border border-primary/30 flex-shrink-0 flex items-center justify-center"><Hash className="w-3.5 h-3.5 text-primary" /></div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[10px] text-muted-foreground">No. Invoice</p>
-                        <p className="text-xs font-mono font-bold text-white truncate">{selectedDetail.invoiceNumber}</p>
+                        <p className="text-xs font-mono font-bold text-foreground truncate">{selectedDetail.invoiceNumber}</p>
                       </div>
                       {selectedDetail.isPackageChange && <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-md bg-primary/10 text-purple-300 border border-border flex-shrink-0">Ganti Paket</span>}
                     </div>
@@ -1051,7 +1051,7 @@ export default function PaymentHistoryPage() {
                       <div className="p-1.5 bg-accent/20 rounded-lg border border-accent/30 flex-shrink-0 flex items-center justify-center"><Wallet className="w-3.5 h-3.5 text-accent" /></div>
                       <div>
                         <p className="text-[10px] text-muted-foreground">Jumlah Tagihan</p>
-                        <p className="text-base font-bold text-white">{formatCurrency(selectedDetail.amount)}</p>
+                        <p className="text-base font-bold text-foreground">{formatCurrency(selectedDetail.amount)}</p>
                       </div>
                     </div>
 
@@ -1070,11 +1070,11 @@ export default function PaymentHistoryPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <div className="p-2.5 bg-muted/10 rounded-xl border border-border/40">
                         <p className="text-[9px] text-muted-foreground uppercase tracking-wide mb-1">Dibuat</p>
-                        <p className="text-[11px] font-semibold text-white">{formatDate(selectedDetail.createdAt)}</p>
+                        <p className="text-[11px] font-semibold text-foreground">{formatDate(selectedDetail.createdAt)}</p>
                       </div>
                       <div className="p-2.5 bg-muted/10 rounded-xl border border-border/40">
                         <p className="text-[9px] text-muted-foreground uppercase tracking-wide mb-1">Jatuh Tempo</p>
-                        <p className="text-[11px] font-semibold text-white">{formatDate(selectedDetail.dueDate)}</p>
+                        <p className="text-[11px] font-semibold text-foreground">{formatDate(selectedDetail.dueDate)}</p>
                       </div>
                     </div>
 

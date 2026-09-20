@@ -172,7 +172,7 @@ export default function CustomerTicketsPage() {
               <CyberCard
                 key={ticket.id}
                 onClick={() => router.push(`/customer/tickets/${ticket.id}`)}
-                className="p-6 cursor-pointer bg-card border-2 border-primary/30 hover:border-accent/50 hover: transition-all"
+                className="p-6 cursor-pointer bg-card border-2 border-primary/30 hover:border-accent/50 transition-all"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -195,7 +195,7 @@ export default function CustomerTicketsPage() {
                         </span>
                       )}
                     </div>
-                    <h3 className="text-lg font-bold text-white mb-2">
+                    <h3 className="text-lg font-bold text-foreground mb-2">
                       {ticket.subject}
                     </h3>
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">

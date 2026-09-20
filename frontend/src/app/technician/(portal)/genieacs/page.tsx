@@ -74,21 +74,23 @@ export default function TechnicianGenieACSPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [filterStatus, setFilterStatus] = useState<'all' | 'online' | 'offline'>('all');
   const [filterManufacturer, setFilterManufacturer] = useState<string>('all');
+  const [devicesError, setDevicesError] = useState<string | null>(null);
   const PAGE_SIZE = 20;
 
   const fetchDevices = useCallback(async () => {
+    setLoading(true);
+    setDevicesError(null);
     try {
       const [devData, settData] = await Promise.all([
-        apiTechnician<{ devices?: GenieACSDevice[] }>('/api/technician/genieacs/devices').catch(() => null),
+        apiTechnician<{ devices?: GenieACSDevice[] }>('/api/technician/genieacs/devices').catch((e: unknown) => { throw e; }),
         apiTechnician<{ settings?: { host?: string } }>('/api/technician/genieacs').catch(() => null),
       ]);
       if (settData) {
         setIsConfigured(!!settData?.settings?.host);
       }
-      if (devData) {
-        setDevices(devData.devices || []);
-      }
-    } catch {
+      setDevices(devData.devices || []);
+    } catch (e: unknown) {
+      setDevicesError(e instanceof Error ? e.message : 'Gagal memuat daftar perangkat');
       addToast({ type: 'error', title: t('techPortal.failedLoadDevices') });
     } finally {
       setLoading(false);
@@ -255,6 +257,15 @@ export default function TechnicianGenieACSPage() {
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-8 h-8 animate-spin text-brand-500" />
         </div>
+      ) : devicesError ? (
+        <div className="text-center py-20 text-destructive">
+          <Server className="w-10 h-10 mx-auto mb-2 opacity-50" />
+          <p className="text-sm font-medium mb-1">Gagal memuat perangkat</p>
+          <p className="text-xs text-muted-foreground mb-4">{devicesError}</p>
+          <button onClick={fetchDevices} className="px-4 py-2 rounded-xl bg-destructive text-white text-sm font-semibold hover:brightness-110">
+            Coba Lagi
+          </button>
+        </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-20 text-muted-foreground/70">
           <Server className="w-10 h-10 mx-auto mb-2 opacity-30" />
@@ -357,7 +368,7 @@ export default function TechnicianGenieACSPage() {
                 <div className="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-border">
                   <button
                     onClick={() => handleViewDetail(d._id)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold bg-slate-100 dark:bg-primary/10 text-foreground border border-border rounded-xl hover:bg-slate-200 dark:hover:bg-primary/10 transition"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 min-h-[44px] text-xs font-semibold bg-slate-100 dark:bg-primary/10 text-foreground border border-border rounded-xl hover:bg-slate-200 dark:hover:bg-primary/10 transition"
                   >
                     <Eye className="w-3.5 h-3.5" />
                     {t('techPortal.details')}
@@ -365,7 +376,7 @@ export default function TechnicianGenieACSPage() {
                   <button
                     onClick={() => handleReboot(d._id)}
                     disabled={rebootingId === d._id}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 rounded-xl hover:bg-red-100 dark:hover:bg-red-500/20 transition disabled:opacity-50"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 min-h-[44px] text-xs font-semibold bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20 rounded-xl hover:bg-red-100 dark:hover:bg-red-500/20 transition disabled:opacity-50"
                   >
                     {rebootingId === d._id
                       ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -547,14 +558,14 @@ export default function TechnicianGenieACSPage() {
                                 <div className="flex gap-2 pt-1">
                                   <button
                                     onClick={() => setWifiEdit(null)}
-                                    className="flex-1 py-1.5 text-[11px] font-semibold bg-muted text-muted-foreground border border-border rounded-lg hover:bg-slate-200 transition"
+                                    className="flex-1 py-2.5 min-h-[44px] text-xs font-semibold bg-muted text-muted-foreground border border-border rounded-lg hover:bg-slate-200 transition"
                                   >
                                     {t('techPortal.cancel')}
                                   </button>
                                   <button
                                     onClick={handleSaveWifi}
                                     disabled={savingWifi || (!wifiEdit.ssid && !wifiEdit.wifiPassword)}
-                                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-[11px] font-bold bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition disabled:opacity-50"
+                                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 min-h-[44px] text-xs font-bold bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition disabled:opacity-50"
                                   >
                                     {savingWifi ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
                                     {savingWifi ? t('techPortal.savingWifi') : t('techPortal.save')}

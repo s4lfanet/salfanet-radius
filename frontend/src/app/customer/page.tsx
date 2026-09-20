@@ -529,20 +529,20 @@ export default function CustomerDashboard() {
                   <>
                     {invoice.paymentLink && !invoice.paymentLink.includes('localhost') ? (
                       <button onClick={() => window.open(invoice.paymentLink ?? undefined, '_blank', 'noopener,noreferrer')}
-                        className="px-2.5 py-1.5 bg-cyan-500 text-black text-[9px] font-bold rounded-lg flex items-center gap-1">
-                        Bayar <ExternalLink className="w-2.5 h-2.5" />
+                        className="px-3 py-2.5 min-h-[40px] bg-cyan-500 text-black text-xs font-bold rounded-lg flex items-center gap-1">
+                        Bayar <ExternalLink className="w-3 h-3" />
                       </button>
                     ) : (
                       <button onClick={() => handleRegeneratePayment(invoice.id, invoice.invoiceNumber)}
                         disabled={generatingPayment === invoice.id}
-                        className="px-2.5 py-1.5 bg-yellow-500 text-black text-[9px] font-bold rounded-lg flex items-center gap-1 disabled:opacity-50">
-                        {generatingPayment === invoice.id ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Zap className="w-2.5 h-2.5" />}
+                        className="px-3 py-2.5 min-h-[40px] bg-yellow-500 text-black text-xs font-bold rounded-lg flex items-center gap-1 disabled:opacity-50">
+                        {generatingPayment === invoice.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
                         Buat Link
                       </button>
                     )}
                     <button onClick={() => setManualPayModal({ id: invoice.id, invoiceNumber: invoice.invoiceNumber, amount: invoice.amount })}
-                      className="px-2.5 py-1.5 bg-purple-600 text-white text-[9px] font-bold rounded-lg flex items-center gap-1">
-                      <Banknote className="w-2.5 h-2.5" /> Bukti
+                      className="px-3 py-2.5 min-h-[40px] bg-purple-600 text-white text-xs font-bold rounded-lg flex items-center gap-1">
+                      <Banknote className="w-3 h-3" /> Bukti
                     </button>
                   </>
                 )}
@@ -560,7 +560,7 @@ export default function CustomerDashboard() {
       {/* -- ONT/WiFi + All Invoices (desktop 2-col) --------------------- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
         {/* ONT/WiFi Card */}
-        <CyberCard className="p-4 bg-card border-2 border-accent/30 ">
+        <CyberCard className="p-4 bg-card border-2 border-accent/30">
           <div className="flex items-center justify-between gap-2 min-w-0 mb-3 min-w-0">
             <div className="flex items-center gap-2">
               <div className="p-2 bg-accent/20 rounded-lg border border-accent/30 flex items-center justify-center">
@@ -651,7 +651,7 @@ export default function CustomerDashboard() {
         </CyberCard>
 
         {/* All Invoices Card */}
-        <CyberCard className="p-4 bg-card border-2 border-success/30 ">
+        <CyberCard className="p-4 bg-card border-2 border-success/30">
           <div className="flex items-center justify-between gap-2 min-w-0 mb-3 min-w-0">
             <div className="flex items-center gap-2">
               <div className="p-2 bg-success/20 rounded-lg border border-success/30 flex items-center justify-center">
@@ -689,16 +689,16 @@ export default function CustomerDashboard() {
                       {!isPaid && !isCancelled && invoice.manualPaymentStatus !== 'pending' && (isPending || isOverdue) && (
                         <div className="flex flex-col gap-1 ml-1 flex-shrink-0">
                           {invoice.paymentLink && !invoice.paymentLink.includes('localhost') ? (
-                            <button onClick={() => window.open(invoice.paymentLink ?? undefined, '_blank', 'noopener,noreferrer')} className="px-2 py-1 bg-cyan-500 text-black text-[9px] font-bold rounded-lg flex items-center gap-0.5">
-                              Bayar <ExternalLink className="w-2.5 h-2.5" />
+                            <button onClick={() => window.open(invoice.paymentLink ?? undefined, '_blank', 'noopener,noreferrer')} className="px-2.5 py-2 min-h-[36px] bg-cyan-500 text-black text-[10px] font-bold rounded-lg flex items-center gap-0.5">
+                              Bayar <ExternalLink className="w-3 h-3" />
                             </button>
                           ) : (
-                            <button onClick={() => handleRegeneratePayment(invoice.id, invoice.invoiceNumber)} disabled={generatingPayment === invoice.id} className="px-2 py-1 bg-yellow-500 text-black text-[9px] font-bold rounded-lg disabled:opacity-50">
-                              {generatingPayment === invoice.id ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Zap className="w-2.5 h-2.5" />}
+                            <button onClick={() => handleRegeneratePayment(invoice.id, invoice.invoiceNumber)} disabled={generatingPayment === invoice.id} className="px-2.5 py-2 min-h-[36px] bg-yellow-500 text-black text-[10px] font-bold rounded-lg disabled:opacity-50">
+                              {generatingPayment === invoice.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
                             </button>
                           )}
-                          <button onClick={() => setManualPayModal({ id: invoice.id, invoiceNumber: invoice.invoiceNumber, amount: invoice.amount })} className="px-2 py-1 bg-purple-600 text-white text-[9px] font-bold rounded-lg">
-                            <Banknote className="w-2.5 h-2.5" />
+                          <button onClick={() => setManualPayModal({ id: invoice.id, invoiceNumber: invoice.invoiceNumber, amount: invoice.amount })} className="px-2.5 py-2 min-h-[36px] bg-purple-600 text-white text-[10px] font-bold rounded-lg">
+                            <Banknote className="w-3 h-3" />
                           </button>
                         </div>
                       )}
