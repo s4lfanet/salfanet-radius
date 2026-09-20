@@ -585,9 +585,13 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
               {(slot.ports.length > 0 ? slot.ports : (slot.uplinkIfaces ?? []).map((iface, index) => ({ port: index, iface, onuCount: 0, onlineCount: 0, hasOnus: false })) ).map((port, index) => {
                 const iface = port.iface ?? (index === 0 ? `gei_1/${slot.index}` : `xgei_1/${slot.index}/${index}`);
                 const isXGE = iface.startsWith('xgei');
-                const shortLabel = isXGE
-                  ? iface.replace(/^xgei_1\/\d+\//, 'X/')
-                  : iface.replace(/^gei_1\//, 'B ');
+                // Keep the slot number in the label (e.g. "B 3", "X/4") — after
+                // merging the redundant SMXA pair into one row, ports from both
+                // physical slots sit side by side, so dropping the slot number
+                // (as a bare "X/" prefix strip used to do) makes two different
+                // ports from slot 3 and slot 4 look identical.
+                const ifaceRest = iface.replace(/^x?gei_1\//, '');
+                const shortLabel = isXGE ? `X/${ifaceRest}` : `B ${ifaceRest}`;
                 const visual = getUplinkPortVisual(port);
 
                 return (

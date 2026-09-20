@@ -123,11 +123,13 @@ function parseShowCard(output: string): CardInfo[] {
 /**
  * Derive uplink interface names for an SMXA slot.
  *
- * ZTE C320 SMXA (plain): 1 GE port + 2 XGE ports per slot.
- *   GE interface name: gei_1/{slot}       (no port suffix — only 1 GE per card)
- *   XGE interface names: xgei_1/{slot}/1, xgei_1/{slot}/2
+ * ZTE C320 SMXA (plain): exactly 1 GE port + 1 XGE port per slot, neither
+ * one sub-numbered. Verified live against a production C320 via
+ * `show interface ?`, which lists only `gei_1/{slot}` and `xgei_1/{slot}`
+ * for an SMXA card — there is no `gei_1/{slot}/1`-style child interface.
  *
- * SMXA-B: 3 GE + 2 XGE per slot (uses /port suffix for all).
+ * SMXA-B: 3 GE + 2 XGE per slot (uses /port suffix for all) — not verified
+ * live on this hardware, kept as the best-known layout for that variant.
  */
 function smxaUplinkPorts(slot: number, cardType: string): string[] {
   const ct = cardType.toUpperCase();
@@ -146,13 +148,8 @@ function smxaUplinkPorts(slot: number, cardType: string): string[] {
       `xgei_1/${slot}/1`, `xgei_1/${slot}/2`,
     ];
   }
-  if (ct === 'SMXA') {
-    // ZTE C320: SMXA has exactly 1 GE port (no /port suffix) + 2 XGE ports.
-    // Verified from `show interface ?` output: gei_1/3, xgei_1/3 etc.
-    return [`gei_1/${slot}`, `xgei_1/${slot}/1`, `xgei_1/${slot}/2`];
-  }
-  // Generic fallback
-  return [`gei_1/${slot}`, `xgei_1/${slot}/1`, `xgei_1/${slot}/2`];
+  // SMXA (plain) and the generic fallback: 1 GE + 1 XGE, no sub-numbering.
+  return [`gei_1/${slot}`, `xgei_1/${slot}`];
 }
 
 function parseUplinkPortStatusTable(output: string, ifaces: string[]): Map<string, UplinkPortState> {
