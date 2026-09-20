@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, use, useMemo } from 'react';
+import { useState, useEffect, useCallback, use, useMemo, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -128,6 +128,10 @@ interface ApiChassisSlot {
   }>;
   uplinkIfaces?: string[];
   description?: string;
+  /** Set on a standby uplink slot once its ports were merged into the active
+   *  slot at this index — lets the two render side by side as one row
+   *  instead of two stacked rows, matching the physical adjacent-slot pair. */
+  pairedWithIndex?: number;
 }
 
 // ── Uplink Port Detail Modal ─────────────────────────────────────────────────
@@ -422,9 +426,9 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
   // ZTE C320 SMXA/SMXA-B uplink cards are installed as a redundant pair
   // (e.g. slot 3 + slot 4): only one is INSERVICE at a time and its ports
   // cover both physical slots. Merge the standby slot's ports into the
-  // active slot — matching the reference nms-ztec320 UI — instead of
-  // showing two separate half-populated uplink rows; the standby slot
-  // still renders as its own EMPTY row.
+  // active slot — instead of showing two separate half-populated uplink
+  // rows — and tag the standby placeholder with pairedWithIndex so the two
+  // physically-adjacent slots render side by side as one row, not stacked.
   {
     const nonUplink = visibleSlots.filter((slot) => slot.type !== 'uplink');
     const uplinks = visibleSlots.filter((slot) => slot.type === 'uplink');
@@ -436,7 +440,7 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
       if (target) {
         target.ports = [...target.ports, ...standbySlot.ports].sort((a, b) => a.port - b.port);
         target.portCount = target.ports.length;
-        merged.push({ ...standbySlot, present: false, cardType: '', cardStatus: '', ports: [], portCount: 0 });
+        merged.push({ ...standbySlot, present: false, cardType: '', cardStatus: '', ports: [], portCount: 0, pairedWithIndex: target.index });
       } else {
         merged.push({ ...standbySlot });
       }
@@ -729,9 +733,32 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
               </div>
             </div>
 
-            {/* Slot rows */}
+            {/* Slot rows — a standby uplink slot renders beside its active
+                pair (physically adjacent in the chassis) instead of below it */}
             <div className="flex-1 flex flex-col gap-1.5">
-              {diagramSlots.map(slot => renderSlotRow(slot))}
+              {(() => {
+                const rows: ReactNode[] = [];
+                const rendered = new Set<number>();
+                for (const slot of diagramSlots) {
+                  if (rendered.has(slot.index)) continue;
+                  const pairSlot = slot.type === 'uplink' && slot.present
+                    ? diagramSlots.find((s) => s.pairedWithIndex === slot.index)
+                    : undefined;
+                  rendered.add(slot.index);
+                  if (pairSlot) {
+                    rendered.add(pairSlot.index);
+                    rows.push(
+                      <div key={slot.index} className="flex items-stretch gap-1.5">
+                        <div className="flex-1">{renderSlotRow(slot)}</div>
+                        <div className="flex-1">{renderSlotRow(pairSlot)}</div>
+                      </div>
+                    );
+                  } else {
+                    rows.push(renderSlotRow(slot));
+                  }
+                }
+                return rows;
+              })()}
             </div>
           </div>
 
