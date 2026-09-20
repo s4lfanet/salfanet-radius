@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Server, RefreshCw, AlertCircle, Wifi, WifiOff, Clock, Activity, ArrowLeft, Save, TestTube, Power, Download, Signal, Plus, X, Zap, Eye, UserPlus, Trash2, Settings } from 'lucide-react';
+import { Server, RefreshCw, AlertCircle, Wifi, WifiOff, Clock, Activity, ArrowLeft, Save, TestTube, Power, Download, Signal, Plus, X, Zap, Eye, UserPlus, Trash2, Settings, Network, HardDrive } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
 import { showError, showSuccess, showInfo, showWarning, showConfirm } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';
@@ -419,6 +419,31 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
     ].sort((a, b) => a.index - b.index);
   }
 
+  // ZTE C320 SMXA/SMXA-B uplink cards are installed as a redundant pair
+  // (e.g. slot 3 + slot 4): only one is INSERVICE at a time and its ports
+  // cover both physical slots. Merge the standby slot's ports into the
+  // active slot — matching the reference nms-ztec320 UI — instead of
+  // showing two separate half-populated uplink rows; the standby slot
+  // still renders as its own EMPTY row.
+  {
+    const nonUplink = visibleSlots.filter((slot) => slot.type !== 'uplink');
+    const uplinks = visibleSlots.filter((slot) => slot.type === 'uplink');
+    const active = uplinks.filter((slot) => (slot.cardStatus || '').toUpperCase() === 'INSERVICE');
+    const standby = uplinks.filter((slot) => (slot.cardStatus || '').toUpperCase() !== 'INSERVICE');
+    const merged: ApiChassisSlot[] = active.map((slot) => ({ ...slot }));
+    for (const standbySlot of standby) {
+      const target = standbySlot.cardType ? merged.find((slot) => slot.cardType === standbySlot.cardType) : undefined;
+      if (target) {
+        target.ports = [...target.ports, ...standbySlot.ports].sort((a, b) => a.port - b.port);
+        target.portCount = target.ports.length;
+        merged.push({ ...standbySlot, present: false, cardType: '', cardStatus: '', ports: [], portCount: 0 });
+      } else {
+        merged.push({ ...standbySlot });
+      }
+    }
+    visibleSlots = [...nonUplink, ...merged].sort((a, b) => a.index - b.index);
+  }
+
   // Every physical PON port belongs in "Detail Per Port PON", not just the
   // ones that already have an ONU — otherwise an empty port silently
   // disappears from the grid instead of showing "0 ONU" like the rack
@@ -530,9 +555,24 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
       <div key={slot.index} className="flex items-center gap-0 rounded overflow-hidden select-none"
         style={{ background: rowBg, border: `1px solid ${rowBorder}`, minHeight: 48 }}>
         <div style={{ width: 4, alignSelf: 'stretch', background: isActive ? rowBorder : '#1e293b' }} />
-        <div className="flex items-center justify-start px-3" style={{ minWidth: 88 }}>
+        <div className="flex items-center justify-start gap-1.5 px-3" style={{ minWidth: 88 }}>
           {isActive ? (
-            <span className="text-xs font-bold font-mono tracking-wider" style={{ color: labelColor }}>{slot.cardType}</span>
+            <>
+              {isUplink
+                ? <Network className="h-3 w-3 shrink-0" style={{ color: labelColor }} />
+                : <HardDrive className="h-3 w-3 shrink-0" style={{ color: labelColor }} />}
+              <div className="flex flex-col">
+                <span className="text-xs font-bold font-mono tracking-wider" style={{ color: labelColor }}>{slot.cardType}</span>
+                {isSmxa && <span className="text-[8px] font-mono leading-none text-blue-400">CTRL</span>}
+              </div>
+              {isSmxa && (
+                <div className="flex items-center justify-center shrink-0 ml-0.5 rounded"
+                  title="DC -48V PSU"
+                  style={{ width: 16, height: 16, background: '#0d1117', border: '1px solid #1d4ed8' }}>
+                  <Zap className="h-2.5 w-2.5 text-blue-400" />
+                </div>
+              )}
+            </>
           ) : (
             <span className="text-xs text-gray-600 font-mono">-</span>
           )}
@@ -547,7 +587,7 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
                 const isXGE = iface.startsWith('xgei');
                 const shortLabel = isXGE
                   ? iface.replace(/^xgei_1\/\d+\//, 'X/')
-                  : iface.replace(/^gei_1\//, 'G/');
+                  : iface.replace(/^gei_1\//, 'B ');
                 const visual = getUplinkPortVisual(port);
 
                 return (
