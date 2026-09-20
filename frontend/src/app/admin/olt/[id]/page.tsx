@@ -419,6 +419,18 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
     ].sort((a, b) => a.index - b.index);
   }
 
+  // Every physical PON port belongs in "Detail Per Port PON", not just the
+  // ones that already have an ONU — otherwise an empty port silently
+  // disappears from the grid instead of showing "0 ONU" like the rack
+  // diagram above it does.
+  for (const slot of visibleSlots) {
+    if (slot.type !== 'service') continue;
+    for (const port of slot.ports) {
+      const key = `${slot.index}/${port.port}`;
+      if (!portStats[key]) portStats[key] = { total: 0, online: 0, offline: 0, los: 0, dyingGasp: 0, unregistered: 0, rxPowers: [] };
+    }
+  }
+
   const diagramSlots = useMemo(() => {
     const nonMcuSlots = visibleSlots.filter((slot) => slot.type !== 'mcud');
     if (nonMcuSlots.length === 0) return [] as ApiChassisSlot[];
@@ -542,11 +554,11 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
                   <button key={iface}
                     onClick={() => setSelectedUplinkPort(iface)}
                     title={uplinkTooltip(slot, port, index + 1)}
-                    className="flex flex-col items-center px-2 py-1 rounded border transition-all hover:brightness-125 hover:scale-105 cursor-pointer"
-                    style={{ background: visual.bg, borderColor: visual.border, minWidth: 48 }}>
-                    <div className="w-1.5 h-1.5 rounded-full mb-0.5" style={{ background: visual.dot }} />
+                    className="flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded border transition-all hover:brightness-125 hover:scale-105 cursor-pointer"
+                    style={{ background: visual.bg, borderColor: visual.border, minWidth: 48, minHeight: 40 }}>
+                    <div className="w-1.5 h-1.5 rounded-full" style={{ background: visual.dot }} />
                     <span className="text-[8px] font-mono leading-none whitespace-nowrap" style={{ color: visual.text }}>{shortLabel}</span>
-                    <span className="text-[7px] font-mono" style={{ color: visual.text }}>{visual.state}</span>
+                    <span className="text-[7px] font-mono leading-none" style={{ color: visual.text }}>{visual.state}</span>
                   </button>
                 );
               })}
@@ -696,26 +708,35 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
               {Object.entries(portStats)
                 .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
                 .map(([portKey, s]) => {
+                  const isEmpty = s.total === 0;
                   const pct = s.total > 0 ? (s.online / s.total) * 100 : 0;
                   const avgRx = s.rxPowers.length > 0 ? (s.rxPowers.reduce((a, b) => a + b, 0) / s.rxPowers.length).toFixed(1) : null;
                   return (
-                    <div key={portKey} className="border border-border rounded-lg p-2.5">
+                    <div key={portKey} className={`border border-border rounded-lg p-2.5 ${isEmpty ? 'opacity-60' : ''}`}>
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-mono text-xs font-semibold text-muted-foreground">0/{portKey}</span>
-                        <span className={`text-[10px] font-bold ${pct === 100 ? 'text-green-600' : pct === 0 ? 'text-red-600' : 'text-orange-500'}`}>
-                          {s.online}/{s.total}
-                        </span>
+                        {!isEmpty && (
+                          <span className={`text-[10px] font-bold ${pct === 100 ? 'text-green-600' : pct === 0 ? 'text-red-600' : 'text-orange-500'}`}>
+                            {s.online}/{s.total}
+                          </span>
+                        )}
                       </div>
-                      <div className="w-full bg-muted rounded-full h-1.5 mb-1">
-                        <div
-                          className={`h-1.5 rounded-full ${pct === 100 ? 'bg-green-500' : pct === 0 ? 'bg-red-500' : 'bg-orange-400'}`}
-                          style={{ width: `${Math.max(pct, s.total > 0 ? 5 : 0)}%` }}
-                        />
-                      </div>
-                      <div className="flex justify-between text-[9px] text-gray-400 gap-2">
-                        <span>{s.total} ONU{s.unregistered > 0 ? ` · ${s.unregistered} unreg` : ''}</span>
-                        {avgRx && <span>{avgRx} dBm</span>}
-                      </div>
+                      {isEmpty ? (
+                        <div className="text-[9px] text-gray-400 text-center py-1.5">No ONU</div>
+                      ) : (
+                        <>
+                          <div className="w-full bg-muted rounded-full h-1.5 mb-1">
+                            <div
+                              className={`h-1.5 rounded-full ${pct === 100 ? 'bg-green-500' : pct === 0 ? 'bg-red-500' : 'bg-orange-400'}`}
+                              style={{ width: `${Math.max(pct, 5)}%` }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-[9px] text-gray-400 gap-2">
+                            <span>{s.total} ONU{s.unregistered > 0 ? ` · ${s.unregistered} unreg` : ''}</span>
+                            {avgRx && <span>{avgRx} dBm</span>}
+                          </div>
+                        </>
+                      )}
                     </div>
                   );
                 })}
@@ -1748,7 +1769,6 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
         const data = await res.json();
         const o = data.olt;
         setOlt(o);
-        return o;
         setSettings({
           vendor: o.vendor ?? 'huawei',
           model: o.model ?? '',
@@ -1766,6 +1786,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
           pollingInterval: o.pollingInterval,
           routerIds: (o.routers ?? []).map((r: { id: string; routerId: string; router: { id: string; name: string; ipAddress: string } }) => r.routerId),
         });
+        return o;
       } else {
         router.push('/admin/olt/monitoring');
       }
@@ -2075,7 +2096,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
       {/* Status Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         <Card className={`border-l-4 ${olt.isOnline ? 'border-l-green-500' : 'border-l-red-500'}`}>
-          <CardContent className="pt-4 pb-4">
+          <CardContent className="px-4 pt-4 pb-4">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
               <Wifi className="h-3 w-3" /> Status
             </div>
@@ -2089,7 +2110,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
         </Card>
 
         <Card className="border-l-4 border-l-blue-500">
-          <CardContent className="pt-4 pb-4">
+          <CardContent className="px-4 pt-4 pb-4">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
               <Clock className="h-3 w-3" /> Uptime
             </div>
@@ -2100,7 +2121,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
           </CardContent>
         </Card>
         <Card className="border-l-4 border-l-teal-500">
-          <CardContent className="pt-4 pb-4">
+          <CardContent className="px-4 pt-4 pb-4">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
               <Activity className="h-3 w-3" /> ONUs
             </div>
@@ -2375,12 +2396,12 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
         <TabsContent value="alerts" className="space-y-3">
           {olt.alerts.length === 0 ? (
             <Card>
-              <CardContent className="text-center py-8 text-gray-400">No active alerts</CardContent>
+              <CardContent className="px-4 text-center py-8 text-gray-400">No active alerts</CardContent>
             </Card>
           ) : (
             olt.alerts.map((alert: OltAlert) => (
               <Card key={alert.id} className={alert.severity === 'critical' ? 'border-red-300' : ''}>
-                <CardContent className="pt-4 pb-4">
+                <CardContent className="px-4 pt-4 pb-4">
                   <div className="flex items-start gap-3">
                     <AlertCircle className={`h-5 w-5 mt-0.5 ${alert.severity === 'critical' ? 'text-red-500' : 'text-orange-500'}`} />
                     <div>
@@ -2405,11 +2426,11 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
         {/* Settings Tab */}
         <TabsContent value="settings">
           <Card>
-            <CardHeader>
+            <CardHeader className="px-5 pt-5">
               <CardTitle>Monitoring Settings</CardTitle>
               <CardDescription>Configure SNMP, SSH, Telnet and polling parameters</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="px-5 pb-5 space-y-6">
               {/* General */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
@@ -2659,7 +2680,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
         {/* Logs Tab */}
         <TabsContent value="logs">
           <Card>
-            <CardContent className="pt-4">
+            <CardContent className="px-4 pt-4 pb-4">
               <div className="space-y-2">
                 {olt.monitoringLogs.map((log: OltMonitoringLog) => (
                   <div key={log.id} className="flex items-start gap-3 py-2 border-b last:border-0">
