@@ -480,7 +480,7 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
     const avgRx = s?.rxPowers.length ? (s.rxPowers.reduce((a, b) => a + b) / s.rxPowers.length).toFixed(1) : null;
     return s
       ? [
-          `PON 0/${slotIdx}/${portIdx}`,
+          `PON ${slotIdx}/${portIdx + 1}`,
           `Total ONU: ${s.total}`,
           `Online: ${s.online}`,
           `Offline: ${s.offline}`,
@@ -489,7 +489,7 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
           `Unconfig: ${s.unregistered}`,
           ...(avgRx ? [`Avg RX: ${avgRx} dBm`] : []),
         ].join('\n')
-      : `PON 0/${slotIdx}/${portIdx}\n(No ONU)`;
+      : `PON ${slotIdx}/${portIdx + 1}\n(No ONU)`;
   };
 
   const getUplinkPortVisual = (port: ApiChassisSlot['ports'][number]) => {
@@ -584,20 +584,32 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
               <span className="ml-2 text-[9px] text-blue-400 font-mono">{slot.cardType}</span>
             </div>
           ) : (
-            <div className="flex items-center gap-1 flex-nowrap min-w-max">
+            <div className="flex items-start gap-1.5 flex-nowrap min-w-max">
               {Array.from({ length: servicePortCount }, (_, i) => {
                 const c = portColor(slot.index, i);
                 const s = portStats[`${slot.index}/${i}`];
+                const losCount = s?.los ?? 0;
+                const dgCount = s?.dyingGasp ?? 0;
+                const uncfgCount = s?.unregistered ?? 0;
 
                 return (
-                  <div key={i}
-                    className="w-4 h-4 rounded-[3px] border flex items-center justify-center cursor-default transition-all hover:brightness-150 hover:scale-110 hover:z-10 relative"
-                    style={{ background: c.bg, borderColor: c.border }}
-                    title={portTooltip(slot.index, i)}>
-                    <div className="w-1 h-1 rounded-full" style={{ background: c.dot }} />
-                    {s && s.unregistered > 0 && (
-                      <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-yellow-400 border border-yellow-600" title="Unregistered ONU" />
-                    )}
+                  <div key={i} className="flex flex-col items-center gap-0.5 shrink-0">
+                    <div
+                      className="w-[26px] h-[26px] rounded-[5px] border flex items-center justify-center cursor-default transition-all hover:brightness-150 hover:scale-110 hover:z-10 relative"
+                      style={{ background: c.bg, borderColor: c.border }}
+                      title={portTooltip(slot.index, i)}>
+                      <div className="w-3.5 h-3.5 rounded-full" style={{ background: c.dot }} />
+                      {losCount > 0 && (
+                        <span className="absolute -top-1.5 -left-1.5 min-w-[14px] h-3.5 px-1 rounded-full bg-red-600 border border-gray-950 text-white text-[8px] font-bold flex items-center justify-center z-10">{losCount}</span>
+                      )}
+                      {dgCount > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-3.5 px-1 rounded-full bg-violet-600 border border-gray-950 text-white text-[8px] font-bold flex items-center justify-center z-10">{dgCount}</span>
+                      )}
+                      {uncfgCount > 0 && losCount === 0 && dgCount === 0 && (
+                        <span className="absolute -bottom-1 -right-1 w-2 h-2 rounded-full bg-yellow-400 border border-yellow-600 z-10" title="Unregistered ONU" />
+                      )}
+                    </div>
+                    <span className="text-[9px] text-gray-500 font-mono leading-none">{i + 1}</span>
                   </div>
                 );
               })}
@@ -708,13 +720,15 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
               {Object.entries(portStats)
                 .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
                 .map(([portKey, s]) => {
+                  const [slotPart, portPart] = portKey.split('/');
+                  const displayLabel = `${slotPart}/${parseInt(portPart, 10) + 1}`;
                   const isEmpty = s.total === 0;
                   const pct = s.total > 0 ? (s.online / s.total) * 100 : 0;
                   const avgRx = s.rxPowers.length > 0 ? (s.rxPowers.reduce((a, b) => a + b, 0) / s.rxPowers.length).toFixed(1) : null;
                   return (
                     <div key={portKey} className={`border border-border rounded-lg p-2.5 ${isEmpty ? 'opacity-60' : ''}`}>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="font-mono text-xs font-semibold text-muted-foreground">0/{portKey}</span>
+                        <span className="font-mono text-xs font-semibold text-muted-foreground">PON {displayLabel}</span>
                         {!isEmpty && (
                           <span className={`text-[10px] font-bold ${pct === 100 ? 'text-green-600' : pct === 0 ? 'text-red-600' : 'text-orange-500'}`}>
                             {s.online}/{s.total}
