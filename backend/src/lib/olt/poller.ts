@@ -138,13 +138,15 @@ export async function pollOLTWithOptions(
 
     // Upsert ONU statuses
     const discoveredKeys = new Set<string>();
+    const discoveredSerials = new Set<string>();
     for (const onu of discoveredOnus) {
       discoveredKeys.add(buildOnuKey(onu));
+      if (onu.status !== 'auth_failed' && onu.serialNumber) discoveredSerials.add(onu.serialNumber);
       await upsertONU(oltId, onu, sshConfig, telnetConfig, vendor, options);
     }
 
     if (discoveredOnus.length > 0) {
-      await pruneMissingOnus(oltId, discoveredKeys);
+      await pruneMissingOnus(oltId, discoveredKeys, discoveredSerials);
     }
 
     // Count ONU statuses
@@ -255,10 +257,10 @@ function buildOnuKey(onu: { frame?: number | null; slot?: number | null; port: n
   return [onu.frame ?? 0, onu.slot ?? 0, onu.port, onu.onuId].join(':');
 }
 
-async function pruneMissingOnus(oltId: string, discoveredKeys: Set<string>): Promise<void> {
+async function pruneMissingOnus(oltId: string, discoveredKeys: Set<string>, discoveredSerials: Set<string>): Promise<void> {
   const currentOnus = await prisma.oltOnuStatus.findMany({
     where: { oltId },
-    select: { id: true, frame: true, slot: true, port: true, onuId: true, status: true },
+    select: { id: true, frame: true, slot: true, port: true, onuId: true, status: true, serialNumber: true },
   });
 
   const staleIds = currentOnus
@@ -268,7 +270,16 @@ async function pruneMissingOnus(oltId: string, discoveredKeys: Set<string>): Pro
       // Do NOT prune these: the OLT SEEN_ONU_TABLE may not reflect the ONU yet
       // right after deletion, and operators need to see it to re-register it.
       // Stale unregistered entries can be cleaned up manually via the UI.
-      if (onu.status === 'auth_failed') return false;
+      //
+      // Exception: if this exact serial number now shows up as a REGISTERED
+      // ONU elsewhere in this same poll, the device has been provisioned —
+      // this row is a leftover ghost from before registration and inflates
+      // the total ONU count forever otherwise (confirmed live: a device
+      // registered under a real onuId still had its old auth_failed row
+      // sitting in the DB with a synthetic onuId, double-counting it).
+      if (onu.status === 'auth_failed') {
+        return !!onu.serialNumber && discoveredSerials.has(onu.serialNumber);
+      }
       return true;
     })
     .map((onu) => onu.id);
