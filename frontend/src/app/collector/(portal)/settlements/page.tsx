@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Fragment } from 'react';
 import { apiAdmin } from '@/lib/api/client';
 import { formatWIB } from '@/lib/timezone';
 import { Activity, ChevronDown, ChevronUp } from 'lucide-react';
@@ -69,33 +69,33 @@ export default function CollectorSettlementsPage() {
   useEffect(() => { if (mode === 'range') fetchRange() }, [mode]);
 
   const pmMethod = (m: string) => {
-    if (!m || m === 'cash') return <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600">Tunai</span>;
-    if (m === 'transfer' || m === 'online') return <span className="text-xs px-2 py-0.5 rounded bg-blue-500/10 text-blue-600">Transfer</span>;
-    if (m === 'discount') return <span className="text-xs px-2 py-0.5 rounded bg-amber-500/10 text-amber-600">Diskon</span>;
+    if (!m || m === 'cash') return <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">Tunai</span>;
+    if (m === 'transfer' || m === 'online') return <span className="text-xs px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400">Transfer</span>;
+    if (m === 'discount') return <span className="text-xs px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400">Diskon</span>;
     return <span className="text-xs px-2 py-0.5 rounded bg-accent text-muted-foreground">{m}</span>;
   };
 
   const confirmBadge = (confirmed_by: string, confirmed_at: string) => {
     if (confirmed_by) return (
-      <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 font-medium">
+      <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-medium">
         Dikonfirmasi {confirmed_at ? formatWIB(confirmed_at, 'dd MMM') : ''}
       </span>
     );
-    return <span className="text-xs px-2 py-0.5 rounded bg-amber-500/10 text-amber-600">Belum dikonfirmasi</span>;
+    return <span className="text-xs px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400">Belum dikonfirmasi</span>;
   };
 
   const renderSummaryCards = (summary: any) => {
     const items = [
-      { label: 'Tagihan', value: summary?.invoice_count || 0, raw: true, color: 'text-blue-600' },
-      { label: 'Total Setoran', value: fmtRp(summary?.total_amount), color: 'text-emerald-600' },
-      { label: 'Tunai', value: fmtRp(summary?.cash_amount), color: 'text-cyan-600' },
-      { label: 'Transfer', value: fmtRp(summary?.transfer_amount), color: 'text-purple-600' },
-      { label: 'Diskon', value: fmtRp(summary?.discount_amount), color: 'text-amber-600' },
+      { label: 'Tagihan', value: summary?.invoice_count || 0, raw: true, color: 'text-blue-600 dark:text-blue-400' },
+      { label: 'Total Setoran', value: fmtRp(summary?.total_amount), color: 'text-emerald-600 dark:text-emerald-400' },
+      { label: 'Tunai', value: fmtRp(summary?.cash_amount), color: 'text-emerald-600 dark:text-emerald-400' },
+      { label: 'Transfer', value: fmtRp(summary?.transfer_amount), color: 'text-blue-600 dark:text-blue-400' },
+      { label: 'Diskon', value: fmtRp(summary?.discount_amount), color: 'text-amber-600 dark:text-amber-400' },
     ];
     return (
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
-        {items.map(it => (
-          <div key={it.label} className="bg-card border border-border rounded-lg p-3">
+        {items.map((it, idx) => (
+          <div key={it.label} className={`bg-card border border-border rounded-lg p-3 ${idx === items.length - 1 ? 'col-span-2 md:col-span-1' : ''}`}>
             <div className="text-xs text-muted-foreground mb-1">{it.label}</div>
             <div className={`font-bold ${it.raw ? 'text-xl' : 'text-sm'} ${it.color}`}>{it.value}</div>
           </div>
@@ -241,8 +241,8 @@ export default function CollectorSettlementsPage() {
                   </thead>
                   <tbody className="divide-y divide-border">
                     {rangeData.rows.map((row: any) => (
-                      <>
-                        <tr key={row.date}
+                      <Fragment key={row.date}>
+                        <tr
                           className="hover:bg-accent/30 transition-colors cursor-pointer"
                           onClick={() => fetchDetailForDate(row.date)}>
                           <td className="px-3 py-3 font-medium text-foreground">
@@ -250,8 +250,8 @@ export default function CollectorSettlementsPage() {
                           </td>
                           <td className="px-3 py-3 text-right">{row.invoice_count}</td>
                           <td className="px-3 py-3 text-right font-medium">{fmtRp(row.total_amount)}</td>
-                          <td className="px-3 py-3 text-right text-cyan-600">{fmtRp(row.cash_amount)}</td>
-                          <td className="px-3 py-3 text-right text-purple-600">{fmtRp(row.transfer_amount)}</td>
+                          <td className="px-3 py-3 text-right text-emerald-600 dark:text-emerald-400">{fmtRp(row.cash_amount)}</td>
+                          <td className="px-3 py-3 text-right text-blue-600 dark:text-blue-400">{fmtRp(row.transfer_amount)}</td>
                           <td className="px-3 py-3 text-center">{confirmBadge(row.confirmed_by, row.confirmed_at)}</td>
                           <td className="px-3 py-3 text-center">
                             {expandedRow === row.date ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -272,7 +272,7 @@ export default function CollectorSettlementsPage() {
                             </td>
                           </tr>
                         )}
-                      </>
+                      </Fragment>
                     ))}
                   </tbody>
                 </table>

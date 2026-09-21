@@ -5,6 +5,7 @@ import { apiAdmin, ApiError } from '@/lib/api/client';
 import { printInvoiceStandard, printInvoiceThermal } from '@/lib/invoice-print';
 import { BluetoothPrinter, type ThermalReceiptData } from '@/lib/bluetooth-printer';
 import { formatWIB } from '@/lib/timezone';
+import { showError, showSuccess, showWarning } from '@/lib/sweetalert';
 import { Users, Search, CheckCircle, Loader2, ChevronDown, X, Upload, Printer, Bluetooth, MessageCircle, FileText, Wallet, MapPin, Wifi, Calendar, Phone } from 'lucide-react';
 
 const PAGE_SIZE = 50;
@@ -91,10 +92,10 @@ export default function CollectorBillingPage() {
     setShowPrintMenu(null);
     try {
       await printInvoiceStandard(invoiceId, (type, title, desc) => {
-        if (type === 'error') alert(`${title}${desc ? ': ' + desc : ''}`);
+        if (type === 'error') showError(desc || title, title);
       });
     } catch (_err) {
-      alert('Gagal mencetak invoice');
+      showError('Gagal mencetak invoice');
     } finally {
       setActionLoading(null);
     }
@@ -105,10 +106,10 @@ export default function CollectorBillingPage() {
     setShowPrintMenu(null);
     try {
       await printInvoiceThermal(invoiceId, (type, title, desc) => {
-        if (type === 'error') alert(`${title}${desc ? ': ' + desc : ''}`);
+        if (type === 'error') showError(desc || title, title);
       });
     } catch (_err) {
-      alert('Gagal mencetak struk');
+      showError('Gagal mencetak struk');
     } finally {
       setActionLoading(null);
     }
@@ -116,7 +117,7 @@ export default function CollectorBillingPage() {
 
   const handleBluetoothConnect = async () => {
     if (!BluetoothPrinter.isSupported()) {
-      alert('Bluetooth printing tidak tersedia.\nGunakan Chrome/Edge di Android atau APK Salfanet Collector.');
+      showWarning('Bluetooth printing tidak tersedia. Gunakan Chrome/Edge di Android atau APK Salfanet Collector.');
       return;
     }
     setActionLoading('bt-connect');
@@ -128,7 +129,7 @@ export default function CollectorBillingPage() {
         setBtConnected(true);
       }
     } catch (err: any) {
-      alert(err.message || 'Gagal connect ke printer Bluetooth');
+      showError(err.message || 'Gagal connect ke printer Bluetooth');
     } finally {
       setActionLoading(null);
     }
@@ -147,7 +148,7 @@ export default function CollectorBillingPage() {
     if (!btPrinter || !btConnected) {
       // Try to connect first
       if (!BluetoothPrinter.isSupported()) {
-        alert('Bluetooth printing tidak tersedia.\nGunakan Chrome/Edge di Android atau APK Salfanet Collector.');
+        showWarning('Bluetooth printing tidak tersedia. Gunakan Chrome/Edge di Android atau APK Salfanet Collector.');
         return;
       }
       setActionLoading(`bt-${invoiceId}`);
@@ -155,7 +156,7 @@ export default function CollectorBillingPage() {
         const printer = new BluetoothPrinter();
         const ok = await printer.connect();
         if (!ok) {
-          alert('Gagal connect ke printer Bluetooth');
+          showError('Gagal connect ke printer Bluetooth');
           return;
         }
         setBtPrinter(printer);
@@ -165,7 +166,7 @@ export default function CollectorBillingPage() {
         const res = await fetch(`/api/invoices/${invoiceId}/pdf`, { credentials: 'include' });
         const data = await res.json();
         if (!data.success || !data.data) {
-          alert('Gagal mengambil data invoice');
+          showError('Gagal mengambil data invoice');
           return;
         }
         const inv = data.data;
@@ -178,9 +179,9 @@ export default function CollectorBillingPage() {
           amountFormatted: inv.amountFormatted,
         };
         await printer.printReceipt(receiptData);
-        alert('Struk berhasil dicetak via Bluetooth');
+        showSuccess('Struk berhasil dicetak via Bluetooth');
       } catch (err: any) {
-        alert(err.message || 'Gagal mencetak via Bluetooth');
+        showError(err.message || 'Gagal mencetak via Bluetooth');
       } finally {
         setActionLoading(null);
       }
@@ -193,7 +194,7 @@ export default function CollectorBillingPage() {
       const res = await fetch(`/api/invoices/${invoiceId}/pdf`, { credentials: 'include' });
       const data = await res.json();
       if (!data.success || !data.data) {
-        alert('Gagal mengambil data invoice');
+        showError('Gagal mengambil data invoice');
         return;
       }
       const inv = data.data;
@@ -207,7 +208,7 @@ export default function CollectorBillingPage() {
       };
       await btPrinter.printReceipt(receiptData);
     } catch (err: any) {
-      alert(err.message || 'Gagal mencetak via Bluetooth');
+      showError(err.message || 'Gagal mencetak via Bluetooth');
     } finally {
       setActionLoading(null);
     }
@@ -221,13 +222,13 @@ export default function CollectorBillingPage() {
         body: JSON.stringify({ invoiceId }),
       });
       if (res.success) {
-        alert(`Bukti pembayaran lunas terkirim via WhatsApp ke pelanggan ${customerName}`);
+        showSuccess(`Bukti pembayaran lunas terkirim via WhatsApp ke pelanggan ${customerName}`);
       } else {
-        alert(res.error || 'Gagal mengirim WhatsApp');
+        showError(res.error || 'Gagal mengirim WhatsApp');
       }
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'Gagal mengirim WhatsApp';
-      alert(msg);
+      showError(msg);
     } finally {
       setActionLoading(null);
     }
@@ -247,7 +248,7 @@ export default function CollectorBillingPage() {
   const handlePay = async () => {
     if (!payModal) return;
     if (paymentMethod === 'transfer' && !proofPreview) {
-      alert('Harap upload bukti transfer terlebih dahulu');
+      showWarning('Harap upload bukti transfer terlebih dahulu');
       return;
     }
     setPayLoading(true);
@@ -271,7 +272,7 @@ export default function CollectorBillingPage() {
       loadData();
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'Gagal menandai lunas';
-      alert(msg);
+      showError(msg);
     } finally {
       setPayLoading(false);
     }
@@ -288,7 +289,7 @@ export default function CollectorBillingPage() {
         <div className="flex items-center gap-2">
           {btConnected ? (
             <div className="flex items-center gap-2">
-              <span className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
+              <span className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
                 <Bluetooth className="w-4 h-4" />
                 Printer terhubung
               </span>
@@ -431,8 +432,8 @@ export default function CollectorBillingPage() {
                       {/* Status */}
                       <td className="px-3 py-3">
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                          u.status === 'active' ? 'bg-emerald-500/10 text-emerald-600' :
-                          u.status === 'isolated' || u.status === 'suspended' ? 'bg-red-500/10 text-red-600' :
+                          u.status === 'active' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
+                          u.status === 'isolated' || u.status === 'suspended' ? 'bg-red-500/10 text-red-600 dark:text-red-400' :
                           'bg-muted text-muted-foreground'
                         }`}>
                           {u.status === 'active' ? 'Aktif' : u.status === 'isolated' || u.status === 'suspended' ? 'Isolir' : u.status}
@@ -449,11 +450,11 @@ export default function CollectorBillingPage() {
                       <td className="px-3 py-3 text-right">
                         {!u.is_paid ? (
                           <div>
-                            <div className="text-sm font-bold text-orange-600">{fmtRp(u.unpaid_amount)}</div>
+                            <div className="text-sm font-bold text-orange-600 dark:text-orange-400">{fmtRp(u.unpaid_amount)}</div>
                             <div className="text-xs text-muted-foreground">{u.unpaid_count} invoice</div>
                           </div>
                         ) : u.invoices?.length > 0 ? (
-                          <span className="text-xs text-emerald-600 font-medium">Lunas</span>
+                          <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Lunas</span>
                         ) : (
                           <span className="text-xs text-muted-foreground">-</span>
                         )}
@@ -463,7 +464,7 @@ export default function CollectorBillingPage() {
                         <div className="flex items-center justify-center">
                           <button
                             onClick={() => setExpandedUser(expandedUser === u.id ? null : u.id)}
-                            className="text-xs text-emerald-600 font-medium hover:underline"
+                            className="text-xs text-emerald-600 dark:text-emerald-400 font-medium hover:underline"
                           >
                             {u.invoices?.length || 0} invoice
                           </button>
@@ -522,9 +523,9 @@ export default function CollectorBillingPage() {
                                       <td className="px-3 py-2 text-muted-foreground">{fmtDate(inv.dueDate)}</td>
                                       <td className="px-3 py-2">
                                         {inv.status === 'PAID' ? (
-                                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-600">Lunas</span>
+                                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">Lunas</span>
                                         ) : (
-                                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-500/10 text-orange-600">{inv.status}</span>
+                                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-500/10 text-orange-600 dark:text-orange-400">{inv.status}</span>
                                         )}
                                       </td>
                                       <td className="px-3 py-2 text-right font-bold text-foreground">{fmtRp(inv.amount)}</td>
@@ -715,6 +716,10 @@ export default function CollectorBillingPage() {
                 )}
               </div>
             )}
+
+            <p className="text-xs text-muted-foreground mb-4">
+              Tindakan ini akan menandai invoice sebagai lunas dan tidak bisa dibatalkan. Bukti pembayaran akan dikirim ke pelanggan via WhatsApp.
+            </p>
 
             <div className="flex gap-2">
               <button

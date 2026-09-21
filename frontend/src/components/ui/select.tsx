@@ -39,8 +39,8 @@ function SelectTrigger({
       className={cn(
         "border-2 border-border data-[placeholder]:text-muted-foreground",
         "[&_svg:not([class*='text-'])]:text-muted-foreground",
-        "focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:focus:border-blue-400 dark:focus:ring-blue-400/20",
-        "hover:border-muted-foreground/30",
+        "focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/30",
+        "hover:border-cyan-500/50",
         "aria-invalid:border-red-500 aria-invalid:ring-2 aria-invalid:ring-red-500/20",
         "bg-popover",
         "flex w-full items-center justify-between gap-2 rounded-xl px-3.5 sm:px-4 py-2 text-sm whitespace-nowrap shadow-sm transition-all duration-200 outline-none",

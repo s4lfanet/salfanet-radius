@@ -239,12 +239,15 @@ export default function AdminDashboard() {
   // Define stat cards with data
   const fmtIDR = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
   const totalMonthRevenue = stats ? (stats.invoiceRevenue + stats.voucherRevenue) : 0;
+  // Gradient reduced to 4 semantic families instead of a different hue per
+  // card: blue = counts/activity, emerald = revenue, amber = needs action,
+  // red = problem state. Was 12 unrelated hues competing on one screen.
   const statCards: StatCard[] = stats ? [
     {
       title: t('dashboard.totalPppoeUsers'),
       value: stats.totalPppoeUsers.toLocaleString(),
       icon: <Users className="w-5 h-5" />,
-      gradient: 'from-blue-500 to-cyan-400',
+      gradient: 'from-blue-500 to-blue-400',
       bgGlow: 'bg-blue-500/20',
       href: '/admin/pppoe/users',
     },
@@ -253,23 +256,23 @@ export default function AdminDashboard() {
       value: stats.activePppoeUsers.toLocaleString(),
       subtitle: 'PPPoE status aktif',
       icon: <CheckCircle2 className="w-5 h-5" />,
-      gradient: 'from-emerald-500 to-green-400',
+      gradient: 'from-emerald-500 to-emerald-400',
       bgGlow: 'bg-emerald-500/20',
     },
     {
       title: t('dashboard.activePppoeSessions'),
       value: stats.activeSessionsPPPoE.toLocaleString(),
       icon: <Activity className="w-5 h-5" />,
-      gradient: 'from-cyan-500 to-teal-400',
-      bgGlow: 'bg-cyan-500/20',
+      gradient: 'from-blue-500 to-blue-400',
+      bgGlow: 'bg-blue-500/20',
       href: '/admin/sessions/pppoe',
     },
     {
       title: t('dashboard.activeHotspotSessions'),
       value: stats.activeSessionsHotspot.toLocaleString(),
       icon: <Wifi className="w-5 h-5" />,
-      gradient: 'from-primary to-primary',
-      bgGlow: 'bg-primary/10',
+      gradient: 'from-blue-500 to-blue-400',
+      bgGlow: 'bg-blue-500/20',
       href: '/admin/sessions/hotspot',
     },
     {
@@ -277,23 +280,23 @@ export default function AdminDashboard() {
       value: stats.newRegistrations.toLocaleString(),
       subtitle: 'Menunggu proses',
       icon: <UserPlus className="w-5 h-5" />,
-      gradient: 'from-pink-500 to-rose-400',
-      bgGlow: 'bg-pink-500/20',
+      gradient: 'from-amber-500 to-amber-400',
+      bgGlow: 'bg-amber-500/20',
       href: '/admin/pppoe/registrations',
     },
     {
       title: t('dashboard.unusedVouchers'),
       value: stats.unusedVouchers.toLocaleString(),
       icon: <Ticket className="w-5 h-5" />,
-      gradient: 'from-amber-500 to-yellow-400',
-      bgGlow: 'bg-amber-500/20',
+      gradient: 'from-blue-500 to-blue-400',
+      bgGlow: 'bg-blue-500/20',
     },
     {
       title: t('dashboard.isolatedCustomers'),
       value: stats.isolatedCount.toLocaleString(),
       subtitle: 'Isolir & diblokir',
       icon: <ShieldBan className="w-5 h-5" />,
-      gradient: 'from-red-500 to-rose-400',
+      gradient: 'from-red-500 to-red-400',
       bgGlow: 'bg-red-500/20',
     },
     {
@@ -301,8 +304,8 @@ export default function AdminDashboard() {
       value: stats.suspendedCount.toLocaleString(),
       subtitle: 'Stop langganan',
       icon: <UserX className="w-5 h-5" />,
-      gradient: 'from-orange-500 to-amber-400',
-      bgGlow: 'bg-orange-500/20',
+      gradient: 'from-red-500 to-red-400',
+      bgGlow: 'bg-red-500/20',
     },
     {
       title: t('dashboard.voucherRevenue'),
@@ -310,8 +313,8 @@ export default function AdminDashboard() {
       subtitle: periodLabel || t('dashboard.thisMonth'),
       detail: `Hari ini: ${stats.voucherRevenueTodayFormatted}`,
       icon: <DollarSign className="w-5 h-5" />,
-      gradient: 'from-fuchsia-500 to-pink-400',
-      bgGlow: 'bg-fuchsia-500/20',
+      gradient: 'from-emerald-500 to-emerald-400',
+      bgGlow: 'bg-emerald-500/20',
     },
     {
       title: t('dashboard.invoiceRevenue'),
@@ -319,16 +322,16 @@ export default function AdminDashboard() {
       subtitle: `${stats.invoiceCountMonth} tagihan • ${periodLabel || t('dashboard.thisMonth')}`,
       detail: `Hari ini: ${stats.invoiceRevenueTodayFormatted} (${stats.invoiceCountToday})`,
       icon: <Receipt className="w-5 h-5" />,
-      gradient: 'from-teal-500 to-cyan-400',
-      bgGlow: 'bg-teal-500/20',
+      gradient: 'from-emerald-500 to-emerald-400',
+      bgGlow: 'bg-emerald-500/20',
     },
     {
       title: 'Belum Bayar',
       value: stats.unpaidInvoicesCount.toLocaleString(),
       subtitle: 'Tagihan pending & overdue',
       icon: <AlertTriangle className="w-5 h-5" />,
-      gradient: 'from-orange-500 to-red-400',
-      bgGlow: 'bg-orange-500/20',
+      gradient: 'from-amber-500 to-amber-400',
+      bgGlow: 'bg-amber-500/20',
       href: '/admin/invoices',
     },
     {
@@ -337,8 +340,8 @@ export default function AdminDashboard() {
       subtitle: `Invoice + Voucher • ${periodLabel || t('dashboard.thisMonth')}`,
       detail: `Invoice: ${stats.invoiceRevenueFormatted}`,
       icon: <TrendingUp className="w-5 h-5" />,
-      gradient: 'from-lime-500 to-green-400',
-      bgGlow: 'bg-lime-500/20',
+      gradient: 'from-emerald-500 to-emerald-400',
+      bgGlow: 'bg-emerald-500/20',
     },
   ] : [];
 
@@ -418,10 +421,10 @@ export default function AdminDashboard() {
                         {card.value}
                       </p>
                       {card.subtitle && (
-                        <p className="text-[9px] sm:text-[10px] text-muted-foreground mt-0.5">{card.subtitle}</p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">{card.subtitle}</p>
                       )}
                       {card.detail && (
-                        <p className="text-[9px] sm:text-[10px] text-brand-500/60 mt-0.5 font-medium">{card.detail}</p>
+                        <p className="text-[10px] sm:text-xs text-brand-500/60 mt-0.5 font-medium">{card.detail}</p>
                       )}
                     </div>
                     <div className={`p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl bg-gradient-to-br ${card.gradient} text-white shadow-lg flex-shrink-0 flex items-center justify-center`}>
@@ -464,7 +467,7 @@ export default function AdminDashboard() {
                 </div>
                 <div>
                   <h2 className="text-xs font-semibold text-foreground">Tagihan Jatuh Tempo</h2>
-                  <p className="text-[10px] text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     {stats?.upcomingInvoices?.length
                       ? `${stats.upcomingInvoices.length} pelanggan (H-7 s/d jatuh tempo)`
                       : 'Pelanggan dengan tagihan mendekati jatuh tempo'}
@@ -503,8 +506,8 @@ export default function AdminDashboard() {
                     <div key={inv.invoiceNumber} className="flex items-center gap-2 px-3 py-2 hover:bg-white/[0.03] transition-colors">
                       <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotColor}`} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-[11px] font-medium text-foreground truncate">{inv.customerName}</p>
-                        <p className="text-[10px] text-muted-foreground truncate">
+                        <p className="text-xs font-medium text-foreground truncate">{inv.customerName}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">
                           {inv.invoiceNumber} &bull; {inv.customerUsername}
                         </p>
                       </div>
@@ -530,7 +533,7 @@ export default function AdminDashboard() {
                 </div>
                 <div>
                   <h2 className="text-xs font-semibold text-foreground">{t('dashboard.paymentActivity')}</h2>
-                  <p className="text-[10px] text-muted-foreground">{t('dashboard.paymentActivitySubtitle')}</p>
+                  <p className="text-xs text-muted-foreground">{t('dashboard.paymentActivitySubtitle')}</p>
                 </div>
               </div>
             </div>
@@ -542,7 +545,7 @@ export default function AdminDashboard() {
               ) : paymentActivities.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-10 gap-1">
                   <Wallet className="h-5 w-5 text-muted-foreground/40" />
-                  <p className="text-[10px] text-muted-foreground">{t('dashboard.noPaymentActivity')}</p>
+                  <p className="text-xs text-muted-foreground">{t('dashboard.noPaymentActivity')}</p>
                 </div>
               ) : (
                 paymentActivities.map((activity) => {
@@ -557,14 +560,14 @@ export default function AdminDashboard() {
                     <div key={activity.id} className="flex items-center gap-2 px-3 py-2 hover:bg-white/[0.03] transition-colors">
                       <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotColor}`} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-[11px] font-medium text-foreground truncate">{activity.customerName}</p>
-                        <p className="text-[10px] text-muted-foreground truncate">{activity.actorLabel}</p>
+                        <p className="text-xs font-medium text-foreground truncate">{activity.customerName}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">{activity.actorLabel}</p>
                       </div>
                       <div className="flex flex-col items-end flex-shrink-0 ml-2">
-                        <span className="text-[11px] font-semibold text-foreground">
+                        <span className="text-xs font-semibold text-foreground">
                           {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(activity.amount)}
                         </span>
-                        <span className="text-[9px] text-muted-foreground">{formatWIB(new Date(activity.paidAt), 'dd MMM, HH:mm')}</span>
+                        <span className="text-[10px] text-muted-foreground">{formatWIB(new Date(activity.paidAt), 'dd MMM, HH:mm')}</span>
                       </div>
                     </div>
                   );

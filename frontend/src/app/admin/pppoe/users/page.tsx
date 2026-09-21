@@ -1625,7 +1625,7 @@ export default function PppoeUsersPage() {
                 </div>
                 <div>
                   <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1 block flex items-center gap-1">Sesi
-                    <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[8px] font-medium bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" title="Live">
+                    <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[9px] font-medium bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" title="Live">
                       <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />Live
                     </span>
                   </label>
@@ -1698,7 +1698,7 @@ export default function PppoeUsersPage() {
                             </span>
                           )}
                         </div>
-                        <p className="text-[10px] text-muted-foreground truncate">
+                        <p className="text-xs text-muted-foreground truncate">
                           {user.name}
                         </p>
                       </div>
@@ -1711,7 +1711,7 @@ export default function PppoeUsersPage() {
                       )}
                       <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium ${user.status === 'active' ? 'bg-success/20 text-success' : user.status === 'isolated' ? 'bg-warning/20 text-warning' : 'bg-destructive/20 text-destructive'}`}>{user.status}</span>
                       {user.isOnline
-                        ? <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-medium bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />Online</span>
+                        ? <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-medium bg-success/20 text-success"><span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse flex-shrink-0" />Online</span>
                         : <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-muted text-muted-foreground">Offline</span>
                       }
                     </div>
@@ -2126,7 +2126,7 @@ export default function PppoeUsersPage() {
             <div>
               <ModalLabel required>{t('pppoe.selectFile')}</ModalLabel>
               <input type="file" accept=".csv,.xlsx,.xls" onChange={handleImportFileChange} className="w-full px-3 py-2 text-xs bg-background dark:bg-card border border-border dark:border-border rounded-lg text-foreground file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-primary/20 dark:file:bg-primary/10 file:text-foreground hover:file:bg-primary/30 dark:hover:file:bg-primary/10 focus:border-primary dark:focus:border-brand-500 focus:ring-1 focus:ring-primary/30 dark:focus:ring-brand-500/30 transition-all" />
-              <p className="text-[9px] text-muted-foreground mt-1">{t('pppoe.csvExcelFormat')}</p>
+              <p className="text-[11px] text-muted-foreground mt-1">{t('pppoe.csvExcelFormat')}</p>
             </div>
 
             {/* File selected + Preview */}

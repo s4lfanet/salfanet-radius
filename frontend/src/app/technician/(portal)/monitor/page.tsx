@@ -221,9 +221,9 @@ export default function TechnicianMonitorPage() {
                       <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse flex-shrink-0 mt-1" />
                       <div className="min-w-0">
                         <p className="text-xs font-semibold text-foreground truncate">{s.customerName ?? s.username}</p>
-                        <p className="text-[10px] font-mono text-brand-500">{s.username}</p>
+                        <p className="text-xs font-mono text-brand-500">{s.username}</p>
                         {s.customerPhone && (
-                          <p className="text-[10px] text-slate-400 flex items-center gap-0.5">
+                          <p className="text-xs text-muted-foreground flex items-center gap-0.5">
                             <Phone className="w-2.5 h-2.5" />{s.customerPhone}
                           </p>
                         )}
@@ -231,25 +231,25 @@ export default function TechnicianMonitorPage() {
                     </div>
                     <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 whitespace-nowrap">{s.uptime}</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] ml-4">
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs ml-4">
                     <div className="flex justify-between">
-                      <span className="text-slate-400">IP:</span>
+                      <span className="text-muted-foreground">IP:</span>
                       <span className="font-mono text-foreground">{s.framedIp}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">Router:</span>
+                      <span className="text-muted-foreground">Router:</span>
                       <span className="text-muted-foreground truncate ml-1">{s.routerName ?? s.nasIp}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">↓ DL:</span>
+                      <span className="text-muted-foreground">↓ DL:</span>
                       <span className="font-semibold text-green-600 dark:text-green-400">{s.download}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-400">↑ UL:</span>
+                      <span className="text-muted-foreground">↑ UL:</span>
                       <span className="font-semibold text-blue-600 dark:text-blue-400">{s.upload}</span>
                     </div>
                     {s.areaName && (
-                      <div className="col-span-2 flex items-center gap-1 text-slate-400">
+                      <div className="col-span-2 flex items-center gap-1 text-muted-foreground">
                         <MapPin className="w-2.5 h-2.5" /><span>{s.areaName}</span>
                       </div>
                     )}
@@ -293,9 +293,9 @@ export default function TechnicianMonitorPage() {
                               <p className="text-xs font-semibold text-foreground">
                                 {s.customerName ?? s.username}
                               </p>
-                              <p className="text-[10px] text-brand-500 font-mono">{s.username}</p>
+                              <p className="text-xs text-brand-500 font-mono">{s.username}</p>
                               {s.customerPhone && (
-                                <p className="text-[10px] text-slate-400 flex items-center gap-0.5">
+                                <p className="text-xs text-muted-foreground flex items-center gap-0.5">
                                   <Phone className="w-2.5 h-2.5" />
                                   {s.customerPhone}
                                 </p>
@@ -305,9 +305,9 @@ export default function TechnicianMonitorPage() {
                         </td>
                         <td className="px-4 py-3">
                           <p className="text-xs font-mono text-foreground">{s.framedIp}</p>
-                          <p className="text-[10px] text-slate-400">{s.routerName ?? s.nasIp}</p>
+                          <p className="text-xs text-muted-foreground">{s.routerName ?? s.nasIp}</p>
                           {s.areaName && (
-                            <p className="text-[10px] text-slate-400 flex items-center gap-0.5">
+                            <p className="text-xs text-muted-foreground flex items-center gap-0.5">
                               <MapPin className="w-2.5 h-2.5" />
                               {s.areaName}
                             </p>
@@ -359,8 +359,8 @@ export default function TechnicianMonitorPage() {
                       <p className="text-sm font-semibold text-foreground truncate">
                         {c.name}
                       </p>
-                      <p className="text-[10px] font-mono text-primary">{c.username}</p>
-                      <p className="text-[10px] text-muted-foreground flex items-center gap-0.5 mt-0.5">
+                      <p className="text-xs font-mono text-primary">{c.username}</p>
+                      <p className="text-xs text-muted-foreground flex items-center gap-0.5 mt-0.5">
                         <Phone className="w-2.5 h-2.5" />
                         {c.phone}
                       </p>
