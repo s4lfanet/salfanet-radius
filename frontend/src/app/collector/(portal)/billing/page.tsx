@@ -377,10 +377,10 @@ export default function CollectorBillingPage() {
               <thead className="bg-accent/50 border-b border-border">
                 <tr className="text-left text-xs text-muted-foreground">
                   <th className="px-3 py-3 font-medium">Pelanggan</th>
-                  <th className="px-3 py-3 font-medium">Paket</th>
-                  <th className="px-3 py-3 font-medium">Area</th>
+                  <th className="hidden md:table-cell px-3 py-3 font-medium">Paket</th>
+                  <th className="hidden md:table-cell px-3 py-3 font-medium">Area</th>
                   <th className="px-3 py-3 font-medium">Status</th>
-                  <th className="px-3 py-3 font-medium">Expired</th>
+                  <th className="hidden md:table-cell px-3 py-3 font-medium">Expired</th>
                   <th className="px-3 py-3 font-medium text-right">Tagihan</th>
                   <th className="px-3 py-3 font-medium text-center">Aksi</th>
                 </tr>
@@ -408,8 +408,8 @@ export default function CollectorBillingPage() {
                           </div>
                         </div>
                       </td>
-                      {/* Paket */}
-                      <td className="px-3 py-3">
+                      {/* Paket — hidden on mobile, shown in the expanded detail below instead */}
+                      <td className="hidden md:table-cell px-3 py-3">
                         {u.profile ? (
                           <div>
                             <div className="text-xs font-medium text-foreground flex items-center gap-1">
@@ -420,8 +420,8 @@ export default function CollectorBillingPage() {
                           </div>
                         ) : <span className="text-muted-foreground">-</span>}
                       </td>
-                      {/* Area */}
-                      <td className="px-3 py-3">
+                      {/* Area — hidden on mobile, shown in the expanded detail below instead */}
+                      <td className="hidden md:table-cell px-3 py-3">
                         {u.area ? (
                           <span className="text-xs text-muted-foreground flex items-center gap-1">
                             <MapPin className="w-3 h-3" />
@@ -439,8 +439,8 @@ export default function CollectorBillingPage() {
                           {u.status === 'active' ? 'Aktif' : u.status === 'isolated' || u.status === 'suspended' ? 'Isolir' : u.status}
                         </span>
                       </td>
-                      {/* Expired */}
-                      <td className="px-3 py-3">
+                      {/* Expired — hidden on mobile, shown in the expanded detail below instead */}
+                      <td className="hidden md:table-cell px-3 py-3">
                         <span className="text-xs text-muted-foreground flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
                           {fmtDate(u.expiredAt)}
@@ -480,6 +480,25 @@ export default function CollectorBillingPage() {
                             <div>
                               <span className="text-muted-foreground">Username:</span>{' '}
                               <span className="font-mono text-foreground">{u.username}</span>
+                            </div>
+                            {/* Paket/Area/Expired are their own columns on desktop (md:table-cell
+                                above); on mobile those columns are hidden, so surface them here
+                                instead of losing the information entirely. */}
+                            {u.profile && (
+                              <div className="md:hidden">
+                                <span className="text-muted-foreground">Paket:</span>{' '}
+                                <span className="text-foreground">{u.profile.name} ({fmtRp(u.profile.price)}/bln)</span>
+                              </div>
+                            )}
+                            {u.area && (
+                              <div className="md:hidden">
+                                <span className="text-muted-foreground">Area:</span>{' '}
+                                <span className="text-foreground">{u.area.name}</span>
+                              </div>
+                            )}
+                            <div className="md:hidden">
+                              <span className="text-muted-foreground">Expired:</span>{' '}
+                              <span className="text-foreground">{fmtDate(u.expiredAt)}</span>
                             </div>
                             <div>
                               <span className="text-muted-foreground">Tipe:</span>{' '}
