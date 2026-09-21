@@ -573,7 +573,7 @@ export default function RenewalPage() {
               <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide block mb-1.5">Metode / Bank Pengirim *</label>
               <input type="text" placeholder="Nama bank / metode transfer (cth: BCA, GoPay)"
                 value={customBank || bankName} onChange={e => { setCustomBank(e.target.value); setBankName(''); }}
-                className="w-full px-3 py-2 text-xs border border-border rounded-lg bg-muted/20 focus:outline-none focus:border-purple-400" />
+                className="w-full px-3 py-2 text-xs border border-border rounded-lg bg-muted/20 focus:outline-none focus:border-cyan-500/60" />
             </div>
 
             {/* Account Name */}
@@ -581,7 +581,7 @@ export default function RenewalPage() {
               <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide block mb-1.5">Nama Pengirim *</label>
               <input type="text" placeholder="Nama lengkap sesuai rekening"
                 value={accountName} onChange={e => setAccountName(e.target.value)}
-                className="w-full px-3 py-2 text-xs border border-border rounded-lg bg-muted/20 focus:outline-none focus:border-purple-400" />
+                className="w-full px-3 py-2 text-xs border border-border rounded-lg bg-muted/20 focus:outline-none focus:border-cyan-500/60" />
             </div>
 
             {/* Notes */}
@@ -589,7 +589,7 @@ export default function RenewalPage() {
               <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide block mb-1.5">Catatan (opsional)</label>
               <input type="text" placeholder="Misalnya: Transfer via mobile banking BCA"
                 value={paymentNotes} onChange={e => setPaymentNotes(e.target.value)}
-                className="w-full px-3 py-2 text-xs border border-border rounded-lg bg-muted/20 focus:outline-none focus:border-purple-400" />
+                className="w-full px-3 py-2 text-xs border border-border rounded-lg bg-muted/20 focus:outline-none focus:border-cyan-500/60" />
             </div>
 
             {/* Proof Upload */}

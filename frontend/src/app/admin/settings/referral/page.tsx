@@ -6,7 +6,8 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
 import { Toggle } from '@/components/ui/toggle';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
-import { CyberCard, CyberButton } from '@/components/cyberpunk';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import {
   Gift, Save, Loader2, ToggleLeft, ToggleRight,
   Wallet, AlertCircle
@@ -92,7 +93,7 @@ export default function ReferralSettingsPage() {
       </div>
 
       {/* Enable/Disable */}
-      <CyberCard className="p-5">
+      <Card className="p-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {config.enabled ? (
@@ -109,10 +110,10 @@ export default function ReferralSettingsPage() {
           </div>
           <Toggle checked={config.enabled} onChange={(v) => setConfig({ ...config, enabled: v })} />
         </div>
-      </CyberCard>
+      </Card>
 
       {/* Reward Configuration */}
-      <CyberCard className="p-5">
+      <Card className="p-5">
         <h3 className="font-semibold text-foreground flex items-center gap-2 mb-4">
           <Wallet className="w-4 h-4 text-cyan-500" />
           {t('referrals.rewardConfig')}
@@ -160,10 +161,10 @@ export default function ReferralSettingsPage() {
             </p>
           </div>
         </div>
-      </CyberCard>
+      </Card>
 
       {/* Summary */}
-      <CyberCard className="p-5">
+      <Card className="p-5">
         <div className="flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-cyan-500 flex-shrink-0 mt-0.5" />
           <div className="text-sm text-muted-foreground">
@@ -179,18 +180,18 @@ export default function ReferralSettingsPage() {
             </ul>
           </div>
         </div>
-      </CyberCard>
+      </Card>
 
       {/* Save Button */}
       <div className="flex justify-end">
-        <CyberButton onClick={saveConfig} disabled={saving}>
+        <Button onClick={saveConfig} disabled={saving}>
           {saving ? (
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
           ) : (
             <Save className="w-4 h-4 mr-2" />
           )}
           {saving ? t('referrals.saving') : t('referrals.saveSettings')}
-        </CyberButton>
+        </Button>
       </div>
     </div>
   );
