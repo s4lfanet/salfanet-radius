@@ -105,7 +105,7 @@ export default function TechnicianOntTasksPage() {
             { key: 'COMPLETED', label: 'Selesai' },
             { key: 'CANCELLED', label: 'Dibatalkan' },
           ] as const).map((f) => (
-            <button key={f.key} onClick={() => setStatus(f.key)} className={`px-3 py-2 text-xs font-bold rounded-xl transition ${status === f.key ? 'bg-violet-500 text-white ' : 'bg-slate-100 dark:bg-muted border border-border text-muted-foreground hover:bg-slate-200 dark:hover:bg-primary/10'}`}>
+            <button key={f.key} onClick={() => setStatus(f.key)} className={`px-3 py-2 text-xs font-bold rounded-xl transition ${status === f.key ? 'bg-brand-500 text-white' : 'bg-slate-100 dark:bg-muted border border-border text-muted-foreground hover:bg-slate-200 dark:hover:bg-primary/10'}`}>
               {f.label}
             </button>
           ))}
@@ -191,7 +191,7 @@ export default function TechnicianOntTasksPage() {
                   ) : (
                     <button
                       onClick={() => { setActiveId(task.id); setNote(''); }}
-                      className="w-full px-3 py-2 bg-violet-500 hover:bg-violet-600 text-white text-xs font-bold rounded-lg transition"
+                      className="w-full px-3 py-2 bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold rounded-lg transition"
                     >
                       Proses Tugas
                     </button>
