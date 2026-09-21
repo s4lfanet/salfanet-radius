@@ -112,13 +112,13 @@ export default function CollectorSettlementsPage() {
           <thead className="bg-accent/50 border-b border-border">
             <tr className="text-left text-xs text-muted-foreground">
               <th className="px-3 py-3 font-medium">Pelanggan</th>
-              <th className="px-3 py-3 font-medium">Kontak</th>
-              <th className="px-3 py-3 font-medium">Alamat</th>
-              <th className="px-3 py-3 font-medium">Paket</th>
-              <th className="px-3 py-3 font-medium">Area</th>
+              <th className="hidden md:table-cell px-3 py-3 font-medium">Kontak</th>
+              <th className="hidden md:table-cell px-3 py-3 font-medium">Alamat</th>
+              <th className="hidden md:table-cell px-3 py-3 font-medium">Paket</th>
+              <th className="hidden md:table-cell px-3 py-3 font-medium">Area</th>
               <th className="px-3 py-3 font-medium text-right">Jumlah</th>
               <th className="px-3 py-3 font-medium text-center">Metode</th>
-              <th className="px-3 py-3 font-medium text-right">Waktu</th>
+              <th className="hidden md:table-cell px-3 py-3 font-medium text-right">Waktu</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -127,14 +127,19 @@ export default function CollectorSettlementsPage() {
                 <td className="px-3 py-3">
                   <div className="font-medium text-foreground">{inv.customerName || inv.customerUsername || '-'}</div>
                   <div className="text-xs text-muted-foreground font-mono">{inv.customerId || inv.customerUsername || '-'}</div>
+                  {/* Area/package/time collapse onto this cell on mobile,
+                      since their own columns are hidden below md */}
+                  <div className="md:hidden text-[11px] text-muted-foreground mt-0.5">
+                    {[inv.profileName, inv.areaName, fmtTime(inv.paidAt)].filter(Boolean).join(' · ')}
+                  </div>
                 </td>
-                <td className="px-3 py-3 text-xs text-muted-foreground">{inv.phone || '-'}</td>
-                <td className="px-3 py-3 text-xs text-muted-foreground max-w-[180px] truncate" title={inv.address}>{inv.address || '-'}</td>
-                <td className="px-3 py-3 text-xs text-muted-foreground">{inv.profileName || '-'}</td>
-                <td className="px-3 py-3 text-xs text-muted-foreground">{inv.areaName || '-'}</td>
+                <td className="hidden md:table-cell px-3 py-3 text-xs text-muted-foreground">{inv.phone || '-'}</td>
+                <td className="hidden md:table-cell px-3 py-3 text-xs text-muted-foreground max-w-[180px] truncate" title={inv.address}>{inv.address || '-'}</td>
+                <td className="hidden md:table-cell px-3 py-3 text-xs text-muted-foreground">{inv.profileName || '-'}</td>
+                <td className="hidden md:table-cell px-3 py-3 text-xs text-muted-foreground">{inv.areaName || '-'}</td>
                 <td className="px-3 py-3 text-right font-medium text-foreground">{fmtRp(inv.amount)}</td>
                 <td className="px-3 py-3 text-center">{pmMethod(inv.paymentMethod)}</td>
-                <td className="px-3 py-3 text-right text-xs text-muted-foreground">{fmtTime(inv.paidAt)}</td>
+                <td className="hidden md:table-cell px-3 py-3 text-right text-xs text-muted-foreground">{fmtTime(inv.paidAt)}</td>
               </tr>
             ))}
           </tbody>
@@ -231,10 +236,10 @@ export default function CollectorSettlementsPage() {
                   <thead className="bg-accent/50 border-b border-border">
                     <tr className="text-left text-xs text-muted-foreground">
                       <th className="px-3 py-3 font-medium">Tanggal</th>
-                      <th className="px-3 py-3 font-medium text-right">Tagihan</th>
+                      <th className="hidden md:table-cell px-3 py-3 font-medium text-right">Tagihan</th>
                       <th className="px-3 py-3 font-medium text-right">Total</th>
-                      <th className="px-3 py-3 font-medium text-right">Tunai</th>
-                      <th className="px-3 py-3 font-medium text-right">Transfer</th>
+                      <th className="hidden md:table-cell px-3 py-3 font-medium text-right">Tunai</th>
+                      <th className="hidden md:table-cell px-3 py-3 font-medium text-right">Transfer</th>
                       <th className="px-3 py-3 font-medium text-center">Status</th>
                       <th className="px-3 py-3"></th>
                     </tr>
@@ -247,11 +252,16 @@ export default function CollectorSettlementsPage() {
                           onClick={() => fetchDetailForDate(row.date)}>
                           <td className="px-3 py-3 font-medium text-foreground">
                             {formatWIB(row.date, 'EEE, dd MMM yyyy')}
+                            {/* Tagihan/Tunai/Transfer collapse onto this cell on
+                                mobile, since their own columns are hidden below md */}
+                            <div className="md:hidden text-[11px] font-normal text-muted-foreground mt-0.5">
+                              {row.invoice_count} invoice · Tunai {fmtRp(row.cash_amount)} · Transfer {fmtRp(row.transfer_amount)}
+                            </div>
                           </td>
-                          <td className="px-3 py-3 text-right">{row.invoice_count}</td>
+                          <td className="hidden md:table-cell px-3 py-3 text-right">{row.invoice_count}</td>
                           <td className="px-3 py-3 text-right font-medium">{fmtRp(row.total_amount)}</td>
-                          <td className="px-3 py-3 text-right text-emerald-600 dark:text-emerald-400">{fmtRp(row.cash_amount)}</td>
-                          <td className="px-3 py-3 text-right text-blue-600 dark:text-blue-400">{fmtRp(row.transfer_amount)}</td>
+                          <td className="hidden md:table-cell px-3 py-3 text-right text-emerald-600 dark:text-emerald-400">{fmtRp(row.cash_amount)}</td>
+                          <td className="hidden md:table-cell px-3 py-3 text-right text-blue-600 dark:text-blue-400">{fmtRp(row.transfer_amount)}</td>
                           <td className="px-3 py-3 text-center">{confirmBadge(row.confirmed_by, row.confirmed_at)}</td>
                           <td className="px-3 py-3 text-center">
                             {expandedRow === row.date ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
