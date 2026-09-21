@@ -229,7 +229,7 @@ export default function TechnicianGenieACSPage() {
             <button
               key={s}
               onClick={() => handleFilterChange(s)}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${filterStatus === s ? 'bg-blue-500 text-white shadow' : 'text-muted-foreground hover:bg-slate-100 dark:hover:bg-primary/10'}`}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${filterStatus === s ? 'bg-brand-500 text-white shadow' : 'text-muted-foreground hover:bg-slate-100 dark:hover:bg-primary/10'}`}
             >
               {s === 'all' ? 'Semua' : s === 'online' ? 'Online' : 'Offline'}
               {s !== 'all' && (
