@@ -3,7 +3,7 @@
 export const dynamic = 'force-dynamic';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Server, Search, RefreshCw, Loader2, Wifi, WifiOff, Eye, X, Power, Pencil, Check } from 'lucide-react';
+import { Server, Search, RefreshCw, Loader2, Wifi, WifiOff, Eye, X, Power, Pencil, Check, ChevronRight } from 'lucide-react';
 import { Pagination } from '@/components/Pagination';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -337,18 +337,23 @@ export default function TechnicianGenieACSPage() {
           <div className="lg:hidden space-y-3">
             {paginated.map((d) => (
               <div key={d._id} className="bg-card border border-border rounded-2xl p-4 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="cursor-pointer" onClick={() => handleViewDetail(d._id)}>
+                <button
+                  type="button"
+                  onClick={() => handleViewDetail(d._id)}
+                  className="flex items-center justify-between w-full text-left -m-1 p-1 rounded-lg hover:bg-accent/50 transition"
+                >
+                  <div className="min-w-0">
                     <p className="text-sm font-bold text-foreground">{d.model || d.serialNumber}</p>
                     <p className="text-xs text-muted-foreground">{d.manufacturer}</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold ${d.status === 'online' ? 'bg-green-500/10 text-green-600 dark:text-green-400' : 'bg-red-500/10 text-red-600 dark:text-red-400'}`}>
                       {d.status === 'online' ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
                       {d.status === 'online' ? t('techPortal.online') : t('techPortal.offline')}
                     </span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground/50" />
                   </div>
-                </div>
+                </button>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   <div>
                     <span className="text-muted-foreground/70">PPPoE: </span>
@@ -486,7 +491,6 @@ export default function TechnicianGenieACSPage() {
                         [t('techPortal.model'), detailDevice.model],
                         ['TR-069 IP', detailDevice.tr069IP],
                         ['MAC', detailDevice.macAddress],
-                        ['RX Power', detailDevice.rxPower],
                         ['TX Power', detailDevice.txPower],
                         ['PON Mode', detailDevice.ponMode],
                         [t('techPortal.uptime') || 'Uptime', detailDevice.uptime],
@@ -500,6 +504,12 @@ export default function TechnicianGenieACSPage() {
                           <p className="font-medium text-foreground break-all">{value || '-'}</p>
                         </div>
                       ))}
+                      <div>
+                        <p className="text-muted-foreground/70">RX Power</p>
+                        <p className={`font-medium font-mono break-all ${parseFloat(detailDevice.rxPower) > -25 ? 'text-green-600 dark:text-green-400' : parseFloat(detailDevice.rxPower) > -28 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'}`}>
+                          {detailDevice.rxPower || '-'}
+                        </p>
+                      </div>
                     </div>
                   </div>
 

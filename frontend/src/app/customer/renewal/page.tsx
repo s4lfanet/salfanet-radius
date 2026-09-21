@@ -103,7 +103,7 @@ export default function RenewalPage() {
   );
 
   // Available packages
-  const { data: pkgData, isLoading: pkgLoading } = useApiQuery<PackagesResponse>(
+  const { data: pkgData, isLoading: pkgLoading, error: pkgError, refetch: refetchPackages } = useApiQuery<PackagesResponse>(
     '/api/customer/packages',
     { mode: 'customer', staleTime: 60000 },
   );
@@ -339,7 +339,12 @@ export default function RenewalPage() {
               <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Pilih Paket</span>
             </div>
             <div className="space-y-2">
-              {packages.length === 0 ? (
+              {pkgError ? (
+                <div className="text-center py-4">
+                  <p className="text-xs text-destructive mb-2">Gagal memuat daftar paket</p>
+                  <button onClick={() => refetchPackages()} className="text-xs font-semibold text-destructive underline">Coba lagi</button>
+                </div>
+              ) : packages.length === 0 ? (
                 <p className="text-xs text-muted-foreground text-center py-4">Tidak ada paket tersedia</p>
               ) : (
                 packages.map(pkg => (

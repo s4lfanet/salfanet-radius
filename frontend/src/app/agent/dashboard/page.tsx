@@ -791,19 +791,19 @@ export default function AgentDashboardPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                 <div>
                   <p className="text-xs text-muted-foreground">{t('agent.portal.costPrice')}</p>
-                  <p className="font-semibold text-foreground">{formatCurrency(selectedProfileData.costPrice)}</p>
+                  <p className="font-semibold text-foreground whitespace-nowrap">{formatCurrency(selectedProfileData.costPrice)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">{t('agent.portal.profitPerPiece')}</p>
-                  <p className="font-semibold text-emerald-600 dark:text-emerald-400">{formatCurrency(selectedProfileData.resellerFee)}</p>
+                  <p className="font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">{formatCurrency(selectedProfileData.resellerFee)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">{t('agent.portal.validity')}</p>
-                  <p className="font-semibold text-foreground">{selectedProfileData.validityValue} {selectedProfileData.validityUnit}</p>
+                  <p className="font-semibold text-foreground whitespace-nowrap">{selectedProfileData.validityValue} {selectedProfileData.validityUnit}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">{t('agent.portal.totalPayment')}</p>
-                  <p className="font-semibold text-cyan-700 dark:text-cyan-400">{formatCurrency(selectedProfileData.costPrice * quantity)}</p>
+                  <p className="font-semibold text-cyan-700 dark:text-cyan-400 whitespace-nowrap">{formatCurrency(selectedProfileData.costPrice * quantity)}</p>
                 </div>
               </div>
             </div>

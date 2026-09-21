@@ -436,12 +436,12 @@ export default function CustomerDashboard() {
               <p className="text-xs text-muted-foreground font-mono">@{user.username}</p>
             </div>
             {isExpired
-              ? <span className="px-2.5 py-1 bg-red-500/20 text-red-400 text-[10px] font-bold rounded-full border border-red-500/40">Expired</span>
+              ? <span className="px-2.5 py-1 bg-destructive/20 text-destructive text-[10px] font-bold rounded-full border border-destructive/40">Expired</span>
               : user.status === 'active'
-              ? <span className="px-2.5 py-1 bg-green-500/20 text-green-400 text-[10px] font-bold rounded-full border border-green-500/40">Aktif</span>
+              ? <span className="px-2.5 py-1 bg-success/20 text-success text-[10px] font-bold rounded-full border border-success/40">Aktif</span>
               : user.status === 'isolated'
               ? <span className="px-2.5 py-1 bg-orange-500/20 text-orange-400 text-[10px] font-bold rounded-full border border-orange-500/40">Terisolir</span>
-              : <span className="px-2.5 py-1 bg-yellow-500/20 text-yellow-400 text-[10px] font-bold rounded-full border border-yellow-500/40">{user.status}</span>
+              : <span className="px-2.5 py-1 bg-warning/20 text-warning text-[10px] font-bold rounded-full border border-warning/40">{user.status}</span>
             }
           </div>
           {/* Package + expiry info */}
@@ -450,12 +450,12 @@ export default function CustomerDashboard() {
               <p className="text-[9px] font-bold uppercase tracking-wide text-primary/70 mb-0.5">Paket</p>
               <p className="text-sm font-bold text-foreground leading-tight">{user.profile.name}</p>
             </div>
-            <div className={`rounded-xl p-2.5 ${isExpired ? 'bg-red-500/10' : 'bg-foreground/5'}`}>
+            <div className={`rounded-xl p-2.5 ${isExpired ? 'bg-destructive/10' : 'bg-foreground/5'}`}>
               <p className="text-[9px] font-bold uppercase tracking-wide text-primary/70 mb-0.5">Berlaku S/D</p>
-              <p className={`text-sm font-bold leading-tight ${isExpired ? 'text-red-400' : 'text-foreground'}`}>
+              <p className={`text-sm font-bold leading-tight ${isExpired ? 'text-destructive' : 'text-foreground'}`}>
                 {formatWIB(user.expiredAt, 'd MMM yyyy')}
               </p>
-              <p className={`text-[10px] font-medium ${isExpired ? 'text-red-400' : daysLeft <= 7 ? 'text-yellow-400' : 'text-green-400'}`}>
+              <p className={`text-[10px] font-medium ${isExpired ? 'text-destructive' : daysLeft <= 7 ? 'text-warning' : 'text-success'}`}>
                 {isExpired ? 'Sudah expired' : daysLeft <= 0 ? 'Hari ini!' : `${daysLeft} hari lagi`}
               </p>
             </div>
@@ -492,7 +492,6 @@ export default function CustomerDashboard() {
             { name: 'WiFi',         href: '/customer/wifi',          icon: Wifi,          color: 'text-blue-400',    bg: 'bg-blue-500/10 border-blue-500/30' },
             { name: 'Speed Test',   href: '/customer/speedtest',     icon: Gauge,         color: 'text-cyan-300',    bg: 'bg-cyan-500/10 border-cyan-500/30' },
             { name: 'Bantuan',      href: '/customer/tickets',       icon: MessageSquare, color: 'text-yellow-400',  bg: 'bg-yellow-500/10 border-yellow-500/30' },
-            { name: 'Tagihan',      href: '/customer/invoices',      icon: FileText,      color: 'text-green-400',   bg: 'bg-green-500/10 border-green-500/30' },
             { name: 'Upgrade',      href: '/customer/upgrade',       icon: Package,       color: 'text-orange-400',  bg: 'bg-orange-500/10 border-orange-500/30' },
             { name: 'Referral',     href: '/customer/referral',      icon: Gift,          color: 'text-pink-400',    bg: 'bg-pink-500/10 border-pink-500/30' },
             { name: 'Profil',       href: '/customer/profile',       icon: User,          color: 'text-slate-400',   bg: 'bg-slate-500/10 border-slate-500/30' },
@@ -514,9 +513,9 @@ export default function CustomerDashboard() {
         <div className="space-y-2">
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Tagihan Belum Dibayar</p>
           {invoices.filter(inv => inv.status === 'PENDING' || inv.status === 'OVERDUE').slice(0, 3).map(invoice => (
-            <div key={invoice.id} className={`rounded-xl border-2 p-3 flex items-center gap-3 ${invoice.status === 'OVERDUE' ? 'bg-red-500/5 border-red-500/30' : 'bg-yellow-500/5 border-yellow-500/30'}`}>
-              <div className={`p-2 rounded-lg flex-shrink-0 ${invoice.status === 'OVERDUE' ? 'bg-red-500/20' : 'bg-yellow-500/20'}`}>
-                <Receipt className={`w-4 h-4 ${invoice.status === 'OVERDUE' ? 'text-red-400' : 'text-yellow-400'}`} />
+            <div key={invoice.id} className={`rounded-xl border-2 p-3 flex items-center gap-3 ${invoice.status === 'OVERDUE' ? 'bg-destructive/5 border-destructive/30' : 'bg-warning/5 border-warning/30'}`}>
+              <div className={`p-2 rounded-lg flex-shrink-0 ${invoice.status === 'OVERDUE' ? 'bg-destructive/20' : 'bg-warning/20'}`}>
+                <Receipt className={`w-4 h-4 ${invoice.status === 'OVERDUE' ? 'text-destructive' : 'text-warning'}`} />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-bold text-foreground font-mono">{invoice.invoiceNumber}</p>
@@ -524,7 +523,7 @@ export default function CustomerDashboard() {
               </div>
               <div className="flex flex-col gap-1 flex-shrink-0">
                 {invoice.manualPaymentStatus === 'pending' ? (
-                  <span className="text-[9px] text-yellow-400 font-medium">Menunggu...</span>
+                  <span className="text-[9px] text-warning font-medium">Menunggu...</span>
                 ) : (
                   <>
                     {invoice.paymentLink && !invoice.paymentLink.includes('localhost') ? (
@@ -578,12 +577,12 @@ export default function CustomerDashboard() {
           : (
             <div className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                <div className="bg-muted/20 rounded-lg p-2"><span className="text-muted-foreground block text-[9px] uppercase font-bold">{t('customer.model')}</span><span className="font-medium text-foreground text-[11px]">{ontDevice.manufacturer} {ontDevice.model}</span></div>
-                <div className="bg-muted/20 rounded-lg p-2"><span className="text-muted-foreground block text-[9px] uppercase font-bold">{t('customer.ontStatus')}</span>
-                  <span className={`text-[11px] font-bold ${ontDevice.status === 'Online' ? 'text-green-400' : 'text-red-400'}`}>{ontDevice.status}</span>
+                <div className="bg-muted/20 rounded-lg p-2"><span className="text-muted-foreground block text-[10px] uppercase font-bold">{t('customer.model')}</span><span className="font-medium text-foreground text-xs">{ontDevice.manufacturer} {ontDevice.model}</span></div>
+                <div className="bg-muted/20 rounded-lg p-2"><span className="text-muted-foreground block text-[10px] uppercase font-bold">{t('customer.ontStatus')}</span>
+                  <span className={`text-xs font-bold ${ontDevice.status === 'Online' ? 'text-success' : 'text-destructive'}`}>{ontDevice.status}</span>
                 </div>
-                <div className="bg-muted/20 rounded-lg p-2"><span className="text-muted-foreground block text-[9px] uppercase font-bold">{t('customer.rxPower')}</span><span className="text-[11px] text-red-300">{ontDevice.signalStrength?.rxPower || '-'}</span></div>
-                <div className="bg-muted/20 rounded-lg p-2"><span className="text-muted-foreground block text-[9px] uppercase font-bold">{t('customer.connectedDevices')}</span><span className="text-[11px] font-bold text-primary">{Array.isArray(ontDevice.connectedHosts) ? ontDevice.connectedHosts.length : 0}</span></div>
+                <div className="bg-muted/20 rounded-lg p-2"><span className="text-muted-foreground block text-[10px] uppercase font-bold">{t('customer.rxPower')}</span><span className="text-xs text-red-300">{ontDevice.signalStrength?.rxPower || '-'}</span></div>
+                <div className="bg-muted/20 rounded-lg p-2"><span className="text-muted-foreground block text-[10px] uppercase font-bold">{t('customer.connectedDevices')}</span><span className="text-xs font-bold text-primary">{Array.isArray(ontDevice.connectedHosts) ? ontDevice.connectedHosts.length : 0}</span></div>
               </div>
               
               {/* WiFi SSIDs */}
@@ -678,11 +677,11 @@ export default function CustomerDashboard() {
                           <p className="font-mono text-xs font-semibold text-foreground truncate">{invoice.invoiceNumber}</p>
                           {isPaid ? <span className="px-1.5 py-0.5 bg-success/20 text-success text-[9px] rounded-full font-bold flex-shrink-0">Lunas</span>
                           : isCancelled ? <span className="px-1.5 py-0.5 bg-muted text-muted-foreground text-[9px] rounded-full font-bold flex-shrink-0">Batal</span>
-                          : isOverdue ? <span className="px-1.5 py-0.5 bg-red-500/20 text-red-400 text-[9px] rounded-full font-bold flex-shrink-0">Terlambat</span>
-                          : <span className="px-1.5 py-0.5 bg-yellow-500/20 text-yellow-400 text-[9px] rounded-full font-bold flex-shrink-0">Belum Bayar</span>}
+                          : isOverdue ? <span className="px-1.5 py-0.5 bg-destructive/20 text-destructive text-[9px] rounded-full font-bold flex-shrink-0">Terlambat</span>
+                          : <span className="px-1.5 py-0.5 bg-warning/20 text-warning text-[9px] rounded-full font-bold flex-shrink-0">Belum Bayar</span>}
                         </div>
                         <div className="flex items-center justify-between">
-                          <p className="text-[9px] text-muted-foreground">JT {formatWIB(invoice.dueDate, 'd MMM yyyy')}</p>
+                          <p className="text-[10px] text-muted-foreground">JT {formatWIB(invoice.dueDate, 'd MMM yyyy')}</p>
                           <p className="text-xs font-bold text-foreground">{formatCurrency(invoice.amount)}</p>
                         </div>
                       </div>
@@ -703,7 +702,7 @@ export default function CustomerDashboard() {
                         </div>
                       )}
                       {!isPaid && !isCancelled && invoice.manualPaymentStatus === 'pending' && (
-                        <span className="text-[9px] text-yellow-400 font-medium ml-1">Menunggu...</span>
+                        <span className="text-[9px] text-warning font-medium ml-1">Menunggu...</span>
                       )}
                     </div>
                   </div>

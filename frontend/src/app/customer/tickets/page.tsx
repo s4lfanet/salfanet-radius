@@ -82,10 +82,10 @@ export default function CustomerTicketsPage() {
 
   const getStatusColor = (status: TicketStatus) => {
     const colors = {
-      OPEN: 'bg-accent/20 text-accent border border-accent/40 ',
-      IN_PROGRESS: 'bg-primary/20 text-primary border border-primary/40 ',
-      WAITING_CUSTOMER: 'bg-warning/20 text-warning border border-warning/40 ',
-      RESOLVED: 'bg-success/20 text-success border border-success/40 ',
+      OPEN: 'bg-accent/20 text-accent border border-accent/40',
+      IN_PROGRESS: 'bg-primary/20 text-primary border border-primary/40',
+      WAITING_CUSTOMER: 'bg-warning/20 text-warning border border-warning/40',
+      RESOLVED: 'bg-success/20 text-success border border-success/40',
       CLOSED: 'bg-muted text-muted-foreground border border-border',
     };
     return colors[status] || colors.OPEN;
@@ -96,9 +96,20 @@ export default function CustomerTicketsPage() {
       LOW: 'bg-muted text-muted-foreground border border-border',
       MEDIUM: 'bg-primary/20 text-primary border border-primary/40',
       HIGH: 'bg-warning/20 text-warning border border-warning/40',
-      URGENT: 'bg-destructive/20 text-destructive border border-destructive/40 ',
+      URGENT: 'bg-destructive/20 text-destructive border border-destructive/40',
     };
     return colors[priority] || colors.MEDIUM;
+  };
+
+  // Admins pick this color freely, so pick readable text against it instead
+  // of assuming white — a pale admin-chosen color with white text was
+  // unreadable.
+  const getCategoryTextColor = (hex: string) => {
+    const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    if (!m) return '#fff';
+    const [r, g, b] = [m[1], m[2], m[3]].map(h => parseInt(h, 16) / 255);
+    const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    return lum > 0.6 ? '#1a1a1a' : '#fff';
   };
 
   return (
@@ -188,8 +199,8 @@ export default function CustomerTicketsPage() {
                       </span>
                       {ticket.category && (
                         <span
-                          className="px-3 py-1 rounded-lg text-xs font-bold text-white border"
-                          style={{ backgroundColor: ticket.category.color, borderColor: ticket.category.color }}
+                          className="px-3 py-1 rounded-lg text-xs font-bold border"
+                          style={{ backgroundColor: ticket.category.color, borderColor: ticket.category.color, color: getCategoryTextColor(ticket.category.color) }}
                         >
                           {ticket.category.name}
                         </span>
