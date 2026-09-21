@@ -6,7 +6,8 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
-import { CyberCard, CyberBadge } from '@/components/cyberpunk';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   Gift, Users, Wallet, Clock, CheckCircle, XCircle, Search,
   Loader2, AlertCircle
@@ -137,53 +138,53 @@ export default function AdminReferralsPage() {
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <CyberCard className="p-3">
+          <Card className="p-3">
             <div className="text-center">
               <Users className="w-5 h-5 mx-auto text-blue-500 mb-1" />
               <p className="text-2xl font-bold text-foreground">{stats.usersWithCode}</p>
               <p className="text-xs text-muted-foreground">{t('referrals.statHasCode')}</p>
             </div>
-          </CyberCard>
-          <CyberCard className="p-3">
+          </Card>
+          <Card className="p-3">
             <div className="text-center">
               <Users className="w-5 h-5 mx-auto text-primary mb-1" />
               <p className="text-2xl font-bold text-foreground">{stats.referredUsers}</p>
               <p className="text-xs text-muted-foreground">{t('referrals.statReferred')}</p>
             </div>
-          </CyberCard>
-          <CyberCard className="p-3">
+          </Card>
+          <Card className="p-3">
             <div className="text-center">
               <Gift className="w-5 h-5 mx-auto text-cyan-500 mb-1" />
               <p className="text-2xl font-bold text-foreground">{stats.totalRewards}</p>
               <p className="text-xs text-muted-foreground">{t('referrals.statTotalRewards')}</p>
             </div>
-          </CyberCard>
-          <CyberCard className="p-3">
+          </Card>
+          <Card className="p-3">
             <div className="text-center">
               <Clock className="w-5 h-5 mx-auto text-amber-500 mb-1" />
               <p className="text-2xl font-bold text-foreground">{stats.pendingRewards}</p>
               <p className="text-xs text-muted-foreground">{t('referrals.statPending')}</p>
             </div>
-          </CyberCard>
-          <CyberCard className="p-3">
+          </Card>
+          <Card className="p-3">
             <div className="text-center">
               <CheckCircle className="w-5 h-5 mx-auto text-emerald-500 mb-1" />
               <p className="text-2xl font-bold text-foreground">{stats.creditedRewards}</p>
               <p className="text-xs text-muted-foreground">{t('referrals.statCredited')}</p>
             </div>
-          </CyberCard>
-          <CyberCard className="p-3">
+          </Card>
+          <Card className="p-3">
             <div className="text-center">
               <Wallet className="w-5 h-5 mx-auto text-emerald-500 mb-1" />
               <p className="text-2xl font-bold text-foreground">{formatCurrency(stats.totalCredited)}</p>
               <p className="text-xs text-muted-foreground">{t('referrals.statTotalCredited')}</p>
             </div>
-          </CyberCard>
+          </Card>
         </div>
       )}
 
       {/* Filters */}
-      <CyberCard className="p-4">
+      <Card className="p-4">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -206,10 +207,10 @@ export default function AdminReferralsPage() {
             <option value="EXPIRED">{t('referrals.statusExpired')}</option>
           </select>
         </div>
-      </CyberCard>
+      </Card>
 
       {/* Rewards Table */}
-      <CyberCard className="p-4">
+      <Card className="p-4">
         {rewards.length === 0 ? (
           <div className="text-center py-12">
             <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
@@ -227,7 +228,7 @@ export default function AdminReferralsPage() {
                     <p className="text-[10px] text-muted-foreground">{reward.referrer.phone}</p>
                     <code className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded">{reward.referrer.referralCode}</code>
                   </div>
-                  <CyberBadge
+                  <Badge
                     variant={
                       reward.status === 'CREDITED' ? 'success' :
                       reward.status === 'PENDING' ? 'warning' : 'destructive'
@@ -235,7 +236,7 @@ export default function AdminReferralsPage() {
                   >
                     {reward.status === 'CREDITED' ? t('referrals.statusCredited') :
                      reward.status === 'PENDING' ? t('referrals.statusPending') : t('referrals.statusExpired')}
-                  </CyberBadge>
+                  </Badge>
                 </div>
                 <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
                   <div>
@@ -306,7 +307,7 @@ export default function AdminReferralsPage() {
                       {formatCurrency(reward.amount)}
                     </td>
                     <td className="py-3 px-3">
-                      <CyberBadge
+                      <Badge
                         variant={
                           reward.status === 'CREDITED' ? 'success' :
                           reward.status === 'PENDING' ? 'warning' : 'destructive'
@@ -314,7 +315,7 @@ export default function AdminReferralsPage() {
                       >
                         {reward.status === 'CREDITED' ? t('referrals.statusCredited') :
                          reward.status === 'PENDING' ? t('referrals.statusPending') : t('referrals.statusExpired')}
-                      </CyberBadge>
+                      </Badge>
                     </td>
                     <td className="py-3 px-3 text-xs text-muted-foreground">
                       {formatDate(reward.createdAt)}
@@ -361,7 +362,7 @@ export default function AdminReferralsPage() {
             onPageChange={setPage}
           />
         </div>
-      </CyberCard>
+      </Card>
     </div>
   );
 }

@@ -11,6 +11,8 @@ import { cn } from '@/lib/utils';
 import { apiAdmin, onUnauthorized } from '@/lib/api';
 import { useAppStore } from '@/lib/store';
 import NotificationDropdown from '@/components/NotificationDropdown';
+import { AdminLoadingGlow } from '@/components/AdminBackgroundGlow';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useIdleTimeout } from '@/hooks/useIdleTimeout';
 import { useTheme } from '@/hooks/useTheme';
@@ -861,10 +863,7 @@ function AdminLayoutContent({
     return (
       <div className="min-h-dvh bg-background flex items-center justify-center relative overflow-hidden">
         {/* Background effects */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-brand-500/10 rounded-full blur-[70px] animate-pulse" style={{ willChange: 'opacity', transform: 'translateZ(0)' }} />
-          <div className="absolute bottom-1/4 right-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-blue-500/10 rounded-full blur-[70px] animate-pulse delay-1000" style={{ willChange: 'opacity', transform: 'translateZ(0)' }} />
-        </div>
+        <AdminLoadingGlow />
 
         <div className="flex flex-col items-center gap-4 relative z-10">
           <div className="relative">
@@ -882,10 +881,7 @@ function AdminLayoutContent({
     return (
       <div className="min-h-dvh bg-background flex items-center justify-center relative overflow-hidden">
         {/* Background effects */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-brand-500/10 rounded-full blur-[70px] animate-pulse" style={{ willChange: 'opacity', transform: 'translateZ(0)' }} />
-          <div className="absolute bottom-1/4 right-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-blue-500/10 rounded-full blur-[70px] animate-pulse delay-1000" style={{ willChange: 'opacity', transform: 'translateZ(0)' }} />
-        </div>
+        <AdminLoadingGlow />
 
         <div className="flex flex-col items-center gap-4 relative z-10">
           <div className="relative">
@@ -1115,22 +1111,19 @@ function AdminLayoutContent({
         <main className="flex-1 p-3 sm:p-4 md:p-6 animate-in fade-in duration-500 safe-area-inset-bottom">{children}</main>
       </div>
 
-      {/* Idle Timeout Warning Modal */}
-      {showIdleWarning && (
-        <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          {/* Scan lines */}
-          <div className="hidden dark:block absolute inset-0 pointer-events-none bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(70,95,255,0.02)_2px,rgba(70,95,255,0.02)_4px)]" />
-
-          <div className="relative bg-background/95 border-2 border-brand-500/30 rounded-2xl shadow-theme-xl max-w-sm w-full p-6 animate-in zoom-in-95 duration-300">
-            {/* Top accent line */}
-            <div className="absolute top-0 left-4 right-4 h-px bg-gradient-to-r from-transparent via-brand-400 to-transparent" />
-
-            {/* Corner accents */}
-            <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-brand-400 rounded-tl-lg" />
-            <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-brand-400 rounded-tr-lg" />
-            <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-blue-400 rounded-bl-lg" />
-            <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-blue-400 rounded-br-lg" />
-
+      {/* Idle Timeout Warning Modal — uses the shared Dialog instead of a
+          bespoke implementation, but stays a forced choice: no ESC/outside
+          click/close-button dismissal, since the user must pick Logout or
+          Stay Active. */}
+      <Dialog open={showIdleWarning} onOpenChange={() => {}}>
+        <DialogContent
+          showCloseButton={false}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
+          className="max-w-sm"
+        >
+          <div>
             <div className="flex items-center gap-4 mb-6">
               <div className="p-3 bg-amber-500/10 rounded-xl border border-amber-500/30 animate-pulse flex items-center justify-center">
                 <Timer className="w-6 h-6 text-amber-400" />
@@ -1149,7 +1142,7 @@ function AdminLayoutContent({
               <p className="text-sm text-muted-foreground mb-4">
                 {t('common.autoLogoutInactivity')}
               </p>
-              <div className="inline-flex items-center justify-center gap-3 px-6 py-4 bg-amber-500/10 border border-amber-500/30 rounded-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
+              <div className="inline-flex items-center justify-center gap-3 px-6 py-4 bg-amber-500/10 border border-amber-500/30 rounded-xl">
                 <AlertTriangle className="w-5 h-5 text-amber-400 animate-pulse" />
                 <span className="text-2xl sm:text-3xl md:text-4xl font-mono font-black text-amber-400 tabular-nums">
                   {idleCountdown}
@@ -1173,8 +1166,8 @@ function AdminLayoutContent({
               </button>
             </div>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -1222,10 +1215,7 @@ export default function AdminLayout({
       <Suspense fallback={
         <div className="min-h-dvh flex items-center justify-center bg-background relative overflow-hidden">
           {/* Background effects */}
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-1/4 left-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-brand-500/10 rounded-full blur-[70px] animate-pulse" style={{ willChange: 'opacity', transform: 'translateZ(0)' }} />
-            <div className="absolute bottom-1/4 right-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-blue-500/10 rounded-full blur-[70px] animate-pulse delay-1000" style={{ willChange: 'opacity', transform: 'translateZ(0)' }} />
-          </div>
+          <AdminLoadingGlow />
 
           <div className="relative">
             <div className="w-12 h-12 border-3 border-brand-500/30 border-t-brand-400 rounded-full animate-spin" />
