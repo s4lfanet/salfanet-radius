@@ -1574,6 +1574,7 @@ function ONUDetailModal({ oltId, onu, onClose }: { oltId: string; onu: ONU; onCl
     ['Interface', String(detail?.telnet?.interface ?? `${onu.frame}/${onu.slot}/${onu.port}:${onu.onuId}`)],
     ['Serial Number', String(parsed['Serial number'] ?? onu.serialNumber ?? 'N/A')],
     ['Name', String(parsed.Name ?? onu.description ?? 'N/A')],
+    ['Description', String(parsed.Description ?? 'N/A')],
     ['Type', String(parsed.Type ?? 'N/A')],
     ['ONT Vendor', String(detailSummary.vendor ?? 'N/A')],
     ['State', String(parsed.State ?? onu.status ?? 'N/A')],
@@ -2860,12 +2861,37 @@ function ONUConfigEditModal({
   const ponPort = onu.port + 1;
   const interfaceName = `gpon-onu_${onu.frame}/${onu.slot}/${ponPort}:${onu.onuId}`;
 
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState(onu.description ?? '');
+  // `onu.description` (DB) is actually the ZTE "Name" attribute — both
+  // `name` and `description` CLI commands used to be set from that one
+  // field on registration, so historically it holds the Name value, not
+  // a real description. Pre-fill Nama from it, then overwrite both once
+  // the live fetch below returns the OLT's real current Name/Description
+  // (confirmed live: DB description "marlinarina@rw03" == OLT's "Name:"
+  // line; the OLT's actual "Description:" line was a separate, unrelated
+  // "ONU-1:1"-style value Salfanet never read at all).
+  const [name, setName] = useState(onu.description ?? '');
+  const [description, setDescription] = useState('');
+  const [loadingLive, setLoadingLive] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<string[] | null>(null);
   const [committed, setCommitted] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setLoadingLive(true);
+    fetch(`/api/olt/${oltId}/onus/${onu.id}/detail`)
+      .then(async (res) => {
+        const json = await res.json();
+        if (!active || !res.ok || !json.success) return;
+        const parsed = json?.telnet?.detail?.parsed ?? {};
+        if (typeof parsed.Name === 'string') setName(parsed.Name);
+        if (typeof parsed.Description === 'string') setDescription(parsed.Description);
+      })
+      .catch(() => { /* keep the DB-derived defaults on failure */ })
+      .finally(() => { if (active) setLoadingLive(false); });
+    return () => { active = false; };
+  }, [oltId, onu.id]);
 
   const buildPayload = (commit: boolean) => ({
     name: name || undefined,
@@ -2942,6 +2968,11 @@ function ONUConfigEditModal({
               {interfaceName}
             </code>
           </div>
+          {loadingLive && (
+            <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+              <RefreshCw className="h-3 w-3 animate-spin" /> Mengambil nama & deskripsi terkini dari OLT...
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label className="text-xs">Nama ONU</Label>
             <Input
@@ -2949,6 +2980,7 @@ function ONUConfigEditModal({
               onChange={(e) => { setName(e.target.value); setPreview(null); setCommitted(false); }}
               placeholder="cth: Pelanggan-A"
               className="text-sm"
+              disabled={loadingLive}
             />
           </div>
           <div className="space-y-1.5">
@@ -2958,6 +2990,7 @@ function ONUConfigEditModal({
               onChange={(e) => { setDescription(e.target.value); setPreview(null); setCommitted(false); }}
               placeholder="cth: Jl. Merdeka No. 1"
               className="text-sm"
+              disabled={loadingLive}
             />
           </div>
           <div className="text-[10px] text-muted-foreground p-2 rounded bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
@@ -2983,7 +3016,7 @@ function ONUConfigEditModal({
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={onClose} disabled={saving}>Batal</Button>
             {!preview ? (
-              <Button onClick={handlePreview} disabled={saving || !isZTE}>
+              <Button onClick={handlePreview} disabled={saving || !isZTE || loadingLive}>
                 {saving ? <RefreshCw className="h-4 w-4 animate-spin mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
                 {saving ? 'Loading...' : 'Preview Command'}
               </Button>
