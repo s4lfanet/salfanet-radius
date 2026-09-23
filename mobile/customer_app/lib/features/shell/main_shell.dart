@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../dashboard/dashboard_screen.dart';
 import '../invoices/invoices_screen.dart';
+import '../more/more_screen.dart';
 import '../tickets/tickets_screen.dart';
 import '../wifi/wifi_screen.dart';
 
@@ -19,6 +20,7 @@ class _MainShellState extends State<MainShell> {
     InvoicesScreen(),
     WifiScreen(),
     TicketsScreen(),
+    MoreScreen(),
   ];
 
   @override
@@ -33,6 +35,7 @@ class _MainShellState extends State<MainShell> {
           NavigationDestination(icon: Icon(Icons.receipt_long_outlined), selectedIcon: Icon(Icons.receipt_long), label: 'Tagihan'),
           NavigationDestination(icon: Icon(Icons.wifi_outlined), selectedIcon: Icon(Icons.wifi), label: 'WiFi'),
           NavigationDestination(icon: Icon(Icons.support_agent_outlined), selectedIcon: Icon(Icons.support_agent), label: 'Tiket'),
+          NavigationDestination(icon: Icon(Icons.more_horiz_outlined), selectedIcon: Icon(Icons.more_horiz), label: 'Lainnya'),
         ],
       ),
     );
