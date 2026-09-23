@@ -2,9 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/formatters.dart';
 import '../../models/customer.dart';
+import '../../models/dashboard_data.dart';
 import '../auth/auth_provider.dart';
 import '../invoices/invoice_provider.dart';
 import '../invoices/invoice_detail_sheet.dart';
+import '../notifications/notifications_provider.dart';
+import '../notifications/notifications_screen.dart';
+import 'dashboard_provider.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -19,6 +23,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<InvoiceProvider>().load();
+      context.read<DashboardProvider>().load();
+      context.read<NotificationsProvider>().load();
     });
   }
 
@@ -26,6 +32,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     await Future.wait([
       context.read<AuthProvider>().fetchMe(),
       context.read<InvoiceProvider>().load(force: true),
+      context.read<DashboardProvider>().load(),
+      context.read<NotificationsProvider>().load(),
     ]);
   }
 
@@ -34,15 +42,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final auth = context.watch<AuthProvider>();
     final customer = auth.customer;
     final invoiceProvider = context.watch<InvoiceProvider>();
+    final dashboardProvider = context.watch<DashboardProvider>();
+    final unreadCount = context.watch<NotificationsProvider>().unreadCount;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Beranda'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Keluar',
-            onPressed: () => _confirmLogout(context),
+            icon: Badge(
+              label: Text('$unreadCount'),
+              isLabelVisible: unreadCount > 0,
+              child: const Icon(Icons.notifications_outlined),
+            ),
+            tooltip: 'Notifikasi',
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsScreen())),
           ),
         ],
       ),
@@ -57,28 +71,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _UnpaidInvoiceCard(invoiceId: invoiceProvider.nextUnpaid!.id),
               const SizedBox(height: 16),
             ],
+            if (dashboardProvider.data != null) _UsageCard(data: dashboardProvider.data!),
           ],
         ),
-      ),
-    );
-  }
-
-  void _confirmLogout(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Keluar dari akun?'),
-        content: const Text('Anda perlu masuk kembali untuk mengakses akun Anda.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Batal')),
-          FilledButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              context.read<AuthProvider>().logout();
-            },
-            child: const Text('Keluar'),
-          ),
-        ],
       ),
     );
   }
@@ -217,6 +212,64 @@ class _UnpaidInvoiceCard extends StatelessWidget {
               Icon(Icons.chevron_right, color: scheme.onErrorContainer),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _UsageCard extends StatelessWidget {
+  const _UsageCard({required this.data});
+  final DashboardData data;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final onlineColor = data.isOnline ? const Color(0xFF12B76A) : scheme.error;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(width: 8, height: 8, decoration: BoxDecoration(color: onlineColor, shape: BoxShape.circle)),
+                const SizedBox(width: 8),
+                Text(data.isOnline ? 'Online' : 'Offline', style: TextStyle(color: onlineColor, fontWeight: FontWeight.w600)),
+                if (data.ipAddress != null) ...[
+                  const Spacer(),
+                  Text(data.ipAddress!, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)),
+                ],
+              ],
+            ),
+            const Divider(height: 28),
+            Text('Pemakaian Bulan Ini', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      Icon(Icons.arrow_downward, size: 16, color: scheme.primary),
+                      const SizedBox(width: 4),
+                      Text(formatBytes(data.downloadBytes), style: const TextStyle(fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Icon(Icons.arrow_upward, size: 16, color: scheme.secondary),
+                      const SizedBox(width: 4),
+                      Text(formatBytes(data.uploadBytes), style: const TextStyle(fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

@@ -54,6 +54,16 @@ class ApiClient {
     return _run(() => _dio.post(path, data: data));
   }
 
+  /// For multipart/form-data submissions (file uploads) — bypasses the
+  /// default application/json content type set in BaseOptions.
+  Future<Map<String, dynamic>> postForm(String path, FormData data) {
+    return _run(() => _dio.post(path, data: data, options: Options(contentType: 'multipart/form-data')));
+  }
+
+  Future<Map<String, dynamic>> patch(String path, {Object? data}) {
+    return _run(() => _dio.patch(path, data: data));
+  }
+
   Future<Map<String, dynamic>> delete(String path, {Map<String, dynamic>? query}) {
     return _run(() => _dio.delete(path, queryParameters: query));
   }

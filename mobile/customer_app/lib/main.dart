@@ -8,9 +8,16 @@ import 'core/theme/app_theme.dart';
 import 'features/auth/auth_provider.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/otp_screen.dart';
+import 'features/dashboard/dashboard_provider.dart';
 import 'features/invoices/invoice_provider.dart';
+import 'features/notifications/notifications_provider.dart';
+import 'features/referral/referral_provider.dart';
+import 'features/renewal/renewal_provider.dart';
 import 'features/shell/main_shell.dart';
+import 'features/suspend/suspend_provider.dart';
 import 'features/tickets/ticket_provider.dart';
+import 'features/topup/topup_provider.dart';
+import 'features/upgrade/upgrade_provider.dart';
 import 'features/wifi/wifi_provider.dart';
 
 Future<void> main() async {
@@ -31,6 +38,13 @@ class CustomerApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => InvoiceProvider()),
         ChangeNotifierProvider(create: (_) => WifiProvider()),
         ChangeNotifierProvider(create: (_) => TicketProvider()),
+        ChangeNotifierProvider(create: (_) => DashboardProvider()),
+        ChangeNotifierProvider(create: (_) => NotificationsProvider()),
+        ChangeNotifierProvider(create: (_) => ReferralProvider()),
+        ChangeNotifierProvider(create: (_) => RenewalProvider()),
+        ChangeNotifierProvider(create: (_) => TopupProvider()),
+        ChangeNotifierProvider(create: (_) => UpgradeProvider()),
+        ChangeNotifierProvider(create: (_) => SuspendProvider()),
       ],
       child: MaterialApp(
         title: 'Salfanet',
