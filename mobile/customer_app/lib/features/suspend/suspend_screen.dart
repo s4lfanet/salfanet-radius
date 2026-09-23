@@ -83,7 +83,7 @@ class _SuspendScreenState extends State<SuspendScreen> {
                             style: TextStyle(fontWeight: FontWeight.bold, color: scheme.primary),
                           ),
                           const SizedBox(height: 6),
-                          Text('${formatDate(provider.current!.startDate)} — ${formatDate(provider.current!.endDate)}'),
+                          Text('${formatDate(provider.current!.startDate)} s.d. ${formatDate(provider.current!.endDate)}'),
                           if (provider.current!.reason != null) Text(provider.current!.reason!),
                           if (provider.current!.isPending) ...[
                             const SizedBox(height: 12),
@@ -105,7 +105,7 @@ class _SuspendScreenState extends State<SuspendScreen> {
                   OutlinedButton.icon(
                     onPressed: _pickRange,
                     icon: const Icon(Icons.date_range),
-                    label: Text(_range == null ? 'Pilih Tanggal' : '${formatDate(_range!.start)} — ${formatDate(_range!.end)}'),
+                    label: Text(_range == null ? 'Pilih Tanggal' : '${formatDate(_range!.start)} s.d. ${formatDate(_range!.end)}'),
                   ),
                   const SizedBox(height: 16),
                   TextField(

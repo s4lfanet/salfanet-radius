@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/api/api_client.dart';
+import '../../core/company/company_logo.dart';
+import '../../core/company/company_provider.dart';
 import 'auth_provider.dart';
 import 'server_settings_screen.dart';
 
@@ -41,13 +43,16 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _openServerSettings() async {
-    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ServerSettingsScreen()));
-    if (mounted) setState(() {});
+    final changed = await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ServerSettingsScreen()));
+    if (!mounted) return;
+    setState(() {});
+    if (changed == true) context.read<CompanyProvider>().load();
   }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final company = context.watch<CompanyProvider>().info;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -70,21 +75,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Container(
-                    width: 72,
-                    height: 72,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: scheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Icon(Icons.wifi_rounded, size: 36, color: scheme.onPrimaryContainer),
-                  ),
+                  Center(child: CompanyLogo(company: company, size: 72, radius: 20)),
                   const SizedBox(height: 24),
                   Text('Selamat Datang', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   Text(
-                    'Masuk dengan nomor HP atau ID pelanggan Anda',
+                    company != null
+                        ? 'Masuk ke akun ${company.name} dengan nomor HP atau ID pelanggan Anda'
+                        : 'Masuk dengan nomor HP atau ID pelanggan Anda',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
                   ),
                   const SizedBox(height: 32),

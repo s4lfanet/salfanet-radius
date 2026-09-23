@@ -3,12 +3,14 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 
 import 'core/api/api_client.dart';
+import 'core/company/company_provider.dart';
 import 'core/push/push_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/auth_provider.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/otp_screen.dart';
 import 'features/dashboard/dashboard_provider.dart';
+import 'features/dashboard/promo_provider.dart';
 import 'features/invoices/invoice_provider.dart';
 import 'features/notifications/notifications_provider.dart';
 import 'features/referral/referral_provider.dart';
@@ -46,6 +48,8 @@ class CustomerApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => TopupProvider()),
         ChangeNotifierProvider(create: (_) => UpgradeProvider()),
         ChangeNotifierProvider(create: (_) => SuspendProvider()),
+        ChangeNotifierProvider(create: (_) => CompanyProvider()..load()),
+        ChangeNotifierProvider(create: (_) => PromoProvider()),
       ],
       child: MaterialApp(
         title: 'Salfanet',

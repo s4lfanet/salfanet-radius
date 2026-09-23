@@ -93,7 +93,7 @@ class _OtpScreenState extends State<OtpScreen> {
                   textAlign: TextAlign.center,
                   maxLength: 6,
                   style: const TextStyle(fontSize: 24, letterSpacing: 8),
-                  decoration: const InputDecoration(counterText: '', hintText: '——————'),
+                  decoration: const InputDecoration(counterText: '', hintText: '• • • • • •'),
                 ),
                 if (_errorText != null) ...[
                   const SizedBox(height: 8),

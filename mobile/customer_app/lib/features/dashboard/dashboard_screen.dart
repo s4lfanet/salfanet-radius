@@ -1,17 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/company/company_logo.dart';
+import '../../core/company/company_provider.dart';
 import '../../core/formatters.dart';
 import '../../models/customer.dart';
 import '../../models/dashboard_data.dart';
 import '../auth/auth_provider.dart';
+import '../invoices/invoice_detail_screen.dart';
 import '../invoices/invoice_provider.dart';
-import '../invoices/invoice_detail_sheet.dart';
 import '../notifications/notifications_provider.dart';
 import '../notifications/notifications_screen.dart';
+import '../referral/referral_screen.dart';
+import '../renewal/renewal_screen.dart';
+import '../speedtest/speedtest_screen.dart';
+import '../topup/topup_screen.dart';
+import '../upgrade/upgrade_screen.dart';
 import 'dashboard_provider.dart';
+import 'promo_carousel.dart';
+import 'promo_provider.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  const DashboardScreen({super.key, required this.onNavigateToTab});
+  final void Function(int tabIndex) onNavigateToTab;
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -25,6 +35,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       context.read<InvoiceProvider>().load();
       context.read<DashboardProvider>().load();
       context.read<NotificationsProvider>().load();
+      context.read<CompanyProvider>().load();
+      context.read<PromoProvider>().load();
     });
   }
 
@@ -34,6 +46,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       context.read<InvoiceProvider>().load(force: true),
       context.read<DashboardProvider>().load(),
       context.read<NotificationsProvider>().load(),
+      context.read<PromoProvider>().load(),
     ]);
   }
 
@@ -44,10 +57,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final invoiceProvider = context.watch<InvoiceProvider>();
     final dashboardProvider = context.watch<DashboardProvider>();
     final unreadCount = context.watch<NotificationsProvider>().unreadCount;
+    final company = context.watch<CompanyProvider>().info;
+    final banners = context.watch<PromoProvider>().banners;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Beranda'),
+        titleSpacing: 12,
+        title: Row(
+          children: [
+            CompanyLogo(company: company, size: 32, radius: 9),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                company?.name ?? 'Salfanet',
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
             icon: Badge(
@@ -63,13 +91,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
       body: RefreshIndicator(
         onRefresh: _refresh,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           children: [
-            if (customer != null) _ProfileCard(customer: customer),
-            const SizedBox(height: 16),
+            if (customer != null) _StatusHeroCard(customer: customer),
+            const SizedBox(height: 18),
+            PromoCarousel(banners: banners),
+            if (banners.isNotEmpty) const SizedBox(height: 18),
+            _QuickMenu(onNavigateToTab: widget.onNavigateToTab),
+            const SizedBox(height: 18),
             if (invoiceProvider.nextUnpaid != null) ...[
               _UnpaidInvoiceCard(invoiceId: invoiceProvider.nextUnpaid!.id),
-              const SizedBox(height: 16),
+              const SizedBox(height: 18),
             ],
             if (dashboardProvider.data != null) _UsageCard(data: dashboardProvider.data!),
           ],
@@ -79,55 +111,88 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
-class _ProfileCard extends StatelessWidget {
-  const _ProfileCard({required this.customer});
+/// Account status at a glance: package, speed, and an explicit days-left
+/// countdown — the one number a billing-app user actually needs on open
+/// (C-3: content-driven, not a generic profile card).
+class _StatusHeroCard extends StatelessWidget {
+  const _StatusHeroCard({required this.customer});
   final CustomerProfile customer;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final profile = customer.profile;
+    final daysLeft = customer.expiredAt?.difference(DateTime.now()).inDays;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 26,
-                  backgroundColor: scheme.primaryContainer,
-                  child: Text(
-                    customer.name.isNotEmpty ? customer.name[0].toUpperCase() : '?',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: scheme.onPrimaryContainer),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(customer.name, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                      Text(customer.username, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
-                    ],
-                  ),
-                ),
-                _StatusChip(status: customer.status),
-              ],
-            ),
-            const Divider(height: 32),
-            _InfoRow(label: 'Paket', value: profile?.name ?? '-'),
-            if (profile?.downloadSpeed != null)
-              _InfoRow(label: 'Kecepatan', value: '${profile!.downloadSpeed} / ${profile.uploadSpeed} Mbps'),
-            _InfoRow(
-              label: 'Berlaku hingga',
-              value: customer.expiredAt != null ? formatDate(customer.expiredAt!) : '-',
-            ),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer,
+        borderRadius: BorderRadius.circular(20),
       ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: scheme.onPrimaryContainer.withValues(alpha: 0.12),
+                child: Text(
+                  customer.name.isNotEmpty ? customer.name[0].toUpperCase() : '?',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: scheme.onPrimaryContainer),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(customer.name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: scheme.onPrimaryContainer)),
+                    Text(profile?.name ?? '-', style: TextStyle(color: scheme.onPrimaryContainer.withValues(alpha: 0.75), fontSize: 13)),
+                  ],
+                ),
+              ),
+              _StatusChip(status: customer.status),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              if (profile?.downloadSpeed != null)
+                Expanded(
+                  child: _heroStat(scheme, 'Kecepatan', '${profile!.downloadSpeed}/${profile.uploadSpeed} Mbps'),
+                ),
+              Expanded(
+                child: _heroStat(
+                  scheme,
+                  'Masa Aktif',
+                  daysLeft == null ? '-' : (daysLeft >= 0 ? '$daysLeft hari lagi' : 'Kedaluwarsa'),
+                  emphasize: daysLeft != null && daysLeft <= 3,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _heroStat(ColorScheme scheme, String label, String value, {bool emphasize = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: TextStyle(fontSize: 11, color: scheme.onPrimaryContainer.withValues(alpha: 0.65))),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+            color: emphasize ? const Color(0xFFF04438) : scheme.onPrimaryContainer,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -142,30 +207,77 @@ class _StatusChip extends StatelessWidget {
     final color = active ? const Color(0xFF12B76A) : const Color(0xFFF04438);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(999)),
+      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.85), borderRadius: BorderRadius.circular(999)),
       child: Text(
         active ? 'Aktif' : status,
-        style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 12),
+        style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 11),
       ),
     );
   }
 }
 
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.label, required this.value});
+class _QuickMenuItem {
+  const _QuickMenuItem(this.icon, this.label, this.onTap);
+  final IconData icon;
   final String label;
-  final String value;
+  final VoidCallback onTap;
+}
+
+class _QuickMenu extends StatelessWidget {
+  const _QuickMenu({required this.onNavigateToTab});
+  final void Function(int) onNavigateToTab;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = [
+      _QuickMenuItem(Icons.receipt_long_outlined, 'Tagihan', () => onNavigateToTab(1)),
+      _QuickMenuItem(Icons.wifi_outlined, 'WiFi', () => onNavigateToTab(2)),
+      _QuickMenuItem(Icons.support_agent_outlined, 'Tiket', () => onNavigateToTab(3)),
+      _QuickMenuItem(Icons.account_balance_wallet_outlined, 'Top Up', () => _push(context, const TopupScreen())),
+      _QuickMenuItem(Icons.upgrade_outlined, 'Upgrade', () => _push(context, const UpgradeScreen())),
+      _QuickMenuItem(Icons.autorenew, 'Perpanjang', () => _push(context, const RenewalScreen())),
+      _QuickMenuItem(Icons.card_giftcard_outlined, 'Referral', () => _push(context, const ReferralScreen())),
+      _QuickMenuItem(Icons.speed_outlined, 'Speed Test', () => _push(context, const SpeedtestScreen())),
+    ];
+
+    return GridView.count(
+      crossAxisCount: 4,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 12,
+      crossAxisSpacing: 8,
+      childAspectRatio: 0.8,
+      children: items.map((item) => _QuickMenuTile(item: item)).toList(),
+    );
+  }
+
+  void _push(BuildContext context, Widget screen) {
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
+  }
+}
+
+class _QuickMenuTile extends StatelessWidget {
+  const _QuickMenuTile({required this.item});
+  final _QuickMenuItem item;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: item.onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label, style: TextStyle(color: scheme.onSurfaceVariant)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.w600)),
+          Container(
+            width: 52,
+            height: 52,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(color: scheme.surfaceContainerHigh, borderRadius: BorderRadius.circular(16)),
+            child: Icon(item.icon, color: scheme.primary),
+          ),
+          const SizedBox(height: 6),
+          Text(item.label, textAlign: TextAlign.center, style: const TextStyle(fontSize: 11.5)),
         ],
       ),
     );
@@ -186,7 +298,7 @@ class _UnpaidInvoiceCard extends StatelessWidget {
       color: scheme.errorContainer.withValues(alpha: 0.5),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () => showInvoiceDetailSheet(context, invoice),
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => InvoiceDetailScreen(invoice: invoice))),
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Row(

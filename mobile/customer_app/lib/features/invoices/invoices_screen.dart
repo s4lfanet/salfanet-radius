@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/formatters.dart';
 import '../../models/invoice.dart';
-import 'invoice_detail_sheet.dart';
+import 'invoice_detail_screen.dart';
 import 'invoice_provider.dart';
 
 class InvoicesScreen extends StatefulWidget {
@@ -72,7 +72,7 @@ class _InvoiceTile extends StatelessWidget {
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () => showInvoiceDetailSheet(context, invoice),
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => InvoiceDetailScreen(invoice: invoice))),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
