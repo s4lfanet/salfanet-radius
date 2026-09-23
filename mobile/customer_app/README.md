@@ -3,11 +3,23 @@
 Native Flutter (Android) app for Salfanet customers — a native counterpart to the
 `frontend/src/app/customer/*` web portal, using the same `backend/src/app/api/customer/*` API.
 
-## Scope (phase 1)
+## Scope
 
 Login (phone/customer ID + WhatsApp OTP), Dashboard, Tagihan (invoices + pay), WiFi
-(view/edit SSID & password), Tiket (list/thread/create). Referral, speedtest, upgrade,
-and top-up are not yet ported from the web app.
+(view/edit SSID & password), Tiket (list/thread/create), plus the rest of the
+customer web portal: renewal, upgrade/change package, top-up (gateway + manual
+transfer), referral, suspend requests, speed test, and profile.
+
+## Server URL — this is NOT a single-tenant app
+
+Every Salfanet Radius installation runs on its own operator-chosen domain, so
+the app does **not** hard-code one production host. On first launch it defaults
+to `https://radius.salfa.my.id` (overridable at build time, see below), but the
+Login screen has a "Pengaturan Server" (gear icon / host caption) that opens
+`lib/features/auth/server_settings_screen.dart` — enter any other install's
+domain there, it's tested against `/api/public/company` and persisted via
+`flutter_secure_storage`. This is how the same APK gets pointed at a different
+ISP's backend without a rebuild.
 
 ## Running
 
@@ -16,7 +28,7 @@ flutter pub get
 flutter run
 ```
 
-Points at `https://customer.salfa.my.id` by default. To hit a local backend instead:
+To point the default at a local backend instead of `radius.salfa.my.id`:
 
 ```
 flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3001
