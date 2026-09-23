@@ -2860,36 +2860,21 @@ function ONUConfigEditModal({
   const ponPort = onu.port + 1;
   const interfaceName = `gpon-onu_${onu.frame}/${onu.slot}/${ponPort}:${onu.onuId}`;
 
+  const [name, setName] = useState('');
   const [description, setDescription] = useState(onu.description ?? '');
-  const [tcontProfile, setTcontProfile] = useState('1G');
-  const [primaryVlan, setPrimaryVlan] = useState('');
-  const [secondaryVlan, setSecondaryVlan] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<string[] | null>(null);
   const [committed, setCommitted] = useState(false);
 
-  const buildPayload = (commit: boolean) => {
-    const vlan1 = parseInt(primaryVlan);
-    const vlan2 = secondaryVlan ? parseInt(secondaryVlan) : undefined;
-    return {
-      description: description || undefined,
-      tcontProfile: tcontProfile || undefined,
-      primaryVlan: isNaN(vlan1) ? undefined : vlan1,
-      secondaryVlan: vlan2,
-      commit,
-    };
-  };
+  const buildPayload = (commit: boolean) => ({
+    name: name || undefined,
+    description: description || undefined,
+    commit,
+  });
 
   const validate = (): string | null => {
-    const vlan1 = parseInt(primaryVlan);
-    if (!primaryVlan || isNaN(vlan1) || vlan1 < 1 || vlan1 > 4094) {
-      return 'Primary VLAN wajib diisi (1-4094)';
-    }
-    if (secondaryVlan) {
-      const vlan2 = parseInt(secondaryVlan);
-      if (isNaN(vlan2) || vlan2 < 1 || vlan2 > 4094) return 'Secondary VLAN harus 1-4094';
-    }
+    if (!name && !description) return 'Isi nama atau deskripsi ONU terlebih dahulu';
     return null;
   };
 
@@ -2941,7 +2926,7 @@ function ONUConfigEditModal({
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2">
             <Settings className="h-4 w-4 text-cyan-500" />
-            <span className="text-sm font-bold text-foreground">Edit Config ONU</span>
+            <span className="text-sm font-bold text-foreground">Edit Nama & Deskripsi ONU</span>
           </div>
           <button onClick={onClose} className="text-slate-500 hover:text-slate-900 dark:hover:text-white text-xl leading-none">×</button>
         </div>
@@ -2958,49 +2943,26 @@ function ONUConfigEditModal({
             </code>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Description / Name</Label>
+            <Label className="text-xs">Nama ONU</Label>
             <Input
-              value={description}
-              onChange={(e) => { setDescription(e.target.value); setPreview(null); setCommitted(false); }}
+              value={name}
+              onChange={(e) => { setName(e.target.value); setPreview(null); setCommitted(false); }}
               placeholder="cth: Pelanggan-A"
               className="text-sm"
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">T-CONT Profile</Label>
+            <Label className="text-xs">Deskripsi</Label>
             <Input
-              value={tcontProfile}
-              onChange={(e) => { setTcontProfile(e.target.value); setPreview(null); setCommitted(false); }}
-              placeholder="cth: 1G, 500M"
+              value={description}
+              onChange={(e) => { setDescription(e.target.value); setPreview(null); setCommitted(false); }}
+              placeholder="cth: Jl. Merdeka No. 1"
               className="text-sm"
             />
-            <p className="text-[10px] text-muted-foreground">Profile T-CONT yang ada di OLT (cek "show gpon profile tcont").</p>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Primary VLAN *</Label>
-              <Input
-                type="number"
-                value={primaryVlan}
-                onChange={(e) => { setPrimaryVlan(e.target.value); setPreview(null); setCommitted(false); }}
-                placeholder="cth: 100"
-                className="text-sm"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Secondary VLAN</Label>
-              <Input
-                type="number"
-                value={secondaryVlan}
-                onChange={(e) => { setSecondaryVlan(e.target.value); setPreview(null); setCommitted(false); }}
-                placeholder="opsional"
-                className="text-sm"
-              />
-            </div>
           </div>
           <div className="text-[10px] text-muted-foreground p-2 rounded bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-            ⚠ Aksi ini akan <b>menimpa</b> T-CONT, GEM port, dan service-port yang ada.
-            PPPoE/WiFi/TR-069 tidak diubah — gunakan register ulang atau GenieACS untuk perubahan layer-2/3.
+            Hanya mengubah nama dan deskripsi ONU di OLT. T-CONT/GEM/service-port/VLAN tidak disentuh —
+            gunakan register ulang atau GenieACS untuk perubahan layer-2/3.
           </div>
 
           {/* Command Preview (dry-run) */}

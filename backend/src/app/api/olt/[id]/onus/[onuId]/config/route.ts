@@ -6,15 +6,14 @@ import { executeMultipleCommands } from '@/lib/olt/telnet';
 /**
  * POST /api/olt/[id]/onus/[onuId]/config
  *
- * Edit konfigurasi ONU yang sudah terdaftar (ZTE C320-style).
- * Mendukung: description/name, T-CONT profile, GEM port, service-port VLAN.
+ * Ubah nama dan/atau deskripsi ONU yang sudah terdaftar (ZTE C320-style).
+ * Ini sengaja dibatasi hanya untuk `name`/`description` — perubahan
+ * T-CONT/GEM/service-port/VLAN dilakukan lewat register ulang, bukan di sini.
  *
  * Body:
- *   - description?:   string
- *   - tcontProfile?:  string  (mis. "1G")
- *   - primaryVlan?:   number  (VLAN service-port 1)
- *   - secondaryVlan?: number  (VLAN service-port 2, opsional)
- *   - commit?:        boolean (default false = dry-run preview saja)
+ *   - name?:        string
+ *   - description?: string
+ *   - commit?:      boolean (default false = dry-run preview saja)
  *
  * Safety:
  *   - Interface name dibangun dari DB record (frame/slot/port/onuId), bukan dari client.
@@ -34,18 +33,21 @@ export async function POST(
     const { id: oltId, onuId } = await params;
     const body = await req.json();
     const {
+      name,
       description,
-      tcontProfile,
-      primaryVlan,
-      secondaryVlan,
       commit = false,
     } = body as {
+      name?: string;
       description?: string;
-      tcontProfile?: string;
-      primaryVlan?: number;
-      secondaryVlan?: number;
       commit?: boolean;
     };
+
+    if (!name && !description) {
+      return NextResponse.json(
+        { error: 'Isi nama atau deskripsi ONU terlebih dahulu' },
+        { status: 400 }
+      );
+    }
 
     // Ambil OLT dan ONU dari DB — jangan percaya interfaceName dari client
     const [olt, onu] = await Promise.all([
@@ -90,58 +92,9 @@ export async function POST(
     const ponPort = onu.port + 1;
     const interfaceName = `gpon-onu_${onu.frame}/${onu.slot}/${ponPort}:${onu.onuId}`;
 
-    // Validasi VLAN
-    if (primaryVlan !== undefined) {
-      if (isNaN(primaryVlan) || primaryVlan < 1 || primaryVlan > 4094) {
-        return NextResponse.json(
-          { error: 'Primary VLAN harus 1-4094' },
-          { status: 400 }
-        );
-      }
-    }
-    if (secondaryVlan !== undefined && secondaryVlan !== null) {
-      if (isNaN(secondaryVlan) || secondaryVlan < 1 || secondaryVlan > 4094) {
-        return NextResponse.json(
-          { error: 'Secondary VLAN harus 1-4094' },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Bangun command edit. Masuk ke config interface, hapus & rebuild
-    // T-CONT + GEM + service-port agar idempoten.
     const commands: string[] = ['configure terminal', `interface ${interfaceName}`];
-
-    if (description !== undefined && description !== '') {
-      commands.push(`name ${description}`, `description ${description}`);
-    }
-
-    if (tcontProfile) {
-      // Hapus T-CONT lama (1-2) lalu rebuild
-      commands.push('no tcont 1', 'no tcont 2');
-      const primaryName = primaryVlan
-        ? `VLAN${String(primaryVlan).padStart(4, '0')}`
-        : 'PRIMARY';
-      commands.push(`tcont 1 name ${primaryName} profile ${tcontProfile}`);
-      if (secondaryVlan) {
-        const secondaryName = `VLAN${secondaryVlan}`;
-        commands.push(`tcont 2 name ${secondaryName} profile ${tcontProfile}`);
-      }
-      commands.push('gemport 1 tcont 1');
-      if (secondaryVlan) commands.push('gemport 2 tcont 2');
-    }
-
-    if (primaryVlan) {
-      commands.push(
-        `service-port 1 vport 1 user-vlan ${primaryVlan} vlan ${primaryVlan}`
-      );
-      if (secondaryVlan) {
-        commands.push(
-          `service-port 2 vport 2 user-vlan ${secondaryVlan} vlan ${secondaryVlan}`
-        );
-      }
-    }
-
+    if (name) commands.push(`name ${name}`);
+    if (description) commands.push(`description ${description}`);
     commands.push('exit', 'end', 'write');
 
     // Dry-run mode: kembalikan commands tanpa eksekusi
@@ -175,7 +128,7 @@ export async function POST(
         oltId,
         logType: 'command',
         severity: result.success ? 'info' : 'error',
-        message: `ONU config edit: ${onu.serialNumber ?? interfaceName} — ${result.success ? 'OK' : 'FAILED'}`,
+        message: `ONU rename/description: ${onu.serialNumber ?? interfaceName} — ${result.success ? 'OK' : 'FAILED'}`,
         data: { commands, interfaceName, output: result.output?.slice(0, 2000), error: result.error },
       },
     });
