@@ -1,6 +1,7 @@
 import 'server-only'
 import * as webpush from 'web-push';
 import { prisma } from '@/server/db/client';
+import { sendFcmToUser, sendFcmToUsers } from './fcm-push.service';
 
 export interface WebPushSubscriptionInput {
   endpoint: string;
@@ -445,6 +446,11 @@ export async function removeTechnicianPushSubscription(technicianId: string, end
   return result.count;
 }
 
+// Both functions below fan out to Web Push (browser PWA subscriptions,
+// stored here) AND FCM (the customer Flutter app's device tokens, stored in
+// fcm-push.service.ts) so every existing caller reaches both surfaces
+// without needing to know the customer app exists.
+
 export async function sendWebPushToUser(userId: string, payload: PushNotificationPayload): Promise<PushSendResult> {
   const subscriptions = await prisma.pushSubscription.findMany({
     where: {
@@ -460,7 +466,16 @@ export async function sendWebPushToUser(userId: string, payload: PushNotificatio
     },
   });
 
-  return sendToStoredSubscriptions(subscriptions, payload);
+  const [webResult, fcmResult] = await Promise.all([
+    sendToStoredSubscriptions(subscriptions, payload),
+    sendFcmToUser(userId, payload),
+  ]);
+
+  return {
+    sent: webResult.sent + fcmResult.sent,
+    failed: webResult.failed + fcmResult.failed,
+    total: webResult.total + fcmResult.sent + fcmResult.failed,
+  };
 }
 
 export async function sendWebPushToUsers(userIds: string[], payload: PushNotificationPayload): Promise<PushSendResult> {
@@ -482,7 +497,16 @@ export async function sendWebPushToUsers(userIds: string[], payload: PushNotific
     },
   });
 
-  return sendToStoredSubscriptions(subscriptions, payload);
+  const [webResult, fcmResult] = await Promise.all([
+    sendToStoredSubscriptions(subscriptions, payload),
+    sendFcmToUsers(userIds, payload),
+  ]);
+
+  return {
+    sent: webResult.sent + fcmResult.sent,
+    failed: webResult.failed + fcmResult.failed,
+    total: webResult.total + fcmResult.sent + fcmResult.failed,
+  };
 }
 
 export async function getPushDashboardStats() {

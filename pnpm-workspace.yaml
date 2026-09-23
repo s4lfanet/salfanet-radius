@@ -3,6 +3,7 @@ packages:
   - 'backend'
   - 'packages/*'
 allowBuilds:
+  '@firebase/util': true
   '@parcel/watcher': true
   '@prisma/client': true
   '@prisma/engines': true
