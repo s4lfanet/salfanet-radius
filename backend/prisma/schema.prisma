@@ -621,6 +621,7 @@ model pppoeUser {
   referralRewardsGiven    referralReward[]       @relation("ReferrerRewards")
   referralRewardsReceived referralReward[]       @relation("ReferredRewards")
   pushSubscriptions       pushSubscription[]
+  customerPushTokens      customerPushToken[]
   oltOnuStatuses          oltOnuStatus[]
   registeredByTechnician  technician?            @relation(fields: [registeredByTechnicianId], references: [id], onDelete: SetNull)
   customerAddons          customerAddon[]
@@ -938,6 +939,21 @@ model pushSubscription {
   @@index([userId, isActive])
   @@index([createdAt])
   @@map("push_subscriptions")
+}
+
+// FCM device token for the customer Flutter app (separate from pushSubscription,
+// which stores browser Web Push/VAPID subscriptions for the customer PWA).
+model customerPushToken {
+  id         String    @id @default(cuid())
+  userId     String
+  user       pppoeUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token      String    @unique @db.VarChar(500)
+  platform   String    @default("android")
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime  @default(now())
+
+  @@index([userId])
+  @@map("customer_push_tokens")
 }
 
 model agentPushSubscription {
