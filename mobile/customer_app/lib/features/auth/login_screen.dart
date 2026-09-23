@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/api/api_client.dart';
 import 'auth_provider.dart';
+import 'server_settings_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -39,10 +40,26 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _openServerSettings() async {
+    await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ServerSettingsScreen()));
+    if (mounted) setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: 'Pengaturan Server',
+            onPressed: _openServerSettings,
+          ),
+        ],
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -96,6 +113,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: _submitting
                         ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
                         : const Text('Masuk'),
+                  ),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: TextButton.icon(
+                      onPressed: _openServerSettings,
+                      icon: const Icon(Icons.dns_outlined, size: 16),
+                      label: Text(
+                        Uri.tryParse(ApiClient.instance.baseUrl)?.host ?? ApiClient.instance.baseUrl,
+                        style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
+                      ),
+                    ),
                   ),
                 ],
               ),

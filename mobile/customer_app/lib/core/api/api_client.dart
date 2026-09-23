@@ -1,12 +1,14 @@
 import 'package:dio/dio.dart';
 import '../storage/secure_storage.dart';
 
-/// Production customer subdomain (see deploy/salfanet-subdomains.conf), which
-/// proxies /api/ to the backend on port 3001. Override at build time for a
-/// local backend: --dart-define=API_BASE_URL=http://10.0.2.2:3001
-const String kApiBaseUrl = String.fromEnvironment(
+/// Every Salfanet Radius installation runs on its own operator-chosen domain
+/// — there is no single production host this app can be built for. This is
+/// only the fallback shown before the user configures their own server (see
+/// ServerSettingsScreen / ApiClient.setBaseUrl). Override at build time for
+/// local dev: --dart-define=API_BASE_URL=http://10.0.2.2:3001
+const String kDefaultServerUrl = String.fromEnvironment(
   'API_BASE_URL',
-  defaultValue: 'https://customer.salfa.my.id',
+  defaultValue: 'https://radius.salfa.my.id',
 );
 
 class ApiException implements Exception {
@@ -21,7 +23,7 @@ class ApiException implements Exception {
 class ApiClient {
   ApiClient._internal() {
     _dio = Dio(BaseOptions(
-      baseUrl: kApiBaseUrl,
+      baseUrl: kDefaultServerUrl,
       connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 20),
       headers: {'Content-Type': 'application/json'},
@@ -45,6 +47,23 @@ class ApiClient {
   /// Called when a request comes back 401 — lets AuthProvider force logout
   /// without ApiClient needing to know about it directly.
   void Function()? onUnauthorized;
+
+  String get baseUrl => _dio.options.baseUrl;
+
+  /// Loads the operator's server URL saved on a previous run, if any —
+  /// call once at startup before any request goes out.
+  Future<void> restoreSavedBaseUrl() async {
+    final saved = await SecureStorage.instance.readServerUrl();
+    if (saved != null && saved.isNotEmpty) {
+      _dio.options.baseUrl = saved;
+    }
+  }
+
+  Future<void> setBaseUrl(String url) async {
+    final normalized = url.trim().replaceAll(RegExp(r'/+$'), '');
+    _dio.options.baseUrl = normalized;
+    await SecureStorage.instance.saveServerUrl(normalized);
+  }
 
   Future<Map<String, dynamic>> get(String path, {Map<String, dynamic>? query}) {
     return _run(() => _dio.get(path, queryParameters: query));

@@ -23,6 +23,7 @@ import 'features/wifi/wifi_provider.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('id_ID', null);
+  await ApiClient.instance.restoreSavedBaseUrl();
   await PushService.instance.initialize();
   runApp(const CustomerApp());
 }
