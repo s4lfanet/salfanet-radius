@@ -122,10 +122,14 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const sessionStartTime = activeSession?.acctstarttime
-      ? activeSession.acctstarttime.toISOString()
-      : mikrotikUptimeSeconds > 0
-        ? new Date(Date.now() - mikrotikUptimeSeconds * 1000).toISOString()
+    // A radacct row with no address is an incomplete record, so its
+    // acctstarttime is not trustworthy either — observed in production as a
+    // row claiming the session began hours ago while the router reported four
+    // days of uptime. When we had to ask the router anyway, believe the router.
+    const sessionStartTime = mikrotikUptimeSeconds > 0 && !radiusIp
+      ? new Date(Date.now() - mikrotikUptimeSeconds * 1000).toISOString()
+      : activeSession?.acctstarttime
+        ? activeSession.acctstarttime.toISOString()
         : null;
 
     // Get usage stats for current month
