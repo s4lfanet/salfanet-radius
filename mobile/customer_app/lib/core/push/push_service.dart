@@ -39,13 +39,19 @@ class PushService {
     if (_initialized) return;
     _initialized = true;
 
+    // Local notifications are set up first and unconditionally. They do not
+    // need Firebase, and folding them into the Firebase path meant that on a
+    // build without google-services.json the channel was never created and
+    // the OS notification permission was never asked for at all.
+    await _setupLocalNotifications();
+
     try {
       if (Firebase.apps.isEmpty) {
         await Firebase.initializeApp();
       }
       available = true;
     } catch (e) {
-      debugPrint('[Push] Firebase not configured, push disabled: $e');
+      debugPrint('[Push] Firebase not configured, remote push disabled: $e');
       available = false;
       return;
     }
@@ -53,6 +59,18 @@ class PushService {
     try {
       await FirebaseMessaging.instance.requestPermission(alert: true, badge: true, sound: true);
 
+      FirebaseMessaging.onMessage.listen(_showForegroundNotification);
+      FirebaseMessaging.instance.onTokenRefresh.listen((_) => registerTokenIfReady());
+      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+      await registerTokenIfReady();
+    } catch (e) {
+      debugPrint('[Push] Setup failed: $e');
+    }
+  }
+
+  Future<void> _setupLocalNotifications() async {
+    try {
       const androidChannel = AndroidNotificationChannel(
         _channelId,
         'Notifikasi Salfanet',
@@ -66,14 +84,25 @@ class PushService {
       await _localNotifications.initialize(
         const InitializationSettings(android: AndroidInitializationSettings('@mipmap/ic_launcher')),
       );
-
-      FirebaseMessaging.onMessage.listen(_showForegroundNotification);
-      FirebaseMessaging.instance.onTokenRefresh.listen((_) => registerTokenIfReady());
-      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-
-      await registerTokenIfReady();
     } catch (e) {
-      debugPrint('[Push] Setup failed: $e');
+      debugPrint('[Push] Local notification setup failed: $e');
+    }
+  }
+
+  /// Asks for the Android 13+ notification permission.
+  ///
+  /// Called after sign-in rather than at cold start: the prompt makes sense
+  /// once there is an account whose bills and ticket replies will generate
+  /// the notifications. Android only surfaces the dialog once, so calling it
+  /// again after a denial returns false without pestering anyone.
+  Future<bool> ensureNotificationPermission() async {
+    try {
+      final android = _localNotifications
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+      return await android?.requestNotificationsPermission() ?? false;
+    } catch (e) {
+      debugPrint('[Push] Notification permission request failed: $e');
+      return false;
     }
   }
 

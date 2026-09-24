@@ -35,6 +35,8 @@ class CustomerProfile {
     this.autoRenewal,
     this.customerId,
     this.address,
+    this.latitude,
+    this.longitude,
     this.profile,
   });
 
@@ -49,9 +51,18 @@ class CustomerProfile {
   final bool? autoRenewal;
   final String? customerId;
   final String? address;
+
+  /// Coordinates recorded when the line was installed. Offered as the
+  /// fallback when creating a ticket from somewhere other than home, or when
+  /// the device refuses to give a GPS fix.
+  final double? latitude;
+  final double? longitude;
+
   final PackageProfile? profile;
 
   bool get isActive => status.toUpperCase() == 'ACTIVE';
+
+  bool get hasRegisteredCoords => latitude != null && longitude != null;
 
   factory CustomerProfile.fromJson(Map<String, dynamic> json) => CustomerProfile(
         id: json['id']?.toString() ?? '',
@@ -65,6 +76,8 @@ class CustomerProfile {
         autoRenewal: json['autoRenewal'] as bool?,
         customerId: json['customerId']?.toString(),
         address: json['address']?.toString(),
+        latitude: (json['latitude'] as num?)?.toDouble(),
+        longitude: (json['longitude'] as num?)?.toDouble(),
         profile: json['profile'] is Map<String, dynamic> ? PackageProfile.fromJson(json['profile']) : null,
       );
 }

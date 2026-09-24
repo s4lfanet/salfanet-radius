@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:dio/dio.dart' as dio;
 import 'package:flutter/foundation.dart';
 import '../../core/api/api_client.dart';
 import '../../models/customer.dart';
@@ -37,17 +39,43 @@ class TicketProvider extends ChangeNotifier {
     }
   }
 
+  /// Uploads one attachment and returns the stored URL the ticket should
+  /// reference. Server accepts JPG/PNG/WebP/PDF up to 10MB and validates by
+  /// magic bytes, so a wrong file comes back as a plain error message.
+  Future<String> uploadAttachment(File file) async {
+    final form = dio.FormData.fromMap({
+      'file': await dio.MultipartFile.fromFile(
+        file.path,
+        filename: file.path.split(Platform.pathSeparator).last,
+      ),
+    });
+    final res = await ApiClient.instance.postForm('/api/customer/tickets/upload', form);
+    final url = res['url']?.toString();
+    if (url == null || url.isEmpty) {
+      throw ApiException(res['error']?.toString() ?? 'Lampiran gagal diunggah.');
+    }
+    return url;
+  }
+
   Future<Ticket> createTicket({
     required String subject,
     required String description,
     String? categoryId,
     String priority = 'MEDIUM',
+    double? latitude,
+    double? longitude,
+    String? locationTag,
+    List<String> attachments = const [],
   }) async {
     final res = await ApiClient.instance.post('/api/customer/tickets', data: {
       'subject': subject,
       'description': description,
       if (categoryId != null) 'categoryId': categoryId,
       'priority': priority,
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
+      if (locationTag != null && locationTag.isNotEmpty) 'locationTag': locationTag,
+      if (attachments.isNotEmpty) 'attachments': attachments,
     });
     final ticket = Ticket.fromJson(res);
     tickets = [ticket, ...tickets];
