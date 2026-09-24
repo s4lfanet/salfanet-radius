@@ -273,6 +273,14 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
             children: [
+              if (customer != null) ...[
+                _ContactCard(
+                  name: customer.name,
+                  phone: customer.phone,
+                  email: customer.email,
+                ),
+                const SizedBox(height: 26),
+              ],
               Text('Masalah Anda', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 12),
               TextFormField(
@@ -403,6 +411,83 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Shown, not asked for. The server takes the name, phone and email straight
+/// from the signed-in account and ignores anything the client sends for them,
+/// so editable fields here would be a control that silently does nothing.
+/// Displaying them still answers the real question: which number will the
+/// technician call?
+class _ContactCard extends StatelessWidget {
+  const _ContactCard({required this.name, required this.phone, this.email});
+
+  final String name;
+  final String phone;
+  final String? email;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: FeatureColors.ticket.containerOf(Theme.of(context).brightness),
+        borderRadius: BorderRadius.circular(AppRadius.card),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.badge_outlined, size: 16, color: FeatureColors.ticket.of(Theme.of(context).brightness)),
+              const SizedBox(width: 7),
+              Text(
+                'Tiket atas nama',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: FeatureColors.ticket.of(Theme.of(context).brightness),
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(name, style: Theme.of(context).textTheme.titleSmall),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              Icon(Icons.phone_outlined, size: 14, color: scheme.onSurfaceVariant),
+              const SizedBox(width: 6),
+              Text(
+                phone.isNotEmpty ? phone : 'Nomor HP belum terdaftar',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+              ),
+            ],
+          ),
+          if (email?.isNotEmpty == true) ...[
+            const SizedBox(height: 3),
+            Row(
+              children: [
+                Icon(Icons.mail_outline_rounded, size: 14, color: scheme.onSurfaceVariant),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    email!,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 10),
+          Text(
+            'Teknisi akan menghubungi nomor ini. Hubungi admin bila datanya keliru.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+          ),
+        ],
       ),
     );
   }
