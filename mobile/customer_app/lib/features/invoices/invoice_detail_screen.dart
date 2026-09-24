@@ -141,7 +141,8 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
                 ),
               ),
               const SizedBox(height: 14),
-              Text(inv.amountFormatted, style: Theme.of(context).textTheme.headlineMedium),
+              Text(inv.amountFormatted, style: Theme.of(context).textTheme.headlineSmall),
+              const SizedBox(height: 2),
               Text(inv.number, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
             ],
           ),
@@ -155,13 +156,13 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
               children: [
                 _groupHeading(context, Icons.storefront_outlined, 'Diterbitkan Oleh'),
                 const SizedBox(height: 8),
-                _kv(inv.company.name, bold: true),
-                if (inv.company.address?.isNotEmpty ?? false) _kv(inv.company.address!),
-                if (inv.company.phone?.isNotEmpty ?? false) _kv('Telp: ${inv.company.phone}'),
+                _kv(context, inv.company.name, bold: true),
+                if (inv.company.address?.isNotEmpty ?? false) _kv(context, inv.company.address!),
+                if (inv.company.phone?.isNotEmpty ?? false) _kv(context, 'Telp: ${inv.company.phone}'),
                 const Divider(height: 28),
                 _groupHeading(context, Icons.person_outline_rounded, 'Pelanggan'),
                 const SizedBox(height: 8),
-                _kv(inv.customer.name, bold: true),
+                _kv(context, inv.customer.name, bold: true),
                 if (inv.customer.customerId?.isNotEmpty ?? false) _labelRow(context, 'ID Pelanggan', inv.customer.customerId!),
                 if (inv.customer.username?.isNotEmpty ?? false) _labelRow(context, 'Username', inv.customer.username!),
                 if (inv.customer.area?.isNotEmpty ?? false) _labelRow(context, 'Area', inv.customer.area!),
@@ -278,21 +279,51 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
     );
   }
 
-  Widget _kv(String value, {bool bold = false}) =>
-      Padding(padding: const EdgeInsets.only(top: 2), child: Text(value, style: TextStyle(fontWeight: bold ? FontWeight.bold : FontWeight.normal)));
+  /// A free-standing line (company or customer name, address). Kept at body
+  /// size so it never competes with the amount at the top of the screen.
+  Widget _kv(BuildContext context, String value, {bool bold = false}) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: 3),
+      child: Text(
+        value,
+        style: bold
+            ? Theme.of(context).textTheme.titleSmall
+            : Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+      ),
+    );
+  }
 
+  /// Label left, value right, on one line each. The previous inline
+  /// "Label: value" run at a single size gave every field equal weight and
+  /// wrapped mid-sentence, which is what made this card read as a wall.
   Widget _labelRow(BuildContext context, String label, String value) {
     final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.only(top: 2),
-      child: RichText(
-        text: TextSpan(
-          style: DefaultTextStyle.of(context).style,
-          children: [
-            TextSpan(text: '$label: ', style: TextStyle(color: scheme.onSurfaceVariant)),
-            TextSpan(text: value, style: const TextStyle(fontWeight: FontWeight.w600)),
-          ],
-        ),
+      padding: const EdgeInsets.only(top: 7),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            flex: 4,
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            flex: 6,
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: scheme.onSurface,
+                  ),
+            ),
+          ),
+        ],
       ),
     );
   }

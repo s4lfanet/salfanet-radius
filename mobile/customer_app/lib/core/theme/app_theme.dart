@@ -140,7 +140,15 @@ class AppTheme {
           borderSide: BorderSide(color: scheme.error, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        // Each of these defaults to a different implicit colour if left unset,
+        // which is how a form ends up with four slightly different greys.
         labelStyle: TextStyle(color: scheme.onSurfaceVariant),
+        floatingLabelStyle: TextStyle(color: scheme.primary, fontWeight: FontWeight.w600),
+        hintStyle: TextStyle(color: scheme.onSurfaceVariant.withValues(alpha: 0.7)),
+        prefixStyle: TextStyle(color: scheme.onSurface, fontWeight: FontWeight.w600),
+        suffixStyle: TextStyle(color: scheme.onSurfaceVariant),
+        helperStyle: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11.5),
+        errorStyle: TextStyle(color: scheme.error, fontSize: 11.5),
       ),
 
       navigationBarTheme: NavigationBarThemeData(
@@ -191,10 +199,39 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       ),
 
+      // Chip label colour must be stated outright: a ChipThemeData.labelStyle
+      // replaces the Material default wholesale rather than merging into it,
+      // so leaving colour null drops the label onto whatever ambient text
+      // colour happens to be in scope.
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.pill)),
-        labelStyle: const TextStyle(fontFamily: kFontFamily, fontSize: 12.5, fontWeight: FontWeight.w600),
+        backgroundColor: scheme.surfaceContainerHigh,
+        selectedColor: scheme.primaryContainer,
+        labelStyle: TextStyle(
+          fontFamily: kFontFamily,
+          fontSize: 12.5,
+          fontWeight: FontWeight.w600,
+          color: scheme.onSurface,
+        ),
+        secondaryLabelStyle: TextStyle(
+          fontFamily: kFontFamily,
+          fontSize: 12.5,
+          fontWeight: FontWeight.w600,
+          color: scheme.onPrimaryContainer,
+        ),
         side: BorderSide(color: scheme.outlineVariant),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      ),
+
+      // The tab bar sits on the app bar's surface colour, not on a primary
+      // header, so its own colours have to be pinned to that surface.
+      tabBarTheme: TabBarThemeData(
+        labelColor: scheme.primary,
+        unselectedLabelColor: scheme.onSurfaceVariant,
+        indicatorColor: scheme.primary,
+        dividerColor: scheme.outlineVariant.withValues(alpha: 0.5),
+        labelStyle: const TextStyle(fontFamily: kFontFamily, fontSize: 14, fontWeight: FontWeight.w700),
+        unselectedLabelStyle: const TextStyle(fontFamily: kFontFamily, fontSize: 14, fontWeight: FontWeight.w600),
       ),
 
       progressIndicatorTheme: ProgressIndicatorThemeData(color: scheme.primary),
