@@ -61,6 +61,7 @@ class AuthProvider extends ChangeNotifier {
       await SecureStorage.instance.saveToken(token);
       customer = CustomerProfile.fromJson(res['user'] as Map<String, dynamic>);
       status = AuthStatus.authenticated;
+      PushService.instance.ensureNotificationPermission();
       PushService.instance.registerTokenIfReady();
       return true;
     } on ApiException catch (e) {
@@ -98,6 +99,7 @@ class AuthProvider extends ChangeNotifier {
       customer = CustomerProfile.fromJson(res['user'] as Map<String, dynamic>);
       pendingPhone = null;
       status = AuthStatus.authenticated;
+      PushService.instance.ensureNotificationPermission();
       PushService.instance.registerTokenIfReady();
     } on ApiException catch (e) {
       error = e.message;
