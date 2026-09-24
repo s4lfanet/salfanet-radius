@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/company/company_logo.dart';
@@ -32,6 +33,8 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  Timer? _liveTimer;
+
   @override
   void initState() {
     super.initState();
@@ -42,6 +45,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
       context.read<CompanyProvider>().load();
       context.read<PromoProvider>().load();
     });
+
+    // Connection status and usage are the one thing on this screen that
+    // changes without the customer doing anything, so it refreshes itself
+    // instead of waiting for a manual pull. Silent: it must never yank the
+    // screen into a loading state while someone is reading it.
+    _liveTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) context.read<DashboardProvider>().load(silent: true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _liveTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _refresh() async {
@@ -117,6 +134,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
                 children: [
                   _StatusHeroCard(customer: customer),
+                  const SizedBox(height: 14),
+                  _AccountDetailCard(customer: customer),
                   if (banners.isNotEmpty) ...[
                     const SizedBox(height: 20),
                     PromoCarousel(banners: banners),
@@ -131,9 +150,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   _QuickMenu(onNavigateToTab: widget.onNavigateToTab),
                   if (dashboardProvider.data != null) ...[
                     const SizedBox(height: 24),
-                    _SectionLabel('Koneksi Anda'),
+                    _SectionLabel('Status Koneksi'),
                     const SizedBox(height: 12),
-                    _ConnectionCard(data: dashboardProvider.data!),
+                    _ConnectionCard(
+                      data: dashboardProvider.data!,
+                      pppoeUsername: customer.username,
+                      lastUpdated: dashboardProvider.lastUpdated,
+                    ),
                   ],
                 ],
               ),
@@ -292,6 +315,100 @@ class _StatusChip extends StatelessWidget {
   }
 }
 
+/// The rest of the account: identity fields and balance that the hero card
+/// deliberately leaves out so the days-left figure stays the one thing that
+/// competes for attention up there. Everything here is a fact already in
+/// CustomerProfile — nothing invented to look more complete than it is.
+class _AccountDetailCard extends StatelessWidget {
+  const _AccountDetailCard({required this.customer});
+  final CustomerProfile customer;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final profile = customer.profile;
+    final autoRenewal = customer.autoRenewal ?? false;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: StatBlock(
+                    label: 'ID Pelanggan',
+                    value: customer.customerId?.isNotEmpty == true ? customer.customerId! : customer.username,
+                  ),
+                ),
+                Expanded(child: StatBlock(label: 'Username', value: customer.username)),
+              ],
+            ),
+            if (profile?.price != null) ...[
+              const SizedBox(height: 14),
+              StatBlock(label: 'Harga Paket', value: '${formatCurrency(profile!.price!)} / bulan'),
+            ],
+            const SizedBox(height: 14),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: StatBlock(
+                    label: 'Saldo Akun',
+                    value: formatCurrency(customer.balance ?? 0),
+                    valueColor: FeatureColors.topup.of(Theme.of(context).brightness),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const TopupScreen()),
+                  ),
+                  child: const Text('Isi Saldo'),
+                ),
+              ],
+            ),
+            const Divider(height: 26),
+            Row(
+              children: [
+                Icon(
+                  autoRenewal ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
+                  size: 16,
+                  color: autoRenewal ? StatusColors.success(Theme.of(context).brightness) : scheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    autoRenewal ? 'Perpanjangan otomatis aktif' : 'Perpanjangan otomatis nonaktif',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                  ),
+                ),
+              ],
+            ),
+            if (customer.address?.isNotEmpty == true) ...[
+              const SizedBox(height: 10),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.location_on_outlined, size: 16, color: scheme.onSurfaceVariant),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      customer.address!,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _QuickMenuItem {
   const _QuickMenuItem(this.icon, this.label, this.accent, this.onTap);
   final IconData icon;
@@ -432,17 +549,23 @@ class _UnpaidInvoiceCard extends StatelessWidget {
   }
 }
 
-/// Usage is reported as plain figures with no progress bar: these packages
-/// have no quota, and a bar would invent a limit the customer does not have.
+/// PPPoE status, not a generic "online/offline" card: the account name that
+/// is actually authenticating, how long that session has held, and the IP it
+/// was handed — the specifics a customer's ISP support line would ask for
+/// anyway. Usage has no progress bar: these packages carry no quota, and a
+/// bar would invent a limit the customer does not have.
 class _ConnectionCard extends StatelessWidget {
-  const _ConnectionCard({required this.data});
+  const _ConnectionCard({required this.data, required this.pppoeUsername, required this.lastUpdated});
   final DashboardData data;
+  final String pppoeUsername;
+  final DateTime? lastUpdated;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final brightness = Theme.of(context).brightness;
-    final onlineColor = data.isOnline ? StatusColors.success(brightness) : scheme.onSurfaceVariant;
+    final onlineColor = data.isOnline ? StatusColors.success(brightness) : StatusColors.danger(brightness);
+    final sessionDuration = data.sessionStartTime != null ? DateTime.now().difference(data.sessionStartTime!) : null;
 
     return Card(
       child: Padding(
@@ -452,25 +575,35 @@ class _ConnectionCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(
-                  data.isOnline ? Icons.cloud_done_rounded : Icons.cloud_off_rounded,
-                  size: 18,
-                  color: onlineColor,
+                Container(width: 9, height: 9, decoration: BoxDecoration(color: onlineColor, shape: BoxShape.circle)),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Text(
+                    data.isOnline ? 'PPPoE terhubung' : 'PPPoE terputus',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(color: onlineColor),
+                  ),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  data.isOnline ? 'Terhubung' : 'Tidak terhubung',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(color: onlineColor),
-                ),
-                if (data.ipAddress != null) ...[
-                  const Spacer(),
+                if (lastUpdated != null)
                   Text(
-                    data.ipAddress!,
+                    'Diperbarui ${formatRelativeTime(lastUpdated!)}',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
                   ),
-                ],
               ],
             ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(child: StatBlock(label: 'Akun PPPoE', value: pppoeUsername)),
+                Expanded(
+                  child: StatBlock(
+                    label: 'Terhubung selama',
+                    value: sessionDuration != null ? formatDuration(sessionDuration) : '-',
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            StatBlock(label: 'Alamat IP', value: data.ipAddress ?? '-'),
             const Divider(height: 26),
             Text(
               'Pemakaian bulan ini',
