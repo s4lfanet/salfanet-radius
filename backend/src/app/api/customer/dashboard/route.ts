@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { listPppActive } from '@/server/services/mikrotik/ppp-secret.service';
+import { listPppActiveDetailed, parseUptime } from '@/server/services/mikrotik/active-sessions.service';
+import { cacheAside } from '@/server/cache/redis';
 
 
 
@@ -89,17 +90,43 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Fallback: check MikroTik /ppp/active if no radacct session
-    // Needed when RADIUS accounting is not working (e.g. just migrated)
+    // RADIUS accounting often records a session with no Framed-IP-Address
+    // (interim updates that omit the attribute), so an empty string here is
+    // just as useless as no session at all.
+    const radiusIp = activeSession?.framedipaddress?.trim() || null;
+
+    // Ask the router itself when RADIUS has no session, or has one without an
+    // address. /ppp/active/print carries both the assigned IP and the uptime,
+    // which is what the customer app shows as "terhubung selama".
+    // Cached per router for 20s: the customer dashboard polls every 30s, and
+    // without this every customer on a router would open its own API session.
     let mikrotikOnline = false;
-    if (!activeSession && user.routerId) {
+    let mikrotikIp: string | null = null;
+    let mikrotikUptimeSeconds = 0;
+
+    if (user.routerId && (!activeSession || !radiusIp)) {
       try {
-        const pppActive = await listPppActive(user.routerId);
-        mikrotikOnline = pppActive.has(user.username);
+        const sessions = await cacheAside(
+          `mikrotik:ppp-active:${user.routerId}`,
+          20,
+          () => listPppActiveDetailed(user.routerId!),
+        );
+        const own = sessions.find((s) => s.username === user.username);
+        if (own) {
+          mikrotikOnline = true;
+          mikrotikIp = own.ipAddress?.trim() || null;
+          mikrotikUptimeSeconds = parseUptime(own.uptime);
+        }
       } catch {
-        // Router API failed — assume offline
+        // Router unreachable — fall back to whatever RADIUS knows.
       }
     }
+
+    const sessionStartTime = activeSession?.acctstarttime
+      ? activeSession.acctstarttime.toISOString()
+      : mikrotikUptimeSeconds > 0
+        ? new Date(Date.now() - mikrotikUptimeSeconds * 1000).toISOString()
+        : null;
 
     // Get usage stats for current month
     const now = new Date();
@@ -177,8 +204,8 @@ export async function GET(request: NextRequest) {
       },
       session: {
         isOnline: !!activeSession || mikrotikOnline,
-        ipAddress: activeSession?.framedipaddress || null,
-        startTime: activeSession?.acctstarttime?.toISOString() || null,
+        ipAddress: radiusIp ?? mikrotikIp,
+        startTime: sessionStartTime,
       },
       usage: {
         upload: uploadBytes,

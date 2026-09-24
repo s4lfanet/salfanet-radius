@@ -4,7 +4,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/api/api_client.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/theme/feature_colors.dart';
+import '../../core/widgets/state_views.dart';
 import 'topup_provider.dart';
 
 class TopupScreen extends StatelessWidget {
@@ -101,23 +103,52 @@ class _DirectTopupTabState extends State<_DirectTopupTab> {
                   ))
               .toList(),
         ),
-        const SizedBox(height: 20),
-        Text('Metode Pembayaran', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-        if (provider.loadingGateways) const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator())),
-        ...provider.gateways.map((gw) => RadioListTile<String>(
-              value: gw.provider,
-              groupValue: _selectedGateway,
-              title: Text(gw.name),
-              onChanged: (value) => setState(() => _selectedGateway = value),
-            )),
+        const SizedBox(height: 22),
+        Text('Metode Pembayaran', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 8),
+        if (provider.loadingGateways)
+          const Padding(padding: EdgeInsets.all(20), child: AppLoadingState(label: 'Memuat metode pembayaran...')),
+        if (provider.gateways.isNotEmpty)
+          Card(
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                for (var i = 0; i < provider.gateways.length; i++) ...[
+                  RadioListTile<String>(
+                    value: provider.gateways[i].provider,
+                    groupValue: _selectedGateway,
+                    title: Text(provider.gateways[i].name),
+                    onChanged: (value) => setState(() => _selectedGateway = value),
+                  ),
+                  if (i != provider.gateways.length - 1)
+                    Divider(height: 1, color: scheme.outlineVariant.withValues(alpha: 0.5)),
+                ],
+              ],
+            ),
+          ),
         if (!provider.loadingGateways && provider.gateways.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Text('Belum ada metode pembayaran otomatis tersedia. Gunakan tab Transfer Manual.', style: TextStyle(color: scheme.onSurfaceVariant)),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerHigh,
+              borderRadius: BorderRadius.circular(AppRadius.control),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline_rounded, size: 18, color: scheme.onSurfaceVariant),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Belum ada pembayaran otomatis. Gunakan tab Transfer Manual.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                  ),
+                ),
+              ],
+            ),
           ),
         if (_error != null) ...[
-          const SizedBox(height: 12),
-          Text(_error!, style: TextStyle(color: scheme.error)),
+          const SizedBox(height: 14),
+          _ErrorNotice(message: _error!),
         ],
         const SizedBox(height: 20),
         FilledButton(
@@ -127,6 +158,39 @@ class _DirectTopupTabState extends State<_DirectTopupTab> {
               : const Text('Bayar Sekarang'),
         ),
       ],
+    );
+  }
+}
+
+/// Failure messages get an icon and a container rather than bare red text:
+/// colour alone is not a signal for anyone who cannot separate red from the
+/// body text around it.
+class _ErrorNotice extends StatelessWidget {
+  const _ErrorNotice({required this.message});
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: scheme.errorContainer,
+        borderRadius: BorderRadius.circular(AppRadius.control),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.error_outline_rounded, size: 18, color: scheme.onErrorContainer),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onErrorContainer),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -210,7 +274,6 @@ class _ManualTopupTabState extends State<_ManualTopupTab> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<TopupProvider>();
-    final scheme = Theme.of(context).colorScheme;
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -239,11 +302,14 @@ class _ManualTopupTabState extends State<_ManualTopupTab> {
         ),
         if (_proof != null) ...[
           const SizedBox(height: 12),
-          ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.file(_proof!, height: 160, fit: BoxFit.cover)),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.control),
+            child: Image.file(_proof!, height: 160, width: double.infinity, fit: BoxFit.cover),
+          ),
         ],
         if (_error != null) ...[
-          const SizedBox(height: 12),
-          Text(_error!, style: TextStyle(color: scheme.error)),
+          const SizedBox(height: 14),
+          _ErrorNotice(message: _error!),
         ],
         const SizedBox(height: 20),
         FilledButton(

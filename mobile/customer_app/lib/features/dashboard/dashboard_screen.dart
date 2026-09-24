@@ -596,14 +596,22 @@ class _ConnectionCard extends StatelessWidget {
                 Expanded(child: StatBlock(label: 'Akun PPPoE', value: pppoeUsername)),
                 Expanded(
                   child: StatBlock(
-                    label: 'Terhubung selama',
-                    value: sessionDuration != null ? formatDuration(sessionDuration) : '-',
+                    label: 'Alamat IP',
+                    // Online with no address means the router answered but the
+                    // session carried none — saying so beats a bare dash that
+                    // reads like the app failed to load.
+                    value: data.ipAddress ?? (data.isOnline ? 'Belum terbaca' : 'Tidak aktif'),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 14),
-            StatBlock(label: 'Alamat IP', value: data.ipAddress ?? '-'),
+            if (data.isOnline) ...[
+              const SizedBox(height: 14),
+              StatBlock(
+                label: 'Terhubung selama',
+                value: sessionDuration != null ? formatDuration(sessionDuration) : 'Belum terbaca',
+              ),
+            ],
             const Divider(height: 26),
             Text(
               'Pemakaian bulan ini',
