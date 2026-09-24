@@ -6,6 +6,7 @@ import '../../core/api/api_client.dart';
 import '../../core/formatters.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/feature_colors.dart';
+import '../../core/widgets/state_views.dart';
 import '../../models/invoice.dart';
 import '../../models/invoice_detail.dart';
 import 'invoice_pdf.dart';
@@ -82,8 +83,10 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.invoice.invoiceNumber),
+      appBar: featureAppBar(
+        title: widget.invoice.invoiceNumber,
+        icon: Icons.receipt_long_rounded,
+        accent: FeatureColors.invoice,
         actions: [
           if (_detail?.isPaid ?? false)
             IconButton(icon: const Icon(Icons.print_outlined), tooltip: 'Cetak / Unduh', onPressed: _printOrSave),
@@ -91,9 +94,9 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
       ),
       body: SafeArea(
         child: _loading
-            ? const Center(child: CircularProgressIndicator())
+            ? const ScrollableCenter(child: AppLoadingState(label: 'Memuat detail tagihan...'))
             : _error != null
-                ? Center(child: Padding(padding: const EdgeInsets.all(24), child: Text(_error!, textAlign: TextAlign.center)))
+                ? ScrollableCenter(child: AppErrorState(message: _error!, onRetry: _load))
                 : _buildDetail(_detail!),
       ),
     );
@@ -144,42 +147,99 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
           ),
         ),
         const SizedBox(height: 24),
-        _sectionCard(context, 'Dari', [
-          _kv(inv.company.name, bold: true),
-          if (inv.company.address?.isNotEmpty ?? false) _kv(inv.company.address!),
-          if (inv.company.phone?.isNotEmpty ?? false) _kv('Telp: ${inv.company.phone}'),
-        ]),
-        const SizedBox(height: 12),
-        _sectionCard(context, 'Kepada', [
-          _kv(inv.customer.name, bold: true),
-          if (inv.customer.customerId?.isNotEmpty ?? false) _labelRow(context, 'ID Pelanggan', inv.customer.customerId!),
-          if (inv.customer.username?.isNotEmpty ?? false) _labelRow(context, 'Username', inv.customer.username!),
-          if (inv.customer.area?.isNotEmpty ?? false) _labelRow(context, 'Area', inv.customer.area!),
-        ]),
-        const SizedBox(height: 12),
-        _sectionCard(context, 'Detail Invoice', [
-          _labelRow(context, 'No Invoice', inv.number),
-          _labelRow(context, 'Tanggal', inv.date),
-          _labelRow(context, 'Jatuh Tempo', inv.dueDate),
-          if (inv.paidAt != null) _labelRow(context, 'Tanggal Bayar', inv.paidAt!),
-          if (inv.paidVia != null) _labelRow(context, 'Metode', inv.paidVia == 'gateway' ? 'Payment Gateway' : 'Transfer Manual'),
-        ]),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _groupHeading(context, Icons.storefront_outlined, 'Diterbitkan Oleh'),
+                const SizedBox(height: 8),
+                _kv(inv.company.name, bold: true),
+                if (inv.company.address?.isNotEmpty ?? false) _kv(inv.company.address!),
+                if (inv.company.phone?.isNotEmpty ?? false) _kv('Telp: ${inv.company.phone}'),
+                const Divider(height: 28),
+                _groupHeading(context, Icons.person_outline_rounded, 'Pelanggan'),
+                const SizedBox(height: 8),
+                _kv(inv.customer.name, bold: true),
+                if (inv.customer.customerId?.isNotEmpty ?? false) _labelRow(context, 'ID Pelanggan', inv.customer.customerId!),
+                if (inv.customer.username?.isNotEmpty ?? false) _labelRow(context, 'Username', inv.customer.username!),
+                if (inv.customer.area?.isNotEmpty ?? false) _labelRow(context, 'Area', inv.customer.area!),
+                const Divider(height: 28),
+                _groupHeading(context, Icons.description_outlined, 'Invoice'),
+                const SizedBox(height: 8),
+                _labelRow(context, 'No Invoice', inv.number),
+                _labelRow(context, 'Tanggal Terbit', inv.date),
+                _labelRow(context, 'Jatuh Tempo', inv.dueDate),
+                if (inv.paidAt != null) _labelRow(context, 'Tanggal Bayar', inv.paidAt!),
+                if (inv.paidVia != null)
+                  _labelRow(context, 'Metode', inv.paidVia == 'gateway' ? 'Payment Gateway' : 'Transfer Manual'),
+              ],
+            ),
+          ),
+        ),
         const SizedBox(height: 20),
-        Text('Rincian Layanan', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
+        Text('Rincian Layanan', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 10),
         _itemsTable(context, inv),
         if (!inv.isPaid && inv.company.bankAccounts.isNotEmpty) ...[
           const SizedBox(height: 20),
-          Text('Pembayaran Manual', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          ...inv.company.bankAccounts.map((ba) => Card(
-                child: ListTile(
-                  leading: const Icon(Icons.account_balance_outlined),
-                  title: Text(ba.bankName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text('${ba.accountNumber}\na/n ${ba.accountName}'),
-                  isThreeLine: true,
-                ),
-              )),
+          Text('Pembayaran Manual', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 4),
+          Text(
+            'Transfer sesuai total tagihan, lalu unggah bukti lewat menu Top Up jika diminta admin.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: 10),
+          Card(
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                for (var i = 0; i < inv.company.bankAccounts.length; i++) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 42,
+                          height: 42,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: scheme.surfaceContainerHigh,
+                            borderRadius: BorderRadius.circular(13),
+                          ),
+                          child: Icon(Icons.account_balance_rounded, color: scheme.onSurfaceVariant, size: 20),
+                        ),
+                        const SizedBox(width: 13),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(inv.company.bankAccounts[i].bankName, style: Theme.of(context).textTheme.titleSmall),
+                              const SizedBox(height: 2),
+                              Text(
+                                inv.company.bankAccounts[i].accountNumber,
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+                              ),
+                              Text(
+                                'a.n. ${inv.company.bankAccounts[i].accountName}',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (i != inv.company.bankAccounts.length - 1)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 71),
+                      child: Divider(height: 1, color: scheme.outlineVariant.withValues(alpha: 0.5)),
+                    ),
+                ],
+              ],
+            ),
+          ),
         ],
         if (_payError != null) ...[
           const SizedBox(height: 12),
@@ -204,20 +264,17 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
     );
   }
 
-  Widget _sectionCard(BuildContext context, String title, List<Widget> children) {
+  Widget _groupHeading(BuildContext context, IconData icon, String title) {
     final scheme = Theme.of(context).colorScheme;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title.toUpperCase(), style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant, letterSpacing: 0.6)),
-            const SizedBox(height: 6),
-            ...children,
-          ],
+    return Row(
+      children: [
+        Icon(icon, size: 15, color: scheme.onSurfaceVariant),
+        const SizedBox(width: 6),
+        Text(
+          title.toUpperCase(),
+          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: scheme.onSurfaceVariant, letterSpacing: 0.6),
         ),
-      ),
+      ],
     );
   }
 
@@ -244,46 +301,63 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
     final scheme = Theme.of(context).colorScheme;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         child: Column(
           children: [
-            for (final item in inv.items) _itemRow(item.description, item.quantity, item.total),
-            for (final fee in inv.additionalFees) _itemRow(fee.name, 1, fee.amount),
+            for (final item in inv.items) _itemRow(context, item.description, item.quantity, item.total),
+            for (final fee in inv.additionalFees) _itemRow(context, fee.name, 1, fee.amount),
             if (inv.tax.hasTax) ...[
-              const Divider(),
-              _totalRow('Subtotal', formatCurrency(inv.tax.baseAmount), scheme.onSurfaceVariant),
-              _totalRow('PPN ${inv.tax.taxRate.toStringAsFixed(0)}%', formatCurrency(inv.tax.taxAmount),
-                  scheme.onSurfaceVariant),
+              Divider(height: 24, color: scheme.outlineVariant.withValues(alpha: 0.5)),
+              _totalRow(context, 'Subtotal', formatCurrency(inv.tax.baseAmount)),
+              _totalRow(context, 'PPN ${inv.tax.taxRate.toStringAsFixed(0)}%', formatCurrency(inv.tax.taxAmount)),
             ],
-            const Divider(),
-            _totalRow('TOTAL', inv.amountFormatted, scheme.onSurface, bold: true),
+            Divider(height: 24, color: scheme.outlineVariant.withValues(alpha: 0.5)),
+            _totalRow(context, 'Total', inv.amountFormatted, emphasize: true),
           ],
         ),
       ),
     );
   }
 
-  Widget _itemRow(String description, int qty, double total) {
+  Widget _itemRow(BuildContext context, String description, int qty, double total) {
+    final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(child: Text(description)),
-          if (qty != 1) Text('x$qty  ', style: const TextStyle(color: Colors.grey)),
-          Text(formatCurrency(total), style: const TextStyle(fontWeight: FontWeight.w600)),
+          Expanded(
+            child: Text(
+              qty != 1 ? '$description ×$qty' : description,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            formatCurrency(total),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: scheme.onSurface,
+                ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _totalRow(String label, String value, Color color, {bool bold = false}) {
+  Widget _totalRow(BuildContext context, String label, String value, {bool emphasize = false}) {
+    final scheme = Theme.of(context).colorScheme;
+    final style = emphasize
+        ? Theme.of(context).textTheme.titleMedium
+        : Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant);
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: color, fontWeight: bold ? FontWeight.bold : FontWeight.normal, fontSize: bold ? 16 : 13)),
-          Text(value, style: TextStyle(color: color, fontWeight: bold ? FontWeight.bold : FontWeight.w600, fontSize: bold ? 16 : 13)),
+          Text(label, style: style),
+          Text(value, style: emphasize ? style : style?.copyWith(fontWeight: FontWeight.w600)),
         ],
       ),
     );

@@ -2,6 +2,7 @@ class DashboardData {
   const DashboardData({
     required this.isOnline,
     required this.ipAddress,
+    required this.sessionStartTime,
     required this.downloadBytes,
     required this.uploadBytes,
     required this.unpaidCount,
@@ -11,6 +12,13 @@ class DashboardData {
 
   final bool isOnline;
   final String? ipAddress;
+
+  /// When the current PPPoE session started (RADIUS acctstarttime), null when
+  /// offline or when the session came from the MikroTik-active fallback path
+  /// rather than accounting records. Used to show how long the line has been
+  /// up, not just whether it happens to be up right now.
+  final DateTime? sessionStartTime;
+
   final int downloadBytes;
   final int uploadBytes;
   final int unpaidCount;
@@ -24,6 +32,8 @@ class DashboardData {
     return DashboardData(
       isOnline: session['isOnline'] as bool? ?? false,
       ipAddress: session['ipAddress']?.toString(),
+      sessionStartTime:
+          session['startTime'] != null ? DateTime.tryParse(session['startTime'].toString()) : null,
       downloadBytes: (usage['download'] as num?)?.toInt() ?? 0,
       uploadBytes: (usage['upload'] as num?)?.toInt() ?? 0,
       unpaidCount: (invoice['unpaidCount'] as num?)?.toInt() ?? 0,
