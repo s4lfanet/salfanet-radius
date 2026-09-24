@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/api/api_client.dart';
 import '../../core/formatters.dart';
+import '../../core/theme/feature_colors.dart';
 import 'suspend_provider.dart';
 
 class SuspendScreen extends StatefulWidget {
@@ -65,7 +66,7 @@ class _SuspendScreenState extends State<SuspendScreen> {
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Suspend Layanan')),
+      appBar: featureAppBar(title: 'Suspend Layanan', icon: Icons.pause_circle_outline_rounded, accent: FeatureColors.suspend),
       body: provider.loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(

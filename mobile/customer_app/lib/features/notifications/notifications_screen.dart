@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/formatters.dart';
+import '../../core/theme/feature_colors.dart';
+import '../../core/widgets/state_views.dart';
 import '../../models/notification_event.dart';
 import 'notifications_provider.dart';
 
@@ -29,21 +31,36 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       appBar: AppBar(title: const Text('Notifikasi')),
       body: RefreshIndicator(
         onRefresh: () => provider.load(),
-        child: provider.loading && provider.events.isEmpty
-            ? const Center(child: CircularProgressIndicator())
-            : provider.events.isEmpty
-                ? ListView(children: const [
-                    SizedBox(height: 120),
-                    Center(child: Icon(Icons.notifications_none, size: 56, color: Colors.grey)),
-                    SizedBox(height: 12),
-                    Center(child: Text('Belum ada notifikasi')),
-                  ])
-                : ListView.separated(
-                    itemCount: provider.events.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (context, index) => _EventTile(event: provider.events[index]),
-                  ),
+        child: _buildBody(provider),
       ),
+    );
+  }
+
+  Widget _buildBody(NotificationsProvider provider) {
+    if (provider.loading && provider.events.isEmpty) {
+      return const ScrollableCenter(child: AppLoadingState(label: 'Memuat notifikasi...'));
+    }
+    if (provider.error != null && provider.events.isEmpty) {
+      return ScrollableCenter(
+        child: AppErrorState(message: provider.error!, onRetry: provider.load),
+      );
+    }
+    if (provider.events.isEmpty) {
+      return const ScrollableCenter(
+        child: AppEmptyState(
+          icon: Icons.notifications_none_rounded,
+          accent: FeatureColors.invoice,
+          title: 'Belum ada notifikasi',
+          message: 'Kabar soal pembayaran yang masuk, balasan teknisi di tiket Anda, '
+              'dan pengingat jatuh tempo akan tampil di sini.',
+        ),
+      );
+    }
+    return ListView.separated(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      itemCount: provider.events.length,
+      separatorBuilder: (_, __) => const Divider(height: 1, indent: 72),
+      itemBuilder: (context, index) => _EventTile(event: provider.events[index]),
     );
   }
 }
@@ -52,35 +69,71 @@ class _EventTile extends StatelessWidget {
   const _EventTile({required this.event});
   final NotificationEvent event;
 
-  IconData get _icon {
+  /// Each event type keeps the hue its feature owns elsewhere in the app, so a
+  /// ticket reply looks like a ticket wherever it shows up.
+  (IconData, FeatureAccent) get _visual {
     switch (event.type) {
       case 'payment_success':
-        return Icons.check_circle_outline;
+        return (Icons.check_circle_rounded, FeatureColors.topup);
       case 'payment_rejected':
-        return Icons.cancel_outlined;
+        return (Icons.cancel_rounded, FeatureColors.referral);
       case 'ticket_reply':
-        return Icons.chat_bubble_outline;
+        return (Icons.chat_bubble_rounded, FeatureColors.ticket);
       case 'ticket_resolved':
-        return Icons.task_alt;
+        return (Icons.task_alt_rounded, FeatureColors.renewal);
       case 'package_changed':
-        return Icons.swap_horiz;
+        return (Icons.trending_up_rounded, FeatureColors.upgrade);
       default:
-        return Icons.notifications_none;
+        return (Icons.notifications_rounded, FeatureColors.invoice);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: event.isRead ? scheme.surfaceContainerHighest : scheme.primaryContainer,
-        child: Icon(_icon, size: 20, color: event.isRead ? scheme.onSurfaceVariant : scheme.onPrimaryContainer),
+    final (icon, accent) = _visual;
+
+    return Container(
+      // Unread carries a tinted background as well as heavier text, so it is
+      // not weight alone doing the work.
+      color: event.isRead ? null : scheme.primaryContainer.withValues(alpha: 0.18),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FeatureIconTile(icon: icon, accent: accent, size: 40, radius: 13),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        event.title,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              fontWeight: event.isRead ? FontWeight.w600 : FontWeight.w800,
+                            ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      formatDate(event.timestamp),
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  event.message,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
-      title: Text(event.title, style: TextStyle(fontWeight: event.isRead ? FontWeight.normal : FontWeight.bold)),
-      subtitle: Text(event.message),
-      trailing: Text(formatDate(event.timestamp), style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant)),
-      isThreeLine: true,
     );
   }
 }

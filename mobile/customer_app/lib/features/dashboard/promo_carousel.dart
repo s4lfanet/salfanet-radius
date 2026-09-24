@@ -5,8 +5,13 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/media_url.dart';
 import '../../models/promo_banner.dart';
 
-/// Auto-advancing promo carousel — only renders when real banners exist
-/// (an empty or fake carousel would be worse than no section at all).
+/// Promo carousel — only renders when real banners exist (an empty or fake
+/// carousel would be worse than no section at all).
+///
+/// This is the one place the app animates on its own: banners two and three
+/// have no other way to be seen. It is not an endless loop, though — the
+/// rotation stops for good the moment the customer swipes, because from then
+/// on they are the one deciding what to look at.
 class PromoCarousel extends StatefulWidget {
   const PromoCarousel({super.key, required this.banners});
   final List<PromoBanner> banners;
@@ -32,6 +37,11 @@ class _PromoCarouselState extends State<PromoCarousel> {
     }
   }
 
+  void _handOverToUser() {
+    _timer?.cancel();
+    _timer = null;
+  }
+
   @override
   void dispose() {
     _timer?.cancel();
@@ -51,21 +61,16 @@ class _PromoCarouselState extends State<PromoCarousel> {
           aspectRatio: 16 / 7,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(16),
-            child: PageView.builder(
-              controller: _controller,
-              itemCount: widget.banners.length,
-              onPageChanged: (i) => setState(() => _page = i),
-              itemBuilder: (context, index) {
-                final banner = widget.banners[index];
-                final url = resolveMediaUrl(banner.imageUrl);
-                return GestureDetector(
-                  onTap: banner.linkUrl == null
-                      ? null
-                      : () {
-                          final uri = Uri.tryParse(banner.linkUrl!);
-                          if (uri != null) launchUrl(uri, mode: LaunchMode.externalApplication);
-                        },
-                  child: url == null
+            child: Listener(
+              onPointerDown: (_) => _handOverToUser(),
+              child: PageView.builder(
+                controller: _controller,
+                itemCount: widget.banners.length,
+                onPageChanged: (i) => setState(() => _page = i),
+                itemBuilder: (context, index) {
+                  final banner = widget.banners[index];
+                  final url = resolveMediaUrl(banner.imageUrl);
+                  final image = url == null
                       ? Container(color: scheme.surfaceContainerHighest)
                       : CachedNetworkImage(
                           imageUrl: url,
@@ -73,9 +78,25 @@ class _PromoCarouselState extends State<PromoCarousel> {
                           width: double.infinity,
                           placeholder: (_, __) => Container(color: scheme.surfaceContainerHighest),
                           errorWidget: (_, __, ___) => Container(color: scheme.surfaceContainerHighest),
-                        ),
-                );
-              },
+                        );
+
+                  // Banners are images with the offer baked in, so without a
+                  // label a screen reader announces nothing at all here.
+                  return Semantics(
+                    label: banner.title ?? 'Promo ${index + 1} dari ${widget.banners.length}',
+                    button: banner.linkUrl != null,
+                    child: GestureDetector(
+                      onTap: banner.linkUrl == null
+                          ? null
+                          : () {
+                              final uri = Uri.tryParse(banner.linkUrl!);
+                              if (uri != null) launchUrl(uri, mode: LaunchMode.externalApplication);
+                            },
+                      child: image,
+                    ),
+                  );
+                },
+              ),
             ),
           ),
         ),
@@ -91,7 +112,7 @@ class _PromoCarouselState extends State<PromoCarousel> {
                 width: active ? 18 : 6,
                 height: 6,
                 decoration: BoxDecoration(
-                  color: active ? scheme.primary : scheme.outlineVariant,
+                  color: active ? scheme.primary : scheme.onSurfaceVariant.withValues(alpha: 0.35),
                   borderRadius: BorderRadius.circular(999),
                 ),
               );

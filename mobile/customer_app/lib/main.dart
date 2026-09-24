@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'core/api/api_client.dart';
 import 'core/company/company_provider.dart';
 import 'core/push/push_service.dart';
-import 'core/theme/app_theme.dart';
+import 'core/theme/brand_theme_provider.dart';
 import 'features/auth/auth_provider.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/otp_screen.dart';
@@ -50,13 +50,21 @@ class CustomerApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => SuspendProvider()),
         ChangeNotifierProvider(create: (_) => CompanyProvider()..load()),
         ChangeNotifierProvider(create: (_) => PromoProvider()),
+        // Recolors the app from the operator's logo once it arrives; no-ops
+        // until then, and on every rebuild where the logo hasn't changed.
+        ChangeNotifierProxyProvider<CompanyProvider, BrandThemeProvider>(
+          create: (_) => BrandThemeProvider(),
+          update: (_, company, brand) => brand!..deriveFrom(company.info?.logo),
+        ),
       ],
-      child: MaterialApp(
-        title: 'Salfanet',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light(),
-        darkTheme: AppTheme.dark(),
-        home: const _AuthGate(),
+      child: Consumer<BrandThemeProvider>(
+        builder: (context, brand, _) => MaterialApp(
+          title: 'Salfanet',
+          debugShowCheckedModeBanner: false,
+          theme: brand.lightTheme,
+          darkTheme: brand.darkTheme,
+          home: const _AuthGate(),
+        ),
       ),
     );
   }

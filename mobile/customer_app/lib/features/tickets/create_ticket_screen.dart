@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/api/api_client.dart';
+import '../../core/theme/feature_colors.dart';
 import 'ticket_provider.dart';
 
 class CreateTicketScreen extends StatefulWidget {
@@ -69,7 +70,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
     final categories = context.watch<TicketProvider>().categories;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Buat Tiket Baru')),
+      appBar: featureAppBar(title: 'Buat Tiket Baru', icon: Icons.support_agent_rounded, accent: FeatureColors.ticket),
       body: SafeArea(
         child: Form(
           key: _formKey,

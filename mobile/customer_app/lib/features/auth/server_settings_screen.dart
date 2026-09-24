@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart' as dio_pkg;
 import 'package:flutter/material.dart';
 import '../../core/api/api_client.dart';
+import '../../core/theme/feature_colors.dart';
 
 /// Every Salfanet Radius install runs on its own domain, so the app can't
 /// ship with one correct server baked in — this screen lets whoever sets up
@@ -114,13 +115,21 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> {
             ],
             if (_successCompanyName != null) ...[
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  const Icon(Icons.check_circle, color: Color(0xFF12B76A), size: 18),
-                  const SizedBox(width: 6),
-                  Expanded(child: Text('Terhubung ke $_successCompanyName', style: const TextStyle(color: Color(0xFF12B76A)))),
-                ],
-              ),
+              Builder(builder: (context) {
+                final ok = StatusColors.success(Theme.of(context).brightness);
+                return Row(
+                  children: [
+                    Icon(Icons.check_circle_rounded, color: ok, size: 18),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        'Terhubung ke $_successCompanyName',
+                        style: TextStyle(color: ok, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                );
+              }),
             ],
             const SizedBox(height: 24),
             FilledButton(

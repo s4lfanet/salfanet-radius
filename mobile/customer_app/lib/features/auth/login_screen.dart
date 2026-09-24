@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/api/api_client.dart';
 import '../../core/company/company_logo.dart';
 import '../../core/company/company_provider.dart';
+import '../../core/theme/app_theme.dart';
 import 'auth_provider.dart';
 import 'server_settings_screen.dart';
 
@@ -75,9 +76,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Center(child: CompanyLogo(company: company, size: 72, radius: 20)),
-                  const SizedBox(height: 24),
-                  Text('Selamat Datang', style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold)),
+                  Center(child: CompanyLogo(company: company, size: 76, radius: 22)),
+                  const SizedBox(height: 26),
+                  Text('Selamat Datang', style: Theme.of(context).textTheme.headlineSmall),
                   const SizedBox(height: 8),
                   Text(
                     company != null
@@ -101,9 +102,30 @@ class _LoginScreenState extends State<LoginScreen> {
                       return null;
                     },
                   ),
+                  // An icon beside the message, so the failure still reads for
+                  // anyone who cannot pick red out from the surrounding text.
                   if (_errorText != null) ...[
-                    const SizedBox(height: 12),
-                    Text(_errorText!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: scheme.errorContainer,
+                        borderRadius: BorderRadius.circular(AppRadius.control),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.error_outline_rounded, size: 18, color: scheme.onErrorContainer),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              _errorText!,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onErrorContainer),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                   const SizedBox(height: 24),
                   FilledButton(
@@ -112,14 +134,24 @@ class _LoginScreenState extends State<LoginScreen> {
                         ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
                         : const Text('Masuk'),
                   ),
-                  const SizedBox(height: 16),
+                  if (company?.phone != null && company!.phone!.isNotEmpty) ...[
+                    const SizedBox(height: 18),
+                    Center(
+                      child: Text(
+                        'Belum punya akun atau lupa nomor terdaftar?\nHubungi ${company.phone}',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 10),
                   Center(
                     child: TextButton.icon(
                       onPressed: _openServerSettings,
-                      icon: const Icon(Icons.dns_outlined, size: 16),
+                      icon: const Icon(Icons.dns_outlined, size: 15),
                       label: Text(
                         Uri.tryParse(ApiClient.instance.baseUrl)?.host ?? ApiClient.instance.baseUrl,
-                        style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
                       ),
                     ),
                   ),
