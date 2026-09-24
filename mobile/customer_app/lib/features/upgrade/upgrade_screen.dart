@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/api/api_client.dart';
 import '../../core/formatters.dart';
+import '../../core/theme/feature_colors.dart';
 import '../../models/package_option.dart';
 import '../auth/auth_provider.dart';
 import 'upgrade_provider.dart';
@@ -61,7 +62,7 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
     final availablePackages = provider.packages.where((p) => p.price >= currentPrice).toList();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Upgrade / Ganti Paket')),
+      appBar: featureAppBar(title: 'Upgrade Paket', icon: Icons.trending_up_rounded, accent: FeatureColors.upgrade),
       body: provider.loading
           ? const Center(child: CircularProgressIndicator())
           : provider.error != null

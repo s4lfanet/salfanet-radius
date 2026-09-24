@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/api/api_client.dart';
+import '../../core/theme/feature_colors.dart';
 import 'topup_provider.dart';
 
 class TopupScreen extends StatelessWidget {
@@ -14,8 +15,10 @@ class TopupScreen extends StatelessWidget {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Top Up Saldo'),
+        appBar: featureAppBar(
+          title: 'Top Up Saldo',
+          icon: Icons.account_balance_wallet_rounded,
+          accent: FeatureColors.topup,
           bottom: const TabBar(tabs: [Tab(text: 'Otomatis'), Tab(text: 'Transfer Manual')]),
         ),
         body: const TabBarView(children: [_DirectTopupTab(), _ManualTopupTab()]),

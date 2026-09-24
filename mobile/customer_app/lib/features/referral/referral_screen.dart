@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../core/formatters.dart';
+import '../../core/theme/feature_colors.dart';
+import '../../core/widgets/state_views.dart';
 import 'referral_provider.dart';
 
 class ReferralScreen extends StatefulWidget {
@@ -26,16 +28,19 @@ class _ReferralScreenState extends State<ReferralScreen> {
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Referral')),
+      appBar: featureAppBar(title: 'Referral', icon: Icons.volunteer_activism_rounded, accent: FeatureColors.referral),
       body: provider.loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const ScrollableCenter(child: AppLoadingState(label: 'Memuat data referral...'))
           : provider.error != null
-              ? Center(child: Text(provider.error!))
+              ? ScrollableCenter(child: AppErrorState(message: provider.error!, onRetry: provider.load))
               : !(provider.info?.enabled ?? false)
-                  ? const Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(24),
-                        child: Text('Program referral belum diaktifkan.', textAlign: TextAlign.center),
+                  ? const ScrollableCenter(
+                      child: AppEmptyState(
+                        icon: Icons.volunteer_activism_rounded,
+                        accent: FeatureColors.referral,
+                        title: 'Program referral belum aktif',
+                        message: 'Penyedia internet Anda belum membuka program ini. '
+                            'Kalau nanti dibuka, kode Anda akan muncul di halaman ini.',
                       ),
                     )
                   : ListView(
@@ -46,8 +51,13 @@ class _ReferralScreenState extends State<ReferralScreen> {
                             padding: const EdgeInsets.all(20),
                             child: Column(
                               children: [
-                                Icon(Icons.card_giftcard, size: 40, color: scheme.primary),
-                                const SizedBox(height: 12),
+                                const FeatureIconTile(
+                                  icon: Icons.volunteer_activism_rounded,
+                                  accent: FeatureColors.referral,
+                                  size: 56,
+                                  radius: 18,
+                                ),
+                                const SizedBox(height: 14),
                                 Text(
                                   'Ajak teman berlangganan, dapatkan ${formatCurrency(provider.info?.rewardAmount ?? 0)} per referral berhasil',
                                   textAlign: TextAlign.center,

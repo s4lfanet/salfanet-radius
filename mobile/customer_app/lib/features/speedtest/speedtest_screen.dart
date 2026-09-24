@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import '../../core/theme/feature_colors.dart';
+import '../../core/widgets/state_views.dart';
 
 class SpeedtestScreen extends StatefulWidget {
   const SpeedtestScreen({super.key});
@@ -31,14 +33,26 @@ class _SpeedtestScreenState extends State<SpeedtestScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Speed Test'),
-        actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _reload)],
+      appBar: featureAppBar(
+        title: 'Speed Test',
+        icon: Icons.network_check_rounded,
+        accent: FeatureColors.speedtest,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded),
+            tooltip: 'Muat ulang',
+            onPressed: _reload,
+          ),
+        ],
       ),
       body: Stack(
         children: [
           WebViewWidget(controller: _controller),
-          if (_loading) const Center(child: CircularProgressIndicator()),
+          if (_loading)
+            Container(
+              color: Theme.of(context).colorScheme.surface,
+              child: const Center(child: AppLoadingState(label: 'Menyiapkan alat ukur...')),
+            ),
         ],
       ),
     );

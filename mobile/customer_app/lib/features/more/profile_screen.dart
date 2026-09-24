@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/api/api_client.dart';
 import '../../core/formatters.dart';
+import '../../core/theme/feature_colors.dart';
+import '../../core/widgets/state_views.dart';
 import '../auth/auth_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -61,7 +63,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final scheme = Theme.of(context).colorScheme;
 
     if (customer == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: ScrollableCenter(child: AppLoadingState(label: 'Memuat profil...')),
+      );
     }
 
     return Scaffold(
@@ -106,8 +110,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 12),
           Card(
             child: SwitchListTile(
+              secondary: const FeatureIconTile(
+                icon: Icons.event_repeat_rounded,
+                accent: FeatureColors.renewal,
+                size: 42,
+                radius: 13,
+              ),
               title: const Text('Perpanjangan Otomatis'),
-              subtitle: const Text('Gunakan saldo untuk perpanjang otomatis saat jatuh tempo'),
+              subtitle: const Text('Pakai saldo untuk perpanjang sendiri saat jatuh tempo'),
               value: customer.autoRenewal ?? false,
               onChanged: _togglingAutoRenewal ? null : _toggleAutoRenewal,
             ),
@@ -115,10 +125,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 12),
           Card(
             child: ListTile(
-              leading: Icon(Icons.restart_alt, color: scheme.primary),
+              leading: const FeatureIconTile(
+                icon: Icons.restart_alt_rounded,
+                accent: FeatureColors.wifi,
+                size: 42,
+                radius: 13,
+              ),
               title: const Text('Reboot Perangkat (ONT)'),
-              subtitle: const Text('Restart modem/ONT dari jarak jauh'),
-              trailing: _rebooting ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2)) : null,
+              subtitle: const Text('Restart modem dari jarak jauh saat internet tersendat'),
+              trailing: _rebooting
+                  ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                  : Icon(Icons.chevron_right_rounded, color: scheme.onSurfaceVariant),
               onTap: _rebooting ? null : _rebootOnt,
             ),
           ),

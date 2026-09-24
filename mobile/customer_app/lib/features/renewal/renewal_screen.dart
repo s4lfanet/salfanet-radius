@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/api/api_client.dart';
 import '../../core/formatters.dart';
+import '../../core/theme/feature_colors.dart';
 import '../auth/auth_provider.dart';
 import 'renewal_provider.dart';
 
@@ -50,7 +51,7 @@ class _RenewalScreenState extends State<RenewalScreen> {
     final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Perpanjang Langganan')),
+      appBar: featureAppBar(title: 'Perpanjang Langganan', icon: Icons.event_repeat_rounded, accent: FeatureColors.renewal),
       body: provider.loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(

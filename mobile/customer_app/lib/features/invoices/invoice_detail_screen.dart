@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/api/api_client.dart';
 import '../../core/formatters.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/theme/feature_colors.dart';
 import '../../models/invoice.dart';
 import '../../models/invoice_detail.dart';
 import 'invoice_pdf.dart';
@@ -99,6 +101,11 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
 
   Widget _buildDetail(InvoiceDetailData inv) {
     final scheme = Theme.of(context).colorScheme;
+    final brightness = Theme.of(context).brightness;
+    final overdue = inv.status.toUpperCase() == 'OVERDUE';
+    final statusColor = inv.isPaid
+        ? StatusColors.success(brightness)
+        : (overdue ? StatusColors.danger(brightness) : StatusColors.warning(brightness));
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
@@ -107,22 +114,32 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
           child: Column(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                 decoration: BoxDecoration(
-                  color: inv.isPaid ? const Color(0xFF12B76A).withValues(alpha: 0.12) : const Color(0xFFF79009).withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(999),
+                  color: statusColor.withValues(alpha: brightness == Brightness.dark ? 0.2 : 0.12),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
                 ),
-                child: Text(
-                  inv.isPaid ? 'LUNAS' : (inv.status.toUpperCase() == 'OVERDUE' ? 'TERLAMBAT' : 'BELUM DIBAYAR'),
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: inv.isPaid ? const Color(0xFF12B76A) : const Color(0xFFF79009),
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      inv.isPaid
+                          ? Icons.check_circle_rounded
+                          : (overdue ? Icons.warning_amber_rounded : Icons.schedule_rounded),
+                      size: 15,
+                      color: statusColor,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      inv.isPaid ? 'Lunas' : (overdue ? 'Terlambat' : 'Belum dibayar'),
+                      style: TextStyle(fontWeight: FontWeight.w700, color: statusColor, fontSize: 13),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 12),
-              Text(inv.amountFormatted, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
-              Text(inv.number, style: TextStyle(color: scheme.onSurfaceVariant)),
+              const SizedBox(height: 14),
+              Text(inv.amountFormatted, style: Theme.of(context).textTheme.headlineMedium),
+              Text(inv.number, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
             ],
           ),
         ),
@@ -235,7 +252,8 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
             if (inv.tax.hasTax) ...[
               const Divider(),
               _totalRow('Subtotal', formatCurrency(inv.tax.baseAmount), scheme.onSurfaceVariant),
-              _totalRow('PPN ${inv.tax.taxRate.toStringAsFixed(0)}%', formatCurrency(inv.tax.taxAmount), const Color(0xFFF79009)),
+              _totalRow('PPN ${inv.tax.taxRate.toStringAsFixed(0)}%', formatCurrency(inv.tax.taxAmount),
+                  scheme.onSurfaceVariant),
             ],
             const Divider(),
             _totalRow('TOTAL', inv.amountFormatted, scheme.onSurface, bold: true),

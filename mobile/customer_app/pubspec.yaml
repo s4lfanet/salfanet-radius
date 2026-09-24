@@ -72,6 +72,14 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  # Bundled, not fetched at runtime: customers open this app on the connection
+  # they are calling about. See DESIGN.md for why this typeface.
+  # Licensed under the SIL Open Font License, see assets/fonts/OFL.txt.
+  fonts:
+    - family: PlusJakartaSans
+      fonts:
+        - asset: assets/fonts/PlusJakartaSans-Variable.ttf
+
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg
