@@ -331,9 +331,17 @@ export async function runInvoiceReminder(): Promise<{ sent: number; skipped: num
     },
     select: {
       id: true, invoiceNumber: true, amount: true, dueDate: true, status: true,
-      customerName: true, customerPhone: true, customerUsername: true,
+      customerName: true, customerPhone: true, customerUsername: true, customerEmail: true,
       paymentLink: true, sentReminders: true, userId: true,
-      user: { select: { address: true } },
+      user: {
+        select: {
+          address: true,
+          customerId: true,
+          email: true,
+          profile: { select: { name: true } },
+          area: { select: { name: true } },
+        },
+      },
     },
   });
 
@@ -396,35 +404,65 @@ export async function runInvoiceReminder(): Promise<{ sent: number; skipped: num
         continue;
       }
 
+      const isOverdue = inv.status === 'OVERDUE' || inv.dueDate < now;
+      const daysOverdue = inv.dueDate < now ? Math.ceil((now.getTime() - inv.dueDate.getTime()) / (24 * 60 * 60 * 1000)) : 0;
+      const user = (inv as any).user as { address?: string | null; customerId?: string | null; email?: string | null; profile?: { name: string } | null; area?: { name: string } | null } | null;
+
       const { sendInvoiceReminder } = await import('@/server/services/notifications/whatsapp-templates.service');
       await sendInvoiceReminder({
         phone: inv.customerPhone!,
         customerName: inv.customerName || inv.customerUsername || 'Customer',
+        customerId: user?.customerId || undefined,
         customerUsername: inv.customerUsername || undefined,
-        address: (inv as any).user?.address || undefined,
+        profileName: user?.profile?.name,
+        area: user?.area?.name,
+        address: user?.address || undefined,
         invoiceNumber: inv.invoiceNumber,
         amount: inv.amount,
         dueDate: inv.dueDate,
         paymentLink: inv.paymentLink || '',
         companyName: company?.name || '',
         companyPhone: company?.phone || '',
-        isOverdue: inv.status === 'OVERDUE' || inv.dueDate < now,
-        daysOverdue: inv.dueDate < now ? Math.ceil((now.getTime() - inv.dueDate.getTime()) / (24 * 60 * 60 * 1000)) : 0,
+        isOverdue,
+        daysOverdue,
       });
+
+      // Send email reminder alongside WhatsApp, if the customer has an email on file
+      const customerEmail = inv.customerEmail || user?.email;
+      if (customerEmail) {
+        const { EmailService } = await import('@/server/services/notifications/email.service');
+        await EmailService.sendInvoiceReminder({
+          email: customerEmail,
+          customerName: inv.customerName || inv.customerUsername || 'Customer',
+          customerId: user?.customerId || undefined,
+          customerUsername: inv.customerUsername || undefined,
+          profileName: user?.profile?.name,
+          area: user?.area?.name,
+          address: user?.address || undefined,
+          invoiceNumber: inv.invoiceNumber,
+          amount: inv.amount,
+          dueDate: inv.dueDate,
+          paymentLink: inv.paymentLink || '',
+          companyName: company?.name || '',
+          companyPhone: company?.phone || '',
+          isOverdue,
+          daysOverdue,
+        }).catch((e) => console.error(`[INVOICE_REMINDER] Email failed for ${inv.invoiceNumber}:`, e?.message || e));
+      }
 
       // Send web push notification alongside WhatsApp
       if (inv.userId) {
-        const isOverdue = inv.status === 'OVERDUE' || inv.dueDate < now;
         await sendPushToUser(inv.userId, isOverdue ? 'invoice-overdue' : 'invoice-reminder', {
           customerName: inv.customerName || inv.customerUsername || 'Pelanggan',
-          customerAddress: (inv as any).user?.address || undefined,
+          customerAddress: user?.address || undefined,
+          profileName: user?.profile?.name,
           invoiceNumber: inv.invoiceNumber,
           amount: inv.amount,
           dueDate: inv.dueDate,
           companyName: company?.name || '',
           companyPhone: company?.phone || '',
           isOverdue,
-          daysOverdue: isOverdue ? Math.ceil((now.getTime() - inv.dueDate.getTime()) / (24 * 60 * 60 * 1000)) : 0,
+          daysOverdue,
         }).catch((e) => console.error(`[INVOICE_REMINDER] Push failed for ${inv.invoiceNumber}:`, e?.message || e));
       }
 

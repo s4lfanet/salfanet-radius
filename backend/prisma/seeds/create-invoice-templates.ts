@@ -352,6 +352,10 @@ Terima kasih,
                   <td style="color: #333333; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;">{{invoiceNumber}}</td>
                 </tr>
                 <tr>
+                  <td style="color: #666666; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;"><strong>ID Pelanggan:</strong></td>
+                  <td style="color: #333333; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;">{{customerId}}</td>
+                </tr>
+                <tr>
                   <td style="color: #666666; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;"><strong>Username:</strong></td>
                   <td style="color: #333333; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;">{{username}}</td>
                 </tr>
@@ -446,6 +450,10 @@ Terima kasih,
                 <tr>
                   <td style="color: #666666; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;"><strong>No. Invoice:</strong></td>
                   <td style="color: #333333; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;">{{invoiceNumber}}</td>
+                </tr>
+                <tr>
+                  <td style="color: #666666; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;"><strong>ID Pelanggan:</strong></td>
+                  <td style="color: #333333; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;">{{customerId}}</td>
                 </tr>
                 <tr>
                   <td style="color: #666666; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;"><strong>Username:</strong></td>
