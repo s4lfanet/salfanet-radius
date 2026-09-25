@@ -68,6 +68,9 @@ interface Stats {
   technicianSubscribers?: number;
   adminSubscribers?: number;
   fcmUserCount?: number;
+  /** Distinct customers reachable via Web Push OR the mobile app — usersWithTokens
+   * + fcmUserCount would double-count anyone registered on both. */
+  customersReachable?: number;
 }
 
 interface Broadcast {
@@ -363,7 +366,7 @@ export default function PushNotificationsPage() {
     return `${roleLabel} - ${targetLabel}`;
   };
 
-  const coveragePct = stats && stats.totalUsers > 0 ? Math.round((stats.usersWithTokens / stats.totalUsers) * 100) : 0;
+  const coveragePct = stats && stats.totalUsers > 0 ? Math.round(((stats.customersReachable ?? stats.usersWithTokens) / stats.totalUsers) * 100) : 0;
   const activeTypeDefs = NOTIFICATION_TYPES_BY_ROLE[recipientRole];
   const activeTemplates = QUICK_TEMPLATES_BY_ROLE[recipientRole];
 
@@ -413,7 +416,7 @@ export default function PushNotificationsPage() {
               </div>
               <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/15 px-2 py-0.5 rounded-full">push</span>
             </div>
-            <p className="text-lg sm:text-2xl font-bold tracking-tight text-emerald-600">{loading ? '-' : stats?.usersWithTokens ?? 0}</p>
+            <p className="text-lg sm:text-2xl font-bold tracking-tight text-emerald-600">{loading ? '-' : stats?.customersReachable ?? stats?.usersWithTokens ?? 0}</p>
             <p className="text-xs text-muted-foreground mt-1">{t('pushNotif.registeredPush')}</p>
           </CardContent>
         </Card>
@@ -478,11 +481,11 @@ export default function PushNotificationsPage() {
             <CardContent className="px-5 pt-0 pb-5">
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                 {([
-                  { value: 'customer' as RecipientRole, label: 'Pelanggan', icon: Users, color: 'bg-blue-500/10 text-blue-600 border-blue-500/30', activeColor: 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/25', count: stats?.usersWithTokens ?? 0, unit: 'push' },
+                  { value: 'customer' as RecipientRole, label: 'Pelanggan', icon: Users, color: 'bg-blue-500/10 text-blue-600 border-blue-500/30', activeColor: 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/25', count: stats?.customersReachable ?? stats?.usersWithTokens ?? 0, unit: 'push' },
                   { value: 'technician' as RecipientRole, label: 'Teknisi', icon: Wrench, color: 'bg-amber-500/10 text-amber-600 border-amber-500/30', activeColor: 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/25', count: stats?.technicianSubscribers ?? 0, unit: 'terdaftar' },
                   { value: 'agent' as RecipientRole, label: 'Agen', icon: Megaphone, color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30', activeColor: 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/25', count: stats?.agentSubscribers ?? 0, unit: 'terdaftar' },
                   { value: 'admin' as RecipientRole, label: 'Admin', icon: Shield, color: 'bg-red-500/10 text-red-600 border-red-500/30', activeColor: 'bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/25', count: stats?.adminSubscribers ?? 0, unit: 'terdaftar' },
-                  { value: 'all' as RecipientRole, label: 'Semua', icon: RadioTower, color: 'bg-primary/10 text-purple-600 border-border', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25', count: (stats?.usersWithTokens ?? 0) + (stats?.agentSubscribers ?? 0) + (stats?.technicianSubscribers ?? 0) + (stats?.adminSubscribers ?? 0), unit: 'total' },
+                  { value: 'all' as RecipientRole, label: 'Semua', icon: RadioTower, color: 'bg-primary/10 text-purple-600 border-border', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25', count: (stats?.customersReachable ?? stats?.usersWithTokens ?? 0) + (stats?.agentSubscribers ?? 0) + (stats?.technicianSubscribers ?? 0) + (stats?.adminSubscribers ?? 0), unit: 'total' },
                 ] as Array<{ value: RecipientRole; label: string; icon: React.ComponentType<{ className?: string }>; color: string; activeColor: string; count: number; unit: string }>).map((role) => {
                   const RoleIcon = role.icon;
                   const active = recipientRole === role.value;
@@ -728,7 +731,7 @@ export default function PushNotificationsPage() {
                       <>
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-muted-foreground">Pelanggan</span>
-                          <span className="font-bold text-blue-600 dark:text-blue-400">{stats?.usersWithTokens ?? 0}</span>
+                          <span className="font-bold text-blue-600 dark:text-blue-400">{stats?.customersReachable ?? stats?.usersWithTokens ?? 0}</span>
                         </div>
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-muted-foreground">Teknisi</span>
@@ -740,7 +743,7 @@ export default function PushNotificationsPage() {
                         </div>
                         <div className="flex items-center justify-between text-xs border-t pt-2 mt-1">
                           <span className="text-muted-foreground font-semibold">Total penerima</span>
-                          <span className="font-bold text-purple-600 dark:text-primary">{(stats?.usersWithTokens ?? 0) + (stats?.agentSubscribers ?? 0) + (stats?.technicianSubscribers ?? 0) + (stats?.adminSubscribers ?? 0)}</span>
+                          <span className="font-bold text-purple-600 dark:text-primary">{(stats?.customersReachable ?? stats?.usersWithTokens ?? 0) + (stats?.agentSubscribers ?? 0) + (stats?.technicianSubscribers ?? 0) + (stats?.adminSubscribers ?? 0)}</span>
                         </div>
                       </>
                     )}
@@ -811,7 +814,7 @@ export default function PushNotificationsPage() {
                 )}
               </Button>
 
-              {stats?.usersWithTokens === 0 && (
+              {(stats?.customersReachable ?? stats?.usersWithTokens ?? 0) === 0 && (
                 <div className="rounded-xl border border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-800/30 p-4 text-xs text-orange-700 dark:text-orange-400">
                   <p className="font-semibold flex items-center gap-1.5">
                     <AlertTriangle className="w-3.5 h-3.5" />

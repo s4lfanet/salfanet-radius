@@ -510,7 +510,7 @@ export async function sendWebPushToUsers(userIds: string[], payload: PushNotific
 }
 
 export async function getPushDashboardStats() {
-  const [totalUsers, areas, totalBroadcasts, totalSubscriptions, subscribedUsers, agentSubscribers, technicianSubscribers, adminSubscribers] = await Promise.all([
+  const [totalUsers, areas, totalBroadcasts, totalSubscriptions, subscribedUsers, agentSubscribers, technicianSubscribers, adminSubscribers, fcmUsers] = await Promise.all([
     prisma.pppoeUser.count({
       where: { status: 'active' },
     }),
@@ -542,7 +542,28 @@ export async function getPushDashboardStats() {
       distinct: ['adminId'],
       select: { adminId: true },
     }),
+    // Customers with the Flutter app's FCM token registered — separate from
+    // pushSubscription (Web Push/VAPID for the customer PWA) above. The admin
+    // dashboard has had a UI slot for this count since the FCM work landed;
+    // it just never queried the table that would fill it.
+    prisma.customerPushToken.findMany({
+      distinct: ['userId'],
+      select: { userId: true },
+    }),
   ]);
+
+  // Distinct customers reachable through either channel — a plain sum of
+  // usersWithTokens + fcmUserCount would double-count anyone who has both a
+  // browser subscription and the app installed. This is what the "how many
+  // customers will this broadcast actually reach" figures should use.
+  const customersReachable = await prisma.pppoeUser.count({
+    where: {
+      OR: [
+        { pushSubscriptions: { some: { isActive: true } } },
+        { customerPushTokens: { some: {} } },
+      ],
+    },
+  });
 
   return {
     totalUsers,
@@ -553,6 +574,8 @@ export async function getPushDashboardStats() {
     agentSubscribers: agentSubscribers.length,
     technicianSubscribers: technicianSubscribers.length,
     adminSubscribers: adminSubscribers.length,
+    fcmUserCount: fcmUsers.length,
+    customersReachable,
   };
 }
 
@@ -581,9 +604,13 @@ export async function getPushBroadcastHistory(limit = 20, page = 1) {
 async function getBroadcastTargets(targetType: PushBroadcastInput['targetType'], targetIds: string[]) {
   const where: Record<string, unknown> = {
     status: { not: 'stop' },
-    pushSubscriptions: {
-      some: { isActive: true },
-    },
+    // A customer with only the Flutter app installed has an FCM token but no
+    // Web Push subscription — requiring pushSubscriptions here (as before)
+    // silently dropped them from every broadcast target list, mobile or not.
+    OR: [
+      { pushSubscriptions: { some: { isActive: true } } },
+      { customerPushTokens: { some: {} } },
+    ],
   };
 
   if (targetType === 'area' && targetIds.length > 0) {
@@ -690,11 +717,24 @@ export async function sendWebPushBroadcast(input: PushBroadcastInput) {
   if (recipientRole === 'customer' || recipientRole === 'all') {
     const targets = await getBroadcastTargets(input.targetType || 'all', targetIds);
     const customerSubs = targets.flatMap((t) => t.pushSubscriptions);
-    if (customerSubs.length > 0) {
-      const r = await sendToStoredSubscriptions(customerSubs, notificationPayload, 'customer');
-      totalSent += r.sent;
-      totalFailed += r.failed;
-      totalCount += r.total;
+    const customerUserIds = targets.map((t) => t.id);
+
+    // Fan out to Web Push (browser PWA) and FCM (the Flutter app) in
+    // parallel, the same split sendWebPushToUser/sendWebPushToUsers already
+    // do for every individual notification — the broadcast tool was the one
+    // path that never got extended, so it silently missed every customer
+    // who only has the mobile app.
+    const [webResult, fcmResult] = await Promise.all([
+      customerSubs.length > 0
+        ? sendToStoredSubscriptions(customerSubs, notificationPayload, 'customer')
+        : Promise.resolve({ sent: 0, failed: 0, total: 0 }),
+      sendFcmToUsers(customerUserIds, notificationPayload),
+    ]);
+
+    if (webResult.total > 0 || fcmResult.sent + fcmResult.failed > 0) {
+      totalSent += webResult.sent + fcmResult.sent;
+      totalFailed += webResult.failed + fcmResult.failed;
+      totalCount += webResult.total + fcmResult.sent + fcmResult.failed;
     }
   }
 
