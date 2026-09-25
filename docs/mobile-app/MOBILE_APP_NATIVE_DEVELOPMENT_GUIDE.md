@@ -1,3 +1,10 @@
+> ⚠️ **Usang.** Rencana Expo/React Native di dokumen ini tidak pernah dilanjutkan.
+> Aplikasi customer yang benar-benar berjalan sekarang adalah **Flutter native**
+> di `mobile/customer_app/`. Panduan setup dan Firebase yang akurat ada di
+> [`mobile/customer_app/README.md`](../../mobile/customer_app/README.md) dan
+> [`mobile/customer_app/FIREBASE_SETUP.md`](../../mobile/customer_app/FIREBASE_SETUP.md).
+> Isi di bawah ini dibiarkan sebagai arsip saja.
+
 # Panduan Development Aplikasi Mobile Native
 
 ## 📱 Ringkasan Implementasi Saat Ini
