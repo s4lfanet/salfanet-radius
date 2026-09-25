@@ -1,3 +1,10 @@
+> ⚠️ **Usang.** Ditulis untuk percobaan Expo/React Native yang tidak dilanjutkan —
+> endpoint di sini (`/api/customer/login`, kolom `fcmTokens`, dst.) sudah berbeda
+> dari API yang benar-benar dipakai aplikasi Flutter sekarang
+> (`backend/src/app/api/customer/*`, model `customerPushToken`). Untuk kontrak
+> API yang akurat, baca langsung kode route-nya atau
+> [`mobile/customer_app/README.md`](../../mobile/customer_app/README.md).
+
 # Backend API Implementation for Mobile App
 
 **Date**: February 17, 2026  

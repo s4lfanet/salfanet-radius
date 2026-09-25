@@ -42,8 +42,23 @@ Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with Free
 | **PWA** | Installable di semua portal (admin, customer, agent, technician), offline fallback, service worker cache |
 | **Web Push** | VAPID-based browser push notifications, subscribe/unsubscribe toggle per portal (admin, agent, technician, collector), admin broadcast with role targeting (customer/agent/technician/admin/all), cron-triggered push (invoice reminder, auto-isolir, auto-renewal), server-side read state for customer notifications |
 | **Collector Portal** | Portal kolektor dengan dashboard, billing (mark-paid + upload bukti transfer), isolir list, ONT removal workflow, my-collections, settlement/setoran harian, admin verification (approve/reject), area-based access control |
-| **Mobile App** | Flutter customer portal (WiFi control, invoice, payment) |
+| **Mobile App** | Native Flutter customer app (`mobile/customer_app/`) — WiFi control, invoice, payment, tickets, push via FCM. See [README](mobile/customer_app/README.md) |
 | **WhatsApp Baileys** | Native WhatsApp gateway built-in VPS via `@whiskeysockets/baileys`, PM2 proses terpisah, scan QR langsung di admin panel, auto-reconnect |
+
+---
+
+## 📱 Mobile App (Flutter, native Android)
+
+Source: `mobile/customer_app/`. Same customer-facing feature set as the web portal,
+talking to the same `backend/src/app/api/customer/*` API. Every install runs on its
+own domain (no hard-coded host — configurable in-app), and every install needs its
+own Firebase project for push notifications.
+
+- **Build / run it**: [`mobile/customer_app/README.md`](mobile/customer_app/README.md)
+- **Enable push notifications (FCM)**: [`mobile/customer_app/FIREBASE_SETUP.md`](mobile/customer_app/FIREBASE_SETUP.md)
+  — creating the Firebase project, `google-services.json`, the backend's service
+  account key, and how to verify each side actually works. Neither credential is
+  ever committed to this repo.
 
 ---
 
