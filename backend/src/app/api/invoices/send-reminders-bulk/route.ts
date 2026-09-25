@@ -32,6 +32,14 @@ export async function POST(request: NextRequest) {
         id: true, invoiceNumber: true, amount: true, dueDate: true, status: true,
         customerName: true, customerPhone: true, customerUsername: true,
         paymentLink: true, sentReminders: true,
+        user: {
+          select: {
+            address: true,
+            customerId: true,
+            profile: { select: { name: true } },
+            area: { select: { name: true } },
+          },
+        },
       },
     });
 
@@ -62,7 +70,11 @@ export async function POST(request: NextRequest) {
         await sendInvoiceReminder({
           phone: inv.customerPhone,
           customerName: inv.customerName || inv.customerUsername || 'Customer',
+          customerId: inv.user?.customerId || undefined,
           customerUsername: inv.customerUsername || undefined,
+          profileName: inv.user?.profile?.name,
+          area: inv.user?.area?.name,
+          address: inv.user?.address || undefined,
           invoiceNumber: inv.invoiceNumber,
           amount: inv.amount,
           dueDate: inv.dueDate,

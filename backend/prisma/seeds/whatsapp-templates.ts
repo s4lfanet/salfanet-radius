@@ -146,6 +146,7 @@ Ini adalah pengingat untuk invoice Anda yang akan segera jatuh tempo.
 *📋 Detail Invoice*
 ━━━━━━━━━━━━━━━━━━━━━━
 🧾 No. Invoice: {{invoiceNumber}}
+🆔 ID Pelanggan: {{customerId}}
 👤 Username: {{username}}
 📦 Paket: {{profileName}}
 📍 Area: {{area}}

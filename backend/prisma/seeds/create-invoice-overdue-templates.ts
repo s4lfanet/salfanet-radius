@@ -17,7 +17,8 @@ export async function seedInvoiceOverdueTemplates() {
 Invoice Anda sudah melewati tanggal jatuh tempo:
 
 📋 No. Invoice: *{{invoiceNumber}}*
-� Username: *{{username}}*
+🆔 ID Pelanggan: *{{customerId}}*
+👤 Username: *{{username}}*
 📦 Paket: *{{profileName}}*
 📍 Area: *{{area}}*
 🏠 Alamat: *{{address}}*
@@ -52,6 +53,7 @@ Terima kasih,
 Invoice Anda sudah melewati tanggal jatuh tempo:
 
 📋 No. Invoice: *{{invoiceNumber}}*
+🆔 ID Pelanggan: *{{customerId}}*
 👤 Username: *{{username}}*
 📦 Paket: *{{profileName}}*
 📍 Area: *{{area}}*
@@ -136,6 +138,10 @@ Terima kasih,
           <tr>
             <td>📋 No. Invoice</td>
             <td>{{invoiceNumber}}</td>
+          </tr>
+          <tr>
+            <td>🆔 ID Pelanggan</td>
+            <td>{{customerId}}</td>
           </tr>
           <tr>
             <td>👤 Username</td>
@@ -250,6 +256,10 @@ Terima kasih,
           <tr>
             <td>📋 No. Invoice</td>
             <td>{{invoiceNumber}}</td>
+          </tr>
+          <tr>
+            <td>🆔 ID Pelanggan</td>
+            <td>{{customerId}}</td>
           </tr>
           <tr>
             <td>👤 Username</td>
