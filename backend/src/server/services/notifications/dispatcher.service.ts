@@ -50,7 +50,10 @@ export const NotificationService = {
       const now = new Date();
       const overdueInvoices = await prisma.invoice.findMany({
         where: {
-          status: 'PENDING',
+          // runInvoiceStatusUpdate (hourly) flips PENDING -> OVERDUE the moment
+          // dueDate passes, well before this 6-hourly sweep ever runs — matching
+          // only 'PENDING' here meant this could never actually find anything.
+          status: { in: ['PENDING', 'OVERDUE'] },
           dueDate: {
             lt: now,
           },
@@ -111,7 +114,10 @@ export const NotificationService = {
             gte: today,
             lt: tomorrow,
           },
-          status: 'active',
+          // pppoe_auto_isolir runs hourly and (with the default 0-day grace
+          // period) flips these users to 'isolated' well before this 6-hourly
+          // sweep sees them — matching only 'active' meant this rarely fired.
+          status: { in: ['active', 'isolated'] },
         },
         select: {
           id: true,
@@ -311,6 +317,23 @@ export const NotificationService = {
       message,
       link,
     });
+  },
+
+  /**
+   * Create notification for monthly invoice generation (from cron).
+   * 'invoice_generated' has a category filter in /admin/notifications but,
+   * until this call was added, nothing anywhere ever created that type.
+   */
+  async notifyInvoicesGenerated(count: number) {
+    if (count > 0) {
+      return await this.create({
+        type: 'invoice_generated',
+        title: 'Invoice Bulanan Dibuat',
+        message: `${count} invoice baru telah dibuat secara otomatis`,
+        link: '/admin/invoices',
+      });
+    }
+    return null;
   },
 
   /**

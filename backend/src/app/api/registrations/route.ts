@@ -74,6 +74,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Admin notification feed — was relying solely on a 6-hourly sweep that
+    // only ever caught requests still PENDING at tick time, so a request
+    // approved/rejected quickly could go completely unnoticed there.
+    import('@/server/services/notifications/dispatcher.service')
+      .then(({ NotificationService }) => NotificationService.notifyNewRegistration(registration))
+      .catch(() => {});
+
     // Notify all admins via WhatsApp (fire-and-forget)
     (() => {
       const refInfo = validReferralCode ? `\n🎁 Kode Referral: *${validReferralCode}*` : '';
