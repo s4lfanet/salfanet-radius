@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import { sendPushToUser } from '@/server/services/notifications/push-templates.service';
 import { rateLimit } from '@/server/middleware/rate-limit';
 import { nowWIB } from '@/lib/timezone';
+import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
 
 // Helper to verify customer token using CustomerSession
 async function verifyCustomerToken(request: NextRequest) {
@@ -92,29 +93,7 @@ export async function POST(request: NextRequest) {
     const company = await prisma.company.findFirst();
 
     // Generate invoice number
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    
-    const lastInvoice = await prisma.invoice.findFirst({
-      where: {
-        invoiceNumber: {
-          startsWith: `INV/${year}/${month}/${day}/`
-        }
-      },
-      orderBy: {
-        invoiceNumber: 'desc'
-      }
-    });
-
-    let sequence = 1;
-    if (lastInvoice) {
-      const parts = lastInvoice.invoiceNumber.split('/');
-      sequence = parseInt(parts[parts.length - 1]) + 1;
-    }
-
-    const invoiceNumber = `INV/${year}/${month}/${day}/${String(sequence).padStart(4, '0')}`;
+    const invoiceNumber = generateInvoiceNumber();
 
     // Calculate due date (7 days from now)
     const dueDate = nowWIB();

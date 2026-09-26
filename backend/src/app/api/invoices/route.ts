@@ -8,8 +8,8 @@ import { sendPushToUser } from '@/server/services/notifications/push-templates.s
 import { EmailService } from '@/server/services/notifications/email.service';
 import { randomBytes } from 'crypto';
 import { nanoid } from 'nanoid';
-import { startOfDayWIBtoUTC, endOfDayWIBtoUTC, toUTC, nowWIB, WIB_TIMEZONE } from '@/lib/timezone';
-import { formatInTimeZone } from 'date-fns-tz';
+import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
+import { startOfDayWIBtoUTC, endOfDayWIBtoUTC, toUTC, nowWIB } from '@/lib/timezone';
 import { ok, created, badRequest, notFound, serverError } from '@/lib/api-response';
 // Generate secure random token for payment link
 function generatePaymentToken(): string {
@@ -208,19 +208,8 @@ export async function POST(request: NextRequest) {
 
     if (!user) return notFound('User');
 
-    // Generate invoice number: INV-YYYYMM-0001
     const now = nowWIB();
-    const wibDateStr = formatInTimeZone(now, WIB_TIMEZONE, 'yyyy-MM');
-    const year = parseInt(wibDateStr.substring(0, 4));
-    const month = wibDateStr.substring(5, 7);
-    const count = await prisma.invoice.count({
-      where: {
-        invoiceNumber: {
-          startsWith: `INV-${year}${month}-`,
-        },
-      },
-    });
-    const invoiceNumber = `INV-${year}${month}-${String(count + 1).padStart(4, '0')}`;
+    const invoiceNumber = generateInvoiceNumber();
 
     // Calculate due date (default 7 days from now)
     const calculatedDueDate = dueDate
