@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Home, MessageSquare, User, Receipt, Shield, Menu, X, Package, Clock, LogOut, Bell, CheckCircle2, XCircle, Trash2, Wifi, FileText, PauseCircle, Gift, Sun, Moon, RefreshCcw, Gauge } from 'lucide-react';
+import { Home, MessageSquare, User, Receipt, Shield, Menu, X, Package, Clock, LogOut, Bell, CheckCircle2, XCircle, Trash2, Wifi, FileText, PauseCircle, Gift, Sun, Moon, RefreshCcw, Gauge, Download } from 'lucide-react';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { onUnauthorized, apiCustomer } from '@/lib/api/client';
@@ -373,6 +373,13 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
 
         {/* Logout */}
         <div className="p-4 border-t border-sidebar-border">
+          <a
+            href="/downloads/salfanet-customer.apk"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 mb-2 text-xs font-bold text-brand-500 dark:text-brand-400 hover:text-white bg-brand-500/10 hover:bg-brand-500 border border-brand-500/30 rounded-xl transition-all duration-300"
+          >
+            <Download className="w-4 h-4" />
+            <span>Unduh Aplikasi Android</span>
+          </a>
           <PushNotificationToggle compact />
           <button
             onClick={handleLogout}
