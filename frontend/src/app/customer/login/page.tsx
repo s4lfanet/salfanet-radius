@@ -353,7 +353,7 @@ export default function CustomerLoginPage() {
 
           {/* App Download */}
           <a
-            href="/downloads/salfanet-customer.apk"
+            href="/downloads/salfanet-customer.apk?v=1.1.1-3"
             className="mt-5 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-semibold transition-all"
           >
             <Download className="w-4 h-4" />
