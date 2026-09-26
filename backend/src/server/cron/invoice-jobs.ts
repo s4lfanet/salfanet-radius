@@ -203,6 +203,14 @@ export async function runInvoiceGenerate(): Promise<{ generated: number; skipped
   }
 
   console.log(`[INVOICE_GENERATE] generated=${generated} skipped=${skipped} errors=${errors.length}`);
+
+  try {
+    const { NotificationService } = await import('@/server/services/notifications/dispatcher.service');
+    await NotificationService.notifyInvoicesGenerated(generated);
+  } catch (e: any) {
+    console.error('[INVOICE_GENERATE] Admin notification failed:', e?.message || e);
+  }
+
   return { generated, skipped, total: users.length, errors };
 }
 
