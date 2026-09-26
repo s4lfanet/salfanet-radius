@@ -493,6 +493,7 @@ export async function runAutoRenewal(): Promise<{ renewed: number; skipped: numb
     },
     include: {
       profile: { select: { id: true, name: true, groupName: true, price: true, ppnActive: true, ppnRate: true, validityValue: true, validityUnit: true } },
+      area: { select: { name: true } },
       router: { select: { id: true, authMode: true } },
     },
   });
@@ -648,8 +649,25 @@ export async function runAutoRenewal(): Promise<{ renewed: number; skipped: numb
       renewed++;
       console.log(`[AUTO_RENEWAL] Renewed ${user.username} until ${newExpiredAt.toISOString()}`);
 
-      // Send push notification about successful auto-renewal
+      // Send WhatsApp notification about successful auto-renewal
       const renewalCompany = await prisma.company.findFirst({ select: { name: true, phone: true } });
+      if (user.phone) {
+        const { sendAutoRenewalSuccess } = await import('@/server/services/notifications/whatsapp-templates.service');
+        await sendAutoRenewalSuccess({
+          customerName: user.name || user.username,
+          customerPhone: user.phone,
+          customerId: user.customerId || undefined,
+          username: user.username,
+          profileName: (user.profile as any).name || '-',
+          area: (user as any).area?.name,
+          address: user.address || undefined,
+          amount,
+          newBalance: user.balance - amount,
+          expiredDate: newExpiredAt,
+        }).catch((e) => console.error(`[AUTO_RENEWAL] WhatsApp failed for ${user.username}:`, e?.message || e));
+      }
+
+      // Send push notification about successful auto-renewal
       await sendPushToUser(user.id, 'auto-renewal-success', {
         customerName: user.name || user.username,
         customerAddress: user.address || undefined,

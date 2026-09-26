@@ -88,6 +88,7 @@ export async function POST(request: NextRequest) {
           username: user.username,
           profileName: (user as any).profile?.name || '-',
           area: (user as any).area?.name || '-',
+          address: user.address || '-',
           companyName: company?.name || '',
           companyPhone: company?.phone || '',
           companyEmail: company?.email || '',

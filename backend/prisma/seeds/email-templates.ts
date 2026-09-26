@@ -346,6 +346,30 @@ export const emailTemplates = [
                   </td>
                 </tr>
                 <tr>
+                  <td style="color: #666666; font-size: 14px; border-bottom: 1px solid #d1fae5; padding: 12px;">
+                    <strong>Paket:</strong>
+                  </td>
+                  <td style="color: #333333; font-size: 14px; border-bottom: 1px solid #d1fae5; padding: 12px;">
+                    {{profileName}}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="color: #666666; font-size: 14px; border-bottom: 1px solid #d1fae5; padding: 12px;">
+                    <strong>Area:</strong>
+                  </td>
+                  <td style="color: #333333; font-size: 14px; border-bottom: 1px solid #d1fae5; padding: 12px;">
+                    {{area}}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="color: #666666; font-size: 14px; border-bottom: 1px solid #d1fae5; padding: 12px;">
+                    <strong>Alamat:</strong>
+                  </td>
+                  <td style="color: #333333; font-size: 14px; border-bottom: 1px solid #d1fae5; padding: 12px;">
+                    {{address}}
+                  </td>
+                </tr>
+                <tr>
                   <td style="color: #666666; font-size: 14px; padding: 12px;">
                     <strong>Masa Aktif Hingga:</strong>
                   </td>
@@ -354,7 +378,7 @@ export const emailTemplates = [
                   </td>
                 </tr>
               </table>
-              
+
               <div style="background-color: #f0fdf4; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0; border-radius: 4px;">
                 <p style="color: #065f46; margin: 0; font-size: 14px; line-height: 1.6;">
                   ✅ <strong>Akun Anda sekarang sudah aktif</strong> dan dapat digunakan untuk mengakses layanan internet.
@@ -1226,6 +1250,58 @@ export const emailTemplates = [
       </td>
     </tr>
   </table>
+</body>
+</html>`,
+    isActive: true,
+  },
+  {
+    type: 'payment-success',
+    name: 'Pembayaran Berhasil',
+    subject: '✅ Pembayaran Diterima - Invoice {{invoiceNumber}}',
+    htmlBody: `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f7f9; }
+    .container { max-width: 600px; margin: 20px auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px 20px; text-align: center; color: white; }
+    .content { padding: 30px 20px; }
+    .success-box { background: #d1fae5; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0; border-radius: 4px; }
+    .footer { background: #f8fafc; padding: 20px; text-align: center; color: #64748b; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 style="margin: 0; font-size: 24px;">✅ Pembayaran Berhasil!</h1>
+      <p style="margin: 10px 0 0 0; opacity: 0.9;">Terima kasih atas pembayaran Anda</p>
+    </div>
+    <div class="content">
+      <p>Kepada Yth. <strong>{{customerName}}</strong>,</p>
+      <p>Kami telah menerima pembayaran Anda. Akun Anda telah diaktifkan.</p>
+
+      <div class="success-box">
+        <p style="margin: 5px 0;"><strong>ID Pelanggan:</strong> {{customerId}}</p>
+        <p style="margin: 5px 0;"><strong>Nomor Invoice:</strong> {{invoiceNumber}}</p>
+        <p style="margin: 5px 0;"><strong>Jumlah Dibayar:</strong> {{amount}}</p>
+        <p style="margin: 5px 0;"><strong>Username:</strong> {{username}}</p>
+        <p style="margin: 5px 0;"><strong>Paket:</strong> {{profileName}}</p>
+        <p style="margin: 5px 0;"><strong>Area:</strong> {{area}}</p>
+        <p style="margin: 5px 0;"><strong>Alamat:</strong> {{address}}</p>
+        <p style="margin: 5px 0;"><strong>Aktif Hingga:</strong> {{expiredDate}}</p>
+      </div>
+
+      <p>Akun internet Anda sudah aktif dan siap digunakan. Terima kasih telah mempercayai layanan kami.</p>
+
+      <p style="margin-top: 30px;">Hormat kami,<br><strong>{{companyName}}</strong></p>
+    </div>
+    <div class="footer">
+      <p>📞 Hubungi kami: {{companyPhone}}</p>
+      <p>Email otomatis, mohon tidak membalas.</p>
+    </div>
+  </div>
 </body>
 </html>`,
     isActive: true,

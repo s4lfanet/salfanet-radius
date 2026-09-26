@@ -982,7 +982,7 @@ async function handleCustomerTopUp(
   const invoiceNumber = orderId.split('-').slice(0, 3).join('-');
   invoice = await prisma.invoice.findFirst({
     where: { invoiceNumber },
-    include: { user: true }
+    include: { user: { include: { area: { select: { name: true } } } } }
   });
 
   // Strategy 2: If orderId is TOPUP-TEMP-xxx, find the most recent PENDING TOPUP invoice
@@ -1003,7 +1003,7 @@ async function handleCustomerTopUp(
         createdAt: { gte: searchWindow }
       },
       orderBy: { createdAt: 'desc' },
-      include: { user: true }
+      include: { user: { include: { area: { select: { name: true } } } } }
     });
 
     if (invoice) {
@@ -1154,6 +1154,8 @@ async function handleCustomerTopUp(
           username: invoice.user.username,
           password: invoice.user.password,
           profileName: 'Top-Up Saldo',
+          area: (invoice.user as any).area?.name,
+          address: invoice.user.address || undefined,
           invoiceNumber: invoice.invoiceNumber,
           amount: topupAmount,
         });
@@ -1280,6 +1282,7 @@ async function handleInvoicePayment(
       user: {
         include: {
           profile: true,
+          area: { select: { name: true } },
           router: { select: { id: true, authMode: true } }
         }
       }
@@ -1291,7 +1294,7 @@ async function handleInvoicePayment(
     const trimmed = invoiceNumber.substring(4); // Remove leading 'INV-'
     invoice = await prisma.invoice.findFirst({
       where: { invoiceNumber: trimmed },
-      include: { user: { include: { profile: true, router: { select: { id: true, authMode: true } } } } }
+      include: { user: { include: { profile: true, area: { select: { name: true } }, router: { select: { id: true, authMode: true } } } } }
     });
   }
 
@@ -1563,6 +1566,8 @@ async function handleInvoicePayment(
             username: user.username,
             password: user.password,
             profileName: profile.name,
+            area: (user as any).area?.name,
+            address: user.address || undefined,
             invoiceNumber: invoice.invoiceNumber,
             amount: invoice.amount,
             newExpiredAt: finalExpiredAt ?? undefined,
@@ -1611,10 +1616,12 @@ async function handleInvoicePayment(
                     })
                   : '-';
                 const variables: Record<string, string> = {
-                  customerId: user.customerId || '',
+                  customerId: user.customerId || '-',
                   customerName: user.name || invoice.customerName || 'Pelanggan',
                   username: user.username,
                   profileName: profile.name,
+                  area: (user as any).area?.name || '-',
+                  address: user.address || '-',
                   invoiceNumber: invoice.invoiceNumber,
                   amount: `Rp ${invoice.amount.toLocaleString('id-ID')}`,
                   expiredDate: expiredDateStr,

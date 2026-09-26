@@ -184,6 +184,7 @@ Terima kasih! Pembayaran Anda telah berhasil dikonfirmasi.
 💰 Jumlah: {{amount}}
 👤 Username: {{username}}
 📦 Paket: {{profileName}}
+📍 Area: {{area}}
 🏠 Alamat: {{address}}
 📅 Aktif hingga: {{expiredDate}}
 
@@ -236,6 +237,7 @@ Pembayaran manual Anda telah *DISETUJUI* oleh admin kami.
 • Username: {{customerUsername}}
 • Paket: {{profileName}}
 • Area: {{area}}
+• Alamat: {{address}}
 • Masa aktif hingga: {{expiredDate}}
 
 ✅ Akun Anda sekarang sudah aktif dan dapat digunakan.

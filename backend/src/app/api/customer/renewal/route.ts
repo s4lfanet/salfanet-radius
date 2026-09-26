@@ -7,6 +7,19 @@ function generatePaymentToken(): string {
   return randomBytes(32).toString('hex');
 }
 
+function formatBankAccountsForWA(bankAccounts: any): string {
+  if (!bankAccounts) return '';
+  let accounts: Array<{ bankName?: string; bank?: string; accountNumber?: string; accountName?: string }> = [];
+  try {
+    accounts = Array.isArray(bankAccounts) ? bankAccounts : JSON.parse(String(bankAccounts));
+  } catch { return ''; }
+  if (!accounts.length) return '';
+  const lines = accounts.map((a) =>
+    `🏦 ${a.bankName || a.bank || '-'}\n   📋 No. Rek: ${a.accountNumber || '-'}\n   👤 A/N: ${a.accountName || '-'}`
+  );
+  return `━━━━━━━━━━━━━━━━━━━━━━\n🏦 *Transfer Manual ke Rekening:*\n${lines.join('\n\n')}`;
+}
+
 export async function POST(request: NextRequest) {
   try {
     console.log('🔄 Customer renewal request received');
@@ -45,7 +58,7 @@ export async function POST(request: NextRequest) {
     console.log('👤 Fetching user:', session.userId);
     const user = await prisma.pppoeUser.findUnique({
       where: { id: session.userId },
-      include: { profile: true },
+      include: { profile: true, area: { select: { name: true } } },
     });
 
     if (!user) {
@@ -261,10 +274,16 @@ export async function POST(request: NextRequest) {
       if (whatsappTemplate && whatsappTemplate.isActive) {
         let message = whatsappTemplate.message
           .replace(/{{customerName}}/g, user.name)
+          .replace(/{{customerId}}/g, user.customerId || '-')
+          .replace(/{{username}}/g, user.username)
+          .replace(/{{profileName}}/g, user.profile?.name || '-')
+          .replace(/{{area}}/g, (user as any).area?.name || '-')
+          .replace(/{{address}}/g, user.address || '-')
           .replace(/{{invoiceNumber}}/g, invoiceNumber)
           .replace(/{{amount}}/g, amount.toLocaleString('id-ID'))
           .replace(/{{dueDate}}/g, newExpiredDate.toLocaleDateString('id-ID', { timeZone: getCurrentTimezone() }))
           .replace(/{{paymentLink}}/g, paymentLink)
+          .replace(/{{bankAccounts}}/g, formatBankAccountsForWA(company?.bankAccounts))
           .replace(/{{companyName}}/g, company?.name || 'Billing System')
           .replace(/{{companyPhone}}/g, company?.phone || '');
 
@@ -327,6 +346,9 @@ export async function POST(request: NextRequest) {
               customerName: user.name,
               customerId: user.customerId || user.username,
               username: user.username,
+              profileName: user.profile?.name || '-',
+              area: (user as any).area?.name || '-',
+              address: user.address || '-',
               invoiceNumber: invoiceNumber,
               amount: `Rp ${amount.toLocaleString('id-ID')}`,
               dueDate: newExpiredDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: getCurrentTimezone() }),
