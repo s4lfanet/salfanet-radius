@@ -1,7 +1,8 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import '../../features/notifications/notifications_screen.dart';
 import '../api/api_client.dart';
 import '../storage/secure_storage.dart';
 
@@ -35,6 +36,10 @@ class PushService {
   bool _initialized = false;
   final _localNotifications = FlutterLocalNotificationsPlugin();
 
+  /// Lets the notification-tap handlers push a screen without a BuildContext
+  /// of their own — wired into MaterialApp in main.dart.
+  final navigatorKey = GlobalKey<NavigatorState>();
+
   Future<void> initialize() async {
     if (_initialized) return;
     _initialized = true;
@@ -63,10 +68,34 @@ class PushService {
       FirebaseMessaging.instance.onTokenRefresh.listen((_) => registerTokenIfReady());
       FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
+      // Tapped while the app was backgrounded (Android auto-displayed the
+      // system notification for us — this fires once the app resumes).
+      FirebaseMessaging.onMessageOpenedApp.listen((_) => _openNotifications());
+
+      // Cold start: the app was launched BY tapping a notification. The
+      // navigator isn't mounted yet at this point in main(), so wait for
+      // the first frame before pushing the route.
+      final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+      if (initialMessage != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _openNotifications());
+      }
+
       await registerTokenIfReady();
     } catch (e) {
       debugPrint('[Push] Setup failed: $e');
     }
+  }
+
+  Future<void> _openNotifications() async {
+    final nav = navigatorKey.currentState;
+    if (nav == null) return;
+    // A stale notification tapped after logout has nowhere useful to go —
+    // the API calls the screen makes would just 401.
+    if (await SecureStorage.instance.readToken() == null) return;
+    // Avoid stacking duplicate copies if the user taps more than one
+    // notification, or is already looking at the list.
+    nav.popUntil((route) => route.isFirst);
+    nav.push(MaterialPageRoute(builder: (_) => const NotificationsScreen()));
   }
 
   Future<void> _setupLocalNotifications() async {
@@ -83,6 +112,7 @@ class PushService {
 
       await _localNotifications.initialize(
         const InitializationSettings(android: AndroidInitializationSettings('@mipmap/ic_launcher')),
+        onDidReceiveNotificationResponse: (_) => _openNotifications(),
       );
     } catch (e) {
       debugPrint('[Push] Local notification setup failed: $e');

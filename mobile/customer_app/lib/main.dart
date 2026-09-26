@@ -61,6 +61,7 @@ class CustomerApp extends StatelessWidget {
         builder: (context, brand, _) => MaterialApp(
           title: 'Salfanet Customer',
           debugShowCheckedModeBanner: false,
+          navigatorKey: PushService.instance.navigatorKey,
           theme: brand.lightTheme,
           darkTheme: brand.darkTheme,
           home: const _AuthGate(),
