@@ -27,11 +27,18 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const orderId = url.searchParams.get('order_id');
 
+  // request.url reflects the internal origin behind the reverse proxy
+  // (e.g. http://localhost:3001) — build the redirect against the public
+  // base URL instead, same as every other outward-facing link this route
+  // generates (paymentLink, etc.).
+  const company = await prisma.company.findFirst({ select: { baseUrl: true } });
+  const baseUrl = company?.baseUrl || url.origin;
+
   if (!orderId) {
-    return NextResponse.redirect(new URL('/', request.url));
+    return NextResponse.redirect(new URL('/', baseUrl));
   }
 
-  const dest = new URL('/payment/success', request.url);
+  const dest = new URL('/payment/success', baseUrl);
   url.searchParams.forEach((value, key) => dest.searchParams.set(key, value));
   return NextResponse.redirect(dest);
 }
