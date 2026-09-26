@@ -365,6 +365,7 @@ export async function PATCH(
           .replace(/{{expiredDate}}/g, newExpiry.toLocaleDateString('id-ID', { timeZone: getCurrentTimezone() }))
           .replace(/{{profileName}}/g, (manualPayment.user as any)?.profile?.name || '-')
           .replace(/{{area}}/g, (manualPayment.user as any)?.area?.name || '-')
+          .replace(/{{address}}/g, manualPayment.user.address || '-')
           .replace(/{{companyName}}/g, company?.name || '')
           .replace(/{{companyPhone}}/g, company?.phone || '')
           .replace(/{{bankAccounts}}/g, formatBankAccountsWA(company?.bankAccounts));
@@ -392,13 +393,14 @@ export async function PATCH(
             expiredDate: newExpiry.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: getCurrentTimezone() }),
             profileName: (manualPayment.user as any)?.profile?.name || '-',
             area: (manualPayment.user as any)?.area?.name || '-',
+            address: manualPayment.user.address || '-',
             companyName: company?.name || '',
             companyPhone: company?.phone || '',
             companyEmail: company?.email || '',
             baseUrl: company?.baseUrl || '',
             bankAccounts: formatBankAccountsHtml(company?.bankAccounts),
           };
-          
+
           try {
             let emailBody = emailTemplate.htmlBody;
             for (const [key, value] of Object.entries(variables)) {

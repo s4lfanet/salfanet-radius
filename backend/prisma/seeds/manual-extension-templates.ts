@@ -12,9 +12,11 @@ const whatsappTemplate = {
 
 Langganan Anda telah diperpanjang oleh admin kami dengan detail sebagai berikut:
 
+🆔 *ID Pelanggan:* {{customerId}}
 👤 *Username:* {{customerUsername}}
 📦 *Paket:* {{profileName}}
 📍 *Area:* {{area}}
+🏠 *Alamat:* {{address}}
 💰 *Nominal:* Rp {{amount}}
 📅 *Berlaku Hingga:* {{newExpiredAt}}
 📄 *No. Invoice:* {{invoiceNumber}}
@@ -63,6 +65,10 @@ const emailTemplate = {
                             <!-- Details Box -->
                             <div style="background:#f0fdf4;border-radius:8px;padding:20px;margin:20px 0">
                                 <div style="margin-bottom:12px">
+                                    <div style="color:#666;font-size:12px">ID Pelanggan</div>
+                                    <div style="color:#333;font-size:16px;font-weight:600;font-family:monospace">{{customerId}}</div>
+                                </div>
+                                <div style="margin-bottom:12px">
                                     <div style="color:#666;font-size:12px">Username</div>
                                     <div style="color:#333;font-size:16px;font-weight:600;font-family:monospace">{{customerUsername}}</div>
                                 </div>
@@ -73,6 +79,10 @@ const emailTemplate = {
                                 <div style="margin-bottom:12px">
                                     <div style="color:#666;font-size:12px">Area</div>
                                     <div style="color:#333;font-size:16px;font-weight:600">{{area}}</div>
+                                </div>
+                                <div style="margin-bottom:12px">
+                                    <div style="color:#666;font-size:12px">Alamat</div>
+                                    <div style="color:#333;font-size:16px;font-weight:600">{{address}}</div>
                                 </div>
                                 <div style="margin-bottom:12px">
                                     <div style="color:#666;font-size:12px">Nominal</div>

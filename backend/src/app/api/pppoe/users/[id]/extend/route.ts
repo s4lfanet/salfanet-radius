@@ -258,9 +258,11 @@ export async function POST(
           // Replace template variables
           let message = template.message;
           message = message.replace(/\{\{customerName\}\}/g, user.name);
+          message = message.replace(/\{\{customerId\}\}/g, user.customerId || '-');
           message = message.replace(/\{\{customerUsername\}\}/g, user.username);
           message = message.replace(/\{\{profileName\}\}/g, newProfile.name);
           message = message.replace(/\{\{area\}\}/g, (user as any).area?.name || '-');
+          message = message.replace(/\{\{address\}\}/g, user.address || '-');
           message = message.replace(/\{\{amount\}\}/g, formattedAmount);
           message = message.replace(/\{\{newExpiredAt\}\}/g, formattedExpiredAt);
           message = message.replace(/\{\{invoiceNumber\}\}/g, invoiceNumber);
@@ -297,9 +299,11 @@ export async function POST(
           // Replace template variables
           let htmlContent = template.htmlBody;
           htmlContent = htmlContent.replace(/\{\{customerName\}\}/g, user.name);
+          htmlContent = htmlContent.replace(/\{\{customerId\}\}/g, user.customerId || '-');
           htmlContent = htmlContent.replace(/\{\{customerUsername\}\}/g, user.username);
           htmlContent = htmlContent.replace(/\{\{profileName\}\}/g, newProfile.name);
           htmlContent = htmlContent.replace(/\{\{area\}\}/g, (user as any).area?.name || '-');
+          htmlContent = htmlContent.replace(/\{\{address\}\}/g, user.address || '-');
           htmlContent = htmlContent.replace(/\{\{amount\}\}/g, formattedAmount);
           htmlContent = htmlContent.replace(/\{\{newExpiredAt\}\}/g, formattedExpiredAt);
           htmlContent = htmlContent.replace(/\{\{invoiceNumber\}\}/g, invoiceNumber);
