@@ -18,7 +18,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # of the product and file versions while build-number is used as the build suffix.
 # Build number must rise on every APK you hand out, otherwise Android treats
 # the new file as the same build and refuses to install it over the old one.
-version: 1.1.1+3
+version: 1.1.2+4
 
 environment:
   sdk: ^3.8.1

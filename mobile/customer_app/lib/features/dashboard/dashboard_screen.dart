@@ -120,7 +120,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
             tooltip: 'Notifikasi',
             onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+              MaterialPageRoute(
+                builder: (_) => NotificationsScreen(onNavigateToTab: widget.onNavigateToTab),
+              ),
             ),
           ),
           const SizedBox(width: 4),
