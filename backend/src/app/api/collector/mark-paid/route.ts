@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { verifyCollector } from '@/server/auth/collector-auth';
 import { cancelPendingOntTasksForPaidUser } from '@/server/services/ont-removal-task.service';
-import { nowWIB, toUTC } from '@/lib/timezone';
+import { nowWIB, toUTC, getCurrentTimezone } from '@/lib/timezone';
 import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service';
 import { managePppSecret, shouldManagePppSecretForSuspend, kickPppoeSession } from '@/server/services/mikrotik/ppp-secret.service';
 
@@ -43,7 +43,13 @@ export async function POST(req: NextRequest) {
             connectionType: true,
             areaId: true,
             routerId: true,
-            profile: { select: { groupName: true, validityUnit: true, validityValue: true } },
+            name: true,
+            phone: true,
+            email: true,
+            customerId: true,
+            address: true,
+            profile: { select: { name: true, groupName: true, validityUnit: true, validityValue: true } },
+            area: { select: { name: true } },
             router: { select: { id: true, authMode: true } },
           },
         },
@@ -173,6 +179,111 @@ export async function POST(req: NextRequest) {
         },
       });
     });
+
+    // ─── Notifications (best-effort) ──────────────────────────────────────
+    // Mirrors handleInvoicePayment in the payment webhook — a collector cash/
+    // transfer settlement is a real payment event too, and previously left
+    // both the admin notification feed and the customer WA/email/push silent.
+    try {
+      const { NotificationService } = await import('@/server/services/notifications/dispatcher.service');
+      await NotificationService.notifyPaymentReceived({
+        amount: invoice.amount,
+        invoiceId: invoice.id,
+        customerName: user.name,
+        customerUsername: user.username,
+        gateway: `collector_${method}`,
+      });
+    } catch (e) {
+      console.error('[CollectorMarkPaid] Admin notification error:', e);
+    }
+
+    if (user.phone) {
+      try {
+        const { sendPaymentSuccess } = await import('@/server/services/notifications/whatsapp-templates.service');
+        await sendPaymentSuccess({
+          customerName: user.name,
+          customerPhone: user.phone,
+          customerId: user.customerId || undefined,
+          username: user.username,
+          password: user.password,
+          profileName: user.profile?.name || '-',
+          area: user.area?.name,
+          address: user.address || undefined,
+          invoiceNumber: invoice.invoiceNumber,
+          amount: invoice.amount,
+          newExpiredAt: newExpiredAt ?? undefined,
+        });
+      } catch (e) {
+        console.error('[CollectorMarkPaid] WhatsApp notification error:', e);
+      }
+    }
+
+    try {
+      const { sendPushToUser } = await import('@/server/services/notifications/push-templates.service');
+      await sendPushToUser(user.id, 'payment-success', {
+        invoiceNumber: invoice.invoiceNumber,
+        amount: invoice.amount,
+        username: user.username,
+        profileName: user.profile?.name,
+        customerAddress: user.address || undefined,
+        expiredDate: newExpiredAt ?? undefined,
+      });
+    } catch (e) {
+      console.error('[CollectorMarkPaid] Push notification error:', e);
+    }
+
+    if (user.email) {
+      try {
+        const emailSettings = await prisma.emailSettings.findFirst();
+        if (emailSettings?.enabled) {
+          const emailTemplate = await prisma.emailTemplate.findFirst({
+            where: { type: 'payment-success', isActive: true },
+          });
+          if (emailTemplate && newExpiredAt) {
+            const company = await prisma.company.findFirst({ select: { name: true, phone: true } });
+            const expiredDateStr = newExpiredAt.toLocaleDateString('id-ID', {
+              day: '2-digit', month: 'long', year: 'numeric', timeZone: getCurrentTimezone(),
+            });
+            const variables: Record<string, string> = {
+              customerId: user.customerId || '-',
+              customerName: user.name,
+              username: user.username,
+              profileName: user.profile?.name || '-',
+              area: user.area?.name || '-',
+              address: user.address || '-',
+              invoiceNumber: invoice.invoiceNumber,
+              amount: `Rp ${invoice.amount.toLocaleString('id-ID')}`,
+              expiredDate: expiredDateStr,
+              companyName: company?.name || 'ISP',
+              companyPhone: company?.phone || '-',
+            };
+            let subject = emailTemplate.subject;
+            let htmlBody = emailTemplate.htmlBody;
+            Object.entries(variables).forEach(([key, value]) => {
+              const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+              subject = subject.replace(regex, value);
+              htmlBody = htmlBody.replace(regex, value);
+            });
+
+            const nodemailer = require('nodemailer');
+            const transporter = nodemailer.createTransport({
+              host: emailSettings.smtpHost,
+              port: emailSettings.smtpPort,
+              secure: emailSettings.smtpSecure,
+              auth: { user: emailSettings.smtpUser, pass: emailSettings.smtpPassword },
+            });
+            await transporter.sendMail({
+              from: `"${emailSettings.fromName}" <${emailSettings.fromEmail}>`,
+              to: user.email,
+              subject,
+              html: htmlBody,
+            });
+          }
+        }
+      } catch (e) {
+        console.error('[CollectorMarkPaid] Email notification error:', e);
+      }
+    }
 
     if (invoice.customerUsername) {
       await cancelPendingOntTasksForPaidUser(invoice.customerUsername).catch(() => {});

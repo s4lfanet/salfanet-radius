@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
 import { verifyQrisSignature, claimNonce } from '@/lib/qris-signature';
+import { getCurrentTimezone } from '@/lib/timezone';
 
 export const dynamic = 'force-dynamic';
 
@@ -167,7 +168,7 @@ export async function POST(request: NextRequest) {
       // Re-read under transaction lock — concurrent notification may have already settled
       const freshPending = await tx.qrisPending.findUnique({ where: { id: pending.id } });
       if (!freshPending || freshPending.status === 'paid') {
-        return { alreadyPaid: true, pending: freshPending };
+        return { alreadyPaid: true, invoicePaidNow: false, pending: freshPending } as const;
       }
 
       // Mark QRIS pending as paid
@@ -181,6 +182,17 @@ export async function POST(request: NextRequest) {
       });
 
       // Update invoice if exists
+      let invoicePaidNow = false;
+      let notifyData: {
+        invoiceNumber: string;
+        amount: number;
+        user: {
+          id: string; name: string; phone: string; email: string | null;
+          username: string; password: string; customerId: string | null; address: string | null;
+          profileName: string; area?: string; newExpiry: Date;
+        };
+      } | null = null;
+
       if (pending.invoiceId) {
         const invoice = await tx.invoice.findUnique({ where: { id: pending.invoiceId } });
         if (invoice && invoice.status !== 'PAID') {
@@ -188,12 +200,13 @@ export async function POST(request: NextRequest) {
             where: { id: invoice.id },
             data: { status: 'PAID', paidAt: now },
           });
+          invoicePaidNow = true;
 
           // Extend subscription if user exists
           if (invoice.userId) {
             const user = await tx.pppoeUser.findUnique({
               where: { id: invoice.userId },
-              include: { profile: true },
+              include: { profile: true, area: { select: { name: true } } },
             });
 
             if (user && user.profile) {
@@ -213,12 +226,23 @@ export async function POST(request: NextRequest) {
                   status: 'active',
                 },
               });
+
+              notifyData = {
+                invoiceNumber: invoice.invoiceNumber,
+                amount: invoice.amount,
+                user: {
+                  id: user.id, name: user.name, phone: user.phone, email: user.email,
+                  username: user.username, password: user.password, customerId: user.customerId,
+                  address: user.address, profileName: user.profile.name,
+                  area: (user as any).area?.name, newExpiry,
+                },
+              };
             }
           }
         }
       }
 
-      return { alreadyPaid: false, pending: freshPending };
+      return { alreadyPaid: false, invoicePaidNow, pending: freshPending, notifyData } as const;
     });
 
     if (result.alreadyPaid) {
@@ -228,6 +252,117 @@ export async function POST(request: NextRequest) {
         invoiceId: pending.invoiceId,
         paid: true,
       });
+    }
+
+    // ─── Notifications (best-effort, outside the transaction) ────────────────
+    // QRIS payments used to settle the invoice silently — no admin
+    // notification and no customer WhatsApp/email/push — because this route
+    // was built independently of the shared payment-webhook notification
+    // pipeline. Wire it in the same way handleInvoicePayment does.
+    if (result.invoicePaidNow && result.notifyData) {
+      const { invoiceNumber, amount, user } = result.notifyData;
+
+      try {
+        const { NotificationService } = await import('@/server/services/notifications/dispatcher.service');
+        await NotificationService.notifyPaymentReceived({
+          amount,
+          invoiceId: pending.invoiceId ?? undefined,
+          customerName: user.name,
+          customerUsername: user.username,
+          gateway: 'qris',
+        });
+      } catch (e) {
+        console.error('[QRIS Notify] Admin notification error:', e);
+      }
+
+      const company = await prisma.company.findFirst({ select: { name: true, phone: true } });
+
+      if (user.phone) {
+        try {
+          const { sendPaymentSuccess } = await import('@/server/services/notifications/whatsapp-templates.service');
+          await sendPaymentSuccess({
+            customerName: user.name,
+            customerPhone: user.phone,
+            customerId: user.customerId || undefined,
+            username: user.username,
+            password: user.password,
+            profileName: user.profileName,
+            area: user.area,
+            address: user.address || undefined,
+            invoiceNumber,
+            amount,
+            newExpiredAt: user.newExpiry,
+          });
+        } catch (e) {
+          console.error('[QRIS Notify] WhatsApp notification error:', e);
+        }
+      }
+
+      try {
+        const { sendPushToUser } = await import('@/server/services/notifications/push-templates.service');
+        await sendPushToUser(user.id, 'payment-success', {
+          invoiceNumber,
+          amount,
+          username: user.username,
+          profileName: user.profileName,
+          customerAddress: user.address || undefined,
+          expiredDate: user.newExpiry,
+        });
+      } catch (e) {
+        console.error('[QRIS Notify] Push notification error:', e);
+      }
+
+      if (user.email) {
+        try {
+          const emailSettings = await prisma.emailSettings.findFirst();
+          if (emailSettings?.enabled) {
+            const emailTemplate = await prisma.emailTemplate.findFirst({
+              where: { type: 'payment-success', isActive: true },
+            });
+            if (emailTemplate) {
+              const expiredDateStr = user.newExpiry.toLocaleDateString('id-ID', {
+                day: '2-digit', month: 'long', year: 'numeric', timeZone: getCurrentTimezone(),
+              });
+              const variables: Record<string, string> = {
+                customerId: user.customerId || '-',
+                customerName: user.name,
+                username: user.username,
+                profileName: user.profileName,
+                area: user.area || '-',
+                address: user.address || '-',
+                invoiceNumber,
+                amount: `Rp ${amount.toLocaleString('id-ID')}`,
+                expiredDate: expiredDateStr,
+                companyName: company?.name || 'ISP',
+                companyPhone: company?.phone || '-',
+              };
+              let subject = emailTemplate.subject;
+              let htmlBody = emailTemplate.htmlBody;
+              Object.entries(variables).forEach(([key, value]) => {
+                const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+                subject = subject.replace(regex, value);
+                htmlBody = htmlBody.replace(regex, value);
+              });
+
+              const nodemailer = require('nodemailer');
+              const transporter = nodemailer.createTransport({
+                host: emailSettings.smtpHost,
+                port: emailSettings.smtpPort,
+                secure: emailSettings.smtpSecure,
+                auth: { user: emailSettings.smtpUser, pass: emailSettings.smtpPassword },
+              });
+              await transporter.sendMail({
+                from: `"${emailSettings.fromName}" <${emailSettings.fromEmail}>`,
+                to: user.email,
+                subject,
+                html: htmlBody,
+              });
+            }
+          }
+        } catch (e) {
+          console.error('[QRIS Notify] Email notification error:', e);
+        }
+      }
     }
 
     console.log('[QRIS Notify] OK invoiceId=' + pending.invoiceId + ' amount=' + amount);

@@ -649,6 +649,20 @@ export async function runAutoRenewal(): Promise<{ renewed: number; skipped: numb
       renewed++;
       console.log(`[AUTO_RENEWAL] Renewed ${user.username} until ${newExpiredAt.toISOString()}`);
 
+      // Admin notification feed — auto-renewal is a real payment event (drawn
+      // from prepaid balance) that previously never showed up in /admin/notifications.
+      try {
+        const { NotificationService } = await import('@/server/services/notifications/dispatcher.service');
+        await NotificationService.notifyPaymentReceived({
+          amount,
+          customerName: user.name || user.username,
+          customerUsername: user.username,
+          gateway: 'auto-renewal',
+        });
+      } catch (e: any) {
+        console.error(`[AUTO_RENEWAL] Admin notification failed for ${user.username}:`, e?.message || e);
+      }
+
       // Send WhatsApp notification about successful auto-renewal
       const renewalCompany = await prisma.company.findFirst({ select: { name: true, phone: true } });
       if (user.phone) {
