@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Shield, Smartphone, Lock, ArrowRight, Loader2, ChevronLeft, Wifi, Sun, Moon, AlertCircle } from 'lucide-react';
+import { Shield, Smartphone, Lock, ArrowRight, Loader2, ChevronLeft, Wifi, Sun, Moon, AlertCircle, Download } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 
 export default function CustomerLoginPage() {
@@ -350,6 +350,15 @@ export default function CustomerLoginPage() {
               </button>
             </div>
           )}
+
+          {/* App Download */}
+          <a
+            href="/downloads/salfanet-customer.apk"
+            className="mt-5 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-semibold transition-all"
+          >
+            <Download className="w-4 h-4" />
+            Unduh Aplikasi Android
+          </a>
 
           {/* Footer */}
           <p className="text-center text-xs text-muted-foreground mt-6">{footerText}</p>
