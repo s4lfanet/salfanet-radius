@@ -16,6 +16,27 @@ import { nanoid } from 'nanoid';
 export const dynamic = 'force-dynamic';
 
 /**
+ * Some Midtrans account/merchant configurations resolve the browser's post-payment
+ * redirect to this notification URL instead of the per-transaction `callbacks.finish`
+ * (`/payment/success`) — Snap's dashboard-level Finish Redirect URL can take
+ * precedence depending on payment method. Rather than 405 the customer, bounce them
+ * to the real result page with the same query string; the server-to-server webhook
+ * (POST, below) is what actually settles the invoice.
+ */
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const orderId = url.searchParams.get('order_id');
+
+  if (!orderId) {
+    return NextResponse.redirect(new URL('/', request.url));
+  }
+
+  const dest = new URL('/payment/success', request.url);
+  url.searchParams.forEach((value, key) => dest.searchParams.set(key, value));
+  return NextResponse.redirect(dest);
+}
+
+/**
  * Unified Payment Webhook Handler
  * Supports: Midtrans & Xendit
  * Single endpoint: /api/payment/webhook
