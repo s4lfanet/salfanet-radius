@@ -19,6 +19,7 @@ export async function POST(
       where: { id },
       select: {
         username: true,
+        name: true,
         password: true,
         ipAddress: true,
         profile: { select: { groupName: true } },
@@ -138,6 +139,21 @@ export async function POST(
     }
 
     const { markedCount, totalAmount } = result;
+
+    // Admin notification feed — this button settles an invoice directly
+    // (e.g. cash at the counter) with no customer-submitted proof and no
+    // payment-gateway webhook, so it was never surfacing anywhere.
+    try {
+      const { NotificationService } = await import('@/server/services/notifications/dispatcher.service');
+      await NotificationService.notifyPaymentReceived({
+        amount: totalAmount,
+        customerName: userRecord.name,
+        customerUsername: userRecord.username,
+        gateway: 'manual',
+      });
+    } catch (e: any) {
+      console.error('[MarkPaid] Admin notification error:', e?.message || e);
+    }
 
     // Restore RADIUS tables so the user reconnects with correct profile.
     // Critical when user was isolated (radusergroup = 'isolir') — without this
