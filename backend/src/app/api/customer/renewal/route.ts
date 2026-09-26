@@ -2,6 +2,7 @@
 import { prisma } from '@/server/db/client';
 import { randomBytes, randomUUID } from 'crypto';
 import { toUTC, nowWIB, getCurrentTimezone } from '@/lib/timezone';
+import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
 
 function generatePaymentToken(): string {
   return randomBytes(32).toString('hex');
@@ -164,36 +165,7 @@ export async function POST(request: NextRequest) {
     
     console.log('💰 Amount:', amount, renewTaxRate ? `(incl. PPN ${renewTaxRate}%)` : '');
 
-    // Generate invoice number with retry for uniqueness
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const prefix = `INV-${year}${month}-`;
-    
-    // Get the latest invoice number for this month
-    const latestInvoice = await prisma.invoice.findFirst({
-      where: {
-        invoiceNumber: {
-          startsWith: prefix,
-        },
-      },
-      orderBy: {
-        invoiceNumber: 'desc',
-      },
-      select: {
-        invoiceNumber: true,
-      },
-    });
-
-    let invoiceNumber: string;
-    let invoiceSequence = 1;
-    
-    if (latestInvoice) {
-      // Extract sequence number from latest invoice
-      const lastSequence = parseInt(latestInvoice.invoiceNumber.split('-')[2] || '0');
-      invoiceSequence = lastSequence + 1;
-    }
-    
-    invoiceNumber = `${prefix}${String(invoiceSequence).padStart(4, '0')}`;
+    let invoiceNumber = generateInvoiceNumber();
 
     // Generate payment token and link
     const paymentToken = generatePaymentToken();
@@ -229,10 +201,9 @@ export async function POST(request: NextRequest) {
         break; // Success, exit loop
       } catch (createError: any) {
         if (createError.code === 'P2002' && retries < maxRetries - 1) {
-          // Duplicate key, increment and retry
+          // Duplicate key, generate a fresh number and retry
           retries++;
-          invoiceSequence++;
-          invoiceNumber = `${prefix}${String(invoiceSequence).padStart(4, '0')}`;
+          invoiceNumber = generateInvoiceNumber();
           console.log(`⚠️ Invoice number collision, retrying with: ${invoiceNumber}`);
           continue;
         }

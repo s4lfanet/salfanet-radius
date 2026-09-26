@@ -5,6 +5,7 @@ import { createXenditInvoice } from '@/server/services/payment/xendit.service';
 import { createDuitkuClient } from '@/server/services/payment/duitku.service';
 import { createTripayClient } from '@/server/services/payment/tripay.service';
 import { nowWIB } from '@/lib/timezone';
+import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
 import crypto from 'crypto';
 
 // Helper to verify customer token (same as topup-direct)
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create invoice for upgrade with package metadata
-    const invoiceNumber = `INV-UPG-${Date.now()}-${crypto.randomBytes(8).toString('hex').toUpperCase()}`;
+    const invoiceNumber = generateInvoiceNumber();
     const paymentToken = `PAY-${Date.now()}-${crypto.randomBytes(16).toString('hex')}`;
 
     // Calculate due date (7 days from now)

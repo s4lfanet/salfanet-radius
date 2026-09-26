@@ -5,6 +5,7 @@ import { randomUUID } from 'crypto';
 import { generateExcelBuffer } from '@/lib/utils/export';
 import ExcelJS from 'exceljs';
 import { generateUniqueReferralCode } from '@/server/services/referral.service';
+import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
 
 function generateCustomerId(prefix = ''): string {
   return prefix + Math.floor(10000000 + Math.random() * 90000000).toString();
@@ -704,10 +705,8 @@ export async function POST(request: NextRequest) {
                 const daysInMonth = new Date(year, month + 1, 0).getDate();
                 invoiceAmount = Math.ceil((daysActive / daysInMonth) * rowProfile.price);
               }
-              const invYear = new Date().getFullYear();
-              const invMonth = String(new Date().getMonth() + 1).padStart(2, '0');
               const invId = randomUUID();
-              const invNumber = `INV-${invYear}${invMonth}-${invId.slice(0, 8).toUpperCase()}`;
+              const invNumber = generateInvoiceNumber();
               await tx.invoice.create({
                 data: {
                   id: invId,
