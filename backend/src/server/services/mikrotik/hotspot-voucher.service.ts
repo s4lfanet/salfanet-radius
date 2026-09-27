@@ -95,6 +95,13 @@ async function connectMikrotik(router: Awaited<ReturnType<typeof getLocalRouterC
     password: router.password || '',
     timeout: 15,
   })
+  // node-routeros' socket connector emits errors (timeouts, "!empty" replies)
+  // as a raw EventEmitter 'error' event, separate from the connect()/write()
+  // promise chain — with no listener, Node treats it as unhandled and kills
+  // the whole process. The uncaughtException filter below only recognizes
+  // "!empty"-shaped errors and re-throws everything else (e.g. a plain
+  // connect timeout), so it was never actually sufficient on its own.
+  api.on('error', (e: any) => console.error(`[MikroTik] RouterOSAPI socket error for ${host}:`, e?.message || e))
 
   await Promise.race([
     api.connect(),

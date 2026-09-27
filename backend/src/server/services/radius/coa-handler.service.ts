@@ -421,6 +421,7 @@ export async function disconnectPPPoEUser(username: string) {
                 timeout: 10,
               }
               const api = new RouterOSAPI(apiOpts)
+              api.on('error', (e: any) => console.error(`[CoA] RouterOSAPI socket error for ${coaTargetIp}:`, e?.message || e))
               await api.connect()
               // Use query filter to only fetch sessions for this user (not all 558 sessions)
               // node-routeros throws UNKNOWNREPLY: !empty when query returns no results
@@ -544,6 +545,7 @@ export async function addToMikrotikAddressList(
             timeout: 10,
           }
           const api = new RouterOSAPI(apiOpts)
+          api.on('error', (e: any) => console.error(`[CoA] RouterOSAPI socket error for ${targetIp}:`, e?.message || e))
           await api.connect()
 
           // Check if already in list
