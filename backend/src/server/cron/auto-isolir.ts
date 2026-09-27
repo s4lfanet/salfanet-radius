@@ -57,7 +57,9 @@ export async function runAutoIsolir(): Promise<{ isolated: number; total: number
       phone: true,
       email: true,
       address: true,
-      profile: { select: { groupName: true } },
+      customerId: true,
+      profile: { select: { groupName: true, name: true } },
+      area: { select: { name: true } },
       router: { select: { id: true, authMode: true } },
     },
   });
@@ -89,7 +91,9 @@ export async function runAutoIsolir(): Promise<{ isolated: number; total: number
       phone: true,
       email: true,
       address: true,
-      profile: { select: { groupName: true } },
+      customerId: true,
+      profile: { select: { groupName: true, name: true } },
+      area: { select: { name: true } },
       router: { select: { id: true, authMode: true } },
     },
   });
@@ -242,7 +246,10 @@ export async function runAutoIsolir(): Promise<{ isolated: number; total: number
         const paymentLink = latestInvoice?.paymentLink || `${company?.baseUrl || ''}/customer`;
         const vars: Record<string, string> = {
           customerName: user.name || user.username,
+          customerId: user.customerId || '-',
           username: user.username,
+          profileName: user.profile?.name || '-',
+          area: (user as any).area?.name || '-',
           address: user.address || '-',
           expiredDate: user.expiredAt
             ? new Date(user.expiredAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
