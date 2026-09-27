@@ -1284,14 +1284,31 @@ function PaymentPromiseTab({ userId, userStatus: _userStatus }: { userId: string
 
   useEffect(() => { loadPromises(); }, [userId]);
 
+  const getCurrentPosition = (): Promise<{ latitude: number; longitude: number } | null> =>
+    new Promise((resolve) => {
+      if (!navigator.geolocation) { resolve(null); return; }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+        () => resolve(null),
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+      );
+    });
+
   const handleCreate = async () => {
     if (!promiseDate) { await showError('Pilih tanggal janji bayar'); return; }
     if (new Date(promiseDate) <= new Date()) { await showError('Tanggal janji harus di masa depan'); return; }
     setSaving(true);
     try {
+      // Best-effort — admin isn't always on-site, so a denied/unavailable
+      // location just means the promise is saved without GPS (unlike the
+      // collector flow, where it's mandatory).
+      const position = await getCurrentPosition();
       const data = await apiAdmin<{ message?: string }>(`/api/pppoe/users/${userId}/promise`, {
         method: 'POST',
-        body: JSON.stringify({ promiseDate, notes: promiseNotes || null }),
+        body: JSON.stringify({
+          promiseDate, notes: promiseNotes || null,
+          ...(position && { latitude: position.latitude, longitude: position.longitude }),
+        }),
       });
       await showSuccess(data.message || 'Janji bayar dibuat. Akses internet dibuka hingga tanggal janji.');
       setShowModal(false);
@@ -1346,8 +1363,22 @@ function PaymentPromiseTab({ userId, userStatus: _userStatus }: { userId: string
               {activePromise.notes && (
                 <p className="text-xs text-muted-foreground mb-2">{activePromise.notes}</p>
               )}
-              <p className="text-[10px] text-muted-foreground">
-                Dibuat: {activePromise.createdAt ? formatWIB(activePromise.createdAt, 'd MMM yyyy') : '-'}
+              <p className="text-[10px] text-muted-foreground flex items-center gap-1.5 flex-wrap">
+                <span>Dibuat: {activePromise.createdAt ? formatWIB(activePromise.createdAt, 'd MMM yyyy') : '-'}</span>
+                {activePromise.createdByRole && (
+                  <span className="px-1 py-0.5 rounded bg-muted text-muted-foreground">
+                    {activePromise.createdByRole === 'collector' ? 'Kolektor' : 'Admin'}
+                  </span>
+                )}
+                {typeof activePromise.latitude === 'number' && typeof activePromise.longitude === 'number' && (
+                  <a
+                    href={`https://www.google.com/maps?q=${activePromise.latitude},${activePromise.longitude}`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-0.5 text-brand-600 dark:text-brand-400 hover:underline"
+                  >
+                    <MapPin className="w-2.5 h-2.5" /> Lihat lokasi GPS
+                  </a>
+                )}
               </p>
             </div>
             <button
@@ -1370,15 +1401,31 @@ function PaymentPromiseTab({ userId, userStatus: _userStatus }: { userId: string
           <summary className="text-xs text-muted-foreground cursor-pointer">Riwayat janji bayar ({promises.length})</summary>
           <div className="space-y-1 mt-2">
             {promises.map(p => (
-              <div key={p.id} className="flex justify-between items-center p-2 bg-muted/20 rounded text-xs">
-                <span>
-                  {formatWIB(p.promiseDate, 'd MMM yyyy')}
-                </span>
-                <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+              <div key={p.id} className="p-2 bg-muted/20 rounded text-xs space-y-1">
+                <div className="flex justify-between items-center gap-2">
+                  <span className="flex items-center gap-1.5 flex-wrap">
+                    {formatWIB(p.promiseDate, 'd MMM yyyy')}
+                    {p.createdByRole && (
+                      <span className="px-1 py-0.5 rounded bg-muted text-muted-foreground text-[10px]">
+                        {p.createdByRole === 'collector' ? 'Kolektor' : 'Admin'}
+                      </span>
+                    )}
+                  </span>
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0 ${
  p.status === 'active' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
  p.status === 'fulfilled' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
  'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
  }`}>{p.status}</span>
+                </div>
+                {typeof p.latitude === 'number' && typeof p.longitude === 'number' && (
+                  <a
+                    href={`https://www.google.com/maps?q=${p.latitude},${p.longitude}`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-0.5 text-brand-600 dark:text-brand-400 hover:underline"
+                  >
+                    <MapPin className="w-2.5 h-2.5" /> Lihat lokasi GPS
+                  </a>
+                )}
               </div>
             ))}
           </div>

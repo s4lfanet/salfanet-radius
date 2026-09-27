@@ -73,10 +73,12 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { promiseDate, notes, invoiceId } = body as {
+    const { promiseDate, notes, invoiceId, latitude, longitude } = body as {
       promiseDate?: string;
       notes?: string;
       invoiceId?: string;
+      latitude?: number;
+      longitude?: number;
     };
 
     if (!promiseDate) {
@@ -119,6 +121,9 @@ export async function POST(
         notes: notes?.trim() || null,
         status: 'active',
         createdByAdminId: authCheck.userId || null,
+        createdByRole: 'admin',
+        latitude: typeof latitude === 'number' ? latitude : null,
+        longitude: typeof longitude === 'number' ? longitude : null,
       },
     });
 
