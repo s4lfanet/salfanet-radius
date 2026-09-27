@@ -6,7 +6,7 @@ import { printInvoiceStandard, printInvoiceThermal } from '@/lib/invoice-print';
 import { BluetoothPrinter, type ThermalReceiptData } from '@/lib/bluetooth-printer';
 import { formatWIB } from '@/lib/timezone';
 import { showError, showSuccess, showWarning } from '@/lib/sweetalert';
-import { Users, Search, CheckCircle, Loader2, ChevronDown, X, Upload, Printer, Bluetooth, MessageCircle, FileText, Wallet, MapPin, Wifi, Calendar, Phone } from 'lucide-react';
+import { Users, Search, CheckCircle, Loader2, ChevronDown, X, Upload, Printer, Bluetooth, MessageCircle, FileText, Wallet, MapPin, Wifi, Calendar, Phone, CalendarClock, LocateFixed } from 'lucide-react';
 
 const PAGE_SIZE = 50;
 const fmtRp = (v: number) => `Rp ${Number(v || 0).toLocaleString('id-ID')}`;
@@ -24,6 +24,12 @@ export default function CollectorBillingPage() {
   const [payLoading, setPayLoading] = useState(false);
   const [proofPreview, setProofPreview] = useState<string | null>(null);
   const [proofFile, setProofFile] = useState<File | null>(null);
+  const [promiseModal, setPromiseModal] = useState<{ userId: string; invoiceId: string; customerName: string } | null>(null);
+  const [promiseDate, setPromiseDate] = useState('');
+  const [promiseNotes, setPromiseNotes] = useState('');
+  const [promiseLoading, setPromiseLoading] = useState(false);
+  const [gpsStatus, setGpsStatus] = useState<'capturing' | 'ok' | 'denied'>('capturing');
+  const [gpsCoords, setGpsCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [btPrinter, setBtPrinter] = useState<BluetoothPrinter | null>(null);
   const [btConnected, setBtConnected] = useState(false);
@@ -275,6 +281,62 @@ export default function CollectorBillingPage() {
       showError(msg);
     } finally {
       setPayLoading(false);
+    }
+  };
+
+  const captureGps = () => {
+    setGpsStatus('capturing');
+    setGpsCoords(null);
+    if (!navigator.geolocation) {
+      setGpsStatus('denied');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGpsCoords({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+        setGpsStatus('ok');
+      },
+      () => setGpsStatus('denied'),
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
+
+  const openPromiseModal = (userId: string, invoiceId: string, customerName: string) => {
+    setPromiseModal({ userId, invoiceId, customerName });
+    setPromiseDate('');
+    setPromiseNotes('');
+    captureGps();
+  };
+
+  const handleCreatePromise = async () => {
+    if (!promiseModal) return;
+    if (!promiseDate) { showWarning('Pilih tanggal janji bayar'); return; }
+    if (new Date(promiseDate) <= new Date()) { showWarning('Tanggal janji harus di masa depan'); return; }
+    if (gpsStatus !== 'ok' || !gpsCoords) {
+      showWarning('Lokasi GPS wajib didapat terlebih dahulu. Aktifkan izin lokasi lalu coba lagi.');
+      return;
+    }
+    setPromiseLoading(true);
+    try {
+      await apiAdmin('/api/collector/promise', {
+        method: 'POST',
+        body: JSON.stringify({
+          userId: promiseModal.userId,
+          invoiceId: promiseModal.invoiceId,
+          promiseDate,
+          notes: promiseNotes || null,
+          latitude: gpsCoords.latitude,
+          longitude: gpsCoords.longitude,
+        }),
+      });
+      showSuccess('Janji bayar tercatat dengan lokasi GPS. Akses internet pelanggan dibuka kembali.');
+      setPromiseModal(null);
+      loadData();
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : 'Gagal membuat janji bayar';
+      showError(msg);
+    } finally {
+      setPromiseLoading(false);
     }
   };
 
@@ -579,6 +641,14 @@ export default function CollectorBillingPage() {
                                                 <Upload className="w-3 h-3" />
                                                 TF
                                               </button>
+                                              <button
+                                                onClick={() => openPromiseModal(u.id, inv.id, u.name)}
+                                                className="px-3 py-2.5 min-h-[40px] text-xs rounded-lg bg-amber-600 text-white font-medium hover:bg-amber-700 transition-all flex items-center gap-1"
+                                                title="Janji Bayar (dengan lokasi GPS)"
+                                              >
+                                                <CalendarClock className="w-3 h-3" />
+                                                Janji
+                                              </button>
                                             </>
                                           )}
                                           {/* Paid: Print + WhatsApp buttons */}
@@ -754,6 +824,76 @@ export default function CollectorBillingPage() {
               >
                 {payLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
                 Konfirmasi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Janji Bayar Modal */}
+      {promiseModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setPromiseModal(null)}>
+          <div className="bg-card border border-border rounded-xl p-6 max-w-sm w-full" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-foreground mb-1">Buat Janji Bayar</h3>
+            <p className="text-sm text-muted-foreground mb-4">{promiseModal.customerName}</p>
+
+            {/* GPS status — mandatory, proves the visit actually happened here */}
+            <div className={`rounded-lg p-3 mb-4 flex items-center gap-2 text-xs ${
+              gpsStatus === 'ok' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
+              gpsStatus === 'denied' ? 'bg-destructive/10 text-destructive' :
+              'bg-muted text-muted-foreground'
+            }`}>
+              {gpsStatus === 'capturing' && <Loader2 className="w-4 h-4 animate-spin shrink-0" />}
+              {gpsStatus === 'ok' && <LocateFixed className="w-4 h-4 shrink-0" />}
+              {gpsStatus === 'denied' && <MapPin className="w-4 h-4 shrink-0" />}
+              <div className="flex-1">
+                {gpsStatus === 'capturing' && 'Mendapatkan lokasi GPS...'}
+                {gpsStatus === 'ok' && gpsCoords && `Lokasi didapat (${gpsCoords.latitude.toFixed(5)}, ${gpsCoords.longitude.toFixed(5)})`}
+                {gpsStatus === 'denied' && 'Gagal mendapat lokasi. Aktifkan izin lokasi lalu coba lagi.'}
+              </div>
+              {gpsStatus === 'denied' && (
+                <button onClick={captureGps} className="shrink-0 text-xs font-semibold underline">Coba lagi</button>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium mb-1 text-foreground">Tanggal Janji Bayar *</label>
+                <input
+                  type="date"
+                  value={promiseDate}
+                  onChange={e => setPromiseDate(e.target.value)}
+                  min={new Date(Date.now() + 86400000).toISOString().slice(0, 10)}
+                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1 text-foreground">Catatan (opsional)</label>
+                <textarea
+                  value={promiseNotes}
+                  onChange={e => setPromiseNotes(e.target.value)}
+                  placeholder="Mis: Janji bayar tanggal gajian..."
+                  rows={3}
+                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded"
+                />
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground mt-3 mb-4">
+              Lokasi GPS Anda saat ini akan dicatat sebagai bukti kunjungan. Akses internet pelanggan akan dibuka hingga tanggal janji.
+            </p>
+
+            <div className="flex gap-2">
+              <button onClick={() => setPromiseModal(null)} className="flex-1 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent">
+                Batal
+              </button>
+              <button
+                onClick={handleCreatePromise}
+                disabled={promiseLoading || gpsStatus !== 'ok'}
+                className="flex-1 py-2 rounded-lg bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {promiseLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarClock className="w-4 h-4" />}
+                Simpan Janji
               </button>
             </div>
           </div>

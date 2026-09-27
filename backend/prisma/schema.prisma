@@ -2542,6 +2542,9 @@ model paymentPromise {
   notes            String?  @db.Text
   status           String   @default("active") // active, fulfilled, broken
   createdByAdminId String?  @map("created_by_admin_id")
+  createdByRole    String?  @map("created_by_role") // 'admin' | 'collector' — who actually captured the GPS
+  latitude         Float?   @map("latitude") // GPS captured at the moment the promise was made — proof of an actual site visit
+  longitude        Float?   @map("longitude")
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
