@@ -6,23 +6,19 @@ export async function seedIsolationTemplates() {
   console.log('🌱 Seeding isolation templates...');
 
   // WhatsApp Template
-  await prisma.isolationTemplate.upsert({
-    where: { id: 'isolation-wa-default' },
-    update: {},
-    create: {
-      id: 'isolation-wa-default',
-      type: 'whatsapp',
-      name: 'Default WhatsApp Isolation Notice',
-      message: `Halo *{{customerName}}* 👋
+  const isolationWaMessage = `Halo *{{customerName}}* 👋
 
 ⚠️ *AKUN ANDA TELAH DIISOLIR*
 
 Akun internet Anda telah dibatasi karena masa berlangganan telah habis.
 
 📋 *Detail Akun:*
-Username: {{username}}
-Alamat: {{address}}
-Expired: {{expiredDate}}
+🆔 ID Pelanggan: {{customerId}}
+👤 Username: {{username}}
+📦 Paket: {{profileName}}
+📍 Area: {{area}}
+🏠 Alamat: {{address}}
+📅 Expired: {{expiredDate}}
 
 🔒 *Status Saat Ini:*
 ✗ Akses internet dibatasi
@@ -45,33 +41,40 @@ Butuh bantuan?
 📧 {{companyEmail}}
 
 Terima kasih,
-*{{companyName}}*`,
-      variables: {
-        customerName: 'Nama pelanggan',
-        username: 'Username PPPoE',
-        address: 'Alamat pelanggan',
-        expiredDate: 'Tanggal expired',
-        rateLimit: 'Rate limit (misal: 64k/64k)',
-        paymentLink: 'Link untuk pembayaran',
-        qrCode: 'QR Code URL',
-        companyName: 'Nama perusahaan',
-        companyPhone: 'No telepon perusahaan',
-        companyEmail: 'Email perusahaan'
-      },
+*{{companyName}}*`;
+  const isolationWaVariables = {
+    customerName: 'Nama pelanggan',
+    customerId: 'ID Pelanggan',
+    username: 'Username PPPoE',
+    profileName: 'Nama paket langganan',
+    area: 'Area/wilayah pelanggan',
+    address: 'Alamat pelanggan',
+    expiredDate: 'Tanggal expired',
+    rateLimit: 'Rate limit (misal: 64k/64k)',
+    paymentLink: 'Link untuk pembayaran',
+    qrCode: 'QR Code URL',
+    companyName: 'Nama perusahaan',
+    companyPhone: 'No telepon perusahaan',
+    companyEmail: 'Email perusahaan'
+  };
+  await prisma.isolationTemplate.upsert({
+    where: { id: 'isolation-wa-default' },
+    update: {
+      message: isolationWaMessage,
+      variables: isolationWaVariables,
+    },
+    create: {
+      id: 'isolation-wa-default',
+      type: 'whatsapp',
+      name: 'Default WhatsApp Isolation Notice',
+      message: isolationWaMessage,
+      variables: isolationWaVariables,
       isActive: true
     }
   });
 
   // Email Template
-  await prisma.isolationTemplate.upsert({
-    where: { id: 'isolation-email-default' },
-    update: {},
-    create: {
-      id: 'isolation-email-default',
-      type: 'email',
-      name: 'Default Email Isolation Notice',
-      subject: '⚠️ Akun Anda Telah Diisolir - {{username}}',
-      message: `<!DOCTYPE html>
+  const isolationEmailMessage = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
@@ -93,21 +96,33 @@ Terima kasih,
       <h1>⚠️ Akun Anda Telah Diisolir</h1>
       <p>Layanan Internet Dibatasi</p>
     </div>
-    
+
     <div class="content">
       <p>Halo <strong>{{customerName}}</strong>,</p>
-      
+
       <div class="alert-box">
         <strong>Pemberitahuan Penting</strong><br>
         Akun internet Anda telah dibatasi karena masa berlangganan telah habis pada <strong>{{expiredDate}}</strong>.
       </div>
-      
+
       <div class="info-box">
         <h3>📋 Detail Akun</h3>
         <table width="100%" cellpadding="5">
           <tr>
-            <td width="150"><strong>Username</strong></td>
+            <td width="150"><strong>ID Pelanggan</strong></td>
+            <td>{{customerId}}</td>
+          </tr>
+          <tr>
+            <td><strong>Username</strong></td>
             <td>{{username}}</td>
+          </tr>
+          <tr>
+            <td><strong>Paket</strong></td>
+            <td>{{profileName}}</td>
+          </tr>
+          <tr>
+            <td><strong>Area</strong></td>
+            <td>{{area}}</td>
           </tr>
           <tr>
             <td><strong>Alamat</strong></td>
@@ -123,37 +138,37 @@ Terima kasih,
           </tr>
         </table>
       </div>
-      
+
       <h3>🔒 Status Saat Ini:</h3>
       <ul>
         <li>✗ Akses internet dibatasi</li>
         <li>✗ Bandwidth terbatas</li>
         <li>✓ Masih bisa login PPPoE</li>
       </ul>
-      
+
       <h3>💡 Cara Mengaktifkan Kembali:</h3>
       <ol>
         <li>Lakukan pembayaran tagihan</li>
         <li>Logout dan login ulang PPPoE Anda</li>
         <li>Akses internet akan aktif otomatis dalam 5-10 menit</li>
       </ol>
-      
+
       <div style="text-align: center;">
         <a href="{{paymentLink}}" class="button">💳 Bayar Sekarang</a>
       </div>
-      
+
       <div class="qr-code">
         <p><strong>Atau Scan QR Code:</strong></p>
         <img src="{{qrCodeImage}}" alt="QR Code" width="200" height="200">
       </div>
-      
+
       <p style="margin-top: 30px;">
         <strong>Butuh Bantuan?</strong><br>
         📞 WhatsApp: {{companyPhone}}<br>
         📧 Email: {{companyEmail}}
       </p>
     </div>
-    
+
     <div class="footer">
       <p>{{companyName}} © 2025</p>
       <p style="font-size: 12px; color: #6b7280;">
@@ -162,32 +177,43 @@ Terima kasih,
     </div>
   </div>
 </body>
-</html>`,
-      variables: {
-        customerName: 'Nama pelanggan',
-        username: 'Username PPPoE',
-        address: 'Alamat pelanggan',
-        expiredDate: 'Tanggal expired (format: 5 November 2024)',
-        rateLimit: 'Rate limit (misal: 64k/64k)',
-        paymentLink: 'URL link untuk pembayaran',
-        qrCodeImage: 'URL image QR code',
-        companyName: 'Nama perusahaan',
-        companyPhone: 'No telepon perusahaan',
-        companyEmail: 'Email perusahaan'
-      },
+</html>`;
+  const isolationEmailVariables = {
+    customerName: 'Nama pelanggan',
+    customerId: 'ID Pelanggan',
+    username: 'Username PPPoE',
+    profileName: 'Nama paket langganan',
+    area: 'Area/wilayah pelanggan',
+    address: 'Alamat pelanggan',
+    expiredDate: 'Tanggal expired (format: 5 November 2024)',
+    rateLimit: 'Rate limit (misal: 64k/64k)',
+    paymentLink: 'URL link untuk pembayaran',
+    qrCodeImage: 'URL image QR code',
+    companyName: 'Nama perusahaan',
+    companyPhone: 'No telepon perusahaan',
+    companyEmail: 'Email perusahaan'
+  };
+  await prisma.isolationTemplate.upsert({
+    where: { id: 'isolation-email-default' },
+    update: {
+      subject: '⚠️ Akun Anda Telah Diisolir - {{username}}',
+      message: isolationEmailMessage,
+      variables: isolationEmailVariables,
+    },
+    create: {
+      id: 'isolation-email-default',
+      type: 'email',
+      name: 'Default Email Isolation Notice',
+      subject: '⚠️ Akun Anda Telah Diisolir - {{username}}',
+      message: isolationEmailMessage,
+      variables: isolationEmailVariables,
       isActive: true
     }
   });
 
   // HTML Landing Page Template
-  await prisma.isolationTemplate.upsert({
-    where: { id: 'isolation-html-default' },
-    update: {},
-    create: {
-      id: 'isolation-html-default',
-      type: 'html_page',
-      name: 'Default HTML Landing Page',
-      message: `<!DOCTYPE html>
+  const isolationHtmlName = 'Default HTML Landing Page';
+  const isolationHtmlMessage = `<!DOCTYPE html>
 <html lang="id">
 <head>
   <meta charset="UTF-8">
@@ -305,12 +331,24 @@ Terima kasih,
         <h3 style="margin-bottom: 15px;">👤 Informasi Akun</h3>
         <table>
           <tr>
+            <td>ID Pelanggan</td>
+            <td><strong>{{customerId}}</strong></td>
+          </tr>
+          <tr>
             <td>Username</td>
             <td><strong>{{username}}</strong></td>
           </tr>
           <tr>
             <td>Nama</td>
             <td><strong>{{customerName}}</strong></td>
+          </tr>
+          <tr>
+            <td>Paket</td>
+            <td><strong>{{profileName}}</strong></td>
+          </tr>
+          <tr>
+            <td>Area</td>
+            <td><strong>{{area}}</strong></td>
           </tr>
           <tr>
             <td>Alamat</td>
@@ -368,20 +406,36 @@ Terima kasih,
     setTimeout(function() { location.reload(); }, 300000);
   </script>
 </body>
-</html>`,
-      variables: {
-        username: 'Username PPPoE',
-        customerName: 'Nama pelanggan',
-        address: 'Alamat pelanggan',
-        expiredDate: 'Tanggal expired',
-        rateLimit: 'Rate limit bandwidth',
-        paymentLink: 'URL link pembayaran',
-        qrCodeImage: 'URL image QR code',
-        companyName: 'Nama perusahaan',
-        companyPhone: 'No telepon dengan format (0895...)',
-        companyPhoneClean: 'No telepon tanpa karakter (62895...)',
-        companyEmail: 'Email perusahaan'
-      },
+</html>`;
+  const isolationHtmlVariables = {
+    customerId: 'ID Pelanggan',
+    username: 'Username PPPoE',
+    customerName: 'Nama pelanggan',
+    profileName: 'Nama paket langganan',
+    area: 'Area/wilayah pelanggan',
+    address: 'Alamat pelanggan',
+    expiredDate: 'Tanggal expired',
+    rateLimit: 'Rate limit bandwidth',
+    paymentLink: 'URL link pembayaran',
+    qrCodeImage: 'URL image QR code',
+    companyName: 'Nama perusahaan',
+    companyPhone: 'No telepon dengan format (0895...)',
+    companyPhoneClean: 'No telepon tanpa karakter (62895...)',
+    companyEmail: 'Email perusahaan'
+  };
+  await prisma.isolationTemplate.upsert({
+    where: { id: 'isolation-html-default' },
+    update: {
+      name: isolationHtmlName,
+      message: isolationHtmlMessage,
+      variables: isolationHtmlVariables,
+    },
+    create: {
+      id: 'isolation-html-default',
+      type: 'html_page',
+      name: isolationHtmlName,
+      message: isolationHtmlMessage,
+      variables: isolationHtmlVariables,
       isActive: true
     }
   });
