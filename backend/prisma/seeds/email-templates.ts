@@ -1306,6 +1306,56 @@ export const emailTemplates = [
 </html>`,
     isActive: true,
   },
+  {
+    type: 'account-stopped',
+    name: 'Layanan Dihentikan',
+    subject: '🚫 Layanan Anda Telah Dihentikan - {{username}}',
+    htmlBody: `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f7f9; }
+    .container { max-width: 600px; margin: 20px auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .header { background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 100%); padding: 30px 20px; text-align: center; color: white; }
+    .content { padding: 30px 20px; }
+    .alert-box { background: #fee2e2; border-left: 4px solid #dc2626; padding: 15px; margin: 20px 0; border-radius: 4px; }
+    .footer { background: #f8fafc; padding: 20px; text-align: center; color: #64748b; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 style="margin: 0; font-size: 24px;">🚫 Layanan Dihentikan</h1>
+    </div>
+    <div class="content">
+      <p>Halo <strong>{{customerName}}</strong>,</p>
+      <div class="alert-box">
+        <p style="margin: 0; color: #7f1d1d; font-size: 14px; line-height: 1.6;">
+          Layanan internet Anda telah <strong>dihentikan sepenuhnya</strong> karena tagihan belum dibayar
+          selama lebih dari 30 hari sejak diisolir.
+        </p>
+      </div>
+      <div class="success-box" style="background: #f8fafc; border-radius: 8px; padding: 15px; margin: 20px 0;">
+        <p style="margin: 5px 0;"><strong>ID Pelanggan:</strong> {{customerId}}</p>
+        <p style="margin: 5px 0;"><strong>Username:</strong> {{username}}</p>
+        <p style="margin: 5px 0;"><strong>Paket:</strong> {{profileName}}</p>
+        <p style="margin: 5px 0;"><strong>Area:</strong> {{area}}</p>
+        <p style="margin: 5px 0;"><strong>Alamat:</strong> {{address}}</p>
+      </div>
+      <p>Segera lakukan pembayaran tagihan Anda yang tertunda, lalu hubungi kami untuk mengaktifkan kembali layanan.</p>
+      <p style="margin-top: 30px;">Hormat kami,<br><strong>{{companyName}}</strong></p>
+    </div>
+    <div class="footer">
+      <p>📞 Hubungi kami: {{companyPhone}}</p>
+      <p>Email otomatis, mohon tidak membalas.</p>
+    </div>
+  </div>
+</body>
+</html>`,
+    isActive: true,
+  },
 ];
 
 export async function seedEmailTemplates(_force = false) {

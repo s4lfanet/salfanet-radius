@@ -22,7 +22,10 @@ export async function runAutoIsolir(): Promise<{ isolated: number; total: number
 
   // Check company settings
   const company = await prisma.company.findFirst({
-    select: { isolationEnabled: true, gracePeriodDays: true, name: true, phone: true },
+    select: {
+      isolationEnabled: true, gracePeriodDays: true, name: true, phone: true, email: true,
+      baseUrl: true, isolationRateLimit: true, isolationNotifyWhatsapp: true, isolationNotifyEmail: true,
+    },
   });
   const isolationEnabled = company?.isolationEnabled !== false;
   if (!isolationEnabled) {
@@ -51,6 +54,9 @@ export async function runAutoIsolir(): Promise<{ isolated: number; total: number
       profileId: true,
       routerId: true,
       expiredAt: true,
+      phone: true,
+      email: true,
+      address: true,
       profile: { select: { groupName: true } },
       router: { select: { id: true, authMode: true } },
     },
@@ -80,6 +86,9 @@ export async function runAutoIsolir(): Promise<{ isolated: number; total: number
       profileId: true,
       routerId: true,
       expiredAt: true,
+      phone: true,
+      email: true,
+      address: true,
       profile: { select: { groupName: true } },
       router: { select: { id: true, authMode: true } },
     },
@@ -219,6 +228,62 @@ export async function runAutoIsolir(): Promise<{ isolated: number; total: number
         companyPhone: company?.phone || '',
       }).catch((e) => console.error(`[AUTO_ISOLIR] Push failed for ${user.username}:`, e?.message || e));
 
+      // 6. WhatsApp / email isolation notice — the isolation_templates table
+      // (WA + email content, editable in Settings > Isolir) and the
+      // isolationNotifyWhatsapp/isolationNotifyEmail toggles both already
+      // existed, but nothing ever actually sent them — isolation was silent
+      // beyond the push notification above.
+      try {
+        const latestInvoice = await prisma.invoice.findFirst({
+          where: { userId: user.id, status: { in: ['PENDING', 'OVERDUE'] } },
+          orderBy: { dueDate: 'desc' },
+          select: { paymentLink: true },
+        });
+        const paymentLink = latestInvoice?.paymentLink || `${company?.baseUrl || ''}/customer`;
+        const vars: Record<string, string> = {
+          customerName: user.name || user.username,
+          username: user.username,
+          address: user.address || '-',
+          expiredDate: user.expiredAt
+            ? new Date(user.expiredAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
+            : '-',
+          rateLimit: company?.isolationRateLimit || '-',
+          paymentLink,
+          qrCode: paymentLink,
+          companyName: company?.name || '',
+          companyPhone: company?.phone || '',
+          companyEmail: company?.email || '',
+        };
+        const renderIsolation = (tpl: string) =>
+          Object.entries(vars).reduce((msg, [k, v]) => msg.replace(new RegExp(`{{${k}}}`, 'g'), v), tpl);
+
+        if (company?.isolationNotifyWhatsapp && user.phone) {
+          const waTemplate = await prisma.isolationTemplate.findFirst({ where: { type: 'whatsapp', isActive: true } });
+          if (waTemplate) {
+            const { WhatsAppService } = await import('@/server/services/notifications/whatsapp.service');
+            await WhatsAppService.sendMessage({ phone: user.phone, message: renderIsolation(waTemplate.message) });
+          }
+        }
+
+        if (company?.isolationNotifyEmail && user.email) {
+          const emailTemplate = await prisma.isolationTemplate.findFirst({ where: { type: 'email', isActive: true } });
+          if (emailTemplate) {
+            const { EmailService } = await import('@/server/services/notifications/email.service');
+            const emailSettings = await EmailService.getSettings();
+            if (emailSettings?.enabled) {
+              await EmailService.send({
+                to: user.email,
+                toName: user.name || user.username,
+                subject: renderIsolation(emailTemplate.subject || 'Akun Anda Telah Diisolir'),
+                html: renderIsolation(emailTemplate.message),
+              });
+            }
+          }
+        }
+      } catch (e: any) {
+        console.error(`[AUTO_ISOLIR] Isolation notice (WA/email) failed for ${user.username}:`, e?.message || e);
+      }
+
       isolated++;
       const subType = prepaidExpired.find(u => u.id === user.id) ? 'PREPAID' : 'POSTPAID';
       console.log(`[AUTO_ISOLIR] Isolated ${user.username} (${subType}, expired: ${user.expiredAt?.toISOString()})`);
@@ -250,14 +315,23 @@ export async function runAutoStop(): Promise<{ stopped: number; total: number; e
     select: {
       id: true,
       username: true,
+      name: true,
+      phone: true,
+      email: true,
+      address: true,
+      customerId: true,
       password: true,
       ipAddress: true,
       macAddress: true,
       connectionType: true,
       routerId: true,
+      profile: { select: { name: true } },
+      area: { select: { name: true } },
       router: { select: { id: true, authMode: true } },
     },
   });
+
+  const stopCompany = await prisma.company.findFirst({ select: { name: true, phone: true } });
 
   let stopped = 0;
   for (const user of longIsolatedUsers) {
@@ -322,6 +396,55 @@ export async function runAutoStop(): Promise<{ stopped: number; total: number; e
         await disconnectPPPoEUser(user.username);
       } catch (e: any) {
         console.warn(`[AUTO_STOP] CoA disconnect failed for ${user.username}:`, e?.message || e);
+      }
+
+      // Customer notice — service fully stopped after 30 days isolated with
+      // no payment. Previously silent: no WA, no email, no push at all.
+      try {
+        const waTemplate = await prisma.whatsapp_templates.findFirst({ where: { type: 'account-stopped', isActive: true } });
+        if (waTemplate && waTemplate.isActive && user.phone) {
+          const message = waTemplate.message
+            .replace(/{{customerName}}/g, user.name || user.username)
+            .replace(/{{customerId}}/g, user.customerId || '-')
+            .replace(/{{username}}/g, user.username)
+            .replace(/{{profileName}}/g, user.profile?.name || '-')
+            .replace(/{{area}}/g, user.area?.name || '-')
+            .replace(/{{address}}/g, user.address || '-')
+            .replace(/{{companyName}}/g, stopCompany?.name || '')
+            .replace(/{{companyPhone}}/g, stopCompany?.phone || '');
+          const { WhatsAppService } = await import('@/server/services/notifications/whatsapp.service');
+          await WhatsAppService.sendMessage({ phone: user.phone, message });
+        }
+
+        if (user.email) {
+          const emailTemplate = await prisma.emailTemplate.findFirst({ where: { type: 'account-stopped', isActive: true } });
+          if (emailTemplate) {
+            const { EmailService } = await import('@/server/services/notifications/email.service');
+            const emailSettings = await EmailService.getSettings();
+            if (emailSettings?.enabled) {
+              let subject = emailTemplate.subject;
+              let html = emailTemplate.htmlBody;
+              const vars: Record<string, string> = {
+                customerName: user.name || user.username,
+                customerId: user.customerId || '-',
+                username: user.username,
+                profileName: user.profile?.name || '-',
+                area: user.area?.name || '-',
+                address: user.address || '-',
+                companyName: stopCompany?.name || '',
+                companyPhone: stopCompany?.phone || '',
+              };
+              Object.entries(vars).forEach(([k, v]) => {
+                const re = new RegExp(`{{${k}}}`, 'g');
+                subject = subject.replace(re, v);
+                html = html.replace(re, v);
+              });
+              await EmailService.send({ to: user.email, toName: user.name || user.username, subject, html });
+            }
+          }
+        }
+      } catch (e: any) {
+        console.error(`[AUTO_STOP] Notice (WA/email) failed for ${user.username}:`, e?.message || e);
       }
 
       stopped++;

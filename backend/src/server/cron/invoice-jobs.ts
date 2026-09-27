@@ -378,6 +378,16 @@ export async function runInvoiceReminder(): Promise<{ sent: number; skipped: num
         continue;
       }
 
+      // daysUntilDue turns more negative every day once overdue, so without a
+      // floor this fires a brand-new WA+email reminder every single day,
+      // forever — by day 30 the account has already been fully stopped
+      // (runAutoStop) and gets its own one-time notice; keep reminding once
+      // is escalation, reminding daily for months is spam.
+      if (daysUntilDue < -30) {
+        skipped++;
+        continue;
+      }
+
       // ─── Idempotency: atomically claim this reminder BEFORE sending ───────
       // Update sentReminders first — if another instance already claimed it,
       // the update will be a no-op (we re-check sentDays inside transaction).

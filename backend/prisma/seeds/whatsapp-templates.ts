@@ -424,6 +424,32 @@ Terima kasih telah menjadi pelanggan setia kami! 🙏
 ☎️ {{companyPhone}}`,
     isActive: true,
   },
+  {
+    id: 'wa-account-stopped',
+    type: 'account-stopped',
+    name: 'Layanan Dihentikan',
+    message: `🚫 *LAYANAN ANDA TELAH DIHENTIKAN*
+
+Halo {{customerName}},
+
+Layanan internet Anda telah *dihentikan sepenuhnya* karena tagihan belum dibayar selama lebih dari 30 hari sejak diisolir.
+
+━━━━━━━━━━━━━━━━━━━━━━
+🆔 ID Pelanggan: {{customerId}}
+👤 Username: {{username}}
+📦 Paket: {{profileName}}
+📍 Area: {{area}}
+🏠 Alamat: {{address}}
+
+💡 *Cara Mengaktifkan Kembali:*
+Segera lakukan pembayaran tagihan Anda yang tertunda, lalu hubungi kami untuk mengaktifkan kembali layanan.
+
+Butuh bantuan?
+📞 {{companyPhone}}
+
+{{companyName}}`,
+    isActive: true,
+  },
 
   // =============================================
   // BROADCAST & MARKETING (4)
