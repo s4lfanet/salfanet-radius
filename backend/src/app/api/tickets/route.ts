@@ -293,6 +293,9 @@ export async function POST(req: NextRequest) {
 // PUT - Update ticket (status, priority, assign, etc)
 export async function PUT(req: NextRequest) {
   try {
+    const authCheck = await requirePermission('customers.edit');
+    if (!authCheck.authorized) return authCheck.response;
+
     const body = await req.json();
     const {
       id,
@@ -374,6 +377,9 @@ export async function PUT(req: NextRequest) {
 // DELETE - Delete ticket
 export async function DELETE(req: NextRequest) {
   try {
+    const authCheck = await requirePermission('customers.edit');
+    if (!authCheck.authorized) return authCheck.response;
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 

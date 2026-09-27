@@ -38,6 +38,11 @@ export async function POST(request: NextRequest) {
             timeout: 5,
             tls: false,
           });
+          // node-routeros can emit a raw EventEmitter 'error' outside the
+          // promise chain (timeouts, malformed replies) — unhandled, that
+          // crashes the whole process instead of just this request. See the
+          // same guard in ppp-secret.service.ts / active-sessions.service.ts.
+          conn.on('error', (e: any) => console.error(`[ROUTER_STATUS] RouterOSAPI socket error for ${router.name}:`, e?.message || e));
 
           await conn.connect();
 
