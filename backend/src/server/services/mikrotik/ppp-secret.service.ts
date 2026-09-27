@@ -323,6 +323,15 @@ export async function listPppActive(routerId: string): Promise<Set<string>> {
       password: router.password || '',
       timeout: 15,
     })
+    // node-routeros' underlying socket connector emits a raw EventEmitter
+    // 'error' event (e.g. on a timeout or a malformed "!empty" reply) that is
+    // completely separate from the connect()/write() promise chain below.
+    // With no listener attached, Node treats that as an unhandled error and
+    // crashes the whole process — this was silently killing the backend
+    // every ~10s once online-status started polling this router on a tight
+    // interval. Attaching a listener here is what makes it just an error,
+    // not a process-ending event.
+    api.on('error', (e: any) => console.error(`[PPP_ACTIVE] RouterOSAPI socket error for ${host}:`, e?.message || e))
     await Promise.race([
       api.connect(),
       new Promise<never>((_, reject) =>
