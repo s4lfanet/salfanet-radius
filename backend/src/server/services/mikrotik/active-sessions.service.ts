@@ -92,6 +92,11 @@ export async function listPppActiveDetailed(routerId: string): Promise<MikrotikA
       password: router.password || '',
       timeout: 15,
     })
+    // See ppp-secret.service.ts's listPppActive for why this is required —
+    // node-routeros can emit a raw EventEmitter 'error' outside the promise
+    // chain, which otherwise crashes the whole process. This function is
+    // polled every 30s from the customer dashboard, making it a hot path.
+    api.on('error', (e: any) => console.error(`[ACTIVE_SESSIONS] RouterOSAPI socket error for ${host}:`, e?.message || e))
     await Promise.race([
       api.connect(),
       new Promise<never>((_, reject) =>
@@ -167,6 +172,7 @@ export async function listHotspotActiveDetailed(routerId: string): Promise<Mikro
       password: router.password || '',
       timeout: 15,
     })
+    api.on('error', (e: any) => console.error(`[ACTIVE_SESSIONS] RouterOSAPI socket error for ${host}:`, e?.message || e))
     await Promise.race([
       api.connect(),
       new Promise<never>((_, reject) =>
