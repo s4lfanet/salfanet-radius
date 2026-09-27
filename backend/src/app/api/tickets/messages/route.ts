@@ -1,5 +1,30 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
+import { requirePermission } from '@/server/middleware/api-auth';
+
+/**
+ * Resolves who is calling: an admin/technician (NextAuth session, checked via
+ * `permission`) or a customer (Bearer token against `customerSession`, same
+ * dual-auth pattern already used by GET /api/tickets). Returns null and lets
+ * the caller respond 401 when neither identity is valid — this file
+ * previously had NO auth check at all on GET/POST/DELETE, letting anyone who
+ * knew or guessed a ticketId read internal staff notes, post messages under
+ * any spoofed sender name, or delete messages outright.
+ */
+async function resolveTicketCaller(req: NextRequest, permission: string): Promise<{ isStaff: boolean; customerUserId: string | null } | null> {
+  const authCheck = await requirePermission(permission);
+  if (authCheck.authorized) return { isStaff: true, customerUserId: null };
+
+  const bearerToken = req.headers.get('authorization')?.replace('Bearer ', '');
+  if (bearerToken) {
+    const customerSession = await prisma.customerSession.findFirst({
+      where: { token: bearerToken, verified: true, expiresAt: { gte: new Date() } },
+      select: { userId: true },
+    });
+    if (customerSession) return { isStaff: false, customerUserId: customerSession.userId };
+  }
+  return null;
+}
 
 // Send WhatsApp notification for new reply
 async function sendReplyNotification(
@@ -58,15 +83,29 @@ async function sendReplyNotification(
 // GET - Get messages for a ticket
 export async function GET(req: NextRequest) {
   try {
+    const caller = await resolveTicketCaller(req, 'customers.view');
+    if (!caller) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const ticketId = searchParams.get('ticketId');
-    const includeInternal = searchParams.get('includeInternal') === 'true';
+    // Internal staff notes are never sent to a customer caller, regardless
+    // of what the query string asks for.
+    const includeInternal = caller.isStaff && searchParams.get('includeInternal') === 'true';
 
     if (!ticketId) {
       return NextResponse.json(
         { error: 'Ticket ID is required' },
         { status: 400 }
       );
+    }
+
+    if (!caller.isStaff) {
+      const ticket = await prisma.ticket.findUnique({ where: { id: ticketId }, select: { customerId: true } });
+      if (!ticket || ticket.customerId !== caller.customerUserId) {
+        return NextResponse.json({ error: 'Ticket not found' }, { status: 404 });
+      }
     }
 
     const where: any = { ticketId };
@@ -93,8 +132,13 @@ export async function GET(req: NextRequest) {
 // POST - Add message/reply to ticket
 export async function POST(req: NextRequest) {
   try {
+    const caller = await resolveTicketCaller(req, 'customers.edit');
+    if (!caller) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await req.json();
-    const {
+    let {
       ticketId,
       senderType,
       senderId,
@@ -120,6 +164,18 @@ export async function POST(req: NextRequest) {
         { error: 'Ticket not found' },
         { status: 404 }
       );
+    }
+
+    // A customer caller can only post to their own ticket, only as
+    // themselves, and never as an internal staff-only note — otherwise
+    // they could spoof a staff reply or an internal note on any ticket.
+    if (!caller.isStaff) {
+      if (ticket.customerId !== caller.customerUserId) {
+        return NextResponse.json({ error: 'Ticket not found' }, { status: 404 });
+      }
+      senderType = 'CUSTOMER';
+      senderId = caller.customerUserId;
+      isInternal = false;
     }
 
     // Create message
@@ -222,6 +278,9 @@ export async function POST(req: NextRequest) {
 // DELETE - Delete message
 export async function DELETE(req: NextRequest) {
   try {
+    const authCheck = await requirePermission('customers.edit');
+    if (!authCheck.authorized) return authCheck.response;
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 
