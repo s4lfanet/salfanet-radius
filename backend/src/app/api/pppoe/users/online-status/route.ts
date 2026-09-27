@@ -93,6 +93,31 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // 4. For RADIUS-auth routers, cross-check anyone radacct says is offline
+    //    against a live MikroTik query too. Accounting can go stale for
+    //    reasons unrelated to whether the session is actually up — e.g. a
+    //    NAS IP change whose FreeRADIUS client-list sync/restart hasn't
+    //    landed yet, a dropped interim-update, or a FreeRADIUS restart
+    //    mid-session — while /ppp/active on the router itself is always the
+    //    live truth. Scoped to only the routers with at least one such user,
+    //    so this stays a no-op on the common, already-in-sync case.
+    const radiusRouterIds = new Set<string>();
+    const radiusUsersNotYetOnline: string[] = [];
+    for (const u of onlineUsers) {
+      if (u.router?.id && (u.router.authMode || 'local') === 'radius' && !onlineSet.has(u.username)) {
+        radiusRouterIds.add(u.router.id);
+        radiusUsersNotYetOnline.push(u.username);
+      }
+    }
+    if (radiusRouterIds.size > 0) {
+      const pppActiveNames = await batchListPppActive([...radiusRouterIds]);
+      for (const name of pppActiveNames) {
+        if (radiusUsersNotYetOnline.includes(name)) {
+          onlineSet.add(name);
+        }
+      }
+    }
+
     const online = [...onlineSet];
     return ok({
       online,
