@@ -10,6 +10,13 @@ const prisma = new PrismaClient();
 // Track last restart time to prevent concurrent restarts
 let lastRestartTime = 0;
 const RESTART_COOLDOWN = 3000; // 3 seconds cooldown
+// Guards a single pending "catch-up" restart when a caller arrives inside the
+// cooldown window with a real config change — without this, that change (e.g.
+// a corrected router IP typed right after a first save, or any of the dozen
+// other call sites racing during a bulk sync) would sync to disk but never
+// actually get applied, since the cooldown used to gate syncNasClients()
+// itself, not just the restart.
+let pendingRestartTimer: NodeJS.Timeout | null = null;
 
 // Path to the auto-generated NAS clients file
 const NAS_CLIENTS_FILE = '/etc/freeradius/3.0/clients.d/nas-from-db.conf';
@@ -185,43 +192,56 @@ export async function syncNasClients(): Promise<boolean> {
   }
 }
 
-/**
- * Restart FreeRADIUS service
- * Requires sudoers permission for PM2 user
- */
-export async function reloadFreeRadius(): Promise<void> {
-  const now = Date.now();
-  
-  // Prevent concurrent restarts
-  if (now - lastRestartTime < RESTART_COOLDOWN) {
-    console.log('FreeRADIUS restart skipped (cooldown active)');
-    return;
-  }
-
+async function restartFreeRadiusService(): Promise<void> {
   try {
-    lastRestartTime = now;
-
-    // Sync NAS clients to clients.d before restart — only restart if config changed
-    const configChanged = await syncNasClients();
-
-    if (!configChanged) {
-      console.log('[FreeRADIUS] Config unchanged, skipping restart');
-      return;
-    }
-
-    // Restart FreeRADIUS service (PM2 runs as root, no sudo needed)
+    lastRestartTime = Date.now();
     const { stdout: _stdout, stderr } = await execAsync('systemctl restart freeradius', {
       timeout: 10000, // 10 second timeout
     });
-
     if (stderr) {
       console.error('FreeRADIUS restart stderr:', stderr);
     }
-
     console.log('FreeRADIUS restarted successfully');
   } catch (error: any) {
     console.error('Failed to restart FreeRADIUS:', error.message);
     // Don't throw error - NAS update is more important
     // FreeRADIUS can be restarted manually if needed
   }
+}
+
+/**
+ * Sync NAS clients to disk and restart FreeRADIUS if the config changed.
+ * Requires sudoers permission for PM2 user.
+ *
+ * The config write (syncNasClients) ALWAYS runs — it's a cheap file diff,
+ * and skipping it used to mean a real NAS/IP change silently never reached
+ * disk at all. Only the actual `systemctl restart` is cooldown-protected,
+ * to avoid restart storms when many call sites (bulk sync, profile sync,
+ * router edits, ...) fire in quick succession. If a change lands inside
+ * the cooldown window, it schedules exactly one catch-up restart instead
+ * of dropping the change — otherwise a router IP corrected a second time
+ * right after the first save (or any change racing a bulk operation)
+ * would sync to nas-from-db.conf but FreeRADIUS would keep running on the
+ * stale client list until some unrelated later action happened to restart it.
+ */
+export async function reloadFreeRadius(): Promise<void> {
+  const configChanged = await syncNasClients();
+  if (!configChanged) {
+    console.log('[FreeRADIUS] Config unchanged, skipping restart');
+    return;
+  }
+
+  const elapsed = Date.now() - lastRestartTime;
+  if (elapsed >= RESTART_COOLDOWN) {
+    await restartFreeRadiusService();
+    return;
+  }
+
+  console.log(`FreeRADIUS restart deferred (cooldown active, ${RESTART_COOLDOWN - elapsed}ms remaining)`);
+  if (pendingRestartTimer) return; // a catch-up restart is already scheduled
+
+  pendingRestartTimer = setTimeout(() => {
+    pendingRestartTimer = null;
+    restartFreeRadiusService().catch((e) => console.error('[FreeRADIUS] Deferred restart failed:', e?.message || e));
+  }, RESTART_COOLDOWN - elapsed);
 }
