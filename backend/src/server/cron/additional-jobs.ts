@@ -6,6 +6,7 @@
 import { prisma } from '@/server/db/client';
 import { nowWIB } from '@/lib/timezone';
 import { listPppActive } from '@/server/services/mikrotik/ppp-secret.service';
+import { listPppActiveDetailed, parseUptime, type MikrotikActiveSession } from '@/server/services/mikrotik/active-sessions.service';
 import { fetchAllVoucherStatusesFromMikrotik } from '@/server/services/mikrotik/hotspot-voucher.service';
 import { syncVoucherStatusFromRadius } from '@/server/services/radius/hotspot-sync.service';
 import { fetchLiveHotspotTrafficMap } from '@/server/services/radius/live-hotspot-traffic';
@@ -674,76 +675,119 @@ export async function runPppoeSessionSync(): Promise<{ synced: number; closed: n
       console.log(`[PPPOE_SESSION_SYNC] All router APIs failed — skipped stale-close for ${openSessions.length} sessions`);
     }
 
-    // ── Create synthetic radacct entries for MikroTik-active users not in radacct ──
-    // When MikroTik doesn't send RADIUS accounting (e.g. accounting not configured,
-    // or just migrated to RADIUS mode), radacct is empty but users are actually online.
-    // Create synthetic radacct rows from MikroTik API data so dashboard/sessions
-    // page can display them with traffic counters and uptime.
+    // ── Synthetic radacct entries for MikroTik-active users not in radacct ──
+    // When MikroTik's RADIUS accounting isn't reaching us (accounting not
+    // configured, NAS IP not yet in FreeRADIUS clients, a Start packet lost
+    // across a FreeRADIUS restart), radacct has no open row for a user who is
+    // actually online. We create one so the sessions page, dashboard and
+    // billing see them.
+    //
+    // These rows used to be written with empty framedipaddress /
+    // callingstationid, zero bytes and acctstarttime = now, because this job
+    // only fetched usernames from MikroTik — so the Sesi PPPoE page showed
+    // "-" for IP and MAC. They now carry the live session's IP, MAC, uptime
+    // and counters, and open synthetic rows are refreshed on every run, which
+    // also repairs rows written before this fix.
     let created = 0;
     if (anySuccess) {
       const onlineRadacctUsernames = new Set(openSessions.map(s => s.username));
-      // Collect all active MikroTik usernames across all routers
       const allMtActiveUsernames = new Set<string>();
       for (const [, activeSet] of routerActiveMap) {
         for (const u of activeSet) allMtActiveUsernames.add(u);
       }
-      // Find MikroTik-active users NOT in radacct
       const missingFromRadacct = [...allMtActiveUsernames].filter(u => !onlineRadacctUsernames.has(u));
-      if (missingFromRadacct.length > 0) {
-        // Look up which users are registered in pppoe_users (only create for registered)
-        const registeredUsers = await prisma.pppoeUser.findMany({
-          where: { username: { in: missingFromRadacct } },
-          select: { username: true, routerId: true },
-        });
-        for (const user of registeredUsers) {
-          try {
-            // Find router NAS IP for this user
-            const router = user.routerId
-              ? await prisma.router.findUnique({
-                  where: { id: user.routerId },
-                  select: { nasname: true, ipAddress: true },
-                })
-              : null;
-            if (!router) continue;
-            const nasIp = router.nasname || router.ipAddress || '';
-            // Check if synthetic entry already exists (avoid duplicates)
-            const existing = await prisma.radacct.findFirst({
-              where: {
-                username: user.username,
-                acctstoptime: null,
-              },
-              select: { radacctid: true },
-            });
-            if (existing) continue;
-            // Create synthetic radacct entry
-            await prisma.$executeRaw`
-              INSERT INTO radacct (
-                acctsessionid, acctuniqueid, username, realm,
-                nasipaddress, nasportid, nasporttype,
-                acctstarttime, acctupdatetime, acctstoptime,
-                acctsessiontime, acctauthentic, connectinfo_start,
-                acctinputoctets, acctoutputoctets,
-                calledstationid, callingstationid, acctterminatecause,
-                servicetype, framedprotocol, framedipaddress
-              ) VALUES (
-                ${'mt-sync-' + Date.now() + '-' + user.username.slice(0, 8)},
-                ${'mt-' + user.username + '-' + Date.now()},
-                ${user.username},
-                NULL,
-                ${nasIp},
-                '', 'Ethernet',
-                ${now}, ${now}, NULL,
-                0, 'RADIUS', '',
-                0, 0,
-                '', '', '',
-                'Framed-User', 'PPP', ''
-              )
-            `;
-            created++;
-          } catch (e: any) {
-            // Non-fatal — skip this user
-            console.error(`[PPPOE_SESSION_SYNC] Failed to create synthetic radacct for ${user.username}:`, e?.message);
-          }
+      const registeredUsers = missingFromRadacct.length > 0
+        ? await prisma.pppoeUser.findMany({
+            where: { username: { in: missingFromRadacct } },
+            select: { username: true, routerId: true },
+          })
+        : [];
+      const syntheticOpen = await prisma.radacct.findMany({
+        where: { acctstoptime: null, acctsessionid: { startsWith: 'mt-sync-' } },
+        select: { radacctid: true, username: true },
+      });
+
+      // Live per-session detail (IP, MAC, uptime, bytes), fetched only when
+      // there is something to create or refresh.
+      const live = new Map<string, MikrotikActiveSession>();
+      if (registeredUsers.length > 0 || syntheticOpen.length > 0) {
+        const detailed = await Promise.allSettled(routers.map(r => listPppActiveDetailed(r.id)));
+        for (const d of detailed) {
+          if (d.status !== 'fulfilled') continue;
+          for (const s of d.value) if (!live.has(s.username)) live.set(s.username, s);
+        }
+      }
+      const startFromUptime = (s?: MikrotikActiveSession) => {
+        const secs = s ? parseUptime(s.uptime) : 0;
+        return { secs, start: secs > 0 ? new Date(now.getTime() - secs * 1000) : now };
+      };
+
+      for (const user of registeredUsers) {
+        try {
+          const router = user.routerId
+            ? await prisma.router.findUnique({
+                where: { id: user.routerId },
+                select: { nasname: true, ipAddress: true },
+              })
+            : null;
+          if (!router) continue;
+          const nasIp = router.nasname || router.ipAddress || '';
+          const existing = await prisma.radacct.findFirst({
+            where: { username: user.username, acctstoptime: null },
+            select: { radacctid: true },
+          });
+          if (existing) continue;
+          const s = live.get(user.username);
+          const { secs, start } = startFromUptime(s);
+          await prisma.$executeRaw`
+            INSERT INTO radacct (
+              acctsessionid, acctuniqueid, username, realm,
+              nasipaddress, nasportid, nasporttype,
+              acctstarttime, acctupdatetime, acctstoptime,
+              acctsessiontime, acctauthentic, connectinfo_start,
+              acctinputoctets, acctoutputoctets,
+              calledstationid, callingstationid, acctterminatecause,
+              servicetype, framedprotocol, framedipaddress
+            ) VALUES (
+              ${'mt-sync-' + Date.now() + '-' + user.username.slice(0, 8)},
+              ${'mt-' + user.username + '-' + Date.now()},
+              ${user.username},
+              NULL,
+              ${nasIp},
+              '', 'Ethernet',
+              ${start}, ${now}, NULL,
+              ${secs}, 'RADIUS', '',
+              ${s?.rxBytes ?? 0}, ${s?.txBytes ?? 0},
+              '', ${(s?.macAddress ?? '').slice(0, 50)}, '',
+              'Framed-User', 'PPP', ${(s?.ipAddress ?? '').slice(0, 15)}
+            )
+          `;
+          created++;
+        } catch (e: any) {
+          console.error(`[PPPOE_SESSION_SYNC] Failed to create synthetic radacct for ${user.username}:`, e?.message);
+        }
+      }
+
+      // Refresh open synthetic rows (FreeRADIUS never sends interim updates
+      // for them, so this job is the only thing keeping them current).
+      for (const row of syntheticOpen) {
+        const s = live.get(row.username);
+        if (!s) continue;
+        try {
+          const { secs } = startFromUptime(s);
+          await prisma.radacct.update({
+            where: { radacctid: row.radacctid },
+            data: {
+              framedipaddress: (s.ipAddress ?? '').slice(0, 15),
+              callingstationid: (s.macAddress ?? '').slice(0, 50),
+              acctupdatetime: now,
+              acctsessiontime: secs,
+              acctinputoctets: BigInt(s.rxBytes || 0),
+              acctoutputoctets: BigInt(s.txBytes || 0),
+            },
+          });
+        } catch (e: any) {
+          console.error(`[PPPOE_SESSION_SYNC] Failed to refresh synthetic radacct for ${row.username}:`, e?.message);
         }
       }
     }

@@ -5,6 +5,10 @@ import { getRecentActivities } from "@/server/services/activity-log.service";
 import { nowWIB, startOfDayWIBtoUTC, WIB_TIMEZONE } from "@/lib/timezone";
 import { formatInTimeZone } from 'date-fns-tz';
 import { batchFetchMikrotikActiveSessions } from "@/server/services/mikrotik/active-sessions.service";
+import { exec } from "child_process";
+import { promisify } from "util";
+
+const execAsync = promisify(exec);
 
 // Disable caching for this route - always fetch fresh data
 export const dynamic = 'force-dynamic';
@@ -460,19 +464,43 @@ export async function GET(request: NextRequest) {
     const activities = await getRecentActivities(10);
 
     // ==================== System Status ====================
-    let radiusStatus = false;
     const databaseStatus = true;
     const apiStatus = true;
 
+    // RADIUS status used to be "did any session START in the last hour",
+    // which is not a health check: PPPoE sessions stay up for days, so on a
+    // stable network nobody reconnects within an hour and RADIUS read
+    // offline while running fine. Ask the service manager instead (same
+    // check the FreeRADIUS status page uses — the app and FreeRADIUS share
+    // this host); only if systemctl can't answer, fall back to "accounting
+    // is alive": an open session or any accounting write in the last hour.
+    let radiusStatus = false;
     try {
-      const recentRadacct = await prisma.radacct.findFirst({
-        where: {
-          acctstarttime: { gte: new Date(now.getTime() - 3600000) },
-        },
-      });
-      radiusStatus = !!recentRadacct;
-    } catch (_error) {
-      radiusStatus = false;
+      const { stdout } = await execAsync('systemctl is-active freeradius', { timeout: 3000 });
+      radiusStatus = stdout.trim() === 'active';
+    } catch (err: any) {
+      const out = String(err?.stdout || '').trim();
+      if (out && out !== 'unknown') {
+        // systemctl answered (inactive / failed / activating) — trust it.
+        radiusStatus = false;
+      } else {
+        try {
+          const since = new Date(now.getTime() - 3600000);
+          const alive = await prisma.radacct.findFirst({
+            where: {
+              OR: [
+                { acctstoptime: null },
+                { acctupdatetime: { gte: since } },
+                { acctstarttime: { gte: since } },
+              ],
+            },
+            select: { radacctid: true },
+          });
+          radiusStatus = !!alive;
+        } catch {
+          radiusStatus = false;
+        }
+      }
     }
 
     // ==================== Format currency ====================

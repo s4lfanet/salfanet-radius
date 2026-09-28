@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { ok, serverError } from '@/lib/api-response';
 import { prisma } from '@/server/db/client';
-import { batchListPppActive } from '@/server/services/mikrotik/ppp-secret.service';
+import { resolveOnlineUsernames } from '@/server/services/radius/online-status.service';
 
 /**
  * GET /api/pppoe/users/online-status
@@ -66,57 +66,8 @@ export async function GET(request: NextRequest) {
       return ok({ online: [], onlineCount: 0, total: statusUsers.length, statusMap, timestamp: new Date().toISOString() });
     }
 
-    // 2. Batch fetch active RADIUS sessions (radacct with acctstoptime = NULL)
-    const activeSessions = await prisma.radacct.findMany({
-      where: { username: { in: onlineUsernames }, acctstoptime: null },
-      select: { username: true },
-    });
-    const onlineSet = new Set(activeSessions.map(s => s.username));
-
-    // 3. For local-auth routers, also poll MikroTik /ppp/active
-    //    (local-auth sessions bypass RADIUS accounting)
-    const localRouterIds = new Set<string>();
-    for (const u of onlineUsers) {
-      if (u.router?.id) {
-        const mode = u.router.authMode || 'local';
-        if (mode !== 'radius') {
-          localRouterIds.add(u.router.id);
-        }
-      }
-    }
-    if (localRouterIds.size > 0) {
-      const pppActiveNames = await batchListPppActive([...localRouterIds]);
-      for (const name of pppActiveNames) {
-        if (onlineUsernames.includes(name)) {
-          onlineSet.add(name);
-        }
-      }
-    }
-
-    // 4. For RADIUS-auth routers, cross-check anyone radacct says is offline
-    //    against a live MikroTik query too. Accounting can go stale for
-    //    reasons unrelated to whether the session is actually up — e.g. a
-    //    NAS IP change whose FreeRADIUS client-list sync/restart hasn't
-    //    landed yet, a dropped interim-update, or a FreeRADIUS restart
-    //    mid-session — while /ppp/active on the router itself is always the
-    //    live truth. Scoped to only the routers with at least one such user,
-    //    so this stays a no-op on the common, already-in-sync case.
-    const radiusRouterIds = new Set<string>();
-    const radiusUsersNotYetOnline: string[] = [];
-    for (const u of onlineUsers) {
-      if (u.router?.id && (u.router.authMode || 'local') === 'radius' && !onlineSet.has(u.username)) {
-        radiusRouterIds.add(u.router.id);
-        radiusUsersNotYetOnline.push(u.username);
-      }
-    }
-    if (radiusRouterIds.size > 0) {
-      const pppActiveNames = await batchListPppActive([...radiusRouterIds]);
-      for (const name of pppActiveNames) {
-        if (radiusUsersNotYetOnline.includes(name)) {
-          onlineSet.add(name);
-        }
-      }
-    }
+    // 2. Shared rule: radacct first, then live MikroTik for the rest.
+    const onlineSet = await resolveOnlineUsernames(onlineUsers);
 
     const online = [...onlineSet];
     return ok({

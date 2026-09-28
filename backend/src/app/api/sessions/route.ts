@@ -535,6 +535,26 @@ export async function GET(request: NextRequest) {
       } as typeof s;
     });
 
+    // ── 4e1b. Fill blank IP / MAC on any RADIUS session from live MikroTik ──
+    // 4e1 only covers hotspot. PPPoE rows can also arrive without
+    // framedipaddress / callingstationid — notably the synthetic rows the
+    // pppoe_session_sync cron writes when accounting isn't reaching us — and
+    // the page then showed "-" for a session that is plainly up. Only blanks
+    // are filled; values that accounting reported are never overwritten.
+    allSessions = allSessions.map((s) => {
+      if (s.dataSource !== 'radius') return s;
+      const needIp = !s.framedIpAddress;
+      const needMac = !s.macAddress || s.macAddress === '-';
+      if (!needIp && !needMac) return s;
+      const mt = mtSessionByUsername.get(s.username);
+      if (!mt) return s;
+      return {
+        ...s,
+        framedIpAddress: needIp ? (mt.ipAddress || s.framedIpAddress) : s.framedIpAddress,
+        macAddress: needMac ? (mt.macAddress || s.macAddress) : s.macAddress,
+      } as typeof s;
+    });
+
     // ── 4e2. Remove synthetic voucher sessions not connected to MikroTik ──
     // Synthetic sessions are ACTIVE vouchers with no radacct record. If the
     // voucher is NOT currently active on MikroTik either, the device is
