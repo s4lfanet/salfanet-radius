@@ -5,7 +5,8 @@
 
 import { prisma } from '@/server/db/client';
 import { logActivity } from '@/server/services/activity-log.service';
-import { shouldCreatePppSecret, getMikrotikProfileName, batchListPppActive } from '@/server/services/mikrotik/ppp-secret.service';
+import { shouldCreatePppSecret, getMikrotikProfileName } from '@/server/services/mikrotik/ppp-secret.service';
+import { resolveOnlineUsernames } from '@/server/services/radius/online-status.service';
 import { invalidateKey, CACHE_KEYS } from '@/server/cache/redis';
 import { toUTC } from '@/lib/timezone';
 import { generateUniqueReferralCode } from '@/server/services/referral.service';
@@ -202,37 +203,10 @@ export async function listPppoeUsers(params: ListPppoeUsersParams) {
     prisma.pppoeUser.count({ where: whereClause }),
   ]);
 
-  // Batch fetch all active sessions in ONE query instead of N queries (N+1 fix)
-  const usernames = users.map(u => u.username);
-  const activeSessions = usernames.length > 0
-    ? await prisma.radacct.findMany({
-        where: { username: { in: usernames }, acctstoptime: null },
-        select: { username: true },
-      })
-    : [];
-  const onlineSet = new Set(activeSessions.map(s => s.username));
-
-  // For local routers, also poll MikroTik /ppp/active because
-  // local-auth users bypass RADIUS accounting and won't appear in radacct.
-  // Group users by router to determine which routers need polling.
-  // Skip MikroTik polling for stopped users â€” they can't be online
-  const localRouterIds = new Set<string>();
-  if (params.status !== 'stop') {
-    for (const u of users) {
-      if (u.router && u.router.id) {
-        const mode = u.router.authMode || 'local';
-        if (mode === 'local') {
-          localRouterIds.add(u.router.id);
-        }
-      }
-    }
-  }
-  if (localRouterIds.size > 0) {
-    const pppActiveNames = await batchListPppActive([...localRouterIds]);
-    for (const name of pppActiveNames) {
-      onlineSet.add(name);
-    }
-  }
+  // Same online rule as the online-status endpoint and the detail view
+  // (radius/online-status.service). Stopped users can't be online, so they
+  // are left out of the MikroTik polling.
+  const onlineSet = await resolveOnlineUsernames(users.filter(u => u.status !== 'stop'));
 
   const mappedUsers = users.map(user => ({ ...user, isOnline: onlineSet.has(user.username) }));
 
@@ -275,7 +249,24 @@ export async function getPppoeUserById(id: string) {
     },
   });
 
-  return { user, activeSession };
+  // The detail view used to return no online flag at all, so the admin
+  // app showed every customer as offline on their own detail page.
+  const isOnline = user.status !== 'stop' && (activeSession != null || (await resolveOnlineUsernames([user])).has(user.username));
+
+  // radacctid and the octet counters are BigInt columns; NextResponse.json
+  // can't serialize BigInt, so returning them raw made this endpoint 500
+  // for every customer with an open session (the detail page opened fine
+  // only for customers who were offline).
+  const session = activeSession
+    ? {
+        ...activeSession,
+        radacctid: activeSession.radacctid.toString(),
+        acctinputoctets: Number(activeSession.acctinputoctets ?? 0),
+        acctoutputoctets: Number(activeSession.acctoutputoctets ?? 0),
+      }
+    : null;
+
+  return { user: { ...user, isOnline }, activeSession: session };
 }
 
 // â”€â”€â”€ Create â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
