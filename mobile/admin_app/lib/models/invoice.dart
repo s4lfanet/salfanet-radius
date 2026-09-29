@@ -80,13 +80,7 @@ class Invoice {
   }
 }
 
-const invoiceTypeLabels = {
-  'MONTHLY': 'Bulanan',
-  'INSTALLATION': 'Pemasangan',
-  'ADDON': 'Tambahan',
-  'TOPUP': 'Top Up',
-  'RENEWAL': 'Perpanjangan',
-};
+const invoiceTypeLabels = {'MONTHLY': 'Bulanan', 'INSTALLATION': 'Pemasangan', 'ADDON': 'Tambahan', 'TOPUP': 'Top Up', 'RENEWAL': 'Perpanjangan'};
 
 class InvoiceStats {
   InvoiceStats({

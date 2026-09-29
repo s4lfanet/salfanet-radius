@@ -85,28 +85,34 @@ class _AgentDepositListScreenState extends State<AgentDepositListScreen> {
         figure: formatCurrency(numOf(d, 'amount')),
       ),
       sections: [
-        DetailSection(title: 'Pengirim', rows: [
-          InfoRow('Atas Nama', str(d, 'senderAccountName')),
-          InfoRow('No. Rekening', str(d, 'senderAccountNumber'), copyable: true),
-        ]),
-        DetailSection(title: 'Rekening Tujuan', rows: [
-          InfoRow('Bank', str(d, 'targetBankName')),
-          InfoRow('No. Rekening', str(d, 'targetBankAccountNumber')),
-          InfoRow('Atas Nama', str(d, 'targetBankAccountName')),
-        ]),
-        DetailSection(title: 'Waktu', rows: [
-          InfoRow('Diajukan', formatDateTimeOrNull(dateOf(d, 'createdAt'))),
-          InfoRow('Disetujui', formatDateTimeOrNull(dateOf(d, 'paidAt'))),
-          InfoRow('Catatan', str(d, 'note')),
-        ]),
+        DetailSection(
+          title: 'Pengirim',
+          rows: [InfoRow('Atas Nama', str(d, 'senderAccountName')), InfoRow('No. Rekening', str(d, 'senderAccountNumber'), copyable: true)],
+        ),
+        DetailSection(
+          title: 'Rekening Tujuan',
+          rows: [
+            InfoRow('Bank', str(d, 'targetBankName')),
+            InfoRow('No. Rekening', str(d, 'targetBankAccountNumber')),
+            InfoRow('Atas Nama', str(d, 'targetBankAccountName')),
+          ],
+        ),
+        DetailSection(
+          title: 'Waktu',
+          rows: [
+            InfoRow('Diajukan', formatDateTimeOrNull(dateOf(d, 'createdAt'))),
+            InfoRow('Disetujui', formatDateTimeOrNull(dateOf(d, 'paidAt'))),
+            InfoRow('Catatan', str(d, 'note')),
+          ],
+        ),
         ProofImage(source: str(d, 'receiptImage'), baseUrl: ApiClient.instance.baseUrl),
       ],
       actions: status != 'PENDING'
           ? null
           : (sheet) => [
-                ActionSpec('Setujui', Icons.check_rounded, () => _decide(sheet, d, true, fromSheet: true), kind: ActionKind.success),
-                ActionSpec('Tolak', Icons.close_rounded, () => _decide(sheet, d, false, fromSheet: true), kind: ActionKind.danger),
-              ],
+              ActionSpec('Setujui', Icons.check_rounded, () => _decide(sheet, d, true, fromSheet: true), kind: ActionKind.success),
+              ActionSpec('Tolak', Icons.close_rounded, () => _decide(sheet, d, false, fromSheet: true), kind: ActionKind.danger),
+            ],
     );
   }
 
@@ -146,7 +152,10 @@ class _AgentDepositListScreenState extends State<AgentDepositListScreen> {
                     icon: Icons.account_balance_wallet_rounded,
                     tone: statusTone(status),
                     title: str(mapOf(d, 'agent'), 'name') ?? '-',
-                    subtitle: [str(d, 'targetBankName'), if (str(d, 'senderAccountName') != null) 'a.n. ${str(d, 'senderAccountName')}'].whereType<String>().join(' · '),
+                    subtitle: [
+                      str(d, 'targetBankName'),
+                      if (str(d, 'senderAccountName') != null) 'a.n. ${str(d, 'senderAccountName')}',
+                    ].whereType<String>().join(' · '),
                     meta: formatDateTimeOrNull(dateOf(d, 'createdAt')),
                     trailing: AmountTrailing(amount: formatCurrency(numOf(d, 'amount')), pill: StatusPill.status(status)),
                     onTap: () => _open(d),

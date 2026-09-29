@@ -13,10 +13,7 @@ class DashboardProvider extends ChangeNotifier {
     error = null;
     notifyListeners();
     try {
-      final results = await Future.wait([
-        ApiClient.instance.get('/api/dashboard/stats'),
-        _radiusRunning(),
-      ]);
+      final results = await Future.wait([ApiClient.instance.get('/api/dashboard/stats'), _radiusRunning()]);
       final res = results[0];
       if (res is Map<String, dynamic>) {
         stats = DashboardStats.fromJson(res);

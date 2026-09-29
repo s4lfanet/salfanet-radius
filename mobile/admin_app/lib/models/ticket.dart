@@ -13,7 +13,11 @@ class Ticket {
     this.categoryName,
     this.messageCount = 0,
     this.estimatedRepair,
+    this.raw = const {},
   });
+
+  /// The row as returned, for edit forms that need fields not modelled here.
+  final Map<String, dynamic> raw;
 
   final String id;
   final String ticketNumber;
@@ -44,12 +48,20 @@ class Ticket {
       categoryName: category?['name']?.toString(),
       messageCount: count?['messages'] is num ? (count!['messages'] as num).toInt() : 0,
       estimatedRepair: json['estimatedRepair']?.toString(),
+      raw: json,
     );
   }
 }
 
 class TicketMessage {
-  TicketMessage({required this.id, required this.senderType, required this.senderName, required this.message, required this.createdAt, this.isInternal = false});
+  TicketMessage({
+    required this.id,
+    required this.senderType,
+    required this.senderName,
+    required this.message,
+    required this.createdAt,
+    this.isInternal = false,
+  });
 
   final String id;
   final String senderType;

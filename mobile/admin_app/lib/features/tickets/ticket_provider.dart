@@ -69,13 +69,10 @@ class TicketMessagesProvider extends ChangeNotifier {
     sending = true;
     notifyListeners();
     try {
-      await ApiClient.instance.post('/api/tickets/messages', data: {
-        'ticketId': ticketId,
-        'senderType': 'ADMIN',
-        'senderName': senderName,
-        'message': message,
-        'isInternal': isInternal,
-      });
+      await ApiClient.instance.post(
+        '/api/tickets/messages',
+        data: {'ticketId': ticketId, 'senderType': 'ADMIN', 'senderName': senderName, 'message': message, 'isInternal': isInternal},
+      );
       await load();
     } finally {
       sending = false;

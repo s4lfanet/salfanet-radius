@@ -25,8 +25,12 @@ class _View extends StatelessWidget {
   const _View();
 
   Future<void> _approve(BuildContext context, ApprovalProvider provider, Map<String, dynamic> u, {bool fromSheet = false}) async {
-    final ok = await confirmAction(context,
-        title: 'Setujui Pendaftaran', message: '${str(u, 'name')} (${str(u, 'username')}) diaktifkan dan disinkronkan ke RADIUS/MikroTik.', confirmLabel: 'Setujui');
+    final ok = await confirmAction(
+      context,
+      title: 'Setujui Pendaftaran',
+      message: '${str(u, 'name')} (${str(u, 'username')}) diaktifkan dan disinkronkan ke RADIUS/MikroTik.',
+      confirmLabel: 'Setujui',
+    );
     if (!ok || !context.mounted) return;
     final done = await runAction(context, () => provider.approve(u['id'].toString()), success: 'Pendaftaran disetujui.');
     if (done && fromSheet && context.mounted) Navigator.pop(context);
@@ -55,21 +59,27 @@ class _View extends StatelessWidget {
         status: const StatusPill(label: 'Menunggu', tone: Tone.warning),
       ),
       sections: [
-        DetailSection(title: 'Pelanggan', rows: [
-          InfoRow('Telepon', str(u, 'phone'), copyable: true),
-          InfoRow('Email', str(u, 'email')),
-          InfoRow('NIK', str(u, 'idCardNumber'), copyable: true),
-          InfoRow('Alamat', str(u, 'address')),
-          InfoRow('Koordinat', lat != null && lng != null ? '$lat, $lng' : null, copyable: true),
-          InfoRow('Didaftarkan', formatDateTimeOrNull(dateOf(u, 'createdAt'))),
-          InfoRow('Oleh Teknisi', str(mapOf(u, 'registeredByTechnician'), 'name')),
-        ]),
-        DetailSection(title: 'Layanan', rows: [
-          InfoRow('Paket', profile == null ? null : '${str(profile, 'name')} · ${formatCurrency(numOf(profile, 'price'))}'),
-          InfoRow('Area', str(mapOf(u, 'area'), 'name')),
-          InfoRow('Router', str(mapOf(u, 'router'), 'name')),
-          InfoRow('ODP', str(u, 'odp')),
-        ]),
+        DetailSection(
+          title: 'Pelanggan',
+          rows: [
+            InfoRow('Telepon', str(u, 'phone'), copyable: true),
+            InfoRow('Email', str(u, 'email')),
+            InfoRow('NIK', str(u, 'idCardNumber'), copyable: true),
+            InfoRow('Alamat', str(u, 'address')),
+            InfoRow('Koordinat', lat != null && lng != null ? '$lat, $lng' : null, copyable: true),
+            InfoRow('Didaftarkan', formatDateTimeOrNull(dateOf(u, 'createdAt'))),
+            InfoRow('Oleh Teknisi', str(mapOf(u, 'registeredByTechnician'), 'name')),
+          ],
+        ),
+        DetailSection(
+          title: 'Layanan',
+          rows: [
+            InfoRow('Paket', profile == null ? null : '${str(profile, 'name')} · ${formatCurrency(numOf(profile, 'price'))}'),
+            InfoRow('Area', str(mapOf(u, 'area'), 'name')),
+            InfoRow('Router', str(mapOf(u, 'router'), 'name')),
+            InfoRow('ODP', str(u, 'odp')),
+          ],
+        ),
         ProofImage(source: str(u, 'idCardPhoto'), baseUrl: ApiClient.instance.baseUrl, title: 'Foto KTP'),
       ],
       actions: (sheet) => [

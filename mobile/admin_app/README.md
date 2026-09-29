@@ -71,3 +71,22 @@ flutter test
 `test/layout_test.dart` renders the shared widgets with worst-case content at
 320dp and 360dp in both themes (with the real bundled font) and fails on any
 overflow; it also guards the filter-chip contrast regression.
+
+## Add / edit / delete (CRUD)
+
+Every web admin mutation has an app counterpart. Most modules are declared,
+not hand-built:
+
+- `lib/core/forms/` — `FieldSpec` + `FormScreen` / `SettingsFormScreen`.
+  Blank text/select fields are sent as `""` (what the web sends, and what the
+  backend's zod `.optional()` schemas accept), blank numbers as `null`, blank
+  dates are omitted. `omitWhenEmpty` for "leave unchanged" passwords.
+- `lib/core/crud/` — `CrudConfig` + `CrudListScreen` (search, filters, FAB
+  add, detail sheet with Edit/Hapus, row actions, long-press bulk actions)
+  and `Lookups` for dropdown data (routers, areas, packages, …).
+- `lib/features/resources/*_resources.dart` — one config per web page,
+  grouped by domain (pppoe, hotspot, team, messaging, settings, network, olt,
+  radius, genieacs).
+
+To add a module: write a `CrudConfig` (or `SettingsFormScreen`) against the
+route's real contract, then add an `_Entry` in `more_menu_screen.dart`.

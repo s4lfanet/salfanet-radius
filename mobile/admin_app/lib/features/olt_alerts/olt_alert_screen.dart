@@ -9,8 +9,16 @@ import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
 
 // Backend enums are lowercase (OltAlertSeverity / OltAlertType in schema.prisma).
-Tone _severityTone(String s) => switch (s.toLowerCase()) { 'critical' => Tone.danger, 'warning' => Tone.warning, _ => Tone.primary };
-String _severityLabel(String s) => switch (s.toLowerCase()) { 'critical' => 'Kritis', 'warning' => 'Peringatan', _ => 'Info' };
+Tone _severityTone(String s) => switch (s.toLowerCase()) {
+  'critical' => Tone.danger,
+  'warning' => Tone.warning,
+  _ => Tone.primary,
+};
+String _severityLabel(String s) => switch (s.toLowerCase()) {
+  'critical' => 'Kritis',
+  'warning' => 'Peringatan',
+  _ => 'Info',
+};
 
 const _typeLabels = {
   'olt_offline': 'OLT offline',
@@ -83,23 +91,31 @@ class _OltAlertScreenState extends State<OltAlertScreen> {
         status: StatusPill(label: resolved ? 'Selesai' : _severityLabel(severity), tone: resolved ? Tone.success : _severityTone(severity)),
       ),
       sections: [
-        DetailSection(title: 'Kejadian', rows: [
-          InfoRow('Pesan', str(a, 'message')),
-          InfoRow('Waktu', formatDateTimeOrNull(dateOf(a, 'createdAt'))),
-          InfoRow('OLT', olt == null ? null : '${str(olt, 'name')} · ${str(olt, 'ipAddress')}'),
-          InfoRow('Diselesaikan', formatDateTimeOrNull(dateOf(a, 'resolvedAt'))),
-          InfoRow('Oleh', str(a, 'resolvedBy')),
-        ]),
+        DetailSection(
+          title: 'Kejadian',
+          rows: [
+            InfoRow('Pesan', str(a, 'message')),
+            InfoRow('Waktu', formatDateTimeOrNull(dateOf(a, 'createdAt'))),
+            InfoRow('OLT', olt == null ? null : '${str(olt, 'name')} · ${str(olt, 'ipAddress')}'),
+            InfoRow('Diselesaikan', formatDateTimeOrNull(dateOf(a, 'resolvedAt'))),
+            InfoRow('Oleh', str(a, 'resolvedBy')),
+          ],
+        ),
         if (onu != null)
-          DetailSection(title: 'ONU', rows: [
-            InfoRow('Serial', str(onu, 'serialNumber'), copyable: true),
-            InfoRow('MAC', str(onu, 'macAddress'), copyable: true),
-            InfoRow('Port', port == null || port.isEmpty ? null : '$port · ONU ${str(onu, 'onuId') ?? '-'}'),
-            InfoRow('Pelanggan', customer == null ? null : '${str(customer, 'name')} (${str(customer, 'username')})'),
-            InfoRow('Telepon', str(customer, 'phone'), copyable: true),
-          ]),
+          DetailSection(
+            title: 'ONU',
+            rows: [
+              InfoRow('Serial', str(onu, 'serialNumber'), copyable: true),
+              InfoRow('MAC', str(onu, 'macAddress'), copyable: true),
+              InfoRow('Port', port == null || port.isEmpty ? null : '$port · ONU ${str(onu, 'onuId') ?? '-'}'),
+              InfoRow('Pelanggan', customer == null ? null : '${str(customer, 'name')} (${str(customer, 'username')})'),
+              InfoRow('Telepon', str(customer, 'phone'), copyable: true),
+            ],
+          ),
       ],
-      actions: resolved ? null : (sheet) => [ActionSpec('Tandai Selesai', Icons.check_circle_rounded, () => _resolve(sheet, a, fromSheet: true), kind: ActionKind.success)],
+      actions: resolved
+          ? null
+          : (sheet) => [ActionSpec('Tandai Selesai', Icons.check_circle_rounded, () => _resolve(sheet, a, fromSheet: true), kind: ActionKind.success)],
     );
   }
 

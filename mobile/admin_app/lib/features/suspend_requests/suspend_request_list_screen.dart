@@ -36,7 +36,11 @@ class _View extends StatelessWidget {
       destructive: !approve,
     );
     if (notes == null || !context.mounted) return;
-    final done = await runAction(context, () => provider.decide(r['id'].toString(), action, adminNotes: notes), success: approve ? 'Permintaan disetujui.' : 'Permintaan ditolak.');
+    final done = await runAction(
+      context,
+      () => provider.decide(r['id'].toString(), action, adminNotes: notes),
+      success: approve ? 'Permintaan disetujui.' : 'Permintaan ditolak.',
+    );
     if (done && fromSheet && context.mounted) Navigator.pop(context);
   }
 
@@ -61,29 +65,37 @@ class _View extends StatelessWidget {
         status: StatusPill.status(status),
       ),
       sections: [
-        DetailSection(title: 'Permintaan', rows: [
-          InfoRow('Periode', _period(r)),
-          InfoRow('Alasan', str(r, 'reason')),
-          InfoRow('Diajukan', formatDateTimeOrNull(dateOf(r, 'requestedAt'))),
-        ]),
-        DetailSection(title: 'Keputusan', rows: [
-          InfoRow('Oleh', str(r, 'approvedBy')),
-          InfoRow('Pada', formatDateTimeOrNull(dateOf(r, 'approvedAt'))),
-          InfoRow('Catatan Admin', str(r, 'adminNotes')),
-        ]),
-        DetailSection(title: 'Pelanggan', rows: [
-          InfoRow('Telepon', str(user, 'phone'), copyable: true),
-          InfoRow('Status Akun', statusLabel(str(user, 'status') ?? '')),
-          InfoRow('Buka Detail Pelanggan', user?['id'] == null ? null : 'Lihat',
-              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => PppoeDetailScreen(userId: user!['id'].toString())))),
-        ]),
+        DetailSection(
+          title: 'Permintaan',
+          rows: [InfoRow('Periode', _period(r)), InfoRow('Alasan', str(r, 'reason')), InfoRow('Diajukan', formatDateTimeOrNull(dateOf(r, 'requestedAt')))],
+        ),
+        DetailSection(
+          title: 'Keputusan',
+          rows: [
+            InfoRow('Oleh', str(r, 'approvedBy')),
+            InfoRow('Pada', formatDateTimeOrNull(dateOf(r, 'approvedAt'))),
+            InfoRow('Catatan Admin', str(r, 'adminNotes')),
+          ],
+        ),
+        DetailSection(
+          title: 'Pelanggan',
+          rows: [
+            InfoRow('Telepon', str(user, 'phone'), copyable: true),
+            InfoRow('Status Akun', statusLabel(str(user, 'status') ?? '')),
+            InfoRow(
+              'Buka Detail Pelanggan',
+              user?['id'] == null ? null : 'Lihat',
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => PppoeDetailScreen(userId: user!['id'].toString()))),
+            ),
+          ],
+        ),
       ],
       actions: status != 'PENDING'
           ? null
           : (sheet) => [
-                ActionSpec('Setujui', Icons.check_rounded, () => _decide(sheet, provider, r, 'APPROVE', fromSheet: true), kind: ActionKind.success),
-                ActionSpec('Tolak', Icons.close_rounded, () => _decide(sheet, provider, r, 'REJECT', fromSheet: true), kind: ActionKind.danger),
-              ],
+              ActionSpec('Setujui', Icons.check_rounded, () => _decide(sheet, provider, r, 'APPROVE', fromSheet: true), kind: ActionKind.success),
+              ActionSpec('Tolak', Icons.close_rounded, () => _decide(sheet, provider, r, 'REJECT', fromSheet: true), kind: ActionKind.danger),
+            ],
     );
   }
 

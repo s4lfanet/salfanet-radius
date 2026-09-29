@@ -24,12 +24,7 @@ class InvoiceProvider extends ChangeNotifier {
     error = null;
     notifyListeners();
     try {
-      final res = await ApiClient.instance.get('/api/invoices', query: {
-        'page': page,
-        'limit': 30,
-        'status': status,
-        if (search.isNotEmpty) 'search': search,
-      });
+      final res = await ApiClient.instance.get('/api/invoices', query: {'page': page, 'limit': 30, 'status': status, if (search.isNotEmpty) 'search': search});
       if (res is Map<String, dynamic>) {
         final list = (res['invoices'] as List? ?? []).map((e) => Invoice.fromJson(e as Map<String, dynamic>)).toList();
         totalPages = res['totalPages'] is num ? (res['totalPages'] as num).toInt() : 1;

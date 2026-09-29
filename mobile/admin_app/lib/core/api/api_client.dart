@@ -12,10 +12,7 @@ import '../storage/app_storage.dart';
 /// only the fallback shown before the user configures their own server (see
 /// ServerSettingsScreen / ApiClient.setBaseUrl). Override at build time for
 /// local dev: --dart-define=API_BASE_URL=http://10.0.2.2:3001
-const String kDefaultServerUrl = String.fromEnvironment(
-  'API_BASE_URL',
-  defaultValue: 'https://radius.salfa.my.id',
-);
+const String kDefaultServerUrl = String.fromEnvironment('API_BASE_URL', defaultValue: 'https://radius.salfa.my.id');
 
 class ApiException implements Exception {
   ApiException(this.message, {this.statusCode});
@@ -52,17 +49,16 @@ class ApiClient {
   Future<void> init() async {
     if (_ready) return;
     final dir = await getApplicationSupportDirectory();
-    _cookieJar = PersistCookieJar(
-      ignoreExpires: false,
-      storage: FileStorage('${dir.path}/.cookies/'),
+    _cookieJar = PersistCookieJar(ignoreExpires: false, storage: FileStorage('${dir.path}/.cookies/'));
+    _dio = Dio(
+      BaseOptions(
+        baseUrl: kDefaultServerUrl,
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 20),
+        validateStatus: (_) => true,
+        followRedirects: false,
+      ),
     );
-    _dio = Dio(BaseOptions(
-      baseUrl: kDefaultServerUrl,
-      connectTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 20),
-      validateStatus: (_) => true,
-      followRedirects: false,
-    ));
     _dio.interceptors.add(CookieManager(_cookieJar));
 
     final saved = await AppStorage.instance.readServerUrl();
@@ -103,15 +99,8 @@ class ApiClient {
     final csrfToken = await _fetchCsrfToken();
     final res = await _dio.post(
       '/api/auth/callback/credentials',
-      data: {
-        ...fields,
-        'csrfToken': csrfToken,
-        'json': 'true',
-      },
-      options: Options(
-        contentType: Headers.formUrlEncodedContentType,
-        headers: {'Accept': 'application/json'},
-      ),
+      data: {...fields, 'csrfToken': csrfToken, 'json': 'true'},
+      options: Options(contentType: Headers.formUrlEncodedContentType, headers: {'Accept': 'application/json'}),
     );
 
     final data = res.data;
@@ -208,6 +197,81 @@ class ApiClient {
     return _run(() => _dio.delete(path, queryParameters: query, data: data));
   }
 
+  /// Multipart upload (logos, banners, KTP photos, backup files).
+  Future<dynamic> upload(String path, String filePath, {String field = 'file', String? filename, Map<String, dynamic>? fields}) async {
+    final form = FormData.fromMap({...?fields, field: await MultipartFile.fromFile(filePath, filename: filename ?? filePath.split(RegExp(r'[\\/]')).last)});
+    return _run(
+      () => _dio.post(
+        path,
+        data: form,
+        options: Options(sendTimeout: const Duration(minutes: 2), receiveTimeout: const Duration(minutes: 2)),
+      ),
+    );
+  }
+
+  /// Downloads a file (exports, templates, backups) into the temp dir and
+  /// returns its path, for sharing/saving.
+  Future<String> download(String path, String filename, {Map<String, dynamic>? query}) async {
+    final dir = await getTemporaryDirectory();
+    final target = '${dir.path}/$filename';
+    try {
+      final res = await _dio.download(
+        path,
+        target,
+        queryParameters: query,
+        options: Options(receiveTimeout: const Duration(minutes: 3)),
+      );
+      if (res.statusCode == 401) onUnauthorized?.call();
+      if (res.statusCode != null && res.statusCode! >= 400) {
+        throw ApiException('Unduhan gagal (${res.statusCode})', statusCode: res.statusCode);
+      }
+      return target;
+    } on DioException {
+      throw ApiException('Unduhan gagal. Periksa koneksi Anda.');
+    }
+  }
+
+  /// Raw bytes through the session (images behind auth, e.g. WhatsApp QR);
+  /// Image.network would not carry the session cookie.
+  Future<List<int>> getBytes(String path) async {
+    try {
+      final res = await _dio.get<List<int>>(path, options: Options(responseType: ResponseType.bytes));
+      if (res.statusCode != null && res.statusCode! >= 400) {
+        String? message;
+        try {
+          final decoded = jsonDecode(utf8.decode(res.data ?? const []));
+          if (decoded is Map) message = (decoded['error'] ?? decoded['message'])?.toString();
+        } catch (_) {}
+        throw ApiException(message ?? 'Gagal memuat (${res.statusCode})', statusCode: res.statusCode);
+      }
+      return res.data ?? const [];
+    } on DioException {
+      throw ApiException('Tidak dapat terhubung ke server.');
+    }
+  }
+
+  /// For long-running maintenance calls (backup, sync, restart) that
+  /// outlast the default 20s receive timeout.
+  Future<dynamic> postLong(String path, {Object? data, Duration timeout = const Duration(minutes: 3)}) {
+    return _run(
+      () => _dio.post(
+        path,
+        data: data,
+        options: Options(receiveTimeout: timeout),
+      ),
+    );
+  }
+
+  Future<dynamic> putLong(String path, {Object? data, Duration timeout = const Duration(minutes: 3)}) {
+    return _run(
+      () => _dio.put(
+        path,
+        data: data,
+        options: Options(receiveTimeout: timeout),
+      ),
+    );
+  }
+
   Future<dynamic> _run(Future<Response> Function() request) async {
     try {
       final res = await request();
@@ -215,9 +279,7 @@ class ApiClient {
     } on ApiException {
       rethrow;
     } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.receiveTimeout ||
-          e.type == DioExceptionType.sendTimeout) {
+      if (e.type == DioExceptionType.connectionTimeout || e.type == DioExceptionType.receiveTimeout || e.type == DioExceptionType.sendTimeout) {
         throw ApiException('Koneksi ke server timeout. Periksa jaringan Anda.');
       }
       if (e.type == DioExceptionType.connectionError) {

@@ -4,20 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../theme/app_theme.dart';
+import 'entity_tile.dart';
 
 /// Top card of every detail screen / sheet: icon, title, subtitle, status,
 /// and optionally one large figure (amount, balance) as the focal point.
 class DetailHeader extends StatelessWidget {
-  const DetailHeader({
-    super.key,
-    required this.icon,
-    required this.tone,
-    required this.title,
-    this.subtitle,
-    this.status,
-    this.figureLabel,
-    this.figure,
-  });
+  const DetailHeader({super.key, required this.icon, required this.tone, required this.title, this.subtitle, this.status, this.figureLabel, this.figure});
 
   final IconData icon;
   final Tone tone;
@@ -55,10 +47,7 @@ class DetailHeader extends StatelessWidget {
                 if (status != null) ...[const SizedBox(width: Gap.sm), status!],
               ],
             ),
-            if (figure != null) ...[
-              const SizedBox(height: Gap.lg),
-              LabeledFigure(label: figureLabel ?? '', value: figure!, valueSize: 24),
-            ],
+            if (figure != null) ...[const SizedBox(height: Gap.lg), LabeledFigure(label: figureLabel ?? '', value: figure!, valueSize: 24)],
           ],
         ),
       ),
@@ -84,17 +73,18 @@ class DetailSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (title != null) Padding(
-            padding: const EdgeInsets.only(left: 2, bottom: Gap.sm),
-            child: Text(title!, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: context.colors.onSurfaceVariant)),
-          ),
+          if (title != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 2, bottom: Gap.sm),
+              child: Text(
+                title!,
+                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: context.colors.onSurfaceVariant),
+              ),
+            ),
           Card(
             child: Column(
               children: [
-                for (var i = 0; i < visible.length; i++) ...[
-                  if (i > 0) const Divider(indent: Gap.lg, endIndent: Gap.lg),
-                  visible[i],
-                ],
+                for (var i = 0; i < visible.length; i++) ...[if (i > 0) const Divider(indent: Gap.lg, endIndent: Gap.lg), visible[i]],
                 if (trailing != null) ...[if (visible.isNotEmpty) const Divider(), trailing!],
               ],
             ),
@@ -267,7 +257,8 @@ Future<T?> showDetailSheet<T>(
             Expanded(
               child: ListView(
                 controller: controller,
-                padding: const EdgeInsets.fromLTRB(Gap.page, 0, Gap.page, Gap.xl),
+                // With an ActionBar the bar handles the nav-bar inset itself.
+                padding: EdgeInsets.fromLTRB(Gap.page, 0, Gap.page, acts.isEmpty ? listBottomPadding(ctx) : Gap.xl),
                 children: [header, ...sections],
               ),
             ),
@@ -314,7 +305,10 @@ class ProofImage extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.only(left: 2, bottom: Gap.sm),
-            child: Text(title, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: context.colors.onSurfaceVariant)),
+            child: Text(
+              title,
+              style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: context.colors.onSurfaceVariant),
+            ),
           ),
           GestureDetector(
             onTap: () => showDialog(
@@ -322,7 +316,9 @@ class ProofImage extends StatelessWidget {
               builder: (_) => Dialog(
                 insetPadding: const EdgeInsets.all(Gap.md),
                 clipBehavior: Clip.antiAlias,
-                child: InteractiveViewer(child: Image(image: provider, fit: BoxFit.contain)),
+                child: InteractiveViewer(
+                  child: Image(image: provider, fit: BoxFit.contain),
+                ),
               ),
             ),
             child: ClipRRect(

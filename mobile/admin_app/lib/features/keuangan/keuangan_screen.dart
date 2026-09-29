@@ -2,14 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/api/api_client.dart';
+import '../../core/crud/crud_list_screen.dart';
+import '../../core/crud/lookups.dart';
+import '../../core/files.dart';
 import '../../core/formatters.dart';
+import '../../core/forms/field_spec.dart';
+import '../../core/forms/form_screen.dart';
+import '../../core/widgets/dialogs.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/detail.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
 
-/// Read-only ledger summary. Adding entries and exports stay on the web;
-/// checking income vs expense for a period is the mobile need.
+/// Ledger: income/expense per period with add, edit, delete, categories
+/// and export — the web Keuangan page.
 class KeuanganScreen extends StatefulWidget {
   const KeuanganScreen({super.key});
 
@@ -53,12 +59,10 @@ class _KeuanganScreenState extends State<KeuanganScreen> {
     });
     try {
       final r = _range;
-      final res = await ApiClient.instance.get('/api/keuangan/transactions', query: {
-        'limit': 100,
-        'type': _type,
-        if (r != null) 'startDate': r.$1,
-        if (r != null) 'endDate': r.$2,
-      });
+      final res = await ApiClient.instance.get(
+        '/api/keuangan/transactions',
+        query: {'limit': 100, 'type': _type, if (r != null) 'startDate': r.$1, if (r != null) 'endDate': r.$2},
+      );
       if (res is Map<String, dynamic>) {
         _tx = ((res['transactions'] as List?) ?? []).map((e) => (e as Map).cast<String, dynamic>()).toList();
         _stats = mapOf(res, 'stats');
@@ -68,6 +72,59 @@ class _KeuanganScreenState extends State<KeuanganScreen> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  List<FieldSpec> _fields() => [
+    const FieldSpec('type', 'Jenis', type: FieldType.select, required: true, initial: 'INCOME', options: [('INCOME', 'Pemasukan'), ('EXPENSE', 'Pengeluaran')]),
+    FieldSpec('categoryId', 'Kategori', type: FieldType.select, required: true, loadOptions: Lookups.keuanganCategories),
+    const FieldSpec('amount', 'Jumlah (Rp)', type: FieldType.integer, required: true, min: 1),
+    const FieldSpec('description', 'Keterangan', required: true),
+    const FieldSpec('date', 'Tanggal', type: FieldType.date, required: true),
+    const FieldSpec('reference', 'Referensi'),
+    const FieldSpec('notes', 'Catatan', type: FieldType.multiline),
+  ];
+
+  Future<void> _add() async {
+    final ok = await openForm(
+      context,
+      title: 'Tambah Transaksi',
+      fields: _fields(),
+      initial: {'date': DateTime.now(), 'type': _type == 'EXPENSE' ? 'EXPENSE' : 'INCOME'},
+      success: 'Transaksi dicatat.',
+      onSubmit: (v) => ApiClient.instance.post('/api/keuangan/transactions', data: v),
+    );
+    if (ok) _load();
+  }
+
+  Future<bool> _edit(BuildContext ctx, Map<String, dynamic> t) => openForm(
+    ctx,
+    title: 'Edit Transaksi',
+    fields: _fields(),
+    initial: {...t, 'categoryId': mapOf(t, 'category')?['id'] ?? t['categoryId'], 'notes': (str(t, 'notes')?.startsWith('{') ?? false) ? null : t['notes']},
+    success: 'Transaksi disimpan.',
+    onSubmit: (v) => ApiClient.instance.put('/api/keuangan/transactions', data: {'id': t['id'], ...v}),
+  );
+
+  Future<bool> _delete(BuildContext ctx, Map<String, dynamic> t) async {
+    final ok = await confirmAction(
+      ctx,
+      title: 'Hapus Transaksi?',
+      message: '"${t['description']}" (${formatCurrency(numOf(t, 'amount'))}) dihapus dari buku kas.',
+      confirmLabel: 'Hapus',
+      destructive: true,
+    );
+    if (!ok || !ctx.mounted) return false;
+    return runAction(ctx, () => ApiClient.instance.delete('/api/keuangan/transactions', query: {'id': t['id']}), success: 'Transaksi dihapus.');
+  }
+
+  Future<void> _export() async {
+    final r = _range;
+    await downloadAndShare(
+      context,
+      '/api/keuangan/export',
+      'keuangan-${DateTime.now().toIso8601String().substring(0, 10)}.xlsx',
+      query: {'format': 'excel', 'type': _type, if (r != null) 'startDate': r.$1, if (r != null) 'endDate': r.$2},
+    );
   }
 
   void _open(Map<String, dynamic> t) {
@@ -84,14 +141,30 @@ class _KeuanganScreenState extends State<KeuanganScreen> {
         figure: formatCurrency(numOf(t, 'amount')),
       ),
       sections: [
-        DetailSection(rows: [
-          InfoRow('Tanggal', formatDateTimeOrNull(dateOf(t, 'date'))),
-          InfoRow('Referensi', str(t, 'reference'), copyable: true),
-          InfoRow('Dicatat oleh', str(t, 'createdBy')),
-          // notes is sometimes a JSON blob written by automated flows;
-          // only show it when it reads as a human note.
-          InfoRow('Catatan', (str(t, 'notes')?.startsWith('{') ?? true) ? null : str(t, 'notes')),
-        ]),
+        DetailSection(
+          rows: [
+            InfoRow('Tanggal', formatDateTimeOrNull(dateOf(t, 'date'))),
+            InfoRow('Referensi', str(t, 'reference'), copyable: true),
+            InfoRow('Dicatat oleh', str(t, 'createdBy')),
+            // notes is sometimes a JSON blob written by automated flows;
+            // only show it when it reads as a human note.
+            InfoRow('Catatan', (str(t, 'notes')?.startsWith('{') ?? true) ? null : str(t, 'notes')),
+          ],
+        ),
+      ],
+      actions: (sheet) => [
+        ActionSpec('Edit', Icons.edit_rounded, () async {
+          if (await _edit(sheet, t)) {
+            if (sheet.mounted) Navigator.pop(sheet);
+            _load();
+          }
+        }),
+        ActionSpec('Hapus', Icons.delete_outline_rounded, () async {
+          if (await _delete(sheet, t)) {
+            if (sheet.mounted) Navigator.pop(sheet);
+            _load();
+          }
+        }, kind: ActionKind.danger),
       ],
     );
   }
@@ -127,8 +200,28 @@ class _KeuanganScreenState extends State<KeuanganScreen> {
               CheckedPopupMenuItem(value: 'EXPENSE', checked: _type == 'EXPENSE', child: const Text('Pengeluaran')),
             ],
           ),
+          PopupMenuButton<String>(
+            onSelected: (v) async {
+              if (v == 'categories') {
+                await CrudListScreen.open(context, keuanganCategoriesConfig());
+              } else {
+                await _export();
+              }
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'categories',
+                child: ListTile(leading: Icon(Icons.category_rounded), title: Text('Kategori'), contentPadding: EdgeInsets.zero),
+              ),
+              PopupMenuItem(
+                value: 'export',
+                child: ListTile(leading: Icon(Icons.ios_share_rounded), title: Text('Ekspor Excel'), contentPadding: EdgeInsets.zero),
+              ),
+            ],
+          ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(onPressed: _add, icon: const Icon(Icons.add_rounded), label: const Text('Transaksi')),
       body: Column(
         children: [
           FilterChipRow(
@@ -146,6 +239,7 @@ class _KeuanganScreenState extends State<KeuanganScreen> {
               emptyMessage: '',
               child: RefreshableList(
                 onRefresh: _load,
+                hasFab: true,
                 header: s == null
                     ? null
                     : Card(
@@ -160,8 +254,22 @@ class _KeuanganScreenState extends State<KeuanganScreen> {
                               const SizedBox(height: Gap.md),
                               Row(
                                 children: [
-                                  Expanded(child: LabeledFigure(label: 'Pemasukan · ${numOf(s, 'incomeCount')}', value: formatCurrency(numOf(s, 'totalIncome')), color: context.tone(Tone.success), valueSize: 15)),
-                                  Expanded(child: LabeledFigure(label: 'Pengeluaran · ${numOf(s, 'expenseCount')}', value: formatCurrency(numOf(s, 'totalExpense')), color: context.tone(Tone.danger), valueSize: 15)),
+                                  Expanded(
+                                    child: LabeledFigure(
+                                      label: 'Pemasukan · ${numOf(s, 'incomeCount')}',
+                                      value: formatCurrency(numOf(s, 'totalIncome')),
+                                      color: context.tone(Tone.success),
+                                      valueSize: 15,
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: LabeledFigure(
+                                      label: 'Pengeluaran · ${numOf(s, 'expenseCount')}',
+                                      value: formatCurrency(numOf(s, 'totalExpense')),
+                                      color: context.tone(Tone.danger),
+                                      valueSize: 15,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ],
@@ -173,7 +281,9 @@ class _KeuanganScreenState extends State<KeuanganScreen> {
                   if (_tx.isEmpty) {
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: Gap.xl),
-                      child: Center(child: Text('Tidak ada transaksi di periode ini.', style: TextStyle(color: context.colors.onSurfaceVariant))),
+                      child: Center(
+                        child: Text('Tidak ada transaksi di periode ini.', style: TextStyle(color: context.colors.onSurfaceVariant)),
+                      ),
                     );
                   }
                   final t = _tx[i];
@@ -199,3 +309,29 @@ class _KeuanganScreenState extends State<KeuanganScreen> {
     );
   }
 }
+
+/// Kategori transaksi — the web Keuangan page's category manager.
+CrudConfig keuanganCategoriesConfig() => CrudConfig(
+  title: 'Kategori Keuangan',
+  noun: 'Kategori',
+  icon: Icons.category_rounded,
+  fetch: (_) => ApiClient.instance.get('/api/keuangan/categories'),
+  listKey: 'categories',
+  filters: const [('all', 'Semua'), ('INCOME', 'Pemasukan'), ('EXPENSE', 'Pengeluaran')],
+  filterOf: (c) => str(c, 'type'),
+  initialFilter: 'all',
+  titleOf: (c) => str(c, 'name') ?? '-',
+  subtitleOf: (c) => c['type'] == 'INCOME' ? 'Pemasukan' : 'Pengeluaran',
+  metaOf: (c) => str(c, 'description'),
+  toneOf: (c) => c['type'] == 'INCOME' ? Tone.success : Tone.danger,
+  statusOf: (c) => c['isActive'] == false ? const StatusPill(label: 'Nonaktif', tone: Tone.neutral) : null,
+  fields: (c) => [
+    const FieldSpec('name', 'Nama kategori', required: true),
+    const FieldSpec('type', 'Jenis', type: FieldType.select, required: true, initial: 'INCOME', options: [('INCOME', 'Pemasukan'), ('EXPENSE', 'Pengeluaran')]),
+    const FieldSpec('description', 'Deskripsi'),
+    if (c != null) const FieldSpec('isActive', 'Aktif', type: FieldType.toggle, initial: true),
+  ],
+  create: CrudRoutes.postTo('/api/keuangan/categories'),
+  update: CrudRoutes.putWithBodyId('/api/keuangan/categories'),
+  delete: CrudRoutes.deleteWithQueryId('/api/keuangan/categories'),
+);

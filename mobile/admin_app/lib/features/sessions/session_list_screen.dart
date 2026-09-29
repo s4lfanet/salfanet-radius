@@ -46,11 +46,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
       _error = null;
     });
     try {
-      final res = await ApiClient.instance.get('/api/sessions', query: {
-        'type': _type,
-        'limit': 200,
-        if (_search.isNotEmpty) 'search': _search,
-      });
+      final res = await ApiClient.instance.get('/api/sessions', query: {'type': _type, 'limit': 200, if (_search.isNotEmpty) 'search': _search});
       if (res is Map<String, dynamic>) {
         _sessions = ((res['sessions'] as List?) ?? []).map((e) => (e as Map).cast<String, dynamic>()).toList();
       }
@@ -64,10 +60,24 @@ class _SessionListScreenState extends State<SessionListScreen> {
   Future<void> _disconnect(BuildContext ctx, Map<String, dynamic> s, {bool fromSheet = false}) async {
     final username = str(s, 'username');
     if (username == null) return;
-    final ok = await confirmAction(ctx,
-        title: 'Putuskan Sesi', message: '$username akan terputus dari internet dan harus login ulang.', confirmLabel: 'Putuskan', destructive: true);
+    final ok = await confirmAction(
+      ctx,
+      title: 'Putuskan Sesi',
+      message: '$username akan terputus dari internet dan harus login ulang.',
+      confirmLabel: 'Putuskan',
+      destructive: true,
+    );
     if (!ok || !ctx.mounted) return;
-    final done = await runAction(ctx, () => ApiClient.instance.post('/api/sessions/disconnect', data: {'usernames': [username]}), success: 'Sesi $username diputuskan.');
+    final done = await runAction(
+      ctx,
+      () => ApiClient.instance.post(
+        '/api/sessions/disconnect',
+        data: {
+          'usernames': [username],
+        },
+      ),
+      success: 'Sesi $username diputuskan.',
+    );
     if (done) {
       if (fromSheet && ctx.mounted) Navigator.pop(ctx);
       _load();
@@ -90,44 +100,124 @@ class _SessionListScreenState extends State<SessionListScreen> {
         figure: str(s, 'durationFormatted') ?? '-',
       ),
       sections: [
-        DetailSection(title: 'Koneksi', rows: [
-          InfoRow('IP', str(s, 'framedIpAddress'), copyable: true),
-          InfoRow('MAC', str(s, 'macAddress'), copyable: true),
-          InfoRow('Router', str(mapOf(s, 'router'), 'name')),
-          InfoRow('NAS IP', str(s, 'nasIpAddress')),
-          InfoRow('Mulai', formatDateTimeOrNull(dateOf(s, 'startTime'))),
-          InfoRow('Session ID', str(s, 'sessionId'), copyable: true),
-        ]),
-        DetailSection(title: 'Pemakaian', rows: [
-          InfoRow('Download', str(s, 'downloadFormatted')),
-          InfoRow('Upload', str(s, 'uploadFormatted')),
-          InfoRow('Total', str(s, 'totalFormatted')),
-        ]),
+        DetailSection(
+          title: 'Koneksi',
+          rows: [
+            InfoRow('IP', str(s, 'framedIpAddress'), copyable: true),
+            InfoRow('MAC', str(s, 'macAddress'), copyable: true),
+            InfoRow('Router', str(mapOf(s, 'router'), 'name')),
+            InfoRow('NAS IP', str(s, 'nasIpAddress')),
+            InfoRow('Mulai', formatDateTimeOrNull(dateOf(s, 'startTime'))),
+            InfoRow('Session ID', str(s, 'sessionId'), copyable: true),
+          ],
+        ),
+        DetailSection(
+          title: 'Pemakaian',
+          rows: [InfoRow('Download', str(s, 'downloadFormatted')), InfoRow('Upload', str(s, 'uploadFormatted')), InfoRow('Total', str(s, 'totalFormatted'))],
+        ),
         if (user != null)
-          DetailSection(title: 'Pelanggan', rows: [
-            InfoRow('ID Pelanggan', str(user, 'customerId')),
-            InfoRow('Paket', str(user, 'profile')),
-            InfoRow('Area', str(area, 'name')),
-            InfoRow('Telepon', str(user, 'phone'), copyable: true),
-            InfoRow('Detail Pelanggan', user['id'] == null ? null : 'Buka',
-                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => PppoeDetailScreen(userId: user['id'].toString())))),
-          ]),
+          DetailSection(
+            title: 'Pelanggan',
+            rows: [
+              InfoRow('ID Pelanggan', str(user, 'customerId')),
+              InfoRow('Paket', str(user, 'profile')),
+              InfoRow('Area', str(area, 'name')),
+              InfoRow('Telepon', str(user, 'phone'), copyable: true),
+              InfoRow(
+                'Detail Pelanggan',
+                user['id'] == null ? null : 'Buka',
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => PppoeDetailScreen(userId: user['id'].toString()))),
+              ),
+            ],
+          ),
         if (voucher != null)
-          DetailSection(title: 'Voucher', rows: [
-            InfoRow('Paket', str(voucher, 'profile')),
-            InfoRow('Batch', str(voucher, 'batchCode')),
-            InfoRow('Agent', str(mapOf(voucher, 'agent'), 'name')),
-            InfoRow('Kedaluwarsa', formatDateTimeOrNull(dateOf(voucher, 'expiresAt'))),
-          ]),
+          DetailSection(
+            title: 'Voucher',
+            rows: [
+              InfoRow('Paket', str(voucher, 'profile')),
+              InfoRow('Batch', str(voucher, 'batchCode')),
+              InfoRow('Agent', str(mapOf(voucher, 'agent'), 'name')),
+              InfoRow('Kedaluwarsa', formatDateTimeOrNull(dateOf(voucher, 'expiresAt'))),
+            ],
+          ),
       ],
       actions: (sheet) => [ActionSpec('Putuskan Sesi', Icons.link_off_rounded, () => _disconnect(sheet, s, fromSheet: true), kind: ActionKind.danger)],
+    );
+  }
+
+  String _bytes(num b) {
+    if (b >= 1 << 30) return '${(b / (1 << 30)).toStringAsFixed(1)} GB';
+    if (b >= 1 << 20) return '${(b / (1 << 20)).toStringAsFixed(1)} MB';
+    if (b >= 1 << 10) return '${(b / (1 << 10)).toStringAsFixed(0)} KB';
+    return '$b B';
+  }
+
+  Widget _summary(BuildContext context) {
+    final down = _sessions.fold<num>(0, (a, s) => a + numOf(s, 'downloadBytes'));
+    final up = _sessions.fold<num>(0, (a, s) => a + numOf(s, 'uploadBytes'));
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: Gap.lg, vertical: Gap.md),
+        child: Row(
+          children: [
+            Expanded(
+              child: LabeledFigure(label: 'Sedang online', value: '${_sessions.length} ${_type == 'pppoe' ? 'pelanggan' : 'voucher'}', valueSize: 18),
+            ),
+            Container(width: 1, height: 36, color: context.colors.outline),
+            const SizedBox(width: Gap.lg),
+            Expanded(
+              child: LabeledFigure(label: 'Total trafik', value: '↓${_bytes(down)}  ↑${_bytes(up)}', valueSize: 14),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _tile(BuildContext context, Map<String, dynamic> s) {
+    final user = mapOf(s, 'user');
+    final ip = str(s, 'framedIpAddress');
+    final mac = str(s, 'macAddress');
+    final muted = context.colors.onSurfaceVariant;
+    return EntityTile(
+      icon: _type == 'pppoe' ? Icons.person_rounded : Icons.confirmation_number_rounded,
+      tone: Tone.success,
+      title: str(user, 'name') ?? str(s, 'username') ?? '-',
+      subtitle: [str(s, 'username'), str(mapOf(s, 'router'), 'name')].whereType<String>().toSet().join(' · '),
+      meta: [ip ?? 'IP belum tercatat', if (mac != null && mac != '-') mac].join(' · '),
+      trailing: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(str(s, 'durationFormatted') ?? '-', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+          const SizedBox(height: 4),
+          Text('↓${str(s, 'downloadFormatted') ?? '-'}', style: TextStyle(fontSize: 11.5, color: muted)),
+        ],
+      ),
+      onTap: () => _open(s),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_loading ? 'Sesi Online' : 'Sesi Online (${_sessions.length})')),
+      appBar: AppBar(
+        title: const Text('Sesi Online'),
+        actions: [
+          IconButton(
+            tooltip: 'Sinkron dari router',
+            icon: const Icon(Icons.sync_rounded),
+            onPressed: () async {
+              final done = await runAction(
+                context,
+                () => ApiClient.instance.postLong('/api/sessions/sync?type=$_type'),
+                success: 'Sesi disinkron dari router.',
+              );
+              if (done) _load();
+            },
+          ),
+        ],
+      ),
       body: Column(
         children: [
           SearchField(
@@ -161,19 +251,9 @@ class _SessionListScreenState extends State<SessionListScreen> {
               emptyMessage: _search.isNotEmpty ? 'Tidak ada sesi yang cocok' : 'Tidak ada sesi ${_type == 'pppoe' ? 'PPPoE' : 'hotspot'} yang online',
               child: RefreshableList(
                 onRefresh: _load,
+                header: _summary(context),
                 itemCount: _sessions.length,
-                itemBuilder: (context, i) {
-                  final s = _sessions[i];
-                  final user = mapOf(s, 'user');
-                  return EntityTile(
-                    icon: _type == 'pppoe' ? Icons.person_rounded : Icons.confirmation_number_rounded,
-                    tone: Tone.success,
-                    title: str(user, 'name') ?? str(s, 'username') ?? '-',
-                    subtitle: '${str(s, 'framedIpAddress') ?? '-'} · ${str(mapOf(s, 'router'), 'name') ?? '-'}',
-                    meta: '${str(s, 'durationFormatted') ?? '-'} · ↓${str(s, 'downloadFormatted') ?? '-'} ↑${str(s, 'uploadFormatted') ?? '-'}',
-                    onTap: () => _open(s),
-                  );
-                },
+                itemBuilder: (context, i) => _tile(context, _sessions[i]),
               ),
             ),
           ),

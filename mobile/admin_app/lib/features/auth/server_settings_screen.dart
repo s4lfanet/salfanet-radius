@@ -60,11 +60,9 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> {
     });
 
     try {
-      final probe = dio_pkg.Dio(dio_pkg.BaseOptions(
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 10),
-        validateStatus: (_) => true,
-      ));
+      final probe = dio_pkg.Dio(
+        dio_pkg.BaseOptions(connectTimeout: const Duration(seconds: 10), receiveTimeout: const Duration(seconds: 10), validateStatus: (_) => true),
+      );
       final res = await probe.get('$normalized/api/public/company');
       final data = res.data;
       if (res.statusCode == 200 && data is Map && data['success'] == true) {
@@ -103,16 +101,9 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> {
               controller: _urlController,
               keyboardType: TextInputType.url,
               autocorrect: false,
-              decoration: const InputDecoration(
-                labelText: 'Alamat Server',
-                hintText: 'radius.nama-isp-anda.id',
-                prefixIcon: Icon(Icons.dns_outlined),
-              ),
+              decoration: const InputDecoration(labelText: 'Alamat Server', hintText: 'radius.nama-isp-anda.id', prefixIcon: Icon(Icons.dns_outlined)),
             ),
-            if (_error != null) ...[
-              const SizedBox(height: 12),
-              Text(_error!, style: TextStyle(color: scheme.error)),
-            ],
+            if (_error != null) ...[const SizedBox(height: 12), Text(_error!, style: TextStyle(color: scheme.error))],
             if (_successCompanyName != null) ...[
               const SizedBox(height: 12),
               Row(
@@ -131,9 +122,7 @@ class _ServerSettingsScreenState extends State<ServerSettingsScreen> {
             const SizedBox(height: 24),
             FilledButton(
               onPressed: _testing ? null : _testAndSave,
-              child: _testing
-                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Text('Uji Koneksi & Simpan'),
+              child: _testing ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Uji Koneksi & Simpan'),
             ),
           ],
         ),

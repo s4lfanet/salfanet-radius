@@ -15,12 +15,7 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _index = 0;
 
-  static const _screens = [
-    DashboardScreen(),
-    PppoeListScreen(),
-    InvoiceListScreen(),
-    MoreMenuScreen(),
-  ];
+  static const _screens = [DashboardScreen(), PppoeListScreen(), InvoiceListScreen(), MoreMenuScreen()];
 
   @override
   Widget build(BuildContext context) {

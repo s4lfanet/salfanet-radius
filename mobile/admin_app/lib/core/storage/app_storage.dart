@@ -4,9 +4,7 @@ class AppStorage {
   AppStorage._internal();
   static final AppStorage instance = AppStorage._internal();
 
-  final _storage = const FlutterSecureStorage(
-    aOptions: AndroidOptions(encryptedSharedPreferences: true),
-  );
+  final _storage = const FlutterSecureStorage(aOptions: AndroidOptions(encryptedSharedPreferences: true));
 
   static const _serverUrlKey = 'server_base_url';
 

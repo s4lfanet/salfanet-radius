@@ -7,7 +7,9 @@ import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
 import '../../models/ticket.dart';
 import 'ticket_detail_screen.dart';
+import '../../core/crud/crud_list_screen.dart';
 import 'ticket_provider.dart';
+import 'ticket_tools.dart';
 
 const ticketStatusOptions = [
   ('OPEN', 'Baru'),
@@ -49,7 +51,19 @@ class _View extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.watch<TicketProvider>();
     return Scaffold(
-      appBar: AppBar(title: const Text('Tiket Bantuan')),
+      appBar: AppBar(
+        title: const Text('Tiket Bantuan'),
+        actions: [
+          IconButton(tooltip: 'Kategori tiket', icon: const Icon(Icons.label_rounded), onPressed: () => CrudListScreen.open(context, ticketCategoriesConfig())),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          if (await dispatchTicket(context)) p.load();
+        },
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Tiket'),
+      ),
       body: Column(
         children: [
           FilterChipRow(options: ticketStatusOptions, selected: p.status, onSelected: p.setStatus),
@@ -64,6 +78,7 @@ class _View extends StatelessWidget {
               emptyHint: p.status == 'OPEN' ? 'Tiket baru dari pelanggan akan muncul di sini.' : null,
               child: RefreshableList(
                 onRefresh: p.load,
+                hasFab: true,
                 itemCount: p.tickets.length,
                 itemBuilder: (context, i) => _Tile(ticket: p.tickets[i]),
               ),
@@ -94,9 +109,14 @@ class _Tile extends StatelessWidget {
       trailing: StatusPill(label: priorityLabel(ticket.priority), tone: priorityTone(ticket.priority)),
       onTap: () async {
         final provider = context.read<TicketProvider>();
-        await Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => ChangeNotifierProvider.value(value: provider, child: TicketDetailScreen(ticket: ticket)),
-        ));
+        await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ChangeNotifierProvider.value(
+              value: provider,
+              child: TicketDetailScreen(ticket: ticket),
+            ),
+          ),
+        );
         provider.load();
       },
     );

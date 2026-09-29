@@ -26,6 +26,21 @@ class NotificationsProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> delete(String id) async {
+    await ApiClient.instance.delete('/api/notifications', query: {'id': id});
+    notifications.removeWhere((n) => n['id'] == id);
+    notifyListeners();
+  }
+
+  /// Clears everything already read — the web's bulk delete over the
+  /// read rows.
+  Future<void> deleteRead() async {
+    final ids = notifications.where((n) => n['isRead'] == true).map((n) => n['id'].toString()).toList();
+    if (ids.isEmpty) return;
+    await ApiClient.instance.delete('/api/notifications', query: {'ids': ids.join(',')});
+    await load();
+  }
+
   Future<void> markAllRead() async {
     await ApiClient.instance.put('/api/notifications', data: {'markAll': true});
     await load();
@@ -40,7 +55,12 @@ class NotificationsProvider extends ChangeNotifier {
     if (unreadCount > 0) unreadCount--;
     notifyListeners();
     try {
-      await ApiClient.instance.put('/api/notifications', data: {'notificationIds': [id]});
+      await ApiClient.instance.put(
+        '/api/notifications',
+        data: {
+          'notificationIds': [id],
+        },
+      );
     } on ApiException catch (_) {}
   }
 }

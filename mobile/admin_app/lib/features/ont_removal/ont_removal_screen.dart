@@ -63,20 +63,40 @@ class _OntRemovalScreenState extends State<OntRemovalScreen> {
         status: StatusPill.status(status),
       ),
       sections: [
-        DetailSection(title: 'Lokasi', rows: [
-          InfoRow('Alamat', str(t, 'address')),
-          InfoRow('Area', str(t, 'areaName')),
-        ]),
-        DetailSection(title: 'Tugas', rows: [
-          InfoRow('Teknisi', str(t, 'technicianName')),
-          InfoRow('Alasan', str(t, 'reason')),
-          InfoRow('Dibuat', formatDateTimeOrNull(dateOf(t, 'createdAt'))),
-          InfoRow('Selesai', formatDateTimeOrNull(dateOf(t, 'completedAt'))),
-          InfoRow('Catatan Teknisi', str(t, 'completedNotes')),
-          InfoRow('Dibatalkan', formatDateTimeOrNull(dateOf(t, 'cancelledAt'))),
-          InfoRow('Alasan Batal', str(t, 'cancelReason')),
-        ]),
+        DetailSection(title: 'Lokasi', rows: [InfoRow('Alamat', str(t, 'address')), InfoRow('Area', str(t, 'areaName'))]),
+        DetailSection(
+          title: 'Tugas',
+          rows: [
+            InfoRow('Teknisi', str(t, 'technicianName')),
+            InfoRow('Alasan', str(t, 'reason')),
+            InfoRow('Dibuat', formatDateTimeOrNull(dateOf(t, 'createdAt'))),
+            InfoRow('Selesai', formatDateTimeOrNull(dateOf(t, 'completedAt'))),
+            InfoRow('Catatan Teknisi', str(t, 'completedNotes')),
+            InfoRow('Dibatalkan', formatDateTimeOrNull(dateOf(t, 'cancelledAt'))),
+            InfoRow('Alasan Batal', str(t, 'cancelReason')),
+          ],
+        ),
       ],
+      actions: status == 'PENDING'
+          ? (sheet) => [
+              ActionSpec('Batalkan Tugas', Icons.cancel_rounded, () async {
+                final reason = await askReason(sheet, title: 'Batalkan Tugas', label: 'Alasan pembatalan', confirmLabel: 'Batalkan', required: false);
+                if (reason == null || !sheet.mounted) return;
+                final done = await runAction(
+                  sheet,
+                  () => ApiClient.instance.patch(
+                    '/api/admin/ont-removal-tasks/${t['id']}',
+                    data: {'cancelReason': reason.isEmpty ? 'Dibatalkan oleh admin' : reason},
+                  ),
+                  success: 'Tugas dibatalkan.',
+                );
+                if (done) {
+                  if (sheet.mounted) Navigator.pop(sheet);
+                  _load();
+                }
+              }, kind: ActionKind.danger),
+            ]
+          : null,
     );
   }
 
@@ -108,6 +128,7 @@ class _OntRemovalScreenState extends State<OntRemovalScreen> {
               emptyMessage: _status == 'PENDING' ? 'Tidak ada penarikan ONT yang tertunda' : 'Tidak ada tugas di status ini',
               emptyHint: 'Ketuk "Tugaskan" untuk mengirim teknisi mengambil perangkat dari pelanggan yang berhenti.',
               child: RefreshableList(
+                hasFab: true,
                 onRefresh: _load,
                 itemCount: _tasks.length,
                 itemBuilder: (context, i) {
@@ -183,11 +204,10 @@ class _CreateSheetState extends State<_CreateSheet> {
     setState(() => _submitting = true);
     final done = await runAction(
       context,
-      () => ApiClient.instance.post('/api/admin/ont-removal-tasks', data: {
-        'username': username,
-        'assignedTechnicianId': _technicianId,
-        if (_reason.text.trim().isNotEmpty) 'reason': _reason.text.trim(),
-      }),
+      () => ApiClient.instance.post(
+        '/api/admin/ont-removal-tasks',
+        data: {'username': username, 'assignedTechnicianId': _technicianId, if (_reason.text.trim().isNotEmpty) 'reason': _reason.text.trim()},
+      ),
       success: 'Tugas penarikan ONT dibuat.',
     );
     if (!mounted) return;
@@ -205,10 +225,17 @@ class _CreateSheetState extends State<_CreateSheet> {
         children: [
           const Text('Tugaskan Penarikan ONT', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
           const SizedBox(height: Gap.lg),
-          TextField(controller: _username, autocorrect: false, decoration: const InputDecoration(labelText: 'Username PPPoE pelanggan')),
+          TextField(
+            controller: _username,
+            autocorrect: false,
+            decoration: const InputDecoration(labelText: 'Username PPPoE pelanggan'),
+          ),
           const SizedBox(height: Gap.md),
           if (_loadingOptions)
-            const Padding(padding: EdgeInsets.all(Gap.md), child: Center(child: CircularProgressIndicator()))
+            const Padding(
+              padding: EdgeInsets.all(Gap.md),
+              child: Center(child: CircularProgressIndicator()),
+            )
           else if (_technicians.isEmpty)
             Text('Belum ada teknisi aktif. Tambahkan teknisi dari panel web.', style: TextStyle(color: context.tone(Tone.danger)))
           else
@@ -220,7 +247,11 @@ class _CreateSheetState extends State<_CreateSheet> {
               onChanged: (v) => setState(() => _technicianId = v),
             ),
           const SizedBox(height: Gap.md),
-          TextField(controller: _reason, maxLines: 2, decoration: const InputDecoration(labelText: 'Alasan (opsional)')),
+          TextField(
+            controller: _reason,
+            maxLines: 2,
+            decoration: const InputDecoration(labelText: 'Alasan (opsional)'),
+          ),
           const SizedBox(height: Gap.xl),
           FilledButton(
             onPressed: _submitting || _technicians.isEmpty ? null : _submit,

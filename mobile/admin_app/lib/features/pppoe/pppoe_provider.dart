@@ -25,12 +25,10 @@ class PppoeProvider extends ChangeNotifier {
     error = null;
     notifyListeners();
     try {
-      final res = await ApiClient.instance.get('/api/pppoe/users', query: {
-        'page': page,
-        'limit': 30,
-        if (search.isNotEmpty) 'search': search,
-        if (statusFilter != null) 'status': statusFilter,
-      });
+      final res = await ApiClient.instance.get(
+        '/api/pppoe/users',
+        query: {'page': page, 'limit': 30, if (search.isNotEmpty) 'search': search, if (statusFilter != null) 'status': statusFilter},
+      );
       if (res is Map<String, dynamic>) {
         final list = (res['users'] as List? ?? []).map((e) => PppoeUser.fromJson(e as Map<String, dynamic>)).toList();
         total = res['total'] is num ? (res['total'] as num).toInt() : 0;

@@ -37,6 +37,7 @@ class PppoeUser {
   final String name;
   final String phone;
   final String status;
+
   /// Mutable: the list/detail refresh it from /api/pppoe/users/online-status
   /// after the initial load (see features/pppoe/online_status.dart).
   bool isOnline;

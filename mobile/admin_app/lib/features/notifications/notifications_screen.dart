@@ -4,12 +4,14 @@ import 'package:provider/provider.dart';
 import '../../core/api/api_client.dart';
 import '../../core/formatters.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
 import '../../models/ticket.dart';
 import '../activity_log/activity_log_screen.dart';
 import '../agents/agent_deposit_list_screen.dart';
-import '../agents/agent_list_screen.dart';
+import '../../core/crud/crud_list_screen.dart';
+import '../resources/hotspot_resources.dart';
 import '../approvals/approval_list_screen.dart';
 import '../invoices/invoice_list_screen.dart';
 import '../invoices/invoice_provider.dart';
@@ -74,7 +76,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         final res = await ApiClient.instance.get('/api/tickets', query: {'id': id});
         if (res is List && res.isNotEmpty) {
           final ticket = Ticket.fromJson((res.first as Map).cast<String, dynamic>());
-          return ChangeNotifierProvider(create: (_) => TicketProvider(), child: TicketDetailScreen(ticket: ticket));
+          return ChangeNotifierProvider(
+            create: (_) => TicketProvider(),
+            child: TicketDetailScreen(ticket: ticket),
+          );
         }
       } on ApiException catch (_) {}
       return const TicketListScreen();
@@ -83,7 +88,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (p == '/admin/manual-payments') return const ManualPaymentListScreen();
     if (p == '/admin/session' || p.startsWith('/admin/sessions')) return const SessionListScreen();
     if (p == '/admin/hotspot/agent/deposits') return const AgentDepositListScreen();
-    if (p == '/admin/hotspot/agent') return const AgentListScreen();
+    if (p == '/admin/hotspot/agent') return CrudListScreen(config: agentsConfig());
     if (p == '/admin/pppoe/registrations') return const RegistrationListScreen();
     if (p == '/admin/pppoe/approvals') return const ApprovalListScreen();
     if (p == '/admin/logs/activity') return const ActivityLogScreen();
@@ -92,7 +97,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       return ChangeNotifierProvider(create: (_) => PppoeProvider()..search = q['search'] ?? '', child: const PppoeListScreen());
     }
     if (p == '/admin/isolated-users') {
-      return ChangeNotifierProvider(create: (_) => PppoeProvider(), child: const PppoeListScreen(initialStatus: 'isolated'));
+      return ChangeNotifierProvider(
+        create: (_) => PppoeProvider(),
+        child: const PppoeListScreen(initialStatus: 'isolated'),
+      );
     }
     if (p.startsWith('/admin/invoices')) {
       return ChangeNotifierProvider(create: (_) => InvoiceProvider(), child: const InvoiceListScreen());
@@ -120,6 +128,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         title: const Text('Notifikasi'),
         actions: [
           if (p.unreadCount > 0) TextButton(onPressed: p.markAllRead, child: const Text('Tandai dibaca')),
+          if (p.notifications.any((n) => n['isRead'] == true))
+            IconButton(
+              tooltip: 'Hapus yang sudah dibaca',
+              icon: const Icon(Icons.delete_sweep_rounded),
+              onPressed: () async {
+                final ok = await confirmAction(
+                  context,
+                  title: 'Hapus Notifikasi?',
+                  message: 'Semua notifikasi yang sudah dibaca dihapus.',
+                  confirmLabel: 'Hapus',
+                  destructive: true,
+                );
+                if (ok && context.mounted) await runAction(context, p.deleteRead, success: 'Notifikasi dihapus.');
+              },
+            ),
           const SizedBox(width: Gap.xs),
         ],
       ),
@@ -139,15 +162,27 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             final type = str(n, 'type') ?? '';
             final unread = n['isRead'] != true;
             final created = dateOf(n, 'createdAt');
-            return _NotificationTile(
-              icon: _typeIcons[type] ?? Icons.notifications_rounded,
-              tone: _typeTone(type),
-              title: str(n, 'title') ?? '-',
-              message: str(n, 'message') ?? '',
-              time: created != null ? formatRelativeTime(created) : null,
-              unread: unread,
-              linked: str(n, 'link') != null,
-              onTap: () => _open(n),
+            return Dismissible(
+              key: ValueKey(n['id']),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: Gap.xl),
+                child: Icon(Icons.delete_outline_rounded, color: context.tone(Tone.danger)),
+              ),
+              confirmDismiss: (_) async {
+                return runAction(context, () => p.delete(n['id'].toString()));
+              },
+              child: _NotificationTile(
+                icon: _typeIcons[type] ?? Icons.notifications_rounded,
+                tone: _typeTone(type),
+                title: str(n, 'title') ?? '-',
+                message: str(n, 'message') ?? '',
+                time: created != null ? formatRelativeTime(created) : null,
+                unread: unread,
+                linked: str(n, 'link') != null,
+                onTap: () => _open(n),
+              ),
             );
           },
         ),
@@ -200,7 +235,9 @@ class _NotificationTile extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Expanded(child: Text(title, style: TextStyle(fontSize: 14, fontWeight: unread ? FontWeight.w800 : FontWeight.w600))),
+                        Expanded(
+                          child: Text(title, style: TextStyle(fontSize: 14, fontWeight: unread ? FontWeight.w800 : FontWeight.w600)),
+                        ),
                         if (unread) Icon(Icons.circle, size: 8, color: context.colors.primary),
                       ],
                     ),
@@ -213,7 +250,10 @@ class _NotificationTile extends StatelessWidget {
                           Text(time!, style: TextStyle(fontSize: 11.5, color: muted)),
                           if (linked) ...[
                             const Spacer(),
-                            Text('Buka', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: context.colors.primary)),
+                            Text(
+                              'Buka',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: context.colors.primary),
+                            ),
                             Icon(Icons.chevron_right_rounded, size: 16, color: context.colors.primary),
                           ],
                         ],

@@ -25,10 +25,7 @@ class AppTheme {
   static ThemeData get dark => _build(_Palette.dark);
 
   static ThemeData _build(_Palette p) {
-    final scheme = ColorScheme.fromSeed(
-      seedColor: brand,
-      brightness: p.brightness,
-    ).copyWith(
+    final scheme = ColorScheme.fromSeed(seedColor: brand, brightness: p.brightness).copyWith(
       primary: p.primary,
       onPrimary: onColor(p.primary),
       surface: p.surface,
@@ -40,10 +37,7 @@ class AppTheme {
       error: p.danger,
     );
 
-    final text = ThemeData(brightness: p.brightness, fontFamily: 'PlusJakartaSans').textTheme.apply(
-          bodyColor: p.text,
-          displayColor: p.text,
-        );
+    final text = ThemeData(brightness: p.brightness, fontFamily: 'PlusJakartaSans').textTheme.apply(bodyColor: p.text, displayColor: p.text);
 
     final controlShape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(radiusControl));
 
@@ -87,7 +81,10 @@ class AppTheme {
         suffixIconColor: p.textMuted,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(radiusControl), borderSide: BorderSide.none),
         enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(radiusControl), borderSide: BorderSide.none),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(radiusControl), borderSide: BorderSide(color: p.primary, width: 1.5)),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(radiusControl),
+          borderSide: BorderSide(color: p.primary, width: 1.5),
+        ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -144,12 +141,14 @@ class AppTheme {
         height: 68,
         indicatorColor: p.primary.withValues(alpha: 0.14),
         iconTheme: WidgetStateProperty.resolveWith((s) => IconThemeData(color: s.contains(WidgetState.selected) ? p.primary : p.textMuted)),
-        labelTextStyle: WidgetStateProperty.resolveWith((s) => TextStyle(
-              fontFamily: 'PlusJakartaSans',
-              fontSize: 11.5,
-              fontWeight: s.contains(WidgetState.selected) ? FontWeight.w700 : FontWeight.w500,
-              color: s.contains(WidgetState.selected) ? p.primary : p.textMuted,
-            )),
+        labelTextStyle: WidgetStateProperty.resolveWith(
+          (s) => TextStyle(
+            fontFamily: 'PlusJakartaSans',
+            fontSize: 11.5,
+            fontWeight: s.contains(WidgetState.selected) ? FontWeight.w700 : FontWeight.w500,
+            color: s.contains(WidgetState.selected) ? p.primary : p.textMuted,
+          ),
+        ),
       ),
       dividerTheme: DividerThemeData(color: p.border, thickness: 1, space: 1),
       listTileTheme: ListTileThemeData(iconColor: p.textMuted, textColor: p.text),
@@ -409,9 +408,17 @@ class LabeledFigure extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.colors.onSurfaceVariant)),
+        Text(
+          label,
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.colors.onSurfaceVariant),
+        ),
         const SizedBox(height: 2),
-        Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: valueSize, fontWeight: FontWeight.w800, color: color, height: 1.15)),
+        Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(fontSize: valueSize, fontWeight: FontWeight.w800, color: color, height: 1.15),
+        ),
       ],
     );
   }
