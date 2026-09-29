@@ -162,6 +162,9 @@ export async function POST(request: NextRequest) {
 // PUT - Update PPPoE profile
 export async function PUT(request: NextRequest) {
   try {
+    const authCheck = await requirePermission('customers.edit');
+    if (!authCheck.authorized) return authCheck.response;
+
     const body = await request.json();
     const {
       id,
@@ -344,6 +347,9 @@ export async function PUT(request: NextRequest) {
 // DELETE - Remove PPPoE profile
 export async function DELETE(request: NextRequest) {
   try {
+    const authCheck = await requirePermission('customers.delete');
+    if (!authCheck.authorized) return authCheck.response;
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 

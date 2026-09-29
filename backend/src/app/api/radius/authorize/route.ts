@@ -1,4 +1,5 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
+import { rejectNonLocal } from '@/server/middleware/internal-only';
 import { prisma } from "@/server/db/client";
 import { nowWIB } from "@/lib/timezone";
 
@@ -14,6 +15,9 @@ import { nowWIB } from "@/lib/timezone";
  * 3. Voucher has expiresAt in the past
  */
 export async function POST(request: NextRequest) {
+  const blocked = rejectNonLocal(request);
+  if (blocked) return blocked;
+
   let username: string | undefined;
   try {
     // Read body as text first (can only read once in Next.js)
