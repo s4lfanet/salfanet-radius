@@ -1,4 +1,5 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
+import { rejectNonLocal } from '@/server/middleware/internal-only';
 import { prisma } from "@/server/db/client";
 import { nanoid } from "nanoid";
 import { nowWIB } from "@/lib/timezone";
@@ -17,6 +18,9 @@ import { nowWIB } from "@/lib/timezone";
  */
 
 export async function POST(request: NextRequest) {
+  const blocked = rejectNonLocal(request);
+  if (blocked) return blocked;
+
   try {
     const body = await request.json();
     const { username, reply } = body;

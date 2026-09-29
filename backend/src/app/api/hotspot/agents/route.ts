@@ -200,6 +200,9 @@ export async function POST(request: NextRequest) {
 // PUT - Update agent
 export async function PUT(request: NextRequest) {
   try {
+    const authCheck = await requirePermission('hotspot.manage');
+    if (!authCheck.authorized) return authCheck.response;
+
     const body = await request.json();
     const { id, name, phone, email, address, isActive, routerId } = body;
 
@@ -252,6 +255,9 @@ export async function PUT(request: NextRequest) {
 // DELETE - Remove agent
 export async function DELETE(request: NextRequest) {
   try {
+    const authCheck = await requirePermission('hotspot.manage');
+    if (!authCheck.authorized) return authCheck.response;
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 

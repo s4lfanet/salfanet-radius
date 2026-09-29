@@ -1,4 +1,5 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
+import { rejectNonLocal } from '@/server/middleware/internal-only';
 
 /**
  * RADIUS Accounting Hook
@@ -11,6 +12,9 @@
  * This endpoint just logs for debugging.
  */
 export async function POST(request: NextRequest) {
+  const blocked = rejectNonLocal(request);
+  if (blocked) return blocked;
+
   try {
     const body = await request.json();
     const {
