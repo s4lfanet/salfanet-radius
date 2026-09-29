@@ -18,10 +18,18 @@ class EmptyState extends StatelessWidget {
       children: [
         RoleIconTile(icon: icon, color: context.tone(Tone.neutral), size: 56),
         const SizedBox(height: Gap.lg),
-        Text(message, textAlign: TextAlign.center, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+        Text(
+          message,
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+        ),
         if (hint != null) ...[
           const SizedBox(height: Gap.xs),
-          Text(hint!, textAlign: TextAlign.center, style: TextStyle(fontSize: 13, height: 1.4, color: context.colors.onSurfaceVariant)),
+          Text(
+            hint!,
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, height: 1.4, color: context.colors.onSurfaceVariant),
+          ),
         ],
         if (action != null) ...[const SizedBox(height: Gap.lg), action!],
       ],
@@ -120,7 +128,10 @@ class DataStateView extends StatelessWidget {
     if (loading) return const LoadingView();
     if (error != null) {
       return onRetry != null
-          ? RefreshIndicator(onRefresh: () async => onRetry!(), child: ErrorView(message: error!, onRetry: onRetry))
+          ? RefreshIndicator(
+              onRefresh: () async => onRetry!(),
+              child: ErrorView(message: error!, onRetry: onRetry),
+            )
           : ErrorView(message: error!);
     }
     if (isEmpty) {

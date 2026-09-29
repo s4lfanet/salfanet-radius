@@ -4,6 +4,7 @@ import '../../core/api/api_client.dart';
 import '../../core/formatters.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/detail.dart';
+import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
 import '../pppoe/pppoe_detail_screen.dart';
@@ -67,23 +68,58 @@ class _ReferralListScreenState extends State<ReferralListScreen> {
         figure: formatCurrency(numOf(r, 'amount')),
       ),
       sections: [
-        DetailSection(title: 'Pengajak', rows: [
-          InfoRow('Nama', str(referrer, 'name'), onTap: () => _openCustomer(str(referrer, 'id'))),
-          InfoRow('Username', str(referrer, 'username')),
-          InfoRow('Kode Referral', str(referrer, 'referralCode'), copyable: true),
-          InfoRow('Telepon', str(referrer, 'phone'), copyable: true),
-        ]),
-        DetailSection(title: 'Pelanggan Baru', rows: [
-          InfoRow('Nama', str(referred, 'name'), onTap: () => _openCustomer(str(referred, 'id'))),
-          InfoRow('Username', str(referred, 'username')),
-          InfoRow('Bergabung', formatDateOrNull(dateOf(referred, 'createdAt'))),
-        ]),
-        DetailSection(title: 'Bonus', rows: [
-          InfoRow('Dibuat', formatDateTimeOrNull(dateOf(r, 'createdAt'))),
-          InfoRow('Dicairkan', formatDateTimeOrNull(dateOf(r, 'creditedAt'))),
-        ]),
+        DetailSection(
+          title: 'Pengajak',
+          rows: [
+            InfoRow('Nama', str(referrer, 'name'), onTap: () => _openCustomer(str(referrer, 'id'))),
+            InfoRow('Username', str(referrer, 'username')),
+            InfoRow('Kode Referral', str(referrer, 'referralCode'), copyable: true),
+            InfoRow('Telepon', str(referrer, 'phone'), copyable: true),
+          ],
+        ),
+        DetailSection(
+          title: 'Pelanggan Baru',
+          rows: [
+            InfoRow('Nama', str(referred, 'name'), onTap: () => _openCustomer(str(referred, 'id'))),
+            InfoRow('Username', str(referred, 'username')),
+            InfoRow('Bergabung', formatDateOrNull(dateOf(referred, 'createdAt'))),
+          ],
+        ),
+        DetailSection(
+          title: 'Bonus',
+          rows: [InfoRow('Dibuat', formatDateTimeOrNull(dateOf(r, 'createdAt'))), InfoRow('Dicairkan', formatDateTimeOrNull(dateOf(r, 'creditedAt')))],
+        ),
       ],
+      actions: status != 'PENDING'
+          ? null
+          : (sheet) => [
+              ActionSpec('Cairkan ke Saldo', Icons.savings_rounded, () => _act(sheet, r, 'credit'), kind: ActionKind.success),
+              ActionSpec('Batalkan', Icons.block_rounded, () => _act(sheet, r, 'expire'), kind: ActionKind.danger),
+            ],
     );
+  }
+
+  Future<void> _act(BuildContext sheet, Map<String, dynamic> r, String action) async {
+    final credit = action == 'credit';
+    final ok = await confirmAction(
+      sheet,
+      title: credit ? 'Cairkan Bonus?' : 'Batalkan Bonus?',
+      message: credit
+          ? '${formatCurrency(numOf(r, 'amount'))} ditambahkan ke saldo ${str(mapOf(r, 'referrer'), 'name') ?? 'pengajak'} dan dicatat di Keuangan.'
+          : 'Bonus ini ditandai kedaluwarsa dan tidak bisa dicairkan.',
+      confirmLabel: credit ? 'Cairkan' : 'Batalkan bonus',
+      destructive: !credit,
+    );
+    if (!ok || !sheet.mounted) return;
+    final done = await runAction(
+      sheet,
+      () => ApiClient.instance.post('/api/admin/referrals/${r['id']}', data: {'action': action}),
+      success: credit ? 'Bonus dicairkan.' : 'Bonus dibatalkan.',
+    );
+    if (done) {
+      if (sheet.mounted) Navigator.pop(sheet);
+      _load();
+    }
   }
 
   @override
@@ -101,10 +137,19 @@ class _ReferralListScreenState extends State<ReferralListScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: Gap.lg, vertical: Gap.md),
                   child: Row(
                     children: [
-                      Expanded(child: LabeledFigure(label: 'Bonus dicairkan', value: formatCurrency(numOf(s, 'totalCredited')), color: context.tone(Tone.success), valueSize: 16)),
+                      Expanded(
+                        child: LabeledFigure(
+                          label: 'Bonus dicairkan',
+                          value: formatCurrency(numOf(s, 'totalCredited')),
+                          color: context.tone(Tone.success),
+                          valueSize: 16,
+                        ),
+                      ),
                       Container(width: 1, height: 36, color: context.colors.outline),
                       const SizedBox(width: Gap.lg),
-                      Expanded(child: LabeledFigure(label: 'Pelanggan dari referral', value: '${numOf(s, 'referredUsers')}', valueSize: 16)),
+                      Expanded(
+                        child: LabeledFigure(label: 'Pelanggan dari referral', value: '${numOf(s, 'referredUsers')}', valueSize: 16),
+                      ),
                     ],
                   ),
                 ),

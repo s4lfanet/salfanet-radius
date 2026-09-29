@@ -50,8 +50,12 @@ class _PaymentProofListScreenState extends State<PaymentProofListScreen> {
   Future<void> _decide(BuildContext ctx, Map<String, dynamic> p, bool approve, {bool fromSheet = false}) async {
     String? reason;
     if (approve) {
-      final ok = await confirmAction(ctx,
-          title: 'Setujui Bukti', message: 'Bukti ${formatCurrency(numOf(p, 'amount'))} dari ${str(p, 'collector_name') ?? 'kolektor'} untuk ${str(p, 'fullname')} diterima.', confirmLabel: 'Setujui');
+      final ok = await confirmAction(
+        ctx,
+        title: 'Setujui Bukti',
+        message: 'Bukti ${formatCurrency(numOf(p, 'amount'))} dari ${str(p, 'collector_name') ?? 'kolektor'} untuk ${str(p, 'fullname')} diterima.',
+        confirmLabel: 'Setujui',
+      );
       if (!ok) return;
     } else {
       reason = await askReason(ctx, title: 'Tolak Bukti', label: 'Alasan penolakan');
@@ -62,7 +66,10 @@ class _PaymentProofListScreenState extends State<PaymentProofListScreen> {
     // the earlier PATCH call failed with 405 on every approve/reject.
     final done = await runAction(
       ctx,
-      () => ApiClient.instance.put('/api/admin/payment-proofs/${p['id']}/verify', data: {'action': approve ? 'approve' : 'reject', if (reason != null) 'rejectReason': reason}),
+      () => ApiClient.instance.put(
+        '/api/admin/payment-proofs/${p['id']}/verify',
+        data: {'action': approve ? 'approve' : 'reject', if (reason != null) 'rejectReason': reason},
+      ),
       success: approve ? 'Bukti disetujui.' : 'Bukti ditolak.',
     );
     if (done) {
@@ -85,25 +92,28 @@ class _PaymentProofListScreenState extends State<PaymentProofListScreen> {
         figure: formatCurrency(numOf(p, 'amount')),
       ),
       sections: [
-        DetailSection(title: 'Tagihan', rows: [
-          InfoRow('Invoice', str(p, 'invoice_number'), copyable: true),
-          InfoRow('Telepon', str(p, 'phone'), copyable: true),
-        ]),
-        DetailSection(title: 'Kolektor', rows: [
-          InfoRow('Nama', str(p, 'collector_name')),
-          InfoRow('Username', str(p, 'collector_username')),
-          InfoRow('Dikirim', formatDateTimeOrNull(dateOf(p, 'submitted_at'))),
-          InfoRow('Diverifikasi', formatDateTimeOrNull(dateOf(p, 'reviewed_at'))),
-          InfoRow('Alasan Ditolak', str(p, 'reject_reason'), valueColor: context.tone(Tone.danger)),
-        ]),
+        DetailSection(
+          title: 'Tagihan',
+          rows: [InfoRow('Invoice', str(p, 'invoice_number'), copyable: true), InfoRow('Telepon', str(p, 'phone'), copyable: true)],
+        ),
+        DetailSection(
+          title: 'Kolektor',
+          rows: [
+            InfoRow('Nama', str(p, 'collector_name')),
+            InfoRow('Username', str(p, 'collector_username')),
+            InfoRow('Dikirim', formatDateTimeOrNull(dateOf(p, 'submitted_at'))),
+            InfoRow('Diverifikasi', formatDateTimeOrNull(dateOf(p, 'reviewed_at'))),
+            InfoRow('Alasan Ditolak', str(p, 'reject_reason'), valueColor: context.tone(Tone.danger)),
+          ],
+        ),
         ProofImage(source: str(p, 'proof_image'), baseUrl: ApiClient.instance.baseUrl),
       ],
       actions: status != 'pending'
           ? null
           : (sheet) => [
-                ActionSpec('Setujui', Icons.check_rounded, () => _decide(sheet, p, true, fromSheet: true), kind: ActionKind.success),
-                ActionSpec('Tolak', Icons.close_rounded, () => _decide(sheet, p, false, fromSheet: true), kind: ActionKind.danger),
-              ],
+              ActionSpec('Setujui', Icons.check_rounded, () => _decide(sheet, p, true, fromSheet: true), kind: ActionKind.success),
+              ActionSpec('Tolak', Icons.close_rounded, () => _decide(sheet, p, false, fromSheet: true), kind: ActionKind.danger),
+            ],
     );
   }
 

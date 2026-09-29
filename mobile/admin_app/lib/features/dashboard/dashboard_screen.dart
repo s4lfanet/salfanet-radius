@@ -41,17 +41,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _refresh() async {
-    await Future.wait([
-      context.read<DashboardProvider>().load(),
-      context.read<NotificationsProvider>().load(),
-    ]);
+    await Future.wait([context.read<DashboardProvider>().load(), context.read<NotificationsProvider>().load()]);
   }
 
   void _open(Widget screen) => Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
 
   // Lists opened from here get their own provider so a filter set from the
   // dashboard doesn't leak into the Pelanggan / Tagihan tabs.
-  void _openCustomers({String? status}) => _open(ChangeNotifierProvider(create: (_) => PppoeProvider(), child: PppoeListScreen(initialStatus: status)));
+  void _openCustomers({String? status}) => _open(
+    ChangeNotifierProvider(
+      create: (_) => PppoeProvider(),
+      child: PppoeListScreen(initialStatus: status),
+    ),
+  );
   void _openInvoices() => _open(ChangeNotifierProvider(create: (_) => InvoiceProvider(), child: const InvoiceListScreen()));
 
   @override
@@ -90,7 +92,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(Gap.page, Gap.xs, Gap.page, Gap.xl),
+      padding: EdgeInsets.fromLTRB(Gap.page, Gap.xs, Gap.page, listBottomPadding(context)),
       children: [
         Text('Halo, ${user?.name.split(' ').first ?? ''}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, height: 1.2)),
         const SizedBox(height: 2),
@@ -167,11 +169,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
             padding: const EdgeInsets.symmetric(vertical: Gap.md),
             child: Row(
               children: [
-                Expanded(child: _ServiceStatus(label: 'RADIUS', online: s.radiusOnline)),
+                Expanded(
+                  child: _ServiceStatus(label: 'RADIUS', online: s.radiusOnline),
+                ),
                 Container(width: 1, height: 34, color: context.colors.outline),
-                Expanded(child: _ServiceStatus(label: 'Database', online: s.databaseOnline)),
+                Expanded(
+                  child: _ServiceStatus(label: 'Database', online: s.databaseOnline),
+                ),
                 Container(width: 1, height: 34, color: context.colors.outline),
-                Expanded(child: _ServiceStatus(label: 'API', online: s.apiOnline)),
+                Expanded(
+                  child: _ServiceStatus(label: 'API', online: s.apiOnline),
+                ),
               ],
             ),
           ),
@@ -219,21 +227,33 @@ class _RevenueHero extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Text('Pendapatan invoice bulan ini', style: TextStyle(color: soft, fontSize: 12.5, fontWeight: FontWeight.w600)),
+                  Text(
+                    'Pendapatan invoice bulan ini',
+                    style: TextStyle(color: soft, fontSize: 12.5, fontWeight: FontWeight.w600),
+                  ),
                   const Spacer(),
                   Icon(Icons.chevron_right_rounded, color: soft, size: 20),
                 ],
               ),
               const SizedBox(height: Gap.xs),
-              Text(stats.invoiceRevenueFormatted, style: const TextStyle(color: onBrand, fontSize: 28, fontWeight: FontWeight.w800, height: 1.15)),
+              Text(
+                stats.invoiceRevenueFormatted,
+                style: const TextStyle(color: onBrand, fontSize: 28, fontWeight: FontWeight.w800, height: 1.15),
+              ),
               const SizedBox(height: Gap.lg),
               Container(height: 1, color: Colors.white.withValues(alpha: 0.18)),
               const SizedBox(height: Gap.md),
               Row(
                 children: [
-                  Expanded(child: _HeroStat(label: 'Invoice hari ini', value: stats.invoiceRevenueTodayFormatted)),
-                  Expanded(child: _HeroStat(label: 'Voucher hari ini', value: stats.voucherRevenueTodayFormatted)),
-                  Expanded(child: _HeroStat(label: 'Invoice terbit', value: '${stats.invoiceCountMonth}')),
+                  Expanded(
+                    child: _HeroStat(label: 'Invoice hari ini', value: stats.invoiceRevenueTodayFormatted),
+                  ),
+                  Expanded(
+                    child: _HeroStat(label: 'Voucher hari ini', value: stats.voucherRevenueTodayFormatted),
+                  ),
+                  Expanded(
+                    child: _HeroStat(label: 'Invoice terbit', value: '${stats.invoiceCountMonth}'),
+                  ),
                 ],
               ),
             ],
@@ -254,9 +274,19 @@ class _HeroStat extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white.withValues(alpha: 0.92), fontSize: 11)),
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.92), fontSize: 11),
+        ),
         const SizedBox(height: 2),
-        Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.w700)),
+        Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(color: Colors.white, fontSize: 13.5, fontWeight: FontWeight.w700),
+        ),
       ],
     );
   }
@@ -289,11 +319,19 @@ class _ActionRow extends StatelessWidget {
                 children: [
                   Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 2),
-                  Text(hint, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: context.colors.onSurfaceVariant)),
+                  Text(
+                    hint,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 12, color: context.colors.onSurfaceVariant),
+                  ),
                 ],
               ),
             ),
-            Text('$count', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: idle ? context.colors.onSurfaceVariant : c)),
+            Text(
+              '$count',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: idle ? context.colors.onSurfaceVariant : c),
+            ),
             const SizedBox(width: Gap.xs),
             Icon(Icons.chevron_right_rounded, color: context.colors.onSurfaceVariant, size: 20),
           ],
@@ -329,7 +367,12 @@ class _MetricCard extends StatelessWidget {
               const SizedBox(height: 2),
               Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
               const SizedBox(height: 2),
-              Text(detail, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11.5, color: context.colors.onSurfaceVariant)),
+              Text(
+                detail,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 11.5, color: context.colors.onSurfaceVariant),
+              ),
             ],
           ),
         ),
@@ -348,14 +391,20 @@ class _ServiceStatus extends StatelessWidget {
     final c = context.tone(online ? Tone.success : Tone.danger);
     return Column(
       children: [
-        Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.colors.onSurfaceVariant)),
+        Text(
+          label,
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.colors.onSurfaceVariant),
+        ),
         const SizedBox(height: 4),
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(online ? Icons.check_circle_rounded : Icons.error_rounded, size: 15, color: c),
             const SizedBox(width: 4),
-            Text(online ? 'Online' : 'Offline', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: c)),
+            Text(
+              online ? 'Online' : 'Offline',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: c),
+            ),
           ],
         ),
       ],
@@ -385,7 +434,12 @@ class _ActivityRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(str(activity, 'action') ?? '-', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, height: 1.35)),
+                Text(
+                  str(activity, 'action') ?? '-',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, height: 1.35),
+                ),
                 const SizedBox(height: 2),
                 Text(
                   [str(activity, 'user'), if (time != null) formatRelativeTime(time)].whereType<String>().join(' · '),

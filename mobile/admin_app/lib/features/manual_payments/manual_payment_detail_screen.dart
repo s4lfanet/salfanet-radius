@@ -26,7 +26,8 @@ class _ManualPaymentDetailScreenState extends State<ManualPaymentDetailScreen> {
     final ok = await confirmAction(
       context,
       title: 'Setujui Pembayaran',
-      message: 'Pastikan ${formatCurrency(p.amount)} dari ${p.accountName} (${p.bankName}) sudah masuk ke rekening. Invoice ${p.invoiceNumber ?? ''} akan ditandai lunas.',
+      message:
+          'Pastikan ${formatCurrency(p.amount)} dari ${p.accountName} (${p.bankName}) sudah masuk ke rekening. Invoice ${p.invoiceNumber ?? ''} akan ditandai lunas.',
       confirmLabel: 'Setujui',
     );
     if (!ok || !mounted) return;
@@ -49,19 +50,37 @@ class _ManualPaymentDetailScreenState extends State<ManualPaymentDetailScreen> {
     if (done) Navigator.pop(context);
   }
 
+  Future<void> _delete() async {
+    final ok = await confirmAction(
+      context,
+      title: 'Hapus Pembayaran?',
+      message: 'Data pembayaran manual ini dihapus permanen.',
+      confirmLabel: 'Hapus',
+      destructive: true,
+    );
+    if (!ok || !mounted) return;
+    final done = await runAction(context, () => ApiClient.instance.delete('/api/manual-payments/${p.id}'), success: 'Pembayaran dihapus.');
+    if (done && mounted) Navigator.pop(context, true);
+  }
+
   @override
   Widget build(BuildContext context) {
     final pending = p.status == 'PENDING';
     return Scaffold(
-      appBar: AppBar(title: const Text('Detail Pembayaran')),
+      appBar: AppBar(
+        title: const Text('Detail Pembayaran'),
+        actions: [IconButton(tooltip: 'Hapus', icon: const Icon(Icons.delete_outline_rounded), onPressed: _acting ? null : _delete)],
+      ),
       bottomNavigationBar: pending
-          ? ActionBar(actions: [
-              ActionSpec('Setujui', Icons.check_rounded, _approve, kind: ActionKind.success, busy: _acting),
-              ActionSpec('Tolak', Icons.close_rounded, _acting ? null : _reject, kind: ActionKind.danger),
-            ])
+          ? ActionBar(
+              actions: [
+                ActionSpec('Setujui', Icons.check_rounded, _approve, kind: ActionKind.success, busy: _acting),
+                ActionSpec('Tolak', Icons.close_rounded, _acting ? null : _reject, kind: ActionKind.danger),
+              ],
+            )
           : null,
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(Gap.page, Gap.sm, Gap.page, Gap.xl),
+        padding: EdgeInsets.fromLTRB(Gap.page, Gap.sm, Gap.page, listBottomPadding(context)),
         children: [
           DetailHeader(
             icon: Icons.receipt_rounded,
@@ -72,19 +91,25 @@ class _ManualPaymentDetailScreenState extends State<ManualPaymentDetailScreen> {
             figureLabel: 'Jumlah transfer',
             figure: formatCurrency(p.amount),
           ),
-          DetailSection(title: 'Transfer', rows: [
-            InfoRow('Bank / E-Wallet', p.bankName),
-            InfoRow('No. Rekening', p.accountNumber, copyable: true),
-            InfoRow('Atas Nama', p.accountName),
-            InfoRow('Tgl Transfer', formatDate(p.paymentDate)),
-            InfoRow('Dikirim', formatDateTime(p.createdAt)),
-            InfoRow('Catatan', p.notes),
-          ]),
-          DetailSection(title: 'Tagihan', rows: [
-            InfoRow('Invoice', p.invoiceNumber, copyable: true),
-            InfoRow('Telepon', p.customerPhone, copyable: true),
-            InfoRow('Alasan Ditolak', p.rejectionReason, valueColor: context.tone(Tone.danger)),
-          ]),
+          DetailSection(
+            title: 'Transfer',
+            rows: [
+              InfoRow('Bank / E-Wallet', p.bankName),
+              InfoRow('No. Rekening', p.accountNumber, copyable: true),
+              InfoRow('Atas Nama', p.accountName),
+              InfoRow('Tgl Transfer', formatDate(p.paymentDate)),
+              InfoRow('Dikirim', formatDateTime(p.createdAt)),
+              InfoRow('Catatan', p.notes),
+            ],
+          ),
+          DetailSection(
+            title: 'Tagihan',
+            rows: [
+              InfoRow('Invoice', p.invoiceNumber, copyable: true),
+              InfoRow('Telepon', p.customerPhone, copyable: true),
+              InfoRow('Alasan Ditolak', p.rejectionReason, valueColor: context.tone(Tone.danger)),
+            ],
+          ),
           ProofImage(source: p.receiptImage, baseUrl: ApiClient.instance.baseUrl, relativePrefix: '/uploads/payment-proofs/'),
         ],
       ),

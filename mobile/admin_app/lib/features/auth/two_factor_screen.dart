@@ -62,8 +62,10 @@ class _TwoFactorScreenState extends State<TwoFactorScreen> {
               const SizedBox(height: Gap.lg),
               const Text('Masukkan kode autentikator', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
               const SizedBox(height: Gap.xs),
-              Text('Buka Google Authenticator (atau aplikasi sejenis) dan masukkan 6 digit kode untuk akun ini. Sesi ini berlaku 10 menit.',
-                  style: TextStyle(color: context.colors.onSurfaceVariant, height: 1.45)),
+              Text(
+                'Buka Google Authenticator (atau aplikasi sejenis) dan masukkan 6 digit kode untuk akun ini. Sesi ini berlaku 10 menit.',
+                style: TextStyle(color: context.colors.onSurfaceVariant, height: 1.45),
+              ),
               const SizedBox(height: Gap.xl),
               TextField(
                 controller: _code,

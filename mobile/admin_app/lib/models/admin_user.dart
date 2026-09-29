@@ -1,11 +1,5 @@
 class AdminUser {
-  AdminUser({
-    required this.id,
-    required this.username,
-    required this.name,
-    required this.role,
-    this.email,
-  });
+  AdminUser({required this.id, required this.username, required this.name, required this.role, this.email});
 
   final String id;
   final String username;

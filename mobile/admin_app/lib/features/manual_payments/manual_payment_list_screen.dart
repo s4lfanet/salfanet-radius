@@ -68,9 +68,18 @@ class _Tile extends StatelessWidget {
       subtitle: '${payment.bankName} · a.n. ${payment.accountName}',
       meta: '${payment.invoiceNumber ?? '-'} · ${formatRelativeTime(payment.createdAt)}',
       trailing: AmountTrailing(amount: formatCurrency(payment.amount), pill: StatusPill.status(payment.status)),
-      onTap: () => Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => ChangeNotifierProvider.value(value: context.read<ManualPaymentProvider>(), child: ManualPaymentDetailScreen(payment: payment)),
-      )),
+      onTap: () async {
+        final provider = context.read<ManualPaymentProvider>();
+        final changed = await Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => ChangeNotifierProvider.value(
+              value: provider,
+              child: ManualPaymentDetailScreen(payment: payment),
+            ),
+          ),
+        );
+        if (changed == true) provider.load();
+      },
     );
   }
 }

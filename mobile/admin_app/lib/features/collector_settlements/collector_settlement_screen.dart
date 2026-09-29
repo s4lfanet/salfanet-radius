@@ -63,15 +63,40 @@ class _CollectorSettlementScreenState extends State<CollectorSettlementScreen> {
   }
 
   Future<void> _confirm(BuildContext ctx, Map<String, dynamic> r, {bool fromSheet = false}) async {
-    final ok = await confirmAction(ctx,
-        title: 'Konfirmasi Setoran',
-        message: '${formatCurrency(numOf(r, 'total_amount'))} dari ${str(r, 'collector_name')} untuk ${formatDate(_date)} sudah diterima kantor?',
-        confirmLabel: 'Sudah Diterima');
+    final ok = await confirmAction(
+      ctx,
+      title: 'Konfirmasi Setoran',
+      message: '${formatCurrency(numOf(r, 'total_amount'))} dari ${str(r, 'collector_name')} untuk ${formatDate(_date)} sudah diterima kantor?',
+      confirmLabel: 'Sudah Diterima',
+    );
     if (!ok || !ctx.mounted) return;
-    final done = await runAction(ctx, () => ApiClient.instance.post('/api/collector/confirm-settlement', data: {'collectorId': r['collector_id'], 'date': _dateParam}),
-        success: 'Setoran dikonfirmasi.');
+    final done = await runAction(
+      ctx,
+      () => ApiClient.instance.post('/api/collector/confirm-settlement', data: {'collectorId': r['collector_id'], 'date': _dateParam}),
+      success: 'Setoran dikonfirmasi.',
+    );
     if (done) {
       if (fromSheet && ctx.mounted) Navigator.pop(ctx);
+      _load();
+    }
+  }
+
+  Future<void> _unconfirm(BuildContext sheet, Map<String, dynamic> r) async {
+    final ok = await confirmAction(
+      sheet,
+      title: 'Batalkan Konfirmasi?',
+      message: 'Setoran ${str(r, 'collector_name')} untuk ${formatDate(_date)} kembali berstatus belum disetor.',
+      confirmLabel: 'Batalkan',
+      destructive: true,
+    );
+    if (!ok || !sheet.mounted) return;
+    final done = await runAction(
+      sheet,
+      () => ApiClient.instance.delete('/api/collector/confirm-settlement', query: {'collectorId': r['collector_id'], 'date': _dateParam}),
+      success: 'Konfirmasi dibatalkan.',
+    );
+    if (done) {
+      if (sheet.mounted) Navigator.pop(sheet);
       _load();
     }
   }
@@ -91,23 +116,30 @@ class _CollectorSettlementScreenState extends State<CollectorSettlementScreen> {
         figure: formatCurrency(numOf(r, 'total_amount')),
       ),
       sections: [
-        DetailSection(title: 'Rincian', rows: [
-          InfoRow('Tunai', formatCurrency(numOf(r, 'cash_amount'))),
-          InfoRow('Transfer', formatCurrency(numOf(r, 'transfer_amount'))),
-          InfoRow('Dikonfirmasi oleh', str(r, 'confirmed_by')),
-          InfoRow('Pada', formatDateTimeOrNull(dateOf(r, 'confirmed_at'))),
-        ]),
+        DetailSection(
+          title: 'Rincian',
+          rows: [
+            InfoRow('Tunai', formatCurrency(numOf(r, 'cash_amount'))),
+            InfoRow('Transfer', formatCurrency(numOf(r, 'transfer_amount'))),
+            InfoRow('Dikonfirmasi oleh', str(r, 'confirmed_by')),
+            InfoRow('Pada', formatDateTimeOrNull(dateOf(r, 'confirmed_at'))),
+          ],
+        ),
         DetailSection(
           title: 'Tagihan Tertagih',
           rows: invoices
-              .map((inv) => InfoRow(
-                    str(inv, 'customerName') ?? str(inv, 'customerUsername') ?? '-',
-                    '${formatCurrency(numOf(inv, 'amount'))} · ${(str(inv, 'paymentMethod') ?? 'tunai')}${inv['has_proof'] == true ? ' · ada bukti' : ''}',
-                  ))
+              .map(
+                (inv) => InfoRow(
+                  str(inv, 'customerName') ?? str(inv, 'customerUsername') ?? '-',
+                  '${formatCurrency(numOf(inv, 'amount'))} · ${(str(inv, 'paymentMethod') ?? 'tunai')}${inv['has_proof'] == true ? ' · ada bukti' : ''}',
+                ),
+              )
               .toList(),
         ),
       ],
-      actions: confirmed ? null : (sheet) => [ActionSpec('Konfirmasi Setoran', Icons.check_circle_rounded, () => _confirm(sheet, r, fromSheet: true), kind: ActionKind.success)],
+      actions: (sheet) => confirmed
+          ? [ActionSpec('Batalkan Konfirmasi', Icons.undo_rounded, () => _unconfirm(sheet, r), kind: ActionKind.danger)]
+          : [ActionSpec('Konfirmasi Setoran', Icons.check_circle_rounded, () => _confirm(sheet, r, fromSheet: true), kind: ActionKind.success)],
     );
   }
 
@@ -130,7 +162,9 @@ class _CollectorSettlementScreenState extends State<CollectorSettlementScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: Gap.lg, vertical: Gap.md),
                   child: Row(
                     children: [
-                      Expanded(child: LabeledFigure(label: DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(_date), value: formatCurrency(_dayTotal), valueSize: 18)),
+                      Expanded(
+                        child: LabeledFigure(label: DateFormat('EEEE, d MMMM yyyy', 'id_ID').format(_date), value: formatCurrency(_dayTotal), valueSize: 18),
+                      ),
                       Icon(Icons.edit_calendar_rounded, color: context.colors.onSurfaceVariant),
                     ],
                   ),

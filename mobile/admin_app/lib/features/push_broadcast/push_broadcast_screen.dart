@@ -29,7 +29,13 @@ class _PushBroadcastScreenState extends State<PushBroadcastScreen> {
   List<Map<String, dynamic>> _history = [];
 
   static const _targets = [('all', 'Semua'), ('active', 'Pelanggan aktif'), ('expired', 'Kedaluwarsa'), ('area', 'Per area')];
-  static const _targetLabels = {'all': 'Semua pelanggan', 'active': 'Pelanggan aktif', 'expired': 'Pelanggan kedaluwarsa', 'area': 'Area tertentu', 'selected': 'Pelanggan tertentu'};
+  static const _targetLabels = {
+    'all': 'Semua pelanggan',
+    'active': 'Pelanggan aktif',
+    'expired': 'Pelanggan kedaluwarsa',
+    'area': 'Area tertentu',
+    'selected': 'Pelanggan tertentu',
+  };
 
   @override
   void initState() {
@@ -71,19 +77,20 @@ class _PushBroadcastScreenState extends State<PushBroadcastScreen> {
       return;
     }
     final audience = _target == 'area' ? '${_areaIds.length} area terpilih' : _targetLabels[_target]!.toLowerCase();
-    final ok = await confirmAction(context,
-        title: 'Kirim Notifikasi?', message: '"$title" dikirim ke $audience yang memasang aplikasi atau mengaktifkan notifikasi web. Tidak bisa dibatalkan.', confirmLabel: 'Kirim');
+    final ok = await confirmAction(
+      context,
+      title: 'Kirim Notifikasi?',
+      message: '"$title" dikirim ke $audience yang memasang aplikasi atau mengaktifkan notifikasi web. Tidak bisa dibatalkan.',
+      confirmLabel: 'Kirim',
+    );
     if (!ok || !mounted) return;
     setState(() => _sending = true);
     String? resultMessage;
     final done = await runAction(context, () async {
-      final res = await ApiClient.instance.post('/api/admin/push-notifications', data: {
-        'title': title,
-        'message': message,
-        'recipientRole': 'customer',
-        'targetType': _target,
-        if (_target == 'area') 'targetIds': _areaIds.toList(),
-      });
+      final res = await ApiClient.instance.post(
+        '/api/admin/push-notifications',
+        data: {'title': title, 'message': message, 'recipientRole': 'customer', 'targetType': _target, if (_target == 'area') 'targetIds': _areaIds.toList()},
+      );
       resultMessage = res is Map ? res['message']?.toString() : null;
     });
     if (!mounted) return;
@@ -105,7 +112,7 @@ class _PushBroadcastScreenState extends State<PushBroadcastScreen> {
       body: RefreshIndicator(
         onRefresh: _load,
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(Gap.page, Gap.sm, Gap.page, Gap.xl),
+          padding: EdgeInsets.fromLTRB(Gap.page, Gap.sm, Gap.page, listBottomPadding(context)),
           children: [
             if (reach != null)
               Card(
@@ -116,7 +123,11 @@ class _PushBroadcastScreenState extends State<PushBroadcastScreen> {
                       RoleIconTile(icon: Icons.campaign_rounded, color: context.colors.primary),
                       const SizedBox(width: Gap.md),
                       Expanded(
-                        child: LabeledFigure(label: 'Pelanggan yang bisa menerima notifikasi', value: '$reach dari ${numOf(_stats, 'totalUsers')} aktif', valueSize: 16),
+                        child: LabeledFigure(
+                          label: 'Pelanggan yang bisa menerima notifikasi',
+                          value: '$reach dari ${numOf(_stats, 'totalUsers')} aktif',
+                          valueSize: 16,
+                        ),
                       ),
                     ],
                   ),
@@ -130,7 +141,10 @@ class _PushBroadcastScreenState extends State<PushBroadcastScreen> {
               children: [
                 for (final (value, label) in _targets)
                   ChoiceChip(
-                    label: Text(label, style: TextStyle(color: _target == value ? onColor(context.colors.primary) : context.colors.onSurface, fontWeight: FontWeight.w600)),
+                    label: Text(
+                      label,
+                      style: TextStyle(color: _target == value ? onColor(context.colors.primary) : context.colors.onSurface, fontWeight: FontWeight.w600),
+                    ),
                     selected: _target == value,
                     onSelected: (_) => setState(() => _target = value),
                   ),
@@ -164,9 +178,18 @@ class _PushBroadcastScreenState extends State<PushBroadcastScreen> {
             ],
             const SizedBox(height: Gap.xl),
             const SectionHeader('Pesan'),
-            TextField(controller: _title, maxLength: 60, decoration: const InputDecoration(labelText: 'Judul', hintText: 'mis. Pemeliharaan jaringan malam ini')),
+            TextField(
+              controller: _title,
+              maxLength: 60,
+              decoration: const InputDecoration(labelText: 'Judul', hintText: 'mis. Pemeliharaan jaringan malam ini'),
+            ),
             const SizedBox(height: Gap.sm),
-            TextField(controller: _message, maxLines: 4, maxLength: 200, decoration: const InputDecoration(labelText: 'Isi pesan', alignLabelWithHint: true)),
+            TextField(
+              controller: _message,
+              maxLines: 4,
+              maxLength: 200,
+              decoration: const InputDecoration(labelText: 'Isi pesan', alignLabelWithHint: true),
+            ),
             if (_history.isNotEmpty) ...[
               const SizedBox(height: Gap.lg),
               const SectionHeader('Riwayat Terkirim'),

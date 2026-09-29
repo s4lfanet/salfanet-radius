@@ -18,6 +18,7 @@ class EntityTile extends StatelessWidget {
     this.onTap,
     this.footer,
     this.leading,
+    this.onLongPress,
   });
 
   final IconData icon;
@@ -27,6 +28,7 @@ class EntityTile extends StatelessWidget {
   final String? meta;
   final Widget? trailing;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final Widget? footer;
 
   /// Replaces the icon tile when a row needs a different leading visual
@@ -49,14 +51,29 @@ class EntityTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700)),
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700),
+                    ),
                     if (subtitle != null && subtitle!.isNotEmpty) ...[
                       const SizedBox(height: 2),
-                      Text(subtitle!, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12.5, color: muted)),
+                      Text(
+                        subtitle!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 12.5, color: muted),
+                      ),
                     ],
                     if (meta != null && meta!.isNotEmpty) ...[
                       const SizedBox(height: 2),
-                      Text(meta!, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11.5, color: muted)),
+                      Text(
+                        meta!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(fontSize: 11.5, color: muted),
+                      ),
                     ],
                   ],
                 ),
@@ -81,7 +98,7 @@ class EntityTile extends StatelessWidget {
 
     return Card(
       clipBehavior: Clip.antiAlias,
-      child: onTap == null ? body : InkWell(onTap: onTap, child: body),
+      child: onTap == null && onLongPress == null ? body : InkWell(onTap: onTap, onLongPress: onLongPress, child: body),
     );
   }
 }
@@ -107,7 +124,10 @@ class StatusPill extends StatelessWidget {
         color: c.withValues(alpha: Theme.of(context).brightness == Brightness.dark ? 0.18 : 0.07),
         borderRadius: BorderRadius.circular(AppTheme.radiusPill),
       ),
-      child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: c)),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: c),
+      ),
     );
   }
 }
@@ -205,6 +225,7 @@ class RefreshableList extends StatelessWidget {
     this.controller,
     this.header,
     this.loadingMore = false,
+    this.hasFab = false,
   });
 
   final int itemCount;
@@ -214,6 +235,10 @@ class RefreshableList extends StatelessWidget {
   final Widget? header;
   final bool loadingMore;
 
+  /// Set on screens with a floating action button, so the last row can be
+  /// scrolled clear of it instead of staying underneath.
+  final bool hasFab;
+
   @override
   Widget build(BuildContext context) {
     final extra = (header != null ? 1 : 0);
@@ -222,20 +247,34 @@ class RefreshableList extends StatelessWidget {
       child: ListView.separated(
         controller: controller,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(Gap.page, Gap.sm, Gap.page, Gap.xl),
+        padding: EdgeInsets.fromLTRB(Gap.page, Gap.sm, Gap.page, listBottomPadding(context, hasFab: hasFab)),
         itemCount: itemCount + extra + (loadingMore ? 1 : 0),
         separatorBuilder: (_, __) => const SizedBox(height: Gap.sm),
         itemBuilder: (context, i) {
           if (header != null && i == 0) return header!;
           final index = i - extra;
           if (index >= itemCount) {
-            return const Padding(padding: EdgeInsets.symmetric(vertical: Gap.lg), child: Center(child: CircularProgressIndicator(strokeWidth: 2)));
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: Gap.lg),
+              child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+            );
           }
           return itemBuilder(context, index);
         },
       ),
     );
   }
+}
+
+/// Bottom padding for any scrollable page body.
+///
+/// Android 15 (targetSdk 35, Flutter's default) forces edge-to-edge: the app
+/// draws under the system navigation bar. A ListView given its own padding
+/// does not add that inset, so the last rows sat behind the nav bar and could
+/// never be scrolled into view (reported on Sesi Online). Add the inset back,
+/// plus room for a floating action button where there is one.
+double listBottomPadding(BuildContext context, {bool hasFab = false}) {
+  return Gap.xl + MediaQuery.viewPaddingOf(context).bottom + (hasFab ? 72 : 0);
 }
 
 /// Section title with an optional trailing action, used above grouped
@@ -252,8 +291,15 @@ class SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: Gap.sm, left: 2),
       child: Row(
         children: [
-          Expanded(child: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700))),
-          if (action != null) TextButton(onPressed: onAction, style: TextButton.styleFrom(visualDensity: VisualDensity.compact), child: Text(action!)),
+          Expanded(
+            child: Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+          ),
+          if (action != null)
+            TextButton(
+              onPressed: onAction,
+              style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+              child: Text(action!),
+            ),
         ],
       ),
     );

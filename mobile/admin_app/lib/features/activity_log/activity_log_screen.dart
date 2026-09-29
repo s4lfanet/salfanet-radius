@@ -44,11 +44,10 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
   }
 
   Future<void> _fetch({required int offset}) async {
-    final res = await ApiClient.instance.get('/api/admin/activity-logs', query: {
-      'limit': _pageSize,
-      'offset': offset,
-      if (_search.isNotEmpty) 'search': _search,
-    });
+    final res = await ApiClient.instance.get(
+      '/api/admin/activity-logs',
+      query: {'limit': _pageSize, 'offset': offset, if (_search.isNotEmpty) 'search': _search},
+    );
     if (res is Map<String, dynamic>) {
       final page = ((res['activities'] as List?) ?? []).map((e) => (e as Map).cast<String, dynamic>());
       _items.addAll(page);
@@ -95,13 +94,15 @@ class _ActivityLogScreenState extends State<ActivityLogScreen> {
         status: StatusPill(label: failed ? 'Gagal' : 'Berhasil', tone: failed ? Tone.danger : Tone.success),
       ),
       sections: [
-        DetailSection(rows: [
-          InfoRow('Pengguna', str(a, 'username')),
-          InfoRow('Peran', str(a, 'userRole')),
-          InfoRow('Aksi', str(a, 'action')),
-          InfoRow('Modul', str(a, 'module')),
-          InfoRow('Alamat IP', str(a, 'ipAddress'), copyable: true),
-        ]),
+        DetailSection(
+          rows: [
+            InfoRow('Pengguna', str(a, 'username')),
+            InfoRow('Peran', str(a, 'userRole')),
+            InfoRow('Aksi', str(a, 'action')),
+            InfoRow('Modul', str(a, 'module')),
+            InfoRow('Alamat IP', str(a, 'ipAddress'), copyable: true),
+          ],
+        ),
       ],
     );
   }

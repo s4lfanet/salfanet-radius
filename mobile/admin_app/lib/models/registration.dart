@@ -12,6 +12,7 @@ class Registration {
     this.profilePrice,
     this.profileSpeed,
     this.areaName,
+    this.areaId,
     this.notes,
     this.rejectionReason,
     this.installationFee,
@@ -37,6 +38,7 @@ class Registration {
   final int? profilePrice;
   final String? profileSpeed;
   final String? areaName;
+  final String? areaId;
   final String? notes;
   final String? rejectionReason;
   final num? installationFee;
@@ -76,6 +78,7 @@ class Registration {
       profilePrice: profile?['price'] is num ? (profile!['price'] as num).toInt() : null,
       profileSpeed: down != null ? '$down/${up ?? '-'} Mbps' : null,
       areaName: _s(area?['name']),
+      areaId: _s(area?['id'] ?? json['areaId']),
       notes: _s(json['notes']),
       rejectionReason: _s(json['rejectionReason']),
       installationFee: num.tryParse('${json['installationFee'] ?? ''}'),

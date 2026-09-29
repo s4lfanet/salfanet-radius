@@ -87,22 +87,25 @@ class _TopupRequestListScreenState extends State<TopupRequestListScreen> {
         figure: formatCurrency(numOf(r, 'amount')),
       ),
       sections: [
-        DetailSection(title: 'Permintaan', rows: [
-          InfoRow('Metode', str(r, 'paymentMethod')),
-          InfoRow('Referensi', str(r, 'reference'), copyable: true),
-          InfoRow('Catatan', str(meta, 'note')),
-          InfoRow('Diajukan', formatDateTimeOrNull(dateOf(meta, 'requestedAt') ?? dateOf(r, 'createdAt'))),
-          InfoRow('Disetujui', formatDateTimeOrNull(dateOf(meta, 'approvedAt'))),
-          InfoRow('Ditolak', formatDateTimeOrNull(dateOf(meta, 'rejectedAt'))),
-        ]),
+        DetailSection(
+          title: 'Permintaan',
+          rows: [
+            InfoRow('Metode', str(r, 'paymentMethod')),
+            InfoRow('Referensi', str(r, 'reference'), copyable: true),
+            InfoRow('Catatan', str(meta, 'note')),
+            InfoRow('Diajukan', formatDateTimeOrNull(dateOf(meta, 'requestedAt') ?? dateOf(r, 'createdAt'))),
+            InfoRow('Disetujui', formatDateTimeOrNull(dateOf(meta, 'approvedAt'))),
+            InfoRow('Ditolak', formatDateTimeOrNull(dateOf(meta, 'rejectedAt'))),
+          ],
+        ),
         ProofImage(source: str(meta, 'proofPath'), baseUrl: ApiClient.instance.baseUrl),
       ],
       actions: status != 'PENDING'
           ? null
           : (sheet) => [
-                ActionSpec('Setujui', Icons.check_rounded, () => _decide(sheet, r, true, fromSheet: true), kind: ActionKind.success),
-                ActionSpec('Tolak', Icons.close_rounded, () => _decide(sheet, r, false, fromSheet: true), kind: ActionKind.danger),
-              ],
+              ActionSpec('Setujui', Icons.check_rounded, () => _decide(sheet, r, true, fromSheet: true), kind: ActionKind.success),
+              ActionSpec('Tolak', Icons.close_rounded, () => _decide(sheet, r, false, fromSheet: true), kind: ActionKind.danger),
+            ],
     );
   }
 

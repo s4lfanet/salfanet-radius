@@ -3,7 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api/api_client.dart';
+import '../../core/crud/lookups.dart';
 import '../../core/formatters.dart';
+import '../../core/forms/field_spec.dart';
+import '../../core/forms/form_screen.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/detail.dart';
 import '../../core/widgets/dialogs.dart';
@@ -21,79 +24,80 @@ class RegistrationDetailScreen extends StatefulWidget {
 }
 
 class _RegistrationDetailScreenState extends State<RegistrationDetailScreen> {
-  List<Map<String, dynamic>> _areas = [];
-  List<Map<String, dynamic>> _routers = [];
-  bool _loadingOptions = false;
   bool _acting = false;
-
-  String? _areaId;
-  String? _routerId;
-  String _subscriptionType = 'POSTPAID';
-  final _billingDayController = TextEditingController(text: '1');
-  final _feeController = TextEditingController(text: '0');
 
   Registration get reg => widget.registration;
   bool get _isPending => reg.status == 'PENDING';
 
-  @override
-  void initState() {
-    super.initState();
-    if (_isPending) _loadOptions();
-  }
-
-  @override
-  void dispose() {
-    _billingDayController.dispose();
-    _feeController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadOptions() async {
-    setState(() => _loadingOptions = true);
-    try {
-      final results = await Future.wait([
-        ApiClient.instance.get('/api/pppoe/areas'),
-        ApiClient.instance.get('/api/network/routers'),
-      ]);
-      _areas = (((results[0] as Map?)?['areas'] as List?) ?? []).map((e) => (e as Map).cast<String, dynamic>()).toList();
-      _routers = (((results[1] as Map?)?['routers'] as List?) ?? []).map((e) => (e as Map).cast<String, dynamic>()).toList();
-      // Pre-select the area the customer picked when registering.
-      final match = _areas.where((a) => a['name'] == reg.areaName);
-      if (match.isNotEmpty) _areaId = match.first['id']?.toString();
-    } on ApiException catch (_) {
-      // Non-fatal: approval still works with area/router left unset.
-    } finally {
-      if (mounted) setState(() => _loadingOptions = false);
-    }
-  }
-
+  /// Same fields as the web approve dialog: billing, area/router,
+  /// connection type and optional custom credentials.
   Future<void> _approve() async {
-    final ok = await confirmAction(
+    final provider = context.read<RegistrationProvider>();
+    bool staticIp(Map<String, dynamic> v) => v['connectionType'] != 'PPPOE';
+    Map<String, dynamic> res = {};
+    final ok = await openForm(
       context,
       title: 'Setujui Registrasi',
-      message: 'Akun PPPoE untuk ${reg.name} dibuat, dan invoice pemasangan dikirim ke WhatsApp ${reg.phone}.',
-      confirmLabel: 'Setujui',
+      submitLabel: 'Setujui',
+      fields: [
+        FieldSpec.note('Akun pelanggan dan invoice pemasangan untuk ${reg.name} akan dibuat.'),
+        const FieldSpec(
+          'subscriptionType',
+          'Jenis langganan',
+          type: FieldType.select,
+          required: true,
+          initial: 'POSTPAID',
+          options: [('POSTPAID', 'Pascabayar'), ('PREPAID', 'Prabayar')],
+        ),
+        FieldSpec(
+          'billingDay',
+          'Tanggal tagihan (1–28)',
+          type: FieldType.integer,
+          initial: 1,
+          min: 1,
+          max: 28,
+          visibleIf: (v) => v['subscriptionType'] == 'POSTPAID',
+        ),
+        const FieldSpec('installationFee', 'Biaya pasang (Rp)', type: FieldType.integer, initial: 0, min: 0),
+        FieldSpec('areaId', 'Area', type: FieldType.select, loadOptions: Lookups.areas),
+        FieldSpec('routerId', 'Router', type: FieldType.select, loadOptions: Lookups.routers),
+        const FieldSpec.section('Koneksi'),
+        const FieldSpec(
+          'connectionType',
+          'Tipe koneksi',
+          type: FieldType.select,
+          required: true,
+          initial: 'PPPOE',
+          options: [('PPPOE', 'PPPoE'), ('STATIC_IP', 'Static IP (ARP)'), ('HOTSPOT', 'Static IP (Hotspot binding)')],
+        ),
+        FieldSpec('ipAddress', 'IP address', visibleIf: staticIp),
+        FieldSpec('macAddress', 'MAC address', visibleIf: staticIp),
+        const FieldSpec('username', 'Username (opsional)', helper: 'Kosongkan untuk dibuat otomatis.'),
+        const FieldSpec('password', 'Password (opsional)', type: FieldType.password),
+      ],
+      initial: {'areaId': reg.areaId},
+      onSubmit: (v) async {
+        if (v['subscriptionType'] != 'POSTPAID') v['billingDay'] = 1;
+        res = await provider.approve(reg.id, {...v, 'installationFee': v['installationFee'] ?? 0});
+      },
     );
     if (!ok || !mounted) return;
-    setState(() => _acting = true);
-    final provider = context.read<RegistrationProvider>();
-    Map<String, dynamic> res = {};
-    final done = await runAction(context, () async {
-      res = await provider.approve(reg.id, {
-        'installationFee': num.tryParse(_feeController.text) ?? 0,
-        'subscriptionType': _subscriptionType,
-        'billingDay': int.tryParse(_billingDayController.text) ?? 1,
-        if (_areaId != null) 'areaId': _areaId,
-        if (_routerId != null) 'routerId': _routerId,
-      });
-    });
-    if (!mounted) return;
-    setState(() => _acting = false);
-    if (done) {
-      final username = (res['pppoeUser'] as Map?)?['username']?.toString();
-      showToast(context, username != null ? 'Disetujui. Akun dibuat: $username' : 'Registrasi disetujui.');
-      Navigator.pop(context);
-    }
+    final username = (res['pppoeUser'] as Map?)?['username']?.toString();
+    showToast(context, username != null ? 'Disetujui. Akun dibuat: $username' : 'Registrasi disetujui.');
+    Navigator.pop(context);
+  }
+
+  Future<void> _delete() async {
+    final ok = await confirmAction(
+      context,
+      title: 'Hapus Registrasi?',
+      message: 'Data pendaftaran ${reg.name} dihapus permanen.',
+      confirmLabel: 'Hapus',
+      destructive: true,
+    );
+    if (!ok || !mounted) return;
+    final done = await runAction(context, () => ApiClient.instance.delete('/api/admin/registrations/${reg.id}'), success: 'Registrasi dihapus.');
+    if (done && mounted) Navigator.pop(context);
   }
 
   Future<void> _reject() async {
@@ -108,7 +112,12 @@ class _RegistrationDetailScreenState extends State<RegistrationDetailScreen> {
   }
 
   Future<void> _markInstalled() async {
-    final ok = await confirmAction(context, title: 'Tandai Terpasang', message: 'Pemasangan untuk ${reg.name} sudah selesai di lokasi?', confirmLabel: 'Sudah Terpasang');
+    final ok = await confirmAction(
+      context,
+      title: 'Tandai Terpasang',
+      message: 'Pemasangan untuk ${reg.name} sudah selesai di lokasi?',
+      confirmLabel: 'Sudah Terpasang',
+    );
     if (!ok || !mounted) return;
     setState(() => _acting = true);
     final provider = context.read<RegistrationProvider>();
@@ -131,7 +140,7 @@ class _RegistrationDetailScreenState extends State<RegistrationDetailScreen> {
   List<ActionSpec> get _actions {
     if (_isPending) {
       return [
-        ActionSpec('Setujui', Icons.check_rounded, _loadingOptions ? null : _approve, kind: ActionKind.success, busy: _acting),
+        ActionSpec('Setujui', Icons.check_rounded, _acting ? null : _approve, kind: ActionKind.success),
         ActionSpec('Tolak', Icons.close_rounded, _acting ? null : _reject, kind: ActionKind.danger),
       ];
     }
@@ -147,10 +156,13 @@ class _RegistrationDetailScreenState extends State<RegistrationDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Detail Registrasi')),
+      appBar: AppBar(
+        title: const Text('Detail Registrasi'),
+        actions: [IconButton(tooltip: 'Hapus', icon: const Icon(Icons.delete_outline_rounded), onPressed: _delete)],
+      ),
       bottomNavigationBar: ActionBar(actions: _actions),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(Gap.page, Gap.sm, Gap.page, Gap.xl),
+        padding: EdgeInsets.fromLTRB(Gap.page, Gap.sm, Gap.page, listBottomPadding(context)),
         children: [
           DetailHeader(
             icon: Icons.person_add_alt_1_rounded,
@@ -159,106 +171,53 @@ class _RegistrationDetailScreenState extends State<RegistrationDetailScreen> {
             subtitle: 'Diajukan ${formatDateTime(reg.createdAt)}',
             status: StatusPill.status(reg.status),
           ),
-          DetailSection(title: 'Data Pendaftar', rows: [
-            InfoRow('Telepon', reg.phone, copyable: true, onTap: () => _launch(Uri(scheme: 'tel', path: reg.phone))),
-            InfoRow('Email', reg.email, copyable: true),
-            InfoRow('NIK', reg.idCardNumber, copyable: true),
-            InfoRow('Alamat', reg.address),
-            InfoRow('Lokasi', reg.hasLocation ? 'Buka di Google Maps' : null,
-                onTap: reg.hasLocation ? () => _launch(Uri.parse('https://www.google.com/maps/search/?api=1&query=${reg.latitude},${reg.longitude}')) : null),
-            InfoRow('Kode Referral', reg.referralCode),
-            InfoRow('Catatan', reg.notes),
-          ]),
-          DetailSection(title: 'Paket', rows: [
-            InfoRow('Paket', reg.profileName),
-            InfoRow('Harga', reg.profilePrice != null ? '${formatCurrency(reg.profilePrice!)} / bulan' : null),
-            InfoRow('Kecepatan', reg.profileSpeed),
-            InfoRow('Area', reg.areaName ?? 'Belum ditentukan'),
-          ]),
+          DetailSection(
+            title: 'Data Pendaftar',
+            rows: [
+              InfoRow(
+                'Telepon',
+                reg.phone,
+                copyable: true,
+                onTap: () => _launch(Uri(scheme: 'tel', path: reg.phone)),
+              ),
+              InfoRow('Email', reg.email, copyable: true),
+              InfoRow('NIK', reg.idCardNumber, copyable: true),
+              InfoRow('Alamat', reg.address),
+              InfoRow(
+                'Lokasi',
+                reg.hasLocation ? 'Buka di Google Maps' : null,
+                onTap: reg.hasLocation ? () => _launch(Uri.parse('https://www.google.com/maps/search/?api=1&query=${reg.latitude},${reg.longitude}')) : null,
+              ),
+              InfoRow('Kode Referral', reg.referralCode),
+              InfoRow('Catatan', reg.notes),
+            ],
+          ),
+          DetailSection(
+            title: 'Paket',
+            rows: [
+              InfoRow('Paket', reg.profileName),
+              InfoRow('Harga', reg.profilePrice != null ? '${formatCurrency(reg.profilePrice!)} / bulan' : null),
+              InfoRow('Kecepatan', reg.profileSpeed),
+              InfoRow('Area', reg.areaName ?? 'Belum ditentukan'),
+            ],
+          ),
           if (!_isPending)
-            DetailSection(title: 'Hasil', rows: [
-              InfoRow('Akun PPPoE', reg.pppoeUsername,
-                  onTap: reg.pppoeUserId == null ? null : () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => PppoeDetailScreen(userId: reg.pppoeUserId!)))),
-              InfoRow('Invoice', reg.invoiceNumber != null ? '${reg.invoiceNumber} · ${statusLabel(reg.invoiceStatus ?? '')}' : null),
-              InfoRow('Biaya Pasang', reg.installationFee != null && reg.installationFee! > 0 ? formatCurrency(reg.installationFee!) : null),
-              InfoRow('Alasan Ditolak', reg.rejectionReason, valueColor: context.tone(Tone.danger)),
-            ]),
-          ProofImage(source: reg.idCardPhoto, baseUrl: ApiClient.instance.baseUrl, title: 'Foto KTP'),
-          if (_isPending) _approveForm(context),
-        ],
-      ),
-    );
-  }
-
-  Widget _approveForm(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: Gap.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 2, bottom: Gap.sm),
-            child: Text('Pengaturan Akun', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: context.colors.onSurfaceVariant)),
-          ),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(Gap.lg),
-              child: _loadingOptions
-                  ? const Padding(padding: EdgeInsets.all(Gap.lg), child: Center(child: CircularProgressIndicator()))
-                  : Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        SegmentedButton<String>(
-                          segments: const [
-                            ButtonSegment(value: 'POSTPAID', label: Text('Pascabayar')),
-                            ButtonSegment(value: 'PREPAID', label: Text('Prabayar')),
-                          ],
-                          selected: {_subscriptionType},
-                          showSelectedIcon: false,
-                          onSelectionChanged: (s) => setState(() => _subscriptionType = s.first),
-                        ),
-                        const SizedBox(height: Gap.md),
-                        Row(
-                          children: [
-                            if (_subscriptionType == 'POSTPAID') ...[
-                              Expanded(
-                                child: TextField(
-                                  controller: _billingDayController,
-                                  keyboardType: TextInputType.number,
-                                  decoration: const InputDecoration(labelText: 'Tgl tagihan (1-31)'),
-                                ),
-                              ),
-                              const SizedBox(width: Gap.md),
-                            ],
-                            Expanded(
-                              child: TextField(
-                                controller: _feeController,
-                                keyboardType: TextInputType.number,
-                                decoration: const InputDecoration(labelText: 'Biaya pasang (Rp)'),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: Gap.md),
-                        DropdownButtonFormField<String>(
-                          value: _areaId,
-                          isExpanded: true,
-                          decoration: const InputDecoration(labelText: 'Area'),
-                          items: _areas.map((a) => DropdownMenuItem(value: a['id']?.toString(), child: Text(a['name']?.toString() ?? '-'))).toList(),
-                          onChanged: (v) => setState(() => _areaId = v),
-                        ),
-                        const SizedBox(height: Gap.md),
-                        DropdownButtonFormField<String>(
-                          value: _routerId,
-                          isExpanded: true,
-                          decoration: const InputDecoration(labelText: 'Router'),
-                          items: _routers.map((r) => DropdownMenuItem(value: r['id']?.toString(), child: Text(r['name']?.toString() ?? '-'))).toList(),
-                          onChanged: (v) => setState(() => _routerId = v),
-                        ),
-                      ],
-                    ),
+            DetailSection(
+              title: 'Hasil',
+              rows: [
+                InfoRow(
+                  'Akun PPPoE',
+                  reg.pppoeUsername,
+                  onTap: reg.pppoeUserId == null
+                      ? null
+                      : () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => PppoeDetailScreen(userId: reg.pppoeUserId!))),
+                ),
+                InfoRow('Invoice', reg.invoiceNumber != null ? '${reg.invoiceNumber} · ${statusLabel(reg.invoiceStatus ?? '')}' : null),
+                InfoRow('Biaya Pasang', reg.installationFee != null && reg.installationFee! > 0 ? formatCurrency(reg.installationFee!) : null),
+                InfoRow('Alasan Ditolak', reg.rejectionReason, valueColor: context.tone(Tone.danger)),
+              ],
             ),
-          ),
+          ProofImage(source: reg.idCardPhoto, baseUrl: ApiClient.instance.baseUrl, title: 'Foto KTP'),
         ],
       ),
     );

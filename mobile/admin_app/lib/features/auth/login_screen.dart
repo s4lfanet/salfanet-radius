@@ -41,8 +41,9 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _loadBranding() async {
     try {
       final base = ApiClient.instance.baseUrl;
-      final res = await dio_pkg.Dio(dio_pkg.BaseOptions(connectTimeout: const Duration(seconds: 6), receiveTimeout: const Duration(seconds: 6)))
-          .get('$base/api/public/company');
+      final res = await dio_pkg.Dio(
+        dio_pkg.BaseOptions(connectTimeout: const Duration(seconds: 6), receiveTimeout: const Duration(seconds: 6)),
+      ).get('$base/api/public/company');
       final company = (res.data is Map) ? (res.data['company'] as Map?) : null;
       if (!mounted || company == null) return;
       setState(() {
@@ -123,7 +124,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                           Icon(Icons.error_outline_rounded, size: 18, color: context.tone(Tone.danger)),
                           const SizedBox(width: Gap.sm),
-                          Expanded(child: Text(_error!, style: TextStyle(color: context.tone(Tone.danger), fontSize: 13, fontWeight: FontWeight.w600))),
+                          Expanded(
+                            child: Text(
+                              _error!,
+                              style: TextStyle(color: context.tone(Tone.danger), fontSize: 13, fontWeight: FontWeight.w600),
+                            ),
+                          ),
                         ],
                       ),
                     ),

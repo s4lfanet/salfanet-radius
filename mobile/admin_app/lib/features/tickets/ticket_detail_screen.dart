@@ -11,6 +11,7 @@ import '../../models/ticket.dart';
 import '../auth/auth_provider.dart';
 import 'ticket_list_screen.dart' show ticketStatusOptions, priorityTone, priorityLabel;
 import 'ticket_provider.dart';
+import 'ticket_tools.dart';
 
 class TicketDetailScreen extends StatefulWidget {
   const TicketDetailScreen({super.key, required this.ticket});
@@ -72,13 +73,32 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
         appBar: AppBar(
           title: Text('Tiket #${t.ticketNumber}'),
           actions: [
+            IconButton(
+              tooltip: 'Edit',
+              icon: const Icon(Icons.edit_rounded),
+              onPressed: () async {
+                if (await editTicket(context, t.raw) && context.mounted) {
+                  context.read<TicketProvider>().load();
+                  Navigator.pop(context);
+                }
+              },
+            ),
+            IconButton(
+              tooltip: 'Hapus',
+              icon: const Icon(Icons.delete_outline_rounded),
+              onPressed: () async {
+                if (await deleteTicket(context, t.raw) && context.mounted) {
+                  context.read<TicketProvider>().load();
+                  Navigator.pop(context);
+                }
+              },
+            ),
             PopupMenuButton<String>(
               tooltip: 'Ubah status',
               icon: const Icon(Icons.swap_horiz_rounded),
               onSelected: _changeStatus,
               itemBuilder: (_) => [
-                for (final (value, label) in ticketStatusOptions)
-                  CheckedPopupMenuItem(value: value, checked: value == _status, child: Text(label)),
+                for (final (value, label) in ticketStatusOptions) CheckedPopupMenuItem(value: value, checked: value == _status, child: Text(label)),
               ],
             ),
           ],
@@ -107,26 +127,33 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                           ],
                         ),
                       ),
-                      DetailSection(title: 'Keluhan', rows: [
-                        InfoRow('Deskripsi', t.description),
-                        InfoRow('Kategori', t.categoryName),
-                        InfoRow('Estimasi', t.estimatedRepair),
-                      ]),
-                      DetailSection(title: 'Pelanggan', rows: [
-                        InfoRow('Nama', t.customerName),
-                        InfoRow('Telepon', t.customerPhone, copyable: true, onTap: _whatsapp),
-                      ]),
+                      DetailSection(
+                        title: 'Keluhan',
+                        rows: [InfoRow('Deskripsi', t.description), InfoRow('Kategori', t.categoryName), InfoRow('Estimasi', t.estimatedRepair)],
+                      ),
+                      DetailSection(
+                        title: 'Pelanggan',
+                        rows: [
+                          InfoRow('Nama', t.customerName),
+                          InfoRow('Telepon', t.customerPhone, copyable: true, onTap: _whatsapp),
+                        ],
+                      ),
                       const SizedBox(height: Gap.lg),
                       SectionHeader('Percakapan'),
                       if (m.loading && m.messages.isEmpty)
-                        const Padding(padding: EdgeInsets.all(Gap.xl), child: Center(child: CircularProgressIndicator()))
+                        const Padding(
+                          padding: EdgeInsets.all(Gap.xl),
+                          child: Center(child: CircularProgressIndicator()),
+                        )
                       else if (m.error != null && m.messages.isEmpty)
                         Text(m.error!, style: TextStyle(color: context.tone(Tone.danger)))
                       else if (m.messages.isEmpty)
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: Gap.lg),
-                          child: Text('Belum ada balasan. Balasan Anda dikirim ke pelanggan lewat WhatsApp.',
-                              style: TextStyle(color: context.colors.onSurfaceVariant, fontSize: 13)),
+                          child: Text(
+                            'Belum ada balasan. Balasan Anda dikirim ke pelanggan lewat WhatsApp.',
+                            style: TextStyle(color: context.colors.onSurfaceVariant, fontSize: 13),
+                          ),
                         )
                       else
                         ...m.messages.map((msg) => _Bubble(message: msg)),
@@ -135,12 +162,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                 ),
               ),
             ),
-            _Composer(
-              controller: _replyController,
-              internal: _internal,
-              onInternalChanged: (v) => setState(() => _internal = v),
-              onSend: _send,
-            ),
+            _Composer(controller: _replyController, internal: _internal, onInternalChanged: (v) => setState(() => _internal = v), onSend: _send),
           ],
         ),
       ),
@@ -159,7 +181,10 @@ class _Composer extends StatelessWidget {
   Widget build(BuildContext context) {
     final sending = context.watch<TicketMessagesProvider>().sending;
     return Container(
-      decoration: BoxDecoration(color: context.colors.surface, border: Border(top: BorderSide(color: context.colors.outline))),
+      decoration: BoxDecoration(
+        color: context.colors.surface,
+        border: Border(top: BorderSide(color: context.colors.outline)),
+      ),
       padding: const EdgeInsets.fromLTRB(Gap.md, Gap.sm, Gap.md, Gap.sm),
       child: SafeArea(
         top: false,
@@ -182,9 +207,7 @@ class _Composer extends StatelessWidget {
                 IconButton.filled(
                   onPressed: sending ? null : onSend,
                   style: IconButton.styleFrom(minimumSize: const Size(48, 48)),
-                  icon: sending
-                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.send_rounded),
+                  icon: sending ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.send_rounded),
                 ),
               ],
             ),
@@ -194,7 +217,11 @@ class _Composer extends StatelessWidget {
                 padding: const EdgeInsets.only(top: Gap.xs),
                 child: Row(
                   children: [
-                    SizedBox(height: 32, width: 32, child: Checkbox(value: internal, onChanged: (v) => onInternalChanged(v ?? false))),
+                    SizedBox(
+                      height: 32,
+                      width: 32,
+                      child: Checkbox(value: internal, onChanged: (v) => onInternalChanged(v ?? false)),
+                    ),
                     Text('Catatan internal staf', style: TextStyle(fontSize: 12.5, color: context.colors.onSurfaceVariant)),
                   ],
                 ),
@@ -245,10 +272,15 @@ class _Bubble extends StatelessWidget {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Flexible(child: Text(message.senderName, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5))),
+                Flexible(
+                  child: Text(message.senderName, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5)),
+                ),
                 if (message.isInternal) ...[
                   const SizedBox(width: 6),
-                  Text('Internal', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: context.tone(Tone.warning))),
+                  Text(
+                    'Internal',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: context.tone(Tone.warning)),
+                  ),
                 ],
               ],
             ),

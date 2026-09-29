@@ -8,7 +8,11 @@ class ThemeController extends ChangeNotifier {
 
   Future<void> restore() async {
     final saved = await AppStorage.instance.readThemeMode();
-    mode = switch (saved) { 'light' => ThemeMode.light, 'dark' => ThemeMode.dark, _ => ThemeMode.system };
+    mode = switch (saved) {
+      'light' => ThemeMode.light,
+      'dark' => ThemeMode.dark,
+      _ => ThemeMode.system,
+    };
     notifyListeners();
   }
 

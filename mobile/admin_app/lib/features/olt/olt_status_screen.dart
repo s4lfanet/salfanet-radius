@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../core/api/api_client.dart';
+import '../../core/crud/crud_list_screen.dart';
+import '../resources/olt_resources.dart';
 import '../../core/formatters.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/detail.dart';
@@ -66,19 +68,37 @@ class _OltStatusScreenState extends State<OltStatusScreen> {
         status: StatusPill(label: online ? 'Online' : 'Offline', tone: online ? Tone.success : Tone.danger),
       ),
       sections: [
-        DetailSection(title: 'Kondisi', rows: [
-          InfoRow('Uptime', _uptime(o)),
-          InfoRow('Suhu', temp is num ? '${temp.toStringAsFixed(1)} °C' : null, valueColor: temp is num && temp >= 60 ? context.tone(Tone.danger) : null),
-          InfoRow('Dicek terakhir', formatDateTimeOrNull(dateOf(o, 'lastPollAt'))),
-          InfoRow('Monitoring', o['monitoringEnabled'] == true ? 'Aktif · tiap ${numOf(o, 'pollingInterval').toInt() ~/ 60} menit' : 'Nonaktif'),
-        ]),
-        DetailSection(title: 'Perangkat', rows: [
-          InfoRow('IP', str(o, 'ipAddress'), copyable: true),
-          InfoRow('Firmware', str(o, 'firmwareVersion')),
-          InfoRow('ODP', count == null ? null : '${numOf(count, 'odps')}'),
-          InfoRow('ONU terpantau', count == null ? null : '${numOf(count, 'onuStatuses')}'),
-          InfoRow('Router Uplink', routers == null || routers.isEmpty ? null : routers),
-        ]),
+        DetailSection(
+          title: 'Kondisi',
+          rows: [
+            InfoRow('Uptime', _uptime(o)),
+            InfoRow('Suhu', temp is num ? '${temp.toStringAsFixed(1)} °C' : null, valueColor: temp is num && temp >= 60 ? context.tone(Tone.danger) : null),
+            InfoRow('Dicek terakhir', formatDateTimeOrNull(dateOf(o, 'lastPollAt'))),
+            InfoRow('Monitoring', o['monitoringEnabled'] == true ? 'Aktif · tiap ${numOf(o, 'pollingInterval').toInt() ~/ 60} menit' : 'Nonaktif'),
+          ],
+        ),
+        DetailSection(
+          title: 'Perangkat',
+          rows: [
+            InfoRow('IP', str(o, 'ipAddress'), copyable: true),
+            InfoRow('Firmware', str(o, 'firmwareVersion')),
+            InfoRow('ODP', count == null ? null : '${numOf(count, 'odps')}'),
+            InfoRow('ONU terpantau', count == null ? null : '${numOf(count, 'onuStatuses')}'),
+            InfoRow('Router Uplink', routers == null || routers.isEmpty ? null : routers),
+          ],
+        ),
+      ],
+      actions: (sheet) => [
+        ActionSpec('Kelola ONU', Icons.settings_input_component_rounded, () {
+          Navigator.pop(sheet);
+          CrudListScreen.open(context, oltDeviceConfig(o));
+        }),
+        ActionSpec('Edit OLT', Icons.edit_rounded, () async {
+          if (await editOltSettings(sheet, o)) {
+            if (sheet.mounted) Navigator.pop(sheet);
+            _load();
+          }
+        }, kind: ActionKind.neutral),
       ],
     );
   }

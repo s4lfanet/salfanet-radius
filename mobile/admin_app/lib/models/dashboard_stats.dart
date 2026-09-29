@@ -45,6 +45,7 @@ class DashboardStats {
   final int invoiceCountMonth;
   final int unpaidInvoicesCount;
   final String totalAllTimeRevenueFormatted;
+
   /// Overridden by DashboardProvider with the real service state from
   /// /api/freeradius/status when the account can read it.
   bool radiusOnline;

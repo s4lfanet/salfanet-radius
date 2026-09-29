@@ -13,7 +13,10 @@ import 'package:flutter_test/flutter_test.dart';
 const _longName = 'Muhammad Abdurrahman Wiryawan Kusumadinata Saputra';
 const _longSub = 'PAKET-FIBER-100MBPS-UNLIMITED · Perumahan Griya Asri Blok C12 No. 7';
 
-Widget _app(Widget child, ThemeData theme) => MaterialApp(theme: theme, home: Scaffold(body: child));
+Widget _app(Widget child, ThemeData theme) => MaterialApp(
+  theme: theme,
+  home: Scaffold(body: child),
+);
 
 void main() {
   // Tests otherwise render with Flutter's box-glyph test font (every glyph
@@ -32,33 +35,47 @@ void main() {
         tester.view.physicalSize = Size(width, 800);
         tester.view.devicePixelRatio = 1;
         addTearDown(tester.view.reset);
-        await tester.pumpWidget(_app(
-          ListView(padding: const EdgeInsets.all(Gap.page), children: [
-            EntityTile(
-              icon: Icons.person_rounded,
-              tone: Tone.warning,
-              title: _longName,
-              subtitle: _longSub,
-              meta: 'CUST-00012345 · Area Kecamatan Sukamaju Selatan',
-              trailing: Column(mainAxisSize: MainAxisSize.min, children: [StatusPill.status('waiting_customer'), const SizedBox(height: 6), StatusPill.status('isolated')]),
-              onTap: () {},
+        await tester.pumpWidget(
+          _app(
+            ListView(
+              padding: const EdgeInsets.all(Gap.page),
+              children: [
+                EntityTile(
+                  icon: Icons.person_rounded,
+                  tone: Tone.warning,
+                  title: _longName,
+                  subtitle: _longSub,
+                  meta: 'CUST-00012345 · Area Kecamatan Sukamaju Selatan',
+                  trailing: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [StatusPill.status('waiting_customer'), const SizedBox(height: 6), StatusPill.status('isolated')],
+                  ),
+                  onTap: () {},
+                ),
+                const SizedBox(height: Gap.sm),
+                EntityTile(
+                  icon: Icons.receipt_long_rounded,
+                  tone: Tone.success,
+                  title: _longName,
+                  subtitle: 'INV-20260928-4D4BD2',
+                  trailing: AmountTrailing(amount: 'Rp 12.345.678', pill: StatusPill.status('overdue')),
+                  footer: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(onPressed: () {}, child: const Text('Tolak')),
+                      ),
+                      const SizedBox(width: Gap.sm),
+                      Expanded(
+                        child: FilledButton(onPressed: () {}, child: const Text('Setujui')),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: Gap.sm),
-            EntityTile(
-              icon: Icons.receipt_long_rounded,
-              tone: Tone.success,
-              title: _longName,
-              subtitle: 'INV-20260928-4D4BD2',
-              trailing: AmountTrailing(amount: 'Rp 12.345.678', pill: StatusPill.status('overdue')),
-              footer: Row(children: [
-                Expanded(child: OutlinedButton(onPressed: () {}, child: const Text('Tolak'))),
-                const SizedBox(width: Gap.sm),
-                Expanded(child: FilledButton(onPressed: () {}, child: const Text('Setujui'))),
-              ]),
-            ),
-          ]),
-          entry.value,
-        ));
+            entry.value,
+          ),
+        );
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
       });
@@ -67,34 +84,53 @@ void main() {
         tester.view.physicalSize = Size(width, 900);
         tester.view.devicePixelRatio = 1;
         addTearDown(tester.view.reset);
-        await tester.pumpWidget(_app(
-          Column(children: [
-            Expanded(
-              child: ListView(padding: const EdgeInsets.all(Gap.page), children: [
-                DetailHeader(
-                  icon: Icons.person_rounded,
-                  tone: Tone.danger,
-                  title: _longName,
-                  subtitle: 'CUST-00012345 · username-yang-sangat-panjang-sekali',
-                  status: Column(mainAxisSize: MainAxisSize.min, children: [StatusPill.status('isolated'), const SizedBox(height: 6), const StatusPill(label: 'Offline', tone: Tone.neutral)]),
-                  figureLabel: 'Tagihan belum dibayar',
-                  figure: 'Rp 1.234.567.890',
+        await tester.pumpWidget(
+          _app(
+            Column(
+              children: [
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.all(Gap.page),
+                    children: [
+                      DetailHeader(
+                        icon: Icons.person_rounded,
+                        tone: Tone.danger,
+                        title: _longName,
+                        subtitle: 'CUST-00012345 · username-yang-sangat-panjang-sekali',
+                        status: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            StatusPill.status('isolated'),
+                            const SizedBox(height: 6),
+                            const StatusPill(label: 'Offline', tone: Tone.neutral),
+                          ],
+                        ),
+                        figureLabel: 'Tagihan belum dibayar',
+                        figure: 'Rp 1.234.567.890',
+                      ),
+                      const DetailSection(
+                        title: 'Akun PPPoE',
+                        rows: [
+                          InfoRow('Username', 'username-yang-sangat-panjang-sekali-untuk-uji', copyable: true),
+                          InfoRow('Tanggal Tagihan', 'Setiap tanggal 28'),
+                          InfoRow('Alamat', 'Jl. Raya Panjang Sekali No. 123, RT 004/RW 012, Kelurahan Sukamaju, Kecamatan Sukamaju Selatan'),
+                          InfoRow('Kosong', null),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-                const DetailSection(title: 'Akun PPPoE', rows: [
-                  InfoRow('Username', 'username-yang-sangat-panjang-sekali-untuk-uji', copyable: true),
-                  InfoRow('Tanggal Tagihan', 'Setiap tanggal 28'),
-                  InfoRow('Alamat', 'Jl. Raya Panjang Sekali No. 123, RT 004/RW 012, Kelurahan Sukamaju, Kecamatan Sukamaju Selatan'),
-                  InfoRow('Kosong', null),
-                ]),
-              ]),
+                ActionBar(
+                  actions: [
+                    ActionSpec('Tandai Terpasang', Icons.home_repair_service_rounded, () {}, kind: ActionKind.success),
+                    ActionSpec('WhatsApp', Icons.chat_rounded, () {}, kind: ActionKind.neutral),
+                  ],
+                ),
+              ],
             ),
-            ActionBar(actions: [
-              ActionSpec('Tandai Terpasang', Icons.home_repair_service_rounded, () {}, kind: ActionKind.success),
-              ActionSpec('WhatsApp', Icons.chat_rounded, () {}, kind: ActionKind.neutral),
-            ]),
-          ]),
-          entry.value,
-        ));
+            entry.value,
+          ),
+        );
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
         // Null/blank rows are dropped rather than rendered as "-".
@@ -105,35 +141,73 @@ void main() {
         tester.view.physicalSize = Size(width, 800);
         tester.view.devicePixelRatio = 1;
         addTearDown(tester.view.reset);
-        await tester.pumpWidget(_app(
-          Column(children: [
-            SearchField(hint: 'Cari nama, username, HP, ID pelanggan', onChanged: (_) {}),
-            FilterChipRow(
-              options: const [('PENDING', 'Menunggu · 12'), ('APPROVED', 'Disetujui · 340'), ('INSTALLED', 'Terpasang'), ('REJECTED', 'Ditolak')],
-              selected: 'APPROVED',
-              onSelected: (_) {},
+        await tester.pumpWidget(
+          _app(
+            Column(
+              children: [
+                SearchField(hint: 'Cari nama, username, HP, ID pelanggan', onChanged: (_) {}),
+                FilterChipRow(
+                  options: const [('PENDING', 'Menunggu · 12'), ('APPROVED', 'Disetujui · 340'), ('INSTALLED', 'Terpasang'), ('REJECTED', 'Ditolak')],
+                  selected: 'APPROVED',
+                  onSelected: (_) {},
+                ),
+                const Expanded(
+                  child: EmptyState(
+                    icon: Icons.receipt_outlined,
+                    message: 'Tidak ada bukti transfer yang menunggu',
+                    hint: 'Bukti transfer yang dikirim pelanggan dari halaman bayar akan muncul di sini.',
+                  ),
+                ),
+              ],
             ),
-            const Expanded(
-              child: EmptyState(
-                icon: Icons.receipt_outlined,
-                message: 'Tidak ada bukti transfer yang menunggu',
-                hint: 'Bukti transfer yang dikirim pelanggan dari halaman bayar akan muncul di sini.',
-              ),
-            ),
-          ]),
-          entry.value,
-        ));
+            entry.value,
+          ),
+        );
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
       });
     }
   }
 
+  for (final hasFab in [false, true]) {
+    testWidgets('Last list row scrolls clear of the system nav bar${hasFab ? ' and the FAB' : ''} (regression)', (tester) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1;
+      // Android 15 edge-to-edge: a 48px gesture/nav bar overlays the app.
+      tester.view.viewPadding = const FakeViewPadding(bottom: 48);
+      tester.view.padding = const FakeViewPadding(bottom: 48);
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light,
+          home: Scaffold(
+            floatingActionButton: hasFab ? FloatingActionButton.extended(onPressed: () {}, label: const Text('Buat')) : null,
+            body: RefreshableList(
+              onRefresh: () async {},
+              hasFab: hasFab,
+              itemCount: 30,
+              itemBuilder: (_, i) => EntityTile(icon: Icons.wifi_rounded, tone: Tone.success, title: 'Sesi $i'),
+            ),
+          ),
+        ),
+      );
+      await tester.fling(find.byType(ListView), const Offset(0, -20000), 5000);
+      await tester.pumpAndSettle();
+      final lastBottom = tester.getRect(find.text('Sesi 29')).bottom;
+      expect(lastBottom, lessThanOrEqualTo(640 - 48), reason: 'last row hidden behind the nav bar');
+      if (hasFab) {
+        final fabTop = tester.getRect(find.byType(FloatingActionButton)).top;
+        expect(
+          tester.getRect(find.ancestor(of: find.text('Sesi 29'), matching: find.byType(Card))).bottom,
+          lessThanOrEqualTo(fabTop),
+          reason: 'last row hidden behind the FAB',
+        );
+      }
+    });
+  }
+
   testWidgets('Selected filter chip label is readable on its fill (regression)', (tester) async {
-    await tester.pumpWidget(_app(
-      FilterChipRow(options: const [('a', 'Aktif'), ('b', 'Stop')], selected: 'a', onSelected: (_) {}),
-      AppTheme.light,
-    ));
+    await tester.pumpWidget(_app(FilterChipRow(options: const [('a', 'Aktif'), ('b', 'Stop')], selected: 'a', onSelected: (_) {}), AppTheme.light));
     final selected = tester.widget<Text>(find.text('Aktif'));
     final unselected = tester.widget<Text>(find.text('Stop'));
     expect(selected.style?.color, onColor(AppTheme.light.colorScheme.primary));
