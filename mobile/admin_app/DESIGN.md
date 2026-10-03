@@ -1,8 +1,6 @@
 # DESIGN.md — Aplikasi Admin Salfanet Radius
 
-Arah desain untuk `mobile/admin_app`. Dipakai bersama
-`.claude/skills/antislop/SKILL.md` sebagai filter: dokumen ini memberi arah,
-filter itu menolak slop.
+Arah desain untuk `mobile/admin_app`.
 
 Berbeda dari `mobile/customer_app/DESIGN.md`: aplikasi itu dipakai pelanggan
 sesekali sehari untuk urusan akun sendiri. Aplikasi ini dipakai staf
@@ -72,7 +70,7 @@ Radius bertingkat, bukan satu nilai untuk semua:
 
 Bayangan tidak dipakai. Kartu diberi garis tepi 1px di atas latar abu muda:
 tanpa garis, kartu putih di atas latar hampir putih tidak punya tepi yang
-terlihat (audit-003 #13).
+terlihat.
 
 ## Terang / gelap
 
@@ -81,7 +79,7 @@ Kedua tema dibangun dari definisi komponen yang sama; yang berbeda hanya
 paletnya. Warna status punya dua shade: -700 untuk tema terang, -400 untuk
 tema gelap, karena shade terang yang lolos kontras di atas putih hanya ±3:1
 di atas latar gelap. Semua pasangan teks/latar diverifikasi ≥4,5:1 (WCAG AA)
-di kedua tema — lihat audit-003.
+di kedua tema.
 
 ## Susunan layar
 

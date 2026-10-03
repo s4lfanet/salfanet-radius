@@ -172,5 +172,11 @@ GoogleService-Info.plist
 .cursor/
 .codeium/
 .github/
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+antislop.md
+anti-slop/
+skills/
 skill-lock.json
 skills-lock.json

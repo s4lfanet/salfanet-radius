@@ -161,7 +161,7 @@ class ActionSpec {
 /// The one way actions are rendered on detail screens and sheets: the
 /// first spec is the filled primary action, the rest are outlined, all in
 /// one row pinned to the bottom. Replaces the old free-form Wrap of four
-/// differently-colored solid buttons (audit-003 #12).
+/// differently-colored solid buttons.
 class ActionBar extends StatelessWidget {
   const ActionBar({super.key, required this.actions, this.pinned = true});
   final List<ActionSpec> actions;

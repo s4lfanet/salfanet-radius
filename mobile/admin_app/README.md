@@ -55,12 +55,10 @@ flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3001
 
 ## Design
 
-Direction and rules are in [DESIGN.md](DESIGN.md) (used with the antislop
-filter in `.claude/skills/antislop`). All screens are built from the shared
+Direction and rules are in [DESIGN.md](DESIGN.md). All screens are built from the shared
 widgets in `lib/core/widgets/` and the tokens in `lib/core/theme/app_theme.dart`;
 light and dark themes share one builder, and staff can pick Terang / Gelap /
-Ikuti HP under Profil & Pengaturan. The last audit is
-`anti-slop/audit-003-2026-09-28.md`.
+Ikuti HP under Profil & Pengaturan.
 
 ## Tests
 

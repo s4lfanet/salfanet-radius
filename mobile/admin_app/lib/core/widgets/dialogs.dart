@@ -4,7 +4,7 @@ import '../api/api_client.dart';
 import '../theme/app_theme.dart';
 
 /// Confirmation dialog used by every approve/reject/destructive action, so
-/// they all read and behave the same (audit-003 #15). Returns true only on
+/// they all read and behave the same. Returns true only on
 /// explicit confirmation.
 Future<bool> confirmAction(
   BuildContext context, {
