@@ -6,11 +6,21 @@ import { nanoid } from 'nanoid';
 import { randomBytes } from 'crypto';
 import { shouldManagePppSecretForSuspend } from '@/server/services/mikrotik/ppp-secret.service';
 import { sendPushToUser } from '@/server/services/notifications/push-templates.service';
+import {
+  companyDate,
+  companyMonthRange,
+  postpaidDueDate,
+  prepaidDueDate,
+  prepaidIsDue,
+} from '@/server/services/billing/invoice-schedule';
 
 /**
- * Invoice Generate — generate monthly invoices for active/isolated users.
- * PREPAID: invoiceType=RENEWAL, dueDate=expiredAt
- * POSTPAID: invoiceType=MONTHLY, dueDate=billingDay of current month
+ * Invoice Generate — runs daily.
+ * PREPAID: invoiceType=RENEWAL, dueDate = the expiry date itself, created
+ *   once expiry is within company.invoiceGenerateDays (default 7). A customer
+ *   paid through 28 Nov gets no October bill.
+ * POSTPAID: invoiceType=MONTHLY, dueDate = billingDay of the current month.
+ * At most one MONTHLY/RENEWAL invoice per customer per due-date month.
  */
 export async function runInvoiceGenerate(): Promise<{ generated: number; skipped: number; total: number; errors: string[] }> {
   // Refresh timezone from DB — company might have changed it
@@ -22,11 +32,12 @@ export async function runInvoiceGenerate(): Promise<{ generated: number; skipped
   });
   const baseUrl = company?.baseUrl || 'http://localhost:3000';
 
-  const wibMonthStr = formatInTimeZone(now, WIB_TIMEZONE, 'yyyy-MM');
-  const year = parseInt(wibMonthStr.substring(0, 4));
-  const month = parseInt(wibMonthStr.substring(5, 7));
-  const monthStart = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
-  const monthEnd = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
+  const { year, month } = companyDate(now);
+  const leadDays = company?.invoiceGenerateDays ?? 7;
+  const monthKey = (d: Date) => {
+    const c = companyDate(d);
+    return `${c.year}-${c.month}`;
+  };
 
   const users = await prisma.pppoeUser.findMany({
     where: { status: { in: ['active', 'isolated'] } },
@@ -35,17 +46,19 @@ export async function runInvoiceGenerate(): Promise<{ generated: number; skipped
     },
   });
 
-  // Batch fetch existing invoices for this month to avoid duplicates
+  // Existing bills keyed by customer + due-date month. PREPAID renewals can
+  // fall in a later month than the run (expiry within the lead time), or an
+  // earlier one (expired and never billed), so look back a year.
   const existingInvoices = await prisma.invoice.findMany({
     where: {
       userId: { in: users.map(u => u.id) },
       invoiceType: { in: ['MONTHLY', 'RENEWAL'] },
-      dueDate: { gte: monthStart, lte: monthEnd },
+      dueDate: { gte: new Date(now.getTime() - 366 * 86_400_000) },
       status: { not: 'CANCELLED' },
     },
-    select: { userId: true },
+    select: { userId: true, dueDate: true },
   });
-  const usersWithInvoice = new Set(existingInvoices.map(i => i.userId).filter(Boolean) as string[]);
+  const billedMonths = new Set(existingInvoices.map(i => `${i.userId}:${monthKey(i.dueDate)}`));
 
   // Phase 7: Batch fetch all recurring addons for all users upfront (N+1 fix)
   // Instead of querying addons per-user inside the loop, fetch all at once.
@@ -69,11 +82,6 @@ export async function runInvoiceGenerate(): Promise<{ generated: number; skipped
 
   for (const user of users) {
     try {
-      if (usersWithInvoice.has(user.id)) {
-        skipped++;
-        continue;
-      }
-
       if (!user.profile) {
         errors.push(`${user.username}: profile not found`);
         continue;
@@ -84,22 +92,21 @@ export async function runInvoiceGenerate(): Promise<{ generated: number; skipped
       let invoiceType: string;
 
       if (subscriptionType === 'PREPAID') {
-        if (!user.expiredAt) { skipped++; continue; }
-        // Due date = tanggal expired (hari, WIB) di bulan berjalan — bukan expiredAt
-        // mentah. Kalau expiredAt dipakai apa adanya, invoice bisa jatuh di bulan lain
-        // dari bulan generate sehingga dedup per-bulan salah menganggapnya duplikat.
-        const expDay = parseInt(formatInTimeZone(user.expiredAt, WIB_TIMEZONE, 'd'), 10);
-        const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
-        const day = Math.min(expDay, daysInMonth);
-        dueDate = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
+        // Still paid up beyond the lead time: nothing to bill yet.
+        if (!user.expiredAt || !prepaidIsDue(user.expiredAt, now, leadDays)) { skipped++; continue; }
+        dueDate = prepaidDueDate(user.expiredAt);
         invoiceType = 'RENEWAL';
       } else {
-        const billingDay = (user as any).billingDay ?? 1;
-        const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
-        const day = Math.min(billingDay, daysInMonth);
-        dueDate = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
+        dueDate = postpaidDueDate(year, month, (user as any).billingDay);
         invoiceType = 'MONTHLY';
       }
+
+      if (billedMonths.has(`${user.id}:${monthKey(dueDate)}`)) {
+        skipped++;
+        continue;
+      }
+      const dueC = companyDate(dueDate);
+      const { start: monthStart, end: monthEnd } = companyMonthRange(dueC.year, dueC.month);
 
       // Calculate amount with PPN (subtract user discount from base price)
       const baseAmount = Math.max(0, user.profile.price - (user.discount || 0));
@@ -139,7 +146,7 @@ export async function runInvoiceGenerate(): Promise<{ generated: number; skipped
           const existing = await tx.invoice.findFirst({
             where: {
               userId: user.id,
-              invoiceType: invoiceType as any,
+              invoiceType: { in: ['MONTHLY', 'RENEWAL'] },
               dueDate: { gte: monthStart, lte: monthEnd },
               status: { not: 'CANCELLED' },
             },
@@ -237,8 +244,12 @@ export async function runInvoiceAutoCancel(): Promise<{ cancelled: number; total
   const staleInvoices = await prisma.invoice.findMany({
     where: {
       status: { in: ['PENDING', 'OVERDUE'] },
+      // POSTPAID customers also carry an expiredAt, but their bill is for the
+      // month already used — renewing past it doesn't make it stale.
+      invoiceType: 'RENEWAL',
       user: {
         status: 'active',
+        subscriptionType: 'PREPAID',
         expiredAt: { not: null },
       },
     },
@@ -263,9 +274,16 @@ export async function runInvoiceAutoCancel(): Promise<{ cancelled: number; total
 
   // Filter: only cancel invoices where user.expiredAt > invoice.dueDate
   // (the user has already renewed past this invoice's due date)
+  // Compared by calendar date: the renewal due on the expiry day itself has
+  // dueDate at 23:59:59 that day, and legacy rows store expiry at other
+  // times of the same day — that bill is current, not stale.
+  const dayNumber = (d: Date) => {
+    const c = companyDate(d);
+    return Date.UTC(c.year, c.month - 1, c.day);
+  };
   const toCancel = staleInvoices.filter((inv) => {
     if (!inv.user?.expiredAt) return false;
-    return inv.user.expiredAt > inv.dueDate;
+    return dayNumber(inv.user.expiredAt) > dayNumber(inv.dueDate);
   });
 
   if (toCancel.length === 0) {

@@ -5,8 +5,12 @@ import { nanoid } from 'nanoid';
 import { randomBytes } from 'crypto';
 import { badRequest } from '@/lib/api-response';
 import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
-import { formatInTimeZone } from 'date-fns-tz';
-import { WIB_TIMEZONE } from '@/lib/timezone';
+import {
+  companyDate,
+  companyMonthRange,
+  postpaidDueDate,
+  prepaidDueDate,
+} from '@/server/services/billing/invoice-schedule';
 
 /**
  * POST /api/invoices/generate
@@ -20,9 +24,11 @@ import { WIB_TIMEZONE } from '@/lib/timezone';
  *
  * Due date logic:
  *   POSTPAID  → billingDay of targetMonth (or last day of month if billingDay > days in month)
- *   PREPAID   → user.expiredAt (the actual expiry already set on the user)
+ *   PREPAID   → the expiry date itself. Only customers whose expiry falls in
+ *               targetMonth (or earlier and still unbilled) get a bill; one
+ *               paid through a later month is skipped as "notDue".
  *
- * Returns { generated, skipped, errors[] }
+ * Returns { generated, skipped, notDue, errors[] }
  */
 export async function POST(request: NextRequest) {
   const authCheck = await requirePermission('invoices.create');
@@ -44,13 +50,6 @@ export async function POST(request: NextRequest) {
 
     const [year, month] = targetMonth.split('-').map(Number);
 
-    // Helper: due date for POSTPAID = billingDay of targetMonth (clamped to days in month)
-    const getDueDatePostpaid = (billingDay: number | null): Date => {
-      const bd = billingDay ?? 1;
-      const daysInMonth = new Date(year, month, 0).getDate(); // last day of targetMonth
-      const day = Math.min(bd, daysInMonth);
-      return new Date(year, month - 1, day, 23, 59, 59, 999);
-    };
 
     // Build user query — include BOTH POSTPAID and PREPAID
     const userWhere: Record<string, unknown> = {
@@ -73,34 +72,32 @@ export async function POST(request: NextRequest) {
     const company = await prisma.company.findFirst({ select: { baseUrl: true, name: true, phone: true } });
     const baseUrl = company?.baseUrl || 'http://localhost:3000';
 
-    // Month range for duplicate check: from 1st to last day of targetMonth
-    const monthStart = new Date(year, month - 1, 1, 0, 0, 0, 0);
-    const monthEnd = new Date(year, month, 0, 23, 59, 59, 999);
+    const { end: targetEnd } = companyMonthRange(year, month);
+    const monthKey = (d: Date) => {
+      const c = companyDate(d);
+      return `${c.year}-${c.month}`;
+    };
 
-    // Batch fetch existing invoices for this month (MONTHLY/RENEWAL type)
+    // Existing bills keyed by customer + due-date month (a PREPAID catch-up
+    // bill can be due before targetMonth).
     const existingInvoices = await prisma.invoice.findMany({
       where: {
         userId: { in: users.map(u => u.id) },
         invoiceType: { in: ['MONTHLY', 'RENEWAL'] },
-        dueDate: { gte: monthStart, lte: monthEnd },
+        dueDate: { lte: targetEnd },
         status: { not: 'CANCELLED' },
       },
-      select: { userId: true },
+      select: { userId: true, dueDate: true },
     });
-    const usersWithInvoice = new Set(existingInvoices.map(i => i.userId).filter(Boolean) as string[]);
+    const billedMonths = new Set(existingInvoices.map(i => `${i.userId}:${monthKey(i.dueDate)}`));
 
     let generated = 0;
     let skipped = 0;
+    let notDue = 0;
     const errors: { username: string; error: string }[] = [];
 
     for (const user of users) {
       try {
-        // Skip if already has invoice for this month
-        if (skipExisting && usersWithInvoice.has(user.id)) {
-          skipped++;
-          continue;
-        }
-
         if (!user.profile) {
           errors.push({ username: user.username, error: 'Paket tidak ditemukan' });
           continue;
@@ -117,19 +114,23 @@ export async function POST(request: NextRequest) {
             skipped++;
             continue;
           }
-          // Due date = tanggal expired (hari) di bulan target, bukan expiredAt mentah.
-          // Kalau pakai expiredAt apa adanya, generate "Oktober" untuk pelanggan yang
-          // expired 3 Nov menghasilkan invoice due 3 Nov — lalu generate "November"
-          // di-skip dedup dan tagihan Oktober tidak pernah ada.
-          const expDay = parseInt(formatInTimeZone(new Date(user.expiredAt), WIB_TIMEZONE, 'd'), 10);
-          const daysInMonth = new Date(year, month, 0).getDate();
-          dueDate = new Date(year, month - 1, Math.min(expDay, daysInMonth), 23, 59, 59, 999);
+          dueDate = prepaidDueDate(new Date(user.expiredAt));
+          // Paid through a later month: no bill for targetMonth.
+          if (dueDate > targetEnd) {
+            notDue++;
+            continue;
+          }
           invoiceType = 'RENEWAL';
         } else {
-          // POSTPAID: due date = billingDay of targetMonth
-          dueDate = getDueDatePostpaid((user as any).billingDay ?? null);
+          dueDate = postpaidDueDate(year, month, (user as any).billingDay);
           invoiceType = 'MONTHLY';
         }
+
+        if (skipExisting && billedMonths.has(`${user.id}:${monthKey(dueDate)}`)) {
+          skipped++;
+          continue;
+        }
+        billedMonths.add(`${user.id}:${monthKey(dueDate)}`);
 
         // Calculate amount (apply user discount + PPN if enabled)
         const baseAmount = Math.max(0, user.profile.price - (user.discount || 0));
@@ -197,8 +198,9 @@ export async function POST(request: NextRequest) {
       success: true,
       generated,
       skipped,
+      notDue,
       errors,
-      message: `${generated} tagihan berhasil dibuat, ${skipped} dilewati${errors.length > 0 ? `, ${errors.length} gagal` : ''}`,
+      message: `${generated} tagihan berhasil dibuat, ${skipped} dilewati${notDue > 0 ? `, ${notDue} prabayar belum jatuh tempo` : ''}${errors.length > 0 ? `, ${errors.length} gagal` : ''}`,
     });
   } catch (err) {
     console.error('[Generate Invoice] Error:', err);
