@@ -3,8 +3,6 @@
 Arah desain untuk `mobile/customer_app`. Aplikasi web punya tema sendiri (cyberpunk);
 dokumen ini hanya mengatur aplikasi Android native.
 
-Dipakai bersama `.claude/skills/antislop/SKILL.md` sebagai filter. Dokumen ini yang
-memberi arah, filter itu yang menolak slop.
 
 ---
 
