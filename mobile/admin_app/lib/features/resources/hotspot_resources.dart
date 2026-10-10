@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -159,6 +161,37 @@ CrudConfig hotspotProfilesConfig() {
 }
 
 /// Template cetak voucher — mirrors /admin/hotspot/template.
+/// Template colour lives in one CSS line, `.vc-theme { --vc-warna: …; --vc-teks: … }`
+/// (same convention as the web editor's colour picker).
+final _themeRe = RegExp(r'(\.vc-theme\s*\{[^}]*?--vc-warna:\s*)(#[0-9a-fA-F]{3,8})([^}]*?--vc-teks:\s*)(#[0-9a-fA-F]{3,8})');
+
+const _voucherSwatches = [
+  ('#1d4ed8', 'Biru'),
+  ('#0f766e', 'Tosca'),
+  ('#15803d', 'Hijau'),
+  ('#ea580c', 'Oranye'),
+  ('#ff8c00', 'Oranye terang'),
+  ('#dc2626', 'Merah'),
+  ('#db2777', 'Pink'),
+  ('#7c3aed', 'Ungu'),
+  ('#111111', 'Hitam'),
+];
+
+String? voucherTemplateColor(String html) => _themeRe.firstMatch(html)?.group(2)?.toLowerCase();
+
+String _readableTextOn(String hex) {
+  var h = hex.replaceFirst('#', '');
+  if (h.length == 3) h = h.split('').map((c) => '$c$c').join();
+  double ch(int i) {
+    final c = int.parse(h.substring(i, i + 2), radix: 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : math.pow((c + 0.055) / 1.055, 2.4).toDouble();
+  }
+
+  return 0.2126 * ch(0) + 0.7152 * ch(2) + 0.0722 * ch(4) > 0.179 ? '#111111' : '#ffffff';
+}
+
+String setVoucherTemplateColor(String html, String hex) => html.replaceFirstMapped(_themeRe, (m) => '${m[1]}$hex${m[3]}${_readableTextOn(hex)}');
+
 /// Built-in models served by the backend (GET /api/voucher-templates/presets).
 Map<String, Json> _templatePresets = {};
 
@@ -217,6 +250,44 @@ CrudConfig voucherTemplatesConfig() => CrudConfig(
   },
   update: CrudRoutes.putById('/api/voucher-templates'),
   delete: CrudRoutes.deleteById('/api/voucher-templates'),
+  metaOf: (t) => voucherTemplateColor('${t['htmlTemplate'] ?? ''}') == null ? null : 'Warna ${voucherTemplateColor('${t['htmlTemplate']}')}',
+  itemActions: [
+    CrudAction('Ubah warna', Icons.palette_rounded, (ctx, t) async {
+      final html = '${t['htmlTemplate'] ?? ''}';
+      final current = voucherTemplateColor(html);
+      if (current == null) {
+        showToast(ctx, 'Template ini belum memakai variabel warna. Pasang ulang dari model bawaan, atau aktifkan di halaman web.');
+        return false;
+      }
+      return openForm(
+        ctx,
+        title: 'Warna ${t['name'] ?? 'template'}',
+        fields: [
+          FieldSpec('swatch', 'Pilih warna', type: FieldType.select, options: [for (final (hex, name) in _voucherSwatches) (hex, '$name  $hex')]),
+          FieldSpec(
+            'hex',
+            'Atau kode warna',
+            hint: '#1d4ed8',
+            helper: 'Dipakai bila diisi. Format #RRGGBB.',
+            validator: (v, _) {
+              final s = '${v ?? ''}'.trim();
+              return s.isEmpty || RegExp(r'^#[0-9a-fA-F]{6}$').hasMatch(s) ? null : 'Format #RRGGBB';
+            },
+          ),
+        ],
+        initial: {'swatch': _voucherSwatches.any((w) => w.$1 == current) ? current : null},
+        success: 'Warna template diubah.',
+        onSubmit: (v) {
+          final hex = isBlank(v['hex']) ? '${v['swatch'] ?? ''}' : '${v['hex']}'.trim().toLowerCase();
+          if (hex.isEmpty) throw ApiException('Pilih warna dulu.');
+          return _api.put(
+            '/api/voucher-templates/${t['id']}',
+            data: {'name': t['name'], 'htmlTemplate': setVoucherTemplateColor(html, hex), 'isDefault': t['isDefault'], 'isActive': t['isActive']},
+          );
+        },
+      );
+    }, kind: ActionKind.primary),
+  ],
   toolbar: [
     CommonActions.confirmPost(
       'Pasang template bawaan',
