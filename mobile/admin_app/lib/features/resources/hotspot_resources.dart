@@ -287,6 +287,24 @@ CrudConfig voucherTemplatesConfig() => CrudConfig(
         },
       );
     }, kind: ActionKind.primary),
+    CommonActions.form(
+      'Ganti dengan model',
+      Icons.dashboard_customize_rounded,
+      fields: (_) => const [
+        FieldSpec.note('Isi HTML template ini diganti dengan model bawaan. Nama dan status tetap.'),
+        FieldSpec('preset', 'Model', type: FieldType.select, required: true, loadOptions: _loadTemplatePresets),
+      ],
+      submitLabel: 'Ganti',
+      success: 'Template diganti dengan model baru.',
+      submit: (t, v) {
+        final preset = _templatePresets['${v['preset']}'];
+        if (preset == null) throw ApiException('Model tidak ditemukan.');
+        return _api.put(
+          '/api/voucher-templates/${t['id']}',
+          data: {'name': t['name'], 'htmlTemplate': preset['htmlTemplate'], 'isDefault': t['isDefault'], 'isActive': t['isActive']},
+        );
+      },
+    ),
   ],
   toolbar: [
     CommonActions.confirmPost(
@@ -294,7 +312,7 @@ CrudConfig voucherTemplatesConfig() => CrudConfig(
       Icons.library_add_rounded,
       (_) => '/api/voucher-templates/presets',
       body: (_) => const {},
-      confirm: 'Menambahkan model yang belum ada: Kartu Standar (21/A4), Ringkas (50/A4), Mini hemat tinta (60/A4).',
+      confirm: 'Menambahkan model yang belum ada: Kartu Standar 50/A4, Kartu Standar Besar 21/A4, Ringkas 50/A4, Mini 60/A4.',
     ),
   ],
 );

@@ -144,10 +144,12 @@ export default function VoucherTemplatesPage() {
   const templateColor = getVoucherColor(formData.htmlTemplate);
   const changeColor = (hex: string) => setFormData((prev) => ({ ...prev, htmlTemplate: setVoucherColor(prev.htmlTemplate, hex) }));
 
-  const applyPreset = (key: string) => {
-    setPresetKey(key);
+  const applyPreset = async (key: string) => {
     const preset = presets.find((p) => p.key === key);
-    if (!preset) return;
+    if (!preset) { setPresetKey(key); return; }
+    // Editing an existing template replaces its HTML — confirm first.
+    if (editingTemplate && !(await showConfirm(`Ganti isi template ini dengan model "${preset.name}"? Nama & status tetap, HTML lama diganti.`))) return;
+    setPresetKey(key);
     setFormData((prev) => ({ ...prev, htmlTemplate: preset.htmlTemplate, name: prev.name.trim() ? prev.name : preset.name }));
   };
 
@@ -182,6 +184,7 @@ export default function VoucherTemplatesPage() {
 
   const handleEdit = (template: VoucherTemplate) => {
     setEditingTemplate(template);
+    setPresetKey('');
     setFormData({
       name: template.name,
       htmlTemplate: template.htmlTemplate,
@@ -268,7 +271,7 @@ export default function VoucherTemplatesPage() {
               onClick={handleInstallPresets}
               disabled={installing}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-card border border-border rounded-md hover:bg-muted disabled:opacity-50"
-              title="Tambahkan template bawaan (Standar, Ringkas 50/A4, Mini 60/A4) yang belum ada"
+              title="Tambahkan template bawaan yang belum ada: Kartu Standar 50/A4, Kartu Standar Besar, Ringkas 50/A4, Mini 60/A4"
             >
               <LayoutTemplate className="w-3.5 h-3.5" />
               {installing ? 'Memasang…' : 'Template Bawaan'}
@@ -393,9 +396,9 @@ export default function VoucherTemplatesPage() {
           </ModalHeader>
           <form onSubmit={handleSubmit}>
             <ModalBody className="space-y-4">
-              {!editingTemplate && presets.length > 0 && (
+              {presets.length > 0 && (
                 <div>
-                  <ModalLabel>Mulai dari model</ModalLabel>
+                  <ModalLabel>{editingTemplate ? 'Ganti isi dengan model' : 'Mulai dari model'}</ModalLabel>
                   <select
                     value={presetKey}
                     onChange={(e) => applyPreset(e.target.value)}
