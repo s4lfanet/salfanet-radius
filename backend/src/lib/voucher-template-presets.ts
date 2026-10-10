@@ -9,7 +9,7 @@
  * Printing goes through getPrintableHtml(): A4 portrait, @page margin 5mm,
  * body padding 3mm, so the usable area is 194 × 281 mm. Card sizes below are
  * in mm so the count per sheet is exact, not dependent on screen DPI:
- *   - Ringkas 50: 5 × 10 cards of 37.5 × 26.5 mm (+0.5 mm margin) = 192.5 × 275 mm
+ *   - Kartu Standar 50 and Ringkas 50: 5 × 10 cards of 37.5 × 26.5 mm (+0.5 mm margin) = 192.5 × 275 mm
  *   - Mini 60:    5 × 12 cards of 37.5 × 22 mm   (+0.5 mm margin) = 192.5 × 270 mm
  */
 
@@ -88,6 +88,48 @@ const STANDARD = `{include file="rad-template-header.tpl"}
 {/foreach}
 {include file="rad-template-footer.tpl"}`;
 
+// The standard orange card scaled to 5 × 10 per A4: same parts (header,
+// label, dashed price strip, quota/duration line) at 37.5 × 26.5 mm.
+const STANDARD_50 = `{include file="rad-template-header.tpl"}
+<style>
+/* WARNA: cukup ubah --vc-warna (dan --vc-teks = warna tulisan di atasnya). */
+.vc-theme { --vc-warna: #ff8c00; --vc-teks: #ffffff; }
+.vs50 { display: inline-flex; flex-direction: column; width: 37.5mm; height: 26.5mm; margin: 0.5mm; border: 0.25mm solid #cccccc; border-radius: 1mm; background: #fff; color: #000; font-family: Arial, Helvetica, sans-serif; box-sizing: border-box; overflow: hidden; vertical-align: top; page-break-inside: avoid; break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.vs50-head { background: var(--vc-warna); color: var(--vc-teks); font-size: 6.5pt; font-weight: bold; padding: 0.7mm 1.5mm; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vs50-body { padding: 0.8mm 1.5mm 0; }
+.vs50-label { color: color-mix(in srgb, var(--vc-warna) 80%, #000000); font-size: 5.5pt; font-weight: 600; }
+.vs50-code { font-family: 'Courier New', monospace; font-size: 12pt; font-weight: bold; line-height: 1.2; word-break: break-all; }
+.vs50-pair { display: flex; gap: 1mm; }
+.vs50-pair > div { flex: 1; min-width: 0; }
+.vs50-pair .vs50-code { font-size: 7.5pt; line-height: 1.25; }
+.vs50-foot { margin-top: auto; border-top: 0.25mm dashed var(--vc-warna); background: color-mix(in srgb, var(--vc-warna) 8%, #ffffff); padding: 0.5mm 1.5mm; font-size: 6.5pt; font-weight: bold; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.vs50-info { background: #f9f9f9; border-top: 0.2mm solid #eeeeee; padding: 0.4mm 1.5mm; font-size: 5pt; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+</style>
+{foreach $v as $vs}
+{if $vs['code'] eq $vs['secret']}
+<div class="vc-theme vs50">
+<div class="vs50-head">{$vs['router_name']}</div>
+<div class="vs50-body">
+<div class="vs50-label">Kode Voucher</div>
+<div class="vs50-code">{$vs['code']}</div>
+</div>
+<div class="vs50-foot">{$vs['validity']} - {$_c['currency_code']}. {number_format($vs['total'], 0, ',', '.')}</div>
+<div class="vs50-info">Kuota: {$vs['quota']} · Durasi: {$vs['duration']}</div>
+</div>
+{else}
+<div class="vc-theme vs50">
+<div class="vs50-head">{$vs['router_name']}</div>
+<div class="vs50-body vs50-pair">
+<div><div class="vs50-label">Username</div><div class="vs50-code">{$vs['code']}</div></div>
+<div><div class="vs50-label">Password</div><div class="vs50-code">{$vs['secret']}</div></div>
+</div>
+<div class="vs50-foot">{$vs['validity']} - {$_c['currency_code']}. {number_format($vs['total'], 0, ',', '.')}</div>
+<div class="vs50-info">Kuota: {$vs['quota']} · Durasi: {$vs['duration']}</div>
+</div>
+{/if}
+{/foreach}
+{include file="rad-template-footer.tpl"}`;
+
 // 5 × 10 per A4. Dashed border doubles as the cutting guide.
 const COMPACT_50 = `{include file="rad-template-header.tpl"}
 <style>
@@ -159,9 +201,16 @@ const MINI_60 = `{include file="rad-template-header.tpl"}
 
 export const VOUCHER_TEMPLATE_PRESETS: VoucherTemplatePreset[] = [
   {
+    key: 'standard-50',
+    name: 'Kartu Standar 50 per A4',
+    description: 'Desain kartu standar oranye diperkecil jadi 37,5 × 26,5 mm: 5 kolom × 10 baris.',
+    perA4: 50,
+    htmlTemplate: STANDARD_50,
+  },
+  {
     key: 'standard',
-    name: 'Kartu Standar',
-    description: 'Kartu besar oranye dengan kuota dan durasi. 21 voucher per A4 (3 × 7).',
+    name: 'Kartu Standar Besar',
+    description: 'Kartu standar ukuran asli dengan kuota dan durasi. 21 voucher per A4 (3 × 7).',
     perA4: 21,
     htmlTemplate: STANDARD,
   },
