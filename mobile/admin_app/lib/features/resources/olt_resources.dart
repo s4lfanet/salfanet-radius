@@ -72,8 +72,9 @@ CrudConfig oltDeviceConfig(Json olt) {
       ),
     ],
     delete: (o) => _api.delete('/api/olt/$id/onus/${o['id']}/delete'),
-    deleteMessage: (o) => 'ONU ${o['serialNumber'] ?? ''} dihapus dari konfigurasi OLT. Pelanggan terputus sampai didaftarkan ulang.',
-    canDelete: (o) => !_unregistered(o),
+    deleteMessage: (o) => _unregistered(o)
+        ? 'Entri ${o['serialNumber'] ?? 'ONU'} dihapus dari daftar saja (tidak ada perintah ke OLT). Jika OLT masih melihatnya sebagai unconfigured, entri muncul lagi saat sinkron.'
+        : 'ONU ${o['serialNumber'] ?? ''} dihapus dari konfigurasi OLT. Pelanggan terputus sampai didaftarkan ulang.',
     itemActions: [
       CrudAction('Daftarkan ONU', Icons.app_registration_rounded, (ctx, o) => registerOnu(ctx, olt, o), kind: ActionKind.primary, visible: _unregistered),
       CommonActions.showResult(
