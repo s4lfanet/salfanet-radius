@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { Plus, Edit2, Trash2, Eye, RefreshCw, FileCode, LayoutTemplate } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
+import { VOUCHER_COLOR_SWATCHES, canEnableVoucherColor, enableVoucherColor, getVoucherColor, setVoucherColor } from '@/lib/utils/voucherTemplateColor';
 import { renderVoucherTemplate } from '@/lib/utils/templateRenderer';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
@@ -85,6 +86,9 @@ const DEFAULT_TEMPLATE = `{include file="rad-template-header.tpl"}
 {/foreach}
 {include file="rad-template-footer.tpl"}`;
 
+// New templates start with the colour line in place so the picker works.
+const DEFAULT_TEMPLATE_COLORED = enableVoucherColor(DEFAULT_TEMPLATE);
+
 interface VoucherTemplatePreset {
   key: string;
   name: string;
@@ -111,7 +115,7 @@ export default function VoucherTemplatesPage() {
   const [editingTemplate, setEditingTemplate] = useState<VoucherTemplate | null>(null);
   const [formData, setFormData] = useState({
     name: '',
-    htmlTemplate: DEFAULT_TEMPLATE,
+    htmlTemplate: DEFAULT_TEMPLATE_COLORED,
     isDefault: false,
     isActive: true
   });
@@ -136,6 +140,9 @@ export default function VoucherTemplatesPage() {
       setInstalling(false);
     }
   };
+
+  const templateColor = getVoucherColor(formData.htmlTemplate);
+  const changeColor = (hex: string) => setFormData((prev) => ({ ...prev, htmlTemplate: setVoucherColor(prev.htmlTemplate, hex) }));
 
   const applyPreset = (key: string) => {
     setPresetKey(key);
@@ -186,7 +193,7 @@ export default function VoucherTemplatesPage() {
 
   const handleAdd = () => {
     setEditingTemplate(null);
-    setFormData({ name: '', htmlTemplate: DEFAULT_TEMPLATE, isDefault: false, isActive: true });
+    setFormData({ name: '', htmlTemplate: DEFAULT_TEMPLATE_COLORED, isDefault: false, isActive: true });
     setPresetKey('');
     setShowDialog(true);
   };
@@ -404,6 +411,42 @@ export default function VoucherTemplatesPage() {
                   )}
                 </div>
               )}
+              <div>
+                <ModalLabel>Warna voucher</ModalLabel>
+                {templateColor ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {VOUCHER_COLOR_SWATCHES.map((c) => (
+                      <button
+                        key={c.hex}
+                        type="button"
+                        title={c.name}
+                        aria-label={c.name}
+                        onClick={() => changeColor(c.hex)}
+                        className={`w-7 h-7 rounded-full border-2 ${templateColor === c.hex ? 'border-foreground ring-2 ring-primary/40' : 'border-border'}`}
+                        style={{ background: c.hex }}
+                      />
+                    ))}
+                    <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer">
+                      <input type="color" value={templateColor.length === 7 ? templateColor : '#000000'} onChange={(e) => changeColor(e.target.value)} className="w-8 h-7 p-0 border border-border rounded bg-transparent cursor-pointer" />
+                      Lainnya
+                    </label>
+                    <span className="text-[10px] font-mono text-muted-foreground">{templateColor}</span>
+                    <button type="button" onClick={() => setShowPreview(true)} className="text-[11px] text-primary hover:underline">Lihat hasil</button>
+                  </div>
+                ) : canEnableVoucherColor(formData.htmlTemplate) ? (
+                  <button
+                    type="button"
+                    onClick={() => setFormData((prev) => ({ ...prev, htmlTemplate: enableVoucherColor(prev.htmlTemplate) }))}
+                    className="px-3 py-1.5 text-xs border border-primary/50 text-primary rounded-lg hover:bg-primary/10"
+                  >
+                    Aktifkan pengaturan warna
+                  </button>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground">
+                    Template ini tidak memakai variabel warna, jadi warnanya diubah langsung di HTML. Model bawaan dan template baru sudah mendukung pemilih warna.
+                  </p>
+                )}
+              </div>
               <div>
                 <ModalLabel required>{t('hotspot.templateName')}</ModalLabel>
                 <ModalInput type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required placeholder="e.g., Default Card" />
