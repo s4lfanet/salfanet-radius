@@ -1549,162 +1549,283 @@ interface OnuDetailResponse {
   };
 }
 
+/**
+ * Rx power grading for GPON ONUs. Receivers saturate above about -8 dBm and
+ * lose sync below about -28 dBm, so a reading above -8 is flagged rather than
+ * praised (a +5 dBm value is a bad reading or an overloaded receiver).
+ */
+function gradeRxPower(rx: number | null): { label: string; tone: string } {
+  if (rx === null || Number.isNaN(rx)) return { label: 'Tidak terbaca', tone: 'text-muted-foreground' };
+  if (rx > -8) return { label: 'Terlalu kuat', tone: 'text-orange-700 dark:text-orange-400' };
+  if (rx >= -20) return { label: 'Sangat baik', tone: 'text-green-700 dark:text-green-400' };
+  if (rx >= -25) return { label: 'Baik', tone: 'text-blue-700 dark:text-blue-400' };
+  if (rx >= -27) return { label: 'Lemah', tone: 'text-yellow-700 dark:text-yellow-400' };
+  return { label: 'Kritis', tone: 'text-red-700 dark:text-red-400' };
+}
+
+/** A value worth showing: drops null, empty strings and the OLT's own placeholders. */
+function present(v: unknown): string | null {
+  if (v === null || v === undefined) return null;
+  const s = Array.isArray(v) ? v.join(', ') : String(v).trim();
+  return s && !/^(n\/a|-|none|null|undefined)$/i.test(s) ? s : null;
+}
+
+function DetailRows({ rows }: { rows: Array<[string, unknown, { mono?: boolean }?]> }) {
+  const visible = rows.map(([label, value, opt]) => [label, present(value), opt] as const).filter(([, v]) => v !== null);
+  if (visible.length === 0) return null;
+  return (
+    <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6">
+      {visible.map(([label, value, opt]) => (
+        <div key={label} className="flex items-baseline justify-between gap-3 py-2 border-b border-border/60 min-w-0">
+          <dt className="text-xs text-muted-foreground shrink-0">{label}</dt>
+          <dd className={`text-sm text-foreground text-right break-all ${opt?.mono ? 'font-mono' : 'font-medium'}`}>{value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function DetailSection({ title, children, aside }: { title: string; children: ReactNode; aside?: ReactNode }) {
+  return (
+    <section className="space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+        {aside}
+      </div>
+      {children}
+    </section>
+  );
+}
+
 function ONUDetailModal({ oltId, onu, onClose }: { oltId: string; onu: ONU; onClose: () => void }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [detail, setDetail] = useState<OnuDetailResponse | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
+    setError(null);
     fetch(`/api/olt/${oltId}/onus/${onu.id}/detail`)
       .then(async (res) => {
         const json = await res.json();
-        if (!res.ok || !json.success) throw new Error(json.error ?? 'Failed to load ONU detail');
-        setDetail(json as OnuDetailResponse);
+        if (!res.ok || !json.success) throw new Error(json.error ?? 'Detail ONU gagal dimuat');
+        if (!cancelled) setDetail(json as OnuDetailResponse);
       })
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)))
-      .finally(() => setLoading(false));
-  }, [oltId, onu.id]);
+      .catch((e: unknown) => { if (!cancelled) setError(e instanceof Error ? e.message : String(e)); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [oltId, onu.id, attempt]);
+
+  // Escape closes, like every other dialog in the panel.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
   const parsed = detail?.telnet?.detail?.parsed ?? {};
-  const detailSummary = detail?.telnet?.detail?.summary ?? {};
-  const configSummary = detail?.telnet?.config?.summary ?? {};
-  const customer = detail?.onu?.customer;
-  const detailItems: [string, string][] = [
-    ['Interface', String(detail?.telnet?.interface ?? `${onu.frame}/${onu.slot}/${onu.port}:${onu.onuId}`)],
-    ['Serial Number', String(parsed['Serial number'] ?? onu.serialNumber ?? 'N/A')],
-    ['Name', String(parsed.Name ?? onu.description ?? 'N/A')],
-    ['Description', String(parsed.Description ?? 'N/A')],
-    ['Type', String(parsed.Type ?? 'N/A')],
-    ['ONT Vendor', String(detailSummary.vendor ?? 'N/A')],
-    ['State', String(parsed.State ?? onu.status ?? 'N/A')],
-    ['Phase', String(parsed['Phase state'] ?? 'N/A')],
-    ['Config', String(parsed['Config state'] ?? 'N/A')],
-    ['Distance', String(parsed['ONU Distance'] ?? (onu.distance !== null ? `${onu.distance}m` : 'N/A'))],
-    ['Online Duration', String(parsed['Online Duration'] ?? 'N/A')],
-    ['RX Power', onu.rxPower !== null ? `${onu.rxPower.toFixed(2)} dBm` : 'N/A'],
-  ];
-  const technicalItems: [string, string][] = [
-    ['Auth Mode', String(detailSummary.authenticationMode ?? 'N/A')],
-    ['SN Bind', String(detailSummary.snBind ?? 'N/A')],
-    ['Admin State', String(detailSummary.adminState ?? 'N/A')],
-    ['Current Channel', String(detailSummary.currentChannel ?? 'N/A')],
-    ['Configured Channel', String(detailSummary.configuredChannel ?? 'N/A')],
-    ['DBA Mode', String(detailSummary.dbaMode ?? 'N/A')],
-    ['Vport Mode', String(detailSummary.vportMode ?? 'N/A')],
-    ['Line Profile', String(detailSummary.lineProfile ?? 'N/A')],
-    ['Service Profile', String(detailSummary.serviceProfile ?? 'N/A')],
-    ['OMCI BW Profile', String(detailSummary.omciBwProfile ?? 'N/A')],
-    ['Description', String(detailSummary.description ?? 'N/A')],
-    ['Serial Prefix', String(detailSummary.serialPrefix ?? 'N/A')],
-  ];
-  const serviceVlans = Array.isArray(configSummary.serviceVlans) && configSummary.serviceVlans.length > 0
-    ? configSummary.serviceVlans.join(', ')
-    : 'N/A';
-  const tcontProfiles = Array.isArray(configSummary.tcontProfiles) && configSummary.tcontProfiles.length > 0
-    ? configSummary.tcontProfiles.join(', ')
-    : 'N/A';
-  const downstreamProfiles = Array.isArray(configSummary.downstreamProfiles) && configSummary.downstreamProfiles.length > 0
-    ? configSummary.downstreamProfiles.join(', ')
-    : 'N/A';
+  const summary = detail?.telnet?.detail?.summary ?? {};
+  const config = detail?.telnet?.config?.summary ?? {};
+  const customer = detail?.onu?.customer ?? null;
+  const iface = detail?.telnet?.interface ?? `${onu.frame}/${onu.slot}/${onu.port}:${onu.onuId}`;
+  const serial = present(parsed['Serial number']) ?? onu.serialNumber;
+  const unregistered = onu.status === 'auth_failed' || onu.status === 'unregistered';
+
+  const state = present(parsed['Phase state']) ?? present(parsed.State) ?? (unregistered ? 'Belum terdaftar' : onu.status.replace(/_/g, ' '));
+  const online = /working|online/i.test(state);
+  const rx = gradeRxPower(onu.rxPower);
+  const distance = present(parsed['ONU Distance']) ?? (onu.distance !== null ? `${onu.distance} m` : null);
+  const uptime = present(parsed['Online Duration']);
+  const title = customer?.name ?? present(parsed.Name) ?? onu.description ?? serial ?? 'ONU';
+
+  const servicePorts = Array.isArray(config.servicePorts) ? (config.servicePorts as ServicePort[]) : [];
+  const hasService = servicePorts.length > 0 || [config.serviceVlans, config.tcontProfiles, config.downstreamProfiles].some((v) => present(v));
+  const detailRaw = detail?.telnet?.detail?.raw?.trim();
+  const configRaw = (detail?.telnet?.config?.raw || detail?.telnet?.optical?.raw)?.trim();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-card rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
-        <div className="flex items-center justify-between px-5 py-4 border-b dark:border-gray-800">
-          <div>
-            <h2 className="font-semibold text-foreground flex items-center gap-2">
-              <Eye className="h-4 w-4 text-blue-500" /> Detail ONU
-            </h2>
-            <p className="text-xs text-gray-500 font-mono mt-0.5">{detail?.telnet?.interface ?? `${onu.frame}/${onu.slot}/${onu.port}:${onu.onuId}`}</p>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4" onClick={onClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="onu-detail-title"
+        onClick={(e) => e.stopPropagation()}
+        className="bg-card text-foreground w-full sm:max-w-3xl max-h-[92vh] sm:rounded-xl rounded-t-xl border border-border shadow-xl flex flex-col overflow-hidden"
+      >
+        <header className="flex items-start justify-between gap-3 px-5 pt-4 pb-3 border-b border-border">
+          <div className="min-w-0">
+            <h2 id="onu-detail-title" className="text-base font-semibold truncate">{title}</h2>
+            <p className="text-xs text-muted-foreground mt-0.5 font-mono break-all">
+              {iface}{serial ? ` · ${serial}` : ''}
+            </p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><X className="h-5 w-5" /></button>
-        </div>
-        <div className="p-5 overflow-y-auto space-y-4">
-          {loading && <div className="py-10 text-center text-gray-400"><RefreshCw className="h-6 w-6 mx-auto animate-spin mb-2" />Loading detail...</div>}
-          {error && <div className="px-3 py-2 rounded bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300 text-sm">{error}</div>}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Tutup detail ONU"
+            autoFocus
+            className="shrink-0 -mr-1 p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </header>
+
+        <div className="overflow-y-auto px-5 py-4 space-y-6">
+          {/* Condition first: it's what the technician opens this for. Shown from
+              stored poll data immediately; the OLT query below fills the rest. */}
+          <section aria-label="Kondisi ONU" className="grid grid-cols-2 sm:grid-cols-4 gap-y-4 rounded-lg bg-muted/50 px-4 py-3">
+            <div>
+              <div className="text-xs text-muted-foreground">Status</div>
+              <div className={`mt-1 text-sm font-semibold capitalize ${unregistered ? 'text-yellow-700 dark:text-yellow-400' : online ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
+                {state}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Rx power</div>
+              <div className="mt-1 flex items-baseline gap-1.5 flex-wrap">
+                <span className="text-lg font-semibold font-mono leading-none">{onu.rxPower !== null ? onu.rxPower.toFixed(2) : '–'}</span>
+                {onu.rxPower !== null && <span className="text-xs text-muted-foreground">dBm</span>}
+              </div>
+              <div className={`text-xs font-medium mt-0.5 ${rx.tone}`}>{rx.label}</div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">Jarak</div>
+              <div className="mt-1 text-sm font-semibold font-mono">{distance ?? '–'}</div>
+            </div>
+            <div>
+              <div className="text-xs text-muted-foreground">{uptime ? 'Online selama' : 'Terakhir terlihat'}</div>
+              <div className="mt-1 text-sm font-semibold">{uptime ?? (onu.lastSeenAt ? formatWIB(onu.lastSeenAt) : '–')}</div>
+            </div>
+          </section>
+
+          {loading && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground" role="status">
+              <RefreshCw className="h-4 w-4 animate-spin" aria-hidden="true" />
+              Membaca detail langsung dari OLT lewat Telnet, biasanya beberapa detik…
+            </div>
+          )}
+
+          {error && !loading && (
+            <div className="rounded-lg border border-red-300 dark:border-red-900 bg-red-50 dark:bg-red-950/40 px-4 py-3 text-sm" role="alert">
+              <p className="font-medium text-red-800 dark:text-red-300">Detail dari OLT tidak bisa dibaca</p>
+              <p className="text-red-700 dark:text-red-400 mt-0.5 break-words">{error}</p>
+              <p className="text-red-700 dark:text-red-400 mt-1">Data di atas berasal dari polling terakhir. Periksa akses Telnet OLT, lalu coba lagi.</p>
+              <Button size="sm" variant="outline" className="mt-2" onClick={() => setAttempt((n) => n + 1)}>
+                <RefreshCw className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" /> Coba lagi
+              </Button>
+            </div>
+          )}
+
           {!loading && !error && detail && (
             <>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {detailItems.map(([label, value]) => (
-                  <div key={label} className="p-3 rounded-lg border border-border bg-gray-50 dark:bg-gray-950">
-                    <div className="text-[10px] uppercase tracking-wide text-gray-500">{label}</div>
-                    <div className="text-sm font-medium text-foreground mt-1 break-words">{value}</div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {technicalItems.map(([label, value]) => (
-                  <div key={label} className="p-3 rounded-lg border border-border bg-gray-50 dark:bg-gray-950">
-                    <div className="text-[10px] uppercase tracking-wide text-gray-500">{label}</div>
-                    <div className="text-sm font-medium text-foreground mt-1 break-words">{value}</div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="rounded-lg border border-border p-3 space-y-3">
-                <div className="text-xs font-semibold text-gray-500 uppercase">ONT Service Summary</div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
-                  <div className="rounded-lg bg-gray-50 dark:bg-gray-950 border border-border p-3">
-                    <div className="text-[10px] uppercase tracking-wide text-gray-500">Service VLANs</div>
-                    <div className="mt-1 font-medium text-foreground break-words">{serviceVlans}</div>
-                  </div>
-                  <div className="rounded-lg bg-gray-50 dark:bg-gray-950 border border-border p-3">
-                    <div className="text-[10px] uppercase tracking-wide text-gray-500">TCONT Profiles</div>
-                    <div className="mt-1 font-medium text-foreground break-words">{tcontProfiles}</div>
-                  </div>
-                  <div className="rounded-lg bg-gray-50 dark:bg-gray-950 border border-border p-3">
-                    <div className="text-[10px] uppercase tracking-wide text-gray-500">Downstream Profiles</div>
-                    <div className="mt-1 font-medium text-foreground break-words">{downstreamProfiles}</div>
-                  </div>
-                </div>
-                {Array.isArray(configSummary.servicePorts) && configSummary.servicePorts.length > 0 && (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm border-separate border-spacing-y-1">
-                      <thead>
-                        <tr className="text-left text-[10px] uppercase tracking-wide text-gray-500">
-                          <th className="px-2 py-1">Service Port</th>
-                          <th className="px-2 py-1">VPort</th>
-                          <th className="px-2 py-1">User VLAN</th>
-                          <th className="px-2 py-1">VLAN</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {configSummary.servicePorts.map((servicePort: ServicePort) => (
-                          <tr key={`${servicePort.servicePort}-${servicePort.vport}`} className="bg-gray-50 dark:bg-gray-950">
-                            <td className="px-2 py-2 rounded-l border-y border-l border-border font-mono">{servicePort.servicePort}</td>
-                            <td className="px-2 py-2 border-y border-border font-mono">{servicePort.vport}</td>
-                            <td className="px-2 py-2 border-y border-border font-mono">{servicePort.userVlan}</td>
-                            <td className="px-2 py-2 rounded-r border-y border-r border-border font-mono">{servicePort.vlan}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-
-              <div className="rounded-lg border border-border p-3">
-                <div className="text-xs font-semibold text-gray-500 uppercase mb-2">Customer Assignment</div>
+              <DetailSection
+                title="Pelanggan"
+                aside={onu.customer?.id ? (
+                  <Link href={`/admin/pppoe/users/${onu.customer.id}`} className="text-xs font-medium text-primary dark:text-blue-400 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary rounded">
+                    Buka data pelanggan
+                  </Link>
+                ) : undefined}
+              >
                 {customer ? (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                    <div><span className="text-gray-500">Name:</span> {customer.name}</div>
-                    <div><span className="text-gray-500">Username:</span> {customer.username}</div>
-                    <div><span className="text-gray-500">Phone:</span> {customer.phone ?? '-'}</div>
-                    <div><span className="text-gray-500">Profile:</span> {customer.profile?.name ?? '-'}</div>
-                    <div><span className="text-gray-500">Area:</span> {customer.area?.name ?? '-'}</div>
-                    <div><span className="text-gray-500">ODP:</span> {customer.odpAssignment?.odp?.name ?? '-'}</div>
-                    <div><span className="text-gray-500">ODP Port:</span> {customer.odpAssignment?.portNumber ?? '-'}</div>
-                    <div><span className="text-gray-500">Status:</span> {customer.status}</div>
-                  </div>
-                ) : <div className="text-sm text-gray-400">Belum terhubung ke customer.</div>}
-              </div>
+                  <DetailRows rows={[
+                    ['Nama', customer.name],
+                    ['Username', customer.username, { mono: true }],
+                    ['Telepon', customer.phone, { mono: true }],
+                    ['Paket', customer.profile?.name],
+                    ['Area', customer.area?.name],
+                    ['ODP', customer.odpAssignment?.odp?.name
+                      ? `${customer.odpAssignment.odp.name}${customer.odpAssignment.portNumber ? ` · port ${customer.odpAssignment.portNumber}` : ''}`
+                      : null],
+                    ['Status layanan', customer.status],
+                  ]} />
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {unregistered
+                      ? 'ONU ini belum terdaftar di OLT. Daftarkan dulu, lalu hubungkan ke pelanggan.'
+                      : 'Belum dihubungkan ke pelanggan. Pakai tombol Assign di daftar ONU untuk menghubungkannya.'}
+                  </p>
+                )}
+              </DetailSection>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                <pre className="text-[11px] font-mono bg-gray-950 text-green-300 rounded-lg p-3 overflow-auto max-h-64 whitespace-pre-wrap">{detail.telnet?.detail?.raw || 'No detail output'}</pre>
-                <pre className="text-[11px] font-mono bg-gray-950 text-blue-300 rounded-lg p-3 overflow-auto max-h-64 whitespace-pre-wrap">{detail.telnet?.config?.raw || detail.telnet?.optical?.raw || 'No config/optical output'}</pre>
-              </div>
+              {hasService && (
+                <DetailSection title="Layanan">
+                  <DetailRows rows={[
+                    ['Service VLAN', config.serviceVlans, { mono: true }],
+                    ['T-CONT profile', config.tcontProfiles],
+                    ['Downstream profile', config.downstreamProfiles],
+                  ]} />
+                  {servicePorts.length > 0 && (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <caption className="sr-only">Service port</caption>
+                        <thead>
+                          <tr className="text-left text-xs text-muted-foreground border-b border-border">
+                            <th scope="col" className="py-2 pr-4 font-medium">Service port</th>
+                            <th scope="col" className="py-2 pr-4 font-medium">VPort</th>
+                            <th scope="col" className="py-2 pr-4 font-medium">User VLAN</th>
+                            <th scope="col" className="py-2 font-medium">VLAN</th>
+                          </tr>
+                        </thead>
+                        <tbody className="font-mono">
+                          {servicePorts.map((sp) => (
+                            <tr key={`${sp.servicePort}-${sp.vport}`} className="border-b border-border/60">
+                              <td className="py-2 pr-4">{sp.servicePort}</td>
+                              <td className="py-2 pr-4">{sp.vport}</td>
+                              <td className="py-2 pr-4">{sp.userVlan}</td>
+                              <td className="py-2">{sp.vlan}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </DetailSection>
+              )}
+
+              <DetailSection title="Perangkat">
+                <DetailRows rows={[
+                  ['Serial number', serial, { mono: true }],
+                  ['Tipe', parsed.Type ?? onu.onuType],
+                  ['Vendor', summary.vendor],
+                  ['Nama di OLT', parsed.Name],
+                  ['Deskripsi', parsed.Description ?? summary.description],
+                  ['Admin state', summary.adminState],
+                  ['Config state', parsed['Config state']],
+                  ['Mode autentikasi', summary.authenticationMode],
+                  ['SN bind', summary.snBind],
+                  ['Channel aktif', summary.currentChannel],
+                  ['Channel diatur', summary.configuredChannel],
+                  ['DBA mode', summary.dbaMode],
+                  ['VPort mode', summary.vportMode],
+                  ['Line profile', summary.lineProfile],
+                  ['Service profile', summary.serviceProfile],
+                  ['OMCI BW profile', summary.omciBwProfile],
+                ]} />
+              </DetailSection>
+
+              {(detailRaw || configRaw) && (
+                <details className="group rounded-lg border border-border">
+                  <summary className="cursor-pointer select-none px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/60 rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">
+                    Output CLI dari OLT
+                  </summary>
+                  <div className="px-4 pb-4 space-y-3">
+                    {detailRaw && (
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-1">Detail ONU</div>
+                        <pre className="text-xs font-mono bg-muted text-foreground rounded-md p-3 overflow-auto max-h-64 whitespace-pre-wrap break-all">{detailRaw}</pre>
+                      </div>
+                    )}
+                    {configRaw && (
+                      <div>
+                        <div className="text-xs text-muted-foreground mb-1">Konfigurasi / optik</div>
+                        <pre className="text-xs font-mono bg-muted text-foreground rounded-md p-3 overflow-auto max-h-64 whitespace-pre-wrap break-all">{configRaw}</pre>
+                      </div>
+                    )}
+                  </div>
+                </details>
+              )}
             </>
           )}
         </div>
@@ -2089,11 +2210,9 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
   };
 
   const getSignalQuality = (rxPower: number | null) => {
-    if (rxPower === null) return { label: 'N/A', color: 'text-gray-400' };
-    if (rxPower >= -20) return { label: 'Excellent', color: 'text-green-600' };
-    if (rxPower >= -25) return { label: 'Good', color: 'text-blue-600' };
-    if (rxPower >= -27) return { label: 'Fair', color: 'text-yellow-600' };
-    return { label: 'Poor', color: 'text-red-600' };
+    if (rxPower === null) return { label: 'N/A', color: 'text-muted-foreground' };
+    const g = gradeRxPower(rxPower);
+    return { label: g.label, color: g.tone };
   };
 
   const _formatBytes = (bytes: number) => {
