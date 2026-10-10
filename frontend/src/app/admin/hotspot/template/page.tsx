@@ -85,6 +85,14 @@ const DEFAULT_TEMPLATE = `{include file="rad-template-header.tpl"}
 {/foreach}
 {include file="rad-template-footer.tpl"}`;
 
+interface VoucherTemplatePreset {
+  key: string;
+  name: string;
+  description: string;
+  perA4: number;
+  htmlTemplate: string;
+}
+
 interface VoucherTemplate {
   id: string;
   name: string;
@@ -111,6 +119,30 @@ export default function VoucherTemplatesPage() {
   // ─── React Query: Templates list ─────────────────────────────────────────────
   const { data: templatesData, isLoading: loading } = useApiQuery<VoucherTemplate[]>('/api/voucher-templates', { staleTime: 30000 })
   const templates = templatesData || []
+  const { data: presetsData } = useApiQuery<{ presets: VoucherTemplatePreset[] }>('/api/voucher-templates/presets', { staleTime: 300000 })
+  const presets = presetsData?.presets || []
+  const [presetKey, setPresetKey] = useState('')
+  const [installing, setInstalling] = useState(false)
+
+  const handleInstallPresets = async () => {
+    setInstalling(true);
+    try {
+      const res = await apiAdmin<{ message?: string }>('/api/voucher-templates/presets', { method: 'POST', body: JSON.stringify({}) });
+      await showSuccess(res.message || 'Template bawaan ditambahkan.');
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/voucher-templates') });
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || 'Gagal memasang template bawaan');
+    } finally {
+      setInstalling(false);
+    }
+  };
+
+  const applyPreset = (key: string) => {
+    setPresetKey(key);
+    const preset = presets.find((p) => p.key === key);
+    if (!preset) return;
+    setFormData((prev) => ({ ...prev, htmlTemplate: preset.htmlTemplate, name: prev.name.trim() ? prev.name : preset.name }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,6 +187,7 @@ export default function VoucherTemplatesPage() {
   const handleAdd = () => {
     setEditingTemplate(null);
     setFormData({ name: '', htmlTemplate: DEFAULT_TEMPLATE, isDefault: false, isActive: true });
+    setPresetKey('');
     setShowDialog(true);
   };
 
@@ -194,7 +227,7 @@ export default function VoucherTemplatesPage() {
 
   const previewHtml = renderVoucherTemplate(
     formData.htmlTemplate,
-    sampleVouchers,
+    Array.from({ length: 10 }, (_, i) => sampleVouchers[i % 2]),
     { currencyCode: 'Rp', companyName: 'test-mikrotik' }
   );
 
@@ -223,6 +256,15 @@ export default function VoucherTemplatesPage() {
               title="Perbarui Data"
             >
               <RefreshCw className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={handleInstallPresets}
+              disabled={installing}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-card border border-border rounded-md hover:bg-muted disabled:opacity-50"
+              title="Tambahkan template bawaan (Standar, Ringkas 50/A4, Mini 60/A4) yang belum ada"
+            >
+              <LayoutTemplate className="w-3.5 h-3.5" />
+              {installing ? 'Memasang…' : 'Template Bawaan'}
             </button>
             <button
               onClick={handleAdd}
@@ -344,6 +386,24 @@ export default function VoucherTemplatesPage() {
           </ModalHeader>
           <form onSubmit={handleSubmit}>
             <ModalBody className="space-y-4">
+              {!editingTemplate && presets.length > 0 && (
+                <div>
+                  <ModalLabel>Mulai dari model</ModalLabel>
+                  <select
+                    value={presetKey}
+                    onChange={(e) => applyPreset(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background"
+                  >
+                    <option value="">— Pilih model bawaan —</option>
+                    {presets.map((p) => (
+                      <option key={p.key} value={p.key}>{p.name} ({p.perA4}/A4)</option>
+                    ))}
+                  </select>
+                  {presetKey && (
+                    <p className="text-[10px] text-muted-foreground mt-1">{presets.find((p) => p.key === presetKey)?.description}</p>
+                  )}
+                </div>
+              )}
               <div>
                 <ModalLabel required>{t('hotspot.templateName')}</ModalLabel>
                 <ModalInput type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required placeholder="e.g., Default Card" />
@@ -391,11 +451,11 @@ export default function VoucherTemplatesPage() {
                   borderRadius: '8px',
                   padding: '12px',
                   width: '100%',
-                  maxWidth: '380px',
+                  maxWidth: '420px',
                   boxSizing: 'border-box',
                   display: 'flex',
-                  flexDirection: 'column',
-                  gap: '10px',
+                  flexWrap: 'wrap',
+                  alignContent: 'flex-start',
                   overflowX: 'hidden',
                 }}
                 dangerouslySetInnerHTML={{ __html: previewHtml }}

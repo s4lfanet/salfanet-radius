@@ -159,6 +159,15 @@ CrudConfig hotspotProfilesConfig() {
 }
 
 /// Template cetak voucher — mirrors /admin/hotspot/template.
+/// Built-in models served by the backend (GET /api/voucher-templates/presets).
+Map<String, Json> _templatePresets = {};
+
+Future<FieldOptions> _loadTemplatePresets() async {
+  final list = extractList(await _api.get('/api/voucher-templates/presets'), listKey: 'presets');
+  _templatePresets = {for (final p in list) '${p['key']}': p};
+  return [for (final p in list) ('${p['key']}', '${p['name']} · ${p['perA4']}/A4')];
+}
+
 CrudConfig voucherTemplatesConfig() => CrudConfig(
   title: 'Template Voucher',
   noun: 'Template',
@@ -166,32 +175,57 @@ CrudConfig voucherTemplatesConfig() => CrudConfig(
   tone: Tone.violet,
   fetch: (_) => _api.get('/api/voucher-templates'),
   titleOf: (t) => str(t, 'name') ?? '-',
-  subtitleOf: (t) => t['isDefault'] == true ? 'Template bawaan' : null,
+  subtitleOf: (t) => t['isDefault'] == true ? 'Dipakai otomatis saat cetak' : null,
   statusOf: _activePill,
   sectionsOf: (context, t) => [
     DetailSection(
       rows: [
-        InfoRow('Bawaan', t['isDefault'] == true ? 'Ya' : 'Tidak'),
+        InfoRow('Template utama', t['isDefault'] == true ? 'Ya' : 'Tidak'),
         InfoRow('Status', t['isActive'] == false ? 'Nonaktif' : 'Aktif'),
         InfoRow('Panjang HTML', '${(t['htmlTemplate'] as String?)?.length ?? 0} karakter'),
       ],
     ),
   ],
-  fields: (_) => const [
-    FieldSpec('name', 'Nama template', required: true),
+  fields: (t) => [
+    if (t == null)
+      const FieldSpec(
+        'preset',
+        'Mulai dari model',
+        type: FieldType.select,
+        loadOptions: _loadTemplatePresets,
+        helper: 'Isi HTML diambil dari model ini bila kolom HTML dikosongkan.',
+      ),
+    const FieldSpec('name', 'Nama template', required: true),
     FieldSpec(
       'htmlTemplate',
       'HTML template',
       type: FieldType.multiline,
-      required: true,
-      helper: 'Variabel: {{code}}, {{password}}, {{profile}}, {{price}}, {{validity}}, {{company}}. Edit besar lebih nyaman di web.',
+      required: t != null,
+      helper:
+          "Variabel: {\$vs['code']}, {\$vs['secret']}, {\$vs['validity']}, {\$vs['quota']}, {\$vs['router_name']}, {number_format(\$vs['total'], 0, ',', '.')}. Edit besar lebih nyaman di web.",
     ),
-    FieldSpec('isDefault', 'Jadikan bawaan', type: FieldType.toggle),
-    FieldSpec('isActive', 'Aktif', type: FieldType.toggle, initial: true),
+    const FieldSpec('isDefault', 'Jadikan template utama saat cetak', type: FieldType.toggle),
+    const FieldSpec('isActive', 'Aktif', type: FieldType.toggle, initial: true),
   ],
-  create: CrudRoutes.postTo('/api/voucher-templates'),
+  create: (v) {
+    final preset = _templatePresets[v.remove('preset')];
+    if (isBlank(v['htmlTemplate'])) {
+      if (preset == null) throw ApiException('Pilih model atau isi HTML template.');
+      v['htmlTemplate'] = preset['htmlTemplate'];
+    }
+    return _api.post('/api/voucher-templates', data: v);
+  },
   update: CrudRoutes.putById('/api/voucher-templates'),
   delete: CrudRoutes.deleteById('/api/voucher-templates'),
+  toolbar: [
+    CommonActions.confirmPost(
+      'Pasang template bawaan',
+      Icons.library_add_rounded,
+      (_) => '/api/voucher-templates/presets',
+      body: (_) => const {},
+      confirm: 'Menambahkan model yang belum ada: Kartu Standar (21/A4), Ringkas (50/A4), Mini hemat tinta (60/A4).',
+    ),
+  ],
 );
 
 /// Agent (reseller voucher) — mirrors /admin/hotspot/agent.
