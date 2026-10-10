@@ -138,15 +138,15 @@ export async function pollOLTWithOptions(
 
     // Upsert ONU statuses
     const discoveredKeys = new Set<string>();
-    const discoveredSerials = new Set<string>();
+    const registeredSerials = new Set<string>();
     for (const onu of discoveredOnus) {
       discoveredKeys.add(buildOnuKey(onu));
-      if (onu.status !== 'auth_failed' && onu.serialNumber) discoveredSerials.add(onu.serialNumber);
+      if (mapOnuStatus(onu.status) !== 'auth_failed' && onu.serialNumber) registeredSerials.add(normalizeSerial(onu.serialNumber));
       await upsertONU(oltId, onu, sshConfig, telnetConfig, vendor, options);
     }
 
     if (discoveredOnus.length > 0) {
-      await pruneMissingOnus(oltId, discoveredKeys, discoveredSerials);
+      await pruneMissingOnus(oltId, discoveredKeys, registeredSerials, (discoveredOnus as any).uncfgAuthoritative === true);
     }
 
     // Count ONU statuses
@@ -257,30 +257,43 @@ function buildOnuKey(onu: { frame?: number | null; slot?: number | null; port: n
   return [onu.frame ?? 0, onu.slot ?? 0, onu.port, onu.onuId].join(':');
 }
 
-async function pruneMissingOnus(oltId: string, discoveredKeys: Set<string>, discoveredSerials: Set<string>): Promise<void> {
+function normalizeSerial(serial: string): string {
+  return serial.toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+/** An ONU just deleted from the UI is kept visible this long, even before the OLT lists it as unconfigured. */
+const RECENTLY_DELETED_GRACE_MS = 10 * 60 * 1000;
+
+async function pruneMissingOnus(
+  oltId: string,
+  discoveredKeys: Set<string>,
+  registeredSerials: Set<string>,
+  uncfgAuthoritative: boolean,
+): Promise<void> {
   const currentOnus = await prisma.oltOnuStatus.findMany({
     where: { oltId },
-    select: { id: true, frame: true, slot: true, port: true, onuId: true, status: true, serialNumber: true },
+    select: { id: true, frame: true, slot: true, port: true, onuId: true, status: true, serialNumber: true, updatedAt: true },
   });
+  const now = Date.now();
 
   const staleIds = currentOnus
     .filter((onu) => {
       if (discoveredKeys.has(buildOnuKey(onu))) return false; // still visible — keep
-      // auth_failed = unregistered ONU (explicitly deleted or never configured).
-      // Do NOT prune these: the OLT SEEN_ONU_TABLE may not reflect the ONU yet
-      // right after deletion, and operators need to see it to re-register it.
-      // Stale unregistered entries can be cleaned up manually via the UI.
-      //
-      // Exception: if this exact serial number now shows up as a REGISTERED
-      // ONU elsewhere in this same poll, the device has been provisioned —
-      // this row is a leftover ghost from before registration and inflates
-      // the total ONU count forever otherwise (confirmed live: a device
-      // registered under a real onuId still had its old auth_failed row
-      // sitting in the DB with a synthetic onuId, double-counting it).
-      if (onu.status === 'auth_failed') {
-        return !!onu.serialNumber && discoveredSerials.has(onu.serialNumber);
-      }
-      return true;
+      if (onu.status !== 'auth_failed') return true;
+
+      // Unconfigured rows:
+      // - same serial now registered elsewhere → leftover from before
+      //   registration, always remove.
+      if (onu.serialNumber && registeredSerials.has(normalizeSerial(onu.serialNumber))) return true;
+      // - the OLT's own uncfg listing was read this poll and doesn't contain
+      //   it → the OLT no longer sees it as unconfigured (unplugged, moved,
+      //   registered from the OLT CLI, or never real). Previously these rows
+      //   were kept forever, so the panel showed unconfigured ONUs the OLT
+      //   didn't have. A row the UI marked moments ago (ONU deletion) keeps a
+      //   short grace period until the OLT reports it.
+      if (uncfgAuthoritative) return now - onu.updatedAt.getTime() > RECENTLY_DELETED_GRACE_MS;
+      // - listing unavailable this poll → state unknown, keep.
+      return false;
     })
     .map((onu) => onu.id);
 
