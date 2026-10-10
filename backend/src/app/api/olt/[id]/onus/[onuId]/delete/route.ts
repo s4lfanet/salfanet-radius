@@ -98,6 +98,25 @@ export async function DELETE(
     if (!olt) return NextResponse.json({ error: 'OLT not found' }, { status: 404 });
     if (!onu) return NextResponse.json({ error: 'ONU not found' }, { status: 404 });
 
+    // An unregistered row is only a record of what the OLT listed as
+    // unconfigured — there is nothing configured on the OLT to remove, so
+    // deleting it just clears the stored row (stale entries the OLT no longer
+    // lists). If the OLT still sees it, the next poll lists it again.
+    if (onu.status === 'auth_failed') {
+      await prisma.oltOnuStatus.delete({ where: { id: onu.id } });
+      await prisma.oltMonitoringLog.create({
+        data: {
+          id: crypto.randomUUID(),
+          oltId,
+          logType: 'command',
+          severity: 'info',
+          message: `Unregistered ONU entry ${onu.serialNumber ?? `${onu.frame}/${onu.slot}/${onu.port}:${onu.onuId}`} removed from the list by ${(session as any).user?.email ?? 'unknown'}`,
+          data: { serialNumber: onu.serialNumber, location: `${onu.frame}/${onu.slot}/${onu.port}:${onu.onuId}` },
+        },
+      }).catch(() => {});
+      return NextResponse.json({ success: true, message: 'Entri ONU unregistered dihapus dari daftar.' });
+    }
+
     const vendor = (olt.vendor ?? '').toLowerCase();
     if (vendor !== 'zte' || !olt.telnetEnabled || !olt.username || !olt.password) {
       return NextResponse.json({ error: 'Delete ONU saat ini hanya didukung untuk ZTE via Telnet' }, { status: 400 });

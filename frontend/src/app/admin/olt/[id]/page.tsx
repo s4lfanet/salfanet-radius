@@ -1998,8 +1998,11 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
   };
 
   const handleDeleteOnu = async (onu: ONU) => {
+    const label = onu.serialNumber ?? `${onu.frame}/${onu.slot}/${onu.port}:${onu.onuId}`;
     const confirmed = await showConfirm(
-      `Hapus ONU ${onu.serialNumber ?? `${onu.frame}/${onu.slot}/${onu.port}:${onu.onuId}`} dari OLT?\n\nAksi ini akan clear config service dan unregister ONU.`
+      onu.status === 'auth_failed'
+        ? `Hapus entri ${label} dari daftar?\n\nTidak ada perintah ke OLT. Jika OLT masih melihatnya sebagai unconfigured, ONU ini muncul lagi di sinkron berikutnya.`
+        : `Hapus ONU ${label} dari OLT?\n\nAksi ini akan clear config service dan unregister ONU.`
     );
     if (!confirmed) return;
 
@@ -2401,6 +2404,15 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                             >
                               <Plus className="w-3 h-3" />
                               Register
+                            </button>
+                            <button
+                              onClick={() => handleDeleteOnu(onu)}
+                              disabled={deletingOnu === onu.id}
+                              title="Hapus entri dari daftar (tidak mengubah OLT)"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 transition-colors"
+                            >
+                              {deletingOnu === onu.id ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                              {deletingOnu === onu.id ? 'Deleting...' : 'Delete'}
                             </button>
                           </div>
                         ) : confirmReboot === onu.id ? (

@@ -263,6 +263,8 @@ function normalizeSerial(serial: string): string {
 
 /** An ONU just deleted from the UI is kept visible this long, even before the OLT lists it as unconfigured. */
 const RECENTLY_DELETED_GRACE_MS = 10 * 60 * 1000;
+/** Unconfigured rows the OLT hasn't listed for this long are dropped even when this poll's listing failed. */
+const UNSEEN_UNCONFIGURED_MAX_MS = 24 * 60 * 60 * 1000;
 
 async function pruneMissingOnus(
   oltId: string,
@@ -272,7 +274,7 @@ async function pruneMissingOnus(
 ): Promise<void> {
   const currentOnus = await prisma.oltOnuStatus.findMany({
     where: { oltId },
-    select: { id: true, frame: true, slot: true, port: true, onuId: true, status: true, serialNumber: true, updatedAt: true },
+    select: { id: true, frame: true, slot: true, port: true, onuId: true, status: true, serialNumber: true, updatedAt: true, lastSeenAt: true },
   });
   const now = Date.now();
 
@@ -291,9 +293,11 @@ async function pruneMissingOnus(
       //   were kept forever, so the panel showed unconfigured ONUs the OLT
       //   didn't have. A row the UI marked moments ago (ONU deletion) keeps a
       //   short grace period until the OLT reports it.
-      if (uncfgAuthoritative) return now - onu.updatedAt.getTime() > RECENTLY_DELETED_GRACE_MS;
-      // - listing unavailable this poll → state unknown, keep.
-      return false;
+      const lastTouched = Math.max(onu.updatedAt.getTime(), onu.lastSeenAt?.getTime() ?? 0);
+      if (uncfgAuthoritative) return now - lastTouched > RECENTLY_DELETED_GRACE_MS;
+      // - listing unavailable this poll → keep, unless the OLT hasn't listed
+      //   it for a day (a real unconfigured ONU reappears on the next good poll).
+      return now - lastTouched > UNSEEN_UNCONFIGURED_MAX_MS;
     })
     .map((onu) => onu.id);
 
