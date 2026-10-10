@@ -38,10 +38,12 @@ const V21 = {
   ponIncrement: 256,
 };
 // Seen-ONU table: zxAnGponOnuDiscoveredInfoTable (3.27.4.1.1)
+// NOT used for unconfigured detection — it also holds ONUs that were only
+// seen once (moved, unplugged, since registered). Kept for reference.
 // Contains ALL ONUs seen on a PON port including unregistered ones.
 // Indexed by .{ponIndex}.{onuSlot}.{onuId} — only col 1 accessible.
 // VERIFIED: returns INTEGER: 2 for both registered (onuId=1) and unregistered (onuId=2).
-const ZTE_V21_SEEN_ONU_TABLE = '1.3.6.1.4.1.3902.1012.3.27.4.1.1';
+export const ZTE_V21_SEEN_ONU_TABLE = '1.3.6.1.4.1.3902.1012.3.27.4.1.1';
 
 // ── ZTE C320 V2.2+ OID Profile (base: 1.3.6.1.4.1.3902.1082) ───────────────
 const V22 = {
@@ -396,6 +398,86 @@ async function fetchOnuDistanceViaTelnet(
   }
 }
 
+// ── Unconfigured ONUs (CLI is the only source of truth) ─────────────────────
+// Same approach as the reference NMS (E:\nms telnet_client.collect_unregistered_onus):
+// the live `uncfg` CLI listing decides which ONUs are unconfigured. The SNMP
+// seen table (3.27.4.1.1) is NOT used for this: it keeps ONUs the OLT saw at
+// some point, so reading it as "unconfigured" showed ONUs the OLT itself no
+// longer lists.
+
+export interface UncfgEntry {
+  board: number;
+  displayPort: number; // 0-based, as stored in the DB
+  serial: string;
+  onuId?: number;
+  model?: string;
+}
+
+const SERIAL_RE = /^[A-Z]{4}[0-9A-F]{4,12}$/i;
+
+function looksLikeCliError(output: string): boolean {
+  return /%\s*(code|error)|invalid input|unrecognized command|command not found|error\s*\d+/i.test(output);
+}
+
+/** Parse both C320 uncfg layouts:
+ *   gpon-olt_1/1/5   F670LV9.0   ZTEGDC79F447   GDC79F447   (OltIndex Model SN PW)
+ *   gpon-olt_1/1/1   N/A         ZTEGDA5918AC   unknown     (OnuIndex Type SN State)
+ *   gpon-onu_1/1/5:1 ZTEGDC79F447 unknown                   (show gpon onu uncfg)
+ */
+export function parseUncfgListing(output: string): UncfgEntry[] {
+  const entries: UncfgEntry[] = [];
+  const clean = output.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\xff]/g, '');
+  for (const raw of clean.split('\n')) {
+    const line = raw.trim();
+    if (!line || /^-+$/.test(line) || /onuindex|oltindex|onutype/i.test(line)) continue;
+    const parts = line.split(/\s+/);
+    const m = parts[0].match(/gpon[_-](olt|onu)[_-](\d+)\/(\d+)\/(\d+)(?::(\d+))?/i);
+    if (!m) continue;
+    const board = parseInt(m[3], 10);
+    const cliPort = parseInt(m[4], 10);
+    const onuId = m[5] ? parseInt(m[5], 10) : undefined;
+    let serial: string | undefined;
+    let model: string | undefined;
+    if (m[1].toLowerCase() === 'onu') {
+      serial = parts[1];
+    } else {
+      // Model and SN columns swap between firmware builds; the SN is the one
+      // with a 4-letter vendor prefix + hex digits.
+      if (parts[1] && SERIAL_RE.test(parts[1])) { serial = parts[1]; model = parts[2]; }
+      else { serial = parts[2]; model = parts[1]; }
+    }
+    if (!serial || !SERIAL_RE.test(serial)) continue;
+    entries.push({
+      board,
+      displayPort: cliPort > 0 ? cliPort - 1 : cliPort,
+      serial: serial.toUpperCase(),
+      onuId,
+      model: model && model.toUpperCase() !== 'N/A' ? model : undefined,
+    });
+  }
+  return entries;
+}
+
+/**
+ * Live unconfigured-ONU list. Tries `show pon onu uncfg` (C320 V2.1+) then
+ * `show gpon onu uncfg`, optionally scoped to one PON. Returns null when
+ * neither command produced a usable answer (Telnet down, both rejected) —
+ * callers must then treat the unconfigured state as UNKNOWN, not empty.
+ */
+export async function fetchUncfgViaTelnet(telnetConfig: TelnetConfig, scope = ''): Promise<UncfgEntry[] | null> {
+  for (const cmd of ['show pon onu uncfg', 'show gpon onu uncfg']) {
+    try {
+      const result = await executeCommand(telnetConfig, scope ? `${cmd} ${scope}` : cmd);
+      if (!result.success || result.output == null) continue;
+      if (looksLikeCliError(result.output)) continue;
+      return parseUncfgListing(result.output);
+    } catch {
+      /* try the next form */
+    }
+  }
+  return null;
+}
+
 // ── SNMP ONU Discovery — V2.1 ────────────────────────────────────────────────
 
 async function discoverPonV21(
@@ -411,13 +493,12 @@ async function discoverPonV21(
   // Walk ALL OID subtrees for this PON port in PARALLEL (6 concurrent SNMP walks),
   // plus one Telnet call for real status (see telnetStateMap below) — all run
   // together since none of them depend on each other.
-  const [regWalk, operWalk, serialWalk, rxWalk, descWalk, seenWalk, telnetStateMap] = await Promise.all([
+  const [regWalk, operWalk, serialWalk, rxWalk, descWalk, telnetStateMap] = await Promise.all([
     snmpWalk(config, `${base}${V21.onuRegStatus}.${ponIndex}`),    // reg status  (.ponIndex.slot.onuId)
     snmpWalk(config, `${base}${V21.onuOperState}.${ponIndex}`),    // oper state  (.ponIndex.slot.onuId)
     snmpWalk(config, `${base}${V21.onuSerial}.${ponIndex}`),       // serial      (.ponIndex.onuId)
     snmpWalk(config, `${base}${V21.onuRxPower}.${ponIndex}`),      // rx power    (.ponIndex.slot.onuId)
     snmpWalk(config, `${base}${V21.onuDescription}.${ponIndex}`),  // description (.ponIndex.onuId)
-    snmpWalk(config, `${ZTE_V21_SEEN_ONU_TABLE}.${ponIndex}`),     // seen/uncfg  (.ponIndex.slot.onuId)
     fetchPonStateViaTelnet(telnetConfig, board, pon),
   ]);
 
@@ -525,26 +606,13 @@ async function discoverPonV21(
     }
   }
 
-  // Discover unregistered ONUs from seenWalk (already fetched above in parallel).
-  // Same OID shape as the regStatus table above (`.ponIndex.{realOnuId}.{subIndex}`,
-  // subIndex sometimes 1 *and* 2 for the same onu) — real ID is second-to-last.
-  const unregisteredIds = new Set<number>();
-  if (seenWalk.success && seenWalk.results) {
-    for (const oid of Object.keys(seenWalk.results)) {
-      const parts = oid.split('.');
-      const onuId = parseInt(parts[parts.length - 2], 10);
-      if (isNaN(onuId) || onuId <= 0 || onuId > 128) continue;
-      if (registeredIds.has(onuId)) continue;
-      unregisteredIds.add(onuId);
-    }
-  }
-
+  // Unconfigured ONUs come only from the live CLI listing (see
+  // fetchUncfgViaTelnet). No listing this poll → report none; the poller then
+  // leaves previously stored unconfigured rows untouched.
   const uncfgSerials = new Map<number, string>();
   const existingSerials = new Set<string>();
   const displayPort = pon - 1; // DB/display port is 0-based
-  const cliPon = pon;          // ZTE C320 CLI PON port is 1-based
   const portKey = `${board}/${displayPort}`;
-  let hadTelnetData = false;   // true if Telnet was available and returned results
 
   const addSerial = (serial: string, fallbackIndex: number, preferredId?: number) => {
     const normalizedSerial = serial.toUpperCase();
@@ -559,61 +627,19 @@ async function discoverPonV21(
     existingSerials.add(normalizedSerial);
   };
 
-  // Method 1: pre-fetched global CLI output (fastest, one Telnet session for all ports)
-  // When globalUncfgMap is present (even with 0 entries for this port), Telnet was available.
-  // Trust Telnet as authoritative for unregistered ONU serials.
-  if (globalUncfgMap !== null && globalUncfgMap !== undefined) {
-    hadTelnetData = true; // global Telnet call succeeded (map built)
-    if (globalUncfgMap.has(portKey)) {
-      const entries = globalUncfgMap.get(portKey)!;
-      entries.forEach((entry, index) => addSerial(entry.serial, index, entry.onuId));
-    }
+  let portEntries: Array<{ serial: string; onuId?: number }> | null = null;
+  if (globalUncfgMap) {
+    portEntries = globalUncfgMap.get(portKey) ?? [];
   } else if (telnetConfig) {
-    // Method 2: per-port CLI fallback (when global map unavailable)
-    try {
-      const result = await executeCommand(telnetConfig, `show gpon onu uncfg gpon-olt_1/${board}/${cliPon}`);
-      if (result.success && result.output) {
-        hadTelnetData = true;
-        const serialList: string[] = [];
-        for (const line of result.output.split('\n')) {
-          const trimmed = line.trim();
-          if (!trimmed || /OnuIndex|OnuType|^-/.test(trimmed)) continue;
-          const parts = trimmed.split(/\s+/);
-          if (parts.length < 2) continue;
-
-          const onuMatch = parts[0].match(/gpon-onu_\d+\/\d+\/\d+:(\d+)/i);
-          if (onuMatch) {
-            const id = parseInt(onuMatch[1], 10);
-            const sn = parts.length >= 4 ? parts[2] : parts[1];
-            if (sn && sn !== 'N/A' && /^[A-Z0-9]{8,16}$/i.test(sn)) addSerial(sn, serialList.length, id);
-            continue;
-          }
-
-          if (/gpon[_-]olt/i.test(parts[0]) && parts.length >= 3) {
-            const sn = parts[2];
-            if (sn && sn !== 'N/A' && /^[A-Z0-9]{8,16}$/i.test(sn)) serialList.push(sn);
-          }
-        }
-
-        serialList.forEach((serial, index) => addSerial(serial, index));
-      }
-    } catch { /* Telnet unavailable */ }
+    const listed = await fetchUncfgViaTelnet(telnetConfig, `gpon-olt_1/${board}/${pon}`);
+    portEntries = listed ? listed.filter((e) => e.board === board && e.displayPort === displayPort) : null;
   }
-
-  // SNMP seenWalk fallback: only use when Telnet was completely unavailable.
-  // The OLT's seen table can contain stale entries (ONUs previously connected),
-  // so if Telnet data is present (authoritative), we must NOT add ghost entries
-  // from the seen table — doing so creates phantom "N/A" unregistered ONUs.
-  if (!hadTelnetData) {
-    for (const id of unregisteredIds) {
-      if (!uncfgSerials.has(id)) uncfgSerials.set(id, '');
-    }
-  }
+  portEntries?.forEach((entry, index) => addSerial(entry.serial, index, entry.onuId));
 
   for (const [onuId, serialNumber] of uncfgSerials) {
     onus.push({
       frame: 1, slot: board, port: pon - 1, onuId,
-      serialNumber: serialNumber || null,
+      serialNumber,
       macAddress: null,
       status: 'unregistered',
       description: null, onuType: null, rxPower: null, distance: null,
@@ -733,48 +759,22 @@ export async function discoverONUsSNMP(
   const onus: any[] = [];
 
   if (!useV22) {
-    // Pre-fetch ALL unregistered ONU serials via ONE global Telnet call.
-    // "show pon onu uncfg" output format:
-    //   OnuIndex                       OnuType     OnuSn           State
-    //   gpon-olt_1/1/1                 N/A         ZTEGDA5918AC    unknown
+    // One Telnet call lists every unconfigured ONU on the OLT.
     let globalUncfgMap: Map<string, Array<{ serial: string; onuId?: number }>> | null = null;
     if (telnetConfig) {
-      try {
-        // ZTE C320 V2.1 uses "show gpon onu uncfg".
-        // Output format: "gpon-onu_F/S/P:ID  SN  State"
-        // (3 columns: OnuIndex Sn State — SN is at index 1, NOT 2)
-        const result = await executeCommand(telnetConfig, 'show gpon onu uncfg');
-        if (result.success && result.output) {
-          globalUncfgMap = new Map();
-          for (const line of result.output.split('\n')) {
-            const trimmed = line.trim();
-            if (!trimmed || /OnuIndex|OnuType|^-/.test(trimmed)) continue;
-            const parts = trimmed.split(/\s+/);
-            if (parts.length >= 2) {
-              // Matches both:
-              //   "gpon-onu_1/1/1:2" (V2.1 show gpon onu uncfg)
-              //   "gpon-olt_1/1/1"   (older per-port format)
-              const portMatch = parts[0].match(/gpon[_-](?:olt|onu)[_-](\d+)\/(\d+)\/(\d+)(?::(\d+))?/i);
-              if (portMatch) {
-                const b = parseInt(portMatch[2]);
-                const cliPort = parseInt(portMatch[3]);
-                const displayPort = cliPort > 0 ? cliPort - 1 : cliPort;
-                const onuId = portMatch[4] ? parseInt(portMatch[4], 10) : undefined;
-                // gpon-onu_ format: "Index  SN  State" → SN at parts[1]
-                // gpon-olt_ format: "Index  Type  SN  State" → SN at parts[2]
-                const isOnuFmt = /gpon[_-]onu[_-]/i.test(parts[0]);
-                const sn = isOnuFmt ? parts[1] : parts[2];
-                if (sn && sn !== 'N/A' && /^[A-Z0-9]{8,16}$/i.test(sn)) {
-                  const key = `${b}/${displayPort}`;
-                  if (!globalUncfgMap.has(key)) globalUncfgMap.set(key, []);
-                  globalUncfgMap.get(key)!.push({ serial: sn.toUpperCase(), onuId });
-                }
-              }
-            }
-          }
+      const listed = await fetchUncfgViaTelnet(telnetConfig);
+      if (listed) {
+        globalUncfgMap = new Map();
+        for (const e of listed) {
+          const key = `${e.board}/${e.displayPort}`;
+          if (!globalUncfgMap.has(key)) globalUncfgMap.set(key, []);
+          globalUncfgMap.get(key)!.push({ serial: e.serial, onuId: e.onuId });
         }
-      } catch { /* Telnet unavailable — global map stays null, per-port fallback used */ }
+      }
     }
+    // Tells the poller whether this poll's unconfigured list is the OLT's
+    // real, complete answer (so stored rows missing from it can be removed).
+    (onus as any).uncfgAuthoritative = globalUncfgMap !== null;
 
     // V2.1: walk PON port table to discover actual port count dynamically.
     // Ports are scanned one at a time deliberately — see the note on
