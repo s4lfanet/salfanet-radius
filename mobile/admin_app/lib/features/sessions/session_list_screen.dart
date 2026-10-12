@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../core/api/api_client.dart';
+import '../../core/files.dart';
 import '../../core/formatters.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/detail.dart';
@@ -204,6 +205,16 @@ class _SessionListScreenState extends State<SessionListScreen> {
       appBar: AppBar(
         title: const Text('Sesi Online'),
         actions: [
+          IconButton(
+            tooltip: 'Ekspor Excel',
+            icon: const Icon(Icons.ios_share_rounded),
+            onPressed: () => downloadAndShare(
+              context,
+              '/api/sessions/export',
+              'sesi-$_type-${DateTime.now().toIso8601String().substring(0, 10)}.xlsx',
+              query: {'format': 'excel', 'type': _type, 'mode': 'active', if (_search.isNotEmpty) 'username': _search},
+            ),
+          ),
           IconButton(
             tooltip: 'Sinkron dari router',
             icon: const Icon(Icons.sync_rounded),

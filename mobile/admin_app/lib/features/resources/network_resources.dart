@@ -664,7 +664,6 @@ CrudConfig splicesConfig({String? deviceId, String? deviceType, String? title}) 
       ),
       const FieldSpec('insertionLoss', 'Insertion loss (dB)', type: FieldType.decimal),
       const FieldSpec('splicedBy', 'Dikerjakan oleh'),
-      const FieldSpec('locationDescription', 'Lokasi'),
       const FieldSpec('notes', 'Catatan', type: FieldType.multiline),
     ],
     create: (v) =>
@@ -801,7 +800,6 @@ CrudConfig vpnServersConfig() {
       const FieldSpec('l2tpEnabled', 'L2TP', type: FieldType.toggle),
       const FieldSpec('sstpEnabled', 'SSTP', type: FieldType.toggle),
       const FieldSpec('pptpEnabled', 'PPTP', type: FieldType.toggle),
-      const FieldSpec('openVpnEnabled', 'OpenVPN', type: FieldType.toggle),
     ],
     initialOf: (s) => {...s, 'password': null},
     create: CrudRoutes.postTo('/api/network/vpn-server'),

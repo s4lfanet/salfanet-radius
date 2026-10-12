@@ -26,6 +26,7 @@ import '../ont_removal/ont_removal_screen.dart';
 import '../payment_proofs/payment_proof_list_screen.dart';
 import '../profile/profile_screen.dart';
 import '../push_broadcast/push_broadcast_screen.dart';
+import '../reports/report_screens.dart';
 import '../referrals/referral_list_screen.dart';
 import '../registrations/registration_list_screen.dart';
 import '../sessions/session_list_screen.dart';
@@ -59,6 +60,7 @@ class MoreMenuScreen extends StatelessWidget {
       [
         _Entry(Icons.person_add_alt_1_rounded, 'Registrasi', 'Pendaftaran baru dari halaman daftar', Tone.accent, (_) => const RegistrationListScreen()),
         _Entry(Icons.how_to_reg_rounded, 'Persetujuan', 'Akun dari teknisi/referral yang perlu dicek', Tone.primary, (_) => const ApprovalListScreen()),
+        _Entry(Icons.block_rounded, 'Pelanggan Terisolir', 'Diisolir karena tunggakan, kirim link bayar', Tone.warning, _crud(isolatedUsersConfig)),
         _Entry(Icons.pause_circle_outline_rounded, 'Permintaan Suspend', 'Cuti langganan sementara', Tone.warning, (_) => const SuspendRequestListScreen()),
         _Entry(Icons.support_agent_rounded, 'Tiket Bantuan', 'Keluhan dan gangguan pelanggan', Tone.violet, (_) => const TicketListScreen()),
         _Entry(Icons.label_rounded, 'Kategori Tiket', 'Jenis keluhan untuk tiket', Tone.violet, _crud(ticketCategoriesConfig)),
@@ -88,6 +90,15 @@ class MoreMenuScreen extends StatelessWidget {
       ],
     ),
     (
+      'Laporan',
+      [
+        _Entry(Icons.summarize_rounded, 'Laporan', 'Tagihan, pembayaran, pelanggan, per paket', Tone.primary, (_) => const LaporanScreen()),
+        _Entry(Icons.receipt_long_rounded, 'Rekap Voucher', 'Penjualan voucher per batch', Tone.violet, (_) => const RekapVoucherScreen()),
+        _Entry(Icons.leaderboard_rounded, 'Laporan Agent', 'Penjualan, komisi, stok per agent', Tone.accent, (_) => const AgentReportScreen()),
+        _Entry(Icons.data_usage_rounded, 'Pemakaian Data', 'Bandwidth per pelanggan', Tone.accent, (_) => const DataUsageScreen()),
+      ],
+    ),
+    (
       'Hotspot & Agent',
       [
         _Entry(Icons.confirmation_number_rounded, 'Voucher Hotspot', 'Buat, ubah, hapus, kirim voucher', Tone.primary, _crud(vouchersConfig)),
@@ -114,6 +125,7 @@ class MoreMenuScreen extends StatelessWidget {
         _Entry(Icons.cable_rounded, 'Kabel Fiber', 'Kabel, tube, core', Tone.accent, _crud(cablesConfig)),
         _Entry(Icons.grain_rounded, 'Core Fiber', 'Pesan, lepas, tandai rusak', Tone.neutral, _crud(coresConfig)),
         _Entry(Icons.linear_scale_rounded, 'Titik Sambung', 'Splice antar core', Tone.violet, _crud(splicesConfig)),
+        _Entry(Icons.route_rounded, 'Trace Fiber', 'Jalur core, splice, dan redaman', Tone.accent, (_) => const FiberTraceScreen()),
         _Entry(Icons.storage_rounded, 'Server', 'Server billing / VPS di peta', Tone.neutral, _crud(serversConfig)),
         _Entry(Icons.vpn_lock_rounded, 'VPN Server', 'MikroTik CHR / VPS, L2TP/PPTP/SSTP', Tone.violet, _crud(vpnServersConfig)),
         _Entry(Icons.vpn_key_rounded, 'VPN Client', 'NAS lewat VPN, WireGuard/L2TP', Tone.violet, _crud(vpnClientsConfig)),

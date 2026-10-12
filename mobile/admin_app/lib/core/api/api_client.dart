@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:path_provider/path_provider.dart';
@@ -65,6 +66,14 @@ class ApiClient {
     if (saved != null && saved.isNotEmpty) {
       _dio.options.baseUrl = saved;
     }
+    _ready = true;
+  }
+
+  /// Widget tests answer requests from [adapter] instead of the network.
+  @visibleForTesting
+  void initForTest(HttpClientAdapter adapter, {String baseUrl = 'https://isp.test'}) {
+    if (!_ready) _dio = Dio(BaseOptions(baseUrl: baseUrl, validateStatus: (_) => true));
+    _dio.httpClientAdapter = adapter;
     _ready = true;
   }
 
