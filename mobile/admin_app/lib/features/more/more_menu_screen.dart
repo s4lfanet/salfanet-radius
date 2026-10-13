@@ -264,7 +264,7 @@ class _WhatsappSendScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Kirim WhatsApp')),
       body: ListView(
-        padding: const EdgeInsets.all(Gap.page),
+        padding: EdgeInsets.fromLTRB(Gap.page, Gap.page, Gap.page, listBottomPadding(context)),
         children: [
           EntityTile(
             icon: Icons.person_rounded,

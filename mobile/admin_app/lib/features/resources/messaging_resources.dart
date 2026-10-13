@@ -179,7 +179,7 @@ class _QrScreenState extends State<_QrScreen> {
         actions: [IconButton(tooltip: 'Muat ulang', icon: const Icon(Icons.refresh_rounded), onPressed: _load)],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(Gap.page),
+        padding: EdgeInsets.fromLTRB(Gap.page, Gap.page, Gap.page, listBottomPadding(context)),
         children: [
           const Text('Buka WhatsApp di ponsel pengirim → Perangkat tertaut → Tautkan perangkat, lalu pindai kode ini.'),
           const SizedBox(height: Gap.lg),
