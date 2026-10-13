@@ -188,7 +188,7 @@ class _RegistrationDetailScreenState extends State<RegistrationDetailScreen> {
                 reg.hasLocation ? 'Buka di Google Maps' : null,
                 onTap: reg.hasLocation ? () => _launch(Uri.parse('https://www.google.com/maps/search/?api=1&query=${reg.latitude},${reg.longitude}')) : null,
               ),
-              InfoRow('Kode Referral', reg.referralCode),
+              InfoRow('Kode ajak teman', reg.referralCode),
               InfoRow('Catatan', reg.notes),
             ],
           ),

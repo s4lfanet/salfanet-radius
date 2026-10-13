@@ -76,7 +76,7 @@ class _ReferralListScreenState extends State<ReferralListScreen> {
           rows: [
             InfoRow('Nama', str(referrer, 'name'), onTap: () => _openCustomer(str(referrer, 'id'))),
             InfoRow('Username', str(referrer, 'username')),
-            InfoRow('Kode Referral', str(referrer, 'referralCode'), copyable: true),
+            InfoRow('Kode ajak teman', str(referrer, 'referralCode'), copyable: true),
             InfoRow('Telepon', str(referrer, 'phone'), copyable: true),
           ],
         ),
@@ -129,7 +129,7 @@ class _ReferralListScreenState extends State<ReferralListScreen> {
   Widget build(BuildContext context) {
     final s = _stats;
     return Scaffold(
-      appBar: AppBar(title: const Text('Referral')),
+      appBar: AppBar(title: const Text('Ajak Teman')),
       body: Column(
         children: [
           if (s != null)
@@ -151,7 +151,7 @@ class _ReferralListScreenState extends State<ReferralListScreen> {
                       Container(width: 1, height: 36, color: context.colors.outlineVariant),
                       const SizedBox(width: Gap.lg),
                       Expanded(
-                        child: LabeledFigure(label: 'Pelanggan dari referral', value: '${numOf(s, 'referredUsers')}', valueSize: 16),
+                        child: LabeledFigure(label: 'Pelanggan dari ajak teman', value: '${numOf(s, 'referredUsers')}', valueSize: 16),
                       ),
                     ],
                   ),
@@ -176,8 +176,8 @@ class _ReferralListScreenState extends State<ReferralListScreen> {
               onRetry: _load,
               isEmpty: _rewards.isEmpty,
               emptyIcon: Icons.card_giftcard_outlined,
-              emptyMessage: 'Belum ada bonus referral',
-              emptyHint: 'Bonus muncul saat pelanggan baru mendaftar dengan kode referral pelanggan lama.',
+              emptyMessage: 'Belum ada bonus ajak teman',
+              emptyHint: 'Bonus muncul saat pelanggan baru mendaftar dengan kode ajak teman dari pelanggan lama.',
               child: RefreshableList(
                 onRefresh: _load,
                 itemCount: _rewards.length,
