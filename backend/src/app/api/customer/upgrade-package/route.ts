@@ -6,6 +6,7 @@ import { sendPushToUser } from '@/server/services/notifications/push-templates.s
 import { rateLimit } from '@/server/middleware/rate-limit';
 import { nowWIB } from '@/lib/timezone';
 import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
+import { createAdminNotification } from '@/server/services/notifications/admin-notification.service';
 
 // Helper to verify customer token using CustomerSession
 async function verifyCustomerToken(request: NextRequest) {
@@ -182,7 +183,7 @@ export async function POST(request: NextRequest) {
     // ============================================
     try {
       const oldPackageName = user.profile?.name || 'Paket Lama';
-      await prisma.notification.create({
+      await createAdminNotification({
         data: {
           type: 'package_change_request',
           title: 'Permintaan Ganti Paket',

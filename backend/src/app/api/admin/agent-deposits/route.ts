@@ -4,6 +4,7 @@ import { nowWIB } from '@/lib/timezone';
 import { requirePermission } from '@/server/middleware/api-auth';
 import type { Prisma } from '@prisma/client';
 import { createAgentNotificationAndPush } from '@/server/services/agent-notification.service';
+import { createAdminNotification } from '@/server/services/notifications/admin-notification.service';
 
 /**
  * GET /api/admin/agent-deposits
@@ -197,7 +198,7 @@ export async function PATCH(request: NextRequest) {
       message: `Permintaan top up manual Rp ${deposit.amount.toLocaleString('id-ID')} ditolak oleh admin`,
     });
 
-    await prisma.notification.create({
+    await createAdminNotification({
       data: {
         id: Math.random().toString(36).substring(2, 15),
         type: 'agent_deposit_rejected',

@@ -3,6 +3,7 @@ import { requirePermission } from '@/server/middleware/api-auth';
 import { nowWIB } from '@/lib/timezone';
 import { prisma } from '@/server/db/client';
 import { createAgentNotificationAndPush } from '@/server/services/agent-notification.service';
+import { createAdminNotification } from '@/server/services/notifications/admin-notification.service';
 
 /**
  * POST /api/hotspot/agents/balance
@@ -112,7 +113,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Create notification for admin
-    await prisma.notification.create({
+    await createAdminNotification({
       data: {
         id: Math.random().toString(36).substring(2, 15),
         type: 'agent_balance_adjustment',

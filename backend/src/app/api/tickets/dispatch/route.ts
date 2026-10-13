@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { WhatsAppService } from '@/server/services/notifications/whatsapp.service';
+import { createAdminNotification } from '@/server/services/notifications/admin-notification.service';
 
 function generateTicketNumber(): string {
   const date = new Date();
@@ -123,7 +124,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Notify admin
-    await prisma.notification.create({
+    await createAdminNotification({
       data: {
         type: 'new_ticket',
         title: 'Tiket Baru — Dispatch ke Teknisi',

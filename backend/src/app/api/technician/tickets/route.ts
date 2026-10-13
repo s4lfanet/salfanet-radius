@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { prisma } from '@/server/db/client';
 import { TECH_JWT_SECRET } from '@/server/auth/technician-secret';
+import { createAdminNotification } from '@/server/services/notifications/admin-notification.service';
 
 async function verifyTechnician(req: NextRequest) {
   const token = req.cookies.get('technician-token')?.value;
@@ -123,7 +124,7 @@ export async function PATCH(req: NextRequest) {
     });
     // Notify admin: technician claimed the ticket
     try {
-      await prisma.notification.create({
+      await createAdminNotification({
         data: {
           type: 'ticket_claimed',
           title: 'Tiket Diklaim Teknisi',

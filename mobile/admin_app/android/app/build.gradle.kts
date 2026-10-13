@@ -8,11 +8,15 @@ plugins {
 android {
     namespace = "com.salfanet.admin_app"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // Pinned above flutter.ndkVersion: the Firebase and local-notification
+    // plugins require this NDK (same as the customer app).
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        // Required by flutter_local_notifications (java.time APIs on API < 26).
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -39,6 +43,17 @@ android {
     }
 }
 
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+}
+
 flutter {
     source = "../.."
+}
+
+// Push needs android/app/google-services.json from the Firebase console
+// (package com.salfanet.admin_app, same project as the customer app). Without
+// it the plugin is skipped, the app still builds, and PushService no-ops.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
 }

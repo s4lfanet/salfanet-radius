@@ -8,6 +8,7 @@ import { parseBody } from '@/lib/parse-body';
 import { generateVoucherSchema } from '@/features/agents/schemas';
 import { requireAgentAuth } from '@/server/middleware/agent-auth';
 import { createAgentNotificationAndPush } from '@/server/services/agent-notification.service';
+import { createAdminNotification } from '@/server/services/notifications/admin-notification.service';
 
 // Code type definitions (same as admin)
 const CODE_TYPES: Record<string, { chars: string }> = {
@@ -240,7 +241,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Create notification for admin about agent voucher generation
-    await prisma.notification.create({
+    await createAdminNotification({
       data: {
         id: Math.random().toString(36).substring(2, 15),
         type: 'agent_voucher_generated',

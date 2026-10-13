@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
+import { createAdminNotification } from '@/server/services/notifications/admin-notification.service';
 
 /**
  * Resolves who is calling: an admin/technician (NextAuth session, checked via
@@ -230,7 +231,7 @@ export async function POST(req: NextRequest) {
     // If customer sends a message, notify admin and assigned technician
     if (!isInternal && senderType === 'CUSTOMER') {
       try {
-        await prisma.notification.create({
+        await createAdminNotification({
           data: {
             type: 'ticket_reply',
             title: 'Balasan Tiket dari Pelanggan',

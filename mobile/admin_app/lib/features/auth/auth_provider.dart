@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../core/push/push_service.dart';
 import '../../core/api/api_client.dart';
 import '../../models/admin_user.dart';
 
@@ -20,6 +21,7 @@ class AuthProvider extends ChangeNotifier {
     final ok = await _fetchSession();
     status = ok ? AuthStatus.authenticated : AuthStatus.unauthenticated;
     notifyListeners();
+    if (ok) PushService.instance.onSignedIn();
   }
 
   Future<bool> _fetchSession() async {
@@ -50,6 +52,7 @@ class AuthProvider extends ChangeNotifier {
       final ok = await _fetchSession();
       if (!ok) throw ApiException('Login gagal, sesi tidak ditemukan.');
       status = AuthStatus.authenticated;
+      PushService.instance.onSignedIn();
       return true;
     } on ApiException catch (e) {
       error = e.message;
@@ -76,6 +79,7 @@ class AuthProvider extends ChangeNotifier {
       if (!ok) throw ApiException('Verifikasi gagal, sesi tidak ditemukan.');
       pendingTfaToken = null;
       status = AuthStatus.authenticated;
+      PushService.instance.onSignedIn();
     } on ApiException catch (e) {
       error = e.message;
       rethrow;
@@ -86,6 +90,9 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    // Before signOut: the token is removed with this admin's session, so the
+    // phone stops getting this account's alerts.
+    await PushService.instance.onSigningOut();
     await ApiClient.instance.signOut();
     user = null;
     status = AuthStatus.unauthenticated;
@@ -95,6 +102,9 @@ class AuthProvider extends ChangeNotifier {
   /// Called by ApiClient when any request comes back 401 (expired/revoked session).
   void forceLogout() {
     if (status != AuthStatus.authenticated) return;
+    // Session already gone server-side; the token row is cleaned up when
+    // FCM later reports it stale or another account registers it.
+    PushService.instance.signedIn = false;
     ApiClient.instance.clearSession();
     user = null;
     status = AuthStatus.unauthenticated;

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { requireAgentAuth } from '@/server/middleware/agent-auth';
+import { createAdminNotification } from '@/server/services/notifications/admin-notification.service';
 
 function generateTicketNumber(): string {
   const date = new Date();
@@ -105,7 +106,7 @@ export async function POST(request: NextRequest) {
 
     // Admin DB notification
     try {
-      await prisma.notification.create({
+      await createAdminNotification({
         data: {
           type: 'new_ticket',
           title: 'Tiket Baru dari Agent',
