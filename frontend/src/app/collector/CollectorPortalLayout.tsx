@@ -199,7 +199,7 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto p-4 lg:p-6 safe-area-inset-bottom">
+        <main className="flex-1 overflow-auto p-4 lg:p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] lg:pb-[calc(2rem+env(safe-area-inset-bottom))]">
           {children}
         </main>
       </div>
