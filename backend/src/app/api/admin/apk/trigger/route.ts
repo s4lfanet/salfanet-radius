@@ -1129,7 +1129,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 etDeviceKey
             })
-            addView(label("Device Secret (V2 Signing — opsional)"))
+            addView(label("Device Secret (wajib, dari panel admin)"))
             addView(run {
                 etDeviceSecret = EditText(this@MainActivity).apply {
                     hint = "Paste device secret dari halaman admin"
@@ -1163,6 +1163,25 @@ class MainActivity : AppCompatActivity() {
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT, dp(52)
                 )
+            })
+            addView(Button(this@MainActivity).apply {
+                text = "TES KONEKSI SERVER"
+                setTextColor(0xFFFFFFFF.toInt())
+                setBackgroundColor(0xFF37474F.toInt())
+                setOnClickListener { testConnection() }
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, dp(48)
+                ).apply { topMargin = dp(8) }
+            })
+            addView(TextView(this@MainActivity).apply {
+                text = "PENTING: jangan tutup aplikasi ini dengan menggeser dari daftar aplikasi terbaru. " +
+                        "Di Xiaomi/Oppo/Vivo, itu menghentikan aplikasi total sehingga notifikasi tidak terbaca. " +
+                        "Kunci aplikasi (ikon gembok) di daftar terbaru dan aktifkan Autostart."
+                textSize = 11f
+                setTextColor(0xFFC62828.toInt())
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = dp(8) }
             })
         })
 
@@ -1294,10 +1313,75 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * The listener writes a heartbeat every 5 minutes while Android keeps it
+     * bound. The "connected" flag is only cleared on a clean disconnect, so a
+     * process the system killed kept showing "Terhubung: YA".
+     */
+    private fun lastBeat(): Long = prefs.getLong(QrisNotificationListener.PREF_HEARTBEAT, 0L)
+    private fun listenerAlive(): Boolean = System.currentTimeMillis() - lastBeat() < 11 * 60_000L
+
+    /** Makes Android bind the listener again; also used after it was killed. */
+    private fun rebindListener() {
+        val cn = ComponentName(this, QrisNotificationListener::class.java)
+        try {
+            packageManager.setComponentEnabledSetting(cn, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED, android.content.pm.PackageManager.DONT_KILL_APP)
+            packageManager.setComponentEnabledSetting(cn, android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED, android.content.pm.PackageManager.DONT_KILL_APP)
+        } catch (_: Exception) {}
+        try { NLS.requestRebind(cn) } catch (_: Exception) {}
+    }
+
+    private fun testConnection() {
+        val url = etServerUrl.text.toString().trim()
+        val key = etDeviceKey.text.toString().trim()
+        val secret = etDeviceSecret.text.toString().trim()
+        if (url.isEmpty() || key.isEmpty()) {
+            Toast.makeText(this, "Isi URL Server dan Device Key dulu", Toast.LENGTH_SHORT).show()
+            return
+        }
+        tvDebug.text = "Menguji koneksi ke server..."
+        Thread {
+            val result = try {
+                val ts = System.currentTimeMillis() / 1000
+                val nonce = java.util.UUID.randomUUID().toString().replace("-", "")
+                val payload = org.json.JSONObject().apply {
+                    put("test", true)
+                    put("device_key", key)
+                    put("amount", 0)
+                    put("timestamp", ts)
+                    put("nonce", nonce)
+                    if (secret.isNotEmpty()) {
+                        val mac = javax.crypto.Mac.getInstance("HmacSHA256")
+                        mac.init(javax.crypto.spec.SecretKeySpec(secret.toByteArray(Charsets.UTF_8), "HmacSHA256"))
+                        put("signature", mac.doFinal("$key|0|$ts|$nonce".toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) })
+                    }
+                }
+                val conn = java.net.URL(url).openConnection() as java.net.HttpURLConnection
+                conn.requestMethod = "POST"
+                conn.connectTimeout = 15_000
+                conn.readTimeout = 15_000
+                conn.doOutput = true
+                conn.setRequestProperty("Content-Type", "application/json; charset=utf-8")
+                conn.outputStream.use { it.write(payload.toString().toByteArray(Charsets.UTF_8)) }
+                val code = conn.responseCode
+                val body = (if (code in 200..299) conn.inputStream else conn.errorStream)?.bufferedReader()?.readText() ?: ""
+                conn.disconnect()
+                val json = try { org.json.JSONObject(body) } catch (_: Exception) { org.json.JSONObject() }
+                if (json.optBoolean("success")) json.optString("message", "Koneksi OK")
+                else "GAGAL (HTTP \${code}): " + json.optString("error", body.take(120))
+            } catch (e: Exception) {
+                "GAGAL: tidak bisa menghubungi server (\${e.message})"
+            }
+            runOnUiThread {
+                tvDebug.text = result
+                Toast.makeText(this, result, Toast.LENGTH_LONG).show()
+            }
+        }.start()
+    }
+
     private fun autoReconnectIfNeeded() {
         val enabled   = prefs.getBoolean(QrisNotificationListener.PREF_ENABLED, false)
-        val connected = prefs.getBoolean(QrisNotificationListener.PREF_DEBUG_CONNECTED, false)
-        if (!enabled || connected) return
+        if (!enabled || listenerAlive()) return
 
         val permOk = isNotificationAccessGranted()
         val hasUrl = !prefs.getString(QrisNotificationListener.PREF_SERVER_URL, "").isNullOrEmpty()
@@ -1308,15 +1392,7 @@ class MainActivity : AppCompatActivity() {
         if (now - lastAutoReconnectAttempt < 15_000L) return
         lastAutoReconnectAttempt = now
 
-        val svcIntent = Intent(this, QrisNotificationListener::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(svcIntent)
-        } else {
-            startService(svcIntent)
-        }
-        try {
-            NLS.requestRebind(ComponentName(this, QrisNotificationListener::class.java))
-        } catch (_: Exception) {}
+        rebindListener()
     }
 
     private fun saveSettings() {
@@ -1335,7 +1411,11 @@ class MainActivity : AppCompatActivity() {
             .putBoolean(QrisNotificationListener.PREF_ENABLED, swEnabled.isChecked)
             .apply()
 
-        Toast.makeText(this, "Pengaturan disimpan! Service tetap aktif.", Toast.LENGTH_SHORT).show()
+        Toast.makeText(
+            this,
+            if (secret.isEmpty()) "Disimpan, tetapi Device Secret kosong: pembayaran akan ditolak server." else "Pengaturan disimpan.",
+            Toast.LENGTH_LONG
+        ).show()
         tvDebug.text = "Memulai service... tunggu 2-3 detik"
 
         val svcIntent = Intent(this, QrisNotificationListener::class.java)
@@ -1344,7 +1424,7 @@ class MainActivity : AppCompatActivity() {
         } else {
             startService(svcIntent)
         }
-        NLS.requestRebind(ComponentName(this, QrisNotificationListener::class.java))
+        rebindListener()
 
         handler.postDelayed({ refreshDebug() }, 2000)
         handler.postDelayed({ refreshDebug() }, 5000)
@@ -1352,6 +1432,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun forceReconnect() {
         val cn = ComponentName(this, QrisNotificationListener::class.java)
+        rebindListener()
         val svcIntent = Intent(this, QrisNotificationListener::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             startForegroundService(svcIntent)
@@ -1374,21 +1455,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun refreshDebug() {
-        val connected = prefs.getBoolean(QrisNotificationListener.PREF_DEBUG_CONNECTED, false)
-        val since     = prefs.getString(QrisNotificationListener.PREF_DEBUG_CONNECTED_SINCE, "-") ?: "-"
+        val connected = listenerAlive()
+        val beat = lastBeat()
+        val since = if (beat > 0) java.text.SimpleDateFormat("dd/MM HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date(beat)) else "-"
         val permOk    = isNotificationAccessGranted()
 
         tvConnStatus.text = if (connected)
-            "Service: Terhubung (sejak \${since})"
+            "Service: Aktif (terakhir \${since})"
         else
-            "Service: Tidak Terhubung"
+            "Service: TIDAK aktif (terakhir \${since}). Tekan Reconnect."
         tvConnStatus.setTextColor(if (connected) cGreen else cRed)
 
         btnForceReconnect.visibility = if (!connected && permOk) View.VISIBLE else View.GONE
 
         val sb = StringBuilder()
         sb.appendLine("=== Status Service ===")
-        sb.appendLine(if (connected) "Terhubung: YA (sejak \${since})" else "Terhubung: TIDAK")
+        sb.appendLine(if (connected) "Aktif: YA (terakhir \${since})" else "Aktif: TIDAK sejak \${since}. Notifikasi tidak terbaca.")
         sb.appendLine()
 
         sb.appendLine("=== DANA / e-wallet terakhir ===")

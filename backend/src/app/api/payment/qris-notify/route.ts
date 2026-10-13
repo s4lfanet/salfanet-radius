@@ -83,6 +83,17 @@ async function logNotification(status: string, amount: number | null, detail: Re
  * The signature is required: the device key alone is a static value that
  * ships inside the listener APK, so it cannot prove a notification is real.
  */
+/**
+ * GET — opened in a browser to check the URL. The listener only POSTs;
+ * answering 405 here looked like a broken endpoint.
+ */
+export async function GET() {
+  return NextResponse.json({
+    ok: true,
+    message: 'Endpoint QRIS Listener aktif. Aplikasi listener mengirim notifikasi ke sini dengan POST; gunakan tombol Tes Koneksi di aplikasi untuk memeriksa Device Key dan Device Secret.',
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
     const limited = await rateLimit(request, RateLimitPresets.strict);
@@ -93,6 +104,31 @@ export async function POST(request: NextRequest) {
     const rawText = typeof raw_text === 'string' ? raw_text.slice(0, 255) : '';
     let amount = typeof body.amount === 'number' ? Math.round(body.amount) : 0;
     const timestamp = typeof body.timestamp === 'number' ? body.timestamp : 0;
+
+    // Connection test from the listener app: checks the key and the
+    // signature (amount 0) without touching any payment.
+    if (body.test === true) {
+      const company = await prisma.company.findFirst({ select: { qrisDeviceKey: true, qrisDeviceSecret: true, qrisEnabled: true } });
+      if (typeof device_key !== 'string' || !company?.qrisDeviceKey || !safeEqual(company.qrisDeviceKey, device_key)) {
+        return NextResponse.json({ success: false, error: 'Device Key tidak cocok dengan pengaturan QRIS Mandiri di server.' }, { status: 401 });
+      }
+      if (!company.qrisDeviceSecret) {
+        return NextResponse.json({ success: false, error: 'Server belum punya Device Secret. Buat di Payment Gateway → QRIS Mandiri.' }, { status: 401 });
+      }
+      const check = verifyQrisSignature(company.qrisDeviceSecret, device_key, 0, timestamp, nonce || '', signature || '');
+      if (!check.valid) {
+        const why: Record<string, string> = {
+          missing_signature: 'Device Secret belum diisi di aplikasi.',
+          signature_mismatch: 'Device Secret di aplikasi tidak sama dengan di server.',
+          timestamp_out_of_window: 'Jam HP berbeda lebih dari 5 menit dari server. Aktifkan waktu otomatis.',
+        };
+        return NextResponse.json({ success: false, error: why[check.reason] ?? `Tanda tangan ditolak (${check.reason}).` }, { status: 401 });
+      }
+      return NextResponse.json({
+        success: true,
+        message: company.qrisEnabled ? 'Koneksi OK: Device Key dan Device Secret cocok.' : 'Kunci cocok, tetapi QRIS Mandiri sedang nonaktif di server.',
+      });
+    }
 
     if (rawText && isOutgoing(rawText)) {
       return NextResponse.json({ success: false, ignored: true, error: 'Notifikasi uang keluar diabaikan' });
