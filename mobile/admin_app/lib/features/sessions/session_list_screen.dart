@@ -47,7 +47,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
       _error = null;
     });
     try {
-      final res = await ApiClient.instance.get('/api/sessions', query: {'type': _type, 'limit': 200, if (_search.isNotEmpty) 'search': _search});
+      final res = await ApiClient.instance.get('/api/sessions', query: {'type': _type, if (_search.isNotEmpty) 'search': _search});
       if (res is Map<String, dynamic>) {
         _sessions = ((res['sessions'] as List?) ?? []).map((e) => (e as Map).cast<String, dynamic>()).toList();
       }
@@ -164,7 +164,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
             Expanded(
               child: LabeledFigure(label: 'Sedang online', value: '${_sessions.length} ${_type == 'pppoe' ? 'pelanggan' : 'voucher'}', valueSize: 18),
             ),
-            Container(width: 1, height: 36, color: context.colors.outline),
+            Container(width: 1, height: 36, color: context.colors.outlineVariant),
             const SizedBox(width: Gap.lg),
             Expanded(
               child: LabeledFigure(label: 'Total trafik', value: '↓${_bytes(down)}  ↑${_bytes(up)}', valueSize: 14),

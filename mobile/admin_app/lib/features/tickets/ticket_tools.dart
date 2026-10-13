@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/api/api_client.dart';
 import '../../core/crud/crud_list_screen.dart';
 import '../../core/crud/lookups.dart';
+import '../../core/crud/paging.dart';
 import '../../core/formatters.dart';
 import '../../core/forms/field_spec.dart';
 import '../../core/forms/form_screen.dart';
@@ -27,8 +28,7 @@ Future<bool> dispatchTicket(BuildContext context) async {
   // Customer list doubles as the auto-fill source for name/phone/address.
   final customers = <String, Json>{};
   Future<FieldOptions> loadCustomers() async {
-    final res = await _api.get('/api/pppoe/users', query: {'limit': 5000});
-    final list = extractList(res, listKey: 'users');
+    final list = await fetchAllPages('/api/pppoe/users', listKey: 'users');
     for (final u in list) {
       customers['${u['id']}'] = u;
     }

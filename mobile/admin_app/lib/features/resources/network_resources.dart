@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../core/api/api_client.dart';
 import '../../core/crud/crud_list_screen.dart';
 import '../../core/crud/lookups.dart';
+import '../../core/crud/paging.dart';
 import '../../core/formatters.dart';
 import '../../core/forms/field_spec.dart';
 import '../../core/forms/form_screen.dart';
@@ -454,8 +455,9 @@ CrudConfig otbsConfig() => CrudConfig(
   noun: 'OTB',
   icon: Icons.inventory_2_rounded,
   tone: Tone.primary,
-  fetch: (q) => _api.get('/api/network/otbs', query: {'limit': 500, ...q}),
+  fetch: (q) => _api.get('/api/network/otbs', query: {...q}),
   listKey: 'otbs',
+  pageSize: 100,
   searchParam: 'search',
   titleOf: (o) => str(o, 'name') ?? '-',
   subtitleOf: (o) => [str(o, 'code'), str(mapOf(o, 'olt'), 'name'), '${o['portCount'] ?? '-'} port'].whereType<String>().join(' · '),
@@ -536,8 +538,9 @@ CrudConfig cablesConfig() => CrudConfig(
   noun: 'Kabel',
   icon: Icons.cable_rounded,
   tone: Tone.accent,
-  fetch: (q) => _api.get('/api/network/cables', query: {'limit': 500, ...q}),
+  fetch: (q) => _api.get('/api/network/cables', query: {...q}),
   listKey: 'cables',
+  pageSize: 100,
   searchParam: 'search',
   titleOf: (c) => '${c['code'] ?? ''} ${c['name'] ?? ''}'.trim(),
   subtitleOf: (c) => '${c['cableType'] ?? '-'} · ${c['tubeCount'] ?? '-'} tube × ${c['coresPerTube'] ?? '-'} core',
@@ -588,11 +591,12 @@ CrudConfig coresConfig({Json? cable}) {
     noun: 'Core',
     icon: Icons.grain_rounded,
     searchable: false,
-    fetch: (q) => _api.get('/api/network/cores', query: {'limit': 500, if (cable != null) 'cableId': cable['id'], ...q}),
+    fetch: (q) => _api.get('/api/network/cores', query: {if (cable != null) 'cableId': cable['id'], ...q}),
     listKey: 'cores',
+    pageSize: 200,
     filters: const [('all', 'Semua'), ('AVAILABLE', 'Tersedia'), ('ASSIGNED', 'Terpakai'), ('RESERVED', 'Dipesan'), ('DAMAGED', 'Rusak')],
     titleOf: (c) => 'Tube ${mapOf(c, 'tube')?['tubeNumber'] ?? c['tubeNumber'] ?? '-'} · Core ${c['coreNumber'] ?? '-'}',
-    subtitleOf: (c) => [str(c, 'colorName') ?? str(c, 'color'), str(c, 'assignedToType')].whereType<String>().join(' · '),
+    subtitleOf: (c) => [str(c, 'colorCode'), str(c, 'assignedToType')].whereType<String>().join(' · '),
     metaOf: (c) => str(c, 'notes'),
     toneOf: (c) => switch (c['status']) {
       'AVAILABLE' => Tone.success,
@@ -620,12 +624,12 @@ CrudConfig coresConfig({Json? cable}) {
 /// Titik sambung (splice) — /admin/network/splice-points.
 CrudConfig splicesConfig({String? deviceId, String? deviceType, String? title}) {
   Future<FieldOptions> availableCores() async {
-    final list = extractList(await _api.get('/api/network/cores', query: {'status': 'AVAILABLE', 'limit': 1000}), listKey: 'cores');
+    final list = await fetchAllPages('/api/network/cores', listKey: 'cores', query: {'status': 'AVAILABLE'});
     return [
       for (final c in list)
         (
           '${c['id']}',
-          '${str(mapOf(mapOf(c, 'tube'), 'cable'), 'code') ?? ''} T${mapOf(c, 'tube')?['tubeNumber'] ?? '-'} C${c['coreNumber'] ?? '-'} ${c['colorName'] ?? ''}'
+          '${str(mapOf(mapOf(c, 'tube'), 'cable'), 'code') ?? ''} T${mapOf(c, 'tube')?['tubeNumber'] ?? '-'} C${c['coreNumber'] ?? '-'} ${c['colorCode'] ?? ''}'
               .trim(),
         ),
     ];
@@ -639,9 +643,10 @@ CrudConfig splicesConfig({String? deviceId, String? deviceType, String? title}) 
     searchable: false,
     fetch: (q) => _api.get(
       '/api/network/splices',
-      query: {'limit': 500, if (deviceId != null) 'deviceId': deviceId, if (deviceType != null) 'deviceType': deviceType, ...q},
+      query: {if (deviceId != null) 'deviceId': deviceId, if (deviceType != null) 'deviceType': deviceType, ...q},
     ),
     listKey: 'splices',
+    pageSize: 200,
     titleOf: (s) => '${_coreLabel(mapOf(s, 'incomingCore'))} ⇄ ${_coreLabel(mapOf(s, 'outgoingCore'))}',
     subtitleOf: (s) => [str(s, 'spliceType'), if (s['insertionLoss'] != null) '${s['insertionLoss']} dB'].whereType<String>().join(' · '),
     metaOf: (s) => [str(s, 'splicedBy'), formatDateOrNull(dateOf(s, 'spliceDate') ?? dateOf(s, 'createdAt'))].whereType<String>().join(' · '),

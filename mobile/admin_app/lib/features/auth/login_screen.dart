@@ -94,7 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(AppTheme.radiusBrand),
-                              border: Border.all(color: context.colors.outline),
+                              border: Border.all(color: context.colors.outlineVariant),
                             ),
                             child: Image.network(_companyLogo!, fit: BoxFit.contain, errorBuilder: (_, __, ___) => const _BrandMark()),
                           )

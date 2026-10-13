@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:admin_app/core/api/api_client.dart';
 import 'package:admin_app/core/crud/crud_list_screen.dart';

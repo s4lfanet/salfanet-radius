@@ -1,5 +1,6 @@
 import '../api/api_client.dart';
 import '../forms/field_spec.dart';
+import 'paging.dart';
 
 /// Option loaders for the reference data most forms pick from. Each hits
 /// the same list endpoint the web panel's dropdowns use.
@@ -48,8 +49,11 @@ class Lookups {
   static Future<FieldOptions> vpnClients() =>
       _get('/api/network/vpn-client', listKey: 'clients', label: (c) => '${c['name']}${c['vpnIp'] != null ? ' · ${c['vpnIp']}' : ''}');
   static Future<FieldOptions> whatsappTemplates() => _get('/api/whatsapp/templates', listKey: 'data');
-  static Future<FieldOptions> pppoeUsers() =>
-      _get('/api/pppoe/users', listKey: 'users', query: {'limit': 5000}, label: (u) => '${u['name'] ?? u['username']} · ${u['username']}');
+  // The customer route caps each page at 500, so walk every page.
+  static Future<FieldOptions> pppoeUsers() async => [
+    for (final u in await fetchAllPages('/api/pppoe/users', listKey: 'users'))
+      ('${u['id']}', '${u['name'] ?? u['username']} · ${u['username']}'),
+  ];
 
   static String _rp(Object? v) {
     final n = v is num ? v : num.tryParse('${v ?? ''}');
