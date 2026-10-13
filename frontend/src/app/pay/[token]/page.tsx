@@ -3,7 +3,7 @@ import { showError } from '@/lib/sweetalert';
 import { formatWIB } from '@/lib/timezone';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { Wifi, CheckCircle, Clock, AlertCircle, CreditCard, Building2, Loader2, User, Phone, Package, Calendar, MapPin, Router, Network, Mail, Hash, Zap, QrCode, Copy, Check } from 'lucide-react';
+import { Wifi, CheckCircle, Clock, AlertCircle, CreditCard, Building2, Loader2, User, Phone, Package, Calendar, MapPin, Router, Network, Mail, Hash, Zap, QrCode } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
 interface Invoice {
@@ -34,13 +34,6 @@ interface Invoice {
 interface PaymentGateway { id: string; name: string; provider: string; isActive: boolean; }
 interface CompanySetting { name: string; address: string | null; phone: string | null; email: string | null; qrisEnabled?: boolean; qrisMerchantName?: string | null; }
 
-interface QrisData {
-  qrString: string;
-  uniqueAmount: number;
-  expiresAt: string;
-  orderId: string;
-}
-
 export default function PaymentPage() {
   const params = useParams();
   const token = params.token as string;
@@ -52,11 +45,6 @@ export default function PaymentPage() {
   const [processing, setProcessing] = useState(false);
   const [duitkuMethods, setDuitkuMethods] = useState<{ code: string; name: string; group: string }[]>([]);
   const [loadingDuitkuMethods, setLoadingDuitkuMethods] = useState(false);
-  const [qrisData, setQrisData] = useState<QrisData | null>(null);
-  const [qrisPaid, setQrisPaid] = useState(false);
-  const [qrisExpired, setQrisExpired] = useState(false);
-  const [qrisCopied, setQrisCopied] = useState(false);
-  const [qrisCountdown, setQrisCountdown] = useState(0);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadInvoice(); }, [token]);
@@ -111,60 +99,10 @@ export default function PaymentPage() {
       const res = await fetch('/api/payment/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const data = await res.json();
       if (!res.ok) { await showError(data.error || 'Failed'); return; }
-      if (data.isQrisOwn && data.qrString) {
-        setQrisData({ qrString: data.qrString, uniqueAmount: data.uniqueAmount, expiresAt: data.expiresAt, orderId: data.orderId });
-        return;
-      }
       if (data.paymentUrl) window.location.href = data.paymentUrl; else await showError('Payment URL not available');
     } catch { await showError('Failed to process payment'); } finally { setProcessing(false); }
   };
 
-  // QRIS polling
-  useEffect(() => {
-    if (!qrisData) return;
-    const pollInterval = setInterval(async () => {
-      try {
-        const res = await fetch(`/api/payment/qris-status?orderId=${qrisData.orderId}`);
-        const data = await res.json();
-        if (data.status === 'paid') {
-          setQrisPaid(true);
-          clearInterval(pollInterval);
-          setTimeout(() => window.location.reload(), 2000);
-        } else if (data.status === 'expired' || (data.expiresAt && new Date(data.expiresAt) < new Date())) {
-          setQrisExpired(true);
-          clearInterval(pollInterval);
-        }
-      } catch { /* ignore poll errors */ }
-    }, 5000);
-    return () => clearInterval(pollInterval);
-  }, [qrisData]);
-
-  // QRIS countdown timer
-  useEffect(() => {
-    if (!qrisData) return;
-    const updateCountdown = () => {
-      const remaining = Math.max(0, Math.floor((new Date(qrisData.expiresAt).getTime() - Date.now()) / 1000));
-      setQrisCountdown(remaining);
-      if (remaining === 0) setQrisExpired(true);
-    };
-    updateCountdown();
-    const timer = setInterval(updateCountdown, 1000);
-    return () => clearInterval(timer);
-  }, [qrisData]);
-
-  const formatCountdown = (s: number) => {
-    const m = Math.floor(s / 60);
-    const sec = s % 60;
-    return `${m}:${sec.toString().padStart(2, '0')}`;
-  };
-
-  const copyQrisString = () => {
-    if (qrisData) {
-      navigator.clipboard.writeText(qrisData.qrString);
-      setQrisCopied(true);
-      setTimeout(() => setQrisCopied(false), 2000);
-    }
-  };
 
   if (loading) return (
     <div className="min-h-dvh bg-muted relative overflow-hidden flex items-center justify-center">
@@ -501,88 +439,6 @@ export default function PaymentPage() {
         </div>
       </div>
 
-      {/* QRIS Mandiri QR Modal */}
-      {qrisData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => !qrisPaid && setQrisData(null)}>
-          <div className="bg-muted border-2 border-brand-500/40 rounded-2xl  max-w-sm w-full p-6" onClick={e => e.stopPropagation()}>
-            {qrisPaid ? (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-green-500/50">
-                  <CheckCircle className="w-8 h-8 text-green-500" />
-                </div>
-                <h2 className="text-lg font-bold text-white mb-2">Pembayaran Berhasil!</h2>
-                <p className="text-xs text-muted-foreground/70">Tagihan telah dilunasi. Halaman akan dimuat ulang...</p>
-              </div>
-            ) : qrisExpired ? (
-              <div className="text-center py-8">
-                <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-red-500/50">
-                  <AlertCircle className="w-8 h-8 text-[#ff6b8a]" />
-                </div>
-                <h2 className="text-lg font-bold text-white mb-2">QRIS Kadaluarsa</h2>
-                <p className="text-xs text-muted-foreground/70 mb-4">Waktu pembayaran telah habis. Silakan buat QR baru.</p>
-                <button onClick={() => setQrisData(null)} className="px-6 py-2 bg-gradient-to-r from-brand-500 to-primary text-white rounded-lg text-sm font-medium">
-                  Tutup
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="text-center mb-4">
-                  <h2 className="text-lg font-bold text-white flex items-center justify-center gap-2">
-                    <QrCode className="w-5 h-5 text-brand-500" />
-                    QRIS Mandiri
-                  </h2>
-                  <p className="text-[10px] text-muted-foreground/60 mt-1">{company?.qrisMerchantName || company?.name || 'Merchant'}</p>
-                </div>
-
-                {/* QR Code */}
-                <div className="flex justify-center mb-4">
-                  <div className="bg-white p-4 rounded-xl ">
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(qrisData.qrString)}`}
-                      alt="QRIS Code"
-                      className="w-60 h-60"
-                    />
-                  </div>
-                </div>
-
-                {/* Amount */}
-                <div className="bg-card rounded-xl p-4 mb-3 text-center">
-                  <p className="text-[10px] text-muted-foreground/60 mb-1">Transfer TEPAT sejumlah:</p>
-                  <p className="text-2xl font-bold text-brand-500 drop-">
-                    Rp {qrisData.uniqueAmount.toLocaleString('id-ID')}
-                  </p>
-                  <p className="text-[10px] text-amber-400 mt-1">Transfer tepat jumlah ini untuk verifikasi otomatis</p>
-                </div>
-
-                {/* Countdown */}
-                <div className="flex items-center justify-center gap-2 mb-3">
-                  <Clock className="w-4 h-4 text-muted-foreground/60" />
-                  <span className={`text-sm font-mono font-bold ${qrisCountdown < 60 ? 'text-[#ff6b8a]' : 'text-brand-500'}`}>
-                    {formatCountdown(qrisCountdown)}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground/60">menunggu pembayaran...</span>
-                </div>
-
-                {/* Copy QR String */}
-                <button
-                  onClick={copyQrisString}
-                  className="w-full flex items-center justify-center gap-2 py-2 bg-card/50 border border-border rounded-lg text-xs text-muted-foreground/70 hover:bg-card transition mb-3"
-                >
-                  {qrisCopied ? <Check className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
-                  {qrisCopied ? 'QR String disalin!' : 'Salin QR String'}
-                </button>
-
-                <button
-                  onClick={() => setQrisData(null)}
-                  className="w-full py-2 text-xs text-muted-foreground/60 hover:text-white transition"
-                >
-                  Batalkan
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

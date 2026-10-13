@@ -4,6 +4,7 @@ import { nowWIB, WIB_TIMEZONE } from '@/lib/timezone';
 import { formatInTimeZone } from 'date-fns-tz';
 import { prisma } from '@/server/db/client';
 import { requireAgentAuth } from '@/server/middleware/agent-auth';
+import { qrisOwnOption } from '@/server/services/payment/qris-own.service';
 
 // GET - Get agent dashboard data
 export async function GET(request: NextRequest) {
@@ -148,6 +149,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Get active payment gateways for deposit
+    const qris = await qrisOwnOption();
     const paymentGateways = await prisma.paymentGateway.findMany({
       where: { isActive: true },
       select: {
@@ -199,10 +201,10 @@ export async function GET(request: NextRequest) {
         expiredAt: d.expiredAt,
         createdAt: d.createdAt,
       })),
-      paymentGateways: paymentGateways.map((g) => ({
-        provider: g.provider,
-        name: g.name,
-      })),
+      paymentGateways: [
+        ...paymentGateways.map((g) => ({ provider: g.provider, name: g.name })),
+        ...(qris ? [{ provider: qris.provider, name: qris.name }] : []),
+      ],
       vouchers: allVouchers.map((v) => ({
         id: v.id,
         code: v.code,

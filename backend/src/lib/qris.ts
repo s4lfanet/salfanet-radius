@@ -224,7 +224,9 @@ export async function generateUniqueAmountSafeAsync(
   const clampedMin = Math.max(1, Math.min(999, min));
   const clampedMax = Math.max(clampedMin, Math.min(999, max));
   const range = clampedMax - clampedMin + 1;
-  const base = Math.round(baseAmount / 1000) * 1000;
+  // The exact bill plus a small code. Rounding the bill to thousands first
+  // (as before) made a Rp150.400 bill payable as Rp150.005, under the bill.
+  const base = Math.round(baseAmount);
 
   const hash = crypto.createHash('md5').update(invoiceId).digest('hex');
   const n = parseInt(hash.substring(0, 8), 16);
@@ -239,6 +241,7 @@ export async function generateUniqueAmountSafeAsync(
     }
   }
 
-  // All suffixes taken (very rare) — return default
-  return base + startSuffix;
+  // Every code is taken by another QRIS waiting for this same amount;
+  // reusing one would make both payments ambiguous.
+  throw new Error('Semua kode unik QRIS untuk nominal ini sedang dipakai. Coba lagi beberapa menit lagi.');
 }

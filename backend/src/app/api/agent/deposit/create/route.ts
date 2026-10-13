@@ -4,6 +4,7 @@ import { createMidtransPayment } from '@/server/services/payment/midtrans.servic
 import { parseBody } from '@/lib/parse-body';
 import { agentDepositCreateSchema } from '@/features/agents/schemas';
 import { requireAgentAuth } from '@/server/middleware/agent-auth';
+import { createQrisPayment, qrisOwnAvailable } from '@/server/services/payment/qris-own.service';
 
 /**
  * POST /api/agent/deposit/create
@@ -45,7 +46,9 @@ export async function POST(request: NextRequest) {
       where: { provider: gateway },
     });
 
-    if (!gatewayConfig || !gatewayConfig.isActive) {
+    // QRIS Mandiri is not a paymentGateway row; it is enabled in company settings.
+    const useQris = gateway === 'qris_own' && (await qrisOwnAvailable());
+    if (!useQris && (!gatewayConfig || !gatewayConfig.isActive)) {
       return NextResponse.json(
         { error: 'Payment gateway not available' },
         { status: 400 }
@@ -86,7 +89,14 @@ export async function POST(request: NextRequest) {
     };
 
     try {
-      switch (gateway) {
+      switch (useQris ? 'qris_own' : gateway) {
+        case 'qris_own':
+          {
+            // orderId is the deposit id, which settleOrder resolves to this deposit.
+            const qris = await createQrisPayment({ orderId: deposit.id, baseAmount: amount, returnPath: '/agent/dashboard' });
+            paymentResult = { paymentUrl: qris.paymentUrl, transactionId: `QRIS-${qris.uniqueAmount}` };
+          }
+          break;
         case 'midtrans':
           {
             const midtransResult = await createMidtransPayment(orderDetails);

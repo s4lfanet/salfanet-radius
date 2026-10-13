@@ -20,6 +20,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'gateway and amount are required' }, { status: 400 });
     }
 
+    if (gateway === 'qris_own') {
+      return NextResponse.json({ success: true, methods: [] });
+    }
+
     const gatewayConfig = await prisma.paymentGateway.findUnique({
       where: { provider: gateway },
     });

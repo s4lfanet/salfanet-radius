@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { prisma } from '@/server/db/client';
 import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
 import { verifyQrisSignature, claimNonce } from '@/lib/qris-signature';
-import { handleInvoicePayment } from '@/server/services/payment/invoice-payment.service';
+import { settleOrder } from '@/server/services/payment/order-settlement.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -164,11 +164,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, paid: true, message: 'Pembayaran sudah diproses sebelumnya', invoiceId: pending.invoiceId });
     }
 
-    // Settle exactly like a gateway payment: payment record, Keuangan,
-    // subscription, isolation lifted in RADIUS/MikroTik + CoA, referral,
-    // and admin/customer notifications.
+    // Settle exactly like a gateway payment, by order type: invoices
+    // (payment, Keuangan, isolation lifted, CoA), voucher orders, balance
+    // top-ups and agent deposits.
     try {
-      await handleInvoicePayment(pending.orderId, 'settlement', 'qris_own', String(source_app || 'listener'), now, pending.id);
+      await settleOrder(pending.orderId, 'settlement', 'qris_own', String(source_app || 'listener'), now, pending.id, pending.baseAmount);
     } catch (e) {
       console.error('[QRIS Notify] Settlement error:', e);
       await logNotification('error', amount, { orderId: pending.orderId, sourceApp: source_app }, false, e instanceof Error ? e.message : String(e));

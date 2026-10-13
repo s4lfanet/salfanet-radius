@@ -6,7 +6,7 @@ import { createDuitkuClient } from '@/server/services/payment/duitku.service';
 import { createTripayClient } from '@/server/services/payment/tripay.service';
 import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
 import { createPaymentAttempt } from '@/server/services/payment/payment-attempt.service';
-import { staticToDynamic, generateUniqueAmountSafeAsync } from '@/lib/qris';
+import { createQrisPayment, type QrisPayment } from '@/server/services/payment/qris-own.service';
 import nodeCrypto from 'crypto';
 import { z } from '@/lib/parse-body';
 
@@ -25,6 +25,23 @@ const paymentCreateSchema = z.object({
 );
 
 export const dynamic = 'force-dynamic';
+
+/** Response shape the pay pages already understand for QRIS Mandiri. */
+function qrisResponse(q: QrisPayment) {
+  return {
+    success: true,
+    orderId: q.orderId,
+    paymentUrl: q.paymentUrl,
+    snapToken: '',
+    qrString: q.qrString,
+    gateway: 'qris_own',
+    isQrisOwn: true,
+    amount: q.baseAmount,
+    uniqueAmount: q.uniqueAmount,
+    expiresAt: q.expiresAt,
+    note: `Bayar TEPAT Rp ${q.uniqueAmount.toLocaleString('id-ID')} (jangan dibulatkan)`,
+  };
+}
 
 /**
  * GET handler to prevent 500 errors from browser prefetch
@@ -96,6 +113,18 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Order already paid' }, { status: 400 });
       }
 
+      if (gateway === 'qris_own') {
+        try {
+          const qris = await createQrisPayment({
+            orderId: `${order.orderNumber}-${Date.now()}`,
+            baseAmount: order.totalAmount,
+            returnPath: order.paymentToken ? `/evoucher/pay/${order.paymentToken}` : undefined,
+          });
+          return NextResponse.json(qrisResponse(qris));
+        } catch (e) {
+          return NextResponse.json({ error: e instanceof Error ? e.message : 'Gagal membuat QRIS' }, { status: 400 });
+        }
+      }
       return await createVoucherPayment(order, gateway);
     }
 
@@ -168,85 +197,18 @@ export async function POST(request: NextRequest) {
 
     // ── QRIS Mandiri (qris_own) — no third-party gateway needed ──────────────
     if (gateway === 'qris_own') {
-      const company = await prisma.company.findFirst();
-      if (!company || !company.qrisEnabled || !company.qrisStaticCode) {
-        return NextResponse.json(
-          { error: 'QRIS Mandiri belum dikonfigurasi. Buka Admin → Payment Gateway → QRIS Mandiri.' },
-          { status: 400 }
-        );
-      }
-
-      const uniqueAmount = await generateUniqueAmountSafeAsync(
-        invoice.amount,
-        invoice.id,
-        async (amt) => {
-          const existing = await prisma.qrisPending.findFirst({
-            where: { uniqueAmount: amt, status: 'pending', expiresAt: { gt: new Date() } },
-            select: { id: true },
-          });
-          return !!existing;
-        },
-        company.qrisUniqueMin ?? 1,
-        company.qrisUniqueMax ?? 999
-      );
-      let qrString: string;
       try {
-        qrString = staticToDynamic(company.qrisStaticCode, uniqueAmount);
-      } catch (e) {
-        return NextResponse.json(
-          { error: 'Gagal generate QRIS: ' + (e instanceof Error ? e.message : 'Unknown error') },
-          { status: 500 }
-        );
-      }
-
-      const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
-
-      await prisma.qrisPending.create({
-        data: {
-          id: crypto.randomUUID(),
-          invoiceId: invoice.id,
-          userId: invoice.userId,
+        const qris = await createQrisPayment({
           orderId,
           baseAmount: invoice.amount,
-          uniqueAmount,
-          qrString,
-          status: 'pending',
-          expiresAt,
-        },
-      });
-
-      // Create webhook log
-      try {
-        await prisma.webhookLog.create({
-          data: {
-            id: crypto.randomUUID(),
-            gateway: 'qris_own',
-            orderId,
-            status: 'pending',
-            transactionId: null,
-            amount: uniqueAmount,
-            payload: JSON.stringify({ type: 'qris_own', invoiceId: invoice.id, uniqueAmount, createdAt: new Date() }),
-            response: JSON.stringify({ qrString: qrString.substring(0, 100) + '...' }),
-            success: true,
-          },
+          invoiceId: invoice.id,
+          userId: invoice.userId,
+          returnPath: invoice.paymentToken ? `/pay/${invoice.paymentToken}` : undefined,
         });
-      } catch (logError) {
-        console.error('Failed to create webhook log:', logError);
+        return NextResponse.json(qrisResponse(qris));
+      } catch (e) {
+        return NextResponse.json({ error: e instanceof Error ? e.message : 'Gagal membuat QRIS' }, { status: 400 });
       }
-
-      return NextResponse.json({
-        success: true,
-        orderId,
-        paymentUrl: '',
-        snapToken: '',
-        qrString,
-        gateway: 'qris_own',
-        isQrisOwn: true,
-        amount: invoice.amount,
-        uniqueAmount,
-        expiresAt,
-        note: `Transfer TEPAT Rp ${uniqueAmount.toLocaleString('id-ID')} (jangan dibulatkan)`,
-      });
     }
 
     // ── Offline payment methods (manual, cash, transfer) — no gateway needed ──

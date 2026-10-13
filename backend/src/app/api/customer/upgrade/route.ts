@@ -7,6 +7,7 @@ import { createTripayClient } from '@/server/services/payment/tripay.service';
 import { nowWIB } from '@/lib/timezone';
 import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
 import crypto from 'crypto';
+import { createQrisPayment, qrisOwnAvailable } from '@/server/services/payment/qris-own.service';
 
 // Helper to verify customer token (same as topup-direct)
 async function verifyCustomerToken(request: NextRequest) {
@@ -69,7 +70,9 @@ export async function POST(request: NextRequest) {
       where: { provider: gateway }
     });
 
-    if (!gatewayConfig || !gatewayConfig.isActive) {
+    // QRIS Mandiri is not a paymentGateway row; it is enabled in company settings.
+    const useQris = gateway === 'qris_own' && (await qrisOwnAvailable());
+    if (!useQris && (!gatewayConfig || !gatewayConfig.isActive)) {
       return NextResponse.json({ error: 'Payment gateway not available' }, { status: 400 });
     }
 
@@ -147,7 +150,16 @@ export async function POST(request: NextRequest) {
       const customerEmail = pppoeUser.email || `${pppoeUser.username}@customer.com`;
       const token = invoice.paymentToken || '';
 
-      if (gateway === 'midtrans') {
+      if (useQris) {
+        const qris = await createQrisPayment({
+          orderId,
+          baseAmount: upgradeAmount,
+          invoiceId: invoice.id,
+          userId: pppoeUser.id,
+          returnPath: '/customer',
+        });
+        paymentUrl = qris.paymentUrl;
+      } else if (gateway === 'midtrans') {
         const midtransResult = await createMidtransPayment({
           orderId,
           amount: invoice.amount,
@@ -178,11 +190,11 @@ export async function POST(request: NextRequest) {
         paymentUrl = xenditResult.invoiceUrl;
       } else if (gateway === 'duitku') {
         const duitku = createDuitkuClient(
-          gatewayConfig.duitkuMerchantCode || '',
-          gatewayConfig.duitkuApiKey || '',
+          gatewayConfig!.duitkuMerchantCode || '',
+          gatewayConfig!.duitkuApiKey || '',
           `${appBaseUrl}/api/payment/webhook`,
           `${appBaseUrl}/customer`,
-          gatewayConfig.duitkuEnvironment === 'sandbox'
+          gatewayConfig!.duitkuEnvironment === 'sandbox'
         );
 
         const result = await duitku.createInvoice({
@@ -198,10 +210,10 @@ export async function POST(request: NextRequest) {
         paymentUrl = result.paymentUrl;
       } else if (gateway === 'tripay') {
         const tripay = createTripayClient(
-          gatewayConfig.tripayMerchantCode || '',
-          gatewayConfig.tripayApiKey || '',
-          gatewayConfig.tripayPrivateKey || '',
-          gatewayConfig.tripayEnvironment === 'sandbox'
+          gatewayConfig!.tripayMerchantCode || '',
+          gatewayConfig!.tripayApiKey || '',
+          gatewayConfig!.tripayPrivateKey || '',
+          gatewayConfig!.tripayEnvironment === 'sandbox'
         );
 
         const result = await tripay.createTransaction({
