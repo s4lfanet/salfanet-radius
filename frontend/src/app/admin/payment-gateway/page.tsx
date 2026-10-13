@@ -47,6 +47,31 @@ interface WebhookLog {
   response: string | null;
 }
 
+/** Copies a credential so it can be pasted into the QRIS Listener app. */
+function CopyField({ value, label }: { value: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      disabled={!value}
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(value);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1500);
+        } catch {
+          /* clipboard blocked: the value is visible in the field */
+        }
+      }}
+      aria-label={`Salin ${label}`}
+      title={copied ? 'Disalin' : `Salin ${label}`}
+      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted-foreground/20 hover:bg-muted-foreground/30 disabled:opacity-40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+    >
+      {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+    </button>
+  );
+}
+
 export default function PaymentGatewayPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -178,7 +203,7 @@ export default function PaymentGatewayPage() {
   const saveQris = async () => {
     setSaving(true);
     try {
-      await apiAdmin('/api/payment-gateway/qris-mandiri', {
+      const saved = await apiAdmin<{ qrisDeviceKey?: string; qrisDeviceSecret?: string }>('/api/payment-gateway/qris-mandiri', {
         method: 'POST',
         body: JSON.stringify({
           qrisStaticCode: qrisForm.staticCode,
@@ -190,7 +215,12 @@ export default function PaymentGatewayPage() {
           qrisUniqueMax: qrisForm.uniqueMax,
         }),
       });
-      await showSuccess('QRIS Mandiri configuration saved');
+      setQrisForm((f) => ({
+        ...f,
+        deviceKey: saved?.qrisDeviceKey || f.deviceKey,
+        deviceSecret: saved?.qrisDeviceSecret || f.deviceSecret,
+      }));
+      await showSuccess('Pengaturan QRIS Mandiri disimpan');
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || 'Failed to save QRIS settings');
     } finally {
@@ -695,15 +725,15 @@ export default function PaymentGatewayPage() {
                     />
                   </div>
                 </div>
-                <p className="text-[9px] text-muted-foreground">Rentang default 1-999. Persempit rentang jika ingin selisih lebih kecil (mis. 1-100). Nominal dibulatkan ke ribuan terdekat sebelum ditambah suffix.</p>
+                <p className="text-[9px] text-muted-foreground">Rentang default 1-999. Persempit rentang jika ingin selisih lebih kecil (mis. 1-100). Suffix ditambahkan ke nominal tagihan persis, tanpa pembulatan.</p>
               </div>
 
               {/* Device Key untuk Android QrisListener */}
               <div className="p-2.5 bg-muted rounded-lg space-y-2">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[11px] font-semibold">Device Key - Android Listener (Opsional)</p>
-                    <p className="text-[10px] text-muted-foreground">Jika diisi, pembayaran QRIS otomatis terdeteksi via aplikasi Android QrisListener.</p>
+                    <p className="text-[11px] font-semibold">Device Key - Android Listener</p>
+                    <p className="text-[10px] text-muted-foreground">Isi di aplikasi QRIS Listener. Dibuat otomatis saat QRIS diaktifkan dan disimpan.</p>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -712,9 +742,10 @@ export default function PaymentGatewayPage() {
                     value={qrisForm.deviceKey}
                     onChange={(e) => setQrisForm({ ...qrisForm, deviceKey: e.target.value })}
                     className="flex-1 px-2.5 py-1.5 text-xs font-mono border border-border rounded-lg bg-card focus:ring-1 focus:ring-ring"
-                    placeholder="Kosongkan jika tidak pakai Android listener"
+                    placeholder="Dibuat otomatis saat disimpan"
                     maxLength={100}
                   />
+                  <CopyField value={qrisForm.deviceKey} label="Device Key" />
                   <button
                     type="button"
                     onClick={() => {
@@ -732,19 +763,29 @@ export default function PaymentGatewayPage() {
               <div className="p-2.5 bg-muted rounded-lg space-y-2">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[11px] font-semibold">Device Secret - V2 Signature (Opsional)</p>
-                    <p className="text-[10px] text-muted-foreground">HMAC-SHA256 signing key untuk verifikasi notifikasi otomatis. Tidak pernah dikirim ke server oleh APK - hanya dipakai untuk menandatangani payload.</p>
+                    <p className="text-[11px] font-semibold">Device Secret - V2 Signature (wajib)</p>
+                    <p className="text-[10px] text-muted-foreground">Kunci HMAC-SHA256 yang dipakai aplikasi QRIS Listener untuk menandatangani setiap notifikasi. Server menolak notifikasi tanpa tanda tangan. Rahasiakan, jangan dibagikan selain ke HP listener.</p>
                   </div>
                 </div>
                 <div className="flex gap-2">
                   <input
-                    type="password"
+                    type={showSecrets.qrisDeviceSecret ? 'text' : 'password'}
                     value={qrisForm.deviceSecret}
                     onChange={(e) => setQrisForm({ ...qrisForm, deviceSecret: e.target.value })}
                     className="flex-1 px-2.5 py-1.5 text-xs font-mono border border-border rounded-lg bg-card focus:ring-1 focus:ring-ring"
-                    placeholder="Kosongkan untuk V1 (device_key only)"
+                    placeholder="Dibuat otomatis saat disimpan"
                     maxLength={100}
+                    aria-label="Device Secret"
                   />
+                  <button
+                    type="button"
+                    onClick={() => toggleSecret('qrisDeviceSecret')}
+                    aria-label={showSecrets.qrisDeviceSecret ? 'Sembunyikan Device Secret' : 'Tampilkan Device Secret'}
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted-foreground/20 hover:bg-muted-foreground/30 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                  >
+                    {showSecrets.qrisDeviceSecret ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  </button>
+                  <CopyField value={qrisForm.deviceSecret} label="Device Secret" />
                   <button
                     type="button"
                     onClick={() => {
@@ -757,9 +798,9 @@ export default function PaymentGatewayPage() {
                   </button>
                 </div>
                 {qrisForm.deviceSecret ? (
-                  <p className="text-[10px] text-success">V2 signature aktif. APK akan menandatangani payload dengan HMAC-SHA256.</p>
+                  <p className="text-[10px] text-success">Tersimpan. Salin ke aplikasi QRIS Listener (kolom Device Secret). Mengganti secret berarti semua HP listener harus diisi ulang.</p>
                 ) : (
-                  <p className="text-[10px] text-muted-foreground">Tanpa device secret, APK menggunakan V1 (device_key only). V2 lebih aman terhadap spoofing.</p>
+                  <p className="text-[10px] text-warning">Belum ada Device Secret. Klik Generate lalu Simpan; tanpa ini pembayaran QRIS tidak terkonfirmasi otomatis.</p>
                 )}
               </div>
 

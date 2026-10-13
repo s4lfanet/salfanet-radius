@@ -118,6 +118,8 @@ class _SettingsFormScreenState extends State<SettingsFormScreen> {
         await widget.save(v, current);
         await _load(rebuild: false);
       },
+      // Actions like "new secret" change server state the header shows.
+      onSecondaryDone: () => _load(rebuild: false),
     );
   }
 }
@@ -137,6 +139,7 @@ class FormScreen extends StatefulWidget {
     this.savedMessage,
     this.secondary = const [],
     this.header,
+    this.onSecondaryDone,
   });
 
   final String title;
@@ -152,6 +155,9 @@ class FormScreen extends StatefulWidget {
   /// Extra actions that act on the current (unsaved) values, e.g. "Tes
   /// Koneksi" on gateway settings. Rendered as outlined buttons left of save.
   final List<FormAction> secondary;
+
+  /// Runs after a secondary action succeeds.
+  final Future<void> Function()? onSecondaryDone;
 
   /// Content above the fields (status cards on settings pages).
   final Widget? header;
@@ -177,6 +183,7 @@ class _FormScreenState extends State<FormScreen> {
     try {
       final msg = await a.run(_collect());
       if (mounted) showToast(context, msg ?? '${a.label} berhasil.');
+      await widget.onSecondaryDone?.call();
     } on ApiException catch (e) {
       if (mounted) showToast(context, e.message);
     } finally {

@@ -75,20 +75,6 @@ export async function POST(request: Request) {
       }
     }
 
-    // Generate device key if enabling and not set
-    let finalDeviceKey = qrisDeviceKey;
-    if (qrisEnabled && !finalDeviceKey) {
-      finalDeviceKey = crypto.randomUUID().replace(/-/g, '').substring(0, 32);
-    }
-
-    // Generate V2 signing secret if requested or if enabling and not set
-    let finalDeviceSecret: string | undefined;
-    if (generateSecret || (qrisEnabled && !body.qrisDeviceSecret)) {
-      finalDeviceSecret = crypto.randomUUID().replace(/-/g, '').substring(0, 32);
-    } else if (body.qrisDeviceSecret !== undefined) {
-      finalDeviceSecret = body.qrisDeviceSecret || undefined;
-    }
-
     const company = await prisma.company.findFirst();
     if (!company) {
       return NextResponse.json(
@@ -96,6 +82,18 @@ export async function POST(request: Request) {
         { status: 404 }
       );
     }
+
+    // Key and secret: what was sent, else what is stored. A new one is made
+    // only when asked for, or when QRIS is on and none exists yet; minting
+    // one on every save broke the listener phones already set up.
+    const newCredential = () => crypto.randomUUID().replace(/-/g, '');
+    let finalDeviceKey: string | null =
+      qrisDeviceKey !== undefined ? (String(qrisDeviceKey || '').trim() || null) : company.qrisDeviceKey;
+    if (qrisEnabled && !finalDeviceKey) finalDeviceKey = newCredential();
+
+    let finalDeviceSecret: string | null =
+      body.qrisDeviceSecret !== undefined ? (String(body.qrisDeviceSecret || '').trim() || null) : company.qrisDeviceSecret;
+    if (generateSecret || (qrisEnabled && !finalDeviceSecret)) finalDeviceSecret = newCredential();
 
     // Validate unique amount range
     const minVal = qrisUniqueMin != null ? Math.max(1, Math.min(999, Number(qrisUniqueMin))) : undefined;
@@ -113,8 +111,8 @@ export async function POST(request: Request) {
         qrisEnabled: !!qrisEnabled,
         qrisStaticCode: qrisStaticCode !== undefined ? (qrisStaticCode?.trim() || null) : undefined,
         qrisMerchantName: qrisMerchantName || null,
-        qrisDeviceKey: finalDeviceKey || null,
-        ...(finalDeviceSecret !== undefined && { qrisDeviceSecret: finalDeviceSecret || null }),
+        qrisDeviceKey: finalDeviceKey,
+        qrisDeviceSecret: finalDeviceSecret,
         ...(minVal != null && { qrisUniqueMin: minVal }),
         ...(maxVal != null && { qrisUniqueMax: maxVal }),
       },

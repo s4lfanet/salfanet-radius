@@ -682,6 +682,38 @@ CrudConfig vouchersConfig() {
         await CrudListScreen.open(ctx, evoucherOrdersConfig());
         return false;
       }),
+      CrudAction('Impor dari CSV', Icons.upload_file_rounded, (ctx, _) async {
+        Json? out;
+        final ok = await openForm(
+          ctx,
+          title: 'Impor Voucher',
+          submitLabel: 'Pilih file CSV',
+          fields: [
+            const FieldSpec.note('File CSV berisi kolom "code" (satu kode per baris). Unduh template dari menu ini bila perlu.'),
+            FieldSpec('profileId', 'Profil hotspot', type: FieldType.select, required: true, loadOptions: Lookups.hotspotProfiles),
+            const FieldSpec('batchCode', 'Kode batch', hint: 'Kosongkan untuk dibuat otomatis'),
+          ],
+          onSubmit: (v) async {
+            final res = await pickAndUpload(
+              ctx,
+              '/api/hotspot/voucher/bulk',
+              extensions: ['csv'],
+              fields: {'profileId': v['profileId'], if ((v['batchCode'] ?? '').toString().isNotEmpty) 'batchCode': v['batchCode']},
+            );
+            if (res == null) throw ApiException('Tidak ada file yang diimpor.');
+            out = res is Map ? mapOf(res.cast<String, dynamic>(), 'results') : null;
+          },
+        );
+        if (ok && ctx.mounted) {
+          final failed = numOf(out, 'failed');
+          showToast(ctx, '${numOf(out, 'success')} voucher diimpor${failed > 0 ? ', $failed gagal (kode sudah ada atau baris kosong)' : ''}.');
+        }
+        return ok;
+      }),
+      CrudAction('Template impor CSV', Icons.grid_on_rounded, (ctx, _) async {
+        await downloadAndShare(ctx, '/api/hotspot/voucher/bulk', 'template-voucher.csv', query: {'type': 'template'});
+        return false;
+      }),
       CrudAction('Ekspor Excel', Icons.ios_share_rounded, (ctx, _) async {
         await downloadAndShare(
           ctx,
