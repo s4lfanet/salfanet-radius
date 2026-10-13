@@ -20,6 +20,7 @@ class PushBroadcastScreen extends StatefulWidget {
 class _PushBroadcastScreenState extends State<PushBroadcastScreen> {
   final _title = TextEditingController();
   final _message = TextEditingController();
+  String _role = 'customer';
   String _target = 'all';
   final Set<String> _areaIds = {};
   bool _sending = false;
@@ -28,6 +29,8 @@ class _PushBroadcastScreenState extends State<PushBroadcastScreen> {
   List<Map<String, dynamic>> _areas = [];
   List<Map<String, dynamic>> _history = [];
 
+  static const _roles = [('customer', 'Pelanggan'), ('technician', 'Teknisi'), ('agent', 'Agen'), ('admin', 'Admin')];
+  static const _roleLabels = {'customer': 'pelanggan', 'technician': 'semua teknisi', 'agent': 'semua agen', 'admin': 'semua admin'};
   static const _targets = [('all', 'Semua'), ('active', 'Pelanggan aktif'), ('expired', 'Kedaluwarsa'), ('area', 'Per area')];
   static const _targetLabels = {
     'all': 'Semua pelanggan',
@@ -72,11 +75,16 @@ class _PushBroadcastScreenState extends State<PushBroadcastScreen> {
       showToast(context, 'Isi judul dan pesan dulu.');
       return;
     }
-    if (_target == 'area' && _areaIds.isEmpty) {
+    final customers = _role == 'customer';
+    if (customers && _target == 'area' && _areaIds.isEmpty) {
       showToast(context, 'Pilih minimal satu area.');
       return;
     }
-    final audience = _target == 'area' ? '${_areaIds.length} area terpilih' : _targetLabels[_target]!.toLowerCase();
+    final audience = !customers
+        ? _roleLabels[_role]!
+        : _target == 'area'
+        ? '${_areaIds.length} area terpilih'
+        : _targetLabels[_target]!.toLowerCase();
     final ok = await confirmAction(
       context,
       title: 'Kirim Notifikasi?',
@@ -89,7 +97,14 @@ class _PushBroadcastScreenState extends State<PushBroadcastScreen> {
     final done = await runAction(context, () async {
       final res = await ApiClient.instance.post(
         '/api/admin/push-notifications',
-        data: {'title': title, 'message': message, 'recipientRole': 'customer', 'targetType': _target, if (_target == 'area') 'targetIds': _areaIds.toList()},
+        data: {
+          'title': title,
+          'message': message,
+          'recipientRole': _role,
+          // Staff and agents are always sent to as a whole group, like the web.
+          'targetType': customers ? _target : 'all',
+          if (customers && _target == 'area') 'targetIds': _areaIds.toList(),
+        },
       );
       resultMessage = res is Map ? res['message']?.toString() : null;
     });
@@ -134,7 +149,25 @@ class _PushBroadcastScreenState extends State<PushBroadcastScreen> {
                 ),
               ),
             const SizedBox(height: Gap.lg),
-            const SectionHeader('Tujuan'),
+            const SectionHeader('Penerima'),
+            Wrap(
+              spacing: Gap.sm,
+              runSpacing: Gap.sm,
+              children: [
+                for (final (value, label) in _roles)
+                  ChoiceChip(
+                    label: Text(
+                      label,
+                      style: TextStyle(color: _role == value ? onColor(context.colors.primary) : context.colors.onSurface, fontWeight: FontWeight.w600),
+                    ),
+                    selected: _role == value,
+                    onSelected: (_) => setState(() => _role = value),
+                  ),
+              ],
+            ),
+            if (_role == 'customer') ...[
+            const SizedBox(height: Gap.lg),
+            const SectionHeader('Pelanggan yang dituju'),
             Wrap(
               spacing: Gap.sm,
               runSpacing: Gap.sm,
@@ -150,7 +183,8 @@ class _PushBroadcastScreenState extends State<PushBroadcastScreen> {
                   ),
               ],
             ),
-            if (_target == 'area') ...[
+            ],
+            if (_role == 'customer' && _target == 'area') ...[
               const SizedBox(height: Gap.md),
               if (_areas.isEmpty)
                 Text('Belum ada area.', style: TextStyle(color: context.colors.onSurfaceVariant))

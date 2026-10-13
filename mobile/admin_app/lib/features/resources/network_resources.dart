@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../core/api/api_client.dart';
 import '../../core/crud/crud_list_screen.dart';
 import '../../core/crud/lookups.dart';
+import '../../core/files.dart';
 import '../../core/crud/paging.dart';
 import '../../core/formatters.dart';
 import '../../core/forms/field_spec.dart';
@@ -238,13 +239,35 @@ CrudConfig oltsConfig() => CrudConfig(
   tone: Tone.accent,
   fetch: (_) => _api.get('/api/network/olts'),
   listKey: 'olts',
+  toolbar: [
+    CrudAction('Impor dari Excel', Icons.upload_file_rounded, (ctx, _) async {
+      final res = await pickAndUpload(ctx, '/api/network/olts/import', extensions: ['xlsx', 'xls', 'csv']);
+      if (res is Map && ctx.mounted) {
+        final failed = numOf(res.cast<String, dynamic>(), 'failed');
+        showToast(ctx, '${numOf(res.cast<String, dynamic>(), 'imported')} OLT diimpor${failed > 0 ? ', $failed gagal' : ''}.');
+      }
+      return res != null;
+    }),
+    CrudAction('Template impor', Icons.grid_on_rounded, (ctx, _) async {
+      await downloadAndShare(ctx, '/api/network/olts/template', 'OLT_Import_Template.xlsx');
+      return false;
+    }),
+  ],
   titleOf: (o) => str(o, 'name') ?? '-',
   subtitleOf: (o) => '${o['ipAddress'] ?? '-'} · ${(str(o, 'vendor') ?? '').toUpperCase()} ${o['model'] ?? ''}'.trim(),
-  metaOf: (o) => o['_count'] is Map ? '${(o['_count'] as Map)['odcs'] ?? 0} ODC · ${(o['_count'] as Map)['odps'] ?? 0} ODP' : null,
-  statusOf: _statusPill,
+  metaOf: (o) => [
+    if (o['_count'] is Map) '${(o['_count'] as Map)['odcs'] ?? 0} ODC · ${(o['_count'] as Map)['odps'] ?? 0} ODP',
+    if (o['isOnline'] != null) o['isOnline'] == true ? 'Online' : 'Offline',
+  ].join(' · '),
+  // Reachability from the last poll is what staff look for first.
+  statusOf: (o) => o['isOnline'] == null
+      ? _statusPill(o)
+      : StatusPill(label: o['isOnline'] == true ? 'Online' : 'Offline', tone: o['isOnline'] == true ? Tone.success : Tone.danger),
   sectionsOf: (context, o) => [
     DetailSection(
       rows: [
+        InfoRow('Status data', _statusOptions.firstWhere((x) => x.$1 == (str(o, 'status') ?? 'active'), orElse: () => (str(o, 'status') ?? '-', str(o, 'status') ?? '-')).$2),
+        InfoRow('Terakhir dicek', formatDateTimeOrNull(dateOf(o, 'lastPollAt'))),
         InfoRow('IP', str(o, 'ipAddress'), copyable: true),
         InfoRow('Vendor', str(o, 'vendor')),
         InfoRow('Model', str(o, 'model')),
@@ -890,6 +913,15 @@ CrudConfig vpnClientsConfig() => CrudConfig(
   tone: Tone.violet,
   fetch: (_) => _api.get('/api/network/vpn-client'),
   listKey: 'clients',
+  toolbar: [
+    CommonActions.showResult(
+      'Info server L2TP',
+      Icons.info_outline_rounded,
+      (_) => '/api/network/vps-l2tp-info',
+      method: 'GET',
+      intro: 'Data server L2TP di VPS untuk mengisi koneksi MikroTik secara manual.',
+    ),
+  ],
   titleOf: (c) => str(c, 'name') ?? '-',
   subtitleOf: (c) => '${(str(c, 'vpnType') ?? '').toUpperCase()} · ${c['vpnIp'] ?? '-'}',
   metaOf: (c) => [str(mapOf(c, 'vpnServer'), 'name'), if (c['isRadiusServer'] == true) 'Server RADIUS', str(c, 'description')].whereType<String>().join(' · '),
