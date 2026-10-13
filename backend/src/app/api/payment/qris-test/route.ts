@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
-import { handleInvoicePayment } from '@/server/services/payment/invoice-payment.service';
+import { settleOrder } from '@/server/services/payment/order-settlement.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     if (claimed.count === 0) {
       return NextResponse.json({ success: true, message: 'Sudah diproses sebelumnya', invoiceId: pending.invoiceId });
     }
-    await handleInvoicePayment(pending.orderId, 'settlement', 'qris_own', 'simulation', now, pending.id);
+    await settleOrder(pending.orderId, 'settlement', 'qris_own', 'simulation', now, pending.id, pending.baseAmount);
 
     return NextResponse.json({
       success: true,

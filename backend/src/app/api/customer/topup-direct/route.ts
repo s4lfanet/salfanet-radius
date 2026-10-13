@@ -7,6 +7,7 @@ import { createTripayClient } from '@/server/services/payment/tripay.service';
 import { nowWIB } from '@/lib/timezone';
 import { z, parseBody } from '@/lib/parse-body';
 import crypto from 'crypto';
+import { createQrisPayment, qrisOwnAvailable } from '@/server/services/payment/qris-own.service';
 
 const topupDirectSchema = z.object({
   amount: z.number().int().min(10000, 'Minimal top-up adalah Rp 10.000'),
@@ -67,7 +68,9 @@ export async function POST(request: NextRequest) {
       }
     });
 
-    if (!gatewayConfig) {
+    // QRIS Mandiri is not a paymentGateway row; it is enabled in company settings.
+    const useQris = gateway === 'qris_own' && (await qrisOwnAvailable());
+    if (!gatewayConfig && !useQris) {
       return NextResponse.json(
         { error: 'Payment gateway tidak tersedia' },
         { status: 400 }
@@ -122,7 +125,16 @@ export async function POST(request: NextRequest) {
     console.log('[Top-Up Direct] Customer:', pppoeUser.name, pppoeUser.phone);
 
     try {
-      if (gateway === 'midtrans') {
+      if (useQris) {
+        const qris = await createQrisPayment({
+          orderId,
+          baseAmount: amount,
+          invoiceId: invoice.id,
+          userId: pppoeUser.id,
+          returnPath: '/customer',
+        });
+        paymentUrl = qris.paymentUrl;
+      } else if (gateway === 'midtrans') {
         console.log('[Top-Up Direct] Calling Midtrans API...');
         const midtransResult = await createMidtransPayment({
           orderId,
@@ -160,17 +172,17 @@ export async function POST(request: NextRequest) {
       } else if (gateway === 'duitku') {
         console.log('[Top-Up Direct] Calling Duitku API...');
         console.log('[Top-Up Direct] Duitku Config:', {
-          merchantCode: gatewayConfig.duitkuMerchantCode,
-          hasApiKey: !!gatewayConfig.duitkuApiKey,
-          environment: gatewayConfig.duitkuEnvironment
+          merchantCode: gatewayConfig!.duitkuMerchantCode,
+          hasApiKey: !!gatewayConfig!.duitkuApiKey,
+          environment: gatewayConfig!.duitkuEnvironment
         });
 
         const duitku = createDuitkuClient(
-          gatewayConfig.duitkuMerchantCode || '',
-          gatewayConfig.duitkuApiKey || '',
+          gatewayConfig!.duitkuMerchantCode || '',
+          gatewayConfig!.duitkuApiKey || '',
           `${appBaseUrl}/api/payment/webhook`,
           `${appBaseUrl}/payment/pending?token=${paymentToken}`,
-          gatewayConfig.duitkuEnvironment === 'sandbox'
+          gatewayConfig!.duitkuEnvironment === 'sandbox'
         );
 
         const result = await duitku.createInvoice({
@@ -190,17 +202,17 @@ export async function POST(request: NextRequest) {
       } else if (gateway === 'tripay') {
         console.log('[Top-Up Direct] Calling Tripay API...');
         console.log('[Top-Up Direct] Tripay Config:', {
-          merchantCode: gatewayConfig.tripayMerchantCode,
-          hasApiKey: !!gatewayConfig.tripayApiKey,
-          hasPrivateKey: !!gatewayConfig.tripayPrivateKey,
-          environment: gatewayConfig.tripayEnvironment
+          merchantCode: gatewayConfig!.tripayMerchantCode,
+          hasApiKey: !!gatewayConfig!.tripayApiKey,
+          hasPrivateKey: !!gatewayConfig!.tripayPrivateKey,
+          environment: gatewayConfig!.tripayEnvironment
         });
 
         const tripay = createTripayClient(
-          gatewayConfig.tripayMerchantCode || '',
-          gatewayConfig.tripayApiKey || '',
-          gatewayConfig.tripayPrivateKey || '',
-          gatewayConfig.tripayEnvironment === 'sandbox'
+          gatewayConfig!.tripayMerchantCode || '',
+          gatewayConfig!.tripayApiKey || '',
+          gatewayConfig!.tripayPrivateKey || '',
+          gatewayConfig!.tripayEnvironment === 'sandbox'
         );
 
         console.log('[Top-Up Direct] Tripay transaction params:', {

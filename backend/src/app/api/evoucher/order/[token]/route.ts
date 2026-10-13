@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
+import { qrisOwnOption } from '@/server/services/payment/qris-own.service';
 
 // GET - Get voucher order by payment token
 export async function GET(
@@ -47,6 +48,7 @@ export async function GET(
       );
     }
 
+    const qris = await qrisOwnOption();
     // Get active payment gateways
     const paymentGateways = await prisma.paymentGateway.findMany({
       where: {
@@ -72,7 +74,7 @@ export async function GET(
 
     return NextResponse.json({
       order,
-      paymentGateways,
+      paymentGateways: qris ? [...paymentGateways, qris] : paymentGateways,
       company,
     });
   } catch (error) {

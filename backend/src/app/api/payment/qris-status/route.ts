@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
+import QRCode from 'qrcode';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,9 +40,18 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // While it can still be paid, include the QR itself, rendered here so
+    // the payment payload is never sent to a third-party QR image service.
+    const payable = pending.status === 'pending' && pending.expiresAt > new Date();
+    const qrImage = payable
+      ? await QRCode.toDataURL(pending.qrString, { margin: 1, width: 320, errorCorrectionLevel: 'M' })
+      : null;
+
     return NextResponse.json({
       success: true,
-      status: pending.status,
+      status: payable || pending.status !== 'pending' ? pending.status : 'expired',
+      qrString: payable ? pending.qrString : null,
+      qrImage,
       invoiceId: pending.invoiceId,
       orderId: pending.orderId,
       baseAmount: pending.baseAmount,
