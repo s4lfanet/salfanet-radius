@@ -527,7 +527,7 @@ class _TwoFactorSettingsScreenState extends State<TwoFactorSettingsScreen> {
       body: on == null
           ? (_error != null ? ErrorView(message: _error!, onRetry: _load) : const LoadingView())
           : ListView(
-              padding: const EdgeInsets.all(Gap.page),
+              padding: EdgeInsets.fromLTRB(Gap.page, Gap.page, Gap.page, listBottomPadding(context)),
               children: [
                 DetailHeader(
                   icon: on ? Icons.verified_user_rounded : Icons.gpp_maybe_rounded,
@@ -781,7 +781,7 @@ class _CloudflareTunnelScreenState extends State<CloudflareTunnelScreen> {
           : RefreshIndicator(
               onRefresh: _load,
               child: ListView(
-                padding: EdgeInsets.fromLTRB(Gap.page, Gap.sm, Gap.page, Gap.xl),
+                padding: EdgeInsets.fromLTRB(Gap.page, Gap.sm, Gap.page, listBottomPadding(context)),
                 children: [
                   DetailHeader(
                     icon: Icons.cloud_rounded,
@@ -904,7 +904,7 @@ class _SystemUpdateScreenState extends State<SystemUpdateScreen> {
       body: info == null
           ? (_error != null ? ErrorView(message: _error!, onRetry: _load) : const LoadingView())
           : ListView(
-              padding: EdgeInsets.fromLTRB(Gap.page, Gap.sm, Gap.page, Gap.xl),
+              padding: EdgeInsets.fromLTRB(Gap.page, Gap.sm, Gap.page, listBottomPadding(context)),
               children: [
                 DetailHeader(
                   icon: Icons.memory_rounded,
