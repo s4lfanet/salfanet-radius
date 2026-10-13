@@ -17,6 +17,7 @@ import '../tickets/ticket_tools.dart';
 import '../agents/agent_deposit_list_screen.dart';
 import '../approvals/approval_list_screen.dart';
 import '../collector_settlements/collector_settlement_screen.dart';
+import '../keuangan/biaya_screen.dart';
 import '../keuangan/keuangan_screen.dart';
 import '../manual_payments/manual_payment_list_screen.dart';
 import '../notifications/notifications_screen.dart';
@@ -83,6 +84,7 @@ class MoreMenuScreen extends StatelessWidget {
         _Entry(Icons.badge_rounded, 'Setoran Kolektor', 'Rekap tagihan tertagih per kolektor', Tone.warning, (_) => const CollectorSettlementScreen()),
         _Entry(Icons.savings_rounded, 'Top Up Saldo', 'Isi saldo prabayar pelanggan', Tone.success, (_) => const TopupRequestListScreen()),
         _Entry(Icons.account_balance_rounded, 'Keuangan', 'Pemasukan, pengeluaran, saldo', Tone.primary, (_) => const KeuanganScreen()),
+        _Entry(Icons.north_east_rounded, 'Biaya Operasional', 'Bandwidth, gaji, alat, sewa vs pendapatan', Tone.danger, (_) => const BiayaScreen()),
         _Entry(Icons.category_rounded, 'Kategori Keuangan', 'Jenis pemasukan & pengeluaran', Tone.primary, _crud(keuanganCategoriesConfig)),
         _Entry(Icons.card_giftcard_rounded, 'Ajak Teman', 'Bonus pelanggan yang mengajak', Tone.accent, (_) => const ReferralListScreen()),
         _Entry(Icons.credit_card_rounded, 'Payment Gateway', 'Midtrans, Xendit, Duitku, Tripay, QRIS', Tone.success, (_) => const PaymentGatewayScreen()),

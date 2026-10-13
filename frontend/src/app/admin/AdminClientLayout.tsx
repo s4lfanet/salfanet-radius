@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useSession, signOut, SessionProvider } from 'next-auth/react';
 import { useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
-import { LayoutDashboard, Users, Wrench, Wifi, Receipt, CreditCard, Wallet, Clock, MessageSquare, Settings, Menu, X, ChevronDown, Shield, LogOut, Router, AlertTriangle, Timer, Server, Bell, UserCheck, Sun, Moon, Gift, Globe, BarChart3, FileText, Activity, Cable, GitBranch, Mail, MessageCircle, Send, Inbox } from 'lucide-react';
+import { LayoutDashboard, Users, Wrench, Wifi, Receipt, CreditCard, Wallet, Clock, MessageSquare, Settings, Menu, X, ChevronDown, Shield, LogOut, Router, AlertTriangle, Timer, Server, Bell, UserCheck, Sun, Moon, Gift, Globe, BarChart3, FileText, Activity, Cable, GitBranch, Mail, MessageCircle, Send, Inbox, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiAdmin, onUnauthorized } from '@/lib/api';
 import { useAppStore } from '@/lib/store';
@@ -128,6 +128,12 @@ const menuGroups: MenuGroup[] = [
         titleKey: 'nav.transaksi',
         icon: <Wallet className="w-4 h-4" />,
         href: '/admin/keuangan',
+        requiredPermission: 'keuangan.view',
+      },
+      {
+        titleKey: 'nav.biayaOperasional',
+        icon: <TrendingDown className="w-4 h-4" />,
+        href: '/admin/keuangan/pengeluaran',
         requiredPermission: 'keuangan.view',
       },
       {

@@ -9,7 +9,8 @@ import { z, parseBody } from '@/lib/parse-body';
 const createTransactionSchema = z.object({
   categoryId: z.string().min(1, 'Category is required'),
   type: z.enum(['INCOME', 'EXPENSE']),
-  amount: z.number().int().positive('Amount must be positive'),
+  // The web form sends the amount as text ("150000"); accept both.
+  amount: z.coerce.number().int().positive('Amount must be positive'),
   description: z.string().min(1, 'Description is required').max(500),
   date: z.string().optional(),
   reference: z.string().max(100).optional(),
@@ -145,7 +146,7 @@ export async function GET(request: NextRequest) {
     const pppoeIncome = await prisma.transaction.aggregate({
       where: {
         type: "INCOME",
-        categoryId: pppoeCategory?.id,
+        categoryId: pppoeCategory?.id ?? '__none__',
         ...(startFilter && endFilter
           ? {
               date: {
@@ -162,7 +163,7 @@ export async function GET(request: NextRequest) {
     const hotspotIncome = await prisma.transaction.aggregate({
       where: {
         type: "INCOME",
-        categoryId: hotspotCategory?.id,
+        categoryId: hotspotCategory?.id ?? '__none__',
         ...(startFilter && endFilter
           ? {
               date: {
@@ -179,7 +180,7 @@ export async function GET(request: NextRequest) {
     const installIncome = await prisma.transaction.aggregate({
       where: {
         type: "INCOME",
-        categoryId: installCategory?.id,
+        categoryId: installCategory?.id ?? '__none__',
         ...(startFilter && endFilter
           ? {
               date: {
@@ -246,6 +247,13 @@ export async function POST(request: NextRequest) {
         { status: 404 },
       );
     }
+    if (category.type !== type) {
+      return NextResponse.json(
+        { success: false, error: `Kategori "${category.name}" bukan kategori ${type === 'EXPENSE' ? 'pengeluaran' : 'pemasukan'}` },
+        { status: 400 },
+      );
+    }
+    const actor = authCheck.session?.user as { username?: string; name?: string } | undefined;
 
     // Create transaction
     const transaction = await prisma.transaction.create({
@@ -258,6 +266,7 @@ export async function POST(request: NextRequest) {
         date: date ? new Date(date) : new Date(),
         reference: reference || null,
         notes: notes || null,
+        createdBy: actor?.username || actor?.name || null,
       },
       include: {
         category: true,
@@ -326,12 +335,27 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    const parsedAmount = amount !== undefined && amount !== null && amount !== '' ? parseInt(String(amount), 10) : undefined;
+    if (parsedAmount !== undefined && (!Number.isFinite(parsedAmount) || parsedAmount <= 0)) {
+      return NextResponse.json({ success: false, error: "Jumlah harus lebih dari 0" }, { status: 400 });
+    }
+    if (categoryId || type) {
+      const current = await prisma.transaction.findUnique({ where: { id }, select: { type: true, categoryId: true } });
+      if (!current) {
+        return NextResponse.json({ success: false, error: "Transaction not found" }, { status: 404 });
+      }
+      const category = await prisma.transactionCategory.findUnique({ where: { id: categoryId || current.categoryId } });
+      if (!category || category.type !== (type || current.type)) {
+        return NextResponse.json({ success: false, error: "Kategori tidak cocok dengan jenis transaksi" }, { status: 400 });
+      }
+    }
+
     const transaction = await prisma.transaction.update({
       where: { id },
       data: {
         ...(categoryId && { categoryId }),
         ...(type && { type }),
-        ...(amount && { amount: parseInt(amount) }),
+        ...(parsedAmount !== undefined && { amount: parsedAmount }),
         ...(description && { description }),
         ...(date && { date: new Date(date) }),
         ...(reference !== undefined && { reference }),
