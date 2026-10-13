@@ -1114,7 +1114,7 @@ function AdminLayoutContent({
         </header>
 
         {/* Content - with safe area padding */}
-        <main className="flex-1 p-3 sm:p-4 md:p-6 animate-in fade-in duration-500 safe-area-inset-bottom">{children}</main>
+        <main className="flex-1 p-3 sm:p-4 md:p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:pb-[calc(2rem+env(safe-area-inset-bottom))] md:pb-[calc(3rem+env(safe-area-inset-bottom))] animate-in fade-in duration-500">{children}</main>
       </div>
 
       {/* Idle Timeout Warning Modal — uses the shared Dialog instead of a
