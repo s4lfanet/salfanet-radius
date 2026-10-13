@@ -2,6 +2,7 @@ import 'server-only'
 import { prisma } from '@/server/db/client';
 import { NextRequest } from 'next/server';
 import { nowWIB } from '@/lib/timezone';
+import { createAdminNotification } from '@/server/services/notifications/admin-notification.service';
 
 export type ActivityModule = 
   | 'pppoe'
@@ -82,7 +83,7 @@ export async function logActivity(params: LogActivityParams) {
     if (module === 'system' && status === 'error' && 
         ['health_check', 'auto_restart_failed', 'backup_failed', 'database_error'].includes(action)) {
       try {
-        await prisma.notification.create({
+        await createAdminNotification({
           data: {
             type: 'system_alert',
             title: 'Peringatan Sistem',

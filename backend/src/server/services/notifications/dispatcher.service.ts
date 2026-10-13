@@ -1,6 +1,7 @@
 import 'server-only'
 import { prisma } from '@/server/db/client';
 import { nowWIB } from '@/lib/timezone';
+import { createAdminNotification } from '@/server/services/notifications/admin-notification.service';
 
 export const NotificationService = {
   /**
@@ -14,7 +15,7 @@ export const NotificationService = {
   }) {
     let notification = null;
     try {
-      notification = await prisma.notification.create({
+      notification = await createAdminNotification({
         data: {
           id: Math.random().toString(36).substring(2, 15),
           ...data,

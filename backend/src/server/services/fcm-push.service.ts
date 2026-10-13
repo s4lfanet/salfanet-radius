@@ -83,9 +83,15 @@ export async function removeCustomerPushToken(userId: string, token?: string | n
   return result.count;
 }
 
+type TokenAudience = 'customer' | 'admin';
+
+// Channel ids must match each app's AndroidNotificationChannel.
+const CHANNEL: Record<TokenAudience, string> = { customer: 'salfanet_customer', admin: 'salfanet_admin' };
+
 async function sendToTokenRows(
   tokenRows: Array<{ id: string; token: string }>,
   payload: FcmPushPayload,
+  audience: TokenAudience = 'customer',
 ): Promise<{ sent: number; failed: number }> {
   const app = getFcmApp();
   if (!app || tokenRows.length === 0) return { sent: 0, failed: 0 };
@@ -105,7 +111,7 @@ async function sendToTokenRows(
         tokens: chunk.map((t) => t.token),
         notification: { title: payload.title, body: payload.body },
         data,
-        android: { priority: 'high', notification: { channelId: 'salfanet_customer' } },
+        android: { priority: 'high', notification: { channelId: CHANNEL[audience] } },
       });
       result.responses.forEach((r, idx) => {
         if (r.success) {
@@ -125,7 +131,8 @@ async function sendToTokenRows(
   }
 
   if (staleIds.length > 0) {
-    await prisma.customerPushToken.deleteMany({ where: { id: { in: staleIds } } }).catch(() => {});
+    const where = { where: { id: { in: staleIds } } };
+    await (audience === 'admin' ? prisma.adminPushToken.deleteMany(where) : prisma.customerPushToken.deleteMany(where)).catch(() => {});
   }
 
   return { sent, failed };
@@ -141,4 +148,44 @@ export async function sendFcmToUsers(userIds: string[], payload: FcmPushPayload)
   if (!getFcmApp() || userIds.length === 0) return { sent: 0, failed: 0 };
   const tokenRows = await prisma.customerPushToken.findMany({ where: { userId: { in: userIds } }, select: { id: true, token: true } });
   return sendToTokenRows(tokenRows, payload);
+}
+
+// ── Admin Flutter app ─────────────────────────────────────────────────────
+
+export async function registerAdminPushToken(adminId: string, token: string, platform = 'android') {
+  const cleanToken = token.trim();
+  if (!cleanToken) throw new Error('Invalid FCM token');
+
+  return prisma.adminPushToken.upsert({
+    where: { token: cleanToken },
+    update: { adminId, platform, lastUsedAt: new Date() },
+    create: { adminId, token: cleanToken, platform },
+  });
+}
+
+export async function removeAdminPushToken(adminId: string, token?: string | null) {
+  const where: { adminId: string; token?: string } = { adminId };
+  if (token?.trim()) where.token = token.trim();
+  const result = await prisma.adminPushToken.deleteMany({ where });
+  return result.count;
+}
+
+/**
+ * Pushes an admin notification to every signed-in admin app whose account
+ * may read notifications — the same people who see it in the web bell.
+ */
+export async function sendFcmToAdmins(payload: FcmPushPayload): Promise<{ sent: number; failed: number }> {
+  if (!getFcmApp()) return { sent: 0, failed: 0 };
+  const rows = await prisma.adminPushToken.findMany({
+    where: { admin: { isActive: true } },
+    select: { id: true, token: true, adminId: true },
+  });
+  if (rows.length === 0) return { sent: 0, failed: 0 };
+
+  const { hasPermission, isSuperAdmin } = await import('@/server/auth/permissions');
+  const allowed = new Set<string>();
+  for (const adminId of new Set(rows.map((r) => r.adminId))) {
+    if ((await isSuperAdmin(adminId)) || (await hasPermission(adminId, 'notifications.view'))) allowed.add(adminId);
+  }
+  return sendToTokenRows(rows.filter((r) => allowed.has(r.adminId)), { url: '/admin', ...payload }, 'admin');
 }

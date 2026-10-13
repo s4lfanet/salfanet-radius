@@ -4,6 +4,7 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
         android:label="Salfanet Admin"
         android:name="${applicationName}"
@@ -35,6 +36,11 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- Must match _channelId in lib/core/push/push_service.dart and the
+             admin channel in backend fcm-push.service.ts. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="salfanet_admin" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

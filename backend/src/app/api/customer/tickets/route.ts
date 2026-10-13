@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
+import { createAdminNotification } from '@/server/services/notifications/admin-notification.service';
 
 /**
  * Helper: get authenticated customer session from Bearer token
@@ -185,7 +186,7 @@ export async function POST(request: NextRequest) {
 
     // Admin DB notification (toast in admin panel)
     try {
-      await prisma.notification.create({
+      await createAdminNotification({
         data: {
           type: 'new_ticket',
           title: 'Tiket Baru dari Pelanggan',

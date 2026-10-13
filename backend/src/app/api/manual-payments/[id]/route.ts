@@ -8,6 +8,7 @@ import { generateTransactionId } from '@/server/services/billing/invoice.service
 import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service';
 import { sendPushToUser } from '@/server/services/notifications/push-templates.service';
 import { toUTC, nowWIB, getCurrentTimezone } from '@/lib/timezone';
+import { createAdminNotification } from '@/server/services/notifications/admin-notification.service';
 
 function formatBankAccountsWA(bankAccounts: any): string {
   if (!bankAccounts) return '';
@@ -423,7 +424,7 @@ export async function PATCH(
       const pkgChangeMsg = newProfileId !== manualPayment.user.profileId
         ? ` | Paket diubah ke ${(newProfileData as any)?.name || newProfileId}`
         : '';
-      await prisma.notification.create({
+      await createAdminNotification({
         data: {
           type: 'manual_payment_approved',
           title: 'Pembayaran Disetujui',
@@ -532,7 +533,7 @@ export async function PATCH(
       }
       
       // Create notification
-      await prisma.notification.create({
+      await createAdminNotification({
         data: {
           type: 'manual_payment_rejected',
           title: 'Pembayaran Ditolak',

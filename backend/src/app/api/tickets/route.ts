@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
+import { createAdminNotification } from '@/server/services/notifications/admin-notification.service';
 
 // Generate unique ticket number
 function generateTicketNumber(): string {
@@ -258,7 +259,7 @@ export async function POST(req: NextRequest) {
     await sendTicketNotification(customerPhone, ticketNumber, subject, true);
 
     // Create admin notification (for real-time toast in admin panel)
-    await prisma.notification.create({
+    await createAdminNotification({
       data: {
         type: 'new_ticket',
         title: 'Tiket Baru Masuk',

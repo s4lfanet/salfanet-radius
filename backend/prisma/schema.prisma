@@ -1667,6 +1667,7 @@ model adminUser {
   twoFactorSecret   String?                 @db.VarChar(255) // TOTP secret (base32)
   userPermissions   userPermission[]
   pushSubscriptions adminPushSubscription[]
+  pushTokens        adminPushToken[]
   area              pppoeArea?              @relation(fields: [areaId], references: [id], onDelete: SetNull)
 
   @@index([username])
@@ -1674,6 +1675,21 @@ model adminUser {
   @@index([role])
   @@index([areaId])
   @@map("admin_users")
+}
+
+// FCM device token for the admin Flutter app. adminPushSubscription holds
+// the browser Web Push subscriptions of the web panel; a native app needs FCM.
+model adminPushToken {
+  id         String    @id @default(cuid())
+  adminId    String
+  admin      adminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  token      String    @unique @db.VarChar(500)
+  platform   String    @default("android")
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime  @default(now())
+
+  @@index([adminId])
+  @@map("admin_push_tokens")
 }
 
 model adminPushSubscription {

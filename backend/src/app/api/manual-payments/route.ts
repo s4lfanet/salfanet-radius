@@ -3,6 +3,7 @@ import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { startOfDayWIBtoUTC, endOfDayWIBtoUTC, nowWIB } from '@/lib/timezone';
 import { notifyAdminsViaWhatsApp } from '@/server/services/notifications/whatsapp-templates.service';
+import { createAdminNotification } from '@/server/services/notifications/admin-notification.service';
 
 // GET - Get all manual payment submissions
 export async function GET(request: NextRequest) {
@@ -164,7 +165,7 @@ export async function POST(request: NextRequest) {
     });
     
     // Create notification for admin
-    await prisma.notification.create({
+    await createAdminNotification({
       data: {
         type: 'manual_payment_submitted',
         title: 'Pembayaran Manual Baru',
