@@ -35,7 +35,11 @@ export async function GET() {
       });
     }
 
-    return NextResponse.json(company);
+    // QRIS listener credentials are served only by
+    // /api/payment-gateway/qris-mandiri (settings.payment); anyone with
+    // settings.view could otherwise settle invoices without paying.
+    const { qrisDeviceKey: _key, qrisDeviceSecret: _secret, ...safe } = company;
+    return NextResponse.json({ ...safe, qrisDeviceKeySet: !!_key });
   } catch (error) {
     console.error('Error fetching company:', error);
     return NextResponse.json(

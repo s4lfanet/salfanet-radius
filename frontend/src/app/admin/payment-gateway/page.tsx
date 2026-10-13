@@ -116,12 +116,13 @@ export default function PaymentGatewayPage() {
     }
   }, [configsData]);
 
-  // Fetch QRIS settings from /api/company
+  // QRIS settings, including the listener credentials, come only from the
+  // settings.payment endpoint; /api/company no longer exposes them.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const res = await apiAdmin<{ qrisStaticCode?: string; qrisMerchantName?: string; qrisEnabled?: boolean; qrisDeviceKey?: string; qrisDeviceSecret?: string; qrisUniqueMin?: number; qrisUniqueMax?: number }>('/api/company');
+        const res = await apiAdmin<{ qrisStaticCode?: string; qrisMerchantName?: string; qrisEnabled?: boolean; qrisDeviceKey?: string; qrisDeviceSecret?: string; qrisUniqueMin?: number; qrisUniqueMax?: number }>('/api/payment-gateway/qris-mandiri');
         if (!cancelled && res) {
           setQrisForm({
             staticCode: res.qrisStaticCode || '',
