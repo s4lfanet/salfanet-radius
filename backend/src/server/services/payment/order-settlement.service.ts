@@ -3,7 +3,9 @@ import { prisma } from '@/server/db/client';
 import { syncVoucherToRadius } from '@/server/services/radius/hotspot-sync.service';
 import { sendPaymentSuccess, sendVoucherPurchaseSuccess } from '@/server/services/notifications/whatsapp-templates.service';
 import { WhatsAppService } from '@/server/services/notifications/whatsapp.service';
-import { getCurrentTimezone } from '@/lib/timezone';
+import { getCurrentTimezone, nowWIB } from '@/lib/timezone';
+import { createAgentNotificationAndPush } from '@/server/services/agent-notification.service';
+import { createAdminNotification } from '@/server/services/notifications/admin-notification.service';
 import { formatInTimeZone } from 'date-fns-tz';
 import { logActivity } from '@/server/services/activity-log.service';
 import { syncVoucherToAssignedRouter } from '@/server/services/mikrotik/hotspot-voucher.service';
@@ -432,6 +434,27 @@ async function handleAgentDeposit(
         },
       });
 
+      // Book the deposit in Keuangan, atomic with the balance.
+      let depositCategory = await tx.transactionCategory.findFirst({ where: { name: 'Deposit Agent' } });
+      if (!depositCategory) {
+        depositCategory = await tx.transactionCategory.create({
+          data: { id: nanoid(), name: 'Deposit Agent', type: 'INCOME', description: 'Deposit saldo agent' },
+        });
+      }
+      await tx.transaction.create({
+        data: {
+          id: nanoid(),
+          categoryId: depositCategory.id,
+          amount: deposit.amount,
+          type: 'INCOME',
+          description: `Deposit agent ${deposit.agent.name}`,
+          reference: `AGENT-DEPOSIT-${deposit.id}`,
+          notes: `Agent: ${deposit.agent.name}, Method: ${gateway}`,
+          createdAt: new Date(),
+          createdBy: 'system',
+        },
+      });
+
       return updatedAgent.balance;
     });
 
@@ -443,8 +466,8 @@ async function handleAgentDeposit(
     console.log(`[Agent Deposit] New balance: Rp ${updatedBalance.toLocaleString('id-ID')}`);
   } else {
     // Non-PAID status: just update deposit status
-    await prisma.agentDeposit.update({
-      where: { id: deposit.id },
+    await prisma.agentDeposit.updateMany({
+      where: { id: deposit.id, status: 'PENDING' },
       data: {
         status: depositStatus,
         transactionId: transactionId || deposit.transactionId,
@@ -456,6 +479,22 @@ async function handleAgentDeposit(
 
   // If payment successful, send notifications
   if (depositStatus === 'PAID' && updatedBalance !== null) {
+    await createAgentNotificationAndPush(deposit.agentId, {
+      type: 'deposit_success',
+      title: 'Deposit Berhasil',
+      message: `Deposit sebesar Rp ${deposit.amount.toLocaleString('id-ID')} berhasil. Saldo baru: Rp ${updatedBalance.toLocaleString('id-ID')}`,
+    }).catch((e) => console.error('[Agent Deposit] Agent push error:', e));
+
+    await createAdminNotification({
+      data: {
+        id: nanoid(),
+        type: 'agent_deposit',
+        title: 'Agent Deposit',
+        message: `${deposit.agent.name} deposit Rp ${deposit.amount.toLocaleString('id-ID')} via ${gateway}`,
+        link: '/admin/hotspot/agent',
+        createdAt: nowWIB(),
+      },
+    }).catch((e) => console.error('[Agent Deposit] Admin notification error:', e));
 
     // Log activity
     try {

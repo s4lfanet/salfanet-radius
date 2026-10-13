@@ -2,6 +2,7 @@
 import { prisma } from '@/server/db/client';
 import { randomBytes } from 'crypto';
 import { getCurrentTimezone } from '@/lib/timezone';
+import { formatWIB } from '@/lib/timezone';
 
 // Generate secure payment token
 function generatePaymentToken(): string {
@@ -165,19 +166,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate order number
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
+    // Order number EVC-yyyyMMdd-NNNN on the company's calendar day. The
+    // webhook reads the first three dash-separated parts, so the format
+    // must stay three parts.
+    const day = formatWIB(new Date(), 'yyyyMMdd');
     const count = await prisma.voucherOrder.count({
-      where: {
-        orderNumber: {
-          startsWith: `EVC-${year}${month}${day}-`,
-        },
-      },
+      where: { orderNumber: { startsWith: `EVC-${day}-` } },
     });
-    const orderNumber = `EVC-${year}${month}${day}-${String(count + 1).padStart(4, '0')}`;
+    const numberFor = (n: number) => `EVC-${day}-${String(n).padStart(4, '0')}`;
 
     // Calculate total amount
     const totalAmount = profile.sellingPrice * quantity;
@@ -190,35 +186,45 @@ export async function POST(request: NextRequest) {
     const paymentToken = generatePaymentToken();
     const paymentLink = `${baseUrl}/evoucher/pay/${paymentToken}`;
 
-    // Create voucher order
-    const order = await prisma.voucherOrder.create({
-      data: {
-        id: crypto.randomUUID(),
-        orderNumber,
-        profileId: profile.id,
-        quantity,
-        customerName,
-        customerPhone,
-        customerEmail,
-        totalAmount,
-        status: 'PENDING',
-        paymentToken,
-        paymentLink,
-      },
-      include: {
-        profile: {
-          select: {
-            name: true,
-            speed: true,
-            validityValue: true,
-            validityUnit: true,
+    // Two purchases at the same moment count the same total; on a clash
+    // (orderNumber is unique) take the next number instead of failing.
+    let order;
+    for (let attempt = 1; ; attempt++) {
+      try {
+        order = await prisma.voucherOrder.create({
+          data: {
+            id: crypto.randomUUID(),
+            orderNumber: numberFor(count + attempt),
+            profileId: profile.id,
+            quantity,
+            customerName,
+            customerPhone,
+            customerEmail,
+            totalAmount,
+            status: 'PENDING',
+            paymentToken,
+            paymentLink,
           },
-        },
-      },
-    });
+          include: {
+            profile: {
+              select: {
+                name: true,
+                speed: true,
+                validityValue: true,
+                validityUnit: true,
+              },
+            },
+          },
+        });
+        break;
+      } catch (e) {
+        const clash = (e as { code?: string })?.code === 'P2002';
+        if (!clash || attempt >= 10) throw e;
+      }
+    }
 
     const duration = Date.now() - startTime;
-    console.log(`✅ Voucher order created: ${orderNumber} for ${customerName} (${duration}ms)`);
+    console.log(`✅ Voucher order created: ${order.orderNumber} for ${customerName} (${duration}ms)`);
     console.log(`Payment Link: ${paymentLink}`);
 
     // Send notification based on preference
