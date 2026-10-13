@@ -369,10 +369,10 @@ CrudConfig promoBannersConfig() => CrudConfig(
 
 /// Program referral — /admin/settings/referral.
 SettingsFormScreen referralSettings() => SettingsFormScreen(
-  title: 'Program Referral',
+  title: 'Program Ajak Teman',
   load: () async => mapOf(_map(await _api.get('/api/admin/referrals/config')), 'config') ?? {},
   fields: (_) => [
-    const FieldSpec('enabled', 'Program referral aktif', type: FieldType.toggle),
+    const FieldSpec('enabled', 'Program ajak teman aktif', type: FieldType.toggle),
     const FieldSpec('rewardAmount', 'Bonus untuk pengajak (Rp)', type: FieldType.integer, min: 0),
     const FieldSpec(
       'rewardType',

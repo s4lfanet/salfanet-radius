@@ -101,7 +101,7 @@ class _View extends StatelessWidget {
         isEmpty: p.users.isEmpty,
         emptyIcon: Icons.how_to_reg_outlined,
         emptyMessage: 'Tidak ada pendaftaran yang menunggu',
-        emptyHint: 'Akun yang didaftarkan teknisi atau lewat referral dan butuh pengecekan akan muncul di sini.',
+        emptyHint: 'Akun yang didaftarkan teknisi atau lewat ajak teman dan butuh pengecekan akan muncul di sini.',
         child: RefreshableList(
           onRefresh: p.load,
           itemCount: p.users.length,
