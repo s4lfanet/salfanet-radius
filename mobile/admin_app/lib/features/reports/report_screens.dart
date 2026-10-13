@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/crud/crud_list_screen.dart';
+import '../../core/crud/paging.dart';
 import '../../core/files.dart';
 import '../../core/formatters.dart';
 import '../../core/forms/field_spec.dart';
@@ -1111,10 +1112,10 @@ class _FiberTraceScreenState extends State<FiberTraceScreen> {
   String? _mode;
 
   static Future<FieldOptions> _cores() async {
-    final list = extractList(await _api.get('/api/network/cores', query: {'limit': 2000}), listKey: 'cores');
+    final list = await fetchAllPages('/api/network/cores', listKey: 'cores');
     return [
       for (final c in list)
-        ('${c['id']}', '${str(mapOf(mapOf(c, 'tube'), 'cable'), 'code') ?? '?'} T${mapOf(c, 'tube')?['tubeNumber'] ?? '-'} C${c['coreNumber'] ?? '-'} ${c['colorName'] ?? ''} · ${c['status'] ?? ''}'.trim()),
+        ('${c['id']}', '${str(mapOf(mapOf(c, 'tube'), 'cable'), 'code') ?? '?'} T${mapOf(c, 'tube')?['tubeNumber'] ?? '-'} C${c['coreNumber'] ?? '-'} ${c['colorCode'] ?? ''} · ${c['status'] ?? ''}'.trim()),
     ];
   }
 

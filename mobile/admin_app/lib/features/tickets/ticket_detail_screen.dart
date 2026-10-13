@@ -183,7 +183,7 @@ class _Composer extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: context.colors.surface,
-        border: Border(top: BorderSide(color: context.colors.outline)),
+        border: Border(top: BorderSide(color: context.colors.outlineVariant)),
       ),
       padding: const EdgeInsets.fromLTRB(Gap.md, Gap.sm, Gap.md, Gap.sm),
       child: SafeArea(
@@ -258,7 +258,7 @@ class _Bubble extends StatelessWidget {
         constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.8),
         decoration: BoxDecoration(
           color: bg,
-          border: fromCustomer ? Border.all(color: context.colors.outline) : null,
+          border: fromCustomer ? Border.all(color: context.colors.outlineVariant) : null,
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(AppTheme.radiusCard),
             topRight: const Radius.circular(AppTheme.radiusCard),

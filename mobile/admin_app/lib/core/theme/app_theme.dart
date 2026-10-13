@@ -31,7 +31,7 @@ class AppTheme {
       surface: p.surface,
       onSurface: p.text,
       onSurfaceVariant: p.textMuted,
-      outline: p.border,
+      outline: p.borderStrong,
       outlineVariant: p.border,
       surfaceContainerHighest: p.surfaceMuted,
       error: p.danger,
@@ -72,18 +72,26 @@ class AppTheme {
           side: BorderSide(color: p.border),
         ),
       ),
+      // Fields sit on the grey page background; a fill alone was 1.1:1 and
+      // read as no field at all. White box + 3:1 outline (WCAG 1.4.11).
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: p.surfaceMuted,
+        fillColor: p.surface,
         hintStyle: TextStyle(color: p.textMuted),
         labelStyle: TextStyle(color: p.textMuted),
         prefixIconColor: p.textMuted,
         suffixIconColor: p.textMuted,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(radiusControl), borderSide: BorderSide.none),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(radiusControl), borderSide: BorderSide.none),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(radiusControl), borderSide: BorderSide(color: p.borderStrong)),
+        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(radiusControl), borderSide: BorderSide(color: p.borderStrong)),
+        disabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(radiusControl), borderSide: BorderSide(color: p.border)),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(radiusControl),
-          borderSide: BorderSide(color: p.primary, width: 1.5),
+          borderSide: BorderSide(color: p.primary, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(radiusControl), borderSide: BorderSide(color: p.danger)),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(radiusControl),
+          borderSide: BorderSide(color: p.danger, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
@@ -112,7 +120,7 @@ class AppTheme {
           foregroundColor: p.text,
           minimumSize: const Size(0, 48),
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          side: BorderSide(color: p.border),
+          side: BorderSide(color: p.borderStrong),
           shape: controlShape,
           textStyle: const TextStyle(fontFamily: 'PlusJakartaSans', fontWeight: FontWeight.w700, fontSize: 14),
         ),
@@ -127,13 +135,15 @@ class AppTheme {
         backgroundColor: p.surface,
         selectedColor: p.primary,
         disabledColor: p.surfaceMuted,
-        side: BorderSide(color: p.border),
+        side: BorderSide(color: p.borderStrong),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radiusPill)),
         showCheckmark: false,
         padding: const EdgeInsets.symmetric(horizontal: 4),
         labelStyle: TextStyle(fontFamily: 'PlusJakartaSans', fontSize: 12.5, fontWeight: FontWeight.w600, color: p.text),
         secondaryLabelStyle: TextStyle(fontFamily: 'PlusJakartaSans', fontSize: 12.5, fontWeight: FontWeight.w700, color: onColor(p.primary)),
       ),
+      // The bar is white on a near-white page; without a top rule it had no
+      // edge, so content and navigation ran together.
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: p.surface,
         surfaceTintColor: Colors.transparent,
@@ -156,7 +166,7 @@ class AppTheme {
         backgroundColor: p.background,
         surfaceTintColor: Colors.transparent,
         showDragHandle: true,
-        dragHandleColor: p.border,
+        dragHandleColor: p.borderStrong,
         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(radiusCard + 4))),
       ),
       dialogTheme: DialogThemeData(
@@ -179,7 +189,7 @@ class AppTheme {
       segmentedButtonTheme: SegmentedButtonThemeData(
         style: ButtonStyle(
           shape: WidgetStatePropertyAll(controlShape),
-          side: WidgetStatePropertyAll(BorderSide(color: p.border)),
+          side: WidgetStatePropertyAll(BorderSide(color: p.borderStrong)),
           backgroundColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? p.primary : p.surface),
           foregroundColor: WidgetStateProperty.resolveWith((s) => s.contains(WidgetState.selected) ? onColor(p.primary) : p.text),
         ),
@@ -197,6 +207,7 @@ class _Palette {
     required this.surface,
     required this.surfaceMuted,
     required this.border,
+    required this.borderStrong,
     required this.text,
     required this.textMuted,
     required this.primary,
@@ -208,7 +219,12 @@ class _Palette {
   final Color background;
   final Color surface;
   final Color surfaceMuted;
+  /// Card edges and dividers: visible structure, ~1.7-2:1.
   final Color border;
+
+  /// Edges of things you operate (inputs, outlined buttons, chips):
+  /// at least 3:1 on every surface, per WCAG 1.4.11.
+  final Color borderStrong;
   final Color text;
   final Color textMuted; // 4.7:1 on surface in both themes
   final Color primary;
@@ -220,7 +236,8 @@ class _Palette {
     background: Color(0xFFF3F5F9),
     surface: Colors.white,
     surfaceMuted: Color(0xFFF1F4F8),
-    border: Color(0xFFE3E8EF),
+    border: Color(0xFFB8C2D1),
+    borderStrong: Color(0xFF7D8799),
     text: Color(0xFF0F172A),
     textMuted: Color(0xFF5B6678),
     primary: Color(0xFF2563EB),
@@ -233,7 +250,8 @@ class _Palette {
     background: Color(0xFF0B1120),
     surface: Color(0xFF131B2C),
     surfaceMuted: Color(0xFF1B2537),
-    border: Color(0xFF253047),
+    border: Color(0xFF3E4A66),
+    borderStrong: Color(0xFF6B7894),
     text: Color(0xFFE6EAF2),
     textMuted: Color(0xFF9AA6BA),
     primary: Color(0xFF5B8DEF),

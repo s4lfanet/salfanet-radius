@@ -22,6 +22,8 @@ class InvoiceListScreen extends StatefulWidget {
 class _InvoiceListScreenState extends State<InvoiceListScreen> {
   Timer? _debounce;
   final _scrollController = ScrollController();
+  // Shows a search preset by whoever opened this list (e.g. the dashboard).
+  late final _searchController = TextEditingController(text: context.read<InvoiceProvider>().search);
   final Set<String> _selected = {};
 
   void _toggle(String id) => setState(() => _selected.contains(id) ? _selected.remove(id) : _selected.add(id));
@@ -104,6 +106,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
 
   @override
   void dispose() {
+    _searchController.dispose();
     _debounce?.cancel();
     _scrollController.dispose();
     super.dispose();
@@ -151,7 +154,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                             valueSize: 16,
                           ),
                         ),
-                        Container(width: 1, height: 36, color: context.colors.outline),
+                        Container(width: 1, height: 36, color: context.colors.outlineVariant),
                         const SizedBox(width: Gap.lg),
                         Expanded(
                           child: LabeledFigure(
@@ -166,7 +169,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                   ),
                 ),
               ),
-            SearchField(hint: 'Cari no. invoice, nama, username', onChanged: _onSearchChanged),
+            SearchField(hint: 'Cari no. invoice, nama, username', controller: _searchController, onChanged: _onSearchChanged),
             FilterChipRow(options: _tabs, selected: p.status, onSelected: p.setStatus),
             Expanded(
               child: DataStateView(

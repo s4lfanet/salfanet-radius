@@ -11,6 +11,7 @@ import '../widgets/dialogs.dart';
 import '../widgets/entity_tile.dart';
 import '../widgets/result_screen.dart';
 import '../widgets/state_views.dart';
+import 'paging.dart';
 
 typedef Json = Map<String, dynamic>;
 
@@ -76,6 +77,8 @@ class CrudConfig {
     this.bulkActions = const [],
     this.idKey = 'id',
     this.fetchLimitNote,
+    this.pageSize,
+    this.offsetPaging = false,
     this.afterCreate,
   });
 
@@ -158,6 +161,13 @@ class CrudConfig {
   /// Shown under the list when the endpoint caps how many rows it returns.
   final String? fetchLimitNote;
 
+  /// Rows per request for routes that page (`page` + `limit`, or `offset`
+  /// when [offsetPaging]). Unset means the route returns everything at once.
+  /// Filters and search must then be server-side, or they only see the rows
+  /// loaded so far.
+  final int? pageSize;
+  final bool offsetPaging;
+
   /// Runs after a successful create, e.g. to show generated credentials.
   final Future<void> Function(BuildContext context)? afterCreate;
 }
@@ -194,6 +204,11 @@ class CrudListScreen extends StatefulWidget {
 class _CrudListScreenState extends State<CrudListScreen> {
   List<Json> _items = [];
   bool _loading = true;
+  int _page = 1;
+  bool _hasMore = false;
+  bool _loadingMore = false;
+  int? _total;
+  final _scroll = ScrollController();
   String? _error;
   String _search = '';
   String? _filter;
@@ -246,12 +261,16 @@ class _CrudListScreenState extends State<CrudListScreen> {
   void initState() {
     super.initState();
     _filter = c.initialFilter ?? c.filters?.first.$1;
+    _scroll.addListener(() {
+      if (_scroll.position.extentAfter < 600) _loadMore();
+    });
     _load();
   }
 
   @override
   void dispose() {
     _debounce?.cancel();
+    _scroll.dispose();
     super.dispose();
   }
 
@@ -261,17 +280,60 @@ class _CrudListScreenState extends State<CrudListScreen> {
       _error = null;
     });
     try {
-      final query = <String, dynamic>{
-        if (c.searchParam != null && _search.isNotEmpty) c.searchParam!: _search,
-        if (c.filterOf == null && _filter != null && _filter != 'all' && _filter!.isNotEmpty) c.filterParam: _filter,
-      };
-      final res = await c.fetch(query);
-      _items = c.parse != null ? c.parse!(res) : extractList(res, listKey: c.listKey);
+      _page = 1;
+      final res = await c.fetch(_query(1));
+      _items = _parse(res);
+      _afterPage(res, _items.length);
     } on ApiException catch (e) {
       _error = e.message;
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+    _fillViewport();
+  }
+
+  Json _query(int page) {
+    final size = c.pageSize;
+    return {
+      if (c.searchParam != null && _search.isNotEmpty) c.searchParam!: _search,
+      if (c.filterOf == null && _filter != null && _filter != 'all' && _filter!.isNotEmpty) c.filterParam: _filter,
+      if (size != null) 'limit': size,
+      if (size != null) c.offsetPaging ? 'offset' : 'page': c.offsetPaging ? (page - 1) * size : page,
+    };
+  }
+
+  List<Json> _parse(dynamic res) => c.parse != null ? c.parse!(res) : extractList(res, listKey: c.listKey);
+
+  void _afterPage(dynamic res, int got) {
+    final size = c.pageSize;
+    _total = totalOf(res);
+    _hasMore = size != null && hasMorePages(res, page: _page, got: got, loaded: _items.length, pageSize: size);
+  }
+
+  Future<void> _loadMore() async {
+    if (!_hasMore || _loadingMore || _loading) return;
+    setState(() => _loadingMore = true);
+    try {
+      _page++;
+      final res = await c.fetch(_query(_page));
+      final got = _parse(res);
+      _items = [..._items, ...got];
+      _afterPage(res, got.length);
+    } on ApiException catch (e) {
+      _page--;
+      if (mounted) showToast(context, e.message);
+    } finally {
+      if (mounted) setState(() => _loadingMore = false);
+    }
+    _fillViewport();
+  }
+
+  // A short first page (or a client filter hiding most rows) leaves nothing
+  // to scroll, so the scroll listener would never ask for page two.
+  void _fillViewport() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _hasMore && _scroll.hasClients && _scroll.position.maxScrollExtent < 200) _loadMore();
+    });
   }
 
   List<Json> get _visible {
@@ -462,6 +524,8 @@ class _CrudListScreenState extends State<CrudListScreen> {
                 emptyHint: _search.isNotEmpty ? null : c.emptyHint,
                 child: RefreshableList(
                   onRefresh: _load,
+                  controller: _scroll,
+                  loadingMore: _loadingMore,
                   hasFab: _canCreate,
                   header: header,
                   itemCount: visible.length,
@@ -483,15 +547,25 @@ class _CrudListScreenState extends State<CrudListScreen> {
                 ),
               ),
             ),
-            if (c.fetchLimitNote != null && _items.isNotEmpty)
+            if (_countNote() case final note?)
               Padding(
                 padding: const EdgeInsets.fromLTRB(Gap.page, 0, Gap.page, Gap.sm),
-                child: Text(c.fetchLimitNote!, style: TextStyle(fontSize: 11.5, color: context.colors.onSurfaceVariant)),
+                child: Text(note, style: TextStyle(fontSize: 11.5, color: context.colors.onSurfaceVariant)),
               ),
           ],
         ),
       ),
     );
+  }
+
+  /// How much of the list is on screen, so a partial list never reads as
+  /// the whole thing.
+  String? _countNote() {
+    if (_items.isEmpty) return null;
+    if (c.pageSize != null && (_hasMore || (_total ?? 0) > _items.length)) {
+      return _total != null ? '${_items.length} dari $_total dimuat · gulir untuk memuat lagi' : '${_items.length} dimuat · gulir untuk memuat lagi';
+    }
+    return c.fetchLimitNote;
   }
 
   /// Actions may call the API directly; surface failures as a toast

@@ -129,15 +129,26 @@ class InfoRow extends StatelessWidget {
           ),
           if (trailing != null) trailing!,
           if (copyable)
-            InkResponse(
-              radius: 18,
-              onTap: () {
-                Clipboard.setData(ClipboardData(text: value ?? ''));
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$label disalin')));
-              },
-              child: Padding(
-                padding: const EdgeInsets.only(left: Gap.sm),
-                child: Icon(Icons.copy_rounded, size: 16, color: context.colors.onSurfaceVariant),
+            // 44x44 target that overlaps the row's own vertical padding, so
+            // the row keeps its height while the icon stays easy to hit.
+            SizedBox(
+              width: 36,
+              height: 20,
+              child: OverflowBox(
+                maxWidth: 44,
+                maxHeight: 44,
+                child: IconButton(
+                  tooltip: 'Salin $label',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(width: 44, height: 44),
+                  iconSize: 16,
+                  color: context.colors.onSurfaceVariant,
+                  icon: const Icon(Icons.copy_rounded),
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: value ?? ''));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$label disalin')));
+                  },
+                ),
               ),
             ),
         ],
@@ -225,7 +236,7 @@ class ActionBar extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: context.colors.surface,
-        border: Border(top: BorderSide(color: context.colors.outline)),
+        border: Border(top: BorderSide(color: context.colors.outlineVariant)),
       ),
       padding: const EdgeInsets.fromLTRB(Gap.page, Gap.md, Gap.page, Gap.md),
       child: SafeArea(top: false, child: row),

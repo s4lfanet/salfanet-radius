@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../core/api/api_client.dart';
 import '../../core/crud/crud_list_screen.dart';
 import '../../core/crud/lookups.dart';
+import '../../core/crud/paging.dart';
 import '../../core/files.dart';
 import '../../core/formatters.dart';
 import '../../core/forms/field_spec.dart';
@@ -59,14 +60,13 @@ class _KeuanganScreenState extends State<KeuanganScreen> {
     });
     try {
       final r = _range;
-      final res = await ApiClient.instance.get(
+      _tx = await fetchAllPages(
         '/api/keuangan/transactions',
-        query: {'limit': 100, 'type': _type, if (r != null) 'startDate': r.$1, if (r != null) 'endDate': r.$2},
+        listKey: 'transactions',
+        pageSize: 200,
+        query: {'type': _type, if (r != null) 'startDate': r.$1, if (r != null) 'endDate': r.$2},
+        onFirst: (res) => _stats = res is Map<String, dynamic> ? mapOf(res, 'stats') : null,
       );
-      if (res is Map<String, dynamic>) {
-        _tx = ((res['transactions'] as List?) ?? []).map((e) => (e as Map).cast<String, dynamic>()).toList();
-        _stats = mapOf(res, 'stats');
-      }
     } on ApiException catch (e) {
       _error = e.message;
     } finally {

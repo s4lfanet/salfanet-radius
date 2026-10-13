@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/crud/paging.dart';
 import '../../core/api/api_client.dart';
 import '../../core/formatters.dart';
 import '../../core/theme/app_theme.dart';
@@ -35,11 +36,13 @@ class _ReferralListScreenState extends State<ReferralListScreen> {
       _error = null;
     });
     try {
-      final res = await ApiClient.instance.get('/api/admin/referrals', query: {'limit': 100, if (_status.isNotEmpty) 'status': _status});
-      if (res is Map<String, dynamic>) {
-        _rewards = ((res['rewards'] as List?) ?? []).map((e) => (e as Map).cast<String, dynamic>()).toList();
-        _stats = mapOf(res, 'stats');
-      }
+      _rewards = await fetchAllPages(
+        '/api/admin/referrals',
+        listKey: 'rewards',
+        pageSize: 200,
+        query: {if (_status.isNotEmpty) 'status': _status},
+        onFirst: (res) => _stats = res is Map<String, dynamic> ? mapOf(res, 'stats') : null,
+      );
     } on ApiException catch (e) {
       _error = e.message;
     } finally {
@@ -145,7 +148,7 @@ class _ReferralListScreenState extends State<ReferralListScreen> {
                           valueSize: 16,
                         ),
                       ),
-                      Container(width: 1, height: 36, color: context.colors.outline),
+                      Container(width: 1, height: 36, color: context.colors.outlineVariant),
                       const SizedBox(width: Gap.lg),
                       Expanded(
                         child: LabeledFigure(label: 'Pelanggan dari referral', value: '${numOf(s, 'referredUsers')}', valueSize: 16),
