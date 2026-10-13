@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
+import { handleInvoicePayment } from '@/server/services/payment/invoice-payment.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,62 +49,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Mark as paid
-    await prisma.qrisPending.update({
-      where: { id: pending.id },
-      data: {
-        status: 'paid',
-        sourceApp: sourceApp || 'test.simulation',
-        paidAt: now,
-      },
+    // Same path as a real listener notification, so the simulation tests
+    // what customers will actually get: payment record, Keuangan, isolation
+    // lifted, notifications.
+    const claimed = await prisma.qrisPending.updateMany({
+      where: { id: pending.id, status: 'pending' },
+      data: { status: 'paid', sourceApp: sourceApp || 'test.simulation', paidAt: now },
     });
-
-    // Update invoice
-    if (pending.invoiceId) {
-      const invoice = await prisma.invoice.findUnique({ where: { id: pending.invoiceId } });
-      if (invoice && invoice.status !== 'PAID') {
-        await prisma.invoice.update({
-          where: { id: invoice.id },
-          data: { status: 'PAID', paidAt: now },
-        });
-
-        // Extend subscription if user exists
-        if (invoice.userId) {
-          const user = await prisma.pppoeUser.findUnique({
-            where: { id: invoice.userId },
-            include: { profile: true },
-          });
-
-          if (user && user.profile) {
-            let newExpiry = user.expiredAt || now;
-            const validity = user.profile.validityValue || 1;
-            if (user.profile.validityUnit === 'MONTHS') {
-              newExpiry = new Date(newExpiry.setMonth(newExpiry.getMonth() + validity));
-            } else {
-              newExpiry = new Date(newExpiry.setDate(newExpiry.getDate() + validity));
-            }
-
-            await prisma.pppoeUser.update({
-              where: { id: user.id },
-              data: {
-                expiredAt: newExpiry,
-                lastPaymentDate: now,
-                status: 'active',
-              },
-            });
-          }
-        }
-      }
+    if (claimed.count === 0) {
+      return NextResponse.json({ success: true, message: 'Sudah diproses sebelumnya', invoiceId: pending.invoiceId });
     }
+    await handleInvoicePayment(pending.orderId, 'settlement', 'qris_own', 'simulation', now, pending.id);
 
     return NextResponse.json({
       success: true,
       message: 'Simulasi pembayaran QRIS berhasil',
       invoiceId: pending.invoiceId,
-      orderId: pending.orderId,
-      baseAmount: pending.baseAmount,
-      uniqueAmount: pending.uniqueAmount,
-      sourceApp: sourceApp || 'test.simulation',
+      amount: pending.uniqueAmount,
+      paidAt: now.toISOString(),
     });
   } catch (error) {
     console.error('[QRIS Test] Error:', error);

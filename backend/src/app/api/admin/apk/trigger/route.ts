@@ -1440,6 +1440,17 @@ class QrisNotificationListener : NotificationListenerService() {
             "com.bca.mobile"       to "BCA Mobile",
             "com.mandiri.smartpay" to "Mandiri",
             "com.beatcom.network"  to "Mandiri",
+            "id.bmri.livin"        to "Livin Mandiri",
+            "ovo.id"               to "OVO",
+            "com.telkom.mwallet"   to "LinkAja",
+            "src.com.bni"          to "BNI Mobile",
+        )
+
+        // Money going out also says "diterima"/"masuk" ("Pesanan diterima
+        // Rp..."); such notifications must never be reported as a payment.
+        private val OUTGOING_HINTS = listOf(
+            "transfer ke", "kirim ke", "bayar ke", "berhasil bayar", "pembelian", "belanja",
+            "pesanan", "kamu membayar", "anda membayar", "transaksi keluar", "debit", "top up ke", "tarik tunai",
         )
 
         private val BLOCKED_APPS = setOf(
@@ -1499,7 +1510,9 @@ class QrisNotificationListener : NotificationListenerService() {
         const val PREF_DEBUG_LAST_EWALLET    = "debug_last_ewallet"
         const val PREF_DEBUG_LAST_RESULT     = "debug_last_result"
         const val PREF_DEBUG_LAST_10         = "debug_last_10"
-
+        // Payments that could not be delivered (offline, server down); retried.
+        const val PREF_QUEUE                 = "pending_queue"
+        private const val QUEUE_MAX_AGE_MS   = 24 * 60 * 60 * 1000L
         private val timeFmt = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
     }
 
@@ -1510,6 +1523,13 @@ class QrisNotificationListener : NotificationListenerService() {
 
     private val recentlySent = mutableMapOf<Int, Long>()
 
+    private val queueHandler = Handler(Looper.getMainLooper())
+    private val flushRunnable: Runnable = object : Runnable {
+        override fun run() {
+            scope.launch { flushQueue() }
+            if (queueSize() > 0) queueHandler.postDelayed(this, 60_000L)
+        }
+    }
     private val rebindHandler = Handler(Looper.getMainLooper())
     private var rebindRetryCount = 0
     private val maxRebindRetries = 36
@@ -1540,6 +1560,7 @@ class QrisNotificationListener : NotificationListenerService() {
         prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         createNotifChannels()
         QrisWatchdogWorker.schedule(this)
+        if (queueSize() > 0) queueHandler.postDelayed(flushRunnable, 5_000L)
         tts = TextToSpeech(this) { status ->
             if (status == TextToSpeech.SUCCESS) {
                 val result = tts?.setLanguage(Locale("in", "ID"))
@@ -1586,6 +1607,7 @@ class QrisNotificationListener : NotificationListenerService() {
     override fun onDestroy() {
         super.onDestroy()
         rebindHandler.removeCallbacks(rebindRunnable)
+        queueHandler.removeCallbacks(flushRunnable)
         prefs.edit().putBoolean(PREF_DEBUG_CONNECTED, false).apply()
         tts?.stop()
         tts?.shutdown()
@@ -1598,8 +1620,9 @@ class QrisNotificationListener : NotificationListenerService() {
         val packageName = sbn.packageName ?: return
 
         if (packageName in BLOCKED_APPS) return
-
-        val appLabel = MONITORED_APPS[packageName]
+        // Only payment apps are read at all; anything else (OTP, shopping,
+        // news...) never leaves the phone.
+        val appLabel = MONITORED_APPS[packageName] ?: return
         val notification = sbn.notification ?: return
 
         val category = notification.category
@@ -1633,7 +1656,7 @@ class QrisNotificationListener : NotificationListenerService() {
         val deviceSecret = prefs.getString(PREF_DEVICE_SECRET, "") ?: ""
         if (serverUrl.isEmpty() || deviceKey.isEmpty()) return
 
-        val displayLabel = appLabel ?: packageName
+        val displayLabel = appLabel
 
         Log.d(TAG, "[\${displayLabel}] \${rawText}")
 
@@ -1641,17 +1664,21 @@ class QrisNotificationListener : NotificationListenerService() {
             .putString(PREF_DEBUG_LAST_EWALLET, "[\${packageName}]\\n\${rawText}")
             .apply()
 
-        val amount = extractAmount(rawText)
-
-        if (amount == null) {
-            // Pola tidak cocok — tetap kirim raw_text ke server dengan amount=0
-            // Server punya fallback parsing (sama seperti PHP qris_notify.php)
-            Log.w(TAG, "[\${displayLabel}] Pola tidak cocok, kirim raw_text ke server untuk parsing")
+        if (deviceSecret.isEmpty()) {
             prefs.edit().putString(PREF_DEBUG_LAST_RESULT,
-                "Pola tidak cocok, kirim ke server:\\n\${rawText.take(150)}").apply()
-            scope.launch {
-                sendToServer(serverUrl, deviceKey, deviceSecret, 0, packageName, rawText.take(255))
-            }
+                "Device Secret belum diisi. Salin dari Payment Gateway > QRIS Mandiri di panel admin.").apply()
+            return
+        }
+        val lower = rawText.lowercase(Locale.ROOT)
+        if (OUTGOING_HINTS.any { lower.contains(it) }) {
+            prefs.edit().putString(PREF_DEBUG_LAST_RESULT, "Uang keluar, diabaikan:\\n\${rawText.take(150)}").apply()
+            return
+        }
+        val amount = extractAmount(rawText)
+        if (amount == null) {
+            // Not a recognisable incoming payment: keep it on the phone.
+            prefs.edit().putString(PREF_DEBUG_LAST_RESULT,
+                "Bukan notifikasi uang masuk, tidak dikirim:\\n\${rawText.take(150)}").apply()
             return
         }
 
@@ -1670,9 +1697,9 @@ class QrisNotificationListener : NotificationListenerService() {
         prefs.edit().putString(PREF_DEBUG_LAST_RESULT, "Mengirim Rp\${amount} ke server...").apply()
 
         playPaymentAlert(displayLabel, amount)
-
         scope.launch {
             sendToServer(serverUrl, deviceKey, deviceSecret, amount, packageName, rawText.take(255))
+            if (queueSize() > 0) flushQueue()
         }
     }
 
@@ -1802,14 +1829,16 @@ class QrisNotificationListener : NotificationListenerService() {
         return null
     }
 
+    /** Sends one payment; returns true when the server gave a final answer. */
     private fun sendToServer(
         serverUrl: String,
         deviceKey: String,
         deviceSecret: String,
         amount: Int,
         sourceApp: String,
-        rawText: String
-    ) {
+        rawText: String,
+        queueOnFailure: Boolean = true,
+    ): Boolean {
         try {
             val url  = URL(serverUrl)
             val conn = url.openConnection() as HttpURLConnection
@@ -1820,57 +1849,93 @@ class QrisNotificationListener : NotificationListenerService() {
                 doOutput       = true
                 setRequestProperty("Content-Type", "application/json; charset=utf-8")
                 setRequestProperty("Accept", "application/json")
-                setRequestProperty("X-QRIS-Client", "SalfanetAndroid/3.0")
+                setRequestProperty("X-QRIS-Client", "SalfanetAndroid/3.1")
             }
-
+            // Signed fresh on every attempt: the server only accepts a
+            // timestamp within 5 minutes and each nonce once.
             val ts = System.currentTimeMillis() / 1000
             val nonce = java.util.UUID.randomUUID().toString().replace("-", "")
-
+            val canonical = "$deviceKey|$amount|$ts|$nonce"
+            val mac = javax.crypto.Mac.getInstance("HmacSHA256")
+            mac.init(javax.crypto.spec.SecretKeySpec(deviceSecret.toByteArray(Charsets.UTF_8), "HmacSHA256"))
+            val sig = mac.doFinal(canonical.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
             val payload = JSONObject().apply {
                 put("device_key", deviceKey)
                 put("amount",     amount)
                 put("source_app", sourceApp)
                 put("raw_text",   rawText)
                 put("timestamp",  ts)
-
-                // V2 signature if device_secret is configured
-                if (deviceSecret.isNotEmpty()) {
-                    val canonical = "$deviceKey|$amount|$ts|$nonce"
-                    val mac = javax.crypto.Mac.getInstance("HmacSHA256")
-                    val secretKey = javax.crypto.spec.SecretKeySpec(deviceSecret.toByteArray(Charsets.UTF_8), "HmacSHA256")
-                    mac.init(secretKey)
-                    val sigBytes = mac.doFinal(canonical.toByteArray(Charsets.UTF_8))
-                    val sig = sigBytes.joinToString("") { "%02x".format(it) }
-                    put("nonce", nonce)
-                    put("signature", sig)
-                }
+                put("nonce",      nonce)
+                put("signature",  sig)
             }
-
             conn.outputStream.use { os: OutputStream -> os.write(payload.toString().toByteArray(Charsets.UTF_8)) }
-
             val responseCode = conn.responseCode
-            val response = conn.inputStream.bufferedReader().readText()
+            val stream = if (responseCode in 200..299) conn.inputStream else conn.errorStream
+            val response = stream?.bufferedReader()?.readText() ?: ""
             conn.disconnect()
-
             Log.i(TAG, "Server [\${responseCode}]: \${response}")
-
-            val resultMsg = if (responseCode == 200) {
-                val json = JSONObject(response)
-                if (json.optBoolean("success")) {
-                    "COCOK: Nominal Rp\${amount} dikirim ke server"
-                } else {
-                    "Server: \${json.optString("error")}"
-                }
-            } else {
-                "HTTP \${responseCode} dari server"
+            val json = try { JSONObject(response) } catch (_: Exception) { JSONObject() }
+            if (responseCode >= 500 || responseCode == 429) {
+                if (queueOnFailure) enqueue(amount, sourceApp, rawText)
+                prefs.edit().putString(PREF_DEBUG_LAST_RESULT,
+                    "Server sibuk (HTTP \${responseCode}), Rp\${amount} diantrikan untuk dikirim ulang").apply()
+                return false
             }
-
+            val resultMsg = when {
+                json.optBoolean("success") -> "TERCATAT: Rp\${amount} lunas di server"
+                responseCode == 401 -> "Ditolak server: " + json.optString("error", "kunci tidak cocok")
+                else -> "Server: " + json.optString("error", "HTTP " + responseCode)
+            }
             prefs.edit().putString(PREF_DEBUG_LAST_RESULT, resultMsg).apply()
-
+            return true
         } catch (e: Exception) {
             Log.e(TAG, "Gagal kirim ke server: \${e.message}")
-            prefs.edit().putString(PREF_DEBUG_LAST_RESULT, "Error: \${e.message?.take(80)}").apply()
+            if (queueOnFailure) enqueue(amount, sourceApp, rawText)
+            prefs.edit().putString(PREF_DEBUG_LAST_RESULT,
+                "Offline: Rp\${amount} diantrikan, dikirim ulang otomatis").apply()
+            return false
         }
+    }
+
+    private fun readQueue(): JSONArray =
+        try { JSONArray(prefs.getString(PREF_QUEUE, "[]") ?: "[]") } catch (_: Exception) { JSONArray() }
+
+    private fun queueSize() = readQueue().length()
+
+    @Synchronized
+    private fun enqueue(amount: Int, sourceApp: String, rawText: String) {
+        val q = readQueue()
+        for (i in 0 until q.length()) {
+            val e = q.getJSONObject(i)
+            if (e.optInt("amount") == amount && e.optString("raw") == rawText) return
+        }
+        q.put(JSONObject().put("amount", amount).put("app", sourceApp).put("raw", rawText).put("at", System.currentTimeMillis()))
+        prefs.edit().putString(PREF_QUEUE, q.toString()).apply()
+        queueHandler.removeCallbacks(flushRunnable)
+        queueHandler.postDelayed(flushRunnable, 60_000L)
+    }
+
+    /**
+     * Retries queued payments. A payment that arrives after its QR expired
+     * is still sent: the server records it in the webhook log so the admin
+     * can match it by hand instead of it vanishing.
+     */
+    @Synchronized
+    private fun flushQueue() {
+        val serverUrl = prefs.getString(PREF_SERVER_URL, "") ?: ""
+        val deviceKey = prefs.getString(PREF_DEVICE_KEY, "") ?: ""
+        val deviceSecret = prefs.getString(PREF_DEVICE_SECRET, "") ?: ""
+        if (serverUrl.isEmpty() || deviceKey.isEmpty() || deviceSecret.isEmpty()) return
+        val q = readQueue()
+        val keep = JSONArray()
+        val now = System.currentTimeMillis()
+        for (i in 0 until q.length()) {
+            val e = q.getJSONObject(i)
+            if (now - e.optLong("at") > QUEUE_MAX_AGE_MS) continue
+            val done = sendToServer(serverUrl, deviceKey, deviceSecret, e.optInt("amount"), e.optString("app"), e.optString("raw"), queueOnFailure = false)
+            if (!done) keep.put(e)
+        }
+        prefs.edit().putString(PREF_QUEUE, keep.toString()).apply()
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
