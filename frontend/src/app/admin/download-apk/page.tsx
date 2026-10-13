@@ -259,9 +259,9 @@ function RoleCard({
               <div>
                 <div className="flex items-center gap-1.5">
                   <XCircle className="w-3.5 h-3.5" />
-                  <span>Build gagal · {formatTime(status.finishedAt)}</span>
+                  <span>{status.status === 'stale' ? 'Build berhenti tanpa kabar (lebih dari 15 menit)' : 'Build gagal'} · {formatTime(status.finishedAt ?? status.startedAt)}</span>
                 </div>
-                {status.error && <p className="text-[10px] opacity-70 mt-0.5 pl-5 truncate">{status.error}</p>}
+                {status.error && <pre className="mt-1 ml-5 max-h-40 overflow-auto whitespace-pre-wrap break-words rounded bg-black/5 p-2 font-mono text-[11px] leading-snug dark:bg-white/5">{status.error}</pre>}
               </div>
             )}
           </div>

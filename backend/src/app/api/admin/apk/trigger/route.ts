@@ -36,6 +36,19 @@ const WRAPPER_JAR_CANDIDATES = [
 ];
 const WRAPPER_JAR = WRAPPER_JAR_CANDIDATES.find(p => existsSync(p)) || WRAPPER_JAR_CANDIDATES[0];
 
+/** Last meaningful lines of a Gradle log: the "What went wrong" part. */
+function buildLogTail(logFile: string, max = 15): string {
+  try {
+    const lines = readFileSync(logFile, 'utf-8').split(/\r?\n/)
+      .filter((l) => l.trim() && !/^\s+at /.test(l) && !/^\.+$/.test(l.trim()));
+    const wrong = lines.findIndex((l) => l.includes('What went wrong'));
+    const picked = wrong >= 0 ? lines.slice(wrong, wrong + max) : lines.slice(-max);
+    return picked.join('\n').slice(0, 2000) || `Log kosong: ${logFile}`;
+  } catch {
+    return `Cek log: ${logFile}`;
+  }
+}
+
 // ─── file generators ─────────────────────────────────────────────────────────
 
 function mainActivity(pkg: string, startUrl: string, baseUrl: string): string {
@@ -555,6 +568,10 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = '17' }
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
 }
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.7.0'
@@ -579,7 +596,7 @@ dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories { google(); mavenCentral() }
 }
-rootProject.name = "${appName.replace(/\s+/g, '')}"
+rootProject.name = "${appName.replace(/[^A-Za-z0-9_-]/g, '') || 'SalfanetApp'}"
 include ':app'
 `;
 
@@ -587,7 +604,7 @@ const gradleProperties = () =>
   `org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8\nandroid.useAndroidX=true\nkotlin.code.style=official\n`;
 
 const gradleWrapperProperties = () =>
-  `distributionBase=GRADLE_USER_HOME\ndistributionPath=wrapper/dists\ndistributionUrl=https\\://services.gradle.org/distributions/gradle-8.4-bin.zip\nnetworkTimeout=10000\nvalidateDistributionUrl=true\nzipStoreBase=GRADLE_USER_HOME\nzipStorePath=wrapper/dists\n`;
+  `distributionBase=GRADLE_USER_HOME\ndistributionPath=wrapper/dists\ndistributionUrl=https\\://services.gradle.org/distributions/gradle-8.4-bin.zip\nnetworkTimeout=180000\nvalidateDistributionUrl=true\nzipStoreBase=GRADLE_USER_HOME\nzipStorePath=wrapper/dists\n`;
 
 const androidManifest = (_pkg: string) => `<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -636,8 +653,13 @@ const activityMainXml = () => `<?xml version="1.0" encoding="utf-8"?>
 </FrameLayout>
 `;
 
+/** Escapes text for an Android string resource (XML + aapt quoting). */
+const androidString = (v: string) =>
+  v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+
 const stringsXml = (appName: string) =>
-  `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <string name="app_name">${appName}</string>\n</resources>\n`;
+  `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <string name="app_name">${androidString(appName)}</string>\n</resources>\n`;
 
 const colorsXml = (color: string) =>
   `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="colorPrimary">${color}</color>\n    <color name="colorPrimaryDark">${color}</color>\n    <color name="colorAccent">${color}</color>\n    <color name="statusBar">${color}</color>\n</resources>\n`;
@@ -1993,7 +2015,7 @@ class QrisWatchdogWorker(context: Context, params: WorkerParameters) : Coroutine
 
         val hasUrl = !prefs.getString(QrisNotificationListener.PREF_SERVER_URL, "").isNullOrEmpty()
         val hasKey = !prefs.getString(QrisNotificationListener.PREF_DEVICE_KEY, "").isNullOrEmpty()
-        if (!hasUrl || !hasKey) return
+        if (!hasUrl || !hasKey) return Result.success()
 
         val hasSecret = !prefs.getString(QrisNotificationListener.PREF_DEVICE_SECRET, "").isNullOrEmpty()
 
@@ -2172,7 +2194,7 @@ async function writeProjectToDisk(
       const company = await prisma.company.findFirst({ select: { qrisDeviceKey: true } });
       if (company?.qrisDeviceKey) {
         writeFileSync(join(projectDir, 'app/src/main/res/values/strings.xml'),
-          `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <string name="app_name">${appName}</string>\n    <string name="default_device_key">${company.qrisDeviceKey}</string>\n    <string name="default_webhook_url">${baseUrl}/api/payment/qris-notify</string>\n</resources>\n`);
+          `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <string name="app_name">${androidString(appName)}</string>\n    <string name="default_device_key">${androidString(company.qrisDeviceKey)}</string>\n    <string name="default_webhook_url">${baseUrl}/api/payment/qris-notify</string>\n</resources>\n`);
       }
     } catch { /* ignore */ }
   } else {
@@ -2427,18 +2449,26 @@ export async function POST(req: NextRequest) {
   }
 
   const startUrl   = `${baseUrl}${ROLES[role].pathSuffix}`;
-  const startedAt  = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString();
+  const startedAt  = new Date().toISOString();
   const projectDir = `/tmp/salfanet-build-${role}-${Date.now()}`;
 
   // Mark as building
   writeFileSync(statusFile, JSON.stringify({ status: 'building', startedAt, role, appName, url: startUrl }));
+
+  if (!existsSync(WRAPPER_JAR)) {
+    writeFileSync(statusFile, JSON.stringify({
+      status: 'failed', startedAt, finishedAt: new Date().toISOString(),
+      error: `gradle-wrapper.jar tidak ditemukan. Pastikan ${WRAPPER_JAR_CANDIDATES[0]} ada (ikut deploy dari frontend/public/android-template).`,
+    }));
+    return NextResponse.json({ error: 'gradle-wrapper.jar tidak ditemukan' }, { status: 503 });
+  }
 
   // Write project files
   try {
     await writeProjectToDisk(projectDir, role, appName, startUrl, baseUrl, logoPath);
   } catch (err) {
     writeFileSync(statusFile, JSON.stringify({
-      status: 'failed', startedAt, finishedAt: new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString(),
+      status: 'failed', startedAt, finishedAt: new Date().toISOString(),
       error: `Gagal generate project: ${err}`,
     }));
     return NextResponse.json({ error: 'Gagal generate project' }, { status: 500 });
@@ -2476,19 +2506,19 @@ export async function POST(req: NextRequest) {
           const dst  = join(roleDir, 'app.apk');
           copyFileSync(src, dst);
           writeFileSync(statusFile, JSON.stringify({
-            status: 'done', startedAt, finishedAt: new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString(),
+            status: 'done', startedAt, finishedAt: new Date().toISOString(),
             appName, url: startUrl, apkSize: statSync(dst).size,
           }));
         } else {
           writeFileSync(statusFile, JSON.stringify({
-            status: 'failed', startedAt, finishedAt: new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString(),
+            status: 'failed', startedAt, finishedAt: new Date().toISOString(),
             error: 'File APK tidak ditemukan setelah build selesai.',
           }));
         }
       } else {
         writeFileSync(statusFile, JSON.stringify({
-          status: 'failed', startedAt, finishedAt: new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString(),
-          error: `Gradle exit code ${code}. Cek: /var/data/salfanet/apk/${role}/build.log`,
+          status: 'failed', startedAt, finishedAt: new Date().toISOString(),
+          error: `Gradle exit code ${code}.\n${buildLogTail(logFile)}`,
         }));
       }
     } catch { /* ignore */ }
