@@ -5,6 +5,14 @@ import crypto from 'crypto';
 
 export const dynamic = 'force-dynamic';
 
+/** Constant-time comparison for webhook signatures and tokens. */
+function safeEqual(received: unknown, expected: string): boolean {
+  if (typeof received !== 'string' || !received) return false;
+  const a = Buffer.from(received);
+  const b = Buffer.from(expected);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
 /**
  * Some Midtrans account/merchant configurations resolve the browser's post-payment
  * redirect to this notification URL instead of the per-transaction `callbacks.finish`
@@ -117,10 +125,10 @@ export async function POST(request: Request) {
         console.log('[Midtrans] Signature validation:', {
           received: signatureKey?.substring(0, 20) + '...',
           expected: expectedSignature.substring(0, 20) + '...',
-          match: signatureKey === expectedSignature
+          match: safeEqual(signatureKey, expectedSignature)
         });
 
-        if (signatureKey !== expectedSignature) {
+        if (!safeEqual(signatureKey, expectedSignature)) {
           console.error('[Midtrans] Invalid signature');
           return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
         }
@@ -161,7 +169,7 @@ export async function POST(request: Request) {
       });
 
       if (gatewayConfig?.xenditWebhookToken && gatewayConfig.xenditWebhookToken.trim() !== '') {
-        if (!signature || signature !== gatewayConfig.xenditWebhookToken) {
+        if (!safeEqual(signature, gatewayConfig.xenditWebhookToken)) {
           console.error('[Xendit] Invalid or missing webhook token');
           return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
         }
@@ -190,7 +198,7 @@ export async function POST(request: Request) {
       });
 
       if (gatewayConfig?.xenditWebhookToken && gatewayConfig.xenditWebhookToken.trim() !== '') {
-        if (!signature || signature !== gatewayConfig.xenditWebhookToken) {
+        if (!safeEqual(signature, gatewayConfig.xenditWebhookToken)) {
           console.error('[Xendit FVA] Invalid or missing webhook token');
           return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
         }
@@ -234,7 +242,7 @@ export async function POST(request: Request) {
           .update(`${gatewayConfig.duitkuMerchantCode}${payload.amount}${orderId}${gatewayConfig.duitkuApiKey}`)
           .digest('hex');
 
-        if (receivedSignature !== expectedSignature) {
+        if (!safeEqual(receivedSignature, expectedSignature)) {
           console.error('[Duitku] Invalid signature');
           return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
         }
@@ -289,10 +297,10 @@ export async function POST(request: Request) {
         console.log('[Tripay] Signature validation:', {
           received: receivedSignature.substring(0, 16) + '...',
           expected: expectedSignature.substring(0, 16) + '...',
-          match: receivedSignature === expectedSignature
+          match: safeEqual(receivedSignature, expectedSignature)
         });
 
-        if (receivedSignature !== expectedSignature) {
+        if (!safeEqual(receivedSignature, expectedSignature)) {
           console.error('[Tripay] Invalid signature');
           return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
         }
