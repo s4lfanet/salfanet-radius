@@ -12,6 +12,8 @@ export const dynamic = 'force-dynamic';
  * Same patterns as QrisNotificationListener.kt PAYMENT_PATTERNS.
  */
 const PAYMENT_PATTERNS: RegExp[] = [
+  // "Kamu dapat/terima pembayaran|transfer Rp..." (merchant apps, transfers).
+  /(?:dapat|terima)\s+(?:pembayaran|transfer|uang|dana)\s*(?:sebesar\s*)?Rp\.?\s*(\d{1,3}(?:[.,]\d{3})*)/iu,
   /(?:menerima|diterima|masuk|received|transfer\s+masuk|pembayaran\s+masuk)[^Rp0-9]*[Rp\s]*(\d{1,3}(?:[.,]\d{3})*)/iu,
   /Rp\s*(\d{1,3}(?:[.,]\d{3})*)(?:\s*telah\s*diterima|\s*berhasil\s*diterima)/iu,
   /Rp\s*(\d{1,3}(?:[.,]\d{3})*)\s+dari\s+\S+\s+berhasil\s+diterima/iu,

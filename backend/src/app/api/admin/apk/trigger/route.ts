@@ -1079,6 +1079,15 @@ class MainActivity : AppCompatActivity() {
                 }
                 btnBatteryOpt
             })
+            addView(Button(this@MainActivity).apply {
+                text = "Izinkan Autostart / Jalan di Latar"
+                setTextColor(0xFFFFFFFF.toInt())
+                setBackgroundColor(0xFF37474F.toInt())
+                setOnClickListener { openAutostartSettings() }
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
+                ).apply { topMargin = dp(6); bottomMargin = dp(4) }
+            })
             addView(TextView(this@MainActivity).apply {
                 text = "Wajib dinonaktifkan agar service tidak dibunuh sistem saat di background. " +
                         "Xiaomi/Redmi tambahan: Pengaturan > Aplikasi > QRIS Listener > Aktifkan Autostart."
@@ -1235,6 +1244,38 @@ class MainActivity : AppCompatActivity() {
             pm.isIgnoringBatteryOptimizations(packageName)
         } catch (e: Exception) {
             true
+        }
+    }
+
+    /**
+     * Opens the vendor screen that lets an app start and stay running in
+     * the background. Without it Xiaomi, Oppo, Vivo, Realme and Huawei kill
+     * the listener soon after the screen turns off.
+     */
+    private fun openAutostartSettings() {
+        val candidates = listOf(
+            ComponentName("com.miui.securitycenter", "com.miui.permcenter.autostart.AutoStartManagementActivity"),
+            ComponentName("com.coloros.safecenter", "com.coloros.safecenter.permission.startup.StartupAppListActivity"),
+            ComponentName("com.coloros.safecenter", "com.coloros.safecenter.startupapp.StartupAppListActivity"),
+            ComponentName("com.oplus.safecenter", "com.oplus.safecenter.permission.startup.StartupAppListActivity"),
+            ComponentName("com.vivo.permissionmanager", "com.vivo.permissionmanager.activity.BgStartUpManagerActivity"),
+            ComponentName("com.iqoo.secure", "com.iqoo.secure.ui.phoneoptimize.BgStartUpManager"),
+            ComponentName("com.huawei.systemmanager", "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity"),
+            ComponentName("com.huawei.systemmanager", "com.huawei.systemmanager.optimize.process.ProtectActivity"),
+        )
+        for (c in candidates) {
+            try {
+                startActivity(Intent().setComponent(c).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                Toast.makeText(this, "Aktifkan \${getString(R.string.app_name)} di daftar ini", Toast.LENGTH_LONG).show()
+                return
+            } catch (_: Exception) {}
+        }
+        // Other phones: the app's own settings page (Baterai > Tidak dibatasi).
+        try {
+            startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:\${packageName}")))
+            Toast.makeText(this, "Pilih Baterai > Tidak dibatasi, dan izinkan aktivitas latar", Toast.LENGTH_LONG).show()
+        } catch (_: Exception) {
+            Toast.makeText(this, "Buka manual: Pengaturan > Aplikasi > QRIS Listener", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -1496,6 +1537,10 @@ class QrisNotificationListener : NotificationListenerService() {
 
         private val PAYMENT_PATTERNS = listOf(
             Pattern.compile(
+                """(?:dapat|terima)\\s+(?:pembayaran|transfer|uang|dana)\\s*(?:sebesar\\s*)?Rp\\.?\\s*(\\d{1,3}(?:[.,]\\d{3})*)""",
+                Pattern.CASE_INSENSITIVE
+            ),
+            Pattern.compile(
                 """(?:menerima|diterima|masuk|received|transfer\\s+masuk|pembayaran\\s+masuk)[^Rp0-9]*[Rp\\s]*(\\d{1,3}(?:[.,]\\d{3})*)""",
                 Pattern.CASE_INSENSITIVE
             ),
@@ -1534,6 +1579,17 @@ class QrisNotificationListener : NotificationListenerService() {
         const val PREF_DEBUG_LAST_10         = "debug_last_10"
         // Payments that could not be delivered (offline, server down); retried.
         const val PREF_QUEUE                 = "pending_queue"
+        // Written while the listener is bound; the watchdog uses its age to
+        // tell a live listener from one the system killed silently.
+        const val PREF_HEARTBEAT             = "heartbeat_at"
+
+        // A notification from an app outside MONITORED_APPS (merchant apps,
+        // other banks) is used only when it clearly reports money coming in.
+        private val INCOMING_HINTS = listOf(
+            "menerima", "diterima", "dana masuk", "uang masuk", "saldo masuk", "transfer masuk",
+            "pembayaran masuk", "pembayaran diterima", "qris berhasil", "received",
+            "dapat pembayaran", "terima pembayaran", "dapat transfer", "terima transfer",
+        )
         private const val QUEUE_MAX_AGE_MS   = 24 * 60 * 60 * 1000L
         private val timeFmt = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
     }
@@ -1544,6 +1600,18 @@ class QrisNotificationListener : NotificationListenerService() {
     private var paymentNotifCounter = PAYMENT_NOTIF_BASE
 
     private val recentlySent = mutableMapOf<Int, Long>()
+
+    private val heartbeatHandler = Handler(Looper.getMainLooper())
+    private val heartbeatRunnable: Runnable = object : Runnable {
+        override fun run() {
+            beat()
+            heartbeatHandler.postDelayed(this, 5 * 60_000L)
+        }
+    }
+
+    private fun beat() {
+        prefs.edit().putLong(PREF_HEARTBEAT, System.currentTimeMillis()).putBoolean(PREF_DEBUG_CONNECTED, true).apply()
+    }
 
     private val queueHandler = Handler(Looper.getMainLooper())
     private val flushRunnable: Runnable = object : Runnable {
@@ -1608,6 +1676,8 @@ class QrisNotificationListener : NotificationListenerService() {
         startForegroundCompat()
         rebindHandler.removeCallbacks(rebindRunnable)
         rebindRetryCount = 0
+        heartbeatHandler.removeCallbacks(heartbeatRunnable)
+        heartbeatHandler.post(heartbeatRunnable)
         prefs.edit()
             .putBoolean(PREF_DEBUG_CONNECTED, true)
             .putString(PREF_DEBUG_CONNECTED_SINCE, timeFmt.format(Date()))
@@ -1620,6 +1690,7 @@ class QrisNotificationListener : NotificationListenerService() {
         prefs.edit()
             .putBoolean(PREF_DEBUG_CONNECTED, false)
             .apply()
+        heartbeatHandler.removeCallbacks(heartbeatRunnable)
         Log.w(TAG, "Listener terputus - memulai rebind retry loop...")
         rebindHandler.removeCallbacks(rebindRunnable)
         rebindRetryCount = 0
@@ -1630,6 +1701,7 @@ class QrisNotificationListener : NotificationListenerService() {
         super.onDestroy()
         rebindHandler.removeCallbacks(rebindRunnable)
         queueHandler.removeCallbacks(flushRunnable)
+        heartbeatHandler.removeCallbacks(heartbeatRunnable)
         prefs.edit().putBoolean(PREF_DEBUG_CONNECTED, false).apply()
         tts?.stop()
         tts?.shutdown()
@@ -1644,7 +1716,7 @@ class QrisNotificationListener : NotificationListenerService() {
         if (packageName in BLOCKED_APPS) return
         // Only payment apps are read at all; anything else (OTP, shopping,
         // news...) never leaves the phone.
-        val appLabel = MONITORED_APPS[packageName] ?: return
+        val knownLabel = MONITORED_APPS[packageName]
         val notification = sbn.notification ?: return
 
         val category = notification.category
@@ -1653,7 +1725,7 @@ class QrisNotificationListener : NotificationListenerService() {
             category == Notification.CATEGORY_SOCIAL) return
 
         val extras = notification.extras ?: return
-        val title   = extras.getString(Notification.EXTRA_TITLE) ?: ""
+        val title   = (extras.getCharSequence(Notification.EXTRA_TITLE) ?: extras.getCharSequence(Notification.EXTRA_TITLE_BIG))?.toString() ?: ""
         val text    = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
         val bigText = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString() ?: ""
         val textLines = extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES)
@@ -1663,6 +1735,7 @@ class QrisNotificationListener : NotificationListenerService() {
             .filter { it.isNotEmpty() }.distinct().joinToString(" | ")
 
         logRecentNotif(packageName, title)
+        beat()
 
         if (!prefs.getBoolean(PREF_DEBUG_CONNECTED, false)) {
             prefs.edit()
@@ -1678,7 +1751,7 @@ class QrisNotificationListener : NotificationListenerService() {
         val deviceSecret = prefs.getString(PREF_DEVICE_SECRET, "") ?: ""
         if (serverUrl.isEmpty() || deviceKey.isEmpty()) return
 
-        val displayLabel = appLabel
+        val displayLabel = knownLabel ?: packageName
 
         Log.d(TAG, "[\${displayLabel}] \${rawText}")
 
@@ -1694,6 +1767,10 @@ class QrisNotificationListener : NotificationListenerService() {
         val lower = rawText.lowercase(Locale.ROOT)
         if (OUTGOING_HINTS.any { lower.contains(it) }) {
             prefs.edit().putString(PREF_DEBUG_LAST_RESULT, "Uang keluar, diabaikan:\\n\${rawText.take(150)}").apply()
+            return
+        }
+        if (knownLabel == null && INCOMING_HINTS.none { lower.contains(it) }) {
+            // Not a payment app and not a payment text: never leaves the phone.
             return
         }
         val amount = extractAmount(rawText)
@@ -1977,6 +2054,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings
 import android.service.notification.NotificationListenerService as NLS
@@ -2017,8 +2095,6 @@ class QrisWatchdogWorker(context: Context, params: WorkerParameters) : Coroutine
         val hasKey = !prefs.getString(QrisNotificationListener.PREF_DEVICE_KEY, "").isNullOrEmpty()
         if (!hasUrl || !hasKey) return Result.success()
 
-        val hasSecret = !prefs.getString(QrisNotificationListener.PREF_DEVICE_SECRET, "").isNullOrEmpty()
-
         if (!isNotificationAccessGranted(ctx)) {
             maybeAlertRevoked(ctx, prefs)
             return Result.success()
@@ -2028,14 +2104,34 @@ class QrisWatchdogWorker(context: Context, params: WorkerParameters) : Coroutine
         // Flag itu cuma di-set false lewat callback graceful (onDestroy/
         // onListenerDisconnected) — kalau OS membunuh proses secara paksa,
         // callback itu tidak pernah terpanggil, flag tetap basi bernilai true.
-        val svcIntent = Intent(ctx, QrisNotificationListener::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            ctx.startForegroundService(svcIntent)
-        } else {
-            ctx.startService(svcIntent)
+        val component = ComponentName(ctx, QrisNotificationListener::class.java)
+        val lastBeat = prefs.getLong(QrisNotificationListener.PREF_HEARTBEAT, 0L)
+        val silentMs = System.currentTimeMillis() - lastBeat
+
+        // A listener killed by the system is not rebound on its own on many
+        // phones. Disabling and re-enabling the component makes Android bind
+        // it again; done only after 20 minutes without a heartbeat.
+        if (silentMs > 20 * 60_000L) {
+            try {
+                val pm = ctx.packageManager
+                pm.setComponentEnabledSetting(component, PackageManager.COMPONENT_ENABLED_STATE_DISABLED, PackageManager.DONT_KILL_APP)
+                pm.setComponentEnabledSetting(component, PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP)
+            } catch (_: Exception) {}
         }
         try {
-            NLS.requestRebind(ComponentName(ctx, QrisNotificationListener::class.java))
+            NLS.requestRebind(component)
+        } catch (_: Exception) {}
+
+        // Android 12+ refuses to start a foreground service from the
+        // background unless the app is exempt from battery optimisation;
+        // that refusal used to crash this worker before the rebind above.
+        try {
+            val svcIntent = Intent(ctx, QrisNotificationListener::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                ctx.startForegroundService(svcIntent)
+            } else {
+                ctx.startService(svcIntent)
+            }
         } catch (_: Exception) {}
 
         return Result.success()
