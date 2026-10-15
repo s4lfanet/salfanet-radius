@@ -2,27 +2,9 @@ import { NextResponse } from 'next/server';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { execSync, execFileSync } from 'child_process';
 import { readFileSync, existsSync } from 'fs';
-import path from 'path';
+import { getAppDir, getAppVersion } from '@/server/app-version';
 
 export const dynamic = 'force-dynamic';
-
-function getAppDir(): string {
-  const candidates = [
-    process.env.SALFANET_APP_DIR,
-    '/var/www/salfanet-frontend',
-    '/var/www/salfanet-radius',
-    path.resolve(process.cwd(), '../..'),
-    process.cwd(),
-  ].filter(Boolean) as string[];
-
-  for (const dir of candidates) {
-    if (existsSync(path.join(dir, 'package.json'))) {
-      return dir;
-    }
-  }
-
-  return '/var/www/salfanet-radius';
-}
 
 function git(cmd: string, appDir: string): string {
   try {
@@ -42,15 +24,7 @@ export async function GET() {
 
   const appDir = getAppDir();
 
-  const pkgPath = path.join(appDir, 'package.json');
-  const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
-
-  // Prefer VERSION file (written by release CI with the tag name, e.g. "v2.12.0")
-  // so the displayed version always matches the installed release ZIP.
-  const versionFilePath = path.join(appDir, 'VERSION');
-  const appVersion = existsSync(versionFilePath)
-    ? readFileSync(versionFilePath, 'utf-8').trim().replace(/^v/, '')
-    : pkg.version;
+  const appVersion = getAppVersion(appDir);
 
   const localCommit  = git('git rev-parse HEAD', appDir);
   const shortCommit  = localCommit !== 'unknown' ? localCommit.slice(0, 7) : 'unknown';

@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.21.0 — Hotspot Session Sync Fixes + Dashboard Log Centralization + Invoice/PWA Fixes
+> **Version:** 5.22.0 - QRIS Mandiri untuk Semua Transaksi + Aplikasi Admin & Pelanggan Native + Biaya Operasional
 
 ---
 
@@ -1089,6 +1089,96 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.22.0 — 2026-10-15 - QRIS Mandiri untuk Semua Transaksi + Aplikasi Admin & Pelanggan Native + Biaya Operasional
+
+### Summary
+Rilis besar setelah 5.21.0 (130 commit). QRIS Mandiri kini dipakai untuk semua jenis pembayaran dengan satu jalur pelunasan yang sama seperti payment gateway, QRIS Listener jauh lebih andal dan mengumumkan pembayaran dengan suara, aplikasi Android native untuk admin dan pelanggan (Flutter) dengan push FCM, halaman Biaya Operasional, perbaikan besar OLT ZTE dan GenieACS, serta sejumlah perbaikan keamanan.
+
+### Pembayaran & QRIS Mandiri
+- **[FEATURE]** QRIS Mandiri tersedia untuk tagihan, top-up saldo, pembelian voucher online, upgrade paket, dan deposit agen: QR dinamis dengan kode unik, berlaku 15 menit, halaman bayar `/pay/qris/{orderId}`
+- **[FIX]** Pembayaran QRIS dilunasi lewat jalur yang sama dengan payment gateway (invoice, top-up, voucher, deposit agen), termasuk notifikasi dan pencatatan keuangan
+- **[FIX]** Top-up pelanggan benar-benar menambah saldo
+- **[SECURITY]** Notifikasi QRIS wajib bertanda tangan HMAC (Device Secret), dengan proteksi replay (nonce + jendela waktu 5 menit) dan perbandingan constant-time
+- **[FIX]** Satu jalur pelunasan deposit agen; webhook deposit agen memakai handler webhook utama
+- **[FIX]** Nomor pesanan voucher aman dari tabrakan (retry otomatis)
+- **[FIX]** Midtrans yang mengarahkan browser ke URL webhook tidak lagi menghasilkan 405
+- **[FIX]** Redirect pembayaran memakai domain publik, bukan origin proxy internal
+- **[UI]** Device Key dan Device Secret QRIS terlihat di halaman Payment Gateway (salin, tampilkan/sembunyikan, buat secret baru)
+- **[FEATURE]** Endpoint `qris-notify` menjawab GET dengan pesan status dan punya mode tes koneksi
+
+### QRIS Listener (APK Android)
+- **[FIX]** Notifikasi DANA ("Pembayaran Masuk", "Rp... diterima DANA Bisnis") tertangkap; judul notifikasi bergaya kini terbaca
+- **[FIX]** Service tetap hidup: heartbeat tiap 5 menit, watchdog memaksa Android mengikat ulang listener yang dimatikan sistem, antrean kirim ulang saat server tidak terjangkau
+- **[FIX]** Status "Aktif" dihitung dari heartbeat, bukan flag lama yang tetap "Terhubung" setelah service mati
+- **[FEATURE]** Tombol Tes Koneksi Server untuk memeriksa Device Key dan Device Secret
+- **[FEATURE]** Tombol Izinkan Autostart untuk Xiaomi, Oppo, Vivo, Realme, Huawei
+- **[FEATURE]** Pembayaran diumumkan dengan suara Bahasa Indonesia ("Pembayaran DANA diterima, tiga ribu delapan puluh enam rupiah") lewat volume media, menggantikan nada alarm; bisa dimatikan dan dites
+- **[FIX]** Build APK dari web: waktu build sesuai jam server, listener berhasil dikompilasi, pesan gagal lebih jelas
+
+### Aplikasi Admin Android (Flutter, baru)
+- **[FEATURE]** Aplikasi admin native di `mobile/admin_app` dengan tambah, ubah, hapus untuk semua modul admin web
+- **[FEATURE]** Laporan, pelanggan terisolir, fiber trace, Biaya Operasional
+- **[FEATURE]** Push notifikasi FCM untuk admin
+- **[FIX]** Semua data termuat (paginasi penuh), bukan hanya halaman pertama
+- **[UI]** Garis dan border lebih jelas, dashboard lebih lengkap, ikon aplikasi dari logo perusahaan
+- **[UI]** Program referral bernama "Ajak Teman"
+- **[FIX]** Layar yang tidak bisa di-scroll sampai bawah
+
+### Aplikasi Pelanggan Android (Flutter, baru)
+- **[FEATURE]** Aplikasi pelanggan native: tagihan, PDF invoice, tiket dengan GPS, branding operator dinamis, alamat server bisa diatur
+- **[FEATURE]** Push notifikasi FCM yang bisa diketuk; broadcast admin dan statistik dashboard memakai FCM
+- **[FEATURE]** Link unduh aplikasi Android di halaman login dan sidebar portal pelanggan
+
+### Keuangan & Billing
+- **[FEATURE]** Halaman Biaya Operasional (alat, bandwidth, gaji, dan lainnya) di web dan aplikasi admin
+- **[FEATURE]** Laporan pendapatan per paket
+- **[FIX]** Pelanggan prabayar tidak ditagih sebelum bulan expired-nya
+- **[FEATURE]** Cron membatalkan otomatis tagihan basi untuk pelanggan yang sudah diperpanjang
+- **[FIX]** Format nomor invoice seragam di seluruh sistem
+- **[FEATURE]** Lokasi GPS dicatat pada janji bayar
+
+### OLT & GenieACS
+- **[FIX]** ZTE C320 V2.1: discovery SNMP per port, rumus RX power, status (termasuk Dying Gasp/LOS) dan jarak lewat Telnet
+- **[FEATURE]** ZTE C320 V2.2: kesehatan chassis, TX power dan jarak ONU
+- **[FIX]** Penomoran port PON, port uplink SMXA, slot uplink standby
+- **[FIX]** OLT baru tidak lagi tertahan "Offline"; tes koneksi SNMP berfungsi; poller Telnet 3,1x lebih cepat
+- **[FIX]** Jumlah ONU tidak lagi dobel karena baris unregistered lama; staf bisa menghapus baris basi
+- **[UI]** Detail ONU didesain ulang berdasarkan kondisi ONU
+- **[FIX]** GenieACS: band 2.4GHz ONT WiFi 6 tidak lagi hilang, field detail perangkat lintas vendor terisi, mode PON, RX power dan voltase di daftar
+- **[SECURITY]** Peringatan NBI GenieACS tanpa autentikasi, dan port 7557 di-firewall otomatis oleh installer
+
+### RADIUS & MikroTik
+- **[FIX]** Status online, kesehatan RADIUS, IP/MAC sesi, dan error 500 pada detail
+- **[FIX]** Sinkronisasi NAS-client FreeRADIUS tidak lagi terlewat, dengan fallback live ke MikroTik
+- **[FIX]** Error socket RouterOS API tidak lagi menghentikan proses
+- **[FIX]** Uptime dari router lebih dipercaya daripada radacct yang tidak lengkap
+
+### Hotspot
+- **[FEATURE]** Template voucher bawaan termasuk 50 dan 60 per A4, Kartu Standar 50 per A4, ganti warna satu klik
+
+### Notifikasi
+- **[FIX]** Notifikasi admin dan pelanggan terkirim di setiap jalur pelunasan pembayaran
+- **[FIX]** Template pengingat, isolir, dan pembayaran berisi data pelanggan lengkap (paket, area, ID pelanggan)
+- **[FIX]** Bel notifikasi teknisi dan kolektor tidak crash saat polling
+- **[FEATURE]** Bot Telegram dua arah untuk teknisi (cek redaman, cek pelanggan)
+- **[FEATURE]** Banner promo slideshow di dashboard pelanggan
+
+### Keamanan
+- **[SECURITY]** Patch dua celah RCE Next.js tanpa autentikasi; kerentanan dependensi 27 menjadi 0
+- **[SECURITY]** Autentikasi wajib pada mutasi admin yang belum terlindungi, tiket, dan pesan tiket; hook RADIUS hanya dari localhost
+
+### Web UI
+- **[UI]** Latar logo login seragam di semua portal (tile putih solid di kedua tema, fallback ukuran sama)
+- **[UI]** Komponen toggle seragam; perbaikan audit UI frontend
+- **[FIX]** Padding bawah halaman admin dan kolektor
+
+### Sistem
+- **[FIX]** Versi aplikasi di web tidak lagi tertahan: file `VERSION` lama dari instalasi ZIP tidak menimpa versi yang lebih baru, folder aplikasi dicari dari lokasi server yang berjalan, dan endpoint health melaporkan versi yang sama
+- **[CHORE]** Bump versi root, frontend, dan backend ke 5.22.0
+- **[FIX]** Semua error typecheck backend dan frontend diselesaikan; lint backend berfungsi kembali
+
+---
+
 ### v5.21.0 — 2026-09-15 — Hotspot Session Sync Fixes + Dashboard Log Centralization + Invoice/PWA Fixes
 
 ### Summary
@@ -1240,79 +1330,6 @@ Audit dan perbaikan menyeluruh untuk payment webhook (Midtrans), payment success
 - `backend/src/app/api/pppoe/users/[id]/extend/route.ts` — HOTSPOT re-enable + kick
 - `frontend/src/app/payment/success/page.tsx` — polling retry
 - `frontend/src/locales/id.json` — payment translation keys
-
----
-
-### v5.18.0 — 2026-08-31 — Notification & Push Notification System Audit
-
-### Summary
-Audit menyeluruh dan perbaikan sistem notifikasi dan push notification untuk semua portal (Admin, Agent, Customer, Technician, Collector). Perbaikan bug kritis dispatch push, vulnerability keamanan pada route agent, integrasi push ke cron jobs, serta penambahan push toggle dan in-app notification untuk collector.
-
-### Security
-- **[CRITICAL]** Agent push subscribe/unsubscribe route menerima `agentId` dari request body tanpa verifikasi — sekarang menggunakan `requireAgentAuth` dan mengambil `agentId` dari JWT token yang terverifikasi
-
-### Bug Fixes
-- **[CRITICAL]** Admin push subscriptions dikirim saat `recipientRole=technician` — push sekarang hanya dikirim ke admin subs ketika `recipientRole` adalah `admin` atau `all`
-- **[FIX]** Service worker notification click redirect hardcoded ke `/customer` — sekarang menggunakan `data.url`/`data.link` dari payload, fallback ke `/`
-
-### Features
-- **[FEATURE]** Admin push toggle di admin panel — komponen `AdminPushToggle.tsx` di user menu dropdown, route `/api/push/admin-subscribe` & `/api/push/admin-unsubscribe` dengan `checkAuth`
-- **[FEATURE]** Admin sebagai recipient role di broadcast push notifications page — type notification, quick templates, dan template content khusus admin
-- **[FEATURE]** Agent push toggle di sidebar — komponen `AgentPushToggle.tsx` dengan subscribe/unsubscribe via `apiAgent`
-- **[FEATURE]** Push notification terintegrasi di cron jobs: invoice reminder (overdue + reminder), auto-isolir (isolation-notice), auto-renewal (auto-renewal-success)
-- **[FEATURE]** `createAgentNotificationAndPush` helper — centralizes agent notification creation + web push sending, menggantikan semua `prisma.agentNotification.create` calls di 8 file
-- **[FEATURE]** Customer notification read state server-side — model `customerNotificationRead` di Prisma, PATCH endpoint untuk mark-as-read, `unreadCount` & `isRead` dari server
-- **[FEATURE]** Collector notification system — API `/api/collector/notifications` (derived dari payments, ONT tasks, tickets), komponen `CollectorNotificationBell.tsx` dengan push toggle + notification dropdown
-- **[FEATURE]** Technician notifications API — `/api/technician/notifications` dengan structured data dari tickets dan ONT tasks
-- **[FEATURE]** Service worker cache bumped to v17 untuk force update
-
-### Files Changed
-- `backend/src/server/services/push-notification.service.ts` — fix admin push dispatch logic, add 'admin' to recipientRole type
-- `backend/src/app/api/push/agent-subscribe/route.ts` — add `requireAgentAuth`
-- `backend/src/app/api/push/agent-unsubscribe/route.ts` — add `requireAgentAuth`
-- `backend/src/app/api/push/admin-subscribe/route.ts` — new route
-- `backend/src/app/api/push/admin-unsubscribe/route.ts` — new route
-- `backend/src/server/services/agent-notification.service.ts` — new helper
-- `backend/src/server/cron/invoice-jobs.ts` — add push for invoice reminders + auto-renewal
-- `backend/src/server/cron/auto-isolir.ts` — add push for isolation notices
-- `backend/src/app/api/admin/agent-deposits/route.ts` — use `createAgentNotificationAndPush`
-- `backend/src/app/api/agent/deposit/webhook/route.ts` — use `createAgentNotificationAndPush`
-- `backend/src/app/api/agent/generate-voucher/route.ts` — use `createAgentNotificationAndPush`
-- `backend/src/app/api/agent/deposit/manual-request/route.ts` — use `createAgentNotificationAndPush`
-- `backend/src/app/api/hotspot/agents/balance/route.ts` — use `createAgentNotificationAndPush`
-- `backend/src/server/services/hotspot.service.ts` — use `createAgentNotificationAndPush`
-- `backend/src/app/api/hotspot/voucher/bulk-delete/route.ts` — use `createAgentNotificationAndPush`
-- `backend/src/app/api/hotspot/voucher/delete-multiple/route.ts` — use `createAgentNotificationAndPush`
-- `backend/src/app/api/hotspot/voucher/[id]/route.ts` — use `createAgentNotificationAndPush`
-- `backend/src/app/api/customer/notifications/route.ts` — add PATCH mark-as-read, server-side read state
-- `backend/src/app/api/technician/notifications/route.ts` — new route
-- `backend/src/app/api/collector/notifications/route.ts` — new route
-- `backend/prisma/schema.prisma` — add `customerNotificationRead` model
-- `frontend/src/components/admin/AdminPushToggle.tsx` — new component
-- `frontend/src/components/agent/AgentPushToggle.tsx` — new component
-- `frontend/src/components/collector/CollectorNotificationBell.tsx` — new component
-- `frontend/src/app/admin/AdminClientLayout.tsx` — add `AdminPushToggle` to user menu
-- `frontend/src/app/agent/AgentLayoutClient.tsx` — add `AgentPushToggle` to sidebar
-- `frontend/src/app/collector/CollectorPortalLayout.tsx` — add `CollectorNotificationBell` to header
-- `frontend/src/app/customer/CustomerClientLayout.tsx` — server-side read state, `markAllAsRead` on bell open
-- `frontend/src/app/admin/push-notifications/page.tsx` — add 'admin' recipient role
-- `frontend/public/sw.js` — role-based redirect, cache v17
-- `package.json` — version bump to 5.18.0
-- `frontend/package.json` — version bump to 5.18.0
-- `README.md` — version update
-- `CHANGELOG.md` — this entry
-
-### Schema Changes
-- New model `customerNotificationRead` — table `customer_notification_reads` with `userId`, `eventKey`, `readAt`, unique constraint on `[userId, eventKey]`
-- Auto-applied via `prisma db push` on VPS update
-
-### Deployment
-```bash
-cd /var/www/salfanet-radius
-git pull origin master
-# updater.sh handles: pnpm install, prisma generate, prisma db push, build, PM2 restart
-bash frontend/vps-install/updater.sh --branch master
-```
 
 ---
 

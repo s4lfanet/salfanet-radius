@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
+import { getAppVersion } from '@/server/app-version'
 
 export async function GET() {
   return NextResponse.json({
     name: 'Salfanet Radius API',
-    version: '0.1.0',
+    version: getAppVersion(),
     status: 'ok',
     timestamp: new Date().toISOString(),
   })

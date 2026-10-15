@@ -3,7 +3,7 @@ import { requirePermission } from '@/server/middleware/api-auth';
 import { exec, spawn } from 'child_process';
 import { promisify } from 'util';
 import { existsSync, readFileSync, writeFileSync, unlinkSync, mkdirSync } from 'fs';
-import path from 'path';
+import { getAppDir } from '@/server/app-version';
 
 const execAsync = promisify(exec);
 
@@ -39,22 +39,6 @@ async function runCmd(cmd: string, cwd: string, timeout: number): Promise<string
     maxBuffer: 1024 * 1024 * 10,
   });
   return (stdout + stderr).trim();
-}
-
-function getAppDir(): string {
-  const candidates = [
-    process.env.SALFANET_APP_DIR,
-    '/var/www/salfanet-radius',
-    path.resolve(process.cwd(), '../..'),
-    process.cwd(),
-  ].filter(Boolean) as string[];
-
-  for (const dir of candidates) {
-    if (existsSync(path.join(dir, 'package.json'))) {
-      return dir;
-    }
-  }
-  return '/var/www/salfanet-radius';
 }
 
 // Write status JSON for polling
