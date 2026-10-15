@@ -8,11 +8,10 @@
 ## 1) Owner / Project Lead (30-45 menit)
 
 1. `README.md`
-2. `docs/AI_PROJECT_MEMORY.md`
-3. `docs/COMPREHENSIVE_FEATURE_GUIDE.md`
-4. `MASTER_AUDIT_REPORT.md`
-5. `SECURITY_EXECUTIVE_SUMMARY.md`
-6. `PERFORMANCE_AUDIT_REPORT.md`
+2. `docs/COMPREHENSIVE_FEATURE_GUIDE.md`
+3. `MASTER_AUDIT_REPORT.md`
+4. `SECURITY_EXECUTIVE_SUMMARY.md`
+5. `PERFORMANCE_AUDIT_REPORT.md`
 
 Hasil yang diharapkan:
 - Paham cakupan sistem, risiko utama, dan prioritas eksekusi 30 hari.
@@ -21,15 +20,14 @@ Hasil yang diharapkan:
 
 ## 2) Backend Developer (60-90 menit)
 
-1. `docs/AI_PROJECT_MEMORY.md`
-2. `docs/RESTRUCTURING_GUIDE.md`
-3. `docs/ROADMAP_RESTRUCTURING.md`
-4. `CODE_QUALITY_AUDIT_REPORT.md`
-5. `CODE_FIXES_IMPLEMENTATION_GUIDE.md`
-6. `SECURITY_CRITICAL_ISSUES.md`
-7. `SECURITY_FIXES_CRITICAL.md`
-8. `SECURITY_FIXES_HIGH_PRIORITY.md`
-9. `docs/getting-started/API_TESTING_GUIDE.md`
+1. `docs/RESTRUCTURING_GUIDE.md`
+2. `docs/ROADMAP_RESTRUCTURING.md`
+3. `CODE_QUALITY_AUDIT_REPORT.md`
+4. `CODE_FIXES_IMPLEMENTATION_GUIDE.md`
+5. `SECURITY_CRITICAL_ISSUES.md`
+6. `SECURITY_FIXES_CRITICAL.md`
+7. `SECURITY_FIXES_HIGH_PRIORITY.md`
+8. `docs/getting-started/API_TESTING_GUIDE.md`
 
 Hasil yang diharapkan:
 - Paham pola arsitektur saat ini, debt kritikal, dan baseline perbaikan aman.
@@ -110,8 +108,7 @@ Hasil yang diharapkan:
 ## Fast Path (15 menit, untuk semua role)
 
 1. `README.md`
-2. `docs/AI_PROJECT_MEMORY.md`
-3. `SECURITY_EXECUTIVE_SUMMARY.md`
-4. `docs/DOCS_INDEX.md`
+2. `SECURITY_EXECUTIVE_SUMMARY.md`
+3. `docs/DOCS_INDEX.md`
 
 Gunakan jalur ini untuk pemahaman awal sebelum masuk ke dokumen spesifik role.

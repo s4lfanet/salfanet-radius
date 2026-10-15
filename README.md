@@ -7,12 +7,6 @@ Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with Free
 
 ---
 
-## 🤖 AI Development Assistant
-
-**READ FIRST:** [docs/AI_PROJECT_MEMORY.md](docs/AI_PROJECT_MEMORY.md) — contains full architecture, VPS details, DB schema, known issues, and proven solutions.
-
----
-
 ## 🎯 Features
 
 | Category | Key Capabilities |

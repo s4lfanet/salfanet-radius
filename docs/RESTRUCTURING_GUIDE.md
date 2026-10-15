@@ -357,5 +357,4 @@ CURRENT TASK: [specify what you're moving/refactoring]
 ## Referensi
 
 - [ROADMAP_RESTRUCTURING.md](./ROADMAP_RESTRUCTURING.md) — Rencana & progress tiap fase
-- [AI_PROJECT_MEMORY.md](./AI_PROJECT_MEMORY.md) — Context project untuk AI
 - [COMPREHENSIVE_FEATURE_GUIDE.md](./COMPREHENSIVE_FEATURE_GUIDE.md) — Detail semua fitur

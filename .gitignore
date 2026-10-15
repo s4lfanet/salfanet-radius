@@ -177,6 +177,8 @@ AGENTS.md
 GEMINI.md
 antislop.md
 anti-slop/
+# Catatan proyek berisi detail server dan kredensial: simpan lokal saja
+docs/AI_PROJECT_MEMORY.md
 skills/
 skill-lock.json
 skills-lock.json

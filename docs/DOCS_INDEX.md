@@ -12,7 +12,6 @@ Dokumentasi diorganisir berdasarkan kategori fitur dan menu:
 docs/
 ├── README.md                        # Dokumentasi utama
 ├── DOCS_INDEX.md                    # File ini (index)
-├── AI_PROJECT_MEMORY.md             # AI context & project memory
 ├── COMPREHENSIVE_FEATURE_GUIDE.md   # Panduan lengkap semua fitur
 ├── ROADMAP.md                       # Rencana pengembangan
 │
