@@ -88,8 +88,6 @@ class _TicketTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final brightness = Theme.of(context).brightness;
-    final (label, color, icon) = _statusVisual(ticket.status, scheme, brightness);
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -109,21 +107,7 @@ class _TicketTile extends StatelessWidget {
                     child: Text(ticket.subject, style: Theme.of(context).textTheme.titleSmall),
                   ),
                   const SizedBox(width: 10),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: brightness == Brightness.dark ? 0.2 : 0.12),
-                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(icon, size: 13, color: color),
-                        const SizedBox(width: 5),
-                        Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 11.5)),
-                      ],
-                    ),
-                  ),
+                  TicketStatusPill(status: ticket.status),
                 ],
               ),
               const SizedBox(height: 8),
@@ -137,10 +121,38 @@ class _TicketTile extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Ticket state as a pill: icon plus word alongside the hue. Shared by the
+/// ticket list and the ticket detail header.
+class TicketStatusPill extends StatelessWidget {
+  const TicketStatusPill({super.key, required this.status});
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final (label, color, icon) = visual(status, Theme.of(context).colorScheme, brightness);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: brightness == Brightness.dark ? 0.2 : 0.12),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: color),
+          const SizedBox(width: 5),
+          Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 11.5)),
+        ],
+      ),
+    );
+  }
 
   /// Icon plus word alongside the hue, so the state survives color blindness
   /// and greyscale screenshots.
-  (String, Color, IconData) _statusVisual(String status, ColorScheme scheme, Brightness brightness) {
+  static (String, Color, IconData) visual(String status, ColorScheme scheme, Brightness brightness) {
     switch (status.toUpperCase()) {
       case 'OPEN':
         return ('Terbuka', StatusColors.warning(brightness), Icons.markunread_mailbox_rounded);

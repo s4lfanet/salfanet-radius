@@ -4,6 +4,7 @@ import '../../core/formatters.dart';
 import '../../models/ticket.dart';
 import '../auth/auth_provider.dart';
 import 'ticket_provider.dart';
+import 'tickets_screen.dart';
 
 class TicketDetailScreen extends StatefulWidget {
   const TicketDetailScreen({super.key, required this.ticketId});
@@ -134,7 +135,14 @@ class _TicketHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(ticket.subject, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: Text(ticket.subject, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
+              const SizedBox(width: 10),
+              TicketStatusPill(status: ticket.status),
+            ],
+          ),
           const SizedBox(height: 4),
           Text(ticket.description, style: TextStyle(color: scheme.onSurfaceVariant)),
           const SizedBox(height: 6),

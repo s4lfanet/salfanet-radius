@@ -264,12 +264,16 @@ class _StatusHeroCard extends StatelessWidget {
                 children: [
                   Icon(Icons.speed_rounded, size: 16, color: scheme.onPrimaryContainer),
                   const SizedBox(width: 8),
-                  Text(
-                    '${profile!.downloadSpeed} Mbps unduh · ${profile.uploadSpeed} Mbps unggah',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: scheme.onPrimaryContainer,
-                          fontWeight: FontWeight.w600,
-                        ),
+                  Flexible(
+                    child: Text(
+                      '${profile!.downloadSpeed} Mbps unduh · ${profile.uploadSpeed} Mbps unggah',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: scheme.onPrimaryContainer,
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
                   ),
                 ],
               ),
@@ -438,7 +442,7 @@ class _QuickMenu extends StatelessWidget {
           () => _push(context, const RenewalScreen())),
       _QuickMenuItem(Icons.trending_up_rounded, 'Upgrade', FeatureColors.upgrade,
           () => _push(context, const UpgradeScreen())),
-      _QuickMenuItem(Icons.volunteer_activism_rounded, 'Referral', FeatureColors.referral,
+      _QuickMenuItem(Icons.volunteer_activism_rounded, 'Ajak Teman', FeatureColors.referral,
           () => _push(context, const ReferralScreen())),
       _QuickMenuItem(Icons.network_check_rounded, 'Speed Test', FeatureColors.speedtest,
           () => _push(context, const SpeedtestScreen())),
@@ -504,11 +508,14 @@ class _UnpaidInvoiceCard extends StatelessWidget {
     final overdue = invoice.isOverdue;
     final accentColor = overdue ? StatusColors.danger(brightness) : StatusColors.warning(brightness);
 
+    // A plain card like the rest of the page: the status reads from the
+    // colored icon and label, and the brand button stays the only filled
+    // color, instead of a tinted panel competing with it.
     return Container(
       decoration: BoxDecoration(
-        color: accentColor.withValues(alpha: brightness == Brightness.dark ? 0.16 : 0.09),
+        color: scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: accentColor.withValues(alpha: 0.35)),
+        border: Border.all(color: scheme.outlineVariant),
       ),
       padding: const EdgeInsets.all(16),
       child: Column(

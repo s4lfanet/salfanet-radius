@@ -25,14 +25,33 @@ class AppTheme {
   static ThemeData get dark => _build(_Palette.dark);
 
   static ThemeData _build(_Palette p) {
-    final scheme = ColorScheme.fromSeed(seedColor: brand, brightness: p.brightness).copyWith(
+    // Every role Material reaches for is set from the palette. Left to the
+    // seed, the container roles (navigation indicator, chips, dialogs,
+    // sheets, menus) came out as the lavender tonal-spot wash that marks a
+    // stock Material 3 app; here they are neutral greys or a light tint of
+    // the brand blue.
+    final brandTint = Color.alphaBlend(p.primary.withValues(alpha: p.brightness == Brightness.light ? 0.10 : 0.22), p.surface);
+    final scheme = ColorScheme.fromSeed(
+      seedColor: brand,
+      brightness: p.brightness,
+      dynamicSchemeVariant: DynamicSchemeVariant.fidelity,
+    ).copyWith(
       primary: p.primary,
       onPrimary: onColor(p.primary),
+      primaryContainer: brandTint,
+      onPrimaryContainer: p.text,
+      secondaryContainer: brandTint,
+      onSecondaryContainer: p.text,
       surface: p.surface,
       onSurface: p.text,
       onSurfaceVariant: p.textMuted,
       outline: p.borderStrong,
       outlineVariant: p.border,
+      surfaceTint: Colors.transparent,
+      surfaceContainerLowest: p.surface,
+      surfaceContainerLow: p.surface,
+      surfaceContainer: p.surface,
+      surfaceContainerHigh: p.surfaceMuted,
       surfaceContainerHighest: p.surfaceMuted,
       error: p.danger,
     );

@@ -28,24 +28,24 @@ class BrandThemeProvider extends ChangeNotifier {
     _working = true;
     try {
       final provider = CachedNetworkImageProvider(url);
-      final light = await ColorScheme.fromImageProvider(
+      // Fidelity keeps the logo's own color as primary rather than a muted
+      // tone of it; the rest of the scheme is built by AppTheme.schemeFor.
+      final fromLogo = await ColorScheme.fromImageProvider(
         provider: provider,
         brightness: Brightness.light,
+        dynamicSchemeVariant: DynamicSchemeVariant.fidelity,
       );
-      final dark = await ColorScheme.fromImageProvider(
-        provider: provider,
-        brightness: Brightness.dark,
-      );
+      final seed = fromLogo.primary;
 
       // A greyscale or near-white logo yields a colorless seed, which would
       // strip the app of any accent at all. Brand blue is the better failure.
-      if (HSLColor.fromColor(light.primary).saturation < 0.15) {
+      if (HSLColor.fromColor(seed).saturation < 0.15) {
         _resolvedFor = url;
         return;
       }
 
-      _light = light;
-      _dark = dark;
+      _light = AppTheme.schemeFor(seed, Brightness.light);
+      _dark = AppTheme.schemeFor(seed, Brightness.dark);
       _resolvedFor = url;
       notifyListeners();
     } catch (e) {

@@ -118,9 +118,18 @@ class _PackageTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Card(
-      color: selected ? scheme.primaryContainer.withValues(alpha: 0.4) : null,
-      child: ListTile(
+    // Selection shows as a brand outline rather than a tinted fill, which
+    // turned the whole row saturated blue under a vivid brand color.
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Card(
+        shape: selected
+            ? RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: scheme.primary, width: 2),
+              )
+            : null,
+        child: ListTile(
         enabled: !isCurrent,
         onTap: onTap,
         title: Text(package.name, style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -130,6 +139,7 @@ class _PackageTile extends StatelessWidget {
             : selected
                 ? Icon(Icons.check_circle, color: scheme.primary)
                 : null,
+        ),
       ),
     );
   }
