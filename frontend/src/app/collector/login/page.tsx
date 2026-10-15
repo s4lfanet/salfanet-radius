@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
+import { LoginLogo } from '@/components/auth/LoginLogo';
 import { apiAdmin, ApiError } from '@/lib/api';
 import { User, Lock, Loader2, Wallet, Sun, Moon, AlertCircle } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
@@ -67,7 +67,7 @@ export default function CollectorLoginPage() {
   };
 
   if (!brandLoaded) {
-    return <div className="min-h-dvh bg-gray-50 dark:bg-slate-950" />;
+    return <div className="min-h-dvh bg-background" />;
   }
 
   return (
@@ -102,18 +102,7 @@ export default function CollectorLoginPage() {
         </button>
 
         <div className="w-full max-w-[320px]">
-          {/* Logo */}
-          <div className="flex justify-center mb-5">
-            {companyLogo ? (
-              <div className="w-24 h-24 p-2 rounded-xl border border-border bg-white/90 shadow-sm flex items-center justify-center overflow-hidden">
-                <Image unoptimized src={companyLogo} alt={companyName} width={220} height={110} className="max-h-full max-w-full w-auto h-auto object-contain" />
-              </div>
-            ) : (
-              <div className="inline-flex items-center justify-center w-14 h-14 bg-emerald-600 rounded-2xl shadow-lg shadow-emerald-500/25">
-                <Wallet className="w-7 h-7 text-white" />
-              </div>
-            )}
-          </div>
+          <LoginLogo src={companyLogo} alt={companyName} fallbackIcon={Wallet} />
 
           {/* Subtitle */}
           <p className="text-center text-sm text-emerald-600 dark:text-emerald-400 font-semibold mb-6">
