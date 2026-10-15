@@ -364,7 +364,7 @@ SettingsFormScreen isolationSettings() => SettingsFormScreen(
   load: () async => mapOf(_map(await _api.get('/api/settings/isolation')), 'data') ?? {},
   fields: (_) => const [
     FieldSpec('isolationEnabled', 'Isolir otomatis aktif', type: FieldType.toggle),
-    FieldSpec('gracePeriodDays', 'Masa tenggang (hari)', type: FieldType.integer, min: 0, helper: 'Hari setelah jatuh tempo sebelum diisolir.'),
+    FieldSpec('gracePeriodDays', 'Masa tenggang (hari)', type: FieldType.integer, min: 0, max: 30, helper: 'Hari setelah jatuh tempo sebelum diisolir.'),
     FieldSpec.section('Jaringan isolir'),
     FieldSpec('isolationIpPool', 'IP pool isolir', hint: '192.168.200.0/24'),
     FieldSpec('isolationServerIp', 'IP server billing'),

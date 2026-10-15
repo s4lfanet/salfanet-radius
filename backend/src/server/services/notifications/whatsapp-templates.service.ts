@@ -387,7 +387,7 @@ export async function sendInvoiceReminder(data: {
 
     if (!templateContent) {
       console.warn(`[WA] No template found for ${templateType}`);
-      return;
+      return false;
     }
 
     // Fetch bank accounts for payment templates
@@ -423,6 +423,7 @@ export async function sendInvoiceReminder(data: {
 
     const status = isOverdue ? 'overdue' : 'reminder';
     console.log(`[WA] ✅ Invoice ${status} sent to ${data.phone}`);
+    return true;
   } catch (error) {
     console.error(`[WA] ❌ Failed to send invoice reminder:`, error);
     throw error; // Re-throw to let cron handle it

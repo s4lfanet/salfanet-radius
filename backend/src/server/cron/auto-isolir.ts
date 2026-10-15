@@ -13,7 +13,7 @@ import { prisma } from '@/server/db/client';
 import { nowWIBAsync } from '@/lib/timezone';
 import { disconnectPPPoEUser, addToMikrotikAddressList } from '@/server/services/radius/coa-handler.service';
 import { managePppSecret, shouldManagePppSecretForSuspend, kickPppoeSession } from '@/server/services/mikrotik/ppp-secret.service';
-import { sendPushToUser } from '@/server/services/notifications/push-templates.service';
+import { sendIsolationNotice } from '@/server/services/notifications/isolation-notice.service';
 
 export async function runAutoIsolir(): Promise<{ isolated: number; total: number; errors: string[] }> {
   const errors: string[] = [];
@@ -224,72 +224,8 @@ export async function runAutoIsolir(): Promise<{ isolated: number; total: number
         console.warn(`[AUTO_ISOLIR] CoA disconnect failed for ${user.username}:`, e?.message || e);
       }
 
-      // 5. Send push notification about isolation
-      await sendPushToUser(user.id, 'isolation-notice', {
-        customerName: user.name || user.username,
-        username: user.username,
-        companyName: company?.name || '',
-        companyPhone: company?.phone || '',
-      }).catch((e) => console.error(`[AUTO_ISOLIR] Push failed for ${user.username}:`, e?.message || e));
-
-      // 6. WhatsApp / email isolation notice — the isolation_templates table
-      // (WA + email content, editable in Settings > Isolir) and the
-      // isolationNotifyWhatsapp/isolationNotifyEmail toggles both already
-      // existed, but nothing ever actually sent them — isolation was silent
-      // beyond the push notification above.
-      try {
-        const latestInvoice = await prisma.invoice.findFirst({
-          where: { userId: user.id, status: { in: ['PENDING', 'OVERDUE'] } },
-          orderBy: { dueDate: 'desc' },
-          select: { paymentLink: true },
-        });
-        const paymentLink = latestInvoice?.paymentLink || `${company?.baseUrl || ''}/customer`;
-        const vars: Record<string, string> = {
-          customerName: user.name || user.username,
-          customerId: user.customerId || '-',
-          username: user.username,
-          profileName: user.profile?.name || '-',
-          area: (user as any).area?.name || '-',
-          address: user.address || '-',
-          expiredDate: user.expiredAt
-            ? new Date(user.expiredAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
-            : '-',
-          rateLimit: company?.isolationRateLimit || '-',
-          paymentLink,
-          qrCode: paymentLink,
-          companyName: company?.name || '',
-          companyPhone: company?.phone || '',
-          companyEmail: company?.email || '',
-        };
-        const renderIsolation = (tpl: string) =>
-          Object.entries(vars).reduce((msg, [k, v]) => msg.replace(new RegExp(`{{${k}}}`, 'g'), v), tpl);
-
-        if (company?.isolationNotifyWhatsapp && user.phone) {
-          const waTemplate = await prisma.isolationTemplate.findFirst({ where: { type: 'whatsapp', isActive: true } });
-          if (waTemplate) {
-            const { WhatsAppService } = await import('@/server/services/notifications/whatsapp.service');
-            await WhatsAppService.sendMessage({ phone: user.phone, message: renderIsolation(waTemplate.message) });
-          }
-        }
-
-        if (company?.isolationNotifyEmail && user.email) {
-          const emailTemplate = await prisma.isolationTemplate.findFirst({ where: { type: 'email', isActive: true } });
-          if (emailTemplate) {
-            const { EmailService } = await import('@/server/services/notifications/email.service');
-            const emailSettings = await EmailService.getSettings();
-            if (emailSettings?.enabled) {
-              await EmailService.send({
-                to: user.email,
-                toName: user.name || user.username,
-                subject: renderIsolation(emailTemplate.subject || 'Akun Anda Telah Diisolir'),
-                html: renderIsolation(emailTemplate.message),
-              });
-            }
-          }
-        }
-      } catch (e: any) {
-        console.error(`[AUTO_ISOLIR] Isolation notice (WA/email) failed for ${user.username}:`, e?.message || e);
-      }
+      // 5. Push, WhatsApp and email notice, per the isolation settings.
+      await sendIsolationNotice(user.id);
 
       isolated++;
       const subType = prepaidExpired.find(u => u.id === user.id) ? 'PREPAID' : 'POSTPAID';

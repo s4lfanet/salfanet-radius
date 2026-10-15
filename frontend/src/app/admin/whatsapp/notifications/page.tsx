@@ -58,7 +58,7 @@ export default function NotificationSettingsPage() {
       showError(t('whatsapp.enterValidNumber'));
       return;
     }
-    if (day > 0) {
+    if (day < -30 || day > 30) {
       showError(t('whatsapp.valueMustBeZeroOrNegative'));
       return;
     }
@@ -119,6 +119,7 @@ export default function NotificationSettingsPage() {
 
   const formatDayLabel = (day: number) => {
     if (day === 0) return t('whatsapp.hDayLabel');
+    if (day > 0) return `H+${day} (${t('whatsapp.hPlusDaysLabel').replace('{days}', String(day))})`;
     return `H${day} (${t('whatsapp.hMinusDaysLabel').replace('{days}', String(Math.abs(day)))})`;
   };
 

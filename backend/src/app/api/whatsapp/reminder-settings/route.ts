@@ -77,18 +77,17 @@ export async function PUT(request: NextRequest) {
       }, { status: 400 })
     }
     
-    // Validate reminderDays values (must be negative or 0)
+    // Offsets from the due date: -7 = 7 days before, 0 = due day, 3 = 3 days after.
     for (const day of reminderDays) {
-      if (typeof day !== 'number' || day > 0) {
+      if (!Number.isInteger(day) || day < -30 || day > 30) {
         return NextResponse.json({
           success: false,
-          error: 'reminderDays must contain numbers <= 0 (e.g., -7, -5, -3, 0)'
+          error: 'Hari reminder harus bilangan bulat dari -30 sampai 30 (contoh: -7, -3, 0, 3)'
         }, { status: 400 })
       }
     }
-    
-    // Validate reminderTime format (HH:mm)
-    if (!/^\d{2}:\d{2}$/.test(reminderTime)) {
+
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(reminderTime)) {
       return NextResponse.json({
         success: false,
         error: 'reminderTime must be in HH:mm format (e.g., 09:00)'

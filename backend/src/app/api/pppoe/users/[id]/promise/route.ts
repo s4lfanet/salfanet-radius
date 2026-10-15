@@ -3,6 +3,7 @@ import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { managePppSecret, kickPppoeSession, shouldManagePppSecretForSuspend } from '@/server/services/mikrotik/ppp-secret.service';
 import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service';
+import { sendIsolationNotice } from '@/server/services/notifications/isolation-notice.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -268,9 +269,10 @@ export async function DELETE(
       data: { status: 'isolated' },
     });
 
-    // 2. Add RADIUS Auth-Type Reject
+    // 2. RADIUS: same as auto-isolir. No Auth-Type Reject: an isolated
+    // customer must still log in, land in the isolir group and reach the
+    // payment page; Reject cut them off completely.
     try {
-      // Remove existing Auth-Type first (unique constraint on [username, attribute])
       await prisma.radcheck.deleteMany({
         where: {
           username: user.username,
@@ -278,11 +280,6 @@ export async function DELETE(
           ...(nasIdentifier ? { nas_identifier: nasIdentifier } : {}),
         },
       });
-
-      await prisma.$executeRaw`
-        INSERT INTO radcheck (username, attribute, op, value, nas_identifier)
-        VALUES (${user.username}, 'Auth-Type', ':=', 'Reject', ${nasIdentifier})
-      `;
 
       // Move to isolir group
       await prisma.$executeRaw`
@@ -329,6 +326,8 @@ export async function DELETE(
     } catch (radiusErr: any) {
       console.error(`[PaymentPromise DELETE] RADIUS re-isolate error for ${user.username}:`, radiusErr?.message);
     }
+
+    if (user.status !== 'isolated') await sendIsolationNotice(user.id);
 
     return NextResponse.json({
       success: true,

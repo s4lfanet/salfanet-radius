@@ -4,7 +4,6 @@ import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.servic
 import { logActivity } from '@/server/services/activity-log.service';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { managePppSecret, shouldManagePppSecretForSuspend, kickPppoeSession } from '@/server/services/mikrotik/ppp-secret.service';
-// sendIsolationNotification moved to NestJS backend — customer notifications handled by backend cron
 
 export async function PUT(request: Request) {
   try {
@@ -294,7 +293,9 @@ export async function PUT(request: Request) {
             reason: 'manual isolation'
           });
 
-          // Customer isolation notification now handled by NestJS backend cron
+          // Tell the customer, per the isolation notification settings.
+          const { sendIsolationNotice } = await import('@/server/services/notifications/isolation-notice.service');
+          await sendIsolationNotice(user.id);
         } else if (status === 'active' && (oldStatus === 'isolated' || oldStatus === 'blocked')) {
           await NotificationService.notifyUserReactivated({
             username: user.username,

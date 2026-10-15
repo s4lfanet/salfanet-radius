@@ -136,6 +136,7 @@ const API_URL = process.env.CRON_API_URL || 'http://localhost:3001'
 // Jobs that may take longer get a higher timeout.
 const JOB_TIMEOUTS: Record<string, number> = {
   invoice_generate: 300,      // 5 min — generates many invoices
+  invoice_reminder: 3300,     // 55 min — WhatsApp batch delays from the reminder settings
   radius_reconciliation: 300, // 5 min — full DB scan
   radius_sync_retry: 180,     // 3 min — batch processing
   pppoe_session_sync: 180,    // 3 min — MikroTik API calls
