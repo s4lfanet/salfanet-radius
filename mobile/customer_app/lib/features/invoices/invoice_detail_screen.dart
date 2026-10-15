@@ -143,7 +143,9 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
               const SizedBox(height: 14),
               Text(inv.amountFormatted, style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: 2),
-              Text(inv.number, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
+              // The number is already in the app bar; the due date is what the
+              // customer reads next.
+              Text('Jatuh tempo ${inv.dueDate}', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant)),
             ],
           ),
         ),
@@ -272,8 +274,8 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
         Icon(icon, size: 15, color: scheme.onSurfaceVariant),
         const SizedBox(width: 6),
         Text(
-          title.toUpperCase(),
-          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: scheme.onSurfaceVariant, letterSpacing: 0.6),
+          title,
+          style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: scheme.onSurfaceVariant),
         ),
       ],
     );

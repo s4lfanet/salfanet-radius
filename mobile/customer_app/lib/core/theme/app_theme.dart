@@ -36,11 +36,53 @@ class AppTheme {
   AppTheme._();
 
   /// [derived] comes from the operator's logo when one could be read.
-  static ThemeData light([ColorScheme? derived]) =>
-      _base(derived ?? ColorScheme.fromSeed(seedColor: kBrandSeed, brightness: Brightness.light));
+  static ThemeData light([ColorScheme? derived]) => _base(derived ?? schemeFor(kBrandSeed, Brightness.light));
 
-  static ThemeData dark([ColorScheme? derived]) =>
-      _base(derived ?? ColorScheme.fromSeed(seedColor: kBrandSeed, brightness: Brightness.dark));
+  static ThemeData dark([ColorScheme? derived]) => _base(derived ?? schemeFor(kBrandSeed, Brightness.dark));
+
+  /// The brand color as the operator chose it, on neutral grey surfaces.
+  ///
+  /// Material's default tonal-spot scheme mutes the seed (brand blue came
+  /// out as a dusty slate indigo) and tints every surface with it, which is
+  /// the lavender wash that makes stock Material 3 apps look alike. Fidelity
+  /// keeps the seed's own chroma for primary; the surfaces are then replaced
+  /// with plain greys so the brand color is the only color on a screen that
+  /// is not a category or status hue.
+  static ColorScheme schemeFor(Color seed, Brightness brightness) {
+    final light = brightness == Brightness.light;
+    final scheme = ColorScheme.fromSeed(
+      seedColor: seed,
+      brightness: brightness,
+      dynamicSchemeVariant: DynamicSchemeVariant.fidelity,
+    );
+    return light
+        ? scheme.copyWith(
+            surface: const Color(0xFFF4F5F7),
+            onSurface: const Color(0xFF111827),
+            onSurfaceVariant: const Color(0xFF4B5563),
+            surfaceContainerLowest: const Color(0xFFFFFFFF),
+            surfaceContainerLow: const Color(0xFFFFFFFF),
+            surfaceContainer: const Color(0xFFF0F2F5),
+            surfaceContainerHigh: const Color(0xFFE9ECF0),
+            surfaceContainerHighest: const Color(0xFFE2E6EB),
+            surfaceTint: Colors.transparent,
+            outline: const Color(0xFF8A93A3),
+            outlineVariant: const Color(0xFFDDE1E7),
+          )
+        : scheme.copyWith(
+            surface: const Color(0xFF0F1115),
+            onSurface: const Color(0xFFE8EAED),
+            onSurfaceVariant: const Color(0xFFA9B1BD),
+            surfaceContainerLowest: const Color(0xFF0B0D10),
+            surfaceContainerLow: const Color(0xFF171A20),
+            surfaceContainer: const Color(0xFF1C2027),
+            surfaceContainerHigh: const Color(0xFF242932),
+            surfaceContainerHighest: const Color(0xFF2C323C),
+            surfaceTint: Colors.transparent,
+            outline: const Color(0xFF6E7785),
+            outlineVariant: const Color(0xFF2E343E),
+          );
+  }
 
   static ThemeData _base(ColorScheme scheme) {
     final base = ThemeData(useMaterial3: true, colorScheme: scheme, fontFamily: kFontFamily);
@@ -85,7 +127,7 @@ class AppTheme {
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.card),
-          side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.5)),
+          side: BorderSide(color: scheme.outlineVariant),
         ),
       ),
 

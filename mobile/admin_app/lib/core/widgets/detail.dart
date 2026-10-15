@@ -36,7 +36,17 @@ class DetailHeader extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, height: 1.25)),
+                      // A code such as an invoice number has nowhere to wrap and
+                      // was broken mid-number; shrink it to one line instead.
+                      // Names with spaces still wrap normally.
+                      if (title.contains(' '))
+                        Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, height: 1.25))
+                      else
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(title, maxLines: 1, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, height: 1.25)),
+                        ),
                       if (subtitle != null && subtitle!.isNotEmpty) ...[
                         const SizedBox(height: 2),
                         Text(subtitle!, style: TextStyle(fontSize: 13, color: context.colors.onSurfaceVariant)),

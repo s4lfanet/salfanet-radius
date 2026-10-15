@@ -115,8 +115,8 @@ class MoreScreen extends StatelessWidget {
               _MenuTile(
                 icon: Icons.volunteer_activism_rounded,
                 accent: FeatureColors.referral,
-                title: 'Referral',
-                subtitle: 'Ajak tetangga, dapat reward',
+                title: 'Ajak Teman',
+                subtitle: 'Bagikan kode, dapat hadiah saldo',
                 onTap: () => _push(context, const ReferralScreen()),
                 isLast: true,
               ),

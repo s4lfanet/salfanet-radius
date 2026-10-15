@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import '../storage/secure_storage.dart';
 
 /// Every Salfanet Radius installation runs on its own operator-chosen domain
@@ -49,6 +50,11 @@ class ApiClient {
   void Function()? onUnauthorized;
 
   String get baseUrl => _dio.options.baseUrl;
+
+  /// Routes every request through [adapter]; widget tests use it to render
+  /// screens against fixed responses without a server.
+  @visibleForTesting
+  void initForTest(HttpClientAdapter adapter) => _dio.httpClientAdapter = adapter;
 
   /// Loads the operator's server URL saved on a previous run, if any —
   /// call once at startup before any request goes out.
