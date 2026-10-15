@@ -1,12 +1,12 @@
 import 'server-only'
 import { prisma } from '@/server/db/client';
 import { syncVoucherToRadius } from '@/server/services/radius/hotspot-sync.service';
-import { sendPaymentSuccess, sendVoucherPurchaseSuccess } from '@/server/services/notifications/whatsapp-templates.service';
+import { sendPaymentSuccess } from '@/server/services/notifications/whatsapp-templates.service';
+import { sendVoucherOrderMessage } from '@/server/services/notifications/voucher-order-notify.service';
 import { WhatsAppService } from '@/server/services/notifications/whatsapp.service';
-import { getCurrentTimezone, nowWIB } from '@/lib/timezone';
+import { nowWIB } from '@/lib/timezone';
 import { createAgentNotificationAndPush } from '@/server/services/agent-notification.service';
 import { createAdminNotification } from '@/server/services/notifications/admin-notification.service';
-import { formatInTimeZone } from 'date-fns-tz';
 import { logActivity } from '@/server/services/activity-log.service';
 import { syncVoucherToAssignedRouter } from '@/server/services/mikrotik/hotspot-voucher.service';
 import { handleInvoicePayment } from '@/server/services/payment/invoice-payment.service';
@@ -254,96 +254,8 @@ async function handleVoucherOrder(
         console.error('Keuangan sync error:', keuanganError);
       }
 
-      // Send WhatsApp notification with voucher codes
-      try {
-        await sendVoucherPurchaseSuccess({
-          customerName: order.customerName,
-          customerPhone: order.customerPhone,
-          orderNumber: order.orderNumber,
-          profileName: order.profile.name,
-          quantity: order.quantity,
-          voucherCodes: vouchers.map(v => v.code),
-          validityValue: order.profile.validityValue,
-          validityUnit: order.profile.validityUnit,
-        });
-        console.log(`✅ WhatsApp voucher notification sent to ${order.customerPhone}`);
-      } catch (waError) {
-        console.error('WhatsApp voucher notification error:', waError);
-      }
-
-      // Send Email notification for voucher purchase
-      if (order.customerEmail) {
-        try {
-          const emailSettings = await prisma.emailSettings.findFirst();
-          if (emailSettings?.enabled) {
-            const emailTemplate = await prisma.emailTemplate.findFirst({
-              where: { type: 'voucher-purchase', isActive: true }
-            });
-
-            if (emailTemplate) {
-              const company = await prisma.company.findFirst();
-              const validityUnit: { [key: string]: string } = {
-                MINUTES: 'Menit', HOURS: 'Jam', DAYS: 'Hari', MONTHS: 'Bulan'
-              };
-              const duration = `${order.profile.validityValue} ${validityUnit[order.profile.validityUnit] || order.profile.validityUnit}`;
-
-              const variables: Record<string, string> = {
-                customerId: '',
-                customerName: order.customerName,
-                phone: order.customerPhone,
-                profileName: order.profile.name,
-                duration: duration,
-                price: `Rp ${(order.totalAmount / order.quantity).toLocaleString('id-ID')}`,
-                quantity: order.quantity.toString(),
-                totalAmount: `Rp ${order.totalAmount.toLocaleString('id-ID')}`,
-                voucherCodes: vouchers.map(v => v.code).join(', '),
-                purchaseDate: formatInTimeZone(new Date(), getCurrentTimezone(), 'dd MMMM yyyy'),
-                expiryDate: '-',
-                companyName: company?.name || 'ISP',
-                companyPhone: company?.phone || '-',
-              };
-
-              let subject = emailTemplate.subject;
-              let htmlBody = emailTemplate.htmlBody;
-              Object.entries(variables).forEach(([key, value]) => {
-                const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
-                subject = subject.replace(regex, value);
-                htmlBody = htmlBody.replace(regex, value);
-              });
-
-              const nodemailer = require('nodemailer');
-              const transporter = nodemailer.createTransport({
-                host: emailSettings.smtpHost,
-                port: emailSettings.smtpPort,
-                secure: emailSettings.smtpSecure,
-                auth: { user: emailSettings.smtpUser, pass: emailSettings.smtpPassword },
-              });
-
-              await transporter.sendMail({
-                from: `"${emailSettings.fromName}" <${emailSettings.fromEmail}>`,
-                to: order.customerEmail,
-                subject: subject,
-                html: htmlBody,
-              });
-
-              // Log to email history
-              await prisma.emailHistory.create({
-                data: {
-                  id: nanoid(),
-                  toEmail: order.customerEmail,
-                  toName: order.customerName,
-                  subject: subject,
-                  body: htmlBody,
-                  status: 'sent',
-                },
-              });
-              console.log(`✅ Email voucher notification sent to ${order.customerEmail}`);
-            }
-          }
-        } catch (emailError) {
-          console.error('Email voucher notification error:', emailError);
-        }
-      }
+      // Voucher codes to the buyer, by every contact on the order.
+      await sendVoucherOrderMessage('purchase', order, vouchers.map(v => v.code));
     }
   }
 

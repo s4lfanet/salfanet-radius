@@ -1,4 +1,5 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
+import { EMAIL_VOUCHER_PAYMENT_LINK, EMAIL_VOUCHER_PURCHASE } from '@/server/services/notifications/voucher-order-templates';
 import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
 
@@ -439,171 +440,14 @@ const defaultTemplates = [
   {
     name: 'Pembelian Voucher',
     type: 'voucher-purchase',
-    subject: '🎫 Voucher Internet Anda - {{profileName}}',
-    htmlBody: `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f7f9; }
-    .container { max-width: 600px; margin: 20px auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px 20px; text-align: center; color: white; }
-    .content { padding: 30px 20px; }
-    .voucher-box { background: #d1fae5; border: 2px dashed #10b981; padding: 20px; margin: 20px 0; border-radius: 8px; text-align: center; }
-    .voucher-code { font-size: 24px; font-weight: bold; color: #065f46; letter-spacing: 2px; margin: 10px 0; font-family: 'Courier New', monospace; }
-    .info-box { background: #f0fdf4; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0; border-radius: 4px; }
-    .footer { background: #f8fafc; padding: 20px; text-align: center; color: #64748b; font-size: 12px; }
-    .highlight { background: #fef08a; padding: 2px 6px; border-radius: 3px; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1 style="margin: 0; font-size: 24px;">🎫 Voucher Internet Anda</h1>
-      <p style="margin: 10px 0 0 0; opacity: 0.9;">Terima kasih atas pembelian Anda!</p>
-    </div>
-    <div class="content">
-      <p>Kepada Yth. <strong>{{customerName}}</strong>,</p>
-      <p>Terima kasih telah membeli voucher internet. Berikut adalah detail voucher Anda:</p>
-      
-      <div class="voucher-box">
-        <p style="margin: 5px 0; font-size: 14px; color: #065f46;">KODE VOUCHER</p>
-        <div class="voucher-code">{{voucherCodes}}</div>
-        <p style="margin: 10px 0 5px 0; font-size: 12px; color: #059669;">Simpan kode ini dengan aman</p>
-      </div>
-      
-      <div class="info-box">
-        <p style="margin: 5px 0;"><strong>ID Pelanggan:</strong> {{customerId}}</p>
-        <p style="margin: 5px 0;"><strong>Nama:</strong> {{customerName}}</p>
-        <p style="margin: 5px 0;"><strong>No. HP:</strong> {{phone}}</p>
-        <p style="margin: 5px 0;"><strong>Paket:</strong> {{profileName}}</p>
-        <p style="margin: 5px 0;"><strong>Durasi:</strong> {{duration}}</p>
-        <p style="margin: 5px 0;"><strong>Harga per Voucher:</strong> {{price}}</p>
-        <p style="margin: 5px 0;"><strong>Jumlah:</strong> {{quantity}} voucher</p>
-        <p style="margin: 5px 0;"><strong>Total Pembayaran:</strong> <span class="highlight">{{totalAmount}}</span></p>
-        <p style="margin: 5px 0;"><strong>Tanggal Pembelian:</strong> {{purchaseDate}}</p>
-        <p style="margin: 5px 0;"><strong>Berlaku Hingga:</strong> {{expiryDate}}</p>
-      </div>
-      
-      <h3 style="color: #065f46; margin-top: 30px;">📝 Cara Menggunakan Voucher:</h3>
-      <ol style="line-height: 1.8;">
-        <li>Hubungkan perangkat Anda ke WiFi <strong>{{companyName}}</strong></li>
-        <li>Buka browser dan tunggu halaman login muncul</li>
-        <li>Masukkan kode voucher di atas</li>
-        <li>Klik "Login" dan mulai browsing!</li>
-      </ol>
-      
-      <p style="background: #fef3c7; padding: 12px; border-radius: 6px; border-left: 4px solid #f59e0b; margin: 20px 0;">
-        ⚠️ <strong>Penting:</strong> Voucher ini bersifat pribadi. Jangan bagikan kode voucher Anda kepada orang lain untuk menghindari penyalahgunaan.
-      </p>
-      
-      <p>Jika Anda mengalami kesulitan dalam menggunakan voucher atau memiliki pertanyaan, jangan ragu untuk menghubungi kami.</p>
-      
-      <p style="margin-top: 30px;">Hormat kami,<br><strong>{{companyName}}</strong></p>
-    </div>
-    <div class="footer">
-      <p>📞 Hubungi kami: {{companyPhone}}</p>
-      <p>Email otomatis, mohon tidak membalas.</p>
-    </div>
-  </div>
-</body>
-</html>`,
+    subject: EMAIL_VOUCHER_PURCHASE.subject,
+    htmlBody: EMAIL_VOUCHER_PURCHASE.htmlBody,
   },
   {
     name: 'Link Pembayaran Voucher',
     type: 'voucher-payment-link',
-    subject: '💳 Link Pembayaran Voucher - {{profileName}}',
-    htmlBody: `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f7f9; }
-    .container { max-width: 600px; margin: 20px auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    .header { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 30px 20px; text-align: center; color: white; }
-    .content { padding: 30px 20px; }
-    .order-box { background: #dbeafe; border: 2px solid #3b82f6; padding: 20px; margin: 20px 0; border-radius: 8px; }
-    .order-token { font-size: 20px; font-weight: bold; color: #1e40af; letter-spacing: 1px; margin: 10px 0; font-family: 'Courier New', monospace; text-align: center; }
-    .info-box { background: #eff6ff; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; border-radius: 4px; }
-    .button { display: inline-block; background: #3b82f6; color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; margin: 20px 0; font-weight: bold; font-size: 16px; }
-    .button:hover { background: #2563eb; }
-    .footer { background: #f8fafc; padding: 20px; text-align: center; color: #64748b; font-size: 12px; }
-    .highlight { background: #fef08a; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
-    .warning-box { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 4px; }
-    .steps { background: #f0fdf4; padding: 15px; border-radius: 6px; margin: 20px 0; }
-    .steps ol { margin: 10px 0; padding-left: 20px; }
-    .steps li { margin: 8px 0; line-height: 1.6; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1 style="margin: 0; font-size: 24px;">💳 Link Pembayaran Voucher</h1>
-      <p style="margin: 10px 0 0 0; opacity: 0.9;">Selesaikan pembayaran untuk mendapatkan voucher</p>
-    </div>
-    <div class="content">
-      <p>Kepada Yth. <strong>{{customerName}}</strong>,</p>
-      <p>Terima kasih telah melakukan pemesanan voucher internet. Silakan lakukan pembayaran untuk mendapatkan kode voucher Anda.</p>
-      
-      <div class="order-box">
-        <p style="margin: 5px 0; font-size: 14px; color: #1e40af; text-align: center;">TOKEN PESANAN</p>
-        <div class="order-token">{{orderToken}}</div>
-        <p style="margin: 10px 0 5px 0; font-size: 12px; color: #2563eb; text-align: center;">Simpan token ini untuk cek status</p>
-      </div>
-      
-      <div class="info-box">
-        <p style="margin: 5px 0;"><strong>ID Pelanggan:</strong> {{customerId}}</p>
-        <p style="margin: 5px 0;"><strong>Nama:</strong> {{customerName}}</p>
-        <p style="margin: 5px 0;"><strong>No. HP:</strong> {{phone}}</p>
-        <p style="margin: 5px 0;"><strong>Paket Voucher:</strong> {{profileName}}</p>
-        <p style="margin: 5px 0;"><strong>Harga per Voucher:</strong> {{price}}</p>
-        <p style="margin: 5px 0;"><strong>Jumlah:</strong> {{quantity}} voucher</p>
-        <p style="margin: 5px 0;"><strong>Total Pembayaran:</strong> <span class="highlight">{{totalAmount}}</span></p>
-        <p style="margin: 5px 0;"><strong>Batas Waktu:</strong> <span style="color: #dc2626; font-weight: bold;">{{expiryTime}}</span></p>
-      </div>
-      
-      <div style="text-align: center;">
-        <a href="{{paymentLink}}" class="button" style="color: white;">💳 BAYAR SEKARANG</a>
-      </div>
-      
-      <div class="steps">
-        <h3 style="color: #065f46; margin-top: 0;">📝 Cara Pembayaran:</h3>
-        <ol>
-          <li>Klik tombol "BAYAR SEKARANG" di atas</li>
-          <li>Pilih metode pembayaran (Transfer Bank, QRIS, E-Wallet, dll)</li>
-          <li>Selesaikan pembayaran sebelum batas waktu</li>
-          <li>Kode voucher akan dikirim otomatis via WhatsApp & Email</li>
-        </ol>
-      </div>
-      
-      <div class="warning-box">
-        ⚠️ <strong>Penting:</strong>
-        <ul style="margin: 10px 0; padding-left: 20px;">
-          <li>Pembayaran harus selesai sebelum <strong>{{expiryTime}}</strong></li>
-          <li>Pastikan nominal transfer sesuai dengan total pembayaran</li>
-          <li>Voucher akan dikirim otomatis setelah pembayaran dikonfirmasi</li>
-          <li>Pembayaran yang sudah masuk tidak dapat dibatalkan atau dikembalikan</li>
-          <li>Link pembayaran hanya berlaku untuk 1x transaksi</li>
-        </ul>
-      </div>
-      
-      <p style="background: #dbeafe; padding: 12px; border-radius: 6px; border-left: 4px solid #3b82f6; margin: 20px 0;">
-        💡 <strong>Tips:</strong> Gunakan metode pembayaran yang tercepat agar voucher segera Anda terima. QRIS dan E-Wallet biasanya diproses instan!
-      </p>
-      
-      <p>Jika Anda mengalami kesulitan dalam melakukan pembayaran atau memiliki pertanyaan, jangan ragu untuk menghubungi kami.</p>
-      
-      <p style="margin-top: 30px;">Hormat kami,<br><strong>{{companyName}}</strong></p>
-    </div>
-    <div class="footer">
-      <p>📞 Hubungi kami: {{companyPhone}}</p>
-      <p>Email otomatis, mohon tidak membalas.</p>
-    </div>
-  </div>
-</body>
-</html>`,
+    subject: EMAIL_VOUCHER_PAYMENT_LINK.subject,
+    htmlBody: EMAIL_VOUCHER_PAYMENT_LINK.htmlBody,
   }
 ];
 

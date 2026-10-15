@@ -68,14 +68,14 @@ const templateConfig = {
     variables: ['{{customerId}}', '{{customerName}}', '{{username}}', '{{phone}}', '{{email}}', '{{address}}', '{{description}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}', '{{baseUrl}}'],
   },
   'voucher-purchase': {
-    title: '🎫 Pembelian Voucher',
-    description: 'Dikirim otomatis saat customer berhasil membeli voucher internet',
-    variables: ['{{customerId}}', '{{customerName}}', '{{username}}', '{{phone}}', '{{email}}', '{{address}}', '{{voucherCodes}}', '{{profileName}}', '{{price}}', '{{quantity}}', '{{totalAmount}}', '{{purchaseDate}}', '{{expiryDate}}', '{{duration}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}', '{{companyAddress}}'],
+    title: '🎫 Pembelian Voucher (cadangan)',
+    description: 'Dipakai hanya bila template Voucher Terbayar tidak ada atau nonaktif',
+    variables: ['{{customerName}}', '{{phone}}', '{{email}}', '{{orderNumber}}', '{{profileName}}', '{{duration}}', '{{quantity}}', '{{price}}', '{{totalAmount}}', '{{paymentLink}}', '{{expiryTime}}', '{{voucherCodes}}', '{{purchaseDate}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}', '{{companyAddress}}'],
   },
   'voucher-payment-link': {
     title: '💳 Link Pembayaran Voucher',
-    description: 'Dikirim saat customer melakukan order voucher dan perlu melakukan pembayaran',
-    variables: ['{{customerId}}', '{{customerName}}', '{{username}}', '{{phone}}', '{{email}}', '{{address}}', '{{orderToken}}', '{{profileName}}', '{{price}}', '{{quantity}}', '{{totalAmount}}', '{{paymentLink}}', '{{expiryTime}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}', '{{companyAddress}}'],
+    description: 'Dikirim saat pembeli membuat pesanan e-voucher. Link berlaku 24 jam',
+    variables: ['{{customerName}}', '{{phone}}', '{{email}}', '{{orderNumber}}', '{{profileName}}', '{{duration}}', '{{quantity}}', '{{price}}', '{{totalAmount}}', '{{paymentLink}}', '{{expiryTime}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}', '{{companyAddress}}'],
   },
   'manual-extension': {
     title: 'Perpanjangan Manual',
@@ -168,9 +168,9 @@ const templateConfig = {
     variables: ['{{customerName}}', '{{customerUsername}}', '{{oldProfile}}', '{{newProfile}}', '{{newSpeed}}', '{{newPrice}}', '{{effectiveDate}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}'],
   },
   'voucher-purchase-success': {
-    title: 'E-Voucher Purchase Success',
-    description: 'Dikirim saat customer berhasil membeli e-voucher',
-    variables: ['{{customerName}}', '{{voucherCodes}}', '{{profileName}}', '{{price}}', '{{quantity}}', '{{totalAmount}}', '{{purchaseDate}}', '{{expiryDate}}', '{{duration}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}'],
+    title: '🎫 Voucher Terbayar',
+    description: 'Dikirim otomatis setelah pembayaran e-voucher masuk, berisi kode voucher',
+    variables: ['{{customerName}}', '{{phone}}', '{{email}}', '{{orderNumber}}', '{{profileName}}', '{{duration}}', '{{quantity}}', '{{price}}', '{{totalAmount}}', '{{paymentLink}}', '{{expiryTime}}', '{{voucherCodes}}', '{{purchaseDate}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}', '{{companyAddress}}'],
   },
   'welcome-message': {
     title: 'Selamat Datang Pelanggan Baru',

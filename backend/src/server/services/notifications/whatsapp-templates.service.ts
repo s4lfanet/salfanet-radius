@@ -500,65 +500,6 @@ export async function sendPaymentSuccess(data: {
 }
 
 /**
- * Send voucher purchase success notification
- * Sends voucher codes to customer after successful e-voucher payment
- */
-export async function sendVoucherPurchaseSuccess(data: {
-  customerName: string;
-  customerPhone: string;
-  orderNumber: string;
-  profileName: string;
-  quantity: number;
-  voucherCodes: string[];
-  validityValue: number;
-  validityUnit: string;
-}) {
-  try {
-    const company = await prisma.company.findFirst();
-    const companyName = company?.name || 'SALFANET RADIUS';
-    const companyPhone = company?.phone || '';
-
-    // Get template from database
-    const templateContent = await getTemplate('voucher-purchase-success');
-
-    if (!templateContent) {
-      console.warn('[WA] No template found for voucher-purchase-success');
-      return;
-    }
-
-    // Format voucher codes list
-    const voucherList = data.voucherCodes.map((code, i) => `${i + 1}. ${code}`).join('\n');
-
-    // Format validity
-    const validityText = `${data.validityValue} ${data.validityUnit.toLowerCase()}`;
-
-    // Prepare variables
-    const variables = {
-      customerName: data.customerName,
-      orderNumber: data.orderNumber,
-      profileName: data.profileName,
-      quantity: data.quantity.toString(),
-      voucherCodes: voucherList,
-      validity: validityText,
-      companyName,
-      companyPhone,
-    };
-
-    // Render template
-    const message = renderTemplate(templateContent, variables);
-
-    await WhatsAppService.sendMessage({
-      phone: data.customerPhone,
-      message,
-    });
-
-    console.log(`[WA] ✅ Voucher purchase notification sent to ${data.customerPhone}`);
-  } catch (error) {
-    console.error(`[WA] ❌ Failed to send voucher purchase notification:`, error);
-  }
-}
-
-/**
  * Send auto-renewal success notification
  * Sent when prepaid user is auto-renewed from balance
  */

@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { EMAIL_VOUCHER_PURCHASE } from '../../src/server/services/notifications/voucher-order-templates';
 
 const prisma = new PrismaClient();
 
@@ -962,52 +963,8 @@ export const emailTemplates = [
   {
     type: 'voucher-purchase-success',
     name: 'Pembelian Voucher Berhasil',
-    subject: '🎫 Voucher Internet Anda - {{orderNumber}}',
-    htmlBody: `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><title>Voucher Anda</title></head>
-<body style="margin:0;padding:0;font-family:Arial,sans-serif;background-color:#f4f4f4;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f4;padding:20px;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
-        <tr><td style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:30px;text-align:center;">
-          <h1 style="color:#ffffff;margin:0;font-size:28px;">🎫 Voucher Internet Anda</h1>
-        </td></tr>
-        <tr><td style="padding:40px 30px;">
-          <p style="color:#333333;font-size:16px;line-height:1.6;margin:0 0 20px 0;">
-            Halo <strong>{{customerName}}</strong>,
-          </p>
-          <p style="color:#333333;font-size:16px;line-height:1.6;margin:0 0 20px 0;">
-            Terima kasih telah membeli voucher internet!
-          </p>
-          <table width="100%" cellpadding="12" cellspacing="0" style="background-color:#f8f9fa;border-radius:8px;margin:20px 0;">
-            <tr>
-              <td style="color:#666666;font-size:14px;border-bottom:1px solid #e9ecef;padding:12px;"><strong>Paket:</strong></td>
-              <td style="color:#333333;font-size:14px;border-bottom:1px solid #e9ecef;padding:12px;">{{profileName}}</td>
-            </tr>
-            <tr>
-              <td style="color:#666666;font-size:14px;border-bottom:1px solid #e9ecef;padding:12px;"><strong>Jumlah:</strong></td>
-              <td style="color:#333333;font-size:14px;border-bottom:1px solid #e9ecef;padding:12px;">{{quantity}} voucher</td>
-            </tr>
-            <tr>
-              <td style="color:#666666;font-size:14px;padding:12px;"><strong>Masa Berlaku:</strong></td>
-              <td style="color:#333333;font-size:14px;padding:12px;">{{validity}}</td>
-            </tr>
-          </table>
-          <div style="background-color:#fff3cd;border-left:4px solid #ffc107;padding:15px;margin:20px 0;border-radius:4px;">
-            <p style="color:#856404;margin:0;font-size:14px;font-weight:bold;">
-              Kode Voucher:<br>{{voucherCodes}}
-            </p>
-          </div>
-        </td></tr>
-        <tr><td style="background-color:#f8f9fa;padding:20px;text-align:center;border-top:1px solid #e9ecef;">
-          <p style="color:#666666;font-size:14px;margin:0 0 10px 0;"><strong>{{companyName}}</strong></p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`,
+    subject: EMAIL_VOUCHER_PURCHASE.subject,
+    htmlBody: EMAIL_VOUCHER_PURCHASE.htmlBody,
     isActive: true,
   },
 

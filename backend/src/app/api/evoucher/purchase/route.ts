@@ -1,127 +1,12 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { randomBytes } from 'crypto';
-import { getCurrentTimezone } from '@/lib/timezone';
+import { sendVoucherOrderMessage } from '@/server/services/notifications/voucher-order-notify.service';
 import { formatWIB } from '@/lib/timezone';
 
 // Generate secure payment token
 function generatePaymentToken(): string {
   return randomBytes(32).toString('hex');
-}
-
-// Send payment link notification
-async function sendPaymentLinkNotification(order: any, notificationMethod: string) {
-  try {
-    const company = await prisma.company.findFirst();
-    
-    // Format validity
-    const validityUnit: { [key: string]: string } = {
-      MINUTES: 'Menit',
-      HOURS: 'Jam', 
-      DAYS: 'Hari',
-      MONTHS: 'Bulan'
-    };
-    const _duration = `${order.profile.validityValue} ${validityUnit[order.profile.validityUnit] || order.profile.validityUnit}`;
-    
-    // Format expiry time (24 hours from now)
-    const expiryDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    const expiryTime = expiryDate.toLocaleString('id-ID', { 
-      day: '2-digit', 
-      month: 'long', 
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      timeZone: getCurrentTimezone()
-    });
-
-    const variables = {
-      customerId: '',
-      customerName: order.customerName,
-      phone: order.customerPhone,
-      orderToken: order.orderNumber,
-      profileName: order.profile.name,
-      price: new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(order.totalAmount / order.quantity),
-      quantity: order.quantity.toString(),
-      totalAmount: new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(order.totalAmount),
-      paymentLink: order.paymentLink,
-      expiryTime: expiryTime,
-      companyName: company?.name || 'ISP',
-      companyPhone: company?.phone || '-',
-    };
-
-    // Send WhatsApp notification
-    if (notificationMethod === 'whatsapp' || notificationMethod === 'both') {
-      try {
-        const waTemplate = await prisma.whatsapp_templates.findFirst({
-          where: { type: 'voucher-payment-link', isActive: true }
-        });
-
-        if (waTemplate && order.customerPhone) {
-          let message = waTemplate.message;
-          Object.entries(variables).forEach(([key, value]) => {
-            message = message.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value);
-          });
-
-          await fetch(`${company?.baseUrl || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/whatsapp/send`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              phone: order.customerPhone,
-              message: message,
-            }),
-          });
-          console.log('✅ WhatsApp notification sent to', order.customerPhone);
-        }
-      } catch (error) {
-        console.error('❌ WhatsApp notification error:', error);
-      }
-    }
-
-    // Send Email notification  
-    if (notificationMethod === 'email' || notificationMethod === 'both') {
-      try {
-        const emailTemplate = await prisma.emailTemplate.findFirst({
-          where: { type: 'voucher-payment-link', isActive: true }
-        });
-
-        if (emailTemplate && order.customerEmail) {
-          let subject = emailTemplate.subject;
-          let htmlBody = emailTemplate.htmlBody;
-          
-          Object.entries(variables).forEach(([key, value]) => {
-            subject = subject.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value);
-            htmlBody = htmlBody.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value);
-          });
-
-          const emailSettings = await prisma.emailSettings.findFirst();
-          if (emailSettings?.enabled) {
-            const nodemailer = require('nodemailer');
-            const transporter = nodemailer.createTransport({
-              host: emailSettings.smtpHost,
-              port: emailSettings.smtpPort,
-              secure: emailSettings.smtpSecure,
-              auth: {
-                user: emailSettings.smtpUser,
-                pass: emailSettings.smtpPassword,
-              },
-            });
-
-            await transporter.sendMail({
-              from: `"${emailSettings.fromName}" <${emailSettings.fromEmail}>`,
-              to: order.customerEmail,
-              subject: subject,
-              html: htmlBody,
-            });
-            console.log('✅ Email notification sent to', order.customerEmail);
-          }
-        }
-      } catch (error) {
-        console.error('❌ Email notification error:', error);
-      }
-    }
-  } catch (error) {
-    console.error('❌ Notification error:', error);
-  }
 }
 
 export async function POST(request: NextRequest) {
@@ -130,21 +15,31 @@ export async function POST(request: NextRequest) {
   
   try {
     const body = await request.json();
-    const { profileId, customerName, customerPhone, customerEmail, notificationMethod = 'both', quantity = 1 } = body;
-    
-    console.log('=== E-VOUCHER PURCHASE REQUEST ===');
-    console.log('Timestamp:', new Date().toISOString());
-    console.log('Client IP:', clientIp);
-    console.log('Customer:', customerName, '|', customerPhone, '|', customerEmail);
-    console.log('Profile ID:', profileId);
-    console.log('Quantity:', quantity);
-    console.log('Notification Method:', notificationMethod);
+    const { profileId, notificationMethod = 'both' } = body;
+    const customerName = String(body.customerName ?? '').trim();
+    const quantity = Number(body.quantity ?? 1);
+    // Keep only the contacts for the channels the buyer chose: the voucher
+    // codes later go to every contact stored on the order.
+    const wantsWa = notificationMethod === 'whatsapp' || notificationMethod === 'both';
+    const wantsEmail = notificationMethod === 'email' || notificationMethod === 'both';
+    const customerPhone = wantsWa ? String(body.customerPhone ?? '').trim() : '';
+    const customerEmail = wantsEmail ? String(body.customerEmail ?? '').trim() : '';
 
-    if (!profileId || !customerName || !customerPhone) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
+    console.log(`[E-Voucher] Purchase request from ${clientIp}: profile ${profileId}, qty ${quantity}, via ${notificationMethod}`);
+
+    if (!profileId || !customerName || !['whatsapp', 'email', 'both'].includes(notificationMethod)) {
+      return NextResponse.json({ error: 'Nama dan paket wajib diisi' }, { status: 400 });
+    }
+    if (wantsWa && !/^\+?\d[\d\s-]{7,16}$/.test(customerPhone)) {
+      return NextResponse.json({ error: 'Nomor WhatsApp tidak valid' }, { status: 400 });
+    }
+    if (wantsEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
+      return NextResponse.json({ error: 'Alamat email tidak valid' }, { status: 400 });
+    }
+    // The total is price x quantity, so a zero, negative or fractional
+    // quantity would make a free or negative order.
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 20) {
+      return NextResponse.json({ error: 'Jumlah voucher harus 1 sampai 20' }, { status: 400 });
     }
 
     // Validate profile exists and has e-voucher access
@@ -199,7 +94,7 @@ export async function POST(request: NextRequest) {
             quantity,
             customerName,
             customerPhone,
-            customerEmail,
+            customerEmail: customerEmail || null,
             totalAmount,
             status: 'PENDING',
             paymentToken,
@@ -227,8 +122,7 @@ export async function POST(request: NextRequest) {
     console.log(`✅ Voucher order created: ${order.orderNumber} for ${customerName} (${duration}ms)`);
     console.log(`Payment Link: ${paymentLink}`);
 
-    // Send notification based on preference
-    await sendPaymentLinkNotification(order, notificationMethod);
+    await sendVoucherOrderMessage('payment-link', order);
 
     return NextResponse.json({
       success: true,

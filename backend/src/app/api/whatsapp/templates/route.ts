@@ -1,4 +1,5 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
+import { WA_VOUCHER_PAYMENT_LINK, WA_VOUCHER_PURCHASE_SUCCESS } from '@/server/services/notifications/voucher-order-templates';
 import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
 
@@ -143,96 +144,12 @@ Terima kasih,
   {
     name: 'Link Pembayaran Voucher (Auto)',
     type: 'voucher-payment-link',
-    message: `💳 *Link Pembayaran Voucher*
-
-Halo *{{customerName}}*,
-
-Pesanan voucher internet Anda telah dibuat! Silakan lakukan pembayaran untuk mendapatkan voucher.
-
-📋 *Detail Pesanan:*
-━━━━━━━━━━━━━━━━━━
-🆔 ID Pelanggan: *{{customerId}}*
-👤 Nama: *{{customerName}}*
-📱 No. HP: *{{phone}}*
-🎟️ Token Order: *{{orderToken}}*
-📦 Paket: *{{profileName}}*
-💰 Harga: *{{price}}*
-🔢 Jumlah: *{{quantity}}* voucher
-💵 *Total Pembayaran: {{totalAmount}}*
-⏰ Batas Bayar: *{{expiryTime}}*
-━━━━━━━━━━━━━━━━━━
-
-💳 *Link Pembayaran:*
-{{paymentLink}}
-
-📌 *Cara Pembayaran:*
-1. Klik link di atas
-2. Pilih metode pembayaran (Transfer/QRIS/E-Wallet)
-3. Selesaikan pembayaran sebelum batas waktu
-4. Voucher akan dikirim otomatis via WhatsApp & Email
-
-⚠️ *PENTING:*
-- Lakukan pembayaran sebelum {{expiryTime}}
-- Setelah pembayaran, voucher akan dikirim otomatis
-- Simpan link ini untuk cek status pembayaran
-- Pembayaran yang sudah masuk tidak dapat dibatalkan
-
-💡 *Tips:*
-- Pastikan nominal pembayaran sesuai dengan total tagihan
-- Gunakan metode pembayaran yang tercepat
-- Hubungi kami jika ada kendala pembayaran
-
-📞 Butuh bantuan? Hubungi: {{companyPhone}}
-
-Terima kasih!
-{{companyName}} 🙏`,
+    message: WA_VOUCHER_PAYMENT_LINK,
   },
   {
     name: 'Pembelian Voucher Berhasil (Auto)',
     type: 'voucher-purchase-success',
-    message: `� *Voucher Internet Anda*
-
-Halo *{{customerName}}*,
-
-Terima kasih telah membeli voucher internet! Berikut adalah detail voucher Anda:
-
-━━━━━━━━━━━━━━━━━━
-🎟️ *KODE VOUCHER:*
-*{{voucherCodes}}*
-━━━━━━━━━━━━━━━━━━
-
-📋 *Detail Pembelian:*
-━━━━━━━━━━━━━━━━━━
-🆔 ID Pelanggan: *{{customerId}}*
-👤 Nama: *{{customerName}}*
-📱 No. HP: *{{phone}}*
-📦 Paket: *{{profileName}}*
-⏱️ Durasi: *{{duration}}*
-💰 Harga: *{{price}}*
-🔢 Jumlah: *{{quantity}}* voucher
-💵 Total: *{{totalAmount}}*
-📅 Tanggal: *{{purchaseDate}}*
-⏰ Berlaku s/d: *{{expiryDate}}*
-━━━━━━━━━━━━━━━━━━
-
-📝 *Cara Menggunakan:*
-1. Hubungkan perangkat ke WiFi *{{companyName}}*
-2. Buka browser, tunggu halaman login muncul
-3. Masukkan kode voucher di atas
-4. Klik "Login" dan mulai browsing! 🌐
-
-⚠️ *PENTING:*
-- Simpan kode voucher dengan baik
-- Jangan bagikan ke orang lain
-- Kode hanya bisa digunakan 1x
-- Voucher tidak bisa dikembalikan
-
-📞 Butuh bantuan? Hubungi: {{companyPhone}}
-
-Terima kasih telah berlangganan!
-{{companyName}} 🙏
-
-Selamat berselancar! 🚀`,
+    message: WA_VOUCHER_PURCHASE_SUCCESS,
   },
   
   // === BROADCAST TEMPLATES (Manual send, no invoice variables) ===
