@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { WA_VOUCHER_PURCHASE_SUCCESS } from '../../src/server/services/notifications/voucher-order-templates';
 
 const prisma = new PrismaClient();
 
@@ -283,79 +284,14 @@ _{{companyName}}_`,
     id: 'wa-voucher-purchase',
     type: 'voucher-purchase',
     name: 'Pembelian Voucher',
-    message: `🎫 *Voucher Internet Anda*
-
-Halo *{{customerName}}*,
-
-Terima kasih telah membeli voucher internet! Berikut adalah detail voucher Anda:
-
-━━━━━━━━━━━━━━━━━━
-🎟️ *KODE VOUCHER:*
-*{{voucherCodes}}*
-━━━━━━━━━━━━━━━━━━
-
-📋 *Detail Pembelian:*
-━━━━━━━━━━━━━━━━━━
-👤 Nama: *{{customerName}}*
-📱 No. HP: *{{phone}}*
-📦 Paket: *{{profileName}}*
-⏱️ Durasi: *{{duration}}*
-💰 Harga: *Rp {{price}}*
-🔢 Jumlah: *{{quantity}}* voucher
-💵 Total: *Rp {{totalAmount}}*
-📅 Tanggal: *{{purchaseDate}}*
-⏰ Berlaku s/d: *{{expiryDate}}*
-━━━━━━━━━━━━━━━━━━
-
-📝 *Cara Menggunakan:*
-1. Hubungkan perangkat ke WiFi *{{companyName}}*
-2. Buka browser, tunggu halaman login muncul
-3. Masukkan kode voucher di atas
-4. Klik "Login" dan mulai browsing! 🌐
-
-⚠️ *PENTING:*
-- Simpan kode voucher dengan baik
-- Jangan bagikan ke orang lain
-- Kode hanya bisa digunakan 1x
-- Voucher tidak bisa dikembalikan
-
-📞 Butuh bantuan? Hubungi: {{companyPhone}}
-
-Terima kasih telah berlangganan!
-_{{companyName}}_ 🙏
-
-Selamat berselancar! 🚀`,
+    message: WA_VOUCHER_PURCHASE_SUCCESS,
     isActive: true,
   },
   {
     id: 'wa-voucher-purchase-success',
     type: 'voucher-purchase-success',
     name: 'E-Voucher Purchase Success',
-    message: `🎫 Halo {{customerName}},
-
-Terima kasih telah membeli E-Voucher!
-
-━━━━━━━━━━━━━━━━━━━━━━
-*📋 DETAIL PESANAN*
-━━━━━━━━━━━━━━━━━━━━━━
-🔢 Nomor Order: {{orderNumber}}
-📦 Paket: {{profileName}}
-🎟️ Jumlah: {{quantity}} voucher
-⏱️ Masa Berlaku: {{validity}}
-
-━━━━━━━━━━━━━━━━━━━━━━
-*🎟️ KODE VOUCHER ANDA*
-━━━━━━━━━━━━━━━━━━━━━━
-{{voucherCodes}}
-
-📝 *Cara Pakai:*
-1. Hubungkan ke WiFi kami
-2. Buka browser
-3. Masukkan kode voucher
-4. Nikmati internet! 🌐
-
-{{companyName}}
-📞 {{companyPhone}}`,
+    message: WA_VOUCHER_PURCHASE_SUCCESS,
     isActive: true,
   },
 

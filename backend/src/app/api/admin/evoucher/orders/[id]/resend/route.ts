@@ -1,6 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { sendVoucherPurchaseSuccess } from '@/server/services/notifications/whatsapp-templates.service';
+import { sendVoucherOrderMessage } from '@/server/services/notifications/voucher-order-notify.service';
 import { requirePermission } from '@/server/middleware/api-auth';
 
 export async function POST(
@@ -42,35 +42,17 @@ export async function POST(
       );
     }
 
-    // Get company info
-    const _company = await prisma.company.findFirst();
+    const sent = await sendVoucherOrderMessage('purchase', order, order.vouchers.map(v => v.code));
+    const label = { sent: 'terkirim', failed: 'gagal', skipped: 'tidak ada kontak' } as const;
+    const summary = `WhatsApp ${label[sent.whatsapp]}, email ${label[sent.email]}`;
 
-    // Resend WhatsApp notification
-    try {
-      await sendVoucherPurchaseSuccess({
-        customerName: order.customerName,
-        customerPhone: order.customerPhone,
-        profileName: order.profile.name,
-        quantity: order.quantity,
-        orderNumber: order.orderNumber,
-        voucherCodes: order.vouchers.map(v => v.code),
-        validityValue: order.profile.validityValue,
-        validityUnit: order.profile.validityUnit,
-      });
-
-      console.log(`✅ Vouchers resent for order ${order.orderNumber}`);
-
-      return NextResponse.json({
-        success: true,
-        message: 'Vouchers resent successfully',
-      });
-    } catch (waError) {
-      console.error('WhatsApp send error:', waError);
+    if (sent.whatsapp !== 'sent' && sent.email !== 'sent') {
       return NextResponse.json(
-        { success: false, error: 'Failed to send WhatsApp notification' },
-        { status: 500 }
+        { success: false, error: `Voucher tidak terkirim (${summary}). ${sent.errors.join('; ')}`.trim(), result: sent },
+        { status: 502 }
       );
     }
+    return NextResponse.json({ success: true, message: `Voucher dikirim ulang: ${summary}.`, result: sent });
   } catch (error: any) {
     console.error('Resend voucher error:', error);
     return NextResponse.json(

@@ -7,6 +7,7 @@ import { createTripayClient } from '@/server/services/payment/tripay.service';
 import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
 import { createPaymentAttempt } from '@/server/services/payment/payment-attempt.service';
 import { createQrisPayment, type QrisPayment } from '@/server/services/payment/qris-own.service';
+import { voucherOrderExpiresAt } from '@/server/services/notifications/voucher-order-notify.service';
 import nodeCrypto from 'crypto';
 import { z } from '@/lib/parse-body';
 
@@ -111,6 +112,9 @@ export async function POST(request: NextRequest) {
 
       if (order.status === 'PAID') {
         return NextResponse.json({ error: 'Order already paid' }, { status: 400 });
+      }
+      if (order.status !== 'PENDING' || voucherOrderExpiresAt(order.createdAt) < new Date()) {
+        return NextResponse.json({ error: 'Pesanan ini sudah kedaluwarsa atau dibatalkan. Silakan buat pesanan baru.' }, { status: 400 });
       }
 
       if (gateway === 'qris_own') {

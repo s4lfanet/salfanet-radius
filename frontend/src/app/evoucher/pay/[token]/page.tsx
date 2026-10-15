@@ -78,6 +78,23 @@ export default function EVoucherPaymentPage() {
     </div>
   );
 
+  if (order.status === 'EXPIRED' || order.status === 'CANCELLED') return (
+    <div className="min-h-dvh bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 max-w-sm w-full text-center">
+        <AlertCircle className="w-12 h-12 text-amber-500 mx-auto mb-3" />
+        <h2 className="text-base font-bold text-gray-900 dark:text-white mb-1">
+          {order.status === 'EXPIRED' ? 'Link Pembayaran Kedaluwarsa' : 'Pesanan Dibatalkan'}
+        </h2>
+        <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
+          {order.status === 'EXPIRED'
+            ? `Pesanan ${order.orderNumber} tidak dibayar dalam 24 jam. Buat pesanan baru untuk membeli voucher.`
+            : `Pesanan ${order.orderNumber} sudah dibatalkan. Buat pesanan baru untuk membeli voucher.`}
+        </p>
+        <button onClick={() => router.push('/evoucher')} className="w-full px-4 py-2.5 text-xs font-medium text-white bg-teal-700 hover:bg-teal-800 rounded-lg">Buat Pesanan Baru</button>
+      </div>
+    </div>
+  );
+
   if (order.status === 'PAID' && order.vouchers.length > 0) return (
     <div className="min-h-dvh bg-gradient-to-br from-green-50 to-teal-50 dark:from-gray-900 dark:to-gray-800 p-4">
       <div className="max-w-md mx-auto py-6">

@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { qrisOwnOption } from '@/server/services/payment/qris-own.service';
+import { voucherOrderExpiresAt } from '@/server/services/notifications/voucher-order-notify.service';
 
 // GET - Get voucher order by payment token
 export async function GET(
@@ -46,6 +47,12 @@ export async function GET(
         { error: 'Order not found or invalid payment link' },
         { status: 404 }
       );
+    }
+
+    // The payment-link message promises the link works for a fixed time.
+    if (order.status === 'PENDING' && voucherOrderExpiresAt(order.createdAt) < new Date()) {
+      await prisma.voucherOrder.updateMany({ where: { id: order.id, status: 'PENDING' }, data: { status: 'EXPIRED' } });
+      order.status = 'EXPIRED';
     }
 
     const qris = await qrisOwnOption();
