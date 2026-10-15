@@ -217,33 +217,18 @@ export async function POST(request: NextRequest) {
 
     console.log(`✅ Created renewal invoice ${invoiceNumber} for ${user.username} - ${amount}`);
 
-    // Log ke file untuk debugging
-    const fs = require('fs');
-    const logPath = '/var/www/salfanet-radius/logs/notification-debug.log';
-    fs.appendFileSync(logPath, `\n[${new Date().toISOString()}] Invoice created: ${invoiceNumber}\n`);
-
     // Send WhatsApp notification
     console.log('📱 Attempting to send WhatsApp notification...');
-    fs.appendFileSync(logPath, `[${new Date().toISOString()}] Attempting WhatsApp notification...\n`);
     try {
-      fs.appendFileSync(logPath, `[${new Date().toISOString()}] Querying whatsappTemplate...\n`);
       const whatsappTemplate = await prisma.whatsapp_templates.findFirst({
         where: { type: 'invoice-created' },
       });
-      fs.appendFileSync(logPath, `[${new Date().toISOString()}] Query completed\n`);
-
-      fs.appendFileSync(logPath, `[${new Date().toISOString()}] WhatsApp template found: ${whatsappTemplate ? 'YES' : 'NO'}\n`);
-      fs.appendFileSync(logPath, `[${new Date().toISOString()}] WhatsApp template active: ${whatsappTemplate?.isActive}\n`);
-      
-      if (whatsappTemplate) {
-        fs.appendFileSync(logPath, `[${new Date().toISOString()}] Template data: ${JSON.stringify(whatsappTemplate)}\n`);
-      }
 
       console.log('📱 WhatsApp template found:', whatsappTemplate ? 'YES' : 'NO');
       console.log('📱 WhatsApp template active:', whatsappTemplate?.isActive);
 
       if (whatsappTemplate && whatsappTemplate.isActive) {
-        let message = whatsappTemplate.message
+        const message = whatsappTemplate.message
           .replace(/{{customerName}}/g, user.name)
           .replace(/{{customerId}}/g, user.customerId || '-')
           .replace(/{{username}}/g, user.username)
@@ -258,31 +243,17 @@ export async function POST(request: NextRequest) {
           .replace(/{{companyName}}/g, company?.name || 'Billing System')
           .replace(/{{companyPhone}}/g, company?.phone || '');
 
-        // Use baseUrl instead of env var for internal API calls
-        const apiUrl = baseUrl || 'http://localhost:3002';
-        fs.appendFileSync(logPath, `[${new Date().toISOString()}] WhatsApp API URL: ${apiUrl}/api/whatsapp/send\n`);
-        fs.appendFileSync(logPath, `[${new Date().toISOString()}] WhatsApp phone: ${user.phone}\n`);
-        fs.appendFileSync(logPath, `[${new Date().toISOString()}] WhatsApp message length: ${message.length}\n`);
-        
-        const response = await fetch(`${apiUrl}/api/whatsapp/send`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            phone: user.phone,
-            message,
-          }),
-        });
-        
-        const result = await response.json();
-        fs.appendFileSync(logPath, `[${new Date().toISOString()}] WhatsApp API response: ${JSON.stringify(result)}\n`);
+        // Straight to the WhatsApp service: /api/whatsapp/send needs an
+        // admin session, so posting there from a customer request always
+        // failed while the log said sent.
+        if (user.phone) {
+          const { WhatsAppService } = await import('@/server/services/notifications/whatsapp.service');
+          await WhatsAppService.sendMessage({ phone: user.phone, message });
+        }
 
-        fs.appendFileSync(logPath, `[${new Date().toISOString()}] WhatsApp notification sent to ${user.phone}\n`);
         console.log(`✅ WhatsApp notification sent to ${user.phone}`);
-      } else {
-        fs.appendFileSync(logPath, `[${new Date().toISOString()}] WhatsApp notification skipped (no active template)\n`);
       }
     } catch (notifError) {
-      fs.appendFileSync(logPath, `[${new Date().toISOString()}] WhatsApp error: ${notifError}\n`);
       console.error('Failed to send WhatsApp notification:', notifError);
       // Don't fail the request if notification fails
     }
@@ -290,15 +261,11 @@ export async function POST(request: NextRequest) {
     // Send Email notification
     console.log('📧 Attempting to send Email notification...');
     console.log('📧 User email:', user.email);
-    fs.appendFileSync(logPath, `[${new Date().toISOString()}] Attempting Email notification...\n`);
-    fs.appendFileSync(logPath, `[${new Date().toISOString()}] User email: ${user.email}\n`);
     if (user.email) {
       try {
         const { EmailService } = await import('@/server/services/notifications/email.service');
         const emailSettings = await EmailService.getSettings();
 
-        fs.appendFileSync(logPath, `[${new Date().toISOString()}] Email settings enabled: ${emailSettings?.enabled}\n`);
-        fs.appendFileSync(logPath, `[${new Date().toISOString()}] Email notify invoice: ${emailSettings?.notifyInvoice}\n`);
 
         console.log('📧 Email settings enabled:', emailSettings?.enabled);
         console.log('📧 Email notify invoice:', emailSettings?.notifyInvoice);
@@ -308,7 +275,6 @@ export async function POST(request: NextRequest) {
             where: { type: 'invoice-created', isActive: true },
           });
 
-          fs.appendFileSync(logPath, `[${new Date().toISOString()}] Email template found: ${emailTemplate ? 'YES' : 'NO'}\n`);
 
           console.log('📧 Email template found:', emailTemplate ? 'YES' : 'NO');
 
@@ -348,21 +314,16 @@ export async function POST(request: NextRequest) {
               html: htmlBody,
             });
 
-            fs.appendFileSync(logPath, `[${new Date().toISOString()}] Email notification sent to ${user.email}\n`);
             console.log(`✅ Email notification sent to ${user.email}`);
           } else {
-            fs.appendFileSync(logPath, `[${new Date().toISOString()}] Email template not found or not active\n`);
           }
         } else {
-          fs.appendFileSync(logPath, `[${new Date().toISOString()}] Email notification skipped (disabled or notifyInvoice=false)\n`);
         }
       } catch (emailError) {
-        fs.appendFileSync(logPath, `[${new Date().toISOString()}] Email error: ${emailError}\n`);
         console.error('Failed to send email notification:', emailError);
         // Don't fail the request if notification fails
       }
     } else {
-      fs.appendFileSync(logPath, `[${new Date().toISOString()}] Email notification skipped (no email address)\n`);
     }
 
     return NextResponse.json({

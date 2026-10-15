@@ -228,7 +228,7 @@ CrudConfig whatsappTemplatesConfig() => CrudConfig(
 
 /// Pengingat & OTP — mirrors /admin/whatsapp/notifications.
 SettingsFormScreen whatsappReminderSettings() => SettingsFormScreen(
-  title: 'Pengingat WhatsApp',
+  title: 'Pengingat Tagihan',
   load: () async {
     final res = await _api.get('/api/whatsapp/reminder-settings');
     final s = res is Map ? (mapOf(res.cast<String, dynamic>(), 'settings') ?? {}) : <String, dynamic>{};
@@ -236,19 +236,19 @@ SettingsFormScreen whatsappReminderSettings() => SettingsFormScreen(
     return {...s, 'reminderDays': days is List ? days.join(', ') : (days ?? '-7, -5, -3, 0').toString()};
   },
   fields: (_) => const [
-    FieldSpec('enabled', 'Kirim pengingat tagihan otomatis', type: FieldType.toggle),
+    FieldSpec('enabled', 'Kirim pengingat tagihan otomatis', type: FieldType.toggle, helper: 'Jadwal ini dipakai untuk WhatsApp, email, dan notifikasi aplikasi pelanggan.'),
     FieldSpec(
       'reminderDays',
       'Hari pengingat',
       required: true,
       hint: '-7, -3, 0, 1',
-      helper: 'Relatif terhadap jatuh tempo: -3 = tiga hari sebelum, 0 = hari H, 1 = sehari sesudah. Pisahkan dengan koma.',
+      helper: 'Relatif terhadap jatuh tempo: -3 = tiga hari sebelum, 0 = hari H, 1 = sehari sesudah. Rentang -30 sampai 30, pisahkan dengan koma.',
     ),
-    FieldSpec('reminderTime', 'Jam kirim', type: FieldType.time, required: true),
+    FieldSpec('reminderTime', 'Jam kirim', type: FieldType.time, required: true, helper: 'Pengingat dikirim mulai jam ini, tidak lebih awal.'),
     FieldSpec.section('Pengiriman massal'),
     FieldSpec('batchSize', 'Pesan per gelombang', type: FieldType.integer, min: 1),
     FieldSpec('batchDelay', 'Jeda antar gelombang (detik)', type: FieldType.integer, min: 0),
-    FieldSpec('randomize', 'Acak jeda (hindari blokir)', type: FieldType.toggle),
+    FieldSpec('randomize', 'Acak urutan pengiriman (hindari blokir)', type: FieldType.toggle),
     FieldSpec.section('OTP login pelanggan'),
     FieldSpec('otpEnabled', 'OTP WhatsApp aktif', type: FieldType.toggle),
     FieldSpec('otpExpiry', 'Masa berlaku OTP (menit)', type: FieldType.integer, min: 1),
@@ -256,6 +256,7 @@ SettingsFormScreen whatsappReminderSettings() => SettingsFormScreen(
   save: (v, _) {
     final days = (v['reminderDays'] as String).split(RegExp(r'[,\s]+')).where((s) => s.isNotEmpty).map((s) => int.tryParse(s)).toList();
     if (days.any((d) => d == null)) throw ApiException('Hari pengingat harus angka dipisah koma.');
+    if (days.any((d) => d! < -30 || d > 30)) throw ApiException('Hari pengingat harus dari -30 sampai 30.');
     return _api.put('/api/whatsapp/reminder-settings', data: {...v, 'reminderDays': days});
   },
 );

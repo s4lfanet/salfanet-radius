@@ -151,8 +151,16 @@ export async function PUT(request: NextRequest) {
       }, { status: 400 });
     }
 
+    if (gracePeriodDays !== undefined && gracePeriodDays !== null &&
+        (!Number.isInteger(gracePeriodDays) || gracePeriodDays < 0 || gracePeriodDays > 30)) {
+      return NextResponse.json({
+        success: false,
+        error: 'Masa tenggang harus 0 sampai 30 hari'
+      }, { status: 400 });
+    }
+
     const company = await prisma.company.findFirst();
-    
+
     if (!company) {
       return NextResponse.json({
         success: false,

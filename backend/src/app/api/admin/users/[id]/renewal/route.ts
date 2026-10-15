@@ -156,14 +156,13 @@ export async function POST(
           .replace(/{{companyName}}/g, company?.name || 'Billing System')
           .replace(/{{companyPhone}}/g, company?.phone || '');
 
-        await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/whatsapp/send`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            to: user.phone,
-            message,
-          }),
-        });
+        // Straight to the WhatsApp service: the old internal POST to
+        // /api/whatsapp/send carried no session and sent `to` instead of
+        // `phone`, so it never delivered.
+        if (user.phone) {
+          const { WhatsAppService } = await import('@/server/services/notifications/whatsapp.service');
+          await WhatsAppService.sendMessage({ phone: user.phone, message });
+        }
 
         console.log(`✅ WhatsApp notification sent to ${user.phone}`);
       }

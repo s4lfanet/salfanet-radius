@@ -3,6 +3,7 @@ import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { managePppSecret, kickPppoeSession, shouldManagePppSecretForSuspend } from '@/server/services/mikrotik/ppp-secret.service';
 import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service';
+import { sendIsolationNotice } from '@/server/services/notifications/isolation-notice.service';
 import { parseBody, z } from '@/lib/parse-body';
 
 // Zod schema for isolate-user — prevents mass assignment and validates input
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
     const user = await prisma.pppoeUser.findUnique({
       where: { username },
       select: {
-        id: true, username: true, name: true, password: true, ipAddress: true,
+        id: true, username: true, name: true, password: true, ipAddress: true, status: true,
         profile: { select: { groupName: true } },
         router: { select: { id: true, authMode: true } },
       },
@@ -88,6 +89,9 @@ export async function POST(request: NextRequest) {
 
     // 4. CoA disconnect
     try { await disconnectPPPoEUser(user.username); } catch { /* non-fatal */ }
+
+    // 5. Tell the customer, per the isolation notification settings.
+    if (user.status !== 'isolated') await sendIsolationNotice(user.id);
 
     return NextResponse.json({
       success: true,

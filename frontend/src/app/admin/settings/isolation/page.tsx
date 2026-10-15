@@ -198,7 +198,7 @@ export default function IsolationSettingsPage() {
                   min="0"
                   max="30"
                   value={settings.gracePeriodDays}
-                  onChange={(e) => setSettings({ ...settings, gracePeriodDays: parseInt(e.target.value) })}
+                  onChange={(e) => setSettings({ ...settings, gracePeriodDays: Math.min(30, Math.max(0, parseInt(e.target.value) || 0)) })}
                   className="w-20 px-2.5 py-1.5 text-sm border border-border rounded-lg focus:ring-2 focus:ring-primary dark:bg-input dark:text-foreground"
                 />
                 <span className="text-xs text-muted-foreground dark:text-muted-foreground">{t('isolation.days')}</span>

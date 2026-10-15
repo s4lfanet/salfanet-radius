@@ -1,5 +1,5 @@
 import { prisma } from '@/server/db/client';
-import { nowWIBAsync, WIB_TIMEZONE } from '@/lib/timezone';
+import { nowWIBAsync, WIB_TIMEZONE, formatWIB } from '@/lib/timezone';
 import { formatInTimeZone } from 'date-fns-tz';
 import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
 import { nanoid } from 'nanoid';
@@ -341,29 +341,119 @@ export async function runInvoiceStatusUpdate(): Promise<{ updated: number }> {
 }
 
 /**
- * Invoice Reminder — send WA reminders for PENDING/OVERDUE invoices.
- * Uses sendInvoiceReminder from whatsapp-templates.service (available in server context).
+ * Reminder schedule from Settings > WhatsApp > Notifikasi. One schedule for
+ * every channel: WhatsApp, email (when "Notifikasi invoice" is on in the
+ * email settings) and the customer app push.
  */
-export async function runInvoiceReminder(): Promise<{ sent: number; skipped: number; total: number; errors: string[] }> {
+export interface ReminderSchedule {
+  enabled: boolean;
+  /** Offsets from the due date: -7 = 7 days before, 0 = due day, 3 = 3 days after. */
+  days: number[];
+  /** HH:mm in the company time zone; nothing is sent earlier in the day. */
+  time: string;
+  batchSize: number;
+  batchDelaySec: number;
+  randomize: boolean;
+}
+
+export async function loadReminderSchedule(): Promise<ReminderSchedule> {
+  const s = await prisma.whatsapp_reminder_settings.findFirst();
+  let days: number[] = [-7, -5, -3, 0];
+  try {
+    const parsed = s?.reminderDays ? JSON.parse(s.reminderDays) : null;
+    if (Array.isArray(parsed)) days = parsed.map(Number).filter((n) => Number.isInteger(n) && n >= -30 && n <= 30);
+  } catch { /* keep defaults */ }
+  return {
+    enabled: s?.enabled ?? true,
+    days,
+    time: /^\d{2}:\d{2}$/.test(s?.reminderTime || '') ? s!.reminderTime : '09:00',
+    batchSize: Math.max(1, s?.batchSize ?? 10),
+    batchDelaySec: Math.max(0, s?.batchDelay ?? 60),
+    randomize: s?.randomize ?? true,
+  };
+}
+
+/** Whole calendar days from today to the due date, in the company time zone (positive = before due). */
+export function daysUntilDueLocal(dueDate: Date, now: Date): number {
+  const ymd = (d: Date) => formatWIB(d, 'yyyy-MM-dd').split('-').map(Number);
+  const [dy, dm, dd] = ymd(dueDate);
+  const [ny, nm, nd] = ymd(now);
+  return Math.round((Date.UTC(dy, dm - 1, dd) - Date.UTC(ny, nm - 1, nd)) / 86_400_000);
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+// The runner gives this job 55 minutes; leave room to finish cleanly. Work
+// not reached is picked up by the next run on the same day.
+const REMINDER_RUN_BUDGET_MS = 50 * 60 * 1000;
+
+/**
+ * Marks reminder `key` as sent on the invoice, atomically. Returns false when
+ * it was already sent, including by the old format, which stored only the
+ * day number for all channels together.
+ */
+async function claimReminder(invoiceId: string, key: string, day: number): Promise<boolean> {
+  let claimed = false;
+  await prisma.$transaction(async (tx) => {
+    const current = await tx.invoice.findUnique({ where: { id: invoiceId }, select: { sentReminders: true } });
+    let sent: Array<number | string> = [];
+    try { sent = current?.sentReminders ? JSON.parse(current.sentReminders) : []; } catch { /* treat as none */ }
+    if (sent.includes(key) || sent.includes(day)) return;
+    sent.push(key);
+    await tx.invoice.update({ where: { id: invoiceId }, data: { sentReminders: JSON.stringify(sent) } });
+    claimed = true;
+  });
+  return claimed;
+}
+
+/** Undo a claim after a failed send so the next run tries again. */
+async function releaseReminder(invoiceId: string, key: string): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    const current = await tx.invoice.findUnique({ where: { id: invoiceId }, select: { sentReminders: true } });
+    let sent: Array<number | string> = [];
+    try { sent = current?.sentReminders ? JSON.parse(current.sentReminders) : []; } catch { return; }
+    await tx.invoice.update({ where: { id: invoiceId }, data: { sentReminders: JSON.stringify(sent.filter((k) => k !== key)) } });
+  }).catch(() => { /* next claim simply stays blocked for today */ });
+}
+
+/**
+ * Invoice Reminder: WhatsApp, email and push for PENDING/OVERDUE invoices,
+ * on the days and from the time set in the reminder settings. Runs hourly;
+ * each channel is sent at most once per invoice per scheduled day.
+ */
+export async function runInvoiceReminder(): Promise<{ sent: number; skipped: number; total: number; errors: string[]; note?: string }> {
+  const started = Date.now();
   const now = await nowWIBAsync();
   const errors: string[] = [];
+  const schedule = await loadReminderSchedule();
 
-  const remindBefore = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-  const invoices = await prisma.invoice.findMany({
+  if (!schedule.enabled) {
+    return { sent: 0, skipped: 0, total: 0, errors, note: 'Reminder invoice dinonaktifkan di pengaturan' };
+  }
+  if (formatWIB(now, 'HH:mm') < schedule.time) {
+    return { sent: 0, skipped: 0, total: 0, errors, note: `Belum jam kirim (${schedule.time})` };
+  }
+  if (schedule.days.length === 0) {
+    return { sent: 0, skipped: 0, total: 0, errors, note: 'Tidak ada hari reminder yang dipilih' };
+  }
+
+  // Only invoices whose due date is one of the scheduled offsets from today.
+  const minOffset = Math.min(...schedule.days);
+  const maxOffset = Math.max(...schedule.days);
+  const windowStart = new Date(now.getTime() - (maxOffset + 1) * 86_400_000);
+  const windowEnd = new Date(now.getTime() + (-minOffset + 1) * 86_400_000);
+
+  const candidates = await prisma.invoice.findMany({
     where: {
       status: { in: ['PENDING', 'OVERDUE'] },
-      dueDate: { lte: remindBefore },
-      customerPhone: { not: null },
+      dueDate: { gte: windowStart, lte: windowEnd },
     },
     select: {
       id: true, invoiceNumber: true, amount: true, dueDate: true, status: true,
       customerName: true, customerPhone: true, customerUsername: true, customerEmail: true,
-      paymentLink: true, sentReminders: true, userId: true,
+      paymentLink: true, userId: true,
       user: {
         select: {
-          address: true,
-          customerId: true,
-          email: true,
+          address: true, customerId: true, email: true,
           profile: { select: { name: true } },
           area: { select: { name: true } },
         },
@@ -371,125 +461,89 @@ export async function runInvoiceReminder(): Promise<{ sent: number; skipped: num
     },
   });
 
-  // Phase 7: Parallelize independent queries
-  const [waProviders, company] = await Promise.all([
-    prisma.whatsapp_providers.findMany({ where: { isActive: true } }),
+  const [waProviders, company, emailSettings] = await Promise.all([
+    prisma.whatsapp_providers.count({ where: { isActive: true } }),
     prisma.company.findFirst({ select: { name: true, phone: true } }),
+    prisma.emailSettings.findFirst({ select: { enabled: true, notifyInvoice: true } }),
   ]);
-  const waAvailable = waProviders.length > 0;
+  const waAvailable = waProviders > 0;
+  const emailAvailable = !!emailSettings?.enabled && !!emailSettings?.notifyInvoice;
+
+  const due = candidates
+    .map((inv) => ({ inv, day: daysUntilDueLocal(inv.dueDate, now) }))
+    .filter(({ day }) => schedule.days.includes(-day));
+  if (schedule.randomize) {
+    for (let i = due.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [due[i], due[j]] = [due[j], due[i]];
+    }
+  }
+
+  const { sendInvoiceReminder } = await import('@/server/services/notifications/whatsapp-templates.service');
+  const { EmailService } = await import('@/server/services/notifications/email.service');
 
   let sent = 0;
   let skipped = 0;
+  let waInBatch = 0;
+  let stoppedEarly = false;
 
-  for (const inv of invoices) {
+  for (const { inv, day } of due) {
+    if (Date.now() - started > REMINDER_RUN_BUDGET_MS) { stoppedEarly = true; break; }
+
+    const user = inv.user;
+    const isOverdue = day < 0;
+    const daysOverdue = isOverdue ? -day : 0;
+    const customerName = inv.customerName || inv.customerUsername || 'Pelanggan';
+    const customerEmail = inv.customerEmail || user?.email || null;
+    const common = {
+      customerName,
+      customerId: user?.customerId || undefined,
+      customerUsername: inv.customerUsername || undefined,
+      profileName: user?.profile?.name,
+      area: user?.area?.name,
+      address: user?.address || undefined,
+      invoiceNumber: inv.invoiceNumber,
+      amount: inv.amount,
+      dueDate: inv.dueDate,
+      paymentLink: inv.paymentLink || '',
+      companyName: company?.name || '',
+      companyPhone: company?.phone || '',
+      isOverdue,
+      daysOverdue,
+    };
+    let any = false;
+
     try {
-      if (!waAvailable || !inv.customerPhone) {
-        skipped++;
-        continue;
+      if (waAvailable && inv.customerPhone && await claimReminder(inv.id, `w:${day}`, day)) {
+        // Pace WhatsApp sends per the batch settings to avoid provider bans.
+        if (waInBatch >= schedule.batchSize) {
+          await sleep(schedule.batchDelaySec * 1000);
+          waInBatch = 0;
+        }
+        try {
+          const ok = await sendInvoiceReminder({ phone: inv.customerPhone, ...common });
+          waInBatch++;
+          if (ok) any = true;
+          else await releaseReminder(inv.id, `w:${day}`);
+        } catch (e: any) {
+          await releaseReminder(inv.id, `w:${day}`);
+          errors.push(`${inv.invoiceNumber} WA: ${e?.message || e}`);
+        }
       }
 
-      let sentDays: number[] = [];
-      try { sentDays = inv.sentReminders ? JSON.parse(inv.sentReminders) : []; } catch {}
-      const daysUntilDue = Math.ceil((inv.dueDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000));
-      if (sentDays.includes(daysUntilDue)) {
-        skipped++;
-        continue;
+      if (emailAvailable && customerEmail && await claimReminder(inv.id, `e:${day}`, day)) {
+        const r = await EmailService.sendInvoiceReminder({ email: customerEmail, ...common })
+          .catch((e: any) => ({ success: false, error: e?.message || String(e) }));
+        if (r?.success) any = true;
+        else {
+          await releaseReminder(inv.id, `e:${day}`);
+          errors.push(`${inv.invoiceNumber} email: ${r?.error || 'gagal'}`);
+        }
       }
 
-      // daysUntilDue turns more negative every day once overdue, so without a
-      // floor this fires a brand-new WA+email reminder every single day,
-      // forever — by day 30 the account has already been fully stopped
-      // (runAutoStop) and gets its own one-time notice; keep reminding once
-      // is escalation, reminding daily for months is spam.
-      if (daysUntilDue < -30) {
-        skipped++;
-        continue;
-      }
-
-      // ─── Idempotency: atomically claim this reminder BEFORE sending ───────
-      // Update sentReminders first — if another instance already claimed it,
-      // the update will be a no-op (we re-check sentDays inside transaction).
-      let claimed = false;
-      try {
-        await prisma.$transaction(async (tx) => {
-          const current = await tx.invoice.findUnique({
-            where: { id: inv.id },
-            select: { sentReminders: true },
-          });
-          let currentDays: number[] = [];
-          try { currentDays = current?.sentReminders ? JSON.parse(current.sentReminders) : []; } catch {}
-          if (currentDays.includes(daysUntilDue)) {
-            // Another instance already sent this reminder — skip
-            return;
-          }
-          currentDays.push(daysUntilDue);
-          await tx.invoice.update({
-            where: { id: inv.id },
-            data: { sentReminders: JSON.stringify(currentDays) },
-          });
-          claimed = true;
-        });
-      } catch {
-        // If transaction fails (e.g., row locked), skip this invoice
-        skipped++;
-        continue;
-      }
-
-      if (!claimed) {
-        skipped++;
-        continue;
-      }
-
-      const isOverdue = inv.status === 'OVERDUE' || inv.dueDate < now;
-      const daysOverdue = inv.dueDate < now ? Math.ceil((now.getTime() - inv.dueDate.getTime()) / (24 * 60 * 60 * 1000)) : 0;
-      const user = (inv as any).user as { address?: string | null; customerId?: string | null; email?: string | null; profile?: { name: string } | null; area?: { name: string } | null } | null;
-
-      const { sendInvoiceReminder } = await import('@/server/services/notifications/whatsapp-templates.service');
-      await sendInvoiceReminder({
-        phone: inv.customerPhone!,
-        customerName: inv.customerName || inv.customerUsername || 'Customer',
-        customerId: user?.customerId || undefined,
-        customerUsername: inv.customerUsername || undefined,
-        profileName: user?.profile?.name,
-        area: user?.area?.name,
-        address: user?.address || undefined,
-        invoiceNumber: inv.invoiceNumber,
-        amount: inv.amount,
-        dueDate: inv.dueDate,
-        paymentLink: inv.paymentLink || '',
-        companyName: company?.name || '',
-        companyPhone: company?.phone || '',
-        isOverdue,
-        daysOverdue,
-      });
-
-      // Send email reminder alongside WhatsApp, if the customer has an email on file
-      const customerEmail = inv.customerEmail || user?.email;
-      if (customerEmail) {
-        const { EmailService } = await import('@/server/services/notifications/email.service');
-        await EmailService.sendInvoiceReminder({
-          email: customerEmail,
-          customerName: inv.customerName || inv.customerUsername || 'Customer',
-          customerId: user?.customerId || undefined,
-          customerUsername: inv.customerUsername || undefined,
-          profileName: user?.profile?.name,
-          area: user?.area?.name,
-          address: user?.address || undefined,
-          invoiceNumber: inv.invoiceNumber,
-          amount: inv.amount,
-          dueDate: inv.dueDate,
-          paymentLink: inv.paymentLink || '',
-          companyName: company?.name || '',
-          companyPhone: company?.phone || '',
-          isOverdue,
-          daysOverdue,
-        }).catch((e) => console.error(`[INVOICE_REMINDER] Email failed for ${inv.invoiceNumber}:`, e?.message || e));
-      }
-
-      // Send web push notification alongside WhatsApp
-      if (inv.userId) {
+      if (inv.userId && await claimReminder(inv.id, `p:${day}`, day)) {
         await sendPushToUser(inv.userId, isOverdue ? 'invoice-overdue' : 'invoice-reminder', {
-          customerName: inv.customerName || inv.customerUsername || 'Pelanggan',
+          customerName,
           customerAddress: user?.address || undefined,
           profileName: user?.profile?.name,
           invoiceNumber: inv.invoiceNumber,
@@ -501,15 +555,21 @@ export async function runInvoiceReminder(): Promise<{ sent: number; skipped: num
           daysOverdue,
         }).catch((e) => console.error(`[INVOICE_REMINDER] Push failed for ${inv.invoiceNumber}:`, e?.message || e));
       }
-
-      sent++;
-    } catch (err: any) {
-      errors.push(`${inv.invoiceNumber}: ${err?.message || err}`);
+    } catch (e: any) {
+      errors.push(`${inv.invoiceNumber}: ${e?.message || e}`);
     }
+
+    if (any) sent++;
+    else skipped++;
   }
 
-  console.log(`[INVOICE_REMINDER] sent=${sent} skipped=${skipped} errors=${errors.length}`);
-  return { sent, skipped, total: invoices.length, errors };
+  const note = [
+    !waAvailable ? 'tidak ada provider WhatsApp aktif' : '',
+    !emailAvailable ? 'email reminder nonaktif' : '',
+    stoppedEarly ? 'batas waktu tercapai, sisa dikirim di jalan berikutnya' : '',
+  ].filter(Boolean).join('; ') || undefined;
+  console.log(`[INVOICE_REMINDER] due=${due.length} sent=${sent} skipped=${skipped} errors=${errors.length}${note ? ` (${note})` : ''}`);
+  return { sent, skipped, total: due.length, errors, note };
 }
 
 /**
