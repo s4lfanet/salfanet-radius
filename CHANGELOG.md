@@ -6,6 +6,96 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.22.0] - 2026-10-15 - QRIS Mandiri untuk Semua Transaksi + Aplikasi Admin & Pelanggan Native + Biaya Operasional
+
+### Summary
+Rilis besar setelah 5.21.0 (130 commit). QRIS Mandiri kini dipakai untuk semua jenis pembayaran dengan satu jalur pelunasan yang sama seperti payment gateway, QRIS Listener jauh lebih andal dan mengumumkan pembayaran dengan suara, aplikasi Android native untuk admin dan pelanggan (Flutter) dengan push FCM, halaman Biaya Operasional, perbaikan besar OLT ZTE dan GenieACS, serta sejumlah perbaikan keamanan.
+
+### Pembayaran & QRIS Mandiri
+- **[FEATURE]** QRIS Mandiri tersedia untuk tagihan, top-up saldo, pembelian voucher online, upgrade paket, dan deposit agen: QR dinamis dengan kode unik, berlaku 15 menit, halaman bayar `/pay/qris/{orderId}`
+- **[FIX]** Pembayaran QRIS dilunasi lewat jalur yang sama dengan payment gateway (invoice, top-up, voucher, deposit agen), termasuk notifikasi dan pencatatan keuangan
+- **[FIX]** Top-up pelanggan benar-benar menambah saldo
+- **[SECURITY]** Notifikasi QRIS wajib bertanda tangan HMAC (Device Secret), dengan proteksi replay (nonce + jendela waktu 5 menit) dan perbandingan constant-time
+- **[FIX]** Satu jalur pelunasan deposit agen; webhook deposit agen memakai handler webhook utama
+- **[FIX]** Nomor pesanan voucher aman dari tabrakan (retry otomatis)
+- **[FIX]** Midtrans yang mengarahkan browser ke URL webhook tidak lagi menghasilkan 405
+- **[FIX]** Redirect pembayaran memakai domain publik, bukan origin proxy internal
+- **[UI]** Device Key dan Device Secret QRIS terlihat di halaman Payment Gateway (salin, tampilkan/sembunyikan, buat secret baru)
+- **[FEATURE]** Endpoint `qris-notify` menjawab GET dengan pesan status dan punya mode tes koneksi
+
+### QRIS Listener (APK Android)
+- **[FIX]** Notifikasi DANA ("Pembayaran Masuk", "Rp... diterima DANA Bisnis") tertangkap; judul notifikasi bergaya kini terbaca
+- **[FIX]** Service tetap hidup: heartbeat tiap 5 menit, watchdog memaksa Android mengikat ulang listener yang dimatikan sistem, antrean kirim ulang saat server tidak terjangkau
+- **[FIX]** Status "Aktif" dihitung dari heartbeat, bukan flag lama yang tetap "Terhubung" setelah service mati
+- **[FEATURE]** Tombol Tes Koneksi Server untuk memeriksa Device Key dan Device Secret
+- **[FEATURE]** Tombol Izinkan Autostart untuk Xiaomi, Oppo, Vivo, Realme, Huawei
+- **[FEATURE]** Pembayaran diumumkan dengan suara Bahasa Indonesia ("Pembayaran DANA diterima, tiga ribu delapan puluh enam rupiah") lewat volume media, menggantikan nada alarm; bisa dimatikan dan dites
+- **[FIX]** Build APK dari web: waktu build sesuai jam server, listener berhasil dikompilasi, pesan gagal lebih jelas
+
+### Aplikasi Admin Android (Flutter, baru)
+- **[FEATURE]** Aplikasi admin native di `mobile/admin_app` dengan tambah, ubah, hapus untuk semua modul admin web
+- **[FEATURE]** Laporan, pelanggan terisolir, fiber trace, Biaya Operasional
+- **[FEATURE]** Push notifikasi FCM untuk admin
+- **[FIX]** Semua data termuat (paginasi penuh), bukan hanya halaman pertama
+- **[UI]** Garis dan border lebih jelas, dashboard lebih lengkap, ikon aplikasi dari logo perusahaan
+- **[UI]** Program referral bernama "Ajak Teman"
+- **[FIX]** Layar yang tidak bisa di-scroll sampai bawah
+
+### Aplikasi Pelanggan Android (Flutter, baru)
+- **[FEATURE]** Aplikasi pelanggan native: tagihan, PDF invoice, tiket dengan GPS, branding operator dinamis, alamat server bisa diatur
+- **[FEATURE]** Push notifikasi FCM yang bisa diketuk; broadcast admin dan statistik dashboard memakai FCM
+- **[FEATURE]** Link unduh aplikasi Android di halaman login dan sidebar portal pelanggan
+
+### Keuangan & Billing
+- **[FEATURE]** Halaman Biaya Operasional (alat, bandwidth, gaji, dan lainnya) di web dan aplikasi admin
+- **[FEATURE]** Laporan pendapatan per paket
+- **[FIX]** Pelanggan prabayar tidak ditagih sebelum bulan expired-nya
+- **[FEATURE]** Cron membatalkan otomatis tagihan basi untuk pelanggan yang sudah diperpanjang
+- **[FIX]** Format nomor invoice seragam di seluruh sistem
+- **[FEATURE]** Lokasi GPS dicatat pada janji bayar
+
+### OLT & GenieACS
+- **[FIX]** ZTE C320 V2.1: discovery SNMP per port, rumus RX power, status (termasuk Dying Gasp/LOS) dan jarak lewat Telnet
+- **[FEATURE]** ZTE C320 V2.2: kesehatan chassis, TX power dan jarak ONU
+- **[FIX]** Penomoran port PON, port uplink SMXA, slot uplink standby
+- **[FIX]** OLT baru tidak lagi tertahan "Offline"; tes koneksi SNMP berfungsi; poller Telnet 3,1x lebih cepat
+- **[FIX]** Jumlah ONU tidak lagi dobel karena baris unregistered lama; staf bisa menghapus baris basi
+- **[UI]** Detail ONU didesain ulang berdasarkan kondisi ONU
+- **[FIX]** GenieACS: band 2.4GHz ONT WiFi 6 tidak lagi hilang, field detail perangkat lintas vendor terisi, mode PON, RX power dan voltase di daftar
+- **[SECURITY]** Peringatan NBI GenieACS tanpa autentikasi, dan port 7557 di-firewall otomatis oleh installer
+
+### RADIUS & MikroTik
+- **[FIX]** Status online, kesehatan RADIUS, IP/MAC sesi, dan error 500 pada detail
+- **[FIX]** Sinkronisasi NAS-client FreeRADIUS tidak lagi terlewat, dengan fallback live ke MikroTik
+- **[FIX]** Error socket RouterOS API tidak lagi menghentikan proses
+- **[FIX]** Uptime dari router lebih dipercaya daripada radacct yang tidak lengkap
+
+### Hotspot
+- **[FEATURE]** Template voucher bawaan termasuk 50 dan 60 per A4, Kartu Standar 50 per A4, ganti warna satu klik
+
+### Notifikasi
+- **[FIX]** Notifikasi admin dan pelanggan terkirim di setiap jalur pelunasan pembayaran
+- **[FIX]** Template pengingat, isolir, dan pembayaran berisi data pelanggan lengkap (paket, area, ID pelanggan)
+- **[FIX]** Bel notifikasi teknisi dan kolektor tidak crash saat polling
+- **[FEATURE]** Bot Telegram dua arah untuk teknisi (cek redaman, cek pelanggan)
+- **[FEATURE]** Banner promo slideshow di dashboard pelanggan
+
+### Keamanan
+- **[SECURITY]** Patch dua celah RCE Next.js tanpa autentikasi; kerentanan dependensi 27 menjadi 0
+- **[SECURITY]** Autentikasi wajib pada mutasi admin yang belum terlindungi, tiket, dan pesan tiket; hook RADIUS hanya dari localhost
+
+### Web UI
+- **[UI]** Latar logo login seragam di semua portal (tile putih solid di kedua tema, fallback ukuran sama)
+- **[UI]** Komponen toggle seragam; perbaikan audit UI frontend
+- **[FIX]** Padding bawah halaman admin dan kolektor
+
+### Sistem
+- **[FIX]** Versi aplikasi di web tidak lagi tertahan: file `VERSION` lama dari instalasi ZIP tidak menimpa versi yang lebih baru, folder aplikasi dicari dari lokasi server yang berjalan, dan endpoint health melaporkan versi yang sama
+- **[CHORE]** Bump versi root, frontend, dan backend ke 5.22.0
+- **[FIX]** Semua error typecheck backend dan frontend diselesaikan; lint backend berfungsi kembali
+
+---
+
 ## [5.21.0] — 2026-09-15 — Hotspot Session Sync Fixes + Dashboard Log Centralization + Invoice/PWA Fixes
 
 ### Summary

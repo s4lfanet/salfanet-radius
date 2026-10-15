@@ -1,5 +1,6 @@
 ﻿import { NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
+import { getAppVersion } from '@/server/app-version';
 
 /**
  * Health Check Endpoint
@@ -34,7 +35,7 @@ export async function GET() {
         rss: `${Math.round(memoryUsage.rss / 1024 / 1024)}MB`,
       },
       database: 'connected',
-      version: process.env.APP_VERSION || process.env.npm_package_version || 'unknown',
+      version: getAppVersion(),
     }, { status: 200 });
   } catch (_error) {
     return NextResponse.json({
