@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
+import { LoginLogo } from '@/components/auth/LoginLogo';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin, ApiError } from '@/lib/api';
 import { User, Lock, Loader2, Wrench, AlertCircle } from 'lucide-react';
@@ -63,7 +63,7 @@ export default function TechnicianLoginPage() {
   };
 
   if (!brandLoaded) {
-    return <div className="min-h-dvh bg-gray-50 dark:bg-slate-950" />;
+    return <div className="min-h-dvh bg-background" />;
   }
 
   return (
@@ -91,18 +91,7 @@ export default function TechnicianLoginPage() {
       <div className="flex items-start justify-center w-full lg:w-[430px] lg:min-h-dvh bg-card border-r border-border shadow-xl px-4 pt-6 pb-6 sm:px-8 sm:pt-10 lg:pt-14 sm:pb-10 flex-shrink-0">
         <div className="w-full max-w-[320px]">
 
-          {/* Logo */}
-          <div className="flex justify-center mb-5">
-            {companyLogo ? (
-              <div className="w-24 h-24 p-2 rounded-xl border border-border bg-white/90 shadow-sm flex items-center justify-center overflow-hidden">
-                <Image unoptimized src={companyLogo} alt={companyName} width={220} height={110} className="max-h-full max-w-full w-auto h-auto object-contain" />
-              </div>
-            ) : (
-              <div className="inline-flex items-center justify-center w-14 h-14 bg-blue-600 rounded-2xl shadow-lg shadow-blue-500/25">
-                <Wrench className="w-7 h-7 text-white" />
-              </div>
-            )}
-          </div>
+          <LoginLogo src={companyLogo} alt={companyName} fallbackIcon={Wrench} />
 
           {/* Subtitle */}
           <p className="text-center text-sm text-blue-600 dark:text-blue-400 font-semibold mb-6">

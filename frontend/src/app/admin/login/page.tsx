@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, Suspense } from 'react';
-import Image from 'next/image';
+import { LoginLogo } from '@/components/auth/LoginLogo';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, Loader2, Shield, Smartphone, User, Lock, Clock, LogIn, ArrowLeft, KeyRound } from 'lucide-react';
@@ -180,7 +180,7 @@ function LoginForm() {
   };
 
   if (!brandLoaded) {
-    return <div className="min-h-dvh bg-gray-50 dark:bg-slate-950" />;
+    return <div className="min-h-dvh bg-background" />;
   }
 
   return (
@@ -208,18 +208,7 @@ function LoginForm() {
       <div className="flex items-start justify-center w-full lg:w-[430px] lg:min-h-dvh bg-card border-r border-border shadow-xl px-4 pt-6 pb-6 sm:px-8 sm:pt-10 lg:pt-14 sm:pb-10 flex-shrink-0">
         <div className="w-full max-w-[320px]">
 
-          {/* Logo */}
-          <div className="flex justify-center mb-5">
-            {companyLogo ? (
-              <div className="w-24 h-24 p-2 rounded-xl border border-border bg-white/90 shadow-sm flex items-center justify-center overflow-hidden">
-                <Image unoptimized src={companyLogo} alt={companyName} width={220} height={110} className="max-h-full max-w-full w-auto h-auto object-contain" />
-              </div>
-            ) : (
-              <div className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl shadow-lg transition-all duration-300 ${step === 'twoFactor' ? 'bg-indigo-600 shadow-indigo-500/25' : 'bg-blue-600 shadow-blue-500/25'}`}>
-                {step === 'twoFactor' ? <Smartphone className="w-7 h-7 text-white" /> : <Shield className="w-7 h-7 text-white" />}
-              </div>
-            )}
-          </div>
+          <LoginLogo src={companyLogo} alt={companyName} fallbackIcon={step === 'twoFactor' ? Smartphone : Shield} />
 
           {/* Subtitle */}
           <p className="text-center text-sm text-blue-600 dark:text-blue-400 font-semibold mb-6">
