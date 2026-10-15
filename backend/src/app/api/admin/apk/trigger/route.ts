@@ -942,6 +942,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var etDeviceKey: EditText
     private lateinit var etDeviceSecret: EditText
     private lateinit var swEnabled: Switch
+    private lateinit var swVoice: Switch
+    private var testTts: android.speech.tts.TextToSpeech? = null
     private lateinit var tvPermStatus: TextView
     private lateinit var tvConnStatus: TextView
     private lateinit var btnGrantPermission: Button
@@ -1148,6 +1150,32 @@ class MainActivity : AppCompatActivity() {
                 }
                 swEnabled
             })
+            addView(run {
+                swVoice = Switch(this@MainActivity).apply {
+                    text = "Bacakan nominal pembayaran dengan suara"
+                    isChecked = prefs.getBoolean(QrisNotificationListener.PREF_VOICE, true)
+                    textSize = 15f
+                    setPadding(0, dp(8), 0, 0)
+                    setOnCheckedChangeListener { _, on ->
+                        prefs.edit().putBoolean(QrisNotificationListener.PREF_VOICE, on).apply()
+                    }
+                }
+                swVoice
+            })
+            addView(TextView(this@MainActivity).apply {
+                text = "Suara keluar lewat volume media. Bila dimatikan, hanya bunyi notifikasi biasa."
+                textSize = 11f
+                setTextColor(cTextSec)
+            })
+            addView(Button(this@MainActivity).apply {
+                text = "Tes Suara"
+                setTextColor(0xFFFFFFFF.toInt())
+                setBackgroundColor(0xFF37474F.toInt())
+                setOnClickListener { testVoice() }
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
+                ).apply { topMargin = dp(6) }
+            })
         })
 
         // TOMBOL SIMPAN
@@ -1240,6 +1268,32 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         handler.removeCallbacks(refreshRunnable)
+    }
+
+    override fun onDestroy() {
+        testTts?.shutdown()
+        testTts = null
+        super.onDestroy()
+    }
+
+    private fun testVoice() {
+        val sample = PaymentVoice.phrase("DANA", 3086)
+        testTts?.let {
+            PaymentVoice.speak(this, it, sample)
+            return
+        }
+        testTts = android.speech.tts.TextToSpeech(this) { status ->
+            val t = testTts
+            if (status != android.speech.tts.TextToSpeech.SUCCESS || t == null) {
+                Toast.makeText(this, "Mesin suara (Text-to-Speech) tidak tersedia di HP ini", Toast.LENGTH_LONG).show()
+                return@TextToSpeech
+            }
+            if (!PaymentVoice.configure(t)) {
+                Toast.makeText(this, "Suara Bahasa Indonesia belum terpasang. Pasang di pengaturan Text-to-Speech.", Toast.LENGTH_LONG).show()
+                try { startActivity(Intent("com.android.settings.TTS_SETTINGS")) } catch (_: Exception) {}
+            }
+            PaymentVoice.speak(this, t, sample)
+        }
     }
 
     private fun updateStatusUI() {
@@ -1566,13 +1620,101 @@ import java.util.Date
 import java.util.Locale
 import java.util.regex.Pattern
 
+/**
+ * Spoken payment announcement, used by the listener and the test button.
+ * Amounts are spelled out in Indonesian because TTS engines read "3.086"
+ * as "tiga koma nol delapan enam" or by digit.
+ */
+object PaymentVoice {
+    const val UTTERANCE_ID = "qris_payment"
+    private val satuan = arrayOf(
+        "", "satu", "dua", "tiga", "empat", "lima", "enam",
+        "tujuh", "delapan", "sembilan", "sepuluh", "sebelas",
+    )
+
+    fun terbilang(n: Long): String {
+        if (n == 0L) return "nol"
+        return spell(n).split(' ').filter { it.isNotEmpty() }.joinToString(" ")
+    }
+
+    private fun spell(n: Long): String = when {
+        n < 12 -> satuan[n.toInt()]
+        n < 20 -> spell(n - 10) + " belas"
+        n < 100 -> spell(n / 10) + " puluh " + spell(n % 10)
+        n < 200 -> "seratus " + spell(n - 100)
+        n < 1_000 -> spell(n / 100) + " ratus " + spell(n % 100)
+        n < 2_000 -> "seribu " + spell(n - 1_000)
+        n < 1_000_000 -> spell(n / 1_000) + " ribu " + spell(n % 1_000)
+        n < 1_000_000_000 -> spell(n / 1_000_000) + " juta " + spell(n % 1_000_000)
+        else -> spell(n / 1_000_000_000) + " miliar " + spell(n % 1_000_000_000)
+    }
+
+    /** "Pembayaran DANA diterima, tiga ribu delapan puluh enam rupiah". */
+    fun phrase(appLabel: String?, amount: Int): String {
+        // Unknown apps are labelled by package name, which is unreadable aloud.
+        val from = if (appLabel != null && !appLabel.contains('.')) " " + appLabel else ""
+        return "Pembayaran" + from + " diterima, " + terbilang(amount.toLong()) + " rupiah"
+    }
+
+    /** Returns false when no Indonesian voice is installed on the phone. */
+    fun configure(tts: TextToSpeech): Boolean {
+        // Media volume, like merchant soundboxes: it is not silenced by the
+        // ringer switch and does not use the alarm tone.
+        tts.setAudioAttributes(
+            android.media.AudioAttributes.Builder()
+                .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SPEECH)
+                .build()
+        )
+        tts.setSpeechRate(0.95f)
+        val r = tts.setLanguage(Locale("in", "ID"))
+        if (r == TextToSpeech.LANG_MISSING_DATA || r == TextToSpeech.LANG_NOT_SUPPORTED) {
+            tts.language = Locale.getDefault()
+            return false
+        }
+        return true
+    }
+
+    /** Speaks [text], lowering music for the duration instead of mixing over it. */
+    fun speak(ctx: Context, tts: TextToSpeech, text: String) {
+        val am = ctx.getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
+        var focus: android.media.AudioFocusRequest? = null
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            focus = android.media.AudioFocusRequest.Builder(android.media.AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+                .setAudioAttributes(
+                    android.media.AudioAttributes.Builder()
+                        .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                        .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .build()
+                )
+                .build()
+            am.requestAudioFocus(focus)
+        }
+        tts.setOnUtteranceProgressListener(object : android.speech.tts.UtteranceProgressListener() {
+            override fun onStart(utteranceId: String?) {}
+            override fun onDone(utteranceId: String?) { release() }
+            @Deprecated("Deprecated in Java")
+            override fun onError(utteranceId: String?) { release() }
+            private fun release() {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) focus?.let { am.abandonAudioFocusRequest(it) }
+            }
+        })
+        tts.speak(text, TextToSpeech.QUEUE_ADD, null, UTTERANCE_ID)
+    }
+}
+
 class QrisNotificationListener : NotificationListenerService() {
 
     companion object {
         private const val TAG = "QrisListener"
 
         const val CHANNEL_FG_ID    = "qris_fg_channel"
-        const val CHANNEL_ALERT_ID = "qris_alert_channel"
+        // Warnings (permission revoked): normal notification sound.
+        const val CHANNEL_ALERT_ID = "qris_alert_v2"
+        // Payments: silent, the voice announces them.
+        const val CHANNEL_PAYMENT_ID = "qris_payment_v2"
+        // Created with the alarm tone by older versions; removed on start.
+        const val LEGACY_ALERT_ID = "qris_alert_channel"
         const val FOREGROUND_NOTIF_ID = 9001
         const val PAYMENT_NOTIF_BASE  = 9100
 
@@ -1653,6 +1795,7 @@ class QrisNotificationListener : NotificationListenerService() {
         const val PREF_DEVICE_KEY  = "device_key"
         const val PREF_DEVICE_SECRET = "device_secret"
         const val PREF_ENABLED     = "enabled"
+        const val PREF_VOICE       = "voice_enabled"
 
         const val PREF_DEBUG_CONNECTED       = "debug_connected"
         const val PREF_DEBUG_CONNECTED_SINCE = "debug_connected_since"
@@ -1679,6 +1822,8 @@ class QrisNotificationListener : NotificationListenerService() {
     private val scope = CoroutineScope(Dispatchers.IO)
     private lateinit var prefs: SharedPreferences
     private var tts: TextToSpeech? = null
+    private var ttsReady = false
+    private var pendingSpeech: String? = null
     private var paymentNotifCounter = PAYMENT_NOTIF_BASE
 
     private val recentlySent = mutableMapOf<Int, Long>()
@@ -1735,10 +1880,11 @@ class QrisNotificationListener : NotificationListenerService() {
         if (queueSize() > 0) queueHandler.postDelayed(flushRunnable, 5_000L)
         tts = TextToSpeech(this) { status ->
             if (status == TextToSpeech.SUCCESS) {
-                val result = tts?.setLanguage(Locale("in", "ID"))
-                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                    tts?.language = Locale.getDefault()
-                }
+                val t = tts ?: return@TextToSpeech
+                if (!PaymentVoice.configure(t)) Log.w(TAG, "TTS: suara Bahasa Indonesia belum terpasang")
+                ttsReady = true
+                pendingSpeech?.let { PaymentVoice.speak(this, t, it) }
+                pendingSpeech = null
                 Log.i(TAG, "TTS initialized")
             } else {
                 Log.w(TAG, "TTS init failed, status=\${status}")
@@ -1897,38 +2043,32 @@ class QrisNotificationListener : NotificationListenerService() {
     private fun playPaymentAlert(appLabel: String, amount: Int) {
         val formatted = NumberFormat.getNumberInstance(Locale("id", "ID")).format(amount)
 
-        try {
-            val alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-            val ringtone = RingtoneManager.getRingtone(applicationContext, alarmUri)
-            ringtone?.play()
-        } catch (e: Exception) {
-            Log.e(TAG, "Ringtone error: \${e.message}")
+        if (prefs.getBoolean(PREF_VOICE, true)) {
+            val text = PaymentVoice.phrase(appLabel, amount)
+            val t = tts
+            if (t != null && ttsReady) PaymentVoice.speak(this, t, text) else pendingSpeech = text
+        } else {
+            // Voice off: a single ordinary notification tone.
+            try {
+                RingtoneManager.getRingtone(applicationContext, RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))?.play()
+            } catch (e: Exception) {
+                Log.e(TAG, "Ringtone error: \${e.message}")
+            }
         }
-
-        tts?.speak(
-            "Pembayaran Q R I S masuk, Rp \${formatted}",
-            TextToSpeech.QUEUE_FLUSH,
-            null,
-            "qris_payment"
-        )
-
         val pi = PendingIntent.getActivity(
             this, 0, Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-            ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-        val notif = NotificationCompat.Builder(this, CHANNEL_ALERT_ID)
+        val notif = NotificationCompat.Builder(this, CHANNEL_PAYMENT_ID)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle("Pembayaran QRIS Masuk!")
             .setContentText("\${appLabel} — Rp \${formatted} diterima")
             .setStyle(NotificationCompat.BigTextStyle()
                 .bigText("\${appLabel} mendeteksi pembayaran masuk Rp \${formatted}.\\nMengirim konfirmasi ke server..."))
-            .setPriority(NotificationCompat.PRIORITY_MAX)
-            .setCategory(NotificationCompat.CATEGORY_ALARM)
-            .setVibrate(longArrayOf(0, 300, 200, 300, 200, 500))
-            .setSound(alarmUri)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_STATUS)
+            .setVibrate(longArrayOf(0, 250, 150, 250))
+            .setSilent(true)
             .setLights(0xFF00FF00.toInt(), 500, 500)
             .setAutoCancel(true)
             .setContentIntent(pi)
@@ -1977,23 +2117,16 @@ class QrisNotificationListener : NotificationListenerService() {
                 setShowBadge(false)
             })
 
+            nm.deleteNotificationChannel(LEGACY_ALERT_ID)
             nm.createNotificationChannel(NotificationChannel(
-                CHANNEL_ALERT_ID,
+                CHANNEL_PAYMENT_ID,
                 "QRIS - Pembayaran Masuk",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Notifikasi konfirmasi pembayaran QRIS (suara + getar)"
+                description = "Pembayaran QRIS terdeteksi. Tanpa nada; nominal dibacakan dengan suara."
                 enableVibration(true)
-                vibrationPattern = longArrayOf(0, 300, 200, 300, 200, 500)
-                val soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-                    ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    val attrs = android.media.AudioAttributes.Builder()
-                        .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
-                        .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                        .build()
-                    setSound(soundUri, attrs)
-                }
+                vibrationPattern = longArrayOf(0, 250, 150, 250)
+                setSound(null, null)
             })
         }
     }
@@ -2255,12 +2388,13 @@ class QrisWatchdogWorker(context: Context, params: WorkerParameters) : Coroutine
     private fun ensureAlertChannel(ctx: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val nm = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            nm.deleteNotificationChannel(QrisNotificationListener.LEGACY_ALERT_ID)
             nm.createNotificationChannel(NotificationChannel(
                 QrisNotificationListener.CHANNEL_ALERT_ID,
-                "QRIS - Pembayaran Masuk",
+                "QRIS - Peringatan Listener",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Notifikasi konfirmasi pembayaran QRIS (suara + getar)"
+                description = "Peringatan saat listener berhenti memantau"
             })
         }
     }
