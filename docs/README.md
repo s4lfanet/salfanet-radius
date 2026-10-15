@@ -5,22 +5,6 @@
 
 ---
 
-## 🤖 For AI/LLM Assistants
-
-**👉 START HERE:** **[AI_PROJECT_MEMORY.md](AI_PROJECT_MEMORY.md)** ⭐ **NEW!**
-
-Complete project context in one file:
-- Tech stack & architecture
-- Database schema
-- Known issues & solutions
-- Configuration locations
-- Recent changes
-- Development guidelines
-
-**Benefits**: Instant project understanding, no repetitive questions, proven solutions included.
-
----
-
 ## 📖 Quick Start
 
 ### 🎯 New to SALFANET RADIUS?
