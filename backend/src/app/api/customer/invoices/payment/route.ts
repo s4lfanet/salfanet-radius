@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
+import { randomBytes } from 'crypto';
 
 // Helper to verify customer token
 async function verifyCustomerToken(request: NextRequest) {
@@ -27,172 +28,58 @@ async function verifyCustomerToken(request: NextRequest) {
   }
 }
 
-// GET - Generate payment link for unpaid invoice
+/**
+ * GET /api/customer/invoices/payment?invoiceId=...
+ *
+ * The payment token and the operator's /pay/{token} link for one of the
+ * signed-in customer's unpaid invoices. The app creates the actual
+ * payment with /api/payment/create, which needs this token.
+ *
+ * This used to create a Midtrans transaction itself and overwrite the
+ * invoice's paymentLink with Midtrans' URL, which broke the /pay link
+ * used by reminders and the web portal. It now creates nothing at a
+ * gateway, and puts the /pay link back when it finds it overwritten.
+ */
 export async function GET(request: NextRequest) {
   try {
     const user = await verifyCustomerToken(request);
     if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const invoiceId = searchParams.get('invoiceId');
-
+    const invoiceId = new URL(request.url).searchParams.get('invoiceId');
     if (!invoiceId) {
-      return NextResponse.json(
-        { success: false, error: 'Invoice ID is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'Invoice ID is required' }, { status: 400 });
     }
 
-    // Find invoice
     const invoice = await prisma.invoice.findFirst({
-      where: {
-        id: invoiceId,
-        userId: user.id,
-        status: {
-          in: ['PENDING', 'OVERDUE']
-        }
-      }
+      where: { id: invoiceId, userId: user.id, status: { in: ['PENDING', 'OVERDUE'] } },
+      select: { id: true, invoiceNumber: true, amount: true, dueDate: true, paymentToken: true, paymentLink: true },
     });
-
     if (!invoice) {
-      return NextResponse.json(
-        { success: false, error: 'Invoice not found or already paid' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Tagihan tidak ditemukan atau sudah lunas' }, { status: 404 });
     }
 
-    // Check payment gateway settings
-    const paymentSettings = await prisma.paymentGateway.findFirst({
-      where: { isActive: true }
-    });
+    const company = await prisma.company.findFirst({ select: { baseUrl: true } });
+    const baseUrl = (company?.baseUrl || process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/+$/, '');
 
-    if (!paymentSettings) {
-      return NextResponse.json(
-        { success: false, error: 'No active payment gateway configured. Please contact admin.' },
-        { status: 503 }
-      );
+    let paymentToken = invoice.paymentToken;
+    if (!paymentToken) {
+      paymentToken = randomBytes(32).toString('hex');
     }
-
-    // Generate payment link based on gateway
-    let paymentLink = '';
-    
-    if (paymentSettings.provider === 'midtrans') {
-      // Midtrans implementation
-      const midtransUrl = paymentSettings.midtransEnvironment === 'sandbox'
-        ? 'https://app.sandbox.midtrans.com/snap/v1/transactions'
-        : 'https://app.midtrans.com/snap/v1/transactions';
-      
-      const auth = Buffer.from((paymentSettings.midtransServerKey || '') + ':').toString('base64');
-      
-      const payload = {
-        transaction_details: {
-          order_id: invoice.invoiceNumber,
-          gross_amount: invoice.amount
-        },
-        customer_details: {
-          first_name: user.name,
-          phone: user.phone,
-          email: user.email || `${user.phone}@customer.com`
-        },
-        item_details: [{
-          id: invoice.id,
-          price: invoice.amount,
-          quantity: 1,
-          name: `Internet Package - ${user.profile?.name || 'Tanpa Paket'}`
-        }]
-      };
-
-      const response = await fetch(midtransUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Basic ${auth}`
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        paymentLink = data.redirect_url || '';
-      } else {
-        const errorData = await response.json();
-        console.error('Midtrans error:', errorData);
-        return NextResponse.json(
-          { success: false, error: 'Failed to generate payment link. Please try again later.' },
-          { status: 500 }
-        );
-      }
-    } else if (paymentSettings.provider === 'xendit') {
-      // Xendit implementation
-      const xenditUrl = 'https://api.xendit.co/v2/invoices';
-      
-      const payload = {
-        external_id: invoice.invoiceNumber,
-        amount: invoice.amount,
-        payer_email: user.email || `${user.phone}@customer.com`,
-        description: `Internet Package - ${user.profile?.name || 'Tanpa Paket'}`,
-        customer: {
-          given_names: user.name,
-          mobile_number: user.phone
-        },
-        success_redirect_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/customer?payment=success`,
-        failure_redirect_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/customer?payment=failed`
-      };
-
-      const response = await fetch(xenditUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Basic ${Buffer.from((paymentSettings.xenditApiKey || '') + ':').toString('base64')}`
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        paymentLink = data.invoice_url || '';
-      } else {
-        const errorData = await response.json();
-        console.error('Xendit error:', errorData);
-        return NextResponse.json(
-          { success: false, error: 'Failed to generate payment link. Please try again later.' },
-          { status: 500 }
-        );
-      }
-    } else {
-      return NextResponse.json(
-        { success: false, error: 'Unsupported payment gateway' },
-        { status: 400 }
-      );
+    const paymentLink = `${baseUrl}/pay/${paymentToken}`;
+    if (paymentToken !== invoice.paymentToken || invoice.paymentLink !== paymentLink) {
+      await prisma.invoice.update({ where: { id: invoice.id }, data: { paymentToken, paymentLink } });
     }
-
-    // Update invoice with payment link
-    await prisma.invoice.update({
-      where: { id: invoice.id },
-      data: { paymentLink }
-    });
 
     return NextResponse.json({
       success: true,
+      paymentToken,
       paymentLink,
-      invoice: {
-        id: invoice.id,
-        invoiceNumber: invoice.invoiceNumber,
-        amount: invoice.amount,
-        dueDate: invoice.dueDate
-      }
+      invoice: { id: invoice.id, invoiceNumber: invoice.invoiceNumber, amount: invoice.amount, dueDate: invoice.dueDate },
     });
-
-  } catch (error: any) {
-    console.error('Payment link generation error:', error);
-    return NextResponse.json(
-      { success: false, error: error.message || 'Internal server error' },
-      { status: 500 }
-    );
+  } catch (error) {
+    console.error('[customer/invoices/payment] error:', error);
+    return NextResponse.json({ success: false, error: 'Gagal menyiapkan pembayaran' }, { status: 500 });
   }
 }
