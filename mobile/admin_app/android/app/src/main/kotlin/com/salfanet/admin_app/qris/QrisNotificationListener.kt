@@ -363,6 +363,11 @@ class QrisNotificationListener : NotificationListenerService() {
         val packageName = sbn.packageName ?: return
 
         if (packageName in BLOCKED_APPS) return
+        // Never read our own notifications: the payment alert this service
+        // posts, and in the admin app the server's own push messages
+        // ("Pembayaran diterima Rp ..."), would otherwise be reported back
+        // as new incoming payments.
+        if (packageName == applicationContext.packageName) return
         // Only payment apps are read at all; anything else (OTP, shopping,
         // news...) never leaves the phone.
         val knownLabel = MONITORED_APPS[packageName]
