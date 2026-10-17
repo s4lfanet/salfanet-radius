@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Plus, Loader2, MapPin, ChevronLeft, Server, Search, Box, GitBranch, Database, Wifi, Trash2 } from 'lucide-react';
 import { showSuccess, showError, showInfo } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';
+import { NumberInput } from '@/components/ui/number-input';
 
 export type AddNodeType = 'OTB' | 'JOINT_CLOSURE' | 'ODC' | 'ODP' | 'OLT';
 
@@ -332,7 +333,7 @@ function JCForm({ lat, lng, otbs: _otbs, cables: _cables, odcsList: _odcsList, j
         </select>
       </FRow>
       <FRow label="Jumlah Core">
-        <input type="number" min="1" value={data.fiberCount} onChange={e => set('fiberCount', e.target.value)} className={INPUT} />
+        <NumberInput type="number" min="1" value={data.fiberCount} onChange={e => set('fiberCount', e.target.value)} className={INPUT} />
       </FRow>
       <FRow label="Alamat"><input value={data.address} onChange={e => set('address', e.target.value)} className={INPUT} placeholder="Jl. Contoh No. 1" /></FRow>
       <CoordRow lat={lat} lng={lng} />
@@ -364,7 +365,7 @@ function ODCForm({ lat, lng, olts, onSubmit, loading }: { lat: number; lng: numb
           {olts.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
         </select>
       </FRow>
-      <FRow label="PON Port *"><input required type="number" min="1" max="32" value={data.ponPort} onChange={e => set('ponPort', e.target.value)} className={INPUT} /></FRow>
+      <FRow label="PON Port *"><NumberInput required type="number" min="1" max="32" value={data.ponPort} onChange={e => set('ponPort', e.target.value)} className={INPUT} /></FRow>
       <FRow label="Kapasitas Port">
         <select value={data.portCount} onChange={e => set('portCount', e.target.value)} className={INPUT}>
           {[4,8,16,32].map(n => <option key={n} value={n}>{n} port</option>)}
@@ -395,7 +396,7 @@ function ODPForm({ lat, lng, olts, odcs, onSubmit, loading }: { lat: number; lng
           {odcs.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
         </select>
       </FRow>
-      <FRow label="PON Port *"><input required type="number" min="1" max="32" value={data.ponPort} onChange={e => set('ponPort', e.target.value)} className={INPUT} /></FRow>
+      <FRow label="PON Port *"><NumberInput required type="number" min="1" max="32" value={data.ponPort} onChange={e => set('ponPort', e.target.value)} className={INPUT} /></FRow>
       <FRow label="Kapasitas Port">
         <select value={data.portCount} onChange={e => set('portCount', e.target.value)} className={INPUT}>
           {[4,8,16,32].map(n => <option key={n} value={n}>{n} port</option>)}

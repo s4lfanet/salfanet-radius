@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { apiAdmin } from '@/lib/api';
 import { showError, showConfirm } from '@/lib/sweetalert';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
+import { NumberInput } from '@/components/ui/number-input';
 
 // ─── Network diagram entity types ────────────────────────────────────────────
 interface OtbListItem { id: string; name: string; code: string; }
@@ -677,7 +678,7 @@ export default function NetworkDiagramsPage() {
                         <div className="border-t border-border pt-4 space-y-2">
                           <p className="text-xs font-medium text-muted-foreground">Tugaskan Tabung ke JC</p>
                           <div className="flex gap-2">
-                            <input
+                            <NumberInput
                               type="number"
                               min="1"
                               value={assignTube}
@@ -696,7 +697,7 @@ export default function NetworkDiagramsPage() {
                               ))}
                             </select>
                           </div>
-                          <input
+                          <NumberInput
                             type="number"
                             min="0"
                             step="0.1"

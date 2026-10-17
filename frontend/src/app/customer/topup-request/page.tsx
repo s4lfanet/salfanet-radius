@@ -7,6 +7,7 @@ import { CyberCard, CyberButton } from '@/components/cyberpunk';
 import { showSuccess, showError } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiCustomer, ApiError } from '@/lib/api';
+import { NumberInput } from '@/components/ui/number-input';
 
 export default function TopUpRequestPage() {
   const { t } = useTranslation();
@@ -131,7 +132,7 @@ export default function TopUpRequestPage() {
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60">
                   Rp
                 </span>
-                <input
+                <NumberInput
                   type="number"
                   value={formData.amount}
                   onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}

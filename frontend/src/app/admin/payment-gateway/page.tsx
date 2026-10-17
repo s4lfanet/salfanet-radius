@@ -12,6 +12,7 @@ import { Pagination } from '@/components/Pagination';
 import { Toggle } from '@/components/ui/toggle';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
+import { NumberInput } from '@/components/ui/number-input';
 
 interface PaymentGateway {
   id: string;
@@ -704,7 +705,7 @@ export default function PaymentGatewayPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
                     <label className="text-[10px] font-medium text-muted-foreground">Minimum (1-999)</label>
-                    <input
+                    <NumberInput
                       type="number"
                       min={1}
                       max={999}
@@ -715,7 +716,7 @@ export default function PaymentGatewayPage() {
                   </div>
                   <div>
                     <label className="text-[10px] font-medium text-muted-foreground">Maksimum (1-999)</label>
-                    <input
+                    <NumberInput
                       type="number"
                       min={1}
                       max={999}

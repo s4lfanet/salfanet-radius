@@ -11,6 +11,7 @@ import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import { AdminBackgroundGlow } from '@/components/AdminBackgroundGlow';
 import type { Company } from '@/types/api';
+import { NumberInput } from '@/components/ui/number-input';
 
 interface BankAccount {
   bankName: string;
@@ -411,7 +412,7 @@ export default function CompanySettingsPage() {
                 <label className="flex items-center gap-1.5 text-[11px] font-medium text-foreground mb-1">
                   {t('settings.invoiceGenerateDays')}
                 </label>
-                <input
+                <NumberInput
                   type="number"
                   min="1"
                   max="30"

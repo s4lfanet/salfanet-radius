@@ -9,6 +9,7 @@ import { Server, Plus, Trash2, Edit, CheckCircle, XCircle, Copy, Loader2, Shield
 import { apiAdmin } from '@/lib/api';
 import { pppoeApi } from '@/lib/api/pppoe';
 import { useApiQuery, useApiMutation, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
+import { NumberInput } from '@/components/ui/number-input';
 
 interface Router {
   id: string
@@ -934,7 +935,7 @@ export default function RouterPage() {
                 {formData.type === 'mikrotik' && (
                 <div>
                   <label className="block text-sm font-medium text-brand-500 mb-2">{t('network.apiPort')}</label>
-                  <input
+                  <NumberInput
                     type="number"
                     value={formData.port}
                     onChange={(e) => setFormData({ ...formData, port: e.target.value })}

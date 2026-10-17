@@ -4,6 +4,7 @@ import * as React from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { NumberInput } from '@/components/ui/number-input';
 
 /**
  * SimpleModal - A lightweight cyberpunk-themed modal component
@@ -229,8 +230,10 @@ export function ModalFooter({ children, className }: ModalFooterProps) {
 
 // Cyberpunk styled form input for modals
 export function ModalInput({ className, ...props }: React.InputHTMLAttributes<HTMLInputElement>) {
+    // Number fields must be clearable while typing; see NumberInput.
+    const Field = props.type === 'number' ? NumberInput : 'input';
     return (
-        <input
+        <Field
             className={cn(
                 'w-full px-3 py-2 text-sm',
                 'bg-background dark:bg-card border-2 border-input dark:border-border rounded-lg',

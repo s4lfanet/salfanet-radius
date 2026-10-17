@@ -17,6 +17,7 @@ import {
   RefreshCcw,
   Copy,
 } from 'lucide-react';
+import { NumberInput } from '@/components/ui/number-input';
 
 interface AgentData {
   id: string;
@@ -733,7 +734,7 @@ export default function AgentDashboardPage() {
 
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('agent.portal.quantity')}</label>
-              <input
+              <NumberInput
                 type="number"
                 min="1"
                 max="50"
@@ -764,7 +765,7 @@ export default function AgentDashboardPage() {
             </div>
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('agent.portal.codeLength')} (4-12)</label>
-              <input
+              <NumberInput
                 type="number"
                 min="4"
                 max="12"
@@ -929,7 +930,7 @@ export default function AgentDashboardPage() {
 
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('agent.portal.depositAmount')}</label>
-                <input
+                <NumberInput
                   type="number"
                   placeholder={t('agent.portal.minimumDeposit')}
                   value={depositAmount}

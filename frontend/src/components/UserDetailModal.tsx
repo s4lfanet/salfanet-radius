@@ -10,6 +10,7 @@ import { apiAdmin } from '@/lib/api';
 import { CameraPhotoInput } from '@/components/CameraPhotoInput';
 import { CameraViewfinder } from '@/components/CameraViewfinder';
 import type { PppoeProfile, PppoeArea, Router } from '@/types/api/pppoe';
+import { NumberInput } from '@/components/ui/number-input';
 
 interface User {
   id: string;
@@ -526,8 +527,8 @@ export default function UserDetailModal({
                       </div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <input type="number" step="any" value={formData.latitude} onChange={(e) => setFormData({ ...formData, latitude: e.target.value })} placeholder="Latitude" className={`${inputCls} font-mono`} />
-                      <input type="number" step="any" value={formData.longitude} onChange={(e) => setFormData({ ...formData, longitude: e.target.value })} placeholder="Longitude" className={`${inputCls} font-mono`} />
+                      <NumberInput type="number" step="any" value={formData.latitude} onChange={(e) => setFormData({ ...formData, latitude: e.target.value })} placeholder="Latitude" className={`${inputCls} font-mono`} />
+                      <NumberInput type="number" step="any" value={formData.longitude} onChange={(e) => setFormData({ ...formData, longitude: e.target.value })} placeholder="Longitude" className={`${inputCls} font-mono`} />
                     </div>
                     <p className={hintCls}>{t('userModal.gpsNote')}</p>
                     {/* GPS Map Preview */}
@@ -646,7 +647,7 @@ export default function UserDetailModal({
                 {/* Diskon Tagihan */}
                 <div>
                   <label className={labelCls}>Diskon Tagihan (Rp/bulan)</label>
-                  <input type="number" min="0" value={formData.discount} onChange={(e) => setFormData({ ...formData, discount: parseInt(e.target.value) || 0 })} placeholder="0" className={inputCls} />
+                  <NumberInput type="number" min="0" value={formData.discount} onChange={(e) => setFormData({ ...formData, discount: parseInt(e.target.value) || 0 })} placeholder="0" className={inputCls} />
                   <p className={hintCls}>Dikurangi dari harga paket setiap bulan.</p>
                 </div>
                 <div>
@@ -1222,7 +1223,7 @@ function CustomerAddonsTab({ userId }: { userId: string }) {
               {selectedType && (
                 <div>
                   <label className="block text-sm font-medium mb-1">Harga Custom (opsional)</label>
-                  <input
+                  <NumberInput
                     type="number"
                     value={form.priceOverride}
                     onChange={e => setForm(f => ({ ...f, priceOverride: e.target.value }))}

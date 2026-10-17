@@ -7,6 +7,7 @@ import { showSuccess, showError } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';
 import { Toggle } from '@/components/ui/toggle';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
+import { NumberInput } from '@/components/ui/number-input';
 
 interface ReminderSettings {
   id: string;
@@ -224,7 +225,7 @@ export default function NotificationSettingsPage() {
               </div>
 
               <div className="flex gap-2">
-                <input
+                <NumberInput
                   type="number"
                   placeholder="-7"
                   value={newDay}
@@ -280,7 +281,7 @@ export default function NotificationSettingsPage() {
                 </svg>
                 {t('whatsapp.otpExpiry')}
               </label>
-              <input
+              <NumberInput
                 type="number"
                 min="1"
                 max="60"
@@ -337,7 +338,7 @@ export default function NotificationSettingsPage() {
                 </svg>
                 Jumlah Pesan Per Batch
               </label>
-              <input
+              <NumberInput
                 type="number"
                 min="1"
                 max="100"
@@ -358,7 +359,7 @@ export default function NotificationSettingsPage() {
                 </svg>
                 Jeda Antar Batch (Detik)
               </label>
-              <input
+              <NumberInput
                 type="number"
                 min="10"
                 max="300"
