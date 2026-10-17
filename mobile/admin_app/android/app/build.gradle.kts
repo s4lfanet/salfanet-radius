@@ -25,7 +25,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.salfanet.admin_app"
+        applicationId = "id.my.salfa.admin_app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -52,7 +52,7 @@ flutter {
 }
 
 // Push needs android/app/google-services.json from the Firebase console
-// (package com.salfanet.admin_app, same project as the customer app). Without
+// (package id.my.salfa.admin_app, same project as the customer app). Without
 // it the plugin is skipped, the app still builds, and PushService no-ops.
 if (file("google-services.json").exists()) {
     apply(plugin = "com.google.gms.google-services")
