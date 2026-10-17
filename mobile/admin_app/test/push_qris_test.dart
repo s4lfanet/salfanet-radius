@@ -87,7 +87,7 @@ void main() {
       return null;
     });
     await pump(tester, qrisSettings());
-    expect(find.text('Isi di aplikasi QRIS Listener'), findsOneWidget);
+    expect(find.text('Kunci Kasir QRIS'), findsOneWidget);
     expect(find.text('devkey123'), findsOneWidget);
     // The secret is masked until shown.
     expect(find.text('a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6'), findsNothing);

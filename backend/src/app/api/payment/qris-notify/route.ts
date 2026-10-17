@@ -90,7 +90,7 @@ async function logNotification(status: string, amount: number | null, detail: Re
 export async function GET() {
   return NextResponse.json({
     ok: true,
-    message: 'Endpoint QRIS Listener aktif. Aplikasi listener mengirim notifikasi ke sini dengan POST; gunakan tombol Tes Koneksi di aplikasi untuk memeriksa Device Key dan Device Secret.',
+    message: 'Endpoint QRIS aktif. Kasir QRIS di aplikasi Admin mengirim notifikasi pembayaran ke sini dengan POST; gunakan Tes koneksi ke server di Kasir QRIS untuk memeriksa Device Key dan Device Secret.',
   });
 }
 

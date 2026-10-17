@@ -5,7 +5,7 @@ import {
   Smartphone, Download, Shield, Wifi, Users, UserCheck,
   CheckCircle2, XCircle, Clock, AlertTriangle, RefreshCw,
   Terminal, Copy, Check, HardDrive, ChevronDown,
-  Package, Globe, Upload, ImageIcon, QrCode, Wallet,
+  Package, Globe, Upload, ImageIcon, Wallet,
 } from 'lucide-react';
 import { apiAdmin, buildUrl } from '@/lib/api';
 import { showError } from '@/lib/sweetalert';
@@ -90,17 +90,6 @@ const ROLES = [
     iconBg: 'bg-amber-500/20 text-amber-400',
     btn: 'from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600',
     pathSuffix: '/collector',
-  },
-  {
-    key: 'qris_listener',
-    label: 'QRIS Listener',
-    description: 'App Android untuk mendengarkan notifikasi e-wallet & verifikasi pembayaran QRIS otomatis.',
-    icon: <QrCode className="w-5 h-5" />,
-    gradient: 'from-rose-600 to-rose-800',
-    border: 'border-rose-500/30',
-    iconBg: 'bg-rose-500/20 text-rose-400',
-    btn: 'from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600',
-    pathSuffix: '',
   },
 ] as const;
 
@@ -649,7 +638,7 @@ export default function DownloadApkPage() {
           <ChevronDown className="w-3.5 h-3.5 group-open:rotate-180 transition-transform" />
         </summary>
         <div className="px-4 pb-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {ROLES.filter(r => r.key !== 'qris_listener').map(r => (
+          {ROLES.map(r => (
             <a
               key={r.key}
               href={`/api/admin/download-apk?role=${r.key}`}
