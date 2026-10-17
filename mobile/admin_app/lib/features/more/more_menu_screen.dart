@@ -27,6 +27,7 @@ import '../ont_removal/ont_removal_screen.dart';
 import '../payment_proofs/payment_proof_list_screen.dart';
 import '../profile/profile_screen.dart';
 import '../push_broadcast/push_broadcast_screen.dart';
+import '../qris_cashier/qris_cashier_screen.dart';
 import '../reports/report_screens.dart';
 import '../referrals/referral_list_screen.dart';
 import '../registrations/registration_list_screen.dart';
@@ -88,6 +89,7 @@ class MoreMenuScreen extends StatelessWidget {
         _Entry(Icons.category_rounded, 'Kategori Keuangan', 'Jenis pemasukan & pengeluaran', Tone.primary, _crud(keuanganCategoriesConfig)),
         _Entry(Icons.card_giftcard_rounded, 'Ajak Teman', 'Bonus pelanggan yang mengajak', Tone.accent, (_) => const ReferralListScreen()),
         _Entry(Icons.credit_card_rounded, 'Payment Gateway', 'Midtrans, Xendit, Duitku, Tripay, QRIS', Tone.success, (_) => const PaymentGatewayScreen()),
+        _Entry(Icons.qr_code_2_rounded, 'Kasir QRIS', 'Tangkap pembayaran QRIS di HP penerima DANA/bank', Tone.success, (_) => const QrisCashierScreen()),
         _Entry(Icons.account_balance_rounded, 'Rekening Bank', 'Tujuan transfer manual', Tone.success, _crud(bankAccountsConfig)),
       ],
     ),
