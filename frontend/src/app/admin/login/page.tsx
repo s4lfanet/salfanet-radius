@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, Suspense } from 'react';
 import { LoginLogo } from '@/components/auth/LoginLogo';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Eye, EyeOff, Loader2, Shield, Smartphone, User, Lock, Clock, LogIn, ArrowLeft, KeyRound } from 'lucide-react';
+import { Eye, EyeOff, Loader2, Shield, Smartphone, User, Lock, Clock, LogIn, ArrowLeft, KeyRound, Download } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
 
@@ -343,6 +343,18 @@ function LoginForm() {
                 Kembali ke Login
               </button>
             </form>
+          )}
+
+          {/* Admin app download. The version query makes the CDN fetch each
+              release instead of serving an older cached file. */}
+          {step === 'credentials' && (
+            <a
+              href="/downloads/salfanet-admin.apk?v=1.0.1-2"
+              className="mt-5 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-semibold transition-all"
+            >
+              <Download className="w-4 h-4" />
+              Unduh Aplikasi Admin Android
+            </a>
           )}
 
           {/* Footer */}
