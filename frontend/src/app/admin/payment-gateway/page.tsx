@@ -48,7 +48,7 @@ interface WebhookLog {
   response: string | null;
 }
 
-/** Copies a credential so it can be pasted into the QRIS Listener app. */
+/** Copies a credential, e.g. for a phone still running the old standalone QRIS Listener. */
 function CopyField({ value, label }: { value: string; label: string }) {
   const [copied, setCopied] = useState(false);
   return (
@@ -729,12 +729,12 @@ export default function PaymentGatewayPage() {
                 <p className="text-[9px] text-muted-foreground">Rentang default 1-999. Persempit rentang jika ingin selisih lebih kecil (mis. 1-100). Suffix ditambahkan ke nominal tagihan persis, tanpa pembulatan.</p>
               </div>
 
-              {/* Device Key untuk Android QrisListener */}
+              {/* Device Key for Kasir QRIS in the admin app */}
               <div className="p-2.5 bg-muted rounded-lg space-y-2">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-[11px] font-semibold">Device Key - Android Listener</p>
-                    <p className="text-[10px] text-muted-foreground">Isi di aplikasi QRIS Listener. Dibuat otomatis saat QRIS diaktifkan dan disimpan.</p>
+                    <p className="text-[11px] font-semibold">Device Key - Kasir QRIS</p>
+                    <p className="text-[10px] text-muted-foreground">Dibuat otomatis saat QRIS diaktifkan dan disimpan. Kasir QRIS di aplikasi Admin mengambilnya sendiri dari server.</p>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -765,7 +765,7 @@ export default function PaymentGatewayPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-[11px] font-semibold">Device Secret - V2 Signature (wajib)</p>
-                    <p className="text-[10px] text-muted-foreground">Kunci HMAC-SHA256 yang dipakai aplikasi QRIS Listener untuk menandatangani setiap notifikasi. Server menolak notifikasi tanpa tanda tangan. Rahasiakan, jangan dibagikan selain ke HP listener.</p>
+                    <p className="text-[10px] text-muted-foreground">Kunci HMAC-SHA256 untuk menandatangani setiap notifikasi pembayaran dari HP kasir. Server menolak notifikasi tanpa tanda tangan. Kasir QRIS mengambilnya otomatis; rahasiakan dan jangan dibagikan.</p>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -799,7 +799,7 @@ export default function PaymentGatewayPage() {
                   </button>
                 </div>
                 {qrisForm.deviceSecret ? (
-                  <p className="text-[10px] text-success">Tersimpan. Salin ke aplikasi QRIS Listener (kolom Device Secret). Mengganti secret berarti semua HP listener harus diisi ulang.</p>
+                  <p className="text-[10px] text-success">Tersimpan. Setelah mengganti secret, matikan lalu nyalakan lagi Kasir QRIS di HP kasir agar memakai secret baru.</p>
                 ) : (
                   <p className="text-[10px] text-warning">Belum ada Device Secret. Klik Generate lalu Simpan; tanpa ini pembayaran QRIS tidak terkonfirmasi otomatis.</p>
                 )}
@@ -807,12 +807,12 @@ export default function PaymentGatewayPage() {
 
               {qrisForm.deviceKey ? (
                 <div className="p-2.5 bg-success/10 border border-success/20 rounded-lg">
-                  <p className="text-[10px] text-success">Android Listener aktif. Pembayaran QRIS akan terdeteksi otomatis saat notifikasi e-wallet (DANA, GoPay, BRImo, dll) masuk ke HP listener.</p>
+                  <p className="text-[10px] text-success">Siap dipakai. Nyalakan Kasir QRIS di aplikasi Admin (Lainnya &gt; Pembayaran) pada HP yang menerima notifikasi DANA, GoPay, BRImo dan sejenisnya.</p>
                   <p className="text-[9px] text-muted-foreground mt-1">Webhook URL Android: <code className="bg-muted px-1 rounded">{typeof window !== 'undefined' ? window.location.origin : ''}/api/payment/qris-notify</code></p>
                 </div>
               ) : (
                 <div className="p-2 bg-warning/10 border border-warning/20 rounded-lg">
-                  <p className="text-[10px] text-warning">Tanpa Device Key, konfirmasi pembayaran QRIS dilakukan manual oleh admin. Isi Device Key di atas lalu install app Android QrisListener untuk deteksi otomatis.</p>
+                  <p className="text-[10px] text-warning">Tanpa Device Key, pembayaran QRIS dikonfirmasi manual oleh admin. Simpan pengaturan ini, lalu nyalakan Kasir QRIS di aplikasi Admin untuk konfirmasi otomatis.</p>
                 </div>
               )}
 

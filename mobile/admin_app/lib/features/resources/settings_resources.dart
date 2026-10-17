@@ -232,7 +232,7 @@ SettingsFormScreen qrisSettings() => SettingsFormScreen(
   secondary: [
     FormAction('Secret baru', Icons.key_rounded, (v) async {
       await _api.post('/api/payment-gateway/qris-mandiri', data: {...v, 'generateSecret': true}..remove('testOrderId'));
-      return 'Device Secret baru dibuat. Isi ulang di setiap HP QRIS Listener.';
+      return 'Device Secret baru dibuat. Matikan lalu nyalakan lagi Kasir QRIS di HP kasir agar memakai secret baru.';
     }),
     FormAction('Simulasi', Icons.science_rounded, (v) async {
       final orderId = (v['testOrderId'] ?? '').toString().trim();
@@ -242,7 +242,8 @@ SettingsFormScreen qrisSettings() => SettingsFormScreen(
   ],
 );
 
-/// What to type into the QRIS Listener app, each value copyable.
+/// The listener credentials, each value copyable. Kasir QRIS fetches them
+/// itself; copying is for a phone still on the old standalone listener.
 class _QrisListenerCard extends StatefulWidget {
   const _QrisListenerCard({required this.current});
   final Map<String, dynamic> current;
@@ -298,7 +299,7 @@ class _QrisListenerCardState extends State<_QrisListenerCard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Isi di aplikasi QRIS Listener', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+            const Text('Kunci Kasir QRIS', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
             const SizedBox(height: 2),
             Text(
               secret == null
