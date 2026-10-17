@@ -12,7 +12,9 @@ export async function GET(request: NextRequest) {
     const gateway = searchParams.get('gateway');
     const amount = parseInt(searchParams.get('amount') || '0');
 
-    if (!gateway || !amount || amount < 10000) {
+    // No minimum here: each gateway enforces its own and says so when the
+    // payment is created. A Rp 10.000 floor rejected small invoices outright.
+    if (!gateway || !amount || amount < 1) {
       return NextResponse.json({ error: 'gateway and amount are required' }, { status: 400 });
     }
 
