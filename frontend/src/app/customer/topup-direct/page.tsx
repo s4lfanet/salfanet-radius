@@ -7,6 +7,7 @@ import { showSuccess, showError, showWarning } from '@/lib/sweetalert';
 import { CyberCard, CyberButton } from '@/components/cyberpunk';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiCustomer, ApiError } from '@/lib/api';
+import { NumberInput } from '@/components/ui/number-input';
 
 interface PaymentGateway {
   id: string;
@@ -301,7 +302,7 @@ export default function TopUpDirectPage() {
             <label className="block text-xs font-medium text-brand-500 mb-2 uppercase tracking-wide">{t('customer.orEnterOtherAmount')}</label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-muted-foreground/60">Rp</span>
-              <input
+              <NumberInput
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}

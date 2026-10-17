@@ -8,6 +8,7 @@ import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { CameraPhotoInput } from '@/components/CameraPhotoInput';
 import { apiAdmin } from '@/lib/api/client';
+import { NumberInput } from '@/components/ui/number-input';
 
 interface Profile {
   id: string;
@@ -321,14 +322,14 @@ export default function TechnicianRegisterPage() {
                     <label className={labelClass}>Latitude <span className="text-red-500 text-[10px]">*</span></label>
                     <div className="relative">
                       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                      <input type="number" step="any" value={form.latitude} onChange={(e) => setValue('latitude', e.target.value)} placeholder="-6.200000" className={inputClass} />
+                      <NumberInput type="number" step="any" value={form.latitude} onChange={(e) => setValue('latitude', e.target.value)} placeholder="-6.200000" className={inputClass} />
                     </div>
                   </div>
                   <div>
                     <label className={labelClass}>Longitude <span className="text-red-500 text-[10px]">*</span></label>
                     <div className="relative">
                       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                      <input type="number" step="any" value={form.longitude} onChange={(e) => setValue('longitude', e.target.value)} placeholder="106.816666" className={inputClass} />
+                      <NumberInput type="number" step="any" value={form.longitude} onChange={(e) => setValue('longitude', e.target.value)} placeholder="106.816666" className={inputClass} />
                     </div>
                   </div>
                   <div className="sm:col-span-2">
@@ -486,7 +487,7 @@ export default function TechnicianRegisterPage() {
                       <label className={labelClass}>Tanggal Tagihan</label>
                       <div className="relative">
                         <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                        <input type="number" min="1" max="31" value={form.billingDay} onChange={(e) => setValue('billingDay', e.target.value)} className={inputClass} />
+                        <NumberInput type="number" min="1" max="31" value={form.billingDay} onChange={(e) => setValue('billingDay', e.target.value)} className={inputClass} />
                       </div>
                     </div>
                   )}

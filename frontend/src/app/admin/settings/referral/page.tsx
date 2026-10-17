@@ -12,6 +12,7 @@ import {
   Gift, Save, Loader2, ToggleLeft, ToggleRight,
   Wallet, AlertCircle
 } from 'lucide-react';
+import { NumberInput } from '@/components/ui/number-input';
 
 interface ReferralConfig {
   enabled: boolean;
@@ -147,7 +148,7 @@ export default function ReferralSettingsPage() {
             </label>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">Rp</span>
-              <input
+              <NumberInput
                 type="number"
                 value={config.rewardAmount}
                 onChange={(e) => setConfig({ ...config, rewardAmount: parseInt(e.target.value) || 0 })}

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Edit2, Trash2, Save, XCircle, Loader2, MapPin, Server, Box, GitBranch, ChevronRight, ExternalLink } from 'lucide-react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
+import { NumberInput } from '@/components/ui/number-input';
 import { apiAdmin } from '@/lib/api';
 
 export interface MapEntity {
@@ -83,11 +84,12 @@ function FieldInput({ label, name, value, onChange, type = 'text', required = fa
   label: string; name: string; value: string | number; onChange: (n: string, v: string) => void;
   type?: string; required?: boolean; children?: React.ReactNode;
 }) {
+  const Field = type === 'number' ? NumberInput : 'input';
   return (
     <div>
       <label className="block text-xs font-medium text-muted-foreground mb-1">{label}{required && <span className="text-red-500 ml-0.5">*</span>}</label>
       {children || (
-        <input type={type} value={value} onChange={e => onChange(name, e.target.value)} required={required}
+        <Field type={type} value={value} onChange={e => onChange(name, e.target.value)} required={required}
           className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-card text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
       )}
     </div>

@@ -1,10 +1,13 @@
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
+import { NumberInput } from "@/components/ui/number-input"
 
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+  // Number fields must be clearable while typing; see NumberInput.
+  const Field = type === "number" ? NumberInput : "input"
   return (
-    <input
+    <Field
       type={type}
       data-slot="input"
       className={cn(

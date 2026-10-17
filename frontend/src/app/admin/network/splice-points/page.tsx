@@ -7,6 +7,7 @@ import { RefreshCcw, Plus, Trash2, Eye, Link2, Cable, X, Zap, Activity, Settings
 import { formatWIB } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
+import { NumberInput } from '@/components/ui/number-input';
 
 // Fiber color coding (TIA-598-D standard)
 const _FIBER_COLORS: Record<string, string> = {
@@ -709,7 +710,7 @@ export default function SplicePointsPage() {
                     Insertion Loss (dB)
                     <span className="ml-1 text-gray-400">*important</span>
                   </label>
-                  <input
+                  <NumberInput
                     type="number"
                     step="0.001"
                     value={formData.insertionLoss}

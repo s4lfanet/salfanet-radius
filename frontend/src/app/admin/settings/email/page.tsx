@@ -29,6 +29,7 @@ import { showSuccess, showError } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';
 import { Toggle } from '@/components/ui/toggle';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
+import { NumberInput } from '@/components/ui/number-input';
 
 interface EmailSettings {
   id?: string;
@@ -571,7 +572,7 @@ export default function EmailSettingsPage() {
                     </div>
                     <div>
                       <label className="block text-xs font-medium mb-1">{t('emailSettings.smtp.port')} *</label>
-                      <input
+                      <NumberInput
                         type="number"
                         value={settings.smtpPort}
                         onChange={(e) => setSettings({ ...settings, smtpPort: parseInt(e.target.value) })}

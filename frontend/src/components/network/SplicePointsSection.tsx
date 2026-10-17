@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';
 import { Plus, Trash2, Link2, X, Zap, Settings, AlertTriangle, RefreshCcw } from 'lucide-react';
+import { NumberInput } from '@/components/ui/number-input';
 
 // Fiber color coding (TIA-598-D standard)
 const _FIBER_COLORS: Record<string, string> = {
@@ -594,7 +595,7 @@ export default function SplicePointsSection({
                     <label className="block text-[9px] font-medium mb-1">
                       Insertion Loss (dB) <span className="text-red-500">*</span>
                     </label>
-                    <input
+                    <NumberInput
                       type="number"
                       step="0.001"
                       value={formData.insertionLoss}
@@ -606,7 +607,7 @@ export default function SplicePointsSection({
                   </div>
                   <div>
                     <label className="block text-[9px] font-medium mb-1">Reflectance (dB)</label>
-                    <input
+                    <NumberInput
                       type="number"
                       step="0.001"
                       value={formData.reflectance}

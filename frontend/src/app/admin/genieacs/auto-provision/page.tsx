@@ -5,6 +5,7 @@ import { Plus, Trash2, Save, RefreshCw, AlertCircle, CheckCircle2 } from 'lucide
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import { showConfirm } from '@/lib/sweetalert';
+import { NumberInput } from '@/components/ui/number-input';
 
 interface ParamEntry {
   path: string;
@@ -181,7 +182,7 @@ export default function AutoProvisionPage() {
           <label className="block text-sm font-medium text-muted-foreground">
             Weight
           </label>
-          <input
+          <NumberInput
             type="number"
             value={form.weight}
             onChange={(e) => setForm((f) => ({ ...f, weight: Number(e.target.value) }))}

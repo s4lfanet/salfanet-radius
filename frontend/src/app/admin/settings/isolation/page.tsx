@@ -24,6 +24,7 @@ import {
   CheckCircle,
   Loader2,
 } from 'lucide-react';
+import { NumberInput } from '@/components/ui/number-input';
 
 interface IsolationSettings {
   isolationEnabled: boolean;
@@ -193,7 +194,7 @@ export default function IsolationSettingsPage() {
                 {t('isolation.gracePeriod')}
               </label>
               <div className="flex items-center gap-2">
-                <input
+                <NumberInput
                   type="number"
                   min="0"
                   max="30"

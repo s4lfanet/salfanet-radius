@@ -9,6 +9,7 @@ import { Shield, Server, Plus, Pencil, Trash2, Zap, Activity, CheckCircle, XCirc
 import { apiAdmin, buildUrl } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import { formatWIB } from '@/lib/timezone';
+import { NumberInput } from '@/components/ui/number-input';
 
 interface VpnServer {
   id: string
@@ -1240,7 +1241,7 @@ export default function VpnServerPage() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-brand-500 mb-2">{t('network.apiPort')}</label>
-                      <input
+                      <NumberInput
                         type="number"
                         value={formData.apiPort}
                         onChange={(e) => setFormData({ ...formData, apiPort: e.target.value })}
@@ -1295,7 +1296,7 @@ export default function VpnServerPage() {
                         <label className="block text-xs text-muted-foreground mb-1">IP Mulai (pool start)</label>
                         <div className="flex items-center gap-1">
                           <span className="text-xs text-muted-foreground font-mono">x.x.x.</span>
-                          <input
+                          <NumberInput
                             type="number"
                             min={2}
                             max={253}
@@ -1310,7 +1311,7 @@ export default function VpnServerPage() {
                         <label className="block text-xs text-muted-foreground mb-1">IP Akhir (pool end)</label>
                         <div className="flex items-center gap-1">
                           <span className="text-xs text-muted-foreground font-mono">x.x.x.</span>
-                          <input
+                          <NumberInput
                             type="number"
                             min={3}
                             max={254}
@@ -1542,7 +1543,7 @@ export default function VpnServerPage() {
                   <p className="text-xs text-muted-foreground mb-3">Target: <span className="text-primary font-medium">{editingServer.name}</span> ({editingServer.host})</p>
                   <input className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground text-sm mb-2" placeholder="VPS IP/Hostname" value={l2tpSshForm.host} onChange={(e) => setL2tpSshForm(p => ({...p, host: e.target.value}))} />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
-                    <input className="px-3 py-2 bg-input border border-border rounded-lg text-foreground text-sm" placeholder="SSH Port" type="number" value={l2tpSshForm.port} onChange={(e) => setL2tpSshForm(p => ({...p, port: e.target.value}))} />
+                    <NumberInput className="px-3 py-2 bg-input border border-border rounded-lg text-foreground text-sm" placeholder="SSH Port" type="number" value={l2tpSshForm.port} onChange={(e) => setL2tpSshForm(p => ({...p, port: e.target.value}))} />
                     <input className="px-3 py-2 bg-input border border-border rounded-lg text-foreground text-sm" placeholder="SSH Username" value={l2tpSshForm.username} onChange={(e) => setL2tpSshForm(p => ({...p, username: e.target.value}))} />
                   </div>
                   <input className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground text-sm mb-3" placeholder="SSH Password" type="password" value={l2tpSshForm.password} onChange={(e) => setL2tpSshForm(p => ({...p, password: e.target.value}))} />

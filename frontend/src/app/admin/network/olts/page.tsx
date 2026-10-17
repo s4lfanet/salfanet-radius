@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { apiAdmin, buildUrl } from '@/lib/api';
 import { useApiQuery, useApiMutation, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import type { OLTListResponse, RouterListResponse } from '@/types/api';
+import { NumberInput } from '@/components/ui/number-input';
 
 // Vendor → available models (aligned with backend vendor libs + OIDs)
 const VENDOR_MODELS: Record<string, Array<{ value: string; label: string; ponType: string }>> = {
@@ -1177,7 +1178,7 @@ export default function OLTsPage() {
                     <span className="text-xs">{t('olt.sshEnabled')}</span>
                   </label>
                   {formData.sshEnabled && (
-                    <input
+                    <NumberInput
                       type="number"
                       min="1"
                       max="65535"
@@ -1199,7 +1200,7 @@ export default function OLTsPage() {
                     <span className="text-xs">{t('olt.telnetEnabled')}</span>
                   </label>
                   {formData.telnetEnabled && (
-                    <input
+                    <NumberInput
                       type="number"
                       min="1"
                       max="65535"
@@ -1214,7 +1215,7 @@ export default function OLTsPage() {
 
               <div>
                 <label className="block text-[10px] font-medium mb-1">SNMP Port</label>
-                <input
+                <NumberInput
                   type="number"
                   min="1"
                   max="65535"
@@ -1276,7 +1277,7 @@ export default function OLTsPage() {
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <input
+                  <NumberInput
                     type="number"
                     step="any"
                     value={formData.latitude}
@@ -1285,7 +1286,7 @@ export default function OLTsPage() {
                     placeholder={t('olt.latitude')}
                     className="w-full px-2 py-1.5 text-xs border dark:border-gray-700 rounded dark:bg-gray-800"
                   />
-                  <input
+                  <NumberInput
                     type="number"
                     step="any"
                     value={formData.longitude}

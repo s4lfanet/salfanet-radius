@@ -6,6 +6,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
+import { NumberInput } from '@/components/ui/number-input';
 
 interface AddonType {
   id: string;
@@ -204,7 +205,7 @@ export default function AddonTypesPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Harga (Rp)</label>
-                <input
+                <NumberInput
                   type="number"
                   min="0"
                   placeholder="0"

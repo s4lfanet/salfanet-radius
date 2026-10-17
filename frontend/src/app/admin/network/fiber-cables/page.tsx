@@ -9,6 +9,7 @@ import {
   Plus, Pencil, Trash2, Cable, Eye, RefreshCcw, X,
   ChevronDown, ChevronRight, Activity, Layers, Circle,
 } from 'lucide-react';
+import { NumberInput } from '@/components/ui/number-input';
 
 // Fiber color coding (TIA-598-D standard)
 const FIBER_COLORS: Record<string, string> = {
@@ -517,7 +518,7 @@ export default function FiberCablesPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="block text-[10px] font-medium mb-1">{t('fiberCable.tubeCount')}</label>
-                    <input
+                    <NumberInput
                       type="number"
                       value={formData.tubeCount}
                       onChange={(e) => setFormData({ ...formData, tubeCount: e.target.value })}
@@ -527,7 +528,7 @@ export default function FiberCablesPage() {
                   </div>
                   <div>
                     <label className="block text-[10px] font-medium mb-1">{t('fiberCable.coresPerTube')}</label>
-                    <input
+                    <NumberInput
                       type="number"
                       value={formData.coresPerTube}
                       onChange={(e) => setFormData({ ...formData, coresPerTube: e.target.value })}
@@ -547,7 +548,7 @@ export default function FiberCablesPage() {
               {/* Diameter */}
               <div>
                 <label className="block text-[10px] font-medium mb-1">{t('fiberCable.outerDiameter')}</label>
-                <input
+                <NumberInput
                   type="number"
                   step="0.1"
                   value={formData.outerDiameter}

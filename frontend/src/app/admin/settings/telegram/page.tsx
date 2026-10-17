@@ -14,6 +14,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
 import { Toggle } from '@/components/ui/toggle';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
+import { NumberInput } from '@/components/ui/number-input';
 
 interface TelegramSettings {
   enabled: boolean;
@@ -353,7 +354,7 @@ export default function TelegramSettingsPage() {
               <label className="block text-sm font-medium text-foreground mb-2">
                 Keep Last Backups
               </label>
-              <input
+              <NumberInput
                 type="number"
                 min="1"
                 max="30"

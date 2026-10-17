@@ -6,6 +6,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { Shield, Plus, Trash2, Eye, Loader2, Users, Copy, CheckCircle, XCircle, Wifi, Radio, Terminal, ChevronDown, ChevronUp, Route, Zap, Info, Key, Settings } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
+import { NumberInput } from '@/components/ui/number-input';
 
 interface VpnClient {
   id: string
@@ -1823,7 +1824,7 @@ ${vpnCmd}
                     onChange={(e) => setApplyRoutingForm(p => ({...p, host: e.target.value}))}
                   />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
-                  <input
+                  <NumberInput
                     className="px-3 py-2 bg-input border border-border rounded-lg text-foreground text-sm"
                     placeholder="SSH Port"
                     type="number"
