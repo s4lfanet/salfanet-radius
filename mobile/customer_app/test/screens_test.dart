@@ -16,6 +16,8 @@ import 'package:customer_app/features/more/more_screen.dart';
 import 'package:customer_app/features/more/profile_screen.dart';
 import 'package:customer_app/features/notifications/notifications_provider.dart';
 import 'package:customer_app/features/notifications/notifications_screen.dart';
+import 'package:customer_app/features/payment/payment_flow.dart';
+import 'package:customer_app/features/payment/qris_pay_screen.dart';
 import 'package:customer_app/features/referral/referral_provider.dart';
 import 'package:customer_app/features/referral/referral_screen.dart';
 import 'package:customer_app/features/renewal/renewal_provider.dart';
@@ -198,12 +200,30 @@ class _Fixtures implements HttpClientAdapter {
         };
       case '/api/customer/suspend-request':
         return {'success': true, 'data': null};
+      case '/api/customer/invoices/payment':
+        return {'success': true, 'paymentLink': 'https://isp.test/pay/tok123'};
+      case '/api/customer/payment-methods':
+        return {'success': true, 'methods': []};
+      case '/api/payment/create':
+        return {'success': true, 'isQrisOwn': true, 'orderId': 'ORD-1', 'paymentUrl': '/pay/qris/ORD-1?back=%2Fpay%2Ftok123'};
+      case '/api/payment/qris-status':
+        return {
+          'success': true,
+          'status': 'pending',
+          'qrImage': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+          'baseAmount': 200000,
+          'uniqueAmount': 200017,
+          'expiresAt': DateTime.now().toUtc().add(const Duration(minutes: 14)).toIso8601String(),
+        };
     }
     return {'success': true};
   }
 
+  final requests = <RequestOptions>[];
+
   @override
   Future<ResponseBody> fetch(RequestOptions o, Stream<Uint8List>? requestStream, Future<void>? cancelFuture) async {
+    requests.add(o);
     return ResponseBody.fromString(jsonEncode(_body(o.path, o.queryParameters)), 200, headers: {
       Headers.contentTypeHeader: [Headers.jsonContentType],
     });
@@ -241,7 +261,11 @@ void main() {
     }
   });
 
-  setUp(() => ApiClient.instance.initForTest(_Fixtures()));
+  late _Fixtures fixtures;
+  setUp(() {
+    fixtures = _Fixtures();
+    ApiClient.instance.initForTest(fixtures);
+  });
 
   Future<void> pump(WidgetTester tester, Widget screen, bool dark, double width, {double height = 1800}) async {
     tester.view.physicalSize = Size(width, height);
@@ -304,6 +328,8 @@ void main() {
     'topup': () => const TopupScreen(),
     'upgrade': () => const UpgradeScreen(),
     'suspend': () => const SuspendScreen(),
+    'pay-choose': () => const InvoicePaymentScreen(invoiceId: 'i1', amount: 200000, invoiceNumber: 'INV-20261005-0001'),
+    'pay-qris': () => const QrisPayScreen(orderId: 'ORD-1'),
   };
 
   for (final MapEntry(key: name, value: build) in screens.entries) {
@@ -316,4 +342,20 @@ void main() {
       });
     }
   }
+
+  testWidgets('paying an invoice with QRIS stays in the app and shows the QR', (tester) async {
+    await pump(tester, const InvoicePaymentScreen(invoiceId: 'i1', amount: 200000, invoiceNumber: 'INV-20261005-0001'), false, 360);
+    await tester.tap(find.text('QRIS'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
+
+    final create = fixtures.requests.lastWhere((r) => r.path == '/api/payment/create');
+    final body = (create.data as Map).cast<String, dynamic>();
+    expect(body['invoiceId'], 'i1');
+    expect(body['gateway'], 'qris_own');
+    expect(body['paymentToken'], 'tok123');
+    expect(find.byType(QrisPayScreen), findsOneWidget);
+    expect(find.text('Rp 200.017'), findsOneWidget);
+  });
 }

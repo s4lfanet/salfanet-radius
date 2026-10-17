@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../invoices/invoice_provider.dart';
+import '../payment/payment_flow.dart';
 import '../../core/api/api_client.dart';
 import '../../core/formatters.dart';
 import '../../core/theme/feature_colors.dart';
@@ -28,14 +29,20 @@ class _RenewalScreenState extends State<RenewalScreen> {
   Future<void> _renew() async {
     setState(() => _error = null);
     try {
-      final link = await context.read<RenewalProvider>().renew();
-      if (link != null) {
-        final uri = Uri.tryParse(link);
-        if (uri != null) await launchUrl(uri, mode: LaunchMode.externalApplication);
+      final invoice = await context.read<RenewalProvider>().renew();
+      if (!mounted) return;
+      final id = invoice?['id']?.toString();
+      if (id != null) {
+        await payInvoice(
+          context,
+          invoiceId: id,
+          amount: (invoice!['amount'] as num?) ?? 0,
+          invoiceNumber: invoice['invoiceNumber']?.toString(),
+        );
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invoice perpanjangan dibuat')));
-        Navigator.pop(context);
+        await context.read<InvoiceProvider>().load(force: true);
+        if (mounted) Navigator.pop(context);
       }
     } on ApiException catch (e) {
       setState(() => _error = e.message);

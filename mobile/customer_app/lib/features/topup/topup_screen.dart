@@ -2,7 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../dashboard/dashboard_provider.dart';
+import '../payment/payment_flow.dart';
 import '../../core/api/api_client.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/feature_colors.dart';
@@ -70,9 +71,12 @@ class _DirectTopupTabState extends State<_DirectTopupTab> {
     setState(() => _error = null);
     try {
       final url = await context.read<TopupProvider>().topupDirect(amount: amount, gateway: _selectedGateway!);
-      final uri = Uri.tryParse(url);
-      if (uri != null) await launchUrl(uri, mode: LaunchMode.externalApplication);
-      if (mounted) Navigator.pop(context);
+      if (!mounted) return;
+      await openPaymentUrl(context, url, title: 'Top Up Saldo');
+      if (mounted) {
+        context.read<DashboardProvider>().load(silent: true);
+        Navigator.pop(context);
+      }
     } on ApiException catch (e) {
       setState(() => _error = e.message);
     } catch (_) {
