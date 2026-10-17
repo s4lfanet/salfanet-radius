@@ -83,14 +83,8 @@ class _InvoicePaymentScreenState extends State<InvoicePaymentScreen> {
   }
 
   /// The invoice's payment token proves the request is for this customer's
-  /// own invoice; the server issues it in the invoice's payment link.
-  Future<String> _paymentToken() async {
-    final link = await context.read<InvoiceProvider>().requestPaymentLink(widget.invoiceId);
-    final segs = Uri.parse(link).pathSegments;
-    final i = segs.indexOf('pay');
-    if (i < 0 || i + 1 >= segs.length) throw ApiException('Tautan pembayaran tagihan tidak valid.');
-    return segs[i + 1];
-  }
+  /// own invoice.
+  Future<String> _paymentToken() => context.read<InvoiceProvider>().requestPaymentToken(widget.invoiceId);
 
   Future<void> _pay(PaymentGatewayOption gw) async {
     setState(() => _busy = gw.provider);

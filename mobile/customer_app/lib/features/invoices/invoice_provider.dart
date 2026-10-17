@@ -33,12 +33,16 @@ class InvoiceProvider extends ChangeNotifier {
     }
   }
 
-  Future<String> requestPaymentLink(String invoiceId) async {
+  /// The invoice's payment token, which /api/payment/create needs as proof
+  /// that this customer may pay this invoice.
+  Future<String> requestPaymentToken(String invoiceId) async {
     final res = await ApiClient.instance.get('/api/customer/invoices/payment', query: {'invoiceId': invoiceId});
-    final link = res['paymentLink']?.toString();
-    if (link == null || link.isEmpty) {
-      throw ApiException('Tautan pembayaran tidak tersedia.');
-    }
-    return link;
+    final token = res['paymentToken']?.toString();
+    if (token != null && token.isNotEmpty) return token;
+    // Older servers only return the /pay/{token} link.
+    final segs = Uri.tryParse(res['paymentLink']?.toString() ?? '')?.pathSegments ?? const [];
+    final i = segs.indexOf('pay');
+    if (i >= 0 && i + 1 < segs.length) return segs[i + 1];
+    throw ApiException('Tagihan ini belum siap dibayar. Coba lagi sebentar, atau hubungi admin.');
   }
 }

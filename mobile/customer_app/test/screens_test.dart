@@ -201,7 +201,7 @@ class _Fixtures implements HttpClientAdapter {
       case '/api/customer/suspend-request':
         return {'success': true, 'data': null};
       case '/api/customer/invoices/payment':
-        return {'success': true, 'paymentLink': 'https://isp.test/pay/tok123'};
+        return {'success': true, 'paymentToken': 'tok123', 'paymentLink': 'https://isp.test/pay/tok123'};
       case '/api/customer/payment-methods':
         return {'success': true, 'methods': []};
       case '/api/payment/create':
