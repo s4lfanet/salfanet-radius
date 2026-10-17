@@ -15,6 +15,7 @@ import { id as localeId } from 'date-fns/locale';
 import { useTheme } from '@/hooks/useTheme';
 import { PushNotificationToggle } from '@/components/push-notification-toggle';
 import { useQueryClient } from '@tanstack/react-query';
+import { useApkRelease } from '@/hooks/useApkRelease';
 
 interface MenuItem {
   name: string;
@@ -50,6 +51,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [companyName, setCompanyName] = useState('');
+  const apk = useApkRelease('customer');
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [bellOpen, setBellOpen] = useState(false);
@@ -373,13 +375,15 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
 
         {/* Logout */}
         <div className="p-4 border-t border-sidebar-border">
-          <a
-            href="/downloads/salfanet-customer.apk?v=1.1.3-5"
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 mb-2 text-xs font-bold text-brand-500 dark:text-brand-400 hover:text-white bg-brand-500/10 hover:bg-brand-500 border border-brand-500/30 rounded-xl transition-all duration-300"
-          >
-            <Download className="w-4 h-4" />
-            <span>Unduh Aplikasi Android</span>
-          </a>
+          {apk && (
+            <a
+              href={apk.url}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 mb-2 text-xs font-bold text-brand-500 dark:text-brand-400 hover:text-white bg-brand-500/10 hover:bg-brand-500 border border-brand-500/30 rounded-xl transition-all duration-300"
+            >
+              <Download className="w-4 h-4" />
+              <span>Unduh Aplikasi Android</span>
+            </a>
+          )}
           <PushNotificationToggle compact />
           <button
             onClick={handleLogout}
