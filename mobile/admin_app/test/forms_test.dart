@@ -32,6 +32,35 @@ void main() {
     return sent;
   }
 
+  // A field that already holds a number must accept being emptied and
+  // retyped; the web form used to snap an emptied field back to its default.
+  const maxField = [FieldSpec('qrisUniqueMax', 'Maksimum', type: FieldType.integer)];
+  const was999 = {'qrisUniqueMax': 999};
+
+  Future<Map<String, dynamic>?> retype(WidgetTester tester, String text) async {
+    Map<String, dynamic>? sent;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: FormScreen(title: 'Uji', fields: maxField, initial: was999, onSubmit: (v) async => sent = v),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).first, text);
+    await tester.pump();
+    await tester.tap(find.text('Simpan'));
+    await tester.pumpAndSettle();
+    return sent;
+  }
+
+  testWidgets('a number field emptied by the user is sent as empty', (tester) async {
+    expect((await retype(tester, ''))!['qrisUniqueMax'], isNull);
+  });
+
+  testWidgets('a number field with 999 cleared and retyped as 4 sends 4', (tester) async {
+    expect((await retype(tester, '4'))!['qrisUniqueMax'], 4);
+  });
+
   testWidgets('blank text/select send "", blank number null, blank date omitted (zod/web parity)', (tester) async {
     final sent = await submit(tester, const [
       FieldSpec('name', 'Nama'),
