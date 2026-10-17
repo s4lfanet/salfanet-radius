@@ -408,7 +408,7 @@ export async function POST(request: NextRequest) {
         );
 
         const result = await tripay.createTransaction({
-          method: 'QRIS', // Default QRIS, bisa dikustomisasi
+          method: paymentMethod || 'QRIS', // the channel the customer picked
           merchantRef: orderId,
           amount: invoice.amount,
           customerName,

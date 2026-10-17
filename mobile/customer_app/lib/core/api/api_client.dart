@@ -121,7 +121,11 @@ class ApiClient {
     if (data is Map<String, dynamic>) {
       if (res.statusCode != null && res.statusCode! >= 400) {
         final message = (data['error'] ?? data['message'] ?? 'Terjadi kesalahan (${res.statusCode})').toString();
-        throw ApiException(message, statusCode: res.statusCode);
+        // Gateway failures carry the gateway's own reason in "details";
+        // without it the customer only sees "Failed to create ... payment".
+        final details = data['details'];
+        final full = details is String && details.isNotEmpty && details != message && details.length < 200 ? '$message: $details' : message;
+        throw ApiException(full, statusCode: res.statusCode);
       }
       return data;
     }

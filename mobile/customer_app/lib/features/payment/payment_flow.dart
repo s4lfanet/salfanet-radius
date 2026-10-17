@@ -96,9 +96,16 @@ class _InvoicePaymentScreenState extends State<InvoicePaymentScreen> {
     setState(() => _busy = gw.provider);
     try {
       String? channel;
-      if (gw.provider != 'qris_own') {
-        final res = await ApiClient.instance.get('/api/customer/payment-methods', query: {'gateway': gw.provider, 'amount': widget.amount.round()});
-        final channels = (res['methods'] as List? ?? const []).map((e) => PaymentChannel.fromJson(e as Map<String, dynamic>)).toList();
+      // Only Duitku and Tripay take the channel up front; Midtrans and
+      // Xendit let the customer choose on their own checkout page.
+      if (gw.provider == 'duitku' || gw.provider == 'tripay') {
+        List<PaymentChannel> channels = const [];
+        try {
+          final res = await ApiClient.instance.get('/api/customer/payment-methods', query: {'gateway': gw.provider, 'amount': widget.amount.round()});
+          channels = (res['methods'] as List? ?? const []).map((e) => PaymentChannel.fromJson(e as Map<String, dynamic>)).toList();
+        } catch (_) {
+          // No list: the gateway's own page still offers its channels.
+        }
         if (channels.isNotEmpty) {
           if (!mounted) return;
           channel = await _pickChannel(gw, channels);

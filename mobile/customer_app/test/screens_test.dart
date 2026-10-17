@@ -188,7 +188,7 @@ class _Fixtures implements HttpClientAdapter {
       case '/api/customer/renewal':
         return {'success': true, 'canRenew': true};
       case '/api/public/payment-gateways':
-        return {'success': true, 'gateways': [{'provider': 'qris_own', 'name': 'QRIS'}, {'provider': 'duitku', 'name': 'Duitku'}]};
+        return {'success': true, 'gateways': [{'provider': 'qris_own', 'name': 'QRIS'}, {'provider': 'midtrans', 'name': 'Midtrans'}, {'provider': 'duitku', 'name': 'Duitku'}]};
       case '/api/public/profiles':
         return {
           'success': true,
@@ -206,6 +206,8 @@ class _Fixtures implements HttpClientAdapter {
         return {'success': true, 'methods': []};
       case '/api/payment/create':
         return {'success': true, 'isQrisOwn': true, 'orderId': 'ORD-1', 'paymentUrl': '/pay/qris/ORD-1?back=%2Fpay%2Ftok123'};
+      case '/api/payment/create-fails':
+        return {'error': 'Failed to create Midtrans payment', 'details': 'Access denied due to unauthorized transaction'};
       case '/api/payment/qris-status':
         return {
           'success': true,
@@ -220,10 +222,17 @@ class _Fixtures implements HttpClientAdapter {
   }
 
   final requests = <RequestOptions>[];
+  String? failGateway;
 
   @override
   Future<ResponseBody> fetch(RequestOptions o, Stream<Uint8List>? requestStream, Future<void>? cancelFuture) async {
     requests.add(o);
+    // A gateway that rejects the transaction, as Midtrans does with bad keys.
+    if (o.path == '/api/payment/create' && failGateway != null && (o.data as Map?)?['gateway'] == failGateway) {
+      return ResponseBody.fromString(jsonEncode(_body('/api/payment/create-fails', o.queryParameters)), 500, headers: {
+        Headers.contentTypeHeader: [Headers.jsonContentType],
+      });
+    }
     return ResponseBody.fromString(jsonEncode(_body(o.path, o.queryParameters)), 200, headers: {
       Headers.contentTypeHeader: [Headers.jsonContentType],
     });
@@ -357,5 +366,28 @@ void main() {
     expect(body['paymentToken'], 'tok123');
     expect(find.byType(QrisPayScreen), findsOneWidget);
     expect(find.text('Rp 200.017'), findsOneWidget);
+  });
+
+  testWidgets('Midtrans goes straight to its checkout, with no channel list call', (tester) async {
+    await pump(tester, const InvoicePaymentScreen(invoiceId: 'i1', amount: 3086), false, 360);
+    await tester.tap(find.text('Midtrans'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    expect(fixtures.requests.where((r) => r.path == '/api/customer/payment-methods'), isEmpty);
+    final create = fixtures.requests.lastWhere((r) => r.path == '/api/payment/create');
+    expect((create.data as Map)['gateway'], 'midtrans');
+    expect((create.data as Map).containsKey('paymentMethod'), isFalse);
+    // Close the payment screen so its status timers stop.
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump(const Duration(seconds: 1));
+  });
+
+  testWidgets("a gateway's rejection shows its own reason", (tester) async {
+    fixtures.failGateway = 'midtrans';
+    await pump(tester, const InvoicePaymentScreen(invoiceId: 'i1', amount: 3086), false, 360);
+    await tester.tap(find.text('Midtrans'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Failed to create Midtrans payment: Access denied due to unauthorized transaction'), findsOneWidget);
   });
 }
