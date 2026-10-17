@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, Loader2, Shield, Smartphone, User, Lock, Clock, LogIn, ArrowLeft, KeyRound, Download } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
+import { useApkRelease } from '@/hooks/useApkRelease';
 
 type Step = 'credentials' | 'twoFactor';
 
@@ -37,6 +38,7 @@ function LoginForm() {
   const [companyName, setCompanyName] = useState('');
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
   const [footerText, setFooterText] = useState('');
+  const apk = useApkRelease('admin');
   const [brandLoaded, setBrandLoaded] = useState(false);
 
   // ── Form data ─────────────────────────────────────────────────────────
@@ -345,11 +347,12 @@ function LoginForm() {
             </form>
           )}
 
-          {/* Admin app download. The version query makes the CDN fetch each
-              release instead of serving an older cached file. */}
-          {step === 'credentials' && (
+          {/* Admin app download, once one has been published from Build APK >
+              Rilis APK; the URL's version id keeps the CDN from serving an
+              older copy. */}
+          {step === 'credentials' && apk && (
             <a
-              href="/downloads/salfanet-admin.apk?v=1.0.1-2"
+              href={apk.url}
               className="mt-5 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-semibold transition-all"
             >
               <Download className="w-4 h-4" />

@@ -7,7 +7,7 @@ import {
   Terminal, Copy, Check, HardDrive, ChevronDown,
   Package, Globe, Upload, ImageIcon, QrCode, Wallet,
 } from 'lucide-react';
-import { apiAdmin } from '@/lib/api';
+import { apiAdmin, buildUrl } from '@/lib/api';
 import { showError } from '@/lib/sweetalert';
 import { useApiQuery } from '@/lib/api/hooks';
 import { formatWIB } from '@/lib/timezone';
@@ -297,6 +297,134 @@ function RoleCard({
 
 // ─── page ─────────────────────────────────────────────────────────────────────
 
+// ─── published releases ──────────────────────────────────────────────────────
+
+interface ApkRelease {
+  target: 'customer' | 'admin';
+  label: string;
+  available: boolean;
+  size?: number;
+  updatedAt?: string;
+  version?: string;
+  uploadedBy?: string;
+  note?: string;
+  url?: string;
+}
+
+/**
+ * The APKs offered on the customer and admin login pages. Super Admin
+ * uploads a release build here; the login pages pick it up at once, with
+ * a new version id in the link so Cloudflare serves the new file.
+ */
+function ReleasePanel() {
+  const query = useApiQuery<{ success: boolean; releases: ApkRelease[]; maxBytes: number }>('/api/admin/apk/release');
+  const [progress, setProgress] = useState<Record<string, number | null>>({});
+  const [errors, setErrors] = useState<Record<string, string | null>>({});
+  const releases = query.data?.releases ?? [];
+  const maxBytes = query.data?.maxBytes ?? 50 * 1024 * 1024;
+
+  const upload = (target: string, file: File) => {
+    if (!file.name.toLowerCase().endsWith('.apk')) {
+      setErrors((e) => ({ ...e, [target]: 'Pilih file berekstensi .apk.' }));
+      return;
+    }
+    if (file.size > maxBytes) {
+      setErrors((e) => ({ ...e, [target]: `Ukuran ${formatBytes(file.size)} melebihi batas ${formatBytes(maxBytes)}.` }));
+      return;
+    }
+    setErrors((e) => ({ ...e, [target]: null }));
+    setProgress((p) => ({ ...p, [target]: 0 }));
+    const form = new FormData();
+    form.append('target', target);
+    form.append('file', file);
+    // XHR rather than fetch: a ~30 MB upload needs a progress bar.
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', buildUrl('/api/admin/apk/release'));
+    xhr.withCredentials = true;
+    xhr.upload.onprogress = (ev) => {
+      if (ev.lengthComputable) setProgress((p) => ({ ...p, [target]: Math.round((ev.loaded / ev.total) * 100) }));
+    };
+    xhr.onload = () => {
+      setProgress((p) => ({ ...p, [target]: null }));
+      let body: { success?: boolean; error?: string } = {};
+      try { body = JSON.parse(xhr.responseText); } catch { /* non-JSON error page */ }
+      if (xhr.status >= 200 && xhr.status < 300 && body.success) {
+        query.refetch();
+      } else {
+        setErrors((e) => ({
+          ...e,
+          [target]: body.error || (xhr.status === 413 ? 'File terlalu besar untuk server.' : `Gagal mengunggah (HTTP ${xhr.status}).`),
+        }));
+      }
+    };
+    xhr.onerror = () => {
+      setProgress((p) => ({ ...p, [target]: null }));
+      setErrors((e) => ({ ...e, [target]: 'Koneksi terputus saat mengunggah.' }));
+    };
+    xhr.send(form);
+  };
+
+  return (
+    <div className="rounded-xl border border-slate-700/50 bg-slate-900/60 p-4">
+      <div className="flex items-center gap-2 text-slate-300 text-xs font-semibold mb-1">
+        <Upload className="w-3.5 h-3.5 text-cyan-400" /> Rilis APK di Halaman Login
+      </div>
+      <p className="text-[11px] text-slate-400 mb-3">
+        APK yang diunggah di sini muncul sebagai tombol unduh di halaman login pelanggan dan admin. Gunakan APK release
+        aplikasi native (bukan hasil Build APK di bawah), maksimal {formatBytes(maxBytes)}.
+      </p>
+      {query.isLoading && (
+        <div className="flex items-center gap-2 text-slate-400 text-xs"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Memuat…</div>
+      )}
+      {query.error && <p className="text-xs text-red-400">Gagal memuat data rilis. Halaman ini khusus Super Admin.</p>}
+      <div className="space-y-2">
+        {releases.map((r) => {
+          const busy = progress[r.target] != null;
+          return (
+            <div key={r.target} className="rounded-lg border border-slate-700/60 bg-slate-800/40 p-3">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-white">{r.label}</p>
+                  {r.available ? (
+                    <p className="text-[11px] text-slate-400 mt-0.5 break-words">
+                      {formatBytes(r.size ?? 0)} · diunggah {formatTime(r.updatedAt)}{r.uploadedBy ? ` oleh ${r.uploadedBy}` : ''} ·{' '}
+                      <a href={r.url} className="text-cyan-400 hover:underline">unduh untuk cek</a>
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-amber-400 mt-0.5">Belum ada APK; tombol unduh di halaman login disembunyikan.</p>
+                  )}
+                </div>
+                <label className="shrink-0">
+                  <span className={`inline-flex items-center justify-center gap-1.5 min-h-[40px] py-2 px-4 rounded-lg text-xs font-bold text-white transition-all ${busy ? 'bg-slate-700 cursor-not-allowed' : 'bg-cyan-600 hover:bg-cyan-500 cursor-pointer'}`}>
+                    {busy ? <><RefreshCw className="w-3 h-3 animate-spin" /> {progress[r.target]}%</> : <><Upload className="w-3 h-3" /> {r.available ? 'Ganti APK' : 'Unggah APK'}</>}
+                  </span>
+                  <input
+                    type="file"
+                    accept=".apk,application/vnd.android.package-archive"
+                    className="sr-only"
+                    disabled={busy}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      e.target.value = '';
+                      if (f) upload(r.target, f);
+                    }}
+                  />
+                </label>
+              </div>
+              {busy && (
+                <div className="mt-2 h-1.5 rounded-full bg-slate-700 overflow-hidden">
+                  <div className="h-full bg-cyan-500 transition-all" style={{ width: `${progress[r.target]}%` }} />
+                </div>
+              )}
+              {errors[r.target] && <p className="text-[11px] text-red-400 mt-2">{errors[r.target]}</p>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function DownloadApkPage() {
   const [statuses, setStatuses] = useState<Partial<Record<RoleKey, BuildStatus>>>({});
   const [building, setBuilding] = useState<Set<RoleKey>>(new Set());
@@ -398,6 +526,9 @@ export default function DownloadApkPage() {
           </div>
         </div>
       </div>
+
+      {/* Published releases for the login pages */}
+      <ReleasePanel />
 
       {/* URL Config */}
       <div className="rounded-xl border border-slate-700/50 bg-slate-900/60 p-4">

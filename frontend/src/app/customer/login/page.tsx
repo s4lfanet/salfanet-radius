@@ -5,11 +5,13 @@ import { useRouter } from 'next/navigation';
 import { LoginLogo } from '@/components/auth/LoginLogo';
 import { Shield, Smartphone, Lock, ArrowRight, Loader2, ChevronLeft, Wifi, Sun, Moon, AlertCircle, Download } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
+import { useApkRelease } from '@/hooks/useApkRelease';
 
 export default function CustomerLoginPage() {
   const router = useRouter();
   const { isDark, toggleTheme } = useTheme();
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
+  const apk = useApkRelease('customer');
   const [identifier, setIdentifier] = useState('');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState('');
@@ -341,13 +343,15 @@ export default function CustomerLoginPage() {
           )}
 
           {/* App Download */}
-          <a
-            href="/downloads/salfanet-customer.apk?v=1.1.3-5"
-            className="mt-5 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-semibold transition-all"
-          >
-            <Download className="w-4 h-4" />
-            Unduh Aplikasi Android
-          </a>
+          {apk && (
+            <a
+              href={apk.url}
+              className="mt-5 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-semibold transition-all"
+            >
+              <Download className="w-4 h-4" />
+              Unduh Aplikasi Android
+            </a>
+          )}
 
           {/* Footer */}
           <p className="text-center text-xs text-muted-foreground mt-6">{footerText}</p>
