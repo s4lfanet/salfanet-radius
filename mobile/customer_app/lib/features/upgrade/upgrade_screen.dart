@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../invoices/invoice_provider.dart';
+import '../payment/payment_flow.dart';
 import '../../core/api/api_client.dart';
 import '../../core/formatters.dart';
 import '../../core/theme/feature_colors.dart';
@@ -33,19 +34,23 @@ class _UpgradeScreenState extends State<UpgradeScreen> {
     setState(() => _error = null);
     final provider = context.read<UpgradeProvider>();
     try {
-      String? link;
+      final invoices = context.read<InvoiceProvider>();
       if (_selectedGateway != null) {
-        link = await provider.upgradeWithGateway(packageId: _selectedPackageId!, gateway: _selectedGateway!);
+        final url = await provider.upgradeWithGateway(packageId: _selectedPackageId!, gateway: _selectedGateway!);
+        if (url != null && mounted) await openPaymentUrl(context, url, title: 'Ganti Paket');
       } else {
-        link = await provider.upgradeManual(packageId: _selectedPackageId!);
-      }
-      if (link != null) {
-        final uri = Uri.tryParse(link);
-        if (uri != null) await launchUrl(uri, mode: LaunchMode.externalApplication);
+        // The server creates the upgrade invoice; pay it like any invoice.
+        final link = await provider.upgradeManual(packageId: _selectedPackageId!);
+        await invoices.load(force: true);
+        final matches = invoices.invoices.where((i) => link != null && i.paymentLink == link);
+        final invoice = matches.isEmpty ? null : matches.first;
+        if (invoice != null && mounted) {
+          await payInvoice(context, invoiceId: invoice.id, amount: invoice.amount, invoiceNumber: invoice.invoiceNumber);
+        }
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invoice ganti paket berhasil dibuat')));
-        Navigator.pop(context);
+        await invoices.load(force: true);
+        if (mounted) Navigator.pop(context);
       }
     } on ApiException catch (e) {
       setState(() => _error = e.message);

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../../core/api/api_client.dart';
 import '../../core/formatters.dart';
 import '../../core/theme/app_theme.dart';
@@ -10,6 +9,7 @@ import '../../core/widgets/state_views.dart';
 import '../../models/invoice.dart';
 import '../../models/invoice_detail.dart';
 import 'invoice_pdf.dart';
+import '../payment/payment_flow.dart';
 import 'invoice_provider.dart';
 
 class InvoiceDetailScreen extends StatefulWidget {
@@ -60,10 +60,15 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
       _payError = null;
     });
     try {
-      final link = await context.read<InvoiceProvider>().requestPaymentLink(widget.invoice.id);
-      final uri = Uri.tryParse(link);
-      if (uri == null || !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-        throw ApiException('Tidak dapat membuka halaman pembayaran.');
+      final done = await payInvoice(
+        context,
+        invoiceId: widget.invoice.id,
+        amount: widget.invoice.amount,
+        invoiceNumber: widget.invoice.invoiceNumber,
+      );
+      if (done && mounted) {
+        await context.read<InvoiceProvider>().load(force: true);
+        await _load();
       }
     } on ApiException catch (e) {
       setState(() => _payError = e.message);

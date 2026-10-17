@@ -26,14 +26,14 @@ class RenewalProvider extends ChangeNotifier {
     }
   }
 
-  /// Returns the created invoice's paymentLink (if any) for the caller to open.
-  Future<String?> renew() async {
+  /// Creates the renewal invoice and returns it (id, invoiceNumber, amount,
+  /// paymentLink) for the caller to pay.
+  Future<Map<String, dynamic>?> renew() async {
     submitting = true;
     notifyListeners();
     try {
       final res = await ApiClient.instance.post('/api/customer/renewal');
-      final invoice = res['invoice'] as Map<String, dynamic>?;
-      return invoice?['paymentLink']?.toString();
+      return res['invoice'] as Map<String, dynamic>?;
     } finally {
       submitting = false;
       notifyListeners();
