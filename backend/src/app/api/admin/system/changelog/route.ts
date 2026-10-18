@@ -240,6 +240,15 @@ copy_standalone() {
 
 log "=== UPDATE STARTED ==="
 
+# A build needs a few GB of free disk; stop before touching anything when it
+# is not there, instead of failing halfway with ENOSPC.
+FREE_MB=$(( $(df -Pk "${appDir}" | awk 'NR==2 {print $4}') / 1024 ))
+if [ "$FREE_MB" -lt 3072 ]; then
+  write_status '{"phase":"error","step":"Git pull","error":"Disk hampir penuh: sisa '$FREE_MB' MB, butuh minimal 3072 MB. Kosongkan ruang disk lalu coba lagi.","finishedAt":'$(date +%s)'}'
+  log "ERROR: only $FREE_MB MB free"
+  exit 1
+fi
+
 # Step 1: Git pull
 write_status '{"phase":"running","step":"Git pull","startedAt":'$(date +%s)'}'
 log "Step 1: Git pull"
@@ -264,7 +273,9 @@ log "Prisma OK (warnings ignored)"
 write_status '{"phase":"running","step":"Backend build"}'
 log "Step 3: Backend install + build"
 cd "${appDir}"
-pnpm install --no-frozen-lockfile --force --config.confirm-modules-purges=false >> "$LOG_FILE" 2>&1
+# No --force: it installs every optional binary for every platform
+# (sharp for riscv64, s390x, ...) and fills the disk.
+pnpm install --no-frozen-lockfile --config.confirm-modules-purges=false >> "$LOG_FILE" 2>&1
 cd "${appDir}/backend"
 node $PRISMA_BIN generate >> "$LOG_FILE" 2>&1
 NODE_OPTIONS="--max-old-space-size=1536" pnpm build >> "$LOG_FILE" 2>&1
