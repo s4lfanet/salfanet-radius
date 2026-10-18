@@ -22,6 +22,17 @@ const staffRoles = <(String, String)>[
 ];
 String roleLabel(String? r) => staffRoles.firstWhere((x) => x.$1 == r, orElse: () => (r ?? '', r ?? '-')).$2;
 
+/// Roles given in Staf & Tim. Technicians are created in Teknisi Lapangan
+/// (the account work orders belong to) and collectors in Kolektor, as on
+/// the web; a technician admin account made earlier keeps its role.
+const officeRoles = <(String, String)>[
+  ('SUPER_ADMIN', 'Super Admin'),
+  ('FINANCE', 'Finance'),
+  ('CUSTOMER_SERVICE', 'Customer Service'),
+  ('MARKETING', 'Marketing'),
+  ('VIEWER', 'Viewer'),
+];
+
 Widget _activePill(Json i) =>
     i['isActive'] == false ? const StatusPill(label: 'Nonaktif', tone: Tone.neutral) : const StatusPill(label: 'Aktif', tone: Tone.success);
 
@@ -49,14 +60,22 @@ CrudConfig staffConfig() => CrudConfig(
   noun: 'Akun Staf',
   icon: Icons.badge_rounded,
   fetch: (_) => _api.get('/api/admin/users'),
-  listKey: 'users',
+  // Collectors are managed in Kolektor.
+  parse: (res) => extractList(res, listKey: 'users').where((u) => u['role'] != 'COLLECTOR').toList(),
+  header: (context, _) => Padding(
+    padding: const EdgeInsets.only(bottom: Gap.sm),
+    child: Text(
+      'Untuk staf kantor. Teknisi dibuat di menu Teknisi Lapangan, kolektor di menu Kolektor.',
+      style: TextStyle(fontSize: 12.5, height: 1.4, color: context.colors.onSurfaceVariant),
+    ),
+  ),
   titleOf: (u) => str(u, 'name') ?? str(u, 'username') ?? '-',
   subtitleOf: (u) => '@${u['username']} · ${roleLabel(str(u, 'role'))}',
   metaOf: (u) =>
       [str(u, 'email'), str(u, 'phone'), if (u['lastLogin'] != null) 'Login ${formatDateTimeOrNull(dateOf(u, 'lastLogin'))}'].whereType<String>().join(' · '),
   toneOf: (u) => u['isActive'] == false ? Tone.neutral : (u['role'] == 'SUPER_ADMIN' ? Tone.accent : Tone.primary),
   statusOf: _activePill,
-  filters: const [('all', 'Semua'), ...staffRoles],
+  filters: const [('all', 'Semua'), ...officeRoles],
   filterOf: (u) => str(u, 'role'),
   initialFilter: 'all',
   sectionsOf: (context, u) {
@@ -98,8 +117,14 @@ CrudConfig staffConfig() => CrudConfig(
       omitWhenEmpty: u != null,
       helper: u != null ? 'Kosongkan jika tidak diganti.' : null,
     ),
-    const FieldSpec('role', 'Peran', type: FieldType.select, required: true, initial: 'CUSTOMER_SERVICE', options: staffRoles),
-    FieldSpec('areaId', 'Area', type: FieldType.select, loadOptions: Lookups.areas, helper: 'Wajib untuk kolektor; membatasi pelanggan yang terlihat.'),
+    FieldSpec(
+      'role',
+      'Peran',
+      type: FieldType.select,
+      required: true,
+      initial: 'CUSTOMER_SERVICE',
+      options: u?['role'] == 'TECHNICIAN' ? const [...officeRoles, ('TECHNICIAN', 'Teknisi (akun lama)')] : officeRoles,
+    ),
     if (u != null) const FieldSpec('isActive', 'Akun aktif', type: FieldType.toggle, initial: true),
     FieldSpec(
       'permissions',
