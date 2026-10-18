@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../core/update/app_updater.dart';
+
 import '../dashboard/dashboard_screen.dart';
 import '../invoices/invoice_list_screen.dart';
 import '../more/more_menu_screen.dart';
@@ -16,6 +18,14 @@ class _MainShellState extends State<MainShell> {
   int _index = 0;
 
   static const _screens = [DashboardScreen(), PppoeListScreen(), InvoiceListScreen(), MoreMenuScreen()];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) AppUpdater.checkOnLaunch(context);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
