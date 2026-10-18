@@ -298,6 +298,9 @@ interface ApkRelease {
   uploadedBy?: string;
   note?: string;
   url?: string;
+  versionCode?: number;
+  versionName?: string;
+  minVersionCode?: number;
 }
 
 /**
@@ -309,6 +312,8 @@ function ReleasePanel() {
   const query = useApiQuery<{ success: boolean; releases: ApkRelease[]; maxBytes: number }>('/api/admin/apk/release');
   const [progress, setProgress] = useState<Record<string, number | null>>({});
   const [errors, setErrors] = useState<Record<string, string | null>>({});
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [mandatory, setMandatory] = useState<Record<string, boolean>>({});
   const releases = query.data?.releases ?? [];
   const maxBytes = query.data?.maxBytes ?? 50 * 1024 * 1024;
 
@@ -326,6 +331,8 @@ function ReleasePanel() {
     const form = new FormData();
     form.append('target', target);
     form.append('file', file);
+    if (notes[target]?.trim()) form.append('note', notes[target].trim());
+    if (mandatory[target]) form.append('mandatory', '1');
     // XHR rather than fetch: a ~30 MB upload needs a progress bar.
     const xhr = new XMLHttpRequest();
     xhr.open('POST', buildUrl('/api/admin/apk/release'));
@@ -338,6 +345,8 @@ function ReleasePanel() {
       let body: { success?: boolean; error?: string } = {};
       try { body = JSON.parse(xhr.responseText); } catch { /* non-JSON error page */ }
       if (xhr.status >= 200 && xhr.status < 300 && body.success) {
+        setNotes((n) => ({ ...n, [target]: '' }));
+        setMandatory((m) => ({ ...m, [target]: false }));
         query.refetch();
       } else {
         setErrors((e) => ({
@@ -359,8 +368,10 @@ function ReleasePanel() {
         <Upload className="w-3.5 h-3.5 text-cyan-400" /> Rilis APK di Halaman Login
       </div>
       <p className="text-[11px] text-slate-400 mb-3">
-        APK yang diunggah di sini muncul sebagai tombol unduh di halaman login pelanggan dan admin. Gunakan APK release
-        aplikasi native (bukan hasil Build APK di bawah), maksimal {formatBytes(maxBytes)}.
+        APK yang diunggah di sini muncul sebagai tombol unduh di halaman login pelanggan dan admin, dan ditawarkan sebagai
+        update di aplikasi yang sudah terpasang. Gunakan APK release aplikasi native (bukan hasil Build APK di bawah),
+        maksimal {formatBytes(maxBytes)}. Nomor build harus lebih tinggi dari yang sekarang dan kunci tanda tangannya
+        harus sama.
       </p>
       {query.isLoading && (
         <div className="flex items-center gap-2 text-slate-400 text-xs"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Memuat…</div>
@@ -376,11 +387,20 @@ function ReleasePanel() {
                   <p className="text-sm font-semibold text-white">{r.label}</p>
                   {r.available ? (
                     <p className="text-[11px] text-slate-400 mt-0.5 break-words">
+                      {r.versionCode !== undefined && (
+                        <span className="text-slate-200">
+                          Versi {r.versionName ?? '-'} (build {r.versionCode}) ·{' '}
+                        </span>
+                      )}
                       {formatBytes(r.size ?? 0)} · diunggah {formatTime(r.updatedAt)}{r.uploadedBy ? ` oleh ${r.uploadedBy}` : ''} ·{' '}
                       <a href={r.url} className="text-cyan-400 hover:underline">unduh untuk cek</a>
                     </p>
                   ) : (
                     <p className="text-[11px] text-amber-400 mt-0.5">Belum ada APK; tombol unduh di halaman login disembunyikan.</p>
+                  )}
+                  {r.available && r.note && <p className="text-[11px] text-slate-400 mt-0.5 break-words">Catatan: {r.note}</p>}
+                  {r.available && r.minVersionCode !== undefined && (
+                    <p className="text-[11px] text-amber-300 mt-0.5">Wajib update untuk aplikasi di bawah build {r.minVersionCode}.</p>
                   )}
                 </div>
                 <label className="shrink-0">
@@ -400,6 +420,32 @@ function ReleasePanel() {
                   />
                 </label>
               </div>
+              <div className="mt-3 flex flex-col sm:flex-row sm:items-center gap-2">
+                <input
+                  type="text"
+                  value={notes[r.target] ?? ''}
+                  onChange={(e) => setNotes((n) => ({ ...n, [r.target]: e.target.value }))}
+                  maxLength={200}
+                  disabled={busy}
+                  placeholder="Catatan rilis untuk pengguna (opsional), mis. Perbaikan pembayaran"
+                  aria-label={`Catatan rilis ${r.label}`}
+                  className="flex-1 min-w-0 min-h-[40px] rounded-lg border border-slate-700 bg-slate-900/60 px-3 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                />
+                <label className="inline-flex items-center gap-2 min-h-[40px] text-xs text-slate-300 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={mandatory[r.target] ?? false}
+                    onChange={(e) => setMandatory((m) => ({ ...m, [r.target]: e.target.checked }))}
+                    disabled={busy}
+                    className="w-4 h-4 accent-cyan-500"
+                  />
+                  Wajib update
+                </label>
+              </div>
+              <p className="text-[10px] text-slate-500 mt-1">
+                Isi catatan dan centang Wajib update dulu bila perlu, lalu pilih file. Wajib update: aplikasi versi lama tidak
+                bisa dipakai sebelum diperbarui.
+              </p>
               {busy && (
                 <div className="mt-2 h-1.5 rounded-full bg-slate-700 overflow-hidden">
                   <div className="h-full bg-cyan-500 transition-all" style={{ width: `${progress[r.target]}%` }} />

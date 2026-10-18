@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/theme_controller.dart';
+import '../../core/update/app_updater.dart';
 import '../../core/widgets/detail.dart';
 import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/entity_tile.dart';
@@ -20,16 +20,6 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  PackageInfo? _info;
-
-  @override
-  void initState() {
-    super.initState();
-    PackageInfo.fromPlatform().then((i) {
-      if (mounted) setState(() => _info = i);
-    });
-  }
-
   Future<void> _logout() async {
     final auth = context.read<AuthProvider>();
     final ok = await confirmAction(
@@ -104,10 +94,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             label: const Text('Keluar'),
           ),
           const SizedBox(height: Gap.lg),
-          if (_info != null)
-            Center(
-              child: Text('Salfanet Admin ${_info!.version} (${_info!.buildNumber})', style: TextStyle(fontSize: 12, color: context.colors.onSurfaceVariant)),
-            ),
+          const AppVersionFooter(appName: 'Salfanet Admin'),
         ],
       ),
     );

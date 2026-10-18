@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/feature_colors.dart';
+import '../../core/update/app_updater.dart';
 import '../auth/auth_provider.dart';
 import '../referral/referral_screen.dart';
 import '../renewal/renewal_screen.dart';
@@ -144,6 +145,8 @@ class MoreScreen extends StatelessWidget {
             label: Text('Keluar', style: TextStyle(color: scheme.error)),
             style: OutlinedButton.styleFrom(side: BorderSide(color: scheme.error.withValues(alpha: 0.5))),
           ),
+          const SizedBox(height: 16),
+          const AppVersionFooter(appName: 'Salfanet'),
         ],
       ),
     );

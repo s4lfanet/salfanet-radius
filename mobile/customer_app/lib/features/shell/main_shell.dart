@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/update/app_updater.dart';
 import '../dashboard/dashboard_screen.dart';
 import '../invoices/invoices_screen.dart';
 import '../more/more_screen.dart';
@@ -28,6 +29,9 @@ class _MainShellState extends State<MainShell> {
       const TicketsScreen(),
       const MoreScreen(),
     ];
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) AppUpdater.checkOnLaunch(context);
+    });
   }
 
   @override

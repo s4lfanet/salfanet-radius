@@ -13,6 +13,7 @@ class MainActivity : FlutterActivity() {
         qris = QrisChannel(this).also {
             MethodChannel(flutterEngine.dartExecutor.binaryMessenger, QrisChannel.NAME).setMethodCallHandler(it)
         }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, AppUpdater.NAME).setMethodCallHandler(AppUpdater(this))
     }
 
     override fun onDestroy() {

@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 /**
  * The APKs offered on the customer and admin login pages.
  *   GET  → what is published now
- *   POST → multipart { target: customer|admin, file: .apk, note? } replaces one
+ *   POST → multipart { target: customer|admin, file: .apk, note?, mandatory?: '1' } replaces one
  * Super Admin only: whatever is uploaded here is installed by every customer.
  */
 async function superAdmin() {
@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
   const target = String(form.get('target') || '') as ApkTarget;
   const file = form.get('file');
   const note = String(form.get('note') || '').slice(0, 200);
+  const mandatory = form.get('mandatory') === '1';
 
   if (!(target in APK_RELEASES)) {
     return NextResponse.json({ success: false, error: 'Pilih aplikasi: pelanggan atau admin.' }, { status: 400 });
@@ -54,8 +55,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const release = saveApkRelease(target, Buffer.from(await file.arrayBuffer()), check.user.username || check.user.name || undefined, note);
-    console.log(`[APK release] ${target} replaced by ${check.user.username}: ${release.size} bytes, v=${release.version}`);
+    const release = saveApkRelease(target, Buffer.from(await file.arrayBuffer()), check.user.username || check.user.name || undefined, note, mandatory);
+    console.log(`[APK release] ${target} replaced by ${check.user.username}: ${release.size} bytes, build ${release.versionCode}${mandatory ? ' (wajib)' : ''}`);
     return NextResponse.json({ success: true, release });
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Gagal menyimpan APK.';
