@@ -60,13 +60,29 @@ function writeStatus(status: {
 }
 
 // Read status JSON for polling
-function readStatus(): { phase: string; step?: string; steps?: any[]; newCommit?: string; error?: string; startedAt?: number; finishedAt?: number } | null {
+function readStatus(): { phase: string; step?: string; steps?: any[]; newCommit?: string; error?: string; startedAt?: number; finishedAt?: number; logTail?: string } | null {
   try {
     if (!existsSync(STATUS_FILE)) return null;
     const raw = readFileSync(STATUS_FILE, 'utf-8');
     return JSON.parse(raw);
   } catch {
     return null;
+  }
+}
+
+/** Last lines of the update log, without terminal colour codes or secrets. */
+function readLogTail(lines: number): string | undefined {
+  try {
+    if (!existsSync(LOG_FILE)) return undefined;
+    return readFileSync(LOG_FILE, 'utf-8')
+      // eslint-disable-next-line no-control-regex
+      .replace(/\x1b\[[0-9;]*m/g, '')
+      .split('\n')
+      .filter((l) => l.trim() && !/(SECRET|PASSWORD|DATABASE_URL)=/i.test(l))
+      .slice(-lines)
+      .join('\n');
+  } catch {
+    return undefined;
   }
 }
 
@@ -84,6 +100,8 @@ export async function GET(req: NextRequest) {
     const action = new URL(req.url).searchParams.get('action');
     if (action === 'status') {
       const status = readStatus();
+      // On failure, the end of the log says why (the status only names the step).
+      if (status?.phase === 'error') status.logTail = readLogTail(40);
       return NextResponse.json({ success: true, status: status || { phase: 'idle' } });
     }
 
@@ -192,6 +210,34 @@ log() {
   echo "[$(date '+%H:%M:%S')] $1" >> "$LOG_FILE"
 }
 
+# The script starts with a clean environment (EXEC_ENV), but next build
+# loads every route, and auth refuses to load without NEXTAUTH_SECRET in
+# production. Take the secrets from the .env files, backend first, as
+# deploy.sh effectively does.
+env_value() {
+  for f in backend/.env frontend/.env; do
+    v=$(sed -n "s/^$1=//p" "$f" 2>/dev/null | tail -1 | tr -d '"' | tr -d "'")
+    if [ -n "$v" ]; then echo "$v"; return; fi
+  done
+}
+export DATABASE_URL=$(env_value DATABASE_URL)
+export SHADOW_DATABASE_URL=$(env_value SHADOW_DATABASE_URL)
+export NEXTAUTH_SECRET=$(env_value NEXTAUTH_SECRET)
+export NEXTAUTH_URL=$(env_value NEXTAUTH_URL)
+export NEXT_TELEMETRY_DISABLED=1
+
+# Same copies as deploy.sh: the standalone server serves public/ and
+# .next/static/ from inside .next/standalone/<app>/.
+copy_standalone() {
+  local app="$1"
+  local out="$app/.next/standalone/$app"
+  [ -d "$out" ] || return 0
+  [ -d "$app/public" ] && { mkdir -p "$out/public"; cp -r "$app/public/." "$out/public/"; }
+  [ -d "$app/.next/static" ] && { mkdir -p "$out/.next"; rm -rf "$out/.next/static"; cp -r "$app/.next/static" "$out/.next/static"; }
+  [ -f "$app/.env" ] && cp "$app/.env" "$out/.env"
+  return 0
+}
+
 log "=== UPDATE STARTED ==="
 
 # Step 1: Git pull
@@ -221,12 +267,14 @@ cd "${appDir}"
 pnpm install --no-frozen-lockfile --force --config.confirm-modules-purges=false >> "$LOG_FILE" 2>&1
 cd "${appDir}/backend"
 node $PRISMA_BIN generate >> "$LOG_FILE" 2>&1
-pnpm build >> "$LOG_FILE" 2>&1
+NODE_OPTIONS="--max-old-space-size=1536" pnpm build >> "$LOG_FILE" 2>&1
 if [ $? -ne 0 ]; then
   write_status '{"phase":"error","step":"Backend build","error":"backend build failed","finishedAt":'$(date +%s)'}'
   log "ERROR: Backend build failed"
   exit 1
 fi
+cd "${appDir}"
+copy_standalone backend
 log "Backend build OK"
 
 # Step 4: Frontend build
@@ -239,6 +287,8 @@ if [ $? -ne 0 ]; then
   log "ERROR: Frontend build failed"
   exit 1
 fi
+cd "${appDir}"
+copy_standalone frontend
 log "Frontend build OK"
 
 # Step 5: Restart PM2 (use reload, NOT delete+start — delete kills the backend
@@ -246,10 +296,6 @@ log "Frontend build OK"
 write_status '{"phase":"running","step":"PM2 restart"}'
 log "Step 5: PM2 restart (reload mode)"
 cd "${appDir}"
-export DATABASE_URL=$(sed -n 's/^DATABASE_URL=//p' backend/.env | tr -d '"' | tr -d "'")
-export SHADOW_DATABASE_URL=$(sed -n 's/^SHADOW_DATABASE_URL=//p' backend/.env | tr -d '"' | tr -d "'" 2>/dev/null || true)
-export NEXTAUTH_SECRET=$(sed -n 's/^NEXTAUTH_SECRET=//p' frontend/.env | tr -d '"' | tr -d "'" 2>/dev/null || true)
-export NEXTAUTH_URL=$(sed -n 's/^NEXTAUTH_URL=//p' frontend/.env | tr -d '"' | tr -d "'" 2>/dev/null || true)
 # Reload frontend first (it doesn't kill this script's parent)
 pm2 reload salfanet-frontend --update-env >> "$LOG_FILE" 2>&1 || pm2 restart salfanet-frontend --update-env >> "$LOG_FILE" 2>&1 || true
 log "Frontend reloaded"

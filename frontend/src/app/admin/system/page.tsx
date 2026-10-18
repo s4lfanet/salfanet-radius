@@ -69,6 +69,8 @@ interface UpdateStatus {
   error?: string;
   startedAt?: number;
   finishedAt?: number;
+  /** End of the update log, sent when the update failed. */
+  logTail?: string;
 }
 
 function formatUptime(seconds: number): string {
@@ -408,9 +410,17 @@ export default function SystemPage() {
             {updateStatus.phase === 'error' && (
               <div className="flex items-start gap-3">
                 <XCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-xs font-medium text-red-400">Update gagal: {updateStatus.step || 'unknown step'}</p>
                   {updateStatus.error && <p className="text-[10px] font-mono text-muted-foreground mt-0.5">{updateStatus.error}</p>}
+                  {updateStatus.logTail && (
+                    <details className="mt-2" open>
+                      <summary className="text-[11px] text-muted-foreground cursor-pointer select-none">Log terakhir</summary>
+                      <pre className="mt-1 max-h-72 overflow-auto rounded-md bg-black/40 p-2 text-[10px] leading-relaxed text-slate-300 whitespace-pre-wrap break-all">
+                        {updateStatus.logTail}
+                      </pre>
+                    </details>
+                  )}
                 </div>
               </div>
             )}
