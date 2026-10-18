@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/crud/crud_list_screen.dart';
@@ -62,12 +63,27 @@ CrudConfig staffConfig() => CrudConfig(
   fetch: (_) => _api.get('/api/admin/users'),
   // Collectors are managed in Kolektor.
   parse: (res) => extractList(res, listKey: 'users').where((u) => u['role'] != 'COLLECTOR').toList(),
-  header: (context, _) => Padding(
-    padding: const EdgeInsets.only(bottom: Gap.sm),
-    child: Text(
-      'Untuk staf kantor. Teknisi dibuat di menu Teknisi Lapangan, kolektor di menu Kolektor.',
-      style: TextStyle(fontSize: 12.5, height: 1.4, color: context.colors.onSurfaceVariant),
-    ),
+  header: (context, _) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Padding(
+        padding: const EdgeInsets.only(bottom: Gap.sm),
+        child: Text(
+          'Untuk staf kantor. Teknisi dibuat di menu Teknisi Lapangan, kolektor di menu Kolektor.',
+          style: TextStyle(fontSize: 12.5, height: 1.4, color: context.colors.onSurfaceVariant),
+        ),
+      ),
+      const LoginLinks(
+        title: 'Alamat login tiap portal',
+        links: [
+          ('Admin & staf kantor', '/admin/login'),
+          ('Teknisi', '/technician/login'),
+          ('Kolektor', '/collector/login'),
+          ('Agen voucher', '/agent'),
+          ('Pelanggan', '/customer/login'),
+        ],
+      ),
+    ],
   ),
   titleOf: (u) => str(u, 'name') ?? str(u, 'username') ?? '-',
   subtitleOf: (u) => '@${u['username']} · ${roleLabel(str(u, 'role'))}',
@@ -155,6 +171,7 @@ CrudConfig collectorsConfig() => CrudConfig(
   tone: Tone.warning,
   fetch: (_) => _api.get('/api/admin/users'),
   parse: (res) => extractList(res, listKey: 'users').where((u) => u['role'] == 'COLLECTOR').toList(),
+  header: (context, _) => const LoginLinks(title: 'Alamat login kolektor', links: [('Kolektor', '/collector/login')]),
   titleOf: (u) => str(u, 'name') ?? str(u, 'username') ?? '-',
   subtitleOf: (u) => '@${u['username']}${mapOf(u, 'area') != null ? ' · ${mapOf(u, 'area')!['name']}' : ''}',
   metaOf: (u) => str(u, 'phone'),
@@ -182,6 +199,7 @@ CrudConfig techniciansConfig() => CrudConfig(
   tone: Tone.accent,
   fetch: (_) => _api.get('/api/admin/technicians'),
   listKey: 'technicians',
+  header: (context, _) => const LoginLinks(title: 'Alamat login teknisi', links: [('Teknisi', '/technician/login')]),
   titleOf: (t) => str(t, 'name') ?? '-',
   subtitleOf: (t) => str(t, 'phoneNumber'),
   metaOf: (t) => [
@@ -229,3 +247,54 @@ CrudConfig techniciansConfig() => CrudConfig(
     ),
   ],
 );
+
+/// Login addresses to hand to new staff, technicians or collectors, built
+/// from the server this app is connected to (every install has its own
+/// domain).
+class LoginLinks extends StatelessWidget {
+  const LoginLinks({super.key, required this.title, required this.links});
+  final String title;
+  final List<(String, String)> links;
+
+  @override
+  Widget build(BuildContext context) {
+    final base = ApiClient.instance.baseUrl.replaceFirst(RegExp(r'/+$'), '');
+    if (base.isEmpty) return const SizedBox.shrink();
+    final colors = context.colors;
+    return Card(
+      margin: const EdgeInsets.only(bottom: Gap.sm),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 10, 4, 6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: Theme.of(context).textTheme.labelLarge),
+            for (final (label, path) in links)
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 6),
+                        Text(label, style: TextStyle(fontSize: 11.5, color: colors.onSurfaceVariant)),
+                        SelectableText('$base$path', style: const TextStyle(fontSize: 12.5, fontFamily: 'monospace')),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Salin alamat login $label',
+                    icon: const Icon(Icons.copy_rounded, size: 18),
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: '$base$path'));
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Alamat login $label disalin')));
+                    },
+                  ),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
