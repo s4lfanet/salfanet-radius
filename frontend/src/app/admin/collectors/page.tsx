@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Users, Search, RefreshCw, Loader2, Plus, X, Phone, Mail, MapPin } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
+import { LoginLinks } from '@/components/admin/LoginLinks';
 import { showSuccess, showError } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
@@ -140,6 +141,8 @@ export default function AdminCollectorsPage() {
           </button>
         </div>
       </div>
+
+      <LoginLinks portals={['collector']} title="Alamat login kolektor" />
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

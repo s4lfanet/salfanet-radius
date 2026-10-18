@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { LoginLinks } from '@/components/admin/LoginLinks';
 import { useSession } from 'next-auth/react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -316,6 +317,8 @@ export default function ManagementPage() {
           <Link href="/admin/technicians" className="font-medium text-primary hover:underline">Teknisi</Link>, kolektor di{' '}
           <Link href="/admin/collectors" className="font-medium text-primary hover:underline">Kolektor</Link>.
         </p>
+
+        <LoginLinks portals={['admin', 'technician', 'collector', 'agent', 'customer']} title="Alamat login tiap portal" />
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
