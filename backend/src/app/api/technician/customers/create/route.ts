@@ -3,6 +3,7 @@ import { jwtVerify } from 'jose';
 import { prisma } from '@/server/db/client';
 import { createPppoeUser } from '@/server/services/pppoe.service';
 import { TECH_JWT_SECRET } from '@/server/auth/technician-secret';
+import { technicianIdForAdminUser } from '@/server/services/technician-link.service';
 
 async function verifyTechnician(req: NextRequest) {
   const token = req.cookies.get('technician-token')?.value;
@@ -53,7 +54,8 @@ export async function POST(req: NextRequest) {
     // Mark as pending approval — technician registrations need admin approval
     const createBody = {
       ...body,
-      registeredByTechnicianId: tech.type === 'technician' ? tech.id : undefined,
+      // Admin-account technicians are credited through their linked technicians row.
+      registeredByTechnicianId: tech.type === 'technician' ? tech.id : await technicianIdForAdminUser(tech.id),
       pendingApproval: true,
     };
 

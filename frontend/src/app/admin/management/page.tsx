@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -77,7 +78,10 @@ export default function ManagementPage() {
 
   // ─── React Query: Users list ─────────────────────────────────────────────────
   const { data: usersData, isLoading: loading } = useApiQuery<{ users: User[] } | User[]>('/api/admin/users', { staleTime: 30000 });
-  const users: User[] = Array.isArray(usersData) ? usersData : (usersData?.users || []);
+  // Collectors have their own page (Kelola Kolektor, with area assignment);
+  // this one is for office staff. Technician admin accounts made before
+  // technicians moved to Kelola Teknisi stay listed so they can be managed.
+  const users: User[] = (Array.isArray(usersData) ? usersData : (usersData?.users || [])).filter((u) => u.role !== 'COLLECTOR');
 
   // ─── React Query: Permissions (rarely change - 5min stale) ──────────────────
   const { data: permissionsData } = useApiQuery<{ success: boolean; permissions: Record<string, Permission[]> } | Permission[]>('/api/permissions', { staleTime: 5 * 60 * 1000 });
@@ -307,6 +311,12 @@ export default function ManagementPage() {
           )}
         </div>
 
+        <p className="text-xs text-muted-foreground">
+          Halaman ini untuk staf kantor. Teknisi lapangan dikelola di{' '}
+          <Link href="/admin/technicians" className="font-medium text-primary hover:underline">Teknisi</Link>, kolektor di{' '}
+          <Link href="/admin/collectors" className="font-medium text-primary hover:underline">Kolektor</Link>.
+        </p>
+
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
           <div className="bg-card rounded-xl border border-border p-2.5 sm:p-3  hover:border-border transition-all">
@@ -362,9 +372,9 @@ export default function ManagementPage() {
               </div>
               <div className="min-w-0">
                 <p className="text-lg font-bold text-foreground">
-                  {users.filter(u => u.role === 'TECHNICIAN').length}
+                  {users.filter(u => u.role === 'FINANCE').length}
                 </p>
-                <p className="text-[9px] sm:text-[10px] text-muted-foreground truncate">{t('management.technician')}</p>
+                <p className="text-[9px] sm:text-[10px] text-muted-foreground truncate">{t('management.finance')}</p>
               </div>
             </div>
           </div>
@@ -573,7 +583,12 @@ export default function ManagementPage() {
               <div>
                 <ModalLabel required>{t('management.role')}</ModalLabel>
                 <ModalSelect value={formData.role} onChange={(e) => handleRoleChange(e.target.value)}>
-                  {ROLES.filter((role) => role.value !== 'SUPER_ADMIN' || currentUserIsSuperAdmin).map((role) => (<option key={role.value} value={role.value} className="dark:bg-card">{t(`management.${role.translationKey}`)}</option>))}
+                  {ROLES.filter((role) =>
+                    (role.value !== 'SUPER_ADMIN' || currentUserIsSuperAdmin) &&
+                    role.value !== 'COLLECTOR' &&
+                    // Only an existing technician account keeps this role; new ones go in Kelola Teknisi.
+                    (role.value !== 'TECHNICIAN' || editingUser?.role === 'TECHNICIAN')
+                  ).map((role) => (<option key={role.value} value={role.value} className="dark:bg-card">{t(`management.${role.translationKey}`)}</option>))}
                 </ModalSelect>
                 <p className="text-[10px] text-muted-foreground mt-1">{t('management.roleAutoLoad')}</p>
               </div>

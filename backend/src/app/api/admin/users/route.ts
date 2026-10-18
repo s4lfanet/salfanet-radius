@@ -91,8 +91,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate role against allowlist
-    const allowedRoles = ['OPERATOR', 'FINANCE', 'CUSTOMER_SERVICE', 'TECHNICIAN', 'MARKETING', 'SUPER_ADMIN', 'VIEWER', 'COLLECTOR'];
-    const finalRole = role || 'OPERATOR';
+    // The AdminRole enum; OPERATOR, the old default, is not in it and made
+    // the insert fail. TECHNICIAN is no longer created here: technicians live
+    // in the technicians table (Kelola Teknisi), which work orders reference.
+    const allowedRoles = ['FINANCE', 'CUSTOMER_SERVICE', 'MARKETING', 'SUPER_ADMIN', 'VIEWER', 'COLLECTOR'];
+    const finalRole = role || 'CUSTOMER_SERVICE';
+    if (finalRole === 'TECHNICIAN') {
+      return NextResponse.json({ success: false, error: 'Akun teknisi dibuat di menu Teknisi (Kelola Teknisi), bukan di Admin & Role.' }, { status: 400 });
+    }
     if (!allowedRoles.includes(finalRole)) {
       return NextResponse.json(
         { success: false, error: 'Invalid role' },

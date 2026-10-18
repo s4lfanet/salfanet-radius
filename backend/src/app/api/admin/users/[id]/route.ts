@@ -34,12 +34,17 @@ export async function PUT(
     }
 
     // Validate role against allowlist if provided
-    const allowedRoles = ['OPERATOR', 'FINANCE', 'CUSTOMER_SERVICE', 'TECHNICIAN', 'MARKETING', 'SUPER_ADMIN', 'VIEWER', 'COLLECTOR'];
+    // TECHNICIAN stays valid for accounts that already have it, but no other
+    // account can be switched to it; new technicians go in Kelola Teknisi.
+    const allowedRoles = ['FINANCE', 'CUSTOMER_SERVICE', 'TECHNICIAN', 'MARKETING', 'SUPER_ADMIN', 'VIEWER', 'COLLECTOR'];
     if (role !== undefined && !allowedRoles.includes(role)) {
       return NextResponse.json(
         { success: false, error: 'Invalid role' },
         { status: 400 }
       );
+    }
+    if (role === 'TECHNICIAN' && existing.role !== 'TECHNICIAN') {
+      return NextResponse.json({ success: false, error: 'Akun teknisi dibuat di menu Teknisi (Kelola Teknisi), bukan di Admin & Role.' }, { status: 400 });
     }
 
     // Prevent SUPER_ADMIN escalation unless caller is SUPER_ADMIN

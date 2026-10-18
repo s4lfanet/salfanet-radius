@@ -1,7 +1,8 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { prisma } from '@/server/db/client';
 import { TECH_JWT_SECRET } from '@/server/auth/technician-secret';
+import { technicianIdForAdminUser } from '@/server/services/technician-link.service';
 
 export async function GET(req: NextRequest) {
   try {
@@ -29,7 +30,8 @@ export async function GET(req: NextRequest) {
       if (!adminUser?.isActive || adminUser.role !== 'TECHNICIAN') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-      technicianId = adminUser.id;
+      // Work orders reference the technicians table, not admin accounts.
+      technicianId = await technicianIdForAdminUser(adminUser.id);
       isAdminUser = true;
     } else {
       technicianId = payload.id as string;
@@ -119,7 +121,7 @@ export async function POST(req: NextRequest) {
       if (!adminUser?.isActive || adminUser.role !== 'TECHNICIAN') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
-      technicianId = adminUser.id;
+      technicianId = await technicianIdForAdminUser(adminUser.id);
     } else {
       technicianId = payload.id as string;
     }
