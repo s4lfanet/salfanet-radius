@@ -26,6 +26,7 @@ import { fetchAllVoucherStatusesFromMikrotik } from '@/server/services/mikrotik/
 import { syncVoucherStatusFromRadius } from '@/server/services/radius/hotspot-sync.service'
 import { pollAllOLTs } from '@/lib/olt/poller'
 import { runAcsAlert } from '@/lib/genieacs/acs-alert'
+import { runTelegramBackup } from '@/server/cron/telegram-backup'
 import { timingSafeEqual } from 'crypto'
 
 /**
@@ -235,6 +236,9 @@ export async function POST(request: NextRequest) {
           break
         case 'acs_alert':
           result = await runAcsAlert()
+          break
+        case 'telegram_backup':
+          result = await runTelegramBackup()
           break
         default:
           result = { success: true, message: `Job ${jobType} not yet implemented` }

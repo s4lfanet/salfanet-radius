@@ -111,6 +111,7 @@ const CRON_JOB_DEFS: CronJobDef[] = [
   { type: 'financial_reconciliation', name: 'Financial Reconciliation', description: 'Reconcile invoice-payment consistency', defaultSchedule: '0 5 * * *' },
   { type: 'hotspot_voucher_sync',  name: 'Hotspot Voucher Sync',  description: 'Sync voucher status dari MikroTik API + RADIUS radacct', defaultSchedule: '*/5 * * * *' },
   { type: 'olt_poll',              name: 'OLT Poll',              description: 'Polling semua OLT (status, ONU, optical power)', defaultSchedule: '*/5 * * * *' },
+  { type: 'telegram_backup',       name: 'Telegram Backup',       description: 'Backup database ke Telegram sesuai jadwal di Pengaturan Telegram', defaultSchedule: '*/5 * * * *' },
   { type: 'acs_alert',             name: 'ACS Alert',             description: 'Deteksi RX degradation & offline ONU via GenieACS', defaultSchedule: '*/3 * * * *' },
 ]
 
@@ -145,6 +146,7 @@ const JOB_TIMEOUTS: Record<string, number> = {
   notification_check: 180,    // 3 min — bulk notifications
   session_monitor: 180,       // 3 min — session analysis
   external_task_processor: 300, // 5 min — MikroTik API calls (8s timeout each)
+  telegram_backup: 900,       // 15 min — mysqldump + upload of up to 50 MB
 }
 const DEFAULT_JOB_TIMEOUT = 120 // 2 min
 
