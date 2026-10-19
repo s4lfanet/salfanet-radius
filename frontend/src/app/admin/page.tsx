@@ -409,26 +409,26 @@ export default function AdminDashboard() {
                   <div className={`absolute -top-8 -right-8 w-24 h-24 ${card.bgGlow} rounded-full blur-2xl opacity-50 group-hover:opacity-80 transition-opacity`} />
                   <div className="relative flex items-center justify-between gap-2 min-w-0">
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] sm:text-[11px] font-medium text-muted-foreground uppercase tracking-wider line-clamp-2 leading-tight" title={card.title}>
+                      <p className="text-[11px] sm:text-xs font-medium text-muted-foreground line-clamp-2 leading-snug" title={card.title}>
                         {card.title}
                       </p>
-                      <p className="text-base sm:text-xl font-bold text-foreground tabular-nums mt-1 sm:mt-1.5 truncate">
+                      <p className="text-[15px] sm:text-base font-semibold text-foreground tabular-nums mt-1 truncate">
                         {card.value}
                       </p>
                       {card.subtitle && (
-                        <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">{card.subtitle}</p>
+                        <p className="text-[10px] sm:text-[11px] text-muted-foreground mt-0.5 leading-snug">{card.subtitle}</p>
                       )}
                       {card.detail && (
-                        <p className="text-[10px] sm:text-xs text-brand-500/60 mt-0.5 font-medium">{card.detail}</p>
+                        <p className="text-[10px] sm:text-[11px] text-brand-500/60 mt-0.5 font-medium leading-snug">{card.detail}</p>
                       )}
                     </div>
-                    <div className={`p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl bg-gradient-to-br ${card.gradient} text-white shadow-lg flex-shrink-0 flex items-center justify-center`}>
-                      {React.cloneElement(card.icon, { className: 'w-4 h-4 sm:w-5 sm:h-5' })}
+                    <div className={`p-1.5 sm:p-2 rounded-lg bg-gradient-to-br ${card.gradient} text-white shadow-lg flex-shrink-0 flex items-center justify-center self-start`}>
+                      {React.cloneElement(card.icon, { className: 'w-3.5 h-3.5 sm:w-4 sm:h-4' })}
                     </div>
                   </div>
                 </>
               );
-              const cls = 'relative bg-card/60 rounded-xl border border-white/10 p-3 sm:p-4 hover:border-white/20 transition-all group overflow-hidden';
+              const cls = 'relative bg-card/60 rounded-xl border border-white/10 p-3 hover:border-white/20 transition-all group overflow-hidden';
               return card.href ? (
                 <a key={card.title} href={card.href} className={cls}>{inner}</a>
               ) : (
