@@ -42,6 +42,7 @@ export const CRON_JOB_DEFS: CronJobDef[] = [
   { type: 'financial_reconciliation', name: 'Financial Reconciliation', description: 'Reconcile invoice-payment consistency and detect financial anomalies', defaultSchedule: '0 5 * * *', defaultScheduleLabel: 'Daily at 5 AM' },
   { type: 'hotspot_voucher_sync',    name: 'Hotspot Voucher Sync',    description: 'Sync voucher status dari MikroTik local-only routers', defaultSchedule: '*/5 * * * *',  defaultScheduleLabel: 'Every 5 minutes' },
   { type: 'olt_poll',                name: 'OLT Poll',                description: 'Polling semua OLT (status, ONU, optical power)',        defaultSchedule: '*/5 * * * *',  defaultScheduleLabel: 'Every 5 minutes' },
+  { type: 'telegram_backup',         name: 'Telegram Backup',         description: 'Backup database ke Telegram sesuai jadwal di Pengaturan Telegram', defaultSchedule: '*/5 * * * *',  defaultScheduleLabel: 'Every 5 minutes (checks the Telegram schedule)' },
   { type: 'acs_alert',               name: 'ACS Alert',               description: 'Deteksi RX degradation & offline ONU via GenieACS',     defaultSchedule: '*/3 * * * *',  defaultScheduleLabel: 'Every 3 minutes' },
 ];
 
