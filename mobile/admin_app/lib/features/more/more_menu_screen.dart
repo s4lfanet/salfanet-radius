@@ -22,6 +22,7 @@ import '../keuangan/biaya_screen.dart';
 import '../keuangan/keuangan_screen.dart';
 import '../manual_payments/manual_payment_list_screen.dart';
 import '../notifications/notifications_screen.dart';
+import '../network_map/network_map_screen.dart';
 import '../olt/olt_status_screen.dart';
 import '../olt_alerts/olt_alert_screen.dart';
 import '../ont_removal/ont_removal_screen.dart';
@@ -117,6 +118,7 @@ class MoreMenuScreen extends StatelessWidget {
     (
       'Jaringan',
       [
+        _Entry(Icons.map_rounded, 'Peta Jaringan', 'OLT, ODC, ODP & pelanggan di peta', Tone.primary, (_) => const NetworkMapScreen()),
         _Entry(Icons.wifi_tethering_rounded, 'Sesi Online', 'PPPoE dan hotspot yang terhubung', Tone.success, (_) => const SessionListScreen()),
         _Entry(Icons.router_rounded, 'Router / NAS', 'MikroTik, script RADIUS & isolir', Tone.primary, _crud(routersConfig)),
         _Entry(Icons.dns_rounded, 'Status OLT', 'Kondisi OLT & kelola ONU', Tone.accent, (_) => const OltStatusScreen()),
