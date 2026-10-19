@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/crud/crud_list_screen.dart';
 import '../../core/forms/form_screen.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/update/app_updater.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../activity_log/activity_log_screen.dart';
 import '../resources/genieacs_resources.dart';
@@ -186,6 +187,7 @@ class MoreMenuScreen extends StatelessWidget {
         _Entry(Icons.map_outlined, 'Peta', 'Pusat peta & routing kabel', Tone.neutral, _settings(mapSettings)),
         _Entry(Icons.verified_user_rounded, 'Keamanan Akun (2FA)', 'Verifikasi dua langkah', Tone.success, (_) => const TwoFactorSettingsScreen()),
         _Entry(Icons.settings_rounded, 'Profil & Tampilan', 'Tema, server, keluar', Tone.neutral, (_) => const ProfileScreen()),
+        _Entry(Icons.system_update_rounded, 'Pembaruan Aplikasi', 'Versi terpasang & update APK', Tone.primary, (_) => const AppUpdateScreen()),
       ],
     ),
   ];

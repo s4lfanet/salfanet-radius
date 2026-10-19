@@ -134,6 +134,13 @@ class MoreScreen extends StatelessWidget {
                 title: 'Speed Test',
                 subtitle: 'Ukur kecepatan internet saat ini',
                 onTap: () => _push(context, const SpeedtestScreen()),
+              ),
+              _MenuTile(
+                icon: Icons.system_update_rounded,
+                accent: FeatureColors.suspend,
+                title: 'Pembaruan Aplikasi',
+                subtitle: 'Cek dan pasang versi terbaru',
+                onTap: () => _push(context, const AppUpdateScreen()),
                 isLast: true,
               ),
             ],

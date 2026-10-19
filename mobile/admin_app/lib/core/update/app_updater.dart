@@ -21,18 +21,43 @@ class AppUpdater {
   static const _target = 'admin';
   static bool _checkedOnLaunch = false;
 
+  /// Why [installed] last returned null, shown to the user so a failure can be reported.
+  static String? lastError;
+
   /// Installed version, or null when not running as an Android app (tests, web).
   static Future<({int code, String name})?> installed() async {
-    if (!Platform.isAndroid) return null;
-    try {
-      final info = await _channel.invokeMapMethod<String, dynamic>('info');
-      if (info == null) return null;
-      return (code: (info['versionCode'] as num).toInt(), name: (info['versionName'] ?? '').toString());
-    } on MissingPluginException {
-      return null;
-    } on PlatformException {
+    if (!Platform.isAndroid) {
+      lastError = 'Bukan aplikasi Android.';
       return null;
     }
+    try {
+      final info = await _channel.invokeMapMethod<String, dynamic>('info');
+      if (info == null) {
+        lastError = 'Versi tidak dikirim oleh sistem.';
+        return null;
+      }
+      lastError = null;
+      return (code: (info['versionCode'] as num).toInt(), name: (info['versionName'] ?? '').toString());
+    } on MissingPluginException {
+      lastError = 'Fitur update tidak terpasang di build ini.';
+      return null;
+    } on PlatformException catch (e) {
+      lastError = e.message ?? e.code;
+      return null;
+    } catch (e) {
+      lastError = e.toString();
+      return null;
+    }
+  }
+
+  /// The release the server offers for this app, or null when none is published.
+  static Future<AppRelease?> published() async {
+    final res = await ApiClient.instance.get('/api/public/apk-releases');
+    final r = (res as Map)['releases']?[_target];
+    if (r is Map && r['available'] == true && r['versionCode'] is num && r['url'] is String) {
+      return AppRelease.fromJson(Map<String, dynamic>.from(r));
+    }
+    return null;
   }
 
   /// Once per app start, after sign-in. Quiet when there is nothing to do.
@@ -49,14 +74,10 @@ class AppUpdater {
     }
 
     final current = await installed();
-    if (current == null) return say('Pembaruan hanya tersedia di aplikasi Android.');
-    _Release? release;
+    if (current == null) return say('Versi aplikasi tidak terbaca: ${lastError ?? '-'}');
+    AppRelease? release;
     try {
-      final res = await ApiClient.instance.get('/api/public/apk-releases');
-      final r = (res as Map)['releases']?[_target];
-      if (r is Map && r['available'] == true && r['versionCode'] is num && r['url'] is String) {
-        release = _Release.fromJson(Map<String, dynamic>.from(r));
-      }
+      release = await published();
     } catch (_) {
       return say('Gagal memeriksa pembaruan. Periksa koneksi lalu coba lagi.');
     }
@@ -74,8 +95,8 @@ class AppUpdater {
   }
 }
 
-class _Release {
-  _Release({required this.versionCode, required this.url, this.versionName, this.minVersionCode, this.size, this.note});
+class AppRelease {
+  AppRelease({required this.versionCode, required this.url, this.versionName, this.minVersionCode, this.size, this.note});
   final int versionCode;
   final String url;
   final String? versionName;
@@ -83,9 +104,9 @@ class _Release {
   final int? size;
   final String? note;
 
-  factory _Release.fromJson(Map<String, dynamic> j) {
+  factory AppRelease.fromJson(Map<String, dynamic> j) {
     final note = j['note']?.toString().trim();
-    return _Release(
+    return AppRelease(
       versionCode: (j['versionCode'] as num).toInt(),
       url: j['url'] as String,
       versionName: j['versionName']?.toString(),
@@ -100,7 +121,7 @@ enum _Step { offer, downloading, permission, ready, failed }
 
 class _UpdateDialog extends StatefulWidget {
   const _UpdateDialog({required this.release, required this.required});
-  final _Release release;
+  final AppRelease release;
   final bool required;
 
   @override
@@ -299,12 +320,136 @@ class _AppVersionFooterState extends State<AppVersionFooter> {
   @override
   Widget build(BuildContext context) {
     final v = _v;
-    if (v == null) return const SizedBox.shrink();
     return Column(
       children: [
-        Text('${widget.appName} ${v.name} (${v.code})', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+        if (v != null)
+          Text('${widget.appName} ${v.name} (${v.code})', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurfaceVariant)),
         TextButton(onPressed: _checking ? null : _check, child: Text(_checking ? 'Memeriksa...' : 'Cek pembaruan')),
       ],
+    );
+  }
+}
+
+/// Pembaruan Aplikasi: installed version, the version on the server and the
+/// update button in one place, with the reason when something fails.
+class AppUpdateScreen extends StatefulWidget {
+  const AppUpdateScreen({super.key});
+
+  @override
+  State<AppUpdateScreen> createState() => _AppUpdateScreenState();
+}
+
+class _AppUpdateScreenState extends State<AppUpdateScreen> {
+  bool _loading = true;
+  ({int code, String name})? _installed;
+  String? _installedError;
+  AppRelease? _release;
+  String? _serverError;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() => _loading = true);
+    final installed = await AppUpdater.installed();
+    final installedError = installed == null ? AppUpdater.lastError : null;
+    AppRelease? release;
+    String? serverError;
+    try {
+      release = await AppUpdater.published();
+    } catch (_) {
+      serverError = 'Server tidak bisa dihubungi.';
+    }
+    if (!mounted) return;
+    setState(() {
+      _installed = installed;
+      _installedError = installedError;
+      _release = release;
+      _serverError = serverError;
+      _loading = false;
+    });
+  }
+
+  Future<void> _update() async {
+    await AppUpdater.check(context, manual: true);
+    if (mounted) await _load();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
+    final installed = _installed;
+    final release = _release;
+    final newer = installed != null && release != null && release.versionCode > installed.code;
+
+    final String serverLine;
+    if (_serverError != null) {
+      serverLine = _serverError!;
+    } else if (release == null) {
+      serverLine = 'Belum ada APK yang diunggah di server.';
+    } else {
+      serverLine = '${release.versionName ?? '-'} (build ${release.versionCode})';
+    }
+
+    final String state;
+    if (newer) {
+      state = 'Versi baru tersedia.';
+    } else if (installed != null && release != null) {
+      state = 'Aplikasi sudah versi terbaru.';
+    } else {
+      state = 'Tarik ke bawah untuk memeriksa lagi.';
+    }
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Pembaruan Aplikasi')),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: _load,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  Card(
+                    child: Column(
+                      children: [
+                        ListTile(
+                          leading: const Icon(Icons.phone_android_rounded),
+                          title: const Text('Terpasang di HP ini'),
+                          subtitle: Text(
+                            installed != null ? '${installed.name} (build ${installed.code})' : 'Tidak terbaca: ${_installedError ?? '-'}',
+                            style: installed == null ? TextStyle(color: scheme.error) : null,
+                          ),
+                        ),
+                        const Divider(height: 1),
+                        ListTile(
+                          leading: const Icon(Icons.cloud_download_outlined),
+                          title: const Text('Tersedia di server'),
+                          subtitle: Text(serverLine, style: _serverError != null ? TextStyle(color: scheme.error) : null),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (release?.note != null) ...[
+                    const SizedBox(height: 12),
+                    Text('Catatan rilis', style: text.titleSmall),
+                    const SizedBox(height: 4),
+                    Text(release!.note!, style: text.bodyMedium),
+                  ],
+                  const SizedBox(height: 16),
+                  Text(state, style: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant)),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    onPressed: _update,
+                    icon: const Icon(Icons.system_update_rounded),
+                    label: Text(newer ? 'Perbarui ke ${release.versionName ?? release.versionCode}' : 'Cek pembaruan'),
+                  ),
+                ],
+              ),
+            ),
     );
   }
 }
