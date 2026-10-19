@@ -14,6 +14,7 @@ import 'package:admin_app/features/notifications/notifications_provider.dart';
 import 'package:admin_app/features/notifications/notifications_screen.dart';
 import 'package:admin_app/features/pppoe/pppoe_detail_screen.dart';
 import 'package:admin_app/features/pppoe/pppoe_provider.dart';
+import 'package:admin_app/features/network_map/network_map_screen.dart';
 import 'package:admin_app/features/profile/profile_screen.dart';
 import 'package:admin_app/features/registrations/registration_provider.dart';
 import 'package:admin_app/features/shell/main_shell.dart';
@@ -69,7 +70,25 @@ Map<String, dynamic> _invoice(int i, String status) => {
 
 class _Fixtures implements HttpClientAdapter {
   Object _body(String path) {
+    path = path.split('?').first;
     switch (path) {
+      case '/api/network/olts':
+        return {'success': true, 'olts': [{'id': 'olt1', 'name': 'OLT Pusat Huawei MA5608T', 'ipAddress': '10.0.0.2', 'latitude': -6.2000, 'longitude': 106.8166, 'status': 'active', 'vendor': 'huawei', 'onlineOnu': 182, 'offlineOnu': 3}]};
+      case '/api/network/odcs':
+        return {'success': true, 'odcs': [{'id': 'odc1', 'name': 'ODC Sukamaju', 'latitude': '-6.2050', 'longitude': '106.8200', 'oltId': 'olt1', 'ponPort': 1, 'portCount': 16, 'status': 'active', 'olt': {'name': 'OLT Pusat'}}]};
+      case '/api/network/odps':
+        return {'success': true, 'odps': [
+          {'id': 'odp1', 'name': 'ODP-SKM-01', 'latitude': -6.2070, 'longitude': 106.8230, 'odcId': 'odc1', 'portCount': 8, 'status': 'active', 'odc': {'name': 'ODC Sukamaju'}},
+          {'id': 'odp2', 'name': 'ODP-SKM-02', 'latitude': -6.2080, 'longitude': 106.8250, 'parentOdpId': 'odp1', 'portCount': 8, 'status': 'maintenance'},
+          {'id': 'odp3', 'name': 'ODP tanpa koordinat', 'latitude': 0, 'longitude': 0, 'status': 'active'},
+        ]};
+      case '/api/network/nodes':
+        return {'success': true, 'data': [{'id': 'jc1', 'type': 'JOINT_CLOSURE', 'code': 'JC-01', 'name': 'JC Simpang', 'latitude': -6.2030, 'longitude': 106.8180, 'status': 'active', 'upstreamId': 'olt1'}]};
+      case '/api/customers/with-location':
+        return {'success': true, 'data': [
+          {'id': 'u1', 'username': 'pelanggan1', 'name': _long, 'latitude': -6.2075, 'longitude': 106.8240, 'status': 'active', 'pppoe_profiles': 'Fiber 30 Mbps', 'odpName': 'ODP-SKM-01', 'odpCoordinates': {'latitude': -6.2070, 'longitude': 106.8230}},
+          {'id': 'u2', 'username': 'pelanggan2', 'name': 'Siti', 'latitude': -6.2085, 'longitude': 106.8255, 'status': 'isolated', 'pppoe_profiles': 'Fiber 20 Mbps'},
+        ]};
       case '/api/dashboard/stats':
         return {
           'success': true,
@@ -194,6 +213,7 @@ void main() {
     'notifications': () => const NotificationsScreen(),
     'tickets': () => const TicketListScreen(),
     'profile': () => const ProfileScreen(),
+    'network-map': () => const NetworkMapScreen(),
   };
   final tabs = {'pelanggan': 'Pelanggan', 'tagihan': 'Tagihan', 'lainnya': 'Lainnya'};
 
