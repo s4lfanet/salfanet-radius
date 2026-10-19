@@ -1,68 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requirePermission } from '@/server/middleware/api-auth';
-import { writeFileSync } from 'fs';
-import { execSync } from 'child_process';
-import path from 'path';
-import { getAppDir, getBackupDir } from '../route';
+import { saveUploadedBackup } from '@/server/services/freeradius-backup.service';
 
 export const dynamic = 'force-dynamic';
 
-// Max upload size: 10MB
 const MAX_SIZE = 10 * 1024 * 1024;
 
+/** Stores a config archive from another server so it can be restored here. Super Admin only. */
 export async function POST(request: NextRequest) {
   const authCheck = await requirePermission('settings.edit');
   if (!authCheck.authorized) return authCheck.response;
+  if (authCheck.session.user.role !== 'SUPER_ADMIN') {
+    return NextResponse.json({ error: 'Hanya Super Admin yang bisa mengunggah backup FreeRADIUS.' }, { status: 403 });
+  }
+
+  let file: File | null = null;
+  try {
+    file = (await request.formData()).get('file') as File | null;
+  } catch {
+    // handled below
+  }
+  if (!file || file.size === 0) return NextResponse.json({ error: 'File belum dipilih.' }, { status: 400 });
+  if (!file.name.toLowerCase().endsWith('.tar.gz')) return NextResponse.json({ error: 'File harus berekstensi .tar.gz.' }, { status: 400 });
+  if (file.size > MAX_SIZE) return NextResponse.json({ error: 'File terlalu besar (maks 10 MB).' }, { status: 400 });
 
   try {
-    const formData = await request.formData();
-    const file = formData.get('file') as File | null;
-
-    if (!file) {
-      return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
-    }
-
-    // Validate mime type
-    if (file.type !== 'application/gzip' && file.type !== 'application/x-gzip'
-      && file.type !== 'application/octet-stream' && !file.name.endsWith('.tar.gz')) {
-      return NextResponse.json({ error: 'File harus berupa .tar.gz' }, { status: 400 });
-    }
-
-    // Validate size
-    if (file.size > MAX_SIZE) {
-      return NextResponse.json({ error: `File terlalu besar (maks 10MB)` }, { status: 400 });
-    }
-
-    // Sanitize filename — only allow alphanumeric, dash, underscore, dot
-    const safeName = file.name.replace(/[^a-zA-Z0-9_\-\.]/g, '_');
-    if (!safeName.endsWith('.tar.gz')) {
-      return NextResponse.json({ error: 'File harus .tar.gz' }, { status: 400 });
-    }
-
-    // Validate archive can actually be read (basic integrity check)
-    const appDir = getAppDir();
-    const backupDir = getBackupDir(appDir);
-    const _destPath = path.join(backupDir, safeName);
-
-    // Prevent overwrite with dup name
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-    const finalName = safeName.replace('.tar.gz', '') + '_uploaded-' + timestamp + '.tar.gz';
-    const finalPath = path.join(backupDir, finalName);
-
-    const buffer = Buffer.from(await file.arrayBuffer());
-    writeFileSync(finalPath, buffer);
-
-    // Verify it's a valid tar.gz
-    try {
-      execSync(`tar -tzf "${finalPath}" > /dev/null 2>&1`);
-    } catch {
-      // Remove invalid file
-      try { execSync(`rm -f "${finalPath}"`); } catch { /* ignore */ }
-      return NextResponse.json({ error: 'File tidak valid atau bukan tar.gz yang benar' }, { status: 400 });
-    }
-
-    return NextResponse.json({ success: true, savedAs: finalName });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+    const savedAs = saveUploadedBackup(file.name, Buffer.from(await file.arrayBuffer()));
+    return NextResponse.json({ success: true, savedAs });
+  } catch (e) {
+    return NextResponse.json({ error: e instanceof Error ? e.message : 'Gagal menyimpan file.' }, { status: 400 });
   }
 }

@@ -7,7 +7,7 @@ import {
     Upload, Server,
 } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
-import { apiAdmin } from '@/lib/api';
+import { apiAdmin, ApiError } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface BackupFile {
@@ -26,6 +26,13 @@ interface RestoreResponse {
     log?: string;
     error?: string;
     restored?: number;
+    safetyBackup?: string;
+}
+
+/** The server's restore result, also when it answered with an error status. */
+function restoreResultOf(e: unknown): RestoreResponse | null {
+    if (e instanceof ApiError && e.body && typeof e.body === 'object' && 'log' in e.body) return e.body as RestoreResponse;
+    return null;
 }
 
 interface UploadResponse {
@@ -52,14 +59,12 @@ export default function FreeRADIUSBackupPage() {
 
     const [running, setRunning] = useState(false);
     const [log, setLog] = useState('');
-    const [polling, setPolling] = useState(false);
     const [restoring, setRestoring] = useState<string | null>(null);
     const [restoreLog, setRestoreLog] = useState<{ file: string; log: string; ok: boolean } | null>(null);
     const [uploading, setUploading] = useState(false);
     const [uploadFile, setUploadFile] = useState<File | null>(null);
     const fileInputId = useId();
     const logRef = useRef<HTMLPreElement>(null);
-    const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     // ─── React Query: Backup data (log + backup list) ────────────────────────────
     const { data: backupData, refetch } = useApiQuery<BackupDataResponse>('/api/admin/system/freeradius-backup', {
@@ -79,31 +84,8 @@ export default function FreeRADIUSBackupPage() {
     const fetchData = useCallback(async () => {
         try {
             await refetch();
-        } catch (e: unknown) { /* ignore - polling will retry */ console.warn('Failed to fetch backup data:', e); }
+        } catch (e: unknown) { /* the list stays as it was */ console.warn('Failed to fetch backup data:', e); }
     }, [refetch]);
-
-    const stopPolling = useCallback(() => {
-        if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
-        setPolling(false);
-        setRunning(false);
-        fetchData(); // final refresh to get new backup in list
-    }, [fetchData]);
-
-    const startPolling = useCallback(() => {
-        setPolling(true);
-        let ticks = 0;
-        pollRef.current = setInterval(async () => {
-            ticks++;
-            await fetchData();
-            const logEl = logRef.current?.textContent || '';
-            const done = logEl.includes('BACKUP_FILE:') || logEl.includes('not found') || logEl.includes('ERROR');
-            if (done || ticks >= 60) stopPolling();
-        }, 1500);
-    }, [fetchData, stopPolling]);
-
-    useEffect(() => {
-        return () => { if (pollRef.current) clearInterval(pollRef.current); };
-    }, []);
 
     const handleBackup = async () => {
         if (!await confirm({
@@ -117,12 +99,16 @@ export default function FreeRADIUSBackupPage() {
         setRunning(true);
         setLog('');
         try {
-            await apiAdmin('/api/admin/system/freeradius-backup', { method: 'POST' });
-            startPolling();
-            addToast({ type: 'info', title: 'Backup dimulai', description: 'Log tampil di bawah...', duration: 2000 });
+            const res = await apiAdmin<{ file?: string; log?: string }>('/api/admin/system/freeradius-backup', { method: 'POST' });
+            if (res?.log) setLog(res.log);
+            addToast({ type: 'success', title: 'Backup selesai', description: res?.file, duration: 3000 });
         } catch (e: unknown) {
-            addToast({ type: 'error', title: 'Gagal', description: (e instanceof Error ? e.message : String(e)) || 'Tidak dapat memulai backup' });
+            const body = e instanceof ApiError ? (e.body as { log?: string; error?: string } | undefined) : undefined;
+            if (body?.log) setLog(body.log);
+            addToast({ type: 'error', title: 'Backup gagal', description: body?.error || (e instanceof Error ? e.message : String(e)) });
+        } finally {
             setRunning(false);
+            fetchData();
         }
     };
 
@@ -133,7 +119,7 @@ export default function FreeRADIUSBackupPage() {
     const handleRestore = async (file: string) => {
         if (!await confirm({
             title: `Restore dari ${file}?`,
-            message: 'Config FreeRADIUS yang sedang berjalan akan ditimpa oleh backup ini dan FreeRADIUS akan di-reload. Lanjutkan?',
+            message: 'Config FreeRADIUS saat ini disimpan dulu sebagai backup, lalu ditimpa oleh backup ini. Kalau hasilnya ditolak FreeRADIUS, config lama otomatis dikembalikan. Login database dan alamat API server ini tetap dipakai. FreeRADIUS di-restart sebentar, sesi PPPoE yang sedang online tidak terputus.',
             confirmText: 'Restore',
             cancelText: 'Batal',
             variant: 'danger',
@@ -153,11 +139,13 @@ export default function FreeRADIUSBackupPage() {
                 addToast({ type: 'error', title: 'Restore gagal', description: data.error || 'Lihat log di bawah' });
             }
         } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : String(e);
-            setRestoreLog({ file, log: msg, ok: false });
-            addToast({ type: 'error', title: 'Error', description: msg });
+            const data = restoreResultOf(e);
+            const msg = data?.error || (e instanceof Error ? e.message : String(e));
+            setRestoreLog({ file, log: data?.log || msg, ok: false });
+            addToast({ type: 'error', title: 'Restore gagal', description: msg });
         } finally {
             setRestoring(null);
+            fetchData();
         }
     };
 
@@ -165,7 +153,7 @@ export default function FreeRADIUSBackupPage() {
         if (!uploadFile) return;
         if (!await confirm({
             title: 'Upload & Restore dari VPS lain?',
-            message: `File "${uploadFile.name}" akan diupload ke VPS ini lalu langsung di-restore ke /etc/freeradius/3.0/. FreeRADIUS akan di-reload. Lanjutkan?`,
+            message: `File "${uploadFile.name}" diupload ke VPS ini lalu di-restore ke /etc/freeradius/3.0/. Config saat ini disimpan dulu dan dikembalikan otomatis kalau hasilnya ditolak FreeRADIUS. Login database dan alamat API server ini tetap dipakai, bukan milik VPS asal. FreeRADIUS di-restart sebentar.`,
             confirmText: 'Upload & Restore',
             cancelText: 'Batal',
             variant: 'danger',
@@ -198,9 +186,13 @@ export default function FreeRADIUSBackupPage() {
                 addToast({ type: 'error', title: 'Restore gagal', description: restData.error || 'Lihat log di bawah' });
             }
         } catch (e: unknown) {
-            addToast({ type: 'error', title: 'Error', description: e instanceof Error ? e.message : String(e) });
+            const data = restoreResultOf(e);
+            const msg = data?.error || (e instanceof Error ? e.message : String(e));
+            if (data?.log) setRestoreLog({ file: uploadFile.name, log: data.log, ok: false });
+            addToast({ type: 'error', title: 'Gagal', description: msg });
         } finally {
             setUploading(false);
+            fetchData();
         }
     };
 
@@ -217,16 +209,16 @@ export default function FreeRADIUSBackupPage() {
                         Backup & Restore FreeRADIUS
                     </h1>
                     <p className="text-sm text-muted-foreground mt-1">
-                        Backup config yang berjalan di VPS ke arsip lokal - bisa di-restore atau didownload
+                        Arsip config FreeRADIUS di VPS ini, untuk dipulihkan atau dipindah ke VPS lain. Hanya Super Admin yang bisa membuat, mengunduh dan me-restore.
                     </p>
                 </div>
                 <button
                     onClick={handleBackup}
-                    disabled={running || polling}
+                    disabled={running}
                     className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium whitespace-nowrap truncate overflow-hidden"
                 >
-                    {running || polling ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-                    {running || polling ? 'Membuat backup...' : 'Buat Backup'}
+                    {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+                    {running ? 'Membuat backup...' : 'Buat Backup'}
                 </button>
             </div>
 
@@ -243,7 +235,7 @@ export default function FreeRADIUSBackupPage() {
                     <div className="p-2 bg-primary/10 rounded-lg"><HardDrive className="w-5 h-5 text-primary" /></div>
                     <div>
                         <p className="text-xs text-muted-foreground">Disimpan di</p>
-                        <p className="text-xs font-mono font-medium text-foreground">backups/freeradius/</p>
+                        <p className="text-xs font-mono font-medium text-foreground break-all">/var/data/salfanet/backups/freeradius/</p>
                     </div>
                 </div>
                 <div className="bg-card rounded-xl border border-border p-4 flex items-center gap-3">
@@ -381,7 +373,6 @@ export default function FreeRADIUSBackupPage() {
                     <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
                         <Terminal className="w-4 h-4 text-primary" />
                         Log Backup
-                        {polling && <span className="text-xs text-amber-500 animate-pulse font-normal">● live</span>}
                     </h2>
                     <div className="flex items-center gap-2">
                         {isDone && (
@@ -389,7 +380,7 @@ export default function FreeRADIUSBackupPage() {
                                 ? <span className="flex items-center gap-1 text-xs text-green-500 font-medium"><CheckCircle className="w-3.5 h-3.5" /> Selesai</span>
                                 : log ? <span className="flex items-center gap-1 text-xs text-red-500 font-medium"><XCircle className="w-3.5 h-3.5" /> Gagal</span> : null
                         )}
-                        <button onClick={fetchData} disabled={polling} className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors disabled:opacity-50" title="Perbarui Data">
+                        <button onClick={fetchData} disabled={running} className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors disabled:opacity-50" title="Perbarui Data">
                             <RefreshCw className="w-3.5 h-3.5" />
                         </button>
                     </div>
