@@ -412,7 +412,7 @@ export default function AdminDashboard() {
                       <p className="text-[10px] sm:text-[11px] font-medium text-muted-foreground uppercase tracking-wider line-clamp-2 leading-tight" title={card.title}>
                         {card.title}
                       </p>
-                      <p className="text-lg sm:text-2xl font-bold text-foreground mt-1 sm:mt-1.5 truncate">
+                      <p className="text-base sm:text-xl font-bold text-foreground tabular-nums mt-1 sm:mt-1.5 truncate">
                         {card.value}
                       </p>
                       {card.subtitle && (
