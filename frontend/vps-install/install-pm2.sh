@@ -322,10 +322,13 @@ module.exports = {
     },
     {
       name: 'salfanet-cron',
-      // tsx CLI binary directly -- runner-wrapper.cjs's require('tsx/cjs') hook does
-      // NOT apply tsconfig path aliases (@/*), causing ERR_MODULE_NOT_FOUND.
-      script: 'backend/node_modules/.bin/tsx',
+      // tsx's JS entry point, as in deploy/ecosystem.config.js. pnpm's .bin/tsx
+      // is a POSIX shell script; PM2 ran it with node and the cron crashed on
+      // every start with a SyntaxError. (runner-wrapper.cjs's require('tsx/cjs')
+      // hook does not apply the @/* path aliases, so the CLI is used.)
+      script: 'backend/node_modules/tsx/dist/cli.mjs',
       args: ['backend/cron-runner.ts'],
+      interpreter: 'node',
       cwd: APP_DIR,
       instances: 1,
       exec_mode: 'fork',

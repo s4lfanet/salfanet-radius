@@ -474,7 +474,9 @@ export -f ensure_ufw_enabled
 # ============================================================================
 
 print_banner() {
-    clear
+    # No TERM (cron, automation, some SSH clients): clear fails, and under
+    # set -e that ended the whole install right after the banner.
+    clear 2>/dev/null || true
     echo ""
     echo -e "${CYAN}=============================================${NC}"
     echo -e "${CYAN}  SALFANET RADIUS - Installer v2.10.9${NC}"
