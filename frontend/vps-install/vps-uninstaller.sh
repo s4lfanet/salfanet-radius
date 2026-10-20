@@ -49,6 +49,7 @@ show_warning() {
     echo -e "${YELLOW}Components that will be removed:${NC}"
     echo "  ❌ PM2 processes (salfanet-frontend, salfanet-backend, salfanet-cron, salfanet-wa)"
     echo "  ❌ Application files ($APP_DIR)"
+    echo "  ❌ Application data (/var/data/salfanet, /var/backups/salfanet)"
     echo "  ❌ MySQL database ($DB_NAME)"
     echo "  ❌ Redis server and data"
     echo "  ❌ FreeRADIUS configuration"
@@ -62,7 +63,7 @@ show_warning() {
 
 ask_backup() {
     read -p "Do you want to backup database before removal? [Y/n]: " BACKUP_CONFIRM </dev/tty
-    
+
     if [[ ! "$BACKUP_CONFIRM" =~ ^[Nn]$ ]]; then
         return 0  # Yes, backup
     else
@@ -73,7 +74,7 @@ ask_backup() {
 ask_confirmation() {
     echo -e "${YELLOW}Type 'REMOVE EVERYTHING' to confirm removal:${NC}"
     read -r CONFIRM_TEXT </dev/tty
-    
+
     if [ "$CONFIRM_TEXT" = "REMOVE EVERYTHING" ]; then
         return 0
     else
@@ -86,66 +87,86 @@ ask_confirmation() {
 # BACKUP FUNCTIONS
 # ============================================================================
 
+# How to reach MySQL as an administrator, tried in order: Debian's
+# maintenance account, the root password the installer recorded (or
+# DB_ROOT_PASSWORD), root without a password, then a prompt. The password in
+# DATABASE_URL belongs to the app's own user, not root, so it is not used:
+# with it the backup and DROP DATABASE failed without a word.
+MYSQL_ADMIN_ARGS=()
 prompt_db_root_password() {
-    if [ -n "${DB_ROOT_PASSWORD:-}" ]; then
+    [ ${#MYSQL_ADMIN_ARGS[@]} -gt 0 ] && return 0
+    command -v mysql >/dev/null 2>&1 || return 0
+
+    if [ -f /etc/mysql/debian.cnf ] && mysql --defaults-file=/etc/mysql/debian.cnf -e 'SELECT 1' >/dev/null 2>&1; then
+        MYSQL_ADMIN_ARGS=(--defaults-file=/etc/mysql/debian.cnf)
+        print_info "MySQL: using /etc/mysql/debian.cnf"
         return 0
     fi
 
-    # Try to read from .env first
-    if [ -f "${APP_DIR}/.env" ]; then
-        local ENV_PASS
-        ENV_PASS=$(grep -E '^DATABASE_URL=' "${APP_DIR}/.env" 2>/dev/null | sed 's|.*://[^:]*:\([^@]*\)@.*|\1|' || true)
-        if [ -n "$ENV_PASS" ]; then
-            DB_ROOT_PASSWORD="$ENV_PASS"
-            print_info "DB password read from .env"
-            return 0
-        fi
+    local PASS="${DB_ROOT_PASSWORD:-}"
+    if [ -z "$PASS" ] && [ -f "${APP_DIR}/INSTALLATION_INFO.txt" ]; then
+        PASS=$(grep -m1 'MySQL Root Pass' "${APP_DIR}/INSTALLATION_INFO.txt" | sed 's/.*: *//')
+    fi
+    if [ -n "$PASS" ] && mysql -u root -p"$PASS" -e 'SELECT 1' >/dev/null 2>&1; then
+        MYSQL_ADMIN_ARGS=(-u root -p"$PASS")
+        print_info "MySQL: using the recorded root password"
+        return 0
+    fi
+    if mysql -u root -e 'SELECT 1' >/dev/null 2>&1; then
+        MYSQL_ADMIN_ARGS=(-u root)
+        return 0
     fi
 
-    # Fall back to prompt
-    echo -n "MySQL root password (leave empty if no password): "
-    read -rs DB_ROOT_PASSWORD </dev/tty
+    echo -n "MySQL root password: "
+    read -rs PASS </dev/tty
     echo ""
-    export DB_ROOT_PASSWORD
+    MYSQL_ADMIN_ARGS=(-u root -p"$PASS")
 }
 
 backup_database() {
     print_step "Creating database backup"
-    
+
     mkdir -p "$BACKUP_DIR"
-    
+
     if command -v mysql >/dev/null 2>&1; then
         prompt_db_root_password
         print_info "Backing up database to: $BACKUP_DIR"
-        
-        mysqldump -u root ${DB_ROOT_PASSWORD:+-p"${DB_ROOT_PASSWORD}"} ${DB_NAME} > "$BACKUP_DIR/database.sql" 2>/dev/null || {
-            print_warning "Database backup failed (database may not exist)"
-        }
-        
-        if [ -f "$BACKUP_DIR/database.sql" ]; then
+
+        if mysqldump "${MYSQL_ADMIN_ARGS[@]}" ${DB_NAME} > "$BACKUP_DIR/database.sql" 2>/dev/null && [ -s "$BACKUP_DIR/database.sql" ]; then
             print_success "Database backed up successfully"
+        else
+            rm -f "$BACKUP_DIR/database.sql"
+            print_warning "Database backup failed (database may not exist)"
         fi
     fi
 }
 
 backup_configs() {
     print_info "Backing up configurations..."
-    
+
     # Backup .env
     if [ -f "$APP_DIR/.env" ]; then
         cp "$APP_DIR/.env" "$BACKUP_DIR/env.backup" 2>/dev/null || true
     fi
-    
+
     # Backup FreeRADIUS configs
     if [ -d "/etc/freeradius" ]; then
         cp -r /etc/freeradius "$BACKUP_DIR/freeradius-backup" 2>/dev/null || true
     fi
-    
+
     # Backup Nginx configs
     if [ -f "/etc/nginx/sites-available/salfanet" ]; then
         cp /etc/nginx/sites-available/salfanet "$BACKUP_DIR/nginx-backup" 2>/dev/null || true
     fi
-    
+
+    # The app's .env files, and its data outside the app folder: uploads,
+    # WhatsApp session, published APKs, FreeRADIUS and database backups.
+    for f in backend/.env frontend/.env; do
+        [ -f "$APP_DIR/$f" ] && cp "$APP_DIR/$f" "$BACKUP_DIR/$(dirname "$f").env" 2>/dev/null || true
+    done
+    [ -d /var/data/salfanet ] && cp -a /var/data/salfanet "$BACKUP_DIR/var-data-salfanet" 2>/dev/null || true
+    [ -d /var/backups/salfanet ] && cp -a /var/backups/salfanet "$BACKUP_DIR/database-backups" 2>/dev/null || true
+
     print_success "Configurations backed up to: $BACKUP_DIR"
 }
 
@@ -155,21 +176,21 @@ backup_configs() {
 
 kill_port_processes() {
     print_step "Killing processes on application ports"
-    
+
     # Ports used by SALFANET RADIUS
     local PORTS=(3000 3001 1812 1813 3799 1814)
-    
+
     for PORT in "${PORTS[@]}"; do
         print_info "Checking port $PORT..."
-        
+
         # Get PIDs using the port
         local PIDS=$(lsof -ti :$PORT 2>/dev/null || true)
-        
+
         if [ -n "$PIDS" ]; then
             print_info "Killing processes on port $PORT: $PIDS"
             echo "$PIDS" | xargs -r kill -9 2>/dev/null || true
             sleep 1
-            
+
             # Verify port is free
             if lsof -ti :$PORT &>/dev/null; then
                 print_warning "Port $PORT still in use after kill attempt"
@@ -184,34 +205,36 @@ kill_port_processes() {
 
 stop_all_services() {
     print_step "Stopping all services"
-    
+
     # Stop PM2 processes (both root and salfanet user)
     print_info "Stopping PM2 processes..."
     pm2 delete all 2>/dev/null || true
     pm2 kill 2>/dev/null || true
-    
-    if id "$APP_USER" &>/dev/null; then
+
+    # Only for a separate app user: for root it is the PM2 just killed above,
+    # and `pm2 delete all` started a new daemon and waited forever.
+    if [ "$APP_USER" != "root" ] && id "$APP_USER" &>/dev/null; then
         sudo su - $APP_USER -c 'pm2 delete all' 2>/dev/null || true
         sudo su - $APP_USER -c 'pm2 kill' 2>/dev/null || true
     fi
-    
+
     # Stop system services
     print_info "Stopping system services..."
     systemctl stop nginx 2>/dev/null || true
     systemctl stop freeradius 2>/dev/null || true
-    
+
     # Kill any remaining Node processes
     pkill -9 node 2>/dev/null || true
-    
+
     # Kill processes on application ports
     kill_port_processes
-    
+
     print_success "All services stopped"
 }
 
 remove_application() {
     print_step "Removing application files"
-    
+
     if [ -d "$APP_DIR" ]; then
         print_info "Removing: $APP_DIR"
         rm -rf "$APP_DIR"
@@ -223,35 +246,52 @@ remove_application() {
 
 remove_database() {
     print_step "Removing MySQL database and user"
-    
+
     if command -v mysql >/dev/null 2>&1; then
         prompt_db_root_password
-        local MYSQL_ARGS="-u root"
-        [ -n "${DB_ROOT_PASSWORD:-}" ] && MYSQL_ARGS="$MYSQL_ARGS -p${DB_ROOT_PASSWORD}"
 
         print_info "Dropping database: $DB_NAME"
-        mysql $MYSQL_ARGS -e "DROP DATABASE IF EXISTS ${DB_NAME};" 2>/dev/null || {
-            print_warning "Database removal failed (may not exist)"
+        mysql "${MYSQL_ADMIN_ARGS[@]}" -e "DROP DATABASE IF EXISTS ${DB_NAME};" 2>/dev/null || {
+            print_warning "Database removal failed (wrong MySQL credentials?)"
         }
-        
+
         print_info "Dropping user: $DB_USER"
-        mysql $MYSQL_ARGS -e "DROP USER IF EXISTS '${DB_USER}'@'localhost';" 2>/dev/null || true
-        mysql $MYSQL_ARGS -e "FLUSH PRIVILEGES;" 2>/dev/null || true
-        
+        for H in localhost 127.0.0.1 ::1; do
+            mysql "${MYSQL_ADMIN_ARGS[@]}" -e "DROP USER IF EXISTS '${DB_USER}'@'${H}';" 2>/dev/null || true
+        done
+        mysql "${MYSQL_ADMIN_ARGS[@]}" -e "FLUSH PRIVILEGES;" 2>/dev/null || true
+
         print_success "Database and user removed"
     else
         print_info "MySQL not installed (skipping)"
     fi
 }
 
+remove_app_data() {
+    print_step "Removing application data"
+
+    # Kept outside the app folder so deploys cannot delete it; an uninstall
+    # has to, or a reinstall picks up the old WhatsApp session and APKs.
+    for D in /var/data/salfanet /var/backups/salfanet; do
+        if [ -d "$D" ]; then
+            rm -rf "$D"
+            print_info "Removed: $D"
+        fi
+    done
+    rm -f /tmp/salfanet-fr-backup.log 2>/dev/null || true
+    rm -rf /tmp/salfanet-update 2>/dev/null || true
+
+    print_success "Application data removed"
+}
+
 remove_redis() {
     print_step "Removing Redis"
-    
+
     # Stop and disable Redis service
     print_info "Stopping Redis service..."
     systemctl stop redis-server 2>/dev/null || true
     systemctl disable redis-server 2>/dev/null || true
-    
+
     # Ask whether to remove Redis packages entirely
     read -p "Remove Redis packages completely? [y/N]: " REMOVE_REDIS_PKG </dev/tty
     if [[ "$REMOVE_REDIS_PKG" =~ ^[Yy]$ ]]; then
@@ -265,13 +305,13 @@ remove_redis() {
     else
         print_info "Redis packages kept (service stopped and disabled)"
     fi
-    
+
     print_success "Redis removed"
 }
 
 remove_security() {
     print_step "Removing security configurations (fail2ban, cleanup cron)"
-    
+
     # Remove fail2ban config for salfanet
     print_info "Removing fail2ban configuration..."
     rm -f /etc/fail2ban/jail.d/salfanet.conf 2>/dev/null || true
@@ -281,22 +321,22 @@ remove_security() {
         systemctl restart fail2ban 2>/dev/null || true
         print_info "fail2ban restarted (salfanet configs removed)"
     fi
-    
+
     # Remove cleanup cron job
     print_info "Removing cleanup cron job..."
     rm -f /etc/cron.d/salfanet-cleanup 2>/dev/null || true
     rm -f /etc/cron.d/salfanet-* 2>/dev/null || true
-    
+
     print_success "Security configurations removed"
 }
 
 remove_freeradius() {
     print_step "Removing FreeRADIUS"
-    
+
     # Stop service
     systemctl stop freeradius 2>/dev/null || true
     systemctl disable freeradius 2>/dev/null || true
-    
+
     # Remove packages (optional)
     read -p "Remove FreeRADIUS packages? [y/N]: " REMOVE_FREERADIUS </dev/tty
     if [[ "$REMOVE_FREERADIUS" =~ ^[Yy]$ ]]; then
@@ -304,7 +344,7 @@ remove_freeradius() {
         apt-get purge -y freeradius freeradius-config freeradius-common freeradius-mysql freeradius-utils freeradius-rest 2>/dev/null || true
         apt-get autoremove -y 2>/dev/null || true
     fi
-    
+
     # Remove configurations and runtime files
     print_info "Removing FreeRADIUS configurations..."
     rm -rf /etc/freeradius 2>/dev/null || true
@@ -314,13 +354,13 @@ remove_freeradius() {
     # Remove sudoers entry created by installer
     rm -f /etc/sudoers.d/${APP_USER}-freeradius
     print_info "Sudoers entry removed"
-    
+
     print_success "FreeRADIUS removed"
 }
 
 remove_nginx_config() {
     print_step "Removing Nginx configuration"
-    
+
     # Remove site configuration
     print_info "Removing Nginx site configuration..."
     rm -f /etc/nginx/sites-available/salfanet
@@ -336,21 +376,21 @@ remove_nginx_config() {
         certbot delete --cert-name "${VPS_DOMAIN}" --non-interactive 2>/dev/null || true
         print_info "Let's Encrypt cert removed for ${VPS_DOMAIN}"
     fi
-    
+
     # Restore default site if it exists
     if [ -f "/etc/nginx/sites-available/default" ] && [ ! -L "/etc/nginx/sites-enabled/default" ]; then
         ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default 2>/dev/null || true
     fi
-    
+
     # Reload Nginx
     systemctl reload nginx 2>/dev/null || true
-    
+
     print_success "Nginx configuration removed"
 }
 
 remove_user() {
     print_step "Removing user account"
-    
+
     if id "$APP_USER" &>/dev/null; then
         # Check if this is a system user (ubuntu, root, etc.) - don't delete
         if [[ "$APP_USER" == "ubuntu" ]] || [[ "$APP_USER" == "root" ]] || [[ "$APP_USER" == "admin" ]] || id -u "$APP_USER" -lt 1000 2>/dev/null; then
@@ -358,20 +398,20 @@ remove_user() {
             print_info "PM2 processes and app files have been removed, but user remains"
             return 0
         fi
-        
+
         print_info "Removing user: $APP_USER"
-        
+
         # Kill all user processes
         pkill -u $APP_USER 2>/dev/null || true
         sleep 2
-        
+
         # Remove user and home directory
         userdel -r $APP_USER 2>/dev/null || {
             print_warning "User removal failed (may have active processes)"
             print_info "Trying force removal..."
             userdel -f $APP_USER 2>/dev/null || true
         }
-        
+
         print_success "User removed"
     else
         print_info "User does not exist (already removed)"
@@ -380,7 +420,7 @@ remove_user() {
 
 remove_pm2() {
     print_step "Removing PM2"
-    
+
     # Remove PM2 systemd startup service regardless of whether we remove PM2 pkg
     print_info "Removing PM2 systemd startup service..."
     pm2 unstartup systemd 2>/dev/null || true
@@ -402,7 +442,7 @@ remove_pm2() {
 
 remove_nodejs() {
     print_step "Removing Node.js"
-    
+
     read -p "Remove Node.js? [y/N]: " REMOVE_NODEJS </dev/tty
     if [[ "$REMOVE_NODEJS" =~ ^[Yy]$ ]]; then
         print_info "Removing Node.js..."
@@ -418,12 +458,12 @@ remove_nodejs() {
 
 remove_mysql() {
     print_step "Removing MySQL"
-    
+
     read -p "Remove MySQL completely? (DANGER: All databases will be lost) [y/N]: " REMOVE_MYSQL </dev/tty
     if [[ "$REMOVE_MYSQL" =~ ^[Yy]$ ]]; then
         print_warning "This will remove ALL MySQL databases!"
         read -p "Are you absolutely sure? Type 'YES' to confirm: " CONFIRM_MYSQL </dev/tty
-        
+
         if [ "$CONFIRM_MYSQL" = "YES" ]; then
             print_info "Removing MySQL..."
             systemctl stop mysql 2>/dev/null || true
@@ -443,7 +483,7 @@ remove_mysql() {
 
 clean_firewall() {
     print_step "Cleaning firewall rules"
-    
+
     read -p "Remove all application firewall rules? [Y/n]: " CLEAN_FIREWALL </dev/tty
     if [[ ! "$CLEAN_FIREWALL" =~ ^[Nn]$ ]]; then
         print_info "Removing UFW rules..."
@@ -468,13 +508,13 @@ clean_firewall() {
 
 clean_logs() {
     print_step "Cleaning logs"
-    
+
     print_info "Removing application logs..."
     rm -rf /var/log/salfanet-vps-install.log
     rm -rf /var/log/freeradius
     rm -rf /var/log/nginx/salfanet-*
     rm -rf /var/log/nginx/salfanet-radius-*
-    
+
     print_success "Logs cleaned"
 }
 
@@ -485,10 +525,10 @@ clean_logs() {
 main() {
     # Check root
     check_root
-    
+
     # Show warning
     show_warning
-    
+
     # Ask for backup
     if ask_backup; then
         backup_database
@@ -497,20 +537,21 @@ main() {
         echo -e "${GREEN}Backup created at: $BACKUP_DIR${NC}"
         echo ""
     fi
-    
+
     # Final confirmation
     ask_confirmation
-    
+
     echo ""
     print_info "Starting removal process..."
     echo ""
-    
+
     # Prompt for DB root password once (used by backup and remove_database)
     prompt_db_root_password
 
     # Execute removal steps
     stop_all_services
     remove_application
+    remove_app_data
     remove_database
     remove_redis
     remove_freeradius
@@ -520,14 +561,14 @@ main() {
     remove_pm2
     clean_firewall
     clean_logs
-    
+
     # Optional removals
     echo ""
     print_info "Optional removals (can affect other applications):"
     echo ""
     remove_nodejs
     remove_mysql
-    
+
     # Final summary
     echo ""
     echo -e "${GREEN}╔═══════════════════════════════════════════════════════════════════╗${NC}"
@@ -545,7 +586,7 @@ main() {
     echo "  ✓ User account deleted"
     echo "  ✓ Logs cleaned"
     echo ""
-    
+
     if [ -d "$BACKUP_DIR" ]; then
         echo -e "${CYAN}Backup location:${NC}"
         echo "  $BACKUP_DIR"
@@ -554,7 +595,7 @@ main() {
         echo "  mysql -u root -p $DB_NAME < $BACKUP_DIR/database.sql"
         echo ""
     fi
-    
+
     echo -e "${CYAN}System is now clean and ready for fresh installation.${NC}"
     echo ""
     echo "To reinstall, run:"
