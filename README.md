@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.22.0 - QRIS Mandiri untuk Semua Transaksi + Aplikasi Admin & Pelanggan Native + Biaya Operasional
+> **Version:** 5.23.0 - Bayar di Dalam Aplikasi + Update APK dari Aplikasi + Kasir QRIS di Aplikasi Admin + Peta Jaringan
 
 ---
 
@@ -1083,6 +1083,72 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.23.0 — 2026-10-20 - Bayar di Dalam Aplikasi + Update APK dari Aplikasi + Kasir QRIS di Aplikasi Admin + Peta Jaringan
+
+### Summary
+Rilis setelah 5.22.0 (27 commit). Pelanggan membayar tagihan, perpanjangan, top-up, dan upgrade paket tanpa keluar dari aplikasi. Aplikasi admin dan pelanggan bisa memperbarui dirinya sendiri dari APK yang diunggah di panel web. QRIS Listener kini bagian dari aplikasi admin (Kasir QRIS), aplikasi admin mendapat Peta Jaringan, backup otomatis Telegram benar-benar berjalan, backup dan restore FreeRADIUS diperbaiki dan diamankan, dan updater web tidak lagi gagal build. Aplikasi pelanggan 1.1.8, aplikasi admin 1.0.7.
+
+### Pembayaran di Aplikasi Pelanggan
+- **[FEATURE]** Bayar tagihan, perpanjangan, top-up saldo, dan upgrade paket di dalam aplikasi, tidak lagi dibuka di browser: QRIS lebih dulu, semua payment gateway yang aktif (dengan pilihan channel bila gateway menyediakannya), dan transfer manual
+- **[FEATURE]** QRIS Mandiri native: QR dari server, nominal dengan kode unik dan tombol salin, hitung mundur, status langsung, QR bisa disimpan atau dibagikan untuk dibayar dari DANA atau m-banking di HP yang sama
+- **[FEATURE]** Halaman checkout gateway di WebView dalam aplikasi; tautan e-wallet (GoPay, DANA, `intent://`) membuka aplikasi e-wallet, dan layar menutup sendiri saat gateway kembali ke situs operator
+- **[FEATURE]** Transfer manual: rekening operator dengan tombol salin, data pengirim, dan foto bukti transfer
+- **[FIX]** Memilih payment gateway tidak lagi error: batas minimum Rp 10.000 yang menolak tagihan kecil dihapus, channel hanya diminta dari Duitku dan Tripay, dan pesan error menampilkan alasan dari gateway
+- **[FIX]** Tripay memakai channel yang dipilih pelanggan, bukan selalu QRIS
+- **[FIX]** "Tautan pembayaran tagihan tidak valid" di aplikasi: endpoint lama yang membuat transaksi Midtrans setiap dipanggil dan menimpa link `/pay` tagihan kini hanya mengembalikan token tagihan, dan link yang tertimpa dipulihkan
+
+### Update APK dari Dalam Aplikasi
+- **[FEATURE]** Aplikasi admin dan pelanggan memeriksa versi terbaru saat dibuka, mengunduh APK di dalam aplikasi dengan progress, lalu membuka layar pasang Android; data dan login tetap tersimpan
+- **[FEATURE]** Menu Pembaruan Aplikasi di kedua aplikasi: versi terpasang, versi di server, catatan rilis, dan tombol perbarui, dengan alasan bila versi tidak terbaca
+- **[FEATURE]** Opsi Wajib Update: aplikasi di bawah build tertentu tidak bisa dipakai sebelum diperbarui
+- **[FEATURE]** Panel Rilis APK di Build APK: Super Admin mengunggah APK pelanggan atau admin tanpa SSH, dengan catatan rilis
+- **[SECURITY]** Unggahan APK dibaca nama paket, nomor build, dan sertifikat tanda tangannya; APK yang tertukar, ditandatangani kunci berbeda, atau nomor build-nya tidak lebih tinggi ditolak karena Android tidak akan memasangnya sebagai update
+- **[FEATURE]** Link unduh aplikasi admin Android di halaman login admin; link unduh memakai id versi sehingga CDN selalu menyajikan file terbaru
+- **[CHORE]** Build release memakai satu keystore tetap lewat `android/key.properties` (tidak masuk git)
+
+### Aplikasi Admin Android
+- **[FEATURE]** Kasir QRIS: QRIS Listener kini bagian dari aplikasi admin (application ID `id.my.salfa.admin_app`); build QRIS Listener terpisah di Build APK dihapus
+- **[FIX]** Listener tidak membaca notifikasi milik aplikasinya sendiri, sehingga push "Pembayaran diterima" dari server tidak dilaporkan balik sebagai pembayaran baru
+- **[FEATURE]** Peta Jaringan: OLT, ODC, ODP, OTB/Joint Closure, dan pelanggan berkoordinat, garis jalur kabel, filter per jenis, peta jalan atau satelit, lokasi saya, dan petunjuk arah ke Google Maps
+- **[FEATURE]** Alamat login tiap portal dengan tombol salin di Staf & Tim, Teknisi Lapangan, dan Kolektor
+- **[FIX]** Field angka bisa dikosongkan dan diketik ulang
+
+### Staf, Teknisi & Kolektor
+- **[FIX]** Satu tempat per jenis akun: kolektor hanya di Kelola Kolektor, teknisi hanya di Kelola Teknisi; Admin & Role untuk staf kantor
+- **[FIX]** Akun teknisi lama (role TECHNICIAN di Admin & Role) bisa mengambil dan menyelesaikan work order serta mendaftarkan pelanggan, karena kini ditautkan ke data teknisi
+- **[FIX]** Role bawaan yang tidak valid (OPERATOR) diganti CUSTOMER_SERVICE
+- **[FEATURE]** Alamat login semua portal (admin, teknisi, kolektor, agen, pelanggan) dengan tombol salin di Admin & Role, Kelola Teknisi, dan Kelola Kolektor, mengikuti domain instalasi
+
+### Backup & Restore
+- **[FIX]** Backup otomatis Telegram benar-benar berjalan: jadwal di Pengaturan Telegram (harian, 12 jam, 6 jam, mingguan) sebelumnya tidak pernah dibaca. Job baru `telegram_backup` mengirim backup ke topic Backup, laporan kesehatan ke topic Health, menyimpan N backup terakhir, mengejar jadwal yang terlewat saat server mati, dan melaporkan kegagalan ke grup
+- **[FIX]** Buat Backup FreeRADIUS tidak pernah berhasil karena script dicari di lokasi yang salah; arsip kini dibuat langsung oleh backend
+- **[SECURITY]** Restore FreeRADIUS tidak lagi menjalankan shell dengan isi arsip (nama folder di arsip unggahan bisa menjalankan perintah sebagai root); symlink hanya dipulihkan bila menunjuk ke dalam folder config
+- **[FIX]** Restore FreeRADIUS menyimpan config saat ini lebih dulu, memeriksa hasilnya dengan `freeradius -C`, dan mengembalikan config lama bila ditolak; login database dan alamat API server ini dipertahankan saat restore dari VPS lain; FreeRADIUS di-restart, bukan reload
+- **[SECURITY]** Buat, unduh, unggah, dan restore backup FreeRADIUS khusus Super Admin
+- **[FIX]** Arsip FreeRADIUS pindah ke `/var/data/salfanet/backups/freeradius`, aman dari `rsync --delete` saat deploy
+
+### Pembaruan Sistem (Update dari Web)
+- **[FIX]** Update Sekarang tidak lagi memakai `pnpm install --force` yang memasang binary untuk semua platform dan memenuhi disk
+- **[FIX]** Update berhenti di awal dengan pesan jelas bila sisa disk kurang dari 3 GB
+- **[FIX]** Build lewat web mengikuti `deploy.sh`: secret diambil dari file `.env`, heap 1,5 GB, dan `public/`, `.next/static`, `.env` disalin ke bundle standalone
+- **[UI]** Bila update gagal, halaman Sistem menampilkan log terakhir
+
+### Notifikasi & E-Voucher
+- **[FIX]** Pengingat tagihan mengikuti pengaturannya: hari, jam kirim, jeda batch, dan urutan acak; H+1 dan H+3 bisa dipilih; WhatsApp, email, dan push satu jadwal, dan pengiriman gagal dicoba lagi
+- **[FIX]** Setiap isolir diumumkan ke pelanggan
+- **[FIX]** Link pembayaran dan kode voucher e-voucher sampai ke pembeli lewat WhatsApp dan email; beli dengan "Email saja" tidak lagi gagal; placeholder yang tidak dikenal tidak muncul ke pembeli
+- **[FIX]** Link pembayaran e-voucher kedaluwarsa 24 jam sesuai pesan
+
+### Web UI
+- **[FIX]** Field angka di seluruh form bisa dikosongkan dan diketik ulang (komponen `NumberInput` menggantikan 143 field angka)
+- **[UI]** Stat card dashboard lebih ringkas: judul huruf biasa, angka dan ikon lebih kecil
+- **[UI]** Aplikasi admin dan pelanggan memakai warna brand apa adanya di atas permukaan abu netral
+
+### Sistem
+- **[CHORE]** Bump versi root, frontend, dan backend ke 5.23.0
+
+---
+
 ### v5.22.0 — 2026-10-15 - QRIS Mandiri untuk Semua Transaksi + Aplikasi Admin & Pelanggan Native + Biaya Operasional
 
 ### Summary
@@ -1292,38 +1358,6 @@ Rombak total laporan Rekap Voucher agar support penjualan harian/mingguan/bulana
 - **[CHORE]** Remove 18 file debug/temp dari git tracking (`.check-*`, `.debug-*`, `.test-*`, `.commit-msg-*`, `.trigger-*`)
 - **[CHORE]** Update `.gitignore` untuk mencegah file debug/temp ter-commit lagi
 - **[CHORE]** Update README — tambah info Rekap Voucher di feature table
-
----
-
-### v5.19.0 — 2026-09-01 — Payment Webhook Fixes & HOTSPOT Isolation/Reactivation Support
-
-### Summary
-Audit dan perbaikan menyeluruh untuk payment webhook (Midtrans), payment success page, dan isolasi/reactivation user untuk kedua mode autentikasi (RADIUS & local MikroTik). Perbaikan bug kritis pada orderId parsing, variable shadowing yang mencegah RADIUS reactivation, serta penambahan dukungan HOTSPOT connectionType untuk isolasi dan reaktivasi di semua route.
-
-### Bug Fixes
-- **[CRITICAL]** Webhook `orderId` parsing tidak strip trailing hex segment — invoice tidak ditemukan, status tetap PENDING. Fix: strip semua trailing segments (timestamp + hex)
-- **[CRITICAL]** `wasDisabled` variable shadowing di `handleInvoicePayment` — `const wasDisabled` di dalam block shadowing outer `let wasDisabled`, menyebabkan RADIUS reactivation tidak pernah berjalan untuk user isolated/suspended. Fix: gunakan assignment `wasDisabled =` bukan `const wasDisabled`
-- **[CRITICAL]** HOTSPOT connectionType tidak ditangani di semua route reaktivasi (webhook, mark-paid, status, bulk-status, extend, invoices PUT) — user Hotspot local mode yang diisolir tidak bisa di-reactivate. Fix: cek `connectionType`, HOTSPOT → `manageHotspotUser(disabled=false)` + `kickHotspotSession`
-- **[FIX]** Invoice DELETE gagal karena foreign key constraints. Fix: hapus semua related records (manualPayment, paymentProof, invoiceAddon, paymentAttempt, registrationRequest, qrisPending) sebelum hapus invoice
-- **[FIX]** Missing translation keys di payment pages. Fix: tambah top-level `payment` section di `id.json`
-- **[FIX]** Payment success page tidak menampilkan data invoice/user lengkap. Fix: tambah user relation & customerUsername di invoice check response
-- **[FIX]** Race condition antara webhook dan frontend polling. Fix: tambah polling retry (5x, 2s delay) di payment success page
-- **[FIX]** Type error: `user.profileId` (string | null) tidak assignable ke `profileId: string`. Fix: coerce dengan `?? ''`
-
-### Features
-- **[FEATURE]** ConnectionType-aware isolation & reactivation — semua route sekarang mengecek `user.connectionType` dan menggunakan `manageHotspotUser`/`kickHotspotSession` untuk HOTSPOT atau `managePppSecret`/`kickPppoeSession` untuk PPPoE/STATIC_IP
-
-### Files Changed
-- `backend/src/app/api/payment/webhook/route.ts` — fix orderId parsing, wasDisabled shadowing, HOTSPOT reactivation, type fix
-- `backend/src/app/api/payment/check-order/route.ts` — fix parseInvoiceNumberFromOrder
-- `backend/src/app/api/invoices/check/route.ts` — add user relation & customerUsername
-- `backend/src/app/api/invoices/route.ts` — fix DELETE foreign keys, HOTSPOT reactivation in PUT
-- `backend/src/app/api/pppoe/users/[id]/mark-paid/route.ts` — HOTSPOT reactivation
-- `backend/src/app/api/pppoe/users/status/route.ts` — HOTSPOT enable/disable + kick
-- `backend/src/app/api/pppoe/users/bulk-status/route.ts` — HOTSPOT enable/disable + kick
-- `backend/src/app/api/pppoe/users/[id]/extend/route.ts` — HOTSPOT re-enable + kick
-- `frontend/src/app/payment/success/page.tsx` — polling retry
-- `frontend/src/locales/id.json` — payment translation keys
 
 ---
 
