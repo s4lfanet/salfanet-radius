@@ -11,6 +11,7 @@ import '../../core/widgets/entity_tile.dart';
 import '../auth/auth_provider.dart';
 import '../auth/server_settings_screen.dart';
 import '../resources/team_resources.dart' show roleLabel;
+import '../../core/guides/guides.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -43,7 +44,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final role = user?.role ?? '';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profil & Pengaturan')),
+      appBar: AppBar(title: const Text('Profil & Pengaturan'), actions: const [GuideAction()]),
       body: ListView(
         padding: EdgeInsets.fromLTRB(Gap.page, Gap.sm, Gap.page, listBottomPadding(context)),
         children: [

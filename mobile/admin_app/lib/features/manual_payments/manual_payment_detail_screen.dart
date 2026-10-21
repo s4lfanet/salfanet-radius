@@ -9,6 +9,7 @@ import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../../models/manual_payment.dart';
 import 'manual_payment_provider.dart';
+import '../../core/guides/guides.dart';
 
 class ManualPaymentDetailScreen extends StatefulWidget {
   const ManualPaymentDetailScreen({super.key, required this.payment});
@@ -69,7 +70,7 @@ class _ManualPaymentDetailScreenState extends State<ManualPaymentDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detail Pembayaran'),
-        actions: [IconButton(tooltip: 'Hapus', icon: const Icon(Icons.delete_outline_rounded), onPressed: _acting ? null : _delete)],
+        actions: [const GuideAction(), IconButton(tooltip: 'Hapus', icon: const Icon(Icons.delete_outline_rounded), onPressed: _acting ? null : _delete)],
       ),
       bottomNavigationBar: pending
           ? ActionBar(

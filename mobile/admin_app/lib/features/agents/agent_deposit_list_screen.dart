@@ -7,6 +7,7 @@ import '../../core/widgets/detail.dart';
 import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
+import '../../core/guides/guides.dart';
 
 /// Manual agent balance top-ups awaiting verification. Approving credits
 /// the agent's balance, so the transfer receipt is shown before the button.
@@ -119,7 +120,7 @@ class _AgentDepositListScreenState extends State<AgentDepositListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Deposit Agent')),
+      appBar: AppBar(title: const Text('Deposit Agent'), actions: const [GuideAction()]),
       body: Column(
         children: [
           FilterChipRow(

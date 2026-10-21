@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/crud/crud_list_screen.dart';
+import '../../core/guides/guides.dart';
 import '../../core/forms/form_screen.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/update/app_updater.dart';
@@ -59,6 +60,12 @@ class MoreMenuScreen extends StatelessWidget {
       (_) => s();
 
   static final _sections = <(String, List<_Entry>)>[
+    (
+      'Bantuan',
+      [
+        _Entry(Icons.menu_book_rounded, 'Pusat Panduan', 'Urutan setup dan cara pakai setiap menu', Tone.primary, (_) => const GuideHubScreen()),
+      ],
+    ),
     (
       'Pelanggan',
       [
@@ -223,6 +230,87 @@ class MoreMenuScreen extends StatelessWidget {
   }
 }
 
+/// The web page each menu entry mirrors, for the Panduan button of the
+/// screen it opens. Entries without a web counterpart have none.
+const _guidePaths = <String, String>{
+  'Registrasi': '/admin/pppoe/registrations',
+  'Persetujuan': '/admin/pppoe/approvals',
+  'Pelanggan Terisolir': '/admin/isolated-users',
+  'Permintaan Suspend': '/admin/suspend-requests',
+  'Tiket Bantuan': '/admin/tickets',
+  'Kategori Tiket': '/admin/tickets/categories',
+  'Paket PPPoE': '/admin/pppoe/profiles',
+  'Area': '/admin/pppoe/areas',
+  'Add-on Layanan': '/admin/pppoe/addons',
+  'IP Pool RADIUS': '/admin/ippool',
+  'Pembayaran Manual': '/admin/manual-payments',
+  'Bukti Pembayaran Kolektor': '/admin/payment-proofs',
+  'Setoran Kolektor': '/admin/collector-settlements',
+  'Keuangan': '/admin/keuangan',
+  'Biaya Operasional': '/admin/keuangan/pengeluaran',
+  'Kategori Keuangan': '/admin/keuangan',
+  'Ajak Teman': '/admin/referrals',
+  'Payment Gateway': '/admin/payment-gateway',
+  'Rekening Bank': '/admin/payment/bank-accounts',
+  'Laporan': '/admin/laporan',
+  'Rekap Voucher': '/admin/hotspot/rekap-voucher',
+  'Laporan Agent': '/admin/hotspot/agent-report',
+  'Voucher Hotspot': '/admin/hotspot/voucher',
+  'Profil Hotspot': '/admin/hotspot/profile',
+  'Template Voucher': '/admin/hotspot/template',
+  'Pesanan E-Voucher': '/admin/hotspot/evoucher',
+  'Agent': '/admin/hotspot/agent',
+  'Deposit Agent': '/admin/hotspot/agent/deposits',
+  'Peta Jaringan': '/admin/network/map',
+  'Sesi Online': '/admin/sessions/pppoe',
+  'Router / NAS': '/admin/network/routers',
+  'Status OLT': '/admin/olt/monitoring',
+  'Data OLT': '/admin/network/olts',
+  'Alert OLT': '/admin/olt/alerts',
+  'ODC': '/admin/network/odcs',
+  'ODP': '/admin/network/odps',
+  'Pelanggan per ODP': '/admin/network/customers',
+  'Joint Closure': '/admin/network/fiber-joint-closures',
+  'OTB': '/admin/network/infrastruktur',
+  'Kabel Fiber': '/admin/network/fiber-cables',
+  'Core Fiber': '/admin/network/fiber-cores',
+  'Titik Sambung': '/admin/network/splice-points',
+  'Trace Fiber': '/admin/network/trace',
+  'VPN Server': '/admin/network/vpn-server',
+  'VPN Client': '/admin/network/vpn-client',
+  'Penarikan ONT': '/admin/ont-removal-tasks',
+  'FreeRADIUS': '/admin/freeradius/status',
+  'GenieACS': '/admin/genieacs/devices',
+  'Jadwal Otomatis': '/admin/settings/cron',
+  'Backup Database': '/admin/settings/database',
+  'Cloudflare Tunnel': '/admin/settings/cloudflare-tunnel',
+  'Sistem & Pembaruan': '/admin/system',
+  'Build APK': '/admin/download-apk',
+  'Broadcast Notifikasi': '/admin/notifications/push',
+  'Kirim WhatsApp': '/admin/settings/whatsapp',
+  'Provider WhatsApp': '/admin/settings/whatsapp',
+  'Template WhatsApp': '/admin/settings/whatsapp',
+  'Pengingat & OTP': '/admin/settings/whatsapp',
+  'Riwayat WhatsApp': '/admin/settings/whatsapp',
+  'Email SMTP': '/admin/settings/email',
+  'Template Email': '/admin/settings/email',
+  'Riwayat Email': '/admin/settings/email',
+  'Telegram Backup': '/admin/settings/telegram',
+  'Bot Telegram': '/admin/settings/telegram-bot',
+  'Notifikasi': '/admin/notifications',
+  'Staf & Tim': '/admin/management',
+  'Kolektor': '/admin/collectors',
+  'Teknisi Lapangan': '/admin/technicians',
+  'Log Aktivitas': '/admin/logs/activity',
+  'Profil Perusahaan': '/admin/settings/company',
+  'Footer Portal': '/admin/settings/footer',
+  'Isolir': '/admin/settings/isolation',
+  'Template Isolir': '/admin/settings/isolation/templates',
+  'Banner Promo': '/admin/settings/promo-banner',
+  'Program Ajak Teman': '/admin/settings/referral',
+  'Keamanan Akun (2FA)': '/admin/settings/security',
+};
+
 class _Row extends StatelessWidget {
   const _Row({required this.entry});
   final _Entry entry;
@@ -230,7 +318,12 @@ class _Row extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: entry.builder)),
+      onTap: () {
+        final path = _guidePaths[entry.label];
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: path == null ? entry.builder : (ctx) => GuideScope(path: path, child: entry.builder(ctx)),
+        ));
+      },
       child: Padding(
         padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.md, Gap.md, Gap.md),
         child: Row(

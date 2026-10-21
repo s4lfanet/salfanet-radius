@@ -10,6 +10,7 @@ import '../../core/widgets/entity_tile.dart';
 import '../../models/invoice.dart';
 import 'invoice_tools.dart';
 import '../pppoe/pppoe_detail_screen.dart';
+import '../../core/guides/guides.dart';
 
 /// Invoice detail with the actions the web invoice page offers: mark paid,
 /// send reminder (WhatsApp/email), and share the customer payment link.
@@ -86,6 +87,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
       appBar: AppBar(
         title: const Text('Detail Tagihan'),
         actions: [
+          const GuideAction(),
           if (unpaid) IconButton(tooltip: 'Kirim pengingat', icon: const Icon(Icons.notifications_active_outlined), onPressed: _sendReminder),
           IconButton(
             tooltip: 'Hapus',

@@ -91,6 +91,10 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  # Admin panel guides, exported from the web with tool/export_guides.ts.
+  assets:
+    - assets/guides.json
+
   fonts:
     - family: PlusJakartaSans
       fonts:

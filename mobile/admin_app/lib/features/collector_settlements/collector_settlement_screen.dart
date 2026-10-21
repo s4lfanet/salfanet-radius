@@ -8,6 +8,7 @@ import '../../core/widgets/detail.dart';
 import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
+import '../../core/guides/guides.dart';
 
 /// Daily cash reconciliation: what each collector took in on a date, broken
 /// down per invoice, confirmed once the money is handed to the office.
@@ -148,7 +149,7 @@ class _CollectorSettlementScreenState extends State<CollectorSettlementScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Setoran Kolektor'),
-        actions: [IconButton(tooltip: 'Pilih tanggal', icon: const Icon(Icons.calendar_month_rounded), onPressed: _pickDate)],
+        actions: [const GuideAction(), IconButton(tooltip: 'Pilih tanggal', icon: const Icon(Icons.calendar_month_rounded), onPressed: _pickDate)],
       ),
       body: Column(
         children: [

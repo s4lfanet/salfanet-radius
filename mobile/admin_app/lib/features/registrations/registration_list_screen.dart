@@ -8,6 +8,7 @@ import '../../core/widgets/state_views.dart';
 import '../../models/registration.dart';
 import 'registration_detail_screen.dart';
 import 'registration_provider.dart';
+import '../../core/guides/guides.dart';
 
 class RegistrationListScreen extends StatefulWidget {
   const RegistrationListScreen({super.key});
@@ -30,7 +31,7 @@ class _RegistrationListScreenState extends State<RegistrationListScreen> {
     String withCount(String label, int? n) => n != null && n > 0 ? '$label · $n' : label;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Registrasi Pelanggan')),
+      appBar: AppBar(title: const Text('Registrasi Pelanggan'), actions: const [GuideAction()]),
       body: Column(
         children: [
           FilterChipRow(

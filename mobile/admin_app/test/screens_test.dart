@@ -14,6 +14,8 @@ import 'package:admin_app/features/notifications/notifications_provider.dart';
 import 'package:admin_app/features/notifications/notifications_screen.dart';
 import 'package:admin_app/features/pppoe/pppoe_detail_screen.dart';
 import 'package:admin_app/features/pppoe/pppoe_provider.dart';
+import 'package:admin_app/core/guides/guides.dart';
+import 'package:admin_app/features/pppoe/pppoe_list_screen.dart';
 import 'package:admin_app/features/network_map/network_map_screen.dart';
 import 'package:admin_app/features/profile/profile_screen.dart';
 import 'package:admin_app/features/registrations/registration_provider.dart';
@@ -166,6 +168,10 @@ Future<void> _shot(WidgetTester tester, String name) async {
 void main() {
   setUpAll(() async {
     await initializeDateFormatting('id_ID', null);
+    // Load the bundled guides here, on real time: a load started inside a
+    // test's fake clock never completes, and the cached future would hang
+    // every later test.
+    await GuideBook.load();
     final jakarta = FontLoader('PlusJakartaSans')..addFont(rootBundle.load('assets/fonts/PlusJakartaSans-Variable.ttf'));
     await jakarta.load();
     final iconFile = File('${Platform.environment['FLUTTER_ROOT'] ?? 'C:/flutter'}/bin/cache/artifacts/material_fonts/materialicons-regular.otf');
@@ -214,6 +220,7 @@ void main() {
     'tickets': () => const TicketListScreen(),
     'profile': () => const ProfileScreen(),
     'network-map': () => const NetworkMapScreen(),
+    'guide-hub': () => const GuideHubScreen(),
   };
   final tabs = {'pelanggan': 'Pelanggan', 'tagihan': 'Tagihan', 'lainnya': 'Lainnya'};
 
@@ -226,6 +233,40 @@ void main() {
         expect(tester.takeException(), isNull);
       });
     }
+    testWidgets('Panduan button opens the guide of a scoped screen at $label', (tester) async {
+      await pump(tester, const GuideScope(path: '/admin/pppoe/users', child: PppoeListScreen()), dark, width);
+      // The guides loaded in setUpAll, outside the test clock; their result
+      // reaches the FutureBuilder once the real event loop turns.
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pump();
+      await tester.tap(find.byTooltip('Panduan'));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+      await _shot(tester, 'a-guide-sheet-$label');
+      expect(find.text('Pelanggan PPPoE'), findsWidgets);
+      expect(find.text('Cara pakai'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+    testWidgets('Pusat Panduan lists setup steps and searches at $label', (tester) async {
+      await pump(tester, const GuideHubScreen(), dark, width);
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      await tester.pump();
+      expect(find.text('Mulai di sini: urutan setup'), findsOneWidget);
+      expect(find.text('Isi profil perusahaan'), findsOneWidget);
+      await _shot(tester, 'a-guide-hub-$label');
+      await tester.enterText(find.byType(TextField), 'isolir');
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text('Mulai di sini: urutan setup'), findsNothing);
+      expect(find.text('Pengaturan Isolasi'), findsOneWidget);
+      await tester.enterText(find.byType(TextField), 'zzzz');
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.textContaining('Tidak ada panduan yang cocok'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+    testWidgets('no Panduan button without a guide at $label', (tester) async {
+      await pump(tester, const PppoeListScreen(), dark, width);
+      expect(find.byTooltip('Panduan'), findsNothing);
+    });
     for (final MapEntry(key: name, value: tab) in tabs.entries) {
       testWidgets('tab $name renders without overflow at $label', (tester) async {
         await pump(tester, const MainShell(), dark, width);

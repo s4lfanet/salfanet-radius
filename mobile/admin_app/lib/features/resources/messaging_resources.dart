@@ -13,6 +13,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/detail.dart';
 import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/entity_tile.dart';
+import '../../core/guides/guides.dart';
 
 final _api = ApiClient.instance;
 
@@ -176,7 +177,7 @@ class _QrScreenState extends State<_QrScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text('QR ${widget.provider['name'] ?? ''}'),
-        actions: [IconButton(tooltip: 'Muat ulang', icon: const Icon(Icons.refresh_rounded), onPressed: _load)],
+        actions: [const GuideAction(), IconButton(tooltip: 'Muat ulang', icon: const Icon(Icons.refresh_rounded), onPressed: _load)],
       ),
       body: ListView(
         padding: EdgeInsets.fromLTRB(Gap.page, Gap.page, Gap.page, listBottomPadding(context)),

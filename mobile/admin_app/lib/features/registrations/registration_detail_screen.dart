@@ -14,6 +14,7 @@ import '../../core/widgets/entity_tile.dart';
 import '../../models/registration.dart';
 import '../pppoe/pppoe_detail_screen.dart';
 import 'registration_provider.dart';
+import '../../core/guides/guides.dart';
 
 class RegistrationDetailScreen extends StatefulWidget {
   const RegistrationDetailScreen({super.key, required this.registration});
@@ -158,7 +159,7 @@ class _RegistrationDetailScreenState extends State<RegistrationDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detail Registrasi'),
-        actions: [IconButton(tooltip: 'Hapus', icon: const Icon(Icons.delete_outline_rounded), onPressed: _delete)],
+        actions: [const GuideAction(), IconButton(tooltip: 'Hapus', icon: const Icon(Icons.delete_outline_rounded), onPressed: _delete)],
       ),
       bottomNavigationBar: ActionBar(actions: _actions),
       body: ListView(

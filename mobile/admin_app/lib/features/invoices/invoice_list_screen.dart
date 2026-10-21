@@ -11,6 +11,7 @@ import '../../models/invoice.dart';
 import 'invoice_detail_screen.dart';
 import 'invoice_tools.dart';
 import 'invoice_provider.dart';
+import '../../core/guides/guides.dart';
 
 class InvoiceListScreen extends StatefulWidget {
   const InvoiceListScreen({super.key});
@@ -57,6 +58,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
         leading: IconButton(icon: const Icon(Icons.close_rounded), onPressed: () => setState(_selected.clear)),
         title: Text('${_selected.length} dipilih'),
         actions: [
+          const GuideAction(),
           IconButton(
             tooltip: 'Pilih semua',
             icon: const Icon(Icons.select_all_rounded),
@@ -78,6 +80,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
     return AppBar(
       title: const Text('Tagihan'),
       actions: [
+        const GuideAction(),
         PopupMenuButton<String>(
           tooltip: 'Alat',
           onSelected: _tool,

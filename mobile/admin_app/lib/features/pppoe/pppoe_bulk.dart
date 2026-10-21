@@ -9,6 +9,7 @@ import '../../core/forms/form_screen.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/entity_tile.dart';
+import '../../core/guides/guides.dart';
 
 final _api = ApiClient.instance;
 
@@ -288,6 +289,7 @@ class _AuditResultScreenState extends State<_AuditResultScreen> {
       appBar: AppBar(
         title: Text('Hasil Audit (${_diffs.length})'),
         actions: [
+          const GuideAction(),
           if (_diffs.isNotEmpty)
             TextButton(
               onPressed: () => setState(() => _selected.length == _diffs.length ? _selected.clear() : _selected.addAll(List.generate(_diffs.length, (i) => i))),

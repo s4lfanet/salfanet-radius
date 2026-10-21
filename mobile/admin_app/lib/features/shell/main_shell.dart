@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/guides/guides.dart';
 import '../../core/update/app_updater.dart';
 
 import '../dashboard/dashboard_screen.dart';
@@ -17,7 +18,13 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _index = 0;
 
-  static const _screens = [DashboardScreen(), PppoeListScreen(), InvoiceListScreen(), MoreMenuScreen()];
+  // Each tab carries the web page it mirrors, for its Panduan button.
+  static const _screens = [
+    GuideScope(path: '/admin', child: DashboardScreen()),
+    GuideScope(path: '/admin/pppoe/users', child: PppoeListScreen()),
+    GuideScope(path: '/admin/invoices', child: InvoiceListScreen()),
+    MoreMenuScreen(),
+  ];
 
   @override
   void initState() {

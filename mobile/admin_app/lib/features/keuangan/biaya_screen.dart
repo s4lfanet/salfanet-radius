@@ -12,6 +12,7 @@ import '../../core/widgets/detail.dart';
 import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
+import '../../core/guides/guides.dart';
 
 final _api = ApiClient.instance;
 final _ymd = DateFormat('yyyy-MM-dd');
@@ -299,6 +300,7 @@ class _BiayaScreenState extends State<BiayaScreen> {
       appBar: AppBar(
         title: const Text('Biaya Operasional'),
         actions: [
+          const GuideAction(),
           PopupMenuButton<DateTime>(
             tooltip: 'Pilih bulan',
             icon: const Icon(Icons.calendar_month_rounded),

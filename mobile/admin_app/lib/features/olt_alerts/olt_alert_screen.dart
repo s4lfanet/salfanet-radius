@@ -7,6 +7,7 @@ import '../../core/widgets/detail.dart';
 import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
+import '../../core/guides/guides.dart';
 
 // Backend enums are lowercase (OltAlertSeverity / OltAlertType in schema.prisma).
 Tone _severityTone(String s) => switch (s.toLowerCase()) {
@@ -122,7 +123,7 @@ class _OltAlertScreenState extends State<OltAlertScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Alert OLT')),
+      appBar: AppBar(title: const Text('Alert OLT'), actions: const [GuideAction()]),
       body: Column(
         children: [
           FilterChipRow(

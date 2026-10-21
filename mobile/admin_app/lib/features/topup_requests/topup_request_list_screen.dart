@@ -7,6 +7,7 @@ import '../../core/widgets/detail.dart';
 import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
+import '../../core/guides/guides.dart';
 
 /// Customer prepaid-balance top-ups paid by manual transfer. Approving
 /// credits the customer's balance, so the transfer proof is shown first.
@@ -113,7 +114,7 @@ class _TopupRequestListScreenState extends State<TopupRequestListScreen> {
   Widget build(BuildContext context) {
     final items = _visible;
     return Scaffold(
-      appBar: AppBar(title: const Text('Top Up Saldo')),
+      appBar: AppBar(title: const Text('Top Up Saldo'), actions: const [GuideAction()]),
       body: Column(
         children: [
           FilterChipRow(

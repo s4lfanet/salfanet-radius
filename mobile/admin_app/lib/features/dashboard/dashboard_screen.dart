@@ -24,6 +24,7 @@ import '../resources/hotspot_resources.dart';
 import '../resources/radius_resources.dart';
 import '../sessions/session_list_screen.dart';
 import 'dashboard_provider.dart';
+import '../../core/guides/guides.dart';
 
 /// The dashboard's job is "what needs me today": the "Perlu Tindakan"
 /// block and the invoices about to fall due are the page; revenue is the
@@ -78,6 +79,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         title: const Text('Dashboard'),
         actions: [
+          const GuideAction(),
           IconButton(
             tooltip: 'Notifikasi',
             onPressed: () => _open(const NotificationsScreen()),

@@ -8,6 +8,7 @@ import '../../core/widgets/state_views.dart';
 import '../../models/manual_payment.dart';
 import 'manual_payment_detail_screen.dart';
 import 'manual_payment_provider.dart';
+import '../../core/guides/guides.dart';
 
 class ManualPaymentListScreen extends StatelessWidget {
   const ManualPaymentListScreen({super.key});
@@ -25,7 +26,7 @@ class _View extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.watch<ManualPaymentProvider>();
     return Scaffold(
-      appBar: AppBar(title: const Text('Pembayaran Manual')),
+      appBar: AppBar(title: const Text('Pembayaran Manual'), actions: const [GuideAction()]),
       body: Column(
         children: [
           FilterChipRow(

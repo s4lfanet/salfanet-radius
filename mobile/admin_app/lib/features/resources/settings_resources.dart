@@ -16,6 +16,7 @@ import '../../core/widgets/detail.dart';
 import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
+import '../../core/guides/guides.dart';
 
 final _api = ApiClient.instance;
 
@@ -188,7 +189,7 @@ class PaymentGatewayScreen extends StatelessWidget {
       child: EntityTile(icon: icon, tone: Tone.success, title: title, subtitle: subtitle, onTap: onTap),
     );
     return Scaffold(
-      appBar: AppBar(title: const Text('Payment Gateway')),
+      appBar: AppBar(title: const Text('Payment Gateway'), actions: const [GuideAction()]),
       body: ListView(
         padding: EdgeInsets.fromLTRB(Gap.page, Gap.sm, Gap.page, listBottomPadding(context)),
         children: [
@@ -615,7 +616,7 @@ class _TwoFactorSettingsScreenState extends State<TwoFactorSettingsScreen> {
   Widget build(BuildContext context) {
     final on = _enabled;
     return Scaffold(
-      appBar: AppBar(title: const Text('Keamanan Akun')),
+      appBar: AppBar(title: const Text('Keamanan Akun'), actions: const [GuideAction()]),
       bottomNavigationBar: on == null
           ? null
           : ActionBar(
@@ -919,7 +920,7 @@ class _CloudflareTunnelScreenState extends State<CloudflareTunnelScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Cloudflare Tunnel'),
-        actions: [IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _load)],
+        actions: [const GuideAction(), IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _load)],
       ),
       bottomNavigationBar: s == null ? null : ActionBar(actions: [ActionSpec('Konfigurasi', Icons.tune_rounded, _configure)]),
       body: s == null
@@ -1044,7 +1045,7 @@ class _SystemUpdateScreenState extends State<SystemUpdateScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Sistem & Pembaruan'),
-        actions: [IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _load)],
+        actions: [const GuideAction(), IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _load)],
       ),
       bottomNavigationBar: hasUpdate && _poll == null ? ActionBar(actions: [ActionSpec('Perbarui Sekarang', Icons.system_update_rounded, _update)]) : null,
       body: info == null
@@ -1157,7 +1158,7 @@ class _ApkBuilderScreenState extends State<ApkBuilderScreen> {
   Widget build(BuildContext context) {
     final ready = _env?['ready'] == true;
     return Scaffold(
-      appBar: AppBar(title: const Text('Build APK')),
+      appBar: AppBar(title: const Text('Build APK'), actions: const [GuideAction()]),
       body: RefreshIndicator(
         onRefresh: _load,
         child: ListView(

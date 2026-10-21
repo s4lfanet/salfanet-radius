@@ -11,6 +11,7 @@ import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
 import '../pppoe/pppoe_detail_screen.dart';
+import '../../core/guides/guides.dart';
 
 /// Live RADIUS sessions (PPPoE and hotspot) with disconnect, mirroring the
 /// web panel's Sesi PPPoE / Sesi Hotspot pages.
@@ -205,6 +206,7 @@ class _SessionListScreenState extends State<SessionListScreen> {
       appBar: AppBar(
         title: const Text('Sesi Online'),
         actions: [
+          const GuideAction(),
           IconButton(
             tooltip: 'Ekspor Excel',
             icon: const Icon(Icons.ios_share_rounded),

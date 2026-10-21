@@ -10,6 +10,7 @@ import '../../core/widgets/detail.dart';
 import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
+import '../../core/guides/guides.dart';
 
 /// Kasir QRIS: turns this phone into the QRIS listener. It reads the payment
 /// notifications DANA, banks and other e-wallets post on the phone that
@@ -148,7 +149,7 @@ class _QrisCashierScreenState extends State<QrisCashierScreen> with WidgetsBindi
   Widget build(BuildContext context) {
     final s = _status;
     return Scaffold(
-      appBar: AppBar(title: const Text('Kasir QRIS')),
+      appBar: AppBar(title: const Text('Kasir QRIS'), actions: const [GuideAction()]),
       body: _error != null
           ? ErrorView(message: _error!)
           : s == null

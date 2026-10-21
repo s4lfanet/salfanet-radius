@@ -10,6 +10,7 @@ import '../../core/api/api_client.dart';
 import '../../core/forms/field_spec.dart' show extractList;
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/state_views.dart';
+import '../../core/guides/guides.dart';
 
 /// Peta Jaringan: OLT, ODC, ODP, OTB / joint closure and customers that
 /// have coordinates, with the cable path between them. Read-only; the
@@ -414,6 +415,7 @@ class _NetworkMapScreenState extends State<NetworkMapScreen> {
       appBar: AppBar(
         title: const Text('Peta Jaringan'),
         actions: [
+          const GuideAction(),
           IconButton(
             tooltip: _satellite ? 'Peta jalan' : 'Citra satelit',
             icon: Icon(_satellite ? Icons.map_outlined : Icons.satellite_alt_rounded),

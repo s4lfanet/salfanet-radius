@@ -12,6 +12,7 @@ import '../../core/widgets/detail.dart';
 import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/result_screen.dart';
+import '../../core/guides/guides.dart';
 
 final _api = ApiClient.instance;
 Json _map(dynamic res) => res is Map ? res.cast<String, dynamic>() : <String, dynamic>{};
@@ -28,7 +29,7 @@ class GenieacsScreen extends StatelessWidget {
       child: EntityTile(icon: icon, tone: Tone.accent, title: title, subtitle: subtitle, onTap: onTap),
     );
     return Scaffold(
-      appBar: AppBar(title: const Text('GenieACS (TR-069)')),
+      appBar: AppBar(title: const Text('GenieACS (TR-069)'), actions: const [GuideAction()]),
       body: ListView(
         padding: EdgeInsets.fromLTRB(Gap.page, Gap.sm, Gap.page, listBottomPadding(context)),
         children: [

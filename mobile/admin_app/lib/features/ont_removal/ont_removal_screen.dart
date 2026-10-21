@@ -7,6 +7,7 @@ import '../../core/widgets/detail.dart';
 import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
+import '../../core/guides/guides.dart';
 
 /// Dispatch queue for retrieving ONTs from stopped customers. Admin reviews
 /// and assigns; the technician marks the job done from their own portal.
@@ -103,7 +104,7 @@ class _OntRemovalScreenState extends State<OntRemovalScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Penarikan ONT')),
+      appBar: AppBar(title: const Text('Penarikan ONT'), actions: const [GuideAction()]),
       floatingActionButton: FloatingActionButton.extended(onPressed: _create, icon: const Icon(Icons.add_rounded), label: const Text('Tugaskan')),
       body: Column(
         children: [

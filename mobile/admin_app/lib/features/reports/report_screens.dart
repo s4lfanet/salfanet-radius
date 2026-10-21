@@ -18,6 +18,7 @@ import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
 import '../pppoe/pppoe_detail_screen.dart';
+import '../../core/guides/guides.dart';
 
 final _api = ApiClient.instance;
 final _ymd = DateFormat('yyyy-MM-dd');
@@ -337,6 +338,7 @@ class _LaporanScreenState extends State<LaporanScreen> {
       appBar: AppBar(
         title: const Text('Laporan'),
         actions: [
+          const GuideAction(),
           if (statusOptions != null)
             _filterMenu(context, tooltip: 'Status', selected: _status, options: statusOptions, onSelected: (v) => _reset(() => _status = v)),
           IconButton(tooltip: 'Ekspor CSV', icon: const Icon(Icons.ios_share_rounded), onPressed: _loading ? null : _exportCsv),
@@ -562,6 +564,7 @@ class _RekapVoucherScreenState extends State<RekapVoucherScreen> {
       appBar: AppBar(
         title: const Text('Rekap Voucher'),
         actions: [
+          const GuideAction(),
           _filterMenu(context, tooltip: 'Agent', selected: _agent, options: _agents, icon: Icons.storefront_rounded, onSelected: (v) => _reset(() => _agent = v)),
           IconButton(
             tooltip: 'Ekspor Excel',
@@ -760,7 +763,7 @@ class _AgentReportScreenState extends State<AgentReportScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Laporan Agent'),
-        actions: [_filterMenu(context, tooltip: 'Agent', selected: _agent, options: _agents, icon: Icons.storefront_rounded, onSelected: (v) => _reset(() => _agent = v))],
+        actions: [const GuideAction(), _filterMenu(context, tooltip: 'Agent', selected: _agent, options: _agents, icon: Icons.storefront_rounded, onSelected: (v) => _reset(() => _agent = v))],
       ),
       body: Column(
         children: [
@@ -1071,7 +1074,7 @@ class _FiberTraceScreenState extends State<FiberTraceScreen> {
   Widget build(BuildContext context) {
     final r = _result;
     return Scaffold(
-      appBar: AppBar(title: const Text('Trace Fiber')),
+      appBar: AppBar(title: const Text('Trace Fiber'), actions: const [GuideAction()]),
       floatingActionButton: FloatingActionButton.extended(onPressed: _search, icon: const Icon(Icons.route_rounded), label: Text(r == null ? 'Telusuri' : 'Telusuri lagi')),
       body: r == null
           ? EmptyState(

@@ -8,6 +8,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/detail.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
+import '../../core/guides/guides.dart';
 
 /// Read-only OLT health. isOnline / temperature / uptime come from the
 /// existing cron poller (cron/olt-poll), so refreshing here is cheap and
@@ -107,7 +108,7 @@ class _OltStatusScreenState extends State<OltStatusScreen> {
   Widget build(BuildContext context) {
     final online = _olts.where((o) => o['isOnline'] == true).length;
     return Scaffold(
-      appBar: AppBar(title: const Text('Status OLT')),
+      appBar: AppBar(title: const Text('Status OLT'), actions: const [GuideAction()]),
       body: DataStateView(
         loading: _loading,
         error: _error,
