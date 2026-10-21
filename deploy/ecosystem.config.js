@@ -64,7 +64,9 @@ module.exports = {
       instances: 1,
       exec_mode: 'fork',
       watch: false,
-      max_memory_restart: '400M',
+      // Well above the 350 MB heap: RSS also counts Next.js native memory,
+      // and a 400M limit killed the backend on every busy minute.
+      max_memory_restart: '768M',
       node_args: [
         '--max-old-space-size=350',
         '--max-semi-space-size=8',

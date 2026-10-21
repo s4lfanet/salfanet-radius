@@ -318,6 +318,11 @@ pm2 restart salfanet-cron --update-env >> "$LOG_FILE" 2>&1 || true
 pm2 save >> "$LOG_FILE" 2>&1
 log "PM2 restart OK"
 
+# Backend memory limit in the installed ecosystem.config.js.
+if [ -f "${appDir}/deploy/fix-pm2-limits.sh" ]; then
+  APP_DIR="${appDir}" bash "${appDir}/deploy/fix-pm2-limits.sh" --apply >> "$LOG_FILE" 2>&1 || true
+fi
+
 # FreeRADIUS fixes that only new installs get from the installer.
 if [ -f "${appDir}/deploy/freeradius/fix-runtime-config.sh" ]; then
   bash "${appDir}/deploy/freeradius/fix-runtime-config.sh" >> "$LOG_FILE" 2>&1 || true

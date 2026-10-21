@@ -137,6 +137,10 @@ if [ -f "${APP_DIR}/production/ecosystem.config.js" ]; then
     echo "[>] ecosystem.config.js refreshed from production/"
 fi
 
+# Backend memory limit in the installed ecosystem.config.js (applied by the
+# re-registration below).
+[ -f "${APP_DIR}/deploy/fix-pm2-limits.sh" ] && APP_DIR="${APP_DIR}" bash "${APP_DIR}/deploy/fix-pm2-limits.sh" || true
+
 # Restart PM2 as the app user.
 # NOTE: `pm2 reload/restart --update-env` is NOT reliable for picking up
 # changed .env values (DATABASE_URL, NEXTAUTH_SECRET, etc). Those are read
