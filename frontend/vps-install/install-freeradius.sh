@@ -160,8 +160,9 @@ restore_from_backup() {
     if [ -f "$FR_BACKUP_DIR/mods-available/rest" ]; then
         cp "$FR_BACKUP_DIR/mods-available/rest" ${FR_CONFIG_DIR}/mods-available/rest
         remove_bom ${FR_CONFIG_DIR}/mods-available/rest
-        # Update connect_uri to local app
-        sed -i 's|connect_uri = .*|connect_uri = "http://localhost:3000"|' ${FR_CONFIG_DIR}/mods-available/rest
+        # The radius API is on the backend (port 3001); the frontend (3000)
+        # has no /api/radius routes and answers every call with a 404 page.
+        sed -i 's|connect_uri = .*|connect_uri = "http://localhost:3001"|' ${FR_CONFIG_DIR}/mods-available/rest
         rm -f ${FR_CONFIG_DIR}/mods-enabled/rest
         ln -sf ${FR_CONFIG_DIR}/mods-available/rest ${FR_CONFIG_DIR}/mods-enabled/rest
         print_success "REST module restored (real-time accounting → Redis)"
@@ -218,7 +219,9 @@ sql {
         spare = 3
         uses = 0
         retry_delay = 30
-        lifetime = 0
+        # Renew connections well before MySQL's wait_timeout (8 h) closes
+        # them; a closed one made the next login fail with error 4031.
+        lifetime = 3600
         idle_timeout = 60
     }
 
@@ -245,8 +248,8 @@ rest {
         check_cert_cn = no
     }
 
-    # Base URI of the Next.js app
-    connect_uri = "http://localhost:3000"
+    # Backend API (port 3001), where /api/radius/* lives
+    connect_uri = "http://localhost:3001"
 
     # Authorize: check user/voucher status BEFORE authentication
     # Returns Auth-Type=Reject + Reply-Message if expired/blocked
@@ -717,7 +720,7 @@ install_freeradius() {
     echo "  Accounting Port: 1813/UDP"
     echo "  CoA Port: 3799/UDP"
     echo "  SQL Module: Enabled (${DB_NAME})"
-    echo "  REST API: Enabled (http://localhost:3000)"
+    echo "  REST API: Enabled (http://localhost:3001)"
     echo "  MS-CHAPv2: Enabled (OpenSSL legacy provider / MD4)"
     echo ""
     print_info "Debug mode: freeradius -X"

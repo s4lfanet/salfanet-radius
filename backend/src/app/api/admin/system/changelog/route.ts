@@ -318,6 +318,11 @@ pm2 restart salfanet-cron --update-env >> "$LOG_FILE" 2>&1 || true
 pm2 save >> "$LOG_FILE" 2>&1
 log "PM2 restart OK"
 
+# FreeRADIUS fixes that only new installs get from the installer.
+if [ -f "${appDir}/deploy/freeradius/fix-runtime-config.sh" ]; then
+  bash "${appDir}/deploy/freeradius/fix-runtime-config.sh" >> "$LOG_FILE" 2>&1 || true
+fi
+
 # Done
 NEW_COMMIT=$(git rev-parse --short HEAD)
 write_status '{"phase":"done","step":"Complete","newCommit":"'"$NEW_COMMIT"'","finishedAt":'$(date +%s)'}'
