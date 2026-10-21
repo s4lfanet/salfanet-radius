@@ -782,13 +782,6 @@ export const GUIDES: PageGuide[] = [
     steps: ['Klik Create Pool dan isi rentang IP.', 'Klik Map Group untuk menghubungkan pool ke group paket.'],
     notes: ['Tidak wajib bila IP pelanggan sudah diatur oleh pool di MikroTik.'],
   },
-  {
-    path: '/admin/data-usage',
-    title: 'Pemakaian Data',
-    section: S.network,
-    summary: 'Pemakaian bandwidth per pelanggan dari data accounting RADIUS, direkap harian pukul 00:05.',
-    steps: ['Pilih periode dan jumlah pelanggan teratas.', 'Klik Aggregate untuk merekap sekarang tanpa menunggu jadwal.'],
-  },
 
   // Infrastruktur
   {
