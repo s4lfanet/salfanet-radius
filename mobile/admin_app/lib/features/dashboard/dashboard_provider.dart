@@ -15,6 +15,9 @@ class DashboardProvider extends ChangeNotifier {
   /// Ledger income vs expense for the last six months, oldest first.
   List<Map<String, dynamic>> incomeExpense = const [];
 
+  /// Bank transfers waiting for a staff check; null when the list could not be read.
+  int? pendingManualPayments;
+
   /// `yyyy-MM`, or null for the current month.
   String? month;
   bool loading = false;
@@ -38,6 +41,7 @@ class DashboardProvider extends ChangeNotifier {
         _optional(() => ApiClient.instance.get('/api/dashboard/payment-activity', query: {'limit': 5})),
         _optional(() => ApiClient.instance.get('/api/dashboard/new-customers', query: q)),
         _optional(() => ApiClient.instance.get('/api/dashboard/analytics', query: {'type': 'financial'})),
+        _optional(() => ApiClient.instance.get('/api/manual-payments', query: {'status': 'PENDING'})),
       ]);
       final res = results[0];
       if (res is Map<String, dynamic>) {
@@ -51,6 +55,8 @@ class DashboardProvider extends ChangeNotifier {
       final data = analytics is Map ? analytics['data'] : null;
       final financial = data is Map ? data['financial'] : null;
       incomeExpense = _list(financial, 'incomeExpense');
+      final manual = results[5];
+      pendingManualPayments = manual is Map && manual['data'] is List ? (manual['data'] as List).length : null;
     } on ApiException catch (e) {
       error = e.message;
     } finally {

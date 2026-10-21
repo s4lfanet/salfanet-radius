@@ -161,7 +161,7 @@ class MoreMenuScreen extends StatelessWidget {
       'Komunikasi',
       [
         _Entry(Icons.campaign_rounded, 'Broadcast Notifikasi', 'Push ke aplikasi pelanggan', Tone.primary, (_) => const PushBroadcastScreen()),
-        _Entry(Icons.chat_rounded, 'Kirim WhatsApp', 'Pesan tunggal atau broadcast', Tone.success, (_) => const _WhatsappSendScreen()),
+        _Entry(Icons.chat_rounded, 'Kirim WhatsApp', 'Pesan tunggal atau broadcast', Tone.success, (_) => const WhatsappSendScreen()),
         _Entry(Icons.hub_rounded, 'Provider WhatsApp', 'Gateway, QR, tes kirim', Tone.success, _crud(whatsappProvidersConfig)),
         _Entry(Icons.text_snippet_rounded, 'Template WhatsApp', 'Isi pesan otomatis', Tone.success, _crud(whatsappTemplatesConfig)),
         _Entry(Icons.alarm_rounded, 'Pengingat & OTP', 'Jadwal pengingat tagihan WhatsApp', Tone.success, _settings(whatsappReminderSettings)),
@@ -354,8 +354,8 @@ class _Row extends StatelessWidget {
 }
 
 /// Entry point for the web "Kirim WhatsApp" page: single or broadcast.
-class _WhatsappSendScreen extends StatelessWidget {
-  const _WhatsappSendScreen();
+class WhatsappSendScreen extends StatelessWidget {
+  const WhatsappSendScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/crud/crud_list_screen.dart';
+import '../../core/forms/form_screen.dart';
 import '../../core/formatters.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/entity_tile.dart';
@@ -13,16 +14,22 @@ import '../auth/auth_provider.dart';
 import '../invoices/invoice_list_screen.dart';
 import '../invoices/invoice_provider.dart';
 import '../keuangan/keuangan_screen.dart';
+import '../manual_payments/manual_payment_list_screen.dart';
+import '../more/more_menu_screen.dart' show WhatsappSendScreen;
+import '../network_map/network_map_screen.dart';
 import '../notifications/notifications_provider.dart';
 import '../notifications/notifications_screen.dart';
 import '../pppoe/pppoe_detail_screen.dart';
 import '../pppoe/pppoe_list_screen.dart';
 import '../pppoe/pppoe_provider.dart';
+import '../pppoe/pppoe_user_form.dart';
+import '../qris_cashier/qris_cashier_screen.dart';
 import '../registrations/registration_list_screen.dart';
 import '../reports/report_screens.dart';
 import '../resources/hotspot_resources.dart';
 import '../resources/radius_resources.dart';
 import '../sessions/session_list_screen.dart';
+import '../tickets/ticket_list_screen.dart';
 import 'dashboard_provider.dart';
 import '../../core/guides/guides.dart';
 
@@ -52,6 +59,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _open(Widget screen) => Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
+
+  /// Opens a screen with the web page it mirrors, for its Panduan button.
+  void _openGuided(String path, Widget screen) => _open(GuideScope(path: path, child: screen));
+
+  Future<void> _newCustomer() async {
+    if (await openCreateCustomer(context) && mounted) _refresh();
+  }
+
+  /// The voucher form straight away; after generating, the voucher list,
+  /// where the new batch can be shared or printed.
+  Future<void> _newVouchers() async {
+    final c = vouchersConfig();
+    final saved = await openForm(context, title: c.createLabel ?? 'Buat Voucher', fields: c.fields!(null), onSubmit: c.create!, success: 'Voucher dibuat.');
+    if (saved && mounted) _openGuided('/admin/hotspot/voucher', CrudListScreen(config: vouchersConfig()));
+  }
 
   // Lists opened from here get their own provider so a filter set from the
   // dashboard doesn't leak into the Pelanggan / Tagihan tabs.
@@ -124,7 +146,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         const SizedBox(height: Gap.lg),
 
-        _RevenueHero(stats: s, onTap: () => _open(const KeuanganScreen())),
+        _QuickActions(
+          actions: [
+            _Quick(Icons.person_add_alt_1_rounded, Tone.primary, 'Pelanggan Baru', _newCustomer),
+            _Quick(Icons.confirmation_number_rounded, Tone.violet, 'Buat Voucher', _newVouchers),
+            _Quick(Icons.qr_code_2_rounded, Tone.success, 'Kasir QRIS', () => _open(const QrisCashierScreen())),
+            _Quick(Icons.fact_check_rounded, Tone.warning, 'Cek Transfer', () => _openGuided('/admin/manual-payments', const ManualPaymentListScreen())),
+            _Quick(Icons.wifi_tethering_rounded, Tone.accent, 'Sesi Online', () => _openGuided('/admin/sessions/pppoe', const SessionListScreen())),
+            _Quick(Icons.support_agent_rounded, Tone.danger, 'Tiket', () => _openGuided('/admin/tickets', const TicketListScreen())),
+            _Quick(Icons.chat_rounded, Tone.success, 'Kirim WhatsApp', () => _openGuided('/admin/settings/whatsapp', const WhatsappSendScreen())),
+            _Quick(Icons.map_rounded, Tone.primary, 'Peta Jaringan', () => _openGuided('/admin/network/map', const NetworkMapScreen())),
+          ],
+        ),
         const SizedBox(height: Gap.xl),
 
         const SectionHeader('Perlu Tindakan'),
@@ -157,8 +190,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
               count: s.isolatedCount,
               onTap: () => _open(CrudListScreen(config: isolatedUsersConfig())),
             ),
+            if (dash.pendingManualPayments != null)
+              _ActionRow(
+                icon: Icons.fact_check_rounded,
+                tone: Tone.success,
+                label: 'Transfer menunggu dicek',
+                hint: 'Bukti transfer dari pelanggan',
+                count: dash.pendingManualPayments!,
+                onTap: () => _openGuided('/admin/manual-payments', const ManualPaymentListScreen()),
+              ),
           ],
         ),
+
+        const SizedBox(height: Gap.xl),
+        _RevenueHero(stats: s, onTap: () => _open(const KeuanganScreen())),
 
         if (upcoming.isNotEmpty) ...[
           const SizedBox(height: Gap.xl),
@@ -334,6 +379,81 @@ class _MonthPicker extends StatelessWidget {
             const SizedBox(width: 2),
             Icon(Icons.expand_more_rounded, size: 20, color: context.colors.onSurfaceVariant),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Quick {
+  const _Quick(this.icon, this.tone, this.label, this.onTap);
+  final IconData icon;
+  final Tone tone;
+  final String label;
+  final VoidCallback onTap;
+}
+
+/// Aksi Cepat: the tasks staff open many times a day that are not already
+/// a bottom tab, one tap each. Same tinted icon tile as the Lainnya menu.
+class _QuickActions extends StatelessWidget {
+  const _QuickActions({required this.actions});
+  final List<_Quick> actions;
+
+  static const _columns = 4;
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = <List<_Quick>>[
+      for (var i = 0; i < actions.length; i += _columns) actions.sublist(i, (i + _columns).clamp(0, actions.length)),
+    ];
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: Gap.xs, vertical: Gap.sm),
+        child: Column(
+          children: [
+            for (final row in rows)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (var i = 0; i < _columns; i++)
+                    Expanded(child: i < row.length ? _QuickButton(action: row[i]) : const SizedBox.shrink()),
+                ],
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickButton extends StatelessWidget {
+  const _QuickButton({required this.action});
+  final _Quick action;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: action.label,
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: action.onTap,
+        borderRadius: BorderRadius.circular(AppTheme.radiusControl),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: Gap.sm),
+          child: Column(
+            children: [
+              RoleIconTile(icon: action.icon, color: context.tone(action.tone), size: 44),
+              const SizedBox(height: 6),
+              Text(
+                action.label,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, height: 1.25),
+              ),
+            ],
+          ),
         ),
       ),
     );
