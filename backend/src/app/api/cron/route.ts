@@ -197,6 +197,9 @@ export async function POST(request: NextRequest) {
         case 'cron_history_cleanup':
           result = await runCronHistoryCleanup()
           break
+        case 'radpostauth_cleanup':
+          result = await runRadpostauthCleanup()
+          break
         case 'freeradius_health':
           result = await runFreeradiusHealth()
           break
@@ -322,6 +325,26 @@ async function runCronHistoryCleanup() {
     await new Promise((r) => setTimeout(r, 200))
   }
   return { deleted: totalDeleted }
+}
+
+/**
+ * FreeRADIUS logs every Access-Accept and Access-Reject to radpostauth and
+ * nothing removed them: a router retrying unknown usernames adds tens of
+ * thousands of rows a day. Keeps 30 days. authdate is FreeRADIUS's local
+ * wall-clock time, so it is compared with MySQL's NOW(), not a JS date.
+ */
+async function runRadpostauthCleanup() {
+  let totalDeleted = 0
+  const BATCH_SIZE = 10000
+  for (let i = 0; i < 300; i++) { // safety cap: 3M rows per run
+    const affected = Number(await prisma.$executeRaw`
+      DELETE FROM radpostauth WHERE authdate < NOW() - INTERVAL 30 DAY LIMIT ${BATCH_SIZE}
+    `)
+    totalDeleted += affected
+    if (affected < BATCH_SIZE) break
+    await new Promise((r) => setTimeout(r, 200))
+  }
+  return { deleted: totalDeleted, keptDays: 30 }
 }
 
 async function runFreeradiusHealth() {
