@@ -12,6 +12,7 @@ import '../auth/auth_provider.dart';
 import 'ticket_list_screen.dart' show ticketStatusOptions, priorityTone, priorityLabel;
 import 'ticket_provider.dart';
 import 'ticket_tools.dart';
+import '../../core/guides/guides.dart';
 
 class TicketDetailScreen extends StatefulWidget {
   const TicketDetailScreen({super.key, required this.ticket});
@@ -73,6 +74,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
         appBar: AppBar(
           title: Text('Tiket #${t.ticketNumber}'),
           actions: [
+            const GuideAction(),
             IconButton(
               tooltip: 'Edit',
               icon: const Icon(Icons.edit_rounded),

@@ -9,6 +9,7 @@ import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
 import '../pppoe/pppoe_detail_screen.dart';
+import '../../core/guides/guides.dart';
 
 class ReferralListScreen extends StatefulWidget {
   const ReferralListScreen({super.key});
@@ -129,7 +130,7 @@ class _ReferralListScreenState extends State<ReferralListScreen> {
   Widget build(BuildContext context) {
     final s = _stats;
     return Scaffold(
-      appBar: AppBar(title: const Text('Ajak Teman')),
+      appBar: AppBar(title: const Text('Ajak Teman'), actions: const [GuideAction()]),
       body: Column(
         children: [
           if (s != null)

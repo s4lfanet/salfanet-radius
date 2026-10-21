@@ -14,6 +14,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/detail.dart';
 import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/entity_tile.dart';
+import '../../core/guides/guides.dart';
 
 final _api = ApiClient.instance;
 
@@ -443,7 +444,7 @@ class _AgentHistoryScreenState extends State<AgentHistoryScreen> {
   Widget build(BuildContext context) {
     final list = extractList(_data, listKey: 'sales');
     return Scaffold(
-      appBar: AppBar(title: Text('Penjualan ${widget.agent['name'] ?? ''}')),
+      appBar: AppBar(title: Text('Penjualan ${widget.agent['name'] ?? ''}'), actions: const [GuideAction()]),
       body: ListView(
         padding: EdgeInsets.fromLTRB(Gap.page, Gap.sm, Gap.page, listBottomPadding(context)),
         children: [

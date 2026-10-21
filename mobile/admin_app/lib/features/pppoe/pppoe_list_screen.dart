@@ -13,6 +13,7 @@ import 'pppoe_bulk.dart';
 import 'pppoe_detail_screen.dart';
 import 'pppoe_provider.dart';
 import 'pppoe_user_form.dart';
+import '../../core/guides/guides.dart';
 
 class PppoeListScreen extends StatefulWidget {
   const PppoeListScreen({super.key, this.initialStatus});
@@ -83,6 +84,7 @@ class _PppoeListScreenState extends State<PppoeListScreen> {
         leading: IconButton(icon: const Icon(Icons.close_rounded), onPressed: () => setState(_selected.clear)),
         title: Text('${_selected.length} dipilih'),
         actions: [
+          const GuideAction(),
           IconButton(
             tooltip: 'Pilih semua yang tampil',
             icon: const Icon(Icons.select_all_rounded),
@@ -108,6 +110,7 @@ class _PppoeListScreenState extends State<PppoeListScreen> {
     return AppBar(
       title: Text(p.total > 0 ? 'Pelanggan (${p.total})' : 'Pelanggan'),
       actions: [
+        const GuideAction(),
         PopupMenuButton<String>(
           tooltip: 'Alat',
           onSelected: _tool,

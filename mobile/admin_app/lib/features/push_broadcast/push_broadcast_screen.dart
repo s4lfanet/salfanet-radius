@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/detail.dart';
 import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/entity_tile.dart';
+import '../../core/guides/guides.dart';
 
 /// Push broadcast to customers (fans out to both web push and the customer
 /// app's FCM tokens on the backend), with the same targeting the web push
@@ -122,7 +123,7 @@ class _PushBroadcastScreenState extends State<PushBroadcastScreen> {
   Widget build(BuildContext context) {
     final reach = _stats == null ? null : numOf(_stats, 'customersReachable');
     return Scaffold(
-      appBar: AppBar(title: const Text('Broadcast Notifikasi')),
+      appBar: AppBar(title: const Text('Broadcast Notifikasi'), actions: const [GuideAction()]),
       bottomNavigationBar: ActionBar(actions: [ActionSpec('Kirim Notifikasi', Icons.send_rounded, _send, busy: _sending)]),
       body: RefreshIndicator(
         onRefresh: _load,

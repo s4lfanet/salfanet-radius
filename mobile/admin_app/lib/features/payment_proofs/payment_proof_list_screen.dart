@@ -7,6 +7,7 @@ import '../../core/widgets/detail.dart';
 import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
+import '../../core/guides/guides.dart';
 
 /// Proof photos collectors upload after collecting in the field — distinct
 /// from Pembayaran Manual (customer self-submitted transfers). The API only
@@ -120,7 +121,7 @@ class _PaymentProofListScreenState extends State<PaymentProofListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Bukti Pembayaran Kolektor')),
+      appBar: AppBar(title: const Text('Bukti Pembayaran Kolektor'), actions: const [GuideAction()]),
       body: Column(
         children: [
           FilterChipRow(

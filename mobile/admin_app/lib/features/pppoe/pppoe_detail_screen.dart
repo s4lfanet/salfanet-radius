@@ -13,6 +13,7 @@ import '../../models/pppoe_user.dart';
 import '../invoices/invoice_detail_screen.dart';
 import 'online_status.dart';
 import 'pppoe_user_form.dart';
+import '../../core/guides/guides.dart';
 
 /// Mirrors the web panel's customer detail (admin/pppoe/users/[id]): full
 /// field set, active session, invoice history and session history, plus the
@@ -219,6 +220,7 @@ class _PppoeDetailScreenState extends State<PppoeDetailScreen> {
       appBar: AppBar(
         title: const Text('Detail Pelanggan'),
         actions: [
+          const GuideAction(),
           if (u != null)
             IconButton(tooltip: 'Edit', icon: const Icon(Icons.edit_rounded), onPressed: _acting ? null : () => _after(openEditCustomer(context, _raw!))),
           if (u != null)

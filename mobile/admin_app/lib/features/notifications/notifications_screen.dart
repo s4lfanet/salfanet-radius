@@ -25,6 +25,7 @@ import '../tickets/ticket_detail_screen.dart';
 import '../tickets/ticket_list_screen.dart';
 import '../tickets/ticket_provider.dart';
 import 'notifications_provider.dart';
+import '../../core/guides/guides.dart';
 
 const _typeIcons = <String, IconData>{
   'invoice_overdue': Icons.receipt_long_rounded,
@@ -127,6 +128,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       appBar: AppBar(
         title: const Text('Notifikasi'),
         actions: [
+          const GuideAction(),
           if (p.unreadCount > 0) TextButton(onPressed: p.markAllRead, child: const Text('Tandai dibaca')),
           if (p.notifications.any((n) => n['isRead'] == true))
             IconButton(

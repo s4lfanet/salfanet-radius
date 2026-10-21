@@ -10,6 +10,7 @@ import 'ticket_detail_screen.dart';
 import '../../core/crud/crud_list_screen.dart';
 import 'ticket_provider.dart';
 import 'ticket_tools.dart';
+import '../../core/guides/guides.dart';
 
 const ticketStatusOptions = [
   ('OPEN', 'Baru'),
@@ -54,6 +55,7 @@ class _View extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Tiket Bantuan'),
         actions: [
+          const GuideAction(),
           IconButton(tooltip: 'Kategori tiket', icon: const Icon(Icons.label_rounded), onPressed: () => CrudListScreen.open(context, ticketCategoriesConfig())),
         ],
       ),

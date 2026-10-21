@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import '../theme/app_theme.dart';
 import 'detail.dart';
 import 'entity_tile.dart';
+import '../guides/guides.dart';
 
 /// Shows what a server action produced — credentials, generated RouterOS
 /// scripts, command output — with copy/share, so staff can paste it into
@@ -60,7 +61,7 @@ class _ResultScreen extends StatelessWidget {
     ];
     final rows = _flat.entries.where((e) => e.value != null && '${e.value}'.isNotEmpty).toList();
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      appBar: AppBar(title: Text(title), actions: const [GuideAction()]),
       body: ListView(
         padding: EdgeInsets.fromLTRB(Gap.page, Gap.sm, Gap.page, listBottomPadding(context)),
         children: [

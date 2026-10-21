@@ -9,6 +9,7 @@ import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
 import '../pppoe/pppoe_detail_screen.dart';
 import 'suspend_request_provider.dart';
+import '../../core/guides/guides.dart';
 
 /// Customer-initiated temporary suspensions (e.g. holiday hold). Approving
 /// sets the account to "stopped" from the start date; the existing cron
@@ -103,7 +104,7 @@ class _View extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.watch<SuspendRequestProvider>();
     return Scaffold(
-      appBar: AppBar(title: const Text('Permintaan Suspend')),
+      appBar: AppBar(title: const Text('Permintaan Suspend'), actions: const [GuideAction()]),
       body: Column(
         children: [
           FilterChipRow(

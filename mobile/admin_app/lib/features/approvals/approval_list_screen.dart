@@ -9,6 +9,7 @@ import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
 import 'approval_provider.dart';
+import '../../core/guides/guides.dart';
 
 /// Self-registered PPPoE accounts (approvalStatus = pending) that need a
 /// staff check before they can connect.
@@ -93,7 +94,7 @@ class _View extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.watch<ApprovalProvider>();
     return Scaffold(
-      appBar: AppBar(title: const Text('Persetujuan Pendaftaran')),
+      appBar: AppBar(title: const Text('Persetujuan Pendaftaran'), actions: const [GuideAction()]),
       body: DataStateView(
         loading: p.loading,
         error: p.error,

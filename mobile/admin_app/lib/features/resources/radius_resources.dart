@@ -12,6 +12,7 @@ import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/result_screen.dart';
 import '../../core/widgets/state_views.dart';
+import '../../core/guides/guides.dart';
 
 final _api = ApiClient.instance;
 Json _map(dynamic res) => res is Map ? res.cast<String, dynamic>() : <String, dynamic>{};
@@ -77,7 +78,7 @@ class _FreeradiusScreenState extends State<FreeradiusScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('FreeRADIUS'),
-        actions: [IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _load)],
+        actions: [const GuideAction(), IconButton(icon: const Icon(Icons.refresh_rounded), onPressed: _load)],
       ),
       body: s == null
           ? (_error != null ? ErrorView(message: _error!, onRetry: _load) : const LoadingView())
@@ -296,7 +297,7 @@ class _RadiusConfigFilesScreenState extends State<RadiusConfigFilesScreen> {
   Widget build(BuildContext context) {
     final groups = _groups;
     return Scaffold(
-      appBar: AppBar(title: const Text('Konfigurasi FreeRADIUS')),
+      appBar: AppBar(title: const Text('Konfigurasi FreeRADIUS'), actions: const [GuideAction()]),
       body: groups == null
           ? (_error != null ? ErrorView(message: _error!, onRetry: _load) : const LoadingView())
           : ListView(

@@ -14,6 +14,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/detail.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
+import '../../core/guides/guides.dart';
 
 /// Ledger: income/expense per period with add, edit, delete, categories
 /// and export — the web Keuangan page.
@@ -184,6 +185,7 @@ class _KeuanganScreenState extends State<KeuanganScreen> {
       appBar: AppBar(
         title: const Text('Keuangan'),
         actions: [
+          const GuideAction(),
           PopupMenuButton<String>(
             tooltip: 'Jenis transaksi',
             icon: Icon(Icons.filter_list_rounded, color: _type == 'all' ? null : context.colors.primary),
