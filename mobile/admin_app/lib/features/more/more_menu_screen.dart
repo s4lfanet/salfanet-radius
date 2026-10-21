@@ -101,7 +101,6 @@ class MoreMenuScreen extends StatelessWidget {
         _Entry(Icons.summarize_rounded, 'Laporan', 'Tagihan, pembayaran, pelanggan, per paket', Tone.primary, (_) => const LaporanScreen()),
         _Entry(Icons.receipt_long_rounded, 'Rekap Voucher', 'Penjualan voucher per batch', Tone.violet, (_) => const RekapVoucherScreen()),
         _Entry(Icons.leaderboard_rounded, 'Laporan Agent', 'Penjualan, komisi, stok per agent', Tone.accent, (_) => const AgentReportScreen()),
-        _Entry(Icons.data_usage_rounded, 'Pemakaian Data', 'Bandwidth per pelanggan', Tone.accent, (_) => const DataUsageScreen()),
       ],
     ),
     (

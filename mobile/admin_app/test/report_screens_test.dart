@@ -117,28 +117,6 @@ class _Fixtures implements HttpClientAdapter {
         {'id': 'a1', 'name': _long},
       ],
     },
-    '/api/admin/data-usage/top' => {
-      'success': true,
-      'data': {
-        'period_days': 30,
-        'total_users': 1,
-        'top_consumers': [
-          {'username': 'pelanggan-dengan-username-yang-sangat-panjang', 'upload_gb': '12.345', 'download_gb': '345.678', 'total_gb': '358.023'},
-        ],
-      },
-    },
-    '/api/admin/data-usage/monthly' => {
-      'success': true,
-      'data': {
-        'period': '2026-09',
-        'total_users': 1,
-        'total_upload_gb': '12.345',
-        'total_download_gb': '345.678',
-        'users': [
-          {'username': 'pelanggan01', 'upload_gb': '12.345', 'download_gb': '345.678', 'total_gb': '358.023', 'periods': 30},
-        ],
-      },
-    },
     '/api/admin/isolated-users' => {
       'success': true,
       'data': [
@@ -269,20 +247,6 @@ void main() {
         await openFirstTileAndClose(tester, find.text('30 terjual · stok 20'), 'Voucher di periode ini');
         await tapChip(tester, 'Bulan lalu');
         expect(fixtures.requests.last.queryParameters['type'], 'monthly');
-      });
-
-      testWidgets('Pemakaian Data top and monthly views at $label', (tester) async {
-        await pump(tester, const DataUsageScreen(), theme.value, width);
-        expect(find.text('358.023 GB'), findsOneWidget);
-        await tapChip(tester, 'Bulan lalu');
-        final q = fixtures.requests.last;
-        expect(q.path, '/api/admin/data-usage/monthly');
-        // Zero-based month, as the route expects.
-        final now = DateTime.now();
-        final last = DateTime(now.year, now.month - 1);
-        expect(q.queryParameters['month'], '${last.month - 1}');
-        expect(find.text('Hari tercatat'), findsNothing);
-        await openFirstTileAndClose(tester, find.text('pelanggan01'), 'Hari tercatat');
       });
 
       testWidgets('Pelanggan Terisolir list, filter and detail at $label', (tester) async {
