@@ -6,11 +6,12 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useSession, signOut, SessionProvider } from 'next-auth/react';
 import { useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
-import { LayoutDashboard, Users, Wrench, Wifi, Receipt, CreditCard, Wallet, Clock, MessageSquare, Settings, Menu, X, ChevronDown, Shield, LogOut, Router, AlertTriangle, Timer, Server, Bell, UserCheck, Sun, Moon, Gift, Globe, BarChart3, FileText, Activity, Cable, GitBranch, Mail, MessageCircle, Send, Inbox, TrendingDown } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Users, Wrench, Wifi, Receipt, CreditCard, Wallet, Clock, MessageSquare, Settings, Menu, X, ChevronDown, Shield, LogOut, Router, AlertTriangle, Timer, Server, Bell, UserCheck, Sun, Moon, Gift, Globe, BarChart3, FileText, Activity, Cable, GitBranch, Mail, MessageCircle, Send, Inbox, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiAdmin, onUnauthorized } from '@/lib/api';
 import { useAppStore } from '@/lib/store';
 import NotificationDropdown from '@/components/NotificationDropdown';
+import { PageGuideButton } from '@/components/admin/PageGuide';
 import { AdminLoadingGlow } from '@/components/AdminBackgroundGlow';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -42,6 +43,13 @@ const dashboardMenuItem: MenuItem = {
   icon: <LayoutDashboard className="w-4 h-4" />,
   href: '/admin',
   requiredPermission: 'dashboard.view',
+};
+
+// First-time setup order and every page's guide; open to all admins.
+const guideMenuItem: MenuItem = {
+  titleKey: 'nav.guideCenter',
+  icon: <BookOpen className="w-4 h-4" />,
+  href: '/admin/panduan',
 };
 
 const menuGroups: MenuGroup[] = [
@@ -997,6 +1005,14 @@ function AdminLayoutContent({
                 t={t}
                 onNavigate={() => setSidebarOpen(false)}
               />
+              <NavItem
+                item={guideMenuItem}
+                pendingCount={pendingRegistrations}
+                manualPaymentsCount={pendingManualPayments}
+                unreadNotifications={unreadNotifications}
+                t={t}
+                onNavigate={() => setSidebarOpen(false)}
+              />
             </div>
             {menuGroups.map(group => (
               <CategoryItem
@@ -1101,6 +1117,7 @@ function AdminLayoutContent({
                   </span>
                 </div>
               )}
+              <PageGuideButton />
               <button
                 onClick={toggleTheme}
                 className="p-2 rounded-lg hover:bg-primary/20 text-muted-foreground hover:text-primary transition-colors border border-transparent hover:border-primary/30"
