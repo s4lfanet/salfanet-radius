@@ -74,6 +74,8 @@ class _Fixtures implements HttpClientAdapter {
   Object _body(String path) {
     path = path.split('?').first;
     switch (path) {
+      case '/api/manual-payments':
+        return {'success': true, 'data': [{'id': 'm1'}, {'id': 'm2'}]};
       case '/api/network/olts':
         return {'success': true, 'olts': [{'id': 'olt1', 'name': 'OLT Pusat Huawei MA5608T', 'ipAddress': '10.0.0.2', 'latitude': -6.2000, 'longitude': 106.8166, 'status': 'active', 'vendor': 'huawei', 'onlineOnu': 182, 'offlineOnu': 3}]};
       case '/api/network/odcs':
