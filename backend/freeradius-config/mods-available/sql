@@ -38,7 +38,9 @@ sql {
         spare = 3
         uses = 0
         retry_delay = 30
-        lifetime = 0
+        # Renew connections well before MySQL's wait_timeout (8 h) closes
+        # them; a closed one made the next login fail with error 4031.
+        lifetime = 3600
         idle_timeout = 60
     }
 

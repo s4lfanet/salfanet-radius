@@ -152,6 +152,9 @@ echo "[>] Restarting application..."
 sudo su - ${APP_USER} -c "cd ${APP_DIR} && pm2 delete salfanet-backend salfanet-frontend >/dev/null 2>&1; pm2 start ${APP_DIR}/ecosystem.config.js --only salfanet-backend,salfanet-frontend"
 sudo su - ${APP_USER} -c 'pm2 save'
 
+# FreeRADIUS fixes that only new installs get from the installer.
+[ -f "${APP_DIR}/deploy/freeradius/fix-runtime-config.sh" ] && bash "${APP_DIR}/deploy/freeradius/fix-runtime-config.sh" || true
+
 echo "[OK] Deployment completed!"
 echo ">> Note: PM2 runs 4 processes: salfanet-frontend, salfanet-backend, salfanet-cron, salfanet-wa."
 echo ""
