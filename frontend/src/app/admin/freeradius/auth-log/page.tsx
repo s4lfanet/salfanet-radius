@@ -69,11 +69,18 @@ export default function RadiusAuthLogPage() {
     <div className="p-4 md:p-6 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="w-5 h-5 text-brand-500" />
-          <h1 className="text-lg font-semibold text-foreground">
-            {t('dashboard.radiusAuthLog') || 'Log Autentikasi RADIUS'}
-          </h1>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5 text-brand-500" />
+            <h1 className="text-lg font-semibold text-foreground">
+              {t('dashboard.radiusAuthLog') || 'Log Autentikasi RADIUS'}
+            </h1>
+          </div>
+          <p className="mt-1 max-w-3xl text-xs leading-relaxed text-muted-foreground">
+            Login yang diperiksa FreeRADIUS saja. Voucher hotspot dan PPPoE yang diautentikasi langsung oleh MikroTik
+            (user hotspot atau secret PPP lokal di router) tidak tercatat di sini; sesinya tetap terlihat di menu Sesi.
+            Log disimpan 30 hari.
+          </p>
         </div>
         <button
           onClick={handleRefresh}

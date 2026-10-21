@@ -752,8 +752,15 @@ export const GUIDES: PageGuide[] = [
     path: '/admin/freeradius/auth-log',
     title: 'Log Autentikasi',
     section: S.network,
-    summary: 'Riwayat login diterima (Access-Accept) dan ditolak (Access-Reject) per username.',
-    steps: ['Cari username pelanggan yang mengeluh tidak bisa konek.', 'Banyak Reject biasanya berarti password di ONT berbeda dengan di billing.'],
+    summary: 'Riwayat login diterima (Access-Accept) dan ditolak (Access-Reject) per username, untuk login yang diperiksa FreeRADIUS.',
+    steps: [
+      'Cari username pelanggan yang mengeluh tidak bisa konek.',
+      'Banyak Reject biasanya berarti password di ONT berbeda dengan di billing, atau username belum ada di billing.',
+    ],
+    notes: [
+      'Voucher hotspot dan PPPoE yang diautentikasi langsung oleh MikroTik (user hotspot atau secret PPP lokal di router) tidak tercatat di sini. Sesinya tetap terlihat di menu Sesi.',
+      'Log lebih tua dari 30 hari dihapus otomatis oleh job RADIUS Auth Log Cleanup.',
+    ],
   },
   {
     path: '/admin/freeradius/backup',
