@@ -55,9 +55,9 @@ export function PageHeader({ title, description, actions }: { title: string; des
   return (
     <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div className="min-w-0">
-        {/* On phones the top bar already carries the page title. */}
-        <h2 className="hidden lg:block text-xl font-bold tracking-tight text-foreground">{title}</h2>
-        {description && <p className="lg:mt-1 text-sm text-muted-foreground">{description}</p>}
+        {/* The top bar already shows the page title on every screen size. */}
+        <h2 className="sr-only">{title}</h2>
+        {description && <p className="text-sm text-muted-foreground">{description}</p>}
       </div>
       {actions && <div className="flex items-center gap-2">{actions}</div>}
     </div>

@@ -136,7 +136,7 @@ export default function CollectorSettlementsPage() {
   useEffect(() => { if (mode === 'range') fetchRange(); }, [mode]);
 
   return (
-    <div>
+    <div className="max-w-4xl">
       <PageHeader title="Setoran Saya" description="Tagihan yang Anda tandai lunas, per hari atau per rentang tanggal" />
 
       <div className="flex gap-2 mb-4" role="group" aria-label="Tampilan">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, Fragment } from 'react';
 import { ScopeFilter, scopeQuery, type ScopeValue } from '@/components/collector/ScopeFilter';
 import { PageHeader, StatusPill, customerStatus, chipClass, LoadingState, ErrorState, EmptyState, ui, fmtRp, toneText } from '@/components/collector/ui';
 import { apiAdmin, ApiError } from '@/lib/api/client';
@@ -364,6 +364,108 @@ export default function CollectorBillingPage() {
 
   const busy = (id: string) => actionLoading === `a4-${id}` || actionLoading === `thermal-${id}` || actionLoading === `bt-${id}`;
 
+  // "Tagih" on the Pelanggan page links here with ?q=<username>.
+  const [linkedQuery, setLinkedQuery] = useState<string | null>(null);
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('q');
+    if (q) { setSearch(q); setLinkedQuery(q); }
+  }, []);
+  // Open that customer once the list has it.
+  useEffect(() => {
+    if (!linkedQuery || loading) return;
+    const match = users.find((u) => u.username === linkedQuery);
+    if (match) setExpandedUser(match.id);
+    setLinkedQuery(null);
+  }, [linkedQuery, loading, users]);
+
+  // One customer's invoices with their actions; shared by phone cards and the desktop table.
+  const renderInvoices = (u: any) => (
+    u.invoices && u.invoices.length > 0 ? (
+      <ul className="space-y-2">
+        {u.invoices.map((inv: any) => {
+          const paid = inv.status === 'PAID';
+          return (
+            <li key={inv.id} className="rounded-xl border border-border bg-background p-3 md:flex md:items-center md:gap-4">
+              <div className="flex items-start justify-between gap-3 md:flex-1 md:min-w-0">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground">{fmtRp(inv.amount)}</p>
+                  <p className="text-xs text-muted-foreground break-words">#{inv.invoiceNumber} · jatuh tempo {fmtDate(inv.dueDate)}</p>
+                </div>
+                <StatusPill tone={paid ? 'green' : inv.status === 'OVERDUE' ? 'red' : 'amber'}>
+                  {paid ? 'Lunas' : inv.status === 'OVERDUE' ? 'Lewat tempo' : 'Belum bayar'}
+                </StatusPill>
+              </div>
+
+              {!paid ? (
+                <div className="mt-3 md:mt-0 grid grid-cols-2 gap-2 sm:flex sm:justify-end">
+                  <button type="button" onClick={() => openPromiseModal(u.id, inv.id, u.name)} className={cn(ui.btnSecondary, 'h-10 text-amber-700 dark:text-amber-400')}>
+                    <CalendarClock className="w-4 h-4" /> Janji bayar
+                  </button>
+                  <button type="button" onClick={() => openPay(inv, u, 'transfer')} className={cn(ui.btnSecondary, 'h-10')}>
+                    <Upload className="w-4 h-4" /> Transfer
+                  </button>
+                  <button type="button" onClick={() => openPay(inv, u, 'cash')} className={cn(ui.btnPrimary, 'h-10 col-span-2 sm:col-span-1')}>
+                    <Wallet className="w-4 h-4" /> Lunas tunai
+                  </button>
+                </div>
+              ) : (
+                <div className="mt-3 md:mt-0 flex flex-wrap justify-end gap-2">
+                  <div className="relative" ref={showPrintMenu === inv.id ? printMenuRef : null}>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setShowPrintMenu(showPrintMenu === inv.id ? null : inv.id); }}
+                      disabled={busy(inv.id)}
+                      aria-expanded={showPrintMenu === inv.id}
+                      className={cn(ui.btnSecondary, 'h-10')}
+                    >
+                      {busy(inv.id) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />} Cetak
+                    </button>
+                    {showPrintMenu === inv.id && (
+                      <div className="absolute right-0 bottom-full mb-1 z-20 rounded-xl border border-border bg-card py-1 min-w-[200px]" role="menu">
+                        <button type="button" role="menuitem" onClick={(e) => { e.stopPropagation(); handlePrintA4(inv.id); }} className="w-full flex items-center gap-2 h-11 px-3 text-sm text-foreground hover:bg-muted text-left">
+                          <FileText className="w-4 h-4" /> Invoice A4
+                        </button>
+                        <button type="button" role="menuitem" onClick={(e) => { e.stopPropagation(); handlePrintThermal(inv.id); }} className="w-full flex items-center gap-2 h-11 px-3 text-sm text-foreground hover:bg-muted text-left">
+                          <Printer className="w-4 h-4" /> Struk 80mm
+                        </button>
+                        <button type="button" role="menuitem" onClick={(e) => { e.stopPropagation(); handlePrintBluetooth(inv.id); }} className="w-full flex items-center gap-2 h-11 px-3 text-sm text-foreground hover:bg-muted text-left">
+                          <Bluetooth className="w-4 h-4" /> Printer Bluetooth
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); handleSendWhatsApp(inv.id, inv.invoiceNumber, u.name); }}
+                    disabled={actionLoading === `wa-${inv.id}`}
+                    className={cn(ui.btnSecondary, 'h-10')}
+                  >
+                    {actionLoading === `wa-${inv.id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />} Kirim bukti lunas
+                  </button>
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    ) : (
+      <p className="text-sm text-muted-foreground py-2">Belum ada tagihan untuk pelanggan ini.</p>
+    )
+  );
+
+  const amountCell = (u: any, align: 'left' | 'right' = 'right') => (
+    !u.is_paid ? (
+      <div className={align === 'right' ? 'text-right' : ''}>
+        <p className={cn('text-sm font-bold', toneText('red'))}>{fmtRp(u.unpaid_amount)}</p>
+        <p className="text-xs text-muted-foreground">{u.unpaid_count} tagihan</p>
+      </div>
+    ) : u.invoices?.length > 0 ? (
+      <p className={cn('text-sm font-semibold', toneText('green'))}>Lunas</p>
+    ) : (
+      <p className="text-xs text-muted-foreground">Tanpa tagihan</p>
+    )
+  );
+
   return (
     <div>
       <PageHeader
@@ -384,9 +486,8 @@ export default function CollectorBillingPage() {
         }
       />
 
-      <ScopeFilter value={scope} onChange={(v) => { setScope(v); setVisibleCount(PAGE_SIZE); }} />
-
-      <div className="relative mb-3">
+      <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-4">
+      <div className="relative lg:w-96">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
         <input
           type="search"
@@ -403,7 +504,7 @@ export default function CollectorBillingPage() {
         )}
       </div>
 
-      <div className="flex gap-2 mb-4 overflow-x-auto pb-1 -mx-4 px-4 lg:mx-0 lg:px-0" role="group" aria-label="Filter tagihan">
+      <div className="flex gap-2 overflow-x-auto pb-1 lg:pb-0 -mx-4 px-4 lg:mx-0 lg:px-0" role="group" aria-label="Filter tagihan">
         {[
           { key: 'unpaid', label: 'Belum bayar' },
           { key: 'paid', label: 'Lunas' },
@@ -414,6 +515,9 @@ export default function CollectorBillingPage() {
           </button>
         ))}
       </div>
+      </div>
+
+      <ScopeFilter value={scope} onChange={(v) => { setScope(v); setVisibleCount(PAGE_SIZE); }} />
 
       {loadError && users.length > 0 && (
         <div className={cn(ui.card, 'p-3 mb-3 flex items-center justify-between gap-3')} role="alert">
@@ -433,7 +537,73 @@ export default function CollectorBillingPage() {
       ) : (
         <>
           <p className="text-xs text-muted-foreground mb-2">{filtered.length} pelanggan</p>
-          <ul className="space-y-2">
+
+          {/* Table: tablets and up. A row opens to its invoices. */}
+          <div className={cn(ui.card, 'hidden md:block overflow-x-auto')}>
+            <table className="w-full text-sm">
+              <thead className="border-b border-border bg-muted/50 text-xs text-muted-foreground">
+                <tr>
+                  <th scope="col" className="px-3 py-2.5 text-left font-medium">Pelanggan</th>
+                  <th scope="col" className="px-3 py-2.5 text-left font-medium hidden lg:table-cell">Paket</th>
+                  <th scope="col" className="px-3 py-2.5 text-left font-medium hidden xl:table-cell">Router / Area</th>
+                  <th scope="col" className="px-3 py-2.5 text-left font-medium hidden lg:table-cell">Telepon</th>
+                  <th scope="col" className="px-3 py-2.5 text-left font-medium">Status</th>
+                  <th scope="col" className="px-3 py-2.5 text-right font-medium">Tagihan</th>
+                  <th scope="col" className="px-3 py-2.5 text-right font-medium"><span className="sr-only">Buka</span></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {visible.map(u => {
+                  const st = customerStatus(u.status);
+                  const open = expandedUser === u.id;
+                  return (
+                    <Fragment key={u.id}>
+                      <tr className={cn('align-top', open ? 'bg-muted/40' : 'hover:bg-muted/40')}>
+                        <td className="px-3 py-3 min-w-[12rem]">
+                          <p className="font-semibold text-foreground">{u.name}</p>
+                          <p className="text-xs text-muted-foreground">{u.customerId || u.username}{u.customerId ? ` · ${u.username}` : ''}</p>
+                        </td>
+                        <td className="px-3 py-3 hidden lg:table-cell">
+                          {u.profile ? <><p className="text-foreground">{u.profile.name}</p><p className="text-xs text-muted-foreground">{fmtRp(u.profile.price)}/bln</p></> : <span className="text-muted-foreground">-</span>}
+                        </td>
+                        <td className="px-3 py-3 hidden xl:table-cell">
+                          <p className="text-foreground">{u.router?.name || '-'}</p>
+                          <p className="text-xs text-muted-foreground">{u.area?.name || '-'}</p>
+                        </td>
+                        <td className="px-3 py-3 hidden lg:table-cell whitespace-nowrap">
+                          {u.phone ? <a href={`tel:${u.phone}`} className="text-blue-700 dark:text-blue-400 hover:underline">{u.phone}</a> : <span className="text-muted-foreground">-</span>}
+                        </td>
+                        <td className="px-3 py-3"><StatusPill tone={st.tone}>{st.label}</StatusPill></td>
+                        <td className="px-3 py-3 whitespace-nowrap">{amountCell(u)}</td>
+                        <td className="px-3 py-3 text-right">
+                          <button
+                            type="button"
+                            onClick={() => setExpandedUser(open ? null : u.id)}
+                            aria-expanded={open}
+                            className={cn(open ? ui.btnSecondary : ui.btnPrimary, 'h-9 px-3 text-xs')}
+                          >
+                            {open ? 'Tutup' : u.is_paid ? 'Lihat' : 'Tagih'}
+                            <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', open && 'rotate-180')} />
+                          </button>
+                        </td>
+                      </tr>
+                      {open && (
+                        <tr className="bg-muted/40">
+                          <td colSpan={7} className="px-3 pb-3">
+                            {u.address && <p className="text-xs text-muted-foreground mb-2">Alamat: <span className="text-foreground">{u.address}</span></p>}
+                            {renderInvoices(u)}
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Cards: phones */}
+          <ul className="md:hidden space-y-2">
             {visible.map(u => {
               const st = customerStatus(u.status);
               const open = expandedUser === u.id;
@@ -480,78 +650,7 @@ export default function CollectorBillingPage() {
                         {u.phone && (<div><dt className="text-muted-foreground">Telepon</dt><dd><a href={`tel:${u.phone}`} className="font-medium text-blue-700 dark:text-blue-400 inline-flex items-center gap-1"><Phone className="w-3 h-3" />{u.phone}</a></dd></div>)}
                         {u.address && (<div className="col-span-2"><dt className="text-muted-foreground">Alamat</dt><dd className="text-foreground">{u.address}</dd></div>)}
                       </dl>
-
-                      {u.invoices && u.invoices.length > 0 ? (
-                        <ul className="space-y-2">
-                          {u.invoices.map((inv: any) => {
-                            const paid = inv.status === 'PAID';
-                            return (
-                              <li key={inv.id} className="rounded-xl border border-border bg-background p-3">
-                                <div className="flex items-start justify-between gap-3">
-                                  <div className="min-w-0">
-                                    <p className="text-sm font-semibold text-foreground">{fmtRp(inv.amount)}</p>
-                                    <p className="text-xs text-muted-foreground break-words">#{inv.invoiceNumber} · jatuh tempo {fmtDate(inv.dueDate)}</p>
-                                  </div>
-                                  <StatusPill tone={paid ? 'green' : inv.status === 'OVERDUE' ? 'red' : 'amber'}>
-                                    {paid ? 'Lunas' : inv.status === 'OVERDUE' ? 'Lewat tempo' : 'Belum bayar'}
-                                  </StatusPill>
-                                </div>
-
-                                {!paid ? (
-                                  <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:justify-end">
-                                    <button type="button" onClick={() => openPromiseModal(u.id, inv.id, u.name)} className={cn(ui.btnSecondary, 'h-10 text-amber-700 dark:text-amber-400')}>
-                                      <CalendarClock className="w-4 h-4" /> Janji bayar
-                                    </button>
-                                    <button type="button" onClick={() => openPay(inv, u, 'transfer')} className={cn(ui.btnSecondary, 'h-10')}>
-                                      <Upload className="w-4 h-4" /> Transfer
-                                    </button>
-                                    <button type="button" onClick={() => openPay(inv, u, 'cash')} className={cn(ui.btnPrimary, 'h-10 col-span-2 sm:col-span-1')}>
-                                      <Wallet className="w-4 h-4" /> Lunas tunai
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <div className="mt-3 flex flex-wrap justify-end gap-2">
-                                    <div className="relative" ref={showPrintMenu === inv.id ? printMenuRef : null}>
-                                      <button
-                                        type="button"
-                                        onClick={(e) => { e.stopPropagation(); setShowPrintMenu(showPrintMenu === inv.id ? null : inv.id); }}
-                                        disabled={busy(inv.id)}
-                                        aria-expanded={showPrintMenu === inv.id}
-                                        className={cn(ui.btnSecondary, 'h-10')}
-                                      >
-                                        {busy(inv.id) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />} Cetak
-                                      </button>
-                                      {showPrintMenu === inv.id && (
-                                        <div className="absolute right-0 bottom-full mb-1 z-20 rounded-xl border border-border bg-card py-1 min-w-[200px]" role="menu">
-                                          <button type="button" role="menuitem" onClick={(e) => { e.stopPropagation(); handlePrintA4(inv.id); }} className="w-full flex items-center gap-2 h-11 px-3 text-sm text-foreground hover:bg-muted text-left">
-                                            <FileText className="w-4 h-4" /> Invoice A4
-                                          </button>
-                                          <button type="button" role="menuitem" onClick={(e) => { e.stopPropagation(); handlePrintThermal(inv.id); }} className="w-full flex items-center gap-2 h-11 px-3 text-sm text-foreground hover:bg-muted text-left">
-                                            <Printer className="w-4 h-4" /> Struk 80mm
-                                          </button>
-                                          <button type="button" role="menuitem" onClick={(e) => { e.stopPropagation(); handlePrintBluetooth(inv.id); }} className="w-full flex items-center gap-2 h-11 px-3 text-sm text-foreground hover:bg-muted text-left">
-                                            <Bluetooth className="w-4 h-4" /> Printer Bluetooth
-                                          </button>
-                                        </div>
-                                      )}
-                                    </div>
-                                    <button
-                                      type="button"
-                                      onClick={(e) => { e.stopPropagation(); handleSendWhatsApp(inv.id, inv.invoiceNumber, u.name); }}
-                                      disabled={actionLoading === `wa-${inv.id}`}
-                                      className={cn(ui.btnSecondary, 'h-10')}
-                                    >
-                                      {actionLoading === `wa-${inv.id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />} Kirim bukti lunas
-                                    </button>
-                                  </div>
-                                )}
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      ) : (
-                        <p className="text-sm text-muted-foreground py-2">Belum ada tagihan untuk pelanggan ini.</p>
-                      )}
+                      {renderInvoices(u)}
                     </div>
                   )}
                 </li>

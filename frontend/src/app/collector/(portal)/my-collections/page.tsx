@@ -72,7 +72,7 @@ export default function CollectorMyCollectionsPage() {
   const transfer = data?.monthly.reduce((s, m) => s + m.transfer_amount, 0) ?? 0;
 
   return (
-    <div>
+    <div className="max-w-4xl">
       <PageHeader title="Koleksi Saya" description="Semua yang Anda tagih dalam 6 bulan terakhir" />
 
       {loading ? (
