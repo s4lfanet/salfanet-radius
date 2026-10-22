@@ -133,24 +133,42 @@ export default function CustomerDetailSheet({
             </div>
           )}
 
+          {/* Same layout as the admin's customer detail: address, latitude and
+              longitude, a map with a pin on the customer, then the link out. */}
           <section aria-labelledby="loc-title">
-            <h4 id="loc-title" className="text-sm font-semibold text-foreground mb-2">Lokasi</h4>
+            <h4 id="loc-title" className="text-sm font-semibold text-foreground mb-2">Lokasi GPS</h4>
             {customer.address && <p className="text-sm text-foreground mb-3 flex items-start gap-2"><MapPin className="w-4 h-4 mt-0.5 shrink-0 text-muted-foreground" />{customer.address}</p>}
             {hasPoint && links ? (
               <>
-                <CustomerMap
-                  className="h-52"
-                  points={[{ id: customer.id, name: customer.name || customer.username, lat: customer.latitude!, lng: customer.longitude!, tone: st.tone === 'green' ? 'green' : st.tone === 'red' ? 'red' : 'slate' }]}
-                />
-                <div className="mt-2 flex items-center justify-between gap-2">
-                  <span className="text-xs text-muted-foreground tabular-nums">{coords}</span>
-                  <button type="button" onClick={copy} className="h-9 px-2 pointer-coarse:h-11 inline-flex items-center gap-1 rounded-lg text-xs font-medium text-blue-700 dark:text-blue-400 hover:bg-muted">
-                    {copied === 'ok' ? <><Check className="w-3.5 h-3.5" /> Tersalin</> : copied === 'fail' ? 'Gagal menyalin, salin manual' : <><Copy className="w-3.5 h-3.5" /> Salin koordinat</>}
-                  </button>
+                <dl className="grid grid-cols-2 gap-2 mb-3">
+                  <div className="rounded-xl border border-border bg-background px-3 py-2">
+                    <dt className="text-xs text-muted-foreground">Latitude</dt>
+                    <dd className="text-sm font-semibold text-foreground tabular-nums">{customer.latitude!.toFixed(6)}</dd>
+                  </div>
+                  <div className="rounded-xl border border-border bg-background px-3 py-2">
+                    <dt className="text-xs text-muted-foreground">Longitude</dt>
+                    <dd className="text-sm font-semibold text-foreground tabular-nums">{customer.longitude!.toFixed(6)}</dd>
+                  </div>
+                </dl>
+                <div className="rounded-2xl border border-border overflow-hidden">
+                  <CustomerMap
+                    pin
+                    zoom={17}
+                    className="h-56 rounded-none border-0"
+                    points={[{ id: customer.id, name: customer.name || customer.username, subtitle: customer.address || undefined, lat: customer.latitude!, lng: customer.longitude!, tone: 'slate' }]}
+                  />
+                  <div className="flex items-center justify-between gap-2 px-3 py-2 bg-muted/40 border-t border-border">
+                    <span className="text-xs text-muted-foreground tabular-nums">{coords}</span>
+                    <a href={links.view} target="_blank" rel="noopener noreferrer" className="h-9 pointer-coarse:h-11 inline-flex items-center gap-1 text-xs font-medium text-blue-700 dark:text-blue-400 hover:underline">
+                      <ExternalLink className="w-3.5 h-3.5" /> Buka di Google Maps
+                    </a>
+                  </div>
                 </div>
                 <div className="mt-2 grid grid-cols-2 gap-2">
-                  <a href={links.directions} target="_blank" rel="noopener noreferrer" className={ui.btnPrimary}><Navigation className="w-4 h-4" /> Navigasi</a>
-                  <a href={links.view} target="_blank" rel="noopener noreferrer" className={ui.btnSecondary}><ExternalLink className="w-4 h-4" /> Google Maps</a>
+                  <a href={links.directions} target="_blank" rel="noopener noreferrer" className={ui.btnPrimary}><Navigation className="w-4 h-4" /> Navigasi ke sini</a>
+                  <button type="button" onClick={copy} className={ui.btnSecondary}>
+                    {copied === 'ok' ? <><Check className="w-4 h-4" /> Tersalin</> : copied === 'fail' ? 'Gagal, salin manual' : <><Copy className="w-4 h-4" /> Salin koordinat</>}
+                  </button>
                 </div>
               </>
             ) : (

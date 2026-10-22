@@ -30,6 +30,7 @@ export default function CustomerMap({
   selectedId,
   className,
   zoom = 16,
+  pin = false,
 }: {
   points: MapPoint[];
   onSelect?: (id: string) => void;
@@ -37,6 +38,8 @@ export default function CustomerMap({
   className?: string;
   /** Zoom used when there is a single point. */
   zoom?: number;
+  /** Standard map pin instead of a dot, as in the admin's customer detail. */
+  pin?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
@@ -59,6 +62,13 @@ export default function CustomerMap({
         link.href = '/leaflet/leaflet.css';
         document.head.appendChild(link);
       }
+      // Self-hosted pin images, as MapPicker does.
+      delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl: '/leaflet/marker-icon-2x.png',
+        iconUrl: '/leaflet/marker-icon.png',
+        shadowUrl: '/leaflet/marker-shadow.png',
+      });
       if (cancelled || !containerRef.current || mapRef.current) return;
       const map = L.map(containerRef.current, { zoomControl: true, attributionControl: true }).setView([-2.5, 118], 5);
       const street = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -103,13 +113,15 @@ export default function CustomerMap({
       layer.clearLayers();
       for (const p of points) {
         const selected = p.id === selectedId;
-        const marker = L.circleMarker([p.lat, p.lng], {
-          radius: selected ? 10 : 7,
-          color: '#ffffff',
-          weight: 2,
-          fillColor: FILL[p.tone],
-          fillOpacity: 1,
-        });
+        const marker = pin
+          ? L.marker([p.lat, p.lng], { keyboard: false })
+          : L.circleMarker([p.lat, p.lng], {
+              radius: selected ? 10 : 7,
+              color: '#ffffff',
+              weight: 2,
+              fillColor: FILL[p.tone],
+              fillOpacity: 1,
+            });
         marker.bindTooltip(`<strong>${escapeHtml(p.name)}</strong>${p.subtitle ? `<br>${escapeHtml(p.subtitle)}` : ''}`, { direction: 'top', offset: [0, -6] });
         if (onSelectRef.current) marker.on('click', () => onSelectRef.current?.(p.id));
         marker.addTo(layer);
@@ -122,7 +134,7 @@ export default function CustomerMap({
       // The container may have changed size since the map was made (sheet, tab switch).
       setTimeout(() => map.invalidateSize(), 50);
     })();
-  }, [points, selectedId, ready, zoom]);
+  }, [points, selectedId, ready, zoom, pin]);
 
   return (
     <div className={cn('relative overflow-hidden rounded-2xl border border-border', className)}>
