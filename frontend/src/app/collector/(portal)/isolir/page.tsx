@@ -1,30 +1,32 @@
 'use client';
 
-import { useState, useEffect, useCallback, Fragment } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ScopeFilter, scopeQuery, type ScopeValue } from '@/components/collector/ScopeFilter';
+import { PageHeader, StatusPill, LoadingState, ErrorState, EmptyState, chipClass, ui, fmtRp, toneText } from '@/components/collector/ui';
 import { apiAdmin, ApiError } from '@/lib/api/client';
 import { formatWIB } from '@/lib/timezone';
-import { UserX, Search, Unplug, ChevronDown, X, Loader2, Wallet, Upload, MapPin, Wifi, Calendar, Phone, CheckCircle } from 'lucide-react';
+import { showError, showSuccess, showWarning } from '@/lib/sweetalert';
+import { cn } from '@/lib/utils';
+import { Search, Unplug, ChevronDown, X, Loader2, Wallet, Upload, Phone, CheckCircle } from 'lucide-react';
 
 const PAGE_SIZE = 50;
-const fmtRp = (v: number) => `Rp ${Number(v || 0).toLocaleString('id-ID')}`;
 const fmtDate = (d: string | null) => d ? formatWIB(d, 'dd MMM yyyy') : '-';
 
 export default function CollectorIsolirPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [scope, setScope] = useState<ScopeValue>({ areaId: '', routerId: '' });
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
 
-  // Cabut ONT modal
-  const [showCabutModal, setShowCabutModal] = useState(false);
+  // Cabut ONT dialog
   const [cabutTarget, setCabutTarget] = useState<any>(null);
   const [cabutNotes, setCabutNotes] = useState('');
   const [cabutLoading, setCabutLoading] = useState(false);
 
-  // Payment modal
+  // Payment dialog
   const [payModal, setPayModal] = useState<{ invoiceId: string; invoiceNumber: string; amount: number; customerName: string } | null>(null);
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [payLoading, setPayLoading] = useState(false);
@@ -32,14 +34,31 @@ export default function CollectorIsolirPage() {
   const [proofFile, setProofFile] = useState<File | null>(null);
 
   const loadData = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
     try {
       const res = await apiAdmin<{ users: any[] }>(`/api/collector/isolir?${scopeQuery(scope).slice(1)}`);
       setUsers(res.users || []);
-    } catch {}
-    finally { setLoading(false); }
+    } catch (e: unknown) {
+      setLoadError(e instanceof Error ? e.message : 'Daftar pelanggan isolir gagal dimuat');
+    } finally {
+      setLoading(false);
+    }
   }, [scope]);
 
-  useEffect(() => { loadData() }, [loadData]);
+  useEffect(() => { loadData(); }, [loadData]);
+
+  // Escape closes whichever dialog is open.
+  useEffect(() => {
+    if (!payModal && !cabutTarget) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setPayModal(null);
+      setCabutTarget(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [payModal, cabutTarget]);
 
   const filtered = users.filter(u => {
     if (!search.trim()) return true;
@@ -51,12 +70,6 @@ export default function CollectorIsolirPage() {
   });
   const visible = filtered.slice(0, visibleCount);
 
-  const openCabutModal = (u: any) => {
-    setCabutTarget(u);
-    setCabutNotes('');
-    setShowCabutModal(true);
-  };
-
   const submitCabut = async () => {
     if (!cabutTarget) return;
     setCabutLoading(true);
@@ -65,18 +78,16 @@ export default function CollectorIsolirPage() {
         method: 'POST',
         body: JSON.stringify({ username: cabutTarget.username, notes: cabutNotes }),
       });
-      setShowCabutModal(false);
+      showSuccess(`Cabut ONT untuk ${cabutTarget.name} tercatat`);
       setCabutTarget(null);
       setCabutNotes('');
     } catch (err) {
-      const msg = err instanceof ApiError ? err.message : 'Gagal mencatat';
-      alert(msg);
+      showError(err instanceof ApiError ? err.message : 'Cabut ONT gagal dicatat');
     } finally {
       setCabutLoading(false);
     }
   };
 
-  // ─── Payment handlers ────────────────────────────────────────────────
   const handleProofSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -110,12 +121,7 @@ export default function CollectorIsolirPage() {
   };
 
   const openPayModal = (inv: any, customerName: string, method: string) => {
-    setPayModal({
-      invoiceId: inv.id,
-      invoiceNumber: inv.invoiceNumber,
-      amount: inv.amount,
-      customerName,
-    });
+    setPayModal({ invoiceId: inv.id, invoiceNumber: inv.invoiceNumber, amount: inv.amount, customerName });
     setPaymentMethod(method);
     setProofPreview(null);
     setProofFile(null);
@@ -124,7 +130,7 @@ export default function CollectorIsolirPage() {
   const handlePay = async () => {
     if (!payModal) return;
     if (paymentMethod === 'transfer' && !proofPreview) {
-      alert('Harap upload bukti transfer terlebih dahulu');
+      showWarning('Unggah bukti transfer dulu');
       return;
     }
     setPayLoading(true);
@@ -134,7 +140,7 @@ export default function CollectorIsolirPage() {
         try {
           proofData = await compressImage(proofFile, 1200, 0.8);
         } catch {
-          // fallback to raw preview
+          // keep the uncompressed preview
         }
       }
       await apiAdmin('/api/collector/mark-paid', {
@@ -147,297 +153,186 @@ export default function CollectorIsolirPage() {
       setProofFile(null);
       loadData();
     } catch (err) {
-      const msg = err instanceof ApiError ? err.message : 'Gagal menandai lunas';
-      alert(msg);
+      showError(err instanceof ApiError ? err.message : 'Tagihan gagal ditandai lunas');
     } finally {
       setPayLoading(false);
     }
   };
 
   return (
-    <div className="animate-fade-in">
-      <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h2 className="text-xl font-bold text-foreground">Pelanggan Terisolir</h2>
-          <p className="text-sm text-muted-foreground mt-1">Pelanggan di wilayahmu yang sedang isolir</p>
-        </div>
-        <span className="px-3 py-1 rounded-full bg-red-500/10 text-red-600 text-sm font-bold">
-          {users.length} Pelanggan
-        </span>
-      </div>
+    <div>
+      <PageHeader title="Pelanggan Isolir" description="Pelanggan di wilayah tugas Anda yang internetnya sedang diputus" />
 
-      {/* Search */}
       <ScopeFilter value={scope} onChange={(v) => { setScope(v); setVisibleCount(PAGE_SIZE); }} />
 
       <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
         <input
-          type="text"
+          type="search"
           value={search}
           onChange={e => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE); }}
-          className="w-full pl-10 pr-10 py-2 rounded-lg border border-border bg-card text-foreground text-sm outline-none focus:ring-2 focus:ring-emerald-500"
-          placeholder="Cari nama, username, ID, No. HP..."
+          className={cn(ui.input, 'pl-9 pr-11')}
+          placeholder="Cari nama, ID, username, No. HP"
+          aria-label="Cari pelanggan isolir"
         />
         {search && (
-          <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground">
+          <button type="button" aria-label="Hapus pencarian" onClick={() => setSearch('')} className="absolute right-0 top-0 h-11 w-11 flex items-center justify-center text-muted-foreground hover:text-foreground">
             <X className="w-4 h-4" />
           </button>
         )}
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-muted-foreground">Memuat...</div>
+        <LoadingState label="Memuat pelanggan isolir..." />
+      ) : loadError ? (
+        <ErrorState message={loadError} onRetry={loadData} />
+      ) : users.length === 0 ? (
+        <EmptyState icon={<CheckCircle className="w-5 h-5" />} title="Tidak ada pelanggan isolir" hint="Semua pelanggan di wilayah tugas Anda sedang aktif." />
       ) : visible.length === 0 ? (
-        <div className="bg-card border border-border rounded-xl p-4 sm:p-8 text-center text-muted-foreground">
-          <UserX className="w-10 h-10 mx-auto mb-3 opacity-20" />
-          {search ? `Tidak ada hasil untuk "${search}"` : 'Tidak ada pelanggan terisolir saat ini.'}
-        </div>
+        <EmptyState icon={<Search className="w-5 h-5" />} title="Tidak ada yang cocok" hint="Ubah kata kunci pencarian." />
       ) : (
         <>
-          {/* Table */}
-          <div className="overflow-x-auto bg-card border border-border rounded-xl">
-            <table className="w-full text-sm">
-              <thead className="bg-accent/50 border-b border-border">
-                <tr className="text-left text-xs text-muted-foreground">
-                  <th className="px-3 py-3 font-medium">Pelanggan</th>
-                  <th className="px-3 py-3 font-medium">Paket</th>
-                  <th className="px-3 py-3 font-medium">Area</th>
-                  <th className="px-3 py-3 font-medium">Expired</th>
-                  <th className="px-3 py-3 font-medium text-right">Tagihan</th>
-                  <th className="px-3 py-3 font-medium text-center">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {visible.map(u => (
-                  <Fragment key={u.id}>
-                    <tr className="hover:bg-accent/30 transition-colors">
-                      {/* Pelanggan */}
-                      <td className="px-3 py-3">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => setExpandedUser(expandedUser === u.id ? null : u.id)}
-                            className="p-0.5 rounded hover:bg-muted"
-                          >
-                            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${expandedUser === u.id ? 'rotate-180' : ''}`} />
-                          </button>
-                          <div className="min-w-0">
-                            <div className="font-semibold text-foreground truncate">{u.name}</div>
-                            <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-                              <span className="font-mono">{u.customerId || u.username}</span>
-                              <span>·</span>
-                              <span className="flex items-center gap-0.5"><Phone className="w-3 h-3" />{u.phone || '-'}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      {/* Paket */}
-                      <td className="px-3 py-3">
-                        {u.profile ? (
-                          <div>
-                            <div className="text-xs font-medium text-foreground flex items-center gap-1">
-                              <Wifi className="w-3 h-3 text-muted-foreground" />
-                              {u.profile.name}
-                            </div>
-                            <div className="text-xs text-muted-foreground">{fmtRp(u.profile.price)}/bln</div>
-                          </div>
-                        ) : <span className="text-muted-foreground">-</span>}
-                      </td>
-                      {/* Area */}
-                      <td className="px-3 py-3">
-                        {u.area ? (
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <MapPin className="w-3 h-3" />
-                            {u.area.name}
-                          </span>
-                        ) : <span className="text-muted-foreground">-</span>}
-                      </td>
-                      {/* Expired */}
-                      <td className="px-3 py-3">
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {fmtDate(u.expiredAt)}
-                        </span>
-                      </td>
-                      {/* Tagihan */}
-                      <td className="px-3 py-3 text-right">
-                        {!u.is_paid ? (
-                          <div>
-                            <div className="text-sm font-bold text-orange-600">{fmtRp(u.unpaid_amount)}</div>
-                            <div className="text-xs text-muted-foreground">{u.unpaid_count} invoice</div>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-emerald-600 font-medium">Lunas</span>
-                        )}
-                      </td>
-                      {/* Aksi */}
-                      <td className="px-3 py-3">
-                        <div className="flex items-center justify-center gap-1">
-                          <button
-                            onClick={() => openCabutModal(u)}
-                            className="p-1.5 rounded-lg text-red-600 hover:bg-red-500/10 transition-all"
-                            title="Catat Cabut ONT"
-                          >
-                            <Unplug className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                    {/* Expanded invoice rows */}
-                    {expandedUser === u.id && (
-                      <tr className="bg-accent/20">
-                        <td colSpan={6} className="px-3 py-3">
-                          {/* Customer detail */}
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3 text-xs">
-                            <div>
-                              <span className="text-muted-foreground">Username:</span>{' '}
-                              <span className="font-mono text-foreground">{u.username}</span>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">Tipe:</span>{' '}
-                              <span className="text-foreground">{u.subscriptionType === 'POSTPAID' ? 'Pascabayar' : 'Prabayar'}</span>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">Koneksi:</span>{' '}
-                              <span className="text-foreground">{u.connectionType || 'PPPOE'}</span>
-                            </div>
-                            {u.router && (
-                              <div>
-                                <span className="text-muted-foreground">Router:</span>{' '}
-                                <span className="text-foreground">{u.router.name}</span>
-                              </div>
-                            )}
-                            {u.address && (
-                              <div className="col-span-2 md:col-span-4">
-                                <span className="text-muted-foreground">Alamat:</span>{' '}
-                                <span className="text-foreground">{u.address}</span>
-                              </div>
-                            )}
-                          </div>
+          <p className="text-xs text-muted-foreground mb-2">{filtered.length} pelanggan isolir</p>
+          <ul className="space-y-2">
+            {visible.map(u => {
+              const open = expandedUser === u.id;
+              return (
+                <li key={u.id} className={ui.card}>
+                  <button
+                    type="button"
+                    onClick={() => setExpandedUser(open ? null : u.id)}
+                    aria-expanded={open}
+                    className="w-full text-left p-4 flex items-start gap-3 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <p className="font-semibold text-foreground truncate">{u.name}</p>
+                        <StatusPill tone="red">Isolir</StatusPill>
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">
+                        {[u.customerId || u.username, u.phone, u.area?.name].filter(Boolean).join(' · ')}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      {!u.is_paid ? (
+                        <>
+                          <p className={cn('text-sm font-bold', toneText('red'))}>{fmtRp(u.unpaid_amount)}</p>
+                          <p className="text-xs text-muted-foreground">{u.unpaid_count} tagihan</p>
+                        </>
+                      ) : (
+                        <p className={cn('text-sm font-semibold', toneText('green'))}>Lunas</p>
+                      )}
+                    </div>
+                    <ChevronDown className={cn('w-5 h-5 mt-0.5 shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')} aria-hidden />
+                  </button>
 
-                          {/* Invoice table */}
-                          {u.invoices && u.invoices.length > 0 ? (
-                            <div className="overflow-x-auto rounded-lg border border-border">
-                              <table className="w-full text-xs">
-                                <thead className="bg-card border-b border-border">
-                                  <tr className="text-left text-muted-foreground">
-                                    <th className="px-3 py-2 font-medium">No. Invoice</th>
-                                    <th className="px-3 py-2 font-medium">Jatuh Tempo</th>
-                                    <th className="px-3 py-2 font-medium">Status</th>
-                                    <th className="px-3 py-2 font-medium text-right">Jumlah</th>
-                                    <th className="px-3 py-2 font-medium text-center">Bayar</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y divide-border">
-                                  {u.invoices.map((inv: any) => (
-                                    <tr key={inv.id} className="bg-card/50">
-                                      <td className="px-3 py-2 font-mono text-foreground">#{inv.invoiceNumber}</td>
-                                      <td className="px-3 py-2 text-muted-foreground">{fmtDate(inv.dueDate)}</td>
-                                      <td className="px-3 py-2">
-                                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-500/10 text-orange-600">
-                                          {inv.status}
-                                        </span>
-                                      </td>
-                                      <td className="px-3 py-2 text-right font-bold text-foreground">{fmtRp(inv.amount)}</td>
-                                      <td className="px-3 py-2">
-                                        <div className="flex items-center justify-center gap-1">
-                                          <button
-                                            onClick={() => openPayModal(inv, u.name, 'cash')}
-                                            className="px-2 py-1 text-[11px] rounded bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-all flex items-center gap-1"
-                                            title="Bayar Tunai"
-                                          >
-                                            <Wallet className="w-3 h-3" />
-                                            Cash
-                                          </button>
-                                          <button
-                                            onClick={() => openPayModal(inv, u.name, 'transfer')}
-                                            className="px-2 py-1 text-[11px] rounded bg-blue-600 text-white font-medium hover:bg-blue-700 transition-all flex items-center gap-1"
-                                            title="Upload Bukti Transfer"
-                                          >
-                                            <Upload className="w-3 h-3" />
-                                            TF
-                                          </button>
-                                        </div>
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          ) : (
-                            <div className="text-xs text-muted-foreground text-center py-3">Tidak ada tagihan belum lunas</div>
-                          )}
-                        </td>
-                      </tr>
-                    )}
-                  </Fragment>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                  {open && (
+                    <div className="border-t border-border px-4 pb-4">
+                      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 py-3 text-xs">
+                        {u.profile && (<div><dt className="text-muted-foreground">Paket</dt><dd className="text-foreground font-medium">{u.profile.name} · {fmtRp(u.profile.price)}</dd></div>)}
+                        <div><dt className="text-muted-foreground">Aktif s/d</dt><dd className="text-foreground font-medium">{fmtDate(u.expiredAt)}</dd></div>
+                        <div><dt className="text-muted-foreground">Username</dt><dd className="text-foreground font-medium break-all">{u.username}</dd></div>
+                        <div><dt className="text-muted-foreground">Tipe</dt><dd className="text-foreground font-medium">{u.subscriptionType === 'POSTPAID' ? 'Pascabayar' : 'Prabayar'} · {u.connectionType || 'PPPOE'}</dd></div>
+                        {u.router && (<div><dt className="text-muted-foreground">Router/NAS</dt><dd className="text-foreground font-medium">{u.router.name}</dd></div>)}
+                        {u.phone && (<div><dt className="text-muted-foreground">Telepon</dt><dd><a href={`tel:${u.phone}`} className="font-medium text-blue-700 dark:text-blue-400 inline-flex items-center gap-1"><Phone className="w-3 h-3" />{u.phone}</a></dd></div>)}
+                        {u.address && (<div className="col-span-2"><dt className="text-muted-foreground">Alamat</dt><dd className="text-foreground">{u.address}</dd></div>)}
+                      </dl>
+
+                      {u.invoices && u.invoices.length > 0 ? (
+                        <ul className="space-y-2">
+                          {u.invoices.map((inv: any) => (
+                            <li key={inv.id} className="rounded-xl border border-border bg-background p-3">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <p className="text-sm font-semibold text-foreground">{fmtRp(inv.amount)}</p>
+                                  <p className="text-xs text-muted-foreground truncate">#{inv.invoiceNumber} · jatuh tempo {fmtDate(inv.dueDate)}</p>
+                                </div>
+                                <StatusPill tone={inv.status === 'OVERDUE' ? 'red' : 'amber'}>{inv.status === 'OVERDUE' ? 'Lewat tempo' : 'Belum bayar'}</StatusPill>
+                              </div>
+                              <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:justify-end">
+                                <button type="button" onClick={() => openPayModal(inv, u.name, 'transfer')} className={cn(ui.btnSecondary, 'h-10')}>
+                                  <Upload className="w-4 h-4" /> Transfer
+                                </button>
+                                <button type="button" onClick={() => openPayModal(inv, u.name, 'cash')} className={cn(ui.btnPrimary, 'h-10')}>
+                                  <Wallet className="w-4 h-4" /> Lunas tunai
+                                </button>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-muted-foreground py-2">Tidak ada tagihan terbuka.</p>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => { setCabutTarget(u); setCabutNotes(''); }}
+                        className={cn(ui.btnSecondary, 'mt-3 w-full text-red-700 dark:text-red-400')}
+                      >
+                        <Unplug className="w-4 h-4" /> Catat cabut ONT
+                      </button>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
 
           {visibleCount < filtered.length && (
-            <div className="text-center mt-4">
-              <button
-                onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
-                className="px-6 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent flex items-center gap-2"
-              >
-                <ChevronDown className="w-4 h-4" /> Muat {Math.min(PAGE_SIZE, filtered.length - visibleCount)} lagi ({visibleCount}/{filtered.length})
-              </button>
-            </div>
+            <button type="button" onClick={() => setVisibleCount(c => c + PAGE_SIZE)} className={cn(ui.btnSecondary, 'mt-4 w-full')}>
+              Tampilkan {Math.min(PAGE_SIZE, filtered.length - visibleCount)} lagi ({visibleCount} dari {filtered.length})
+            </button>
           )}
         </>
       )}
 
-      {/* Cabut ONT Modal */}
-      {showCabutModal && cabutTarget && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setShowCabutModal(false)}>
-          <div className="bg-card border border-border rounded-xl p-6 max-w-sm w-full" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-foreground mb-1">Catat Cabut ONT</h3>
-            <p className="text-sm text-muted-foreground mb-4">{cabutTarget.name} ({cabutTarget.username})</p>
-
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-foreground mb-2">Catatan (opsional)</label>
-              <textarea
-                value={cabutNotes}
-                onChange={e => setCabutNotes(e.target.value)}
-                rows={3}
-                className="w-full px-3 py-2 rounded-lg border border-border bg-card text-foreground text-sm outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
-                placeholder="Catatan pencabutan..."
-              />
-            </div>
-
-            <div className="flex gap-2">
-              <button onClick={() => setShowCabutModal(false)} className="flex-1 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent">
-                Batal
-              </button>
+      {/* Cabut ONT dialog */}
+      {cabutTarget && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="cabut-title">
+          <button type="button" aria-label="Tutup" className="absolute inset-0 bg-black/50" onClick={() => setCabutTarget(null)} />
+          <div className="relative w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl border border-border bg-card p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
+            <h3 id="cabut-title" className="text-lg font-bold text-foreground">Catat cabut ONT</h3>
+            <p className="text-sm text-muted-foreground">{cabutTarget.name} · {cabutTarget.username}</p>
+            <label htmlFor="cabut-notes" className="block text-sm font-medium text-foreground mt-4 mb-1">Catatan <span className="font-normal text-muted-foreground">(opsional)</span></label>
+            <textarea
+              id="cabut-notes"
+              value={cabutNotes}
+              onChange={e => setCabutNotes(e.target.value)}
+              rows={3}
+              className={cn(ui.input, 'h-auto py-2 resize-none')}
+              placeholder="Contoh: ONT diambil, adaptor tertinggal"
+            />
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => setCabutTarget(null)} className={ui.btnSecondary}>Batal</button>
               <button
+                type="button"
                 onClick={submitCabut}
                 disabled={cabutLoading}
-                className="flex-1 py-2 rounded-lg bg-red-600 text-white text-sm font-medium hover:bg-red-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                className="inline-flex items-center justify-center gap-2 h-11 px-4 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
-                {cabutLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Unplug className="w-4 h-4" />}
-                Catat
+                {cabutLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Unplug className="w-4 h-4" />} Catat cabut
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Payment Modal */}
+      {/* Payment dialog */}
       {payModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setPayModal(null)}>
-          <div className="bg-card border border-border rounded-xl p-6 max-w-sm w-full" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-foreground mb-1">Konfirmasi Pembayaran</h3>
-            <p className="text-sm text-muted-foreground mb-4">Invoice #{payModal.invoiceNumber} - {payModal.customerName}</p>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="pay-title">
+          <button type="button" aria-label="Tutup" className="absolute inset-0 bg-black/50" onClick={() => setPayModal(null)} />
+          <div className="relative w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl border border-border bg-card p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] max-h-[90dvh] overflow-y-auto">
+            <h3 id="pay-title" className="text-lg font-bold text-foreground">Tandai lunas</h3>
+            <p className="text-sm text-muted-foreground">{payModal.customerName} · #{payModal.invoiceNumber}</p>
 
-            <div className="bg-accent/30 rounded-lg p-3 mb-4">
-              <div className="text-xs text-muted-foreground">Jumlah Tagihan</div>
-              <div className="text-xl font-bold text-foreground">{fmtRp(payModal.amount)}</div>
+            <div className="mt-4 rounded-xl bg-muted p-3">
+              <p className="text-xs text-muted-foreground">Jumlah diterima</p>
+              <p className="text-2xl font-extrabold tracking-tight text-foreground">{fmtRp(payModal.amount)}</p>
             </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-foreground mb-2">Metode Pembayaran</label>
-              <div className="flex gap-2">
+            <fieldset className="mt-4">
+              <legend className="text-sm font-medium text-foreground mb-2">Cara bayar</legend>
+              <div className="grid grid-cols-2 gap-2">
                 {[
                   { key: 'cash', label: 'Tunai', icon: Wallet },
                   { key: 'transfer', label: 'Transfer', icon: Upload },
@@ -446,68 +341,47 @@ export default function CollectorIsolirPage() {
                   return (
                     <button
                       key={m.key}
+                      type="button"
+                      aria-pressed={paymentMethod === m.key}
                       onClick={() => { setPaymentMethod(m.key); if (m.key === 'cash') { setProofPreview(null); setProofFile(null); } }}
-                      className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
-                        paymentMethod === m.key
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-accent text-muted-foreground hover:bg-accent/80'
-                      }`}
+                      className={chipClass(paymentMethod === m.key) + ' h-11 flex items-center justify-center gap-2'}
                     >
-                      <Icon className="w-4 h-4" />
-                      {m.label}
+                      <Icon className="w-4 h-4" /> {m.label}
                     </button>
                   );
                 })}
               </div>
-            </div>
+            </fieldset>
 
             {paymentMethod === 'transfer' && (
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-foreground mb-2">Bukti Transfer</label>
-                <p className="text-xs text-muted-foreground mb-2">Bukti transfer akan dikirim ke admin untuk verifikasi.</p>
+              <div className="mt-4">
+                <p className="text-sm font-medium text-foreground mb-2">Bukti transfer</p>
                 {proofPreview ? (
                   <div className="relative">
-                    <img src={proofPreview} alt="Bukti Transfer" className="w-full rounded-lg border border-border max-h-48 object-contain" />
-                    <button
-                      onClick={() => { setProofPreview(null); setProofFile(null); }}
-                      className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80"
-                    >
+                    {/* eslint-disable-next-line @next/next/no-img-element -- local preview of a picked file */}
+                    <img src={proofPreview} alt="Bukti transfer" className="w-full rounded-xl border border-border max-h-48 object-contain" />
+                    <button type="button" aria-label="Hapus bukti" onClick={() => { setProofPreview(null); setProofFile(null); }} className="absolute top-2 right-2 h-9 w-9 flex items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80">
                       <X className="w-4 h-4" />
                     </button>
                   </div>
                 ) : (
-                  <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded-lg p-6 cursor-pointer hover:bg-accent/30 transition-all">
-                    <Upload className="w-8 h-8 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Klik untuk upload bukti transfer</span>
-                    <input type="file" accept="image/*" onChange={handleProofSelect} className="hidden" />
+                  <label className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border p-6 cursor-pointer hover:bg-muted focus-within:ring-2 focus-within:ring-blue-600">
+                    <Upload className="w-6 h-6 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Ambil foto atau pilih gambar</span>
+                    <input type="file" accept="image/*" onChange={handleProofSelect} className="sr-only" />
                   </label>
                 )}
               </div>
             )}
 
-            {paymentMethod === 'cash' && (
-              <div className="mb-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg p-3">
-                <p className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4" />
-                  Pembayaran tunai akan langsung mengaktifkan pelanggan.
-                </p>
-              </div>
-            )}
+            <p className="text-xs text-muted-foreground mt-4">
+              Tagihan ditandai lunas dan tidak bisa dibatalkan dari sini. Internet pelanggan dibuka kembali setelah lunas.
+            </p>
 
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPayModal(null)}
-                className="flex-1 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handlePay}
-                disabled={payLoading}
-                className="flex-1 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {payLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                Konfirmasi
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => setPayModal(null)} className={ui.btnSecondary}>Batal</button>
+              <button type="button" onClick={handlePay} disabled={payLoading} className={ui.btnPrimary}>
+                {payLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />} Tandai lunas
               </button>
             </div>
           </div>

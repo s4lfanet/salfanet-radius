@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Inbox, Search, Eye, ChevronDown, Loader2, X } from 'lucide-react';
+import { Inbox, Search, Eye, X } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
 import { formatWIB } from '@/lib/timezone';
+import { PageHeader, StatusPill, LoadingState, ErrorState, EmptyState, chipClass, ui, fmtRp } from '@/components/collector/ui';
+import { cn } from '@/lib/utils';
 
 interface ProofItem {
   id: string;
@@ -27,32 +29,46 @@ interface ProofItem {
 }
 
 const STEP = 50;
+const fmtDate = (d: string) => d ? formatWIB(d, 'dd MMM yyyy HH:mm') : '-';
+
+const FILTERS = [
+  { key: 'pending', label: 'Menunggu' },
+  { key: 'approved', label: 'Disetujui' },
+  { key: 'rejected', label: 'Ditolak' },
+] as const;
 
 export default function CollectorProofsPage() {
   const [proofs, setProofs] = useState<ProofItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'pending' | 'approved' | 'rejected'>('pending');
   const [search, setSearch] = useState('');
   const [visibleCount, setVisibleCount] = useState(STEP);
   const [viewImage, setViewImage] = useState<string | null>(null);
 
-  const fetchProofs = useCallback(async (f: string) => {
+  const fetchProofs = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      const data = await apiAdmin<{ proofs: ProofItem[] }>(`/api/collector/proofs?filter=${f}`);
+      const data = await apiAdmin<{ proofs: ProofItem[] }>(`/api/collector/proofs?filter=${filter}`);
       setProofs(data.proofs || []);
-    } catch {
-      setProofs([]);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Bukti transfer gagal dimuat');
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  useEffect(() => {
-    fetchProofs(filter);
   }, [filter]);
 
-  const filtered = proofs.filter(p => {
+  useEffect(() => { fetchProofs(); }, [fetchProofs]);
+
+  useEffect(() => {
+    if (!viewImage) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setViewImage(null); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [viewImage]);
+
+  const filtered = proofs.filter((p) => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
     return (p.fullname || '').toLowerCase().includes(q) ||
@@ -61,154 +77,89 @@ export default function CollectorProofsPage() {
   });
   const visible = filtered.slice(0, visibleCount);
 
-  const fmtRp = (v: number) => `Rp ${Number(v || 0).toLocaleString('id-ID')}`;
-  const fmtDate = (d: string) => d ? formatWIB(d, 'dd MMM') : '-';
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
-            <Inbox className="w-5 h-5" /> Verifikasi Bukti Transfer
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">Periksa bukti transfer dari pelanggan di wilayah Anda.</p>
-        </div>
-        {filter === 'pending' && proofs.length > 0 && (
-          <span className="bg-red-500 text-white rounded-full font-bold px-3 py-1 text-xs">
-            {proofs.length} Pending
-          </span>
-        )}
-      </div>
+    <div>
+      <PageHeader title="Bukti Transfer" description="Bukti transfer pelanggan di wilayah tugas Anda dan status pemeriksaan admin" />
 
-      {/* Filter */}
-      <div className="flex gap-2 flex-wrap">
-        {(['pending', 'approved', 'rejected'] as const).map(s => (
-          <button
-            key={s}
-            onClick={() => { setFilter(s); setSearch(''); setVisibleCount(STEP); }}
-            className={`px-4 py-1.5 text-xs font-medium rounded-lg transition-all ${
-              filter === s
-                ? 'bg-emerald-600 text-white'
-                : 'border border-border bg-card text-muted-foreground hover:bg-muted'
-            }`}
-          >
-            {s === 'pending' ? 'Menunggu' : s === 'approved' ? 'Disetujui' : 'Ditolak'}
+      <div className="flex gap-2 mb-3 overflow-x-auto pb-1 -mx-4 px-4 lg:mx-0 lg:px-0" role="group" aria-label="Filter status">
+        {FILTERS.map((f) => (
+          <button key={f.key} type="button" aria-pressed={filter === f.key} onClick={() => { setFilter(f.key); setVisibleCount(STEP); }} className={chipClass(filter === f.key)}>
+            {f.label}
           </button>
         ))}
       </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
         <input
-          type="text"
-          placeholder="Cari nama, telepon..."
+          type="search"
           value={search}
-          onChange={e => { setSearch(e.target.value); setVisibleCount(STEP); }}
-          className="w-full pl-10 pr-10 py-2.5 rounded-lg border border-input bg-background text-foreground text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
+          onChange={(e) => { setSearch(e.target.value); setVisibleCount(STEP); }}
+          className={cn(ui.input, 'pl-9')}
+          placeholder="Cari nama, username, No. HP"
+          aria-label="Cari bukti transfer"
         />
-        {search && (
-          <button onClick={() => { setSearch(''); setVisibleCount(STEP); }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-            <X className="w-4 h-4" />
-          </button>
-        )}
       </div>
 
-      {/* Table */}
       {loading ? (
-        <div className="flex items-center justify-center py-12 text-muted-foreground">
-          <Loader2 className="w-6 h-6 animate-spin" />
-        </div>
+        <LoadingState label="Memuat bukti transfer..." />
+      ) : error ? (
+        <ErrorState message={error} onRetry={fetchProofs} />
       ) : filtered.length === 0 ? (
-        <div className="card p-4 sm:p-8 text-center text-muted-foreground">
-          <Inbox className="w-10 h-10 mx-auto mb-3 opacity-20" />
-          {search ? `Tidak ada hasil untuk "${search}"` : filter === 'pending' ? 'Tidak ada bukti transfer yang menunggu verifikasi.' : 'Tidak ada data.'}
-        </div>
+        <EmptyState
+          icon={<Inbox className="w-5 h-5" />}
+          title={search ? 'Tidak ada yang cocok' : filter === 'pending' ? 'Tidak ada bukti yang menunggu' : 'Belum ada bukti di sini'}
+          hint={search ? 'Ubah kata kunci pencarian.' : undefined}
+        />
       ) : (
         <>
-          <div className="overflow-x-auto bg-card border border-border rounded-xl">
-            <table className="w-full text-sm">
-              <thead className="bg-accent/50 border-b border-border">
-                <tr className="text-left text-xs text-muted-foreground">
-                  <th className="px-3 py-3 font-medium">Pelanggan</th>
-                  <th className="px-3 py-3 font-medium">Kontak</th>
-                  <th className="px-3 py-3 font-medium">Alamat</th>
-                  <th className="px-3 py-3 font-medium">Paket</th>
-                  <th className="px-3 py-3 font-medium">Area</th>
-                  <th className="px-3 py-3 font-medium">Invoice</th>
-                  <th className="px-3 py-3 font-medium">Jumlah</th>
-                  <th className="px-3 py-3 font-medium">Status</th>
-                  <th className="px-3 py-3 font-medium">Tgl Kirim</th>
-                  <th className="px-3 py-3 font-medium text-center">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {visible.map(proof => (
-                  <tr key={proof.id} className="hover:bg-accent/30 transition-colors">
-                      <td className="px-3 py-3">
-                        <div className="font-medium text-foreground">{proof.fullname || proof.username}</div>
-                        <div className="text-xs text-muted-foreground font-mono">{proof.customerId || proof.username}</div>
-                      </td>
-                      <td className="px-3 py-3 text-xs text-muted-foreground">{proof.phone || '-'}</td>
-                      <td className="px-3 py-3 text-xs text-muted-foreground max-w-[200px] truncate" title={proof.address}>{proof.address || '-'}</td>
-                      <td className="px-3 py-3 text-xs text-muted-foreground">{proof.profileName || '-'}</td>
-                      <td className="px-3 py-3 text-xs text-muted-foreground">{proof.areaName || '-'}</td>
-                      <td className="px-3 py-3 text-xs text-muted-foreground">{proof.invoice_number}</td>
-                      <td className="px-3 py-3 font-semibold text-foreground">{fmtRp(proof.amount)}</td>
-                      <td className="px-3 py-3">
-                        {proof.status === 'pending' && (
-                          <span className="text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 font-medium">Menunggu</span>
-                        )}
-                        {proof.status === 'approved' && (
-                          <span className="text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 font-medium">Disetujui</span>
-                        )}
-                        {proof.status === 'rejected' && (
-                          <div>
-                            <span className="text-xs px-2 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 font-medium">Ditolak</span>
-                            {proof.reject_reason && (
-                              <div className="text-xs text-muted-foreground mt-1">{proof.reject_reason}</div>
-                            )}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-3 py-3 text-xs text-muted-foreground">{fmtDate(proof.submitted_at)}</td>
-                      <td className="px-3 py-3 text-center">
-                        <button
-                          onClick={() => setViewImage(proof.proof_image)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs border border-border rounded-lg hover:bg-muted transition-all"
-                        >
-                          <Eye className="w-3.5 h-3.5" /> Lihat
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-            </table>
-          </div>
+          <ul className="space-y-2">
+            {visible.map((p) => (
+              <li key={p.id} className={cn(ui.card, 'p-4')}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-foreground truncate">{p.fullname || p.username}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {[p.customerId || p.username, p.profileName, p.areaName].filter(Boolean).join(' · ')}
+                    </p>
+                  </div>
+                  {p.status === 'approved' ? <StatusPill tone="green">Disetujui</StatusPill>
+                    : p.status === 'rejected' ? <StatusPill tone="red">Ditolak</StatusPill>
+                    : <StatusPill tone="amber">Menunggu</StatusPill>}
+                </div>
+                <div className="mt-3 flex items-end justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-foreground">{fmtRp(p.amount)}</p>
+                    <p className="text-xs text-muted-foreground">#{p.invoice_number} · dikirim {fmtDate(p.submitted_at)}</p>
+                    {p.is_my_upload && <p className="text-xs text-muted-foreground">Diunggah oleh Anda</p>}
+                  </div>
+                  <button type="button" onClick={() => setViewImage(p.proof_image)} className={cn(ui.btnSecondary, 'h-10 shrink-0')}>
+                    <Eye className="w-4 h-4" /> Lihat bukti
+                  </button>
+                </div>
+                {p.status === 'rejected' && p.reject_reason && (
+                  <p className="mt-3 pt-3 border-t border-border text-sm text-red-700 dark:text-red-400">Alasan ditolak: {p.reject_reason}</p>
+                )}
+              </li>
+            ))}
+          </ul>
           {visibleCount < filtered.length && (
-            <div className="text-center">
-              <button
-                onClick={() => setVisibleCount(c => c + STEP)}
-                className="inline-flex items-center gap-2 px-5 py-2 text-sm border border-border rounded-lg hover:bg-muted transition-all"
-              >
-                <ChevronDown className="w-4 h-4" /> Muat {Math.min(STEP, filtered.length - visibleCount)} lagi
-                <span className="text-muted-foreground text-xs">({visibleCount}/{filtered.length})</span>
-              </button>
-            </div>
+            <button type="button" onClick={() => setVisibleCount((c) => c + STEP)} className={cn(ui.btnSecondary, 'mt-4 w-full')}>
+              Tampilkan {Math.min(STEP, filtered.length - visibleCount)} lagi ({visibleCount} dari {filtered.length})
+            </button>
           )}
         </>
       )}
 
-      {/* Image Modal */}
       {viewImage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setViewImage(null)}>
-          <div className="relative max-w-[calc(100%-2rem)] sm:max-w-2xl w-full">
-            <button onClick={() => setViewImage(null)}
-              className="absolute -top-10 right-0 text-white hover:text-gray-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Bukti transfer">
+          <button type="button" aria-label="Tutup" className="absolute inset-0 bg-black/80" onClick={() => setViewImage(null)} />
+          <div className="relative w-full max-w-2xl">
+            <button type="button" onClick={() => setViewImage(null)} aria-label="Tutup" className="absolute -top-12 right-0 h-11 w-11 flex items-center justify-center rounded-xl text-white hover:bg-white/10">
               <X className="w-6 h-6" />
             </button>
-            <img src={viewImage} alt="Bukti Transfer" className="w-full rounded-lg" />
+            {/* eslint-disable-next-line @next/next/no-img-element -- proof is a data URL or upload path of any size */}
+            <img src={viewImage} alt="Bukti transfer" className="w-full max-h-[80dvh] object-contain rounded-xl bg-black" />
           </div>
         </div>
       )}

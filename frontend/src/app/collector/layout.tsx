@@ -1,5 +1,10 @@
 import type { Metadata, Viewport } from 'next';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 import { getCompanyInfo } from '@/lib/api/server';
+
+// Same typeface as the admin and customer apps (DESIGN.md): large x-height and
+// clearly distinct figures for rupiah amounts and invoice numbers.
+const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], weight: ['400', '500', '600', '700', '800'], display: 'swap' });
 
 export async function generateMetadata(): Promise<Metadata> {
   const company = await getCompanyInfo();
@@ -12,11 +17,9 @@ export async function generateMetadata(): Promise<Metadata> {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-  themeColor: '#10b981',
+  themeColor: '#2563EB',
 };
 
 export default function CollectorRootLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return <div className={jakarta.className}>{children}</div>;
 }

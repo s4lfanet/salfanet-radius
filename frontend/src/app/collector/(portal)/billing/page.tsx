@@ -1,16 +1,17 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef, Fragment } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { ScopeFilter, scopeQuery, type ScopeValue } from '@/components/collector/ScopeFilter';
+import { PageHeader, StatusPill, customerStatus, chipClass, LoadingState, ErrorState, EmptyState, ui, fmtRp, toneText } from '@/components/collector/ui';
 import { apiAdmin, ApiError } from '@/lib/api/client';
 import { printInvoiceStandard, printInvoiceThermal } from '@/lib/invoice-print';
 import { BluetoothPrinter, type ThermalReceiptData } from '@/lib/bluetooth-printer';
 import { formatWIB } from '@/lib/timezone';
 import { showError, showSuccess, showWarning } from '@/lib/sweetalert';
-import { Users, Search, CheckCircle, Loader2, ChevronDown, X, Upload, Printer, Bluetooth, MessageCircle, FileText, Wallet, MapPin, Wifi, Calendar, Phone, CalendarClock, LocateFixed } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Users, Search, CheckCircle, Loader2, ChevronDown, X, Upload, Printer, Bluetooth, MessageCircle, FileText, Wallet, MapPin, Phone, CalendarClock, LocateFixed } from 'lucide-react';
 
 const PAGE_SIZE = 50;
-const fmtRp = (v: number) => `Rp ${Number(v || 0).toLocaleString('id-ID')}`;
 const fmtDate = (d: string) => d ? formatWIB(d, 'dd MMM yyyy') : '-';
 
 export default function CollectorBillingPage() {
@@ -342,428 +343,246 @@ export default function CollectorBillingPage() {
     }
   };
 
+  // Escape closes whichever dialog is open.
+  useEffect(() => {
+    if (!payModal && !promiseModal) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setPayModal(null);
+      setPromiseModal(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [payModal, promiseModal]);
+
+  const openPay = (inv: any, u: any, method: 'cash' | 'transfer') => {
+    setPayModal({ invoiceId: inv.id, invoiceNumber: inv.invoiceNumber, amount: inv.amount, customerName: u.name });
+    setPaymentMethod(method);
+    setProofPreview(null);
+    setProofFile(null);
+  };
+
+  const busy = (id: string) => actionLoading === `a4-${id}` || actionLoading === `thermal-${id}` || actionLoading === `bt-${id}`;
+
   return (
-    <div className="animate-fade-in">
-      <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h2 className="text-xl font-bold text-foreground">Tagihan Pelanggan</h2>
-          <p className="text-sm text-muted-foreground mt-1">Tandai invoice sebagai lunas saat menerima pembayaran</p>
-        </div>
-        {/* Bluetooth printer status */}
-        <div className="flex items-center gap-2">
-          {btConnected ? (
+    <div>
+      <PageHeader
+        title="Tagihan"
+        description="Tandai lunas saat menerima pembayaran, atau catat janji bayar"
+        actions={
+          btConnected ? (
             <div className="flex items-center gap-2">
-              <span className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-                <Bluetooth className="w-4 h-4" />
-                Printer terhubung
-              </span>
-              <button
-                onClick={handleBluetoothDisconnect}
-                className="text-xs text-red-500 hover:text-red-600"
-              >
-                Putus
-              </button>
+              <StatusPill tone="green"><Bluetooth className="w-3.5 h-3.5 mr-1" />Printer terhubung</StatusPill>
+              <button type="button" onClick={handleBluetoothDisconnect} className={cn(ui.btnSecondary, 'h-9 px-3 text-xs')}>Putuskan</button>
             </div>
           ) : (
-            <button
-              onClick={handleBluetoothConnect}
-              disabled={actionLoading === 'bt-connect'}
-              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:bg-accent transition-all"
-            >
-              {actionLoading === 'bt-connect' ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Bluetooth className="w-3.5 h-3.5" />
-              )}
-              Hubungkan Printer BT
+            <button type="button" onClick={handleBluetoothConnect} disabled={actionLoading === 'bt-connect'} className={cn(ui.btnSecondary, 'w-full sm:w-auto')}>
+              {actionLoading === 'bt-connect' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bluetooth className="w-4 h-4" />}
+              Hubungkan printer Bluetooth
             </button>
-          )}
-        </div>
-      </div>
-
-      {/* Filter */}
-      <div className="flex gap-2 mb-4 flex-wrap">
-        {[
-          { key: 'unpaid', label: 'Belum Bayar' },
-          { key: 'all', label: 'Semua' },
-          { key: 'paid', label: 'Lunas' },
-        ].map(f => (
-          <button
-            key={f.key}
-            onClick={() => { setFilter(f.key); setVisibleCount(PAGE_SIZE); }}
-            className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-              filter === f.key
-                ? 'bg-emerald-600 text-white'
-                : 'bg-card border border-border text-muted-foreground hover:bg-accent'
-            }`}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
+          )
+        }
+      />
 
       <ScopeFilter value={scope} onChange={(v) => { setScope(v); setVisibleCount(PAGE_SIZE); }} />
 
-      {/* Search */}
-      <div className="relative mb-4">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+      <div className="relative mb-3">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
         <input
-          type="text"
+          type="search"
           value={search}
           onChange={e => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE); }}
-          className="w-full pl-10 pr-10 py-2 rounded-lg border border-border bg-card text-foreground text-sm outline-none focus:ring-2 focus:ring-emerald-500"
-          placeholder="Cari nama, username, ID, No. HP..."
+          className={cn(ui.input, 'pl-9 pr-11')}
+          placeholder="Cari nama, ID, username, No. HP"
+          aria-label="Cari pelanggan"
         />
         {search && (
-          <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground">
+          <button type="button" aria-label="Hapus pencarian" onClick={() => setSearch('')} className="absolute right-0 top-0 h-11 w-11 flex items-center justify-center text-muted-foreground hover:text-foreground">
             <X className="w-4 h-4" />
           </button>
         )}
       </div>
 
-      {/* List */}
-      {loadError && (
-        <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-3 mb-3 flex items-center justify-between gap-3">
-          <span className="text-sm text-destructive">Gagal memuat data: {loadError}{users.length > 0 ? ' — data di bawah mungkin tidak terbaru.' : ''}</span>
-          <button onClick={loadData} className="shrink-0 text-xs font-semibold text-destructive underline">Coba lagi</button>
+      <div className="flex gap-2 mb-4 overflow-x-auto pb-1 -mx-4 px-4 lg:mx-0 lg:px-0" role="group" aria-label="Filter tagihan">
+        {[
+          { key: 'unpaid', label: 'Belum bayar' },
+          { key: 'paid', label: 'Lunas' },
+          { key: 'all', label: 'Semua' },
+        ].map(f => (
+          <button key={f.key} type="button" aria-pressed={filter === f.key} onClick={() => { setFilter(f.key); setVisibleCount(PAGE_SIZE); }} className={chipClass(filter === f.key)}>
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {loadError && users.length > 0 && (
+        <div className={cn(ui.card, 'p-3 mb-3 flex items-center justify-between gap-3')} role="alert">
+          <span className={cn('text-sm', toneText('red'))}>Data terbaru gagal dimuat, yang tampil mungkin belum terbaru.</span>
+          <button type="button" onClick={loadData} className={cn(ui.btnSecondary, 'h-9 px-3 text-xs shrink-0')}>Coba lagi</button>
         </div>
       )}
+
       {loading ? (
-        <div className="text-center py-12 text-muted-foreground">Memuat...</div>
+        <LoadingState label="Memuat tagihan..." />
+      ) : loadError && users.length === 0 ? (
+        <ErrorState message={loadError} onRetry={loadData} />
       ) : visible.length === 0 ? (
-        <div className="bg-card border border-border rounded-xl p-4 sm:p-8 text-center text-muted-foreground">
-          <Users className="w-10 h-10 mx-auto mb-3 opacity-20" />
-          Tidak ada data.
-        </div>
+        filter === 'unpaid' && !search
+          ? <EmptyState icon={<CheckCircle className="w-5 h-5" />} title="Semua tagihan sudah lunas" hint="Tidak ada pelanggan dengan tagihan terbuka di wilayah tugas Anda." />
+          : <EmptyState icon={<Users className="w-5 h-5" />} title="Tidak ada yang cocok" hint="Ubah kata kunci atau pilih filter Semua." />
       ) : (
         <>
-          {/* Table */}
-          <div className="overflow-x-auto bg-card border border-border rounded-xl">
-            <table className="w-full text-sm">
-              <thead className="bg-accent/50 border-b border-border">
-                <tr className="text-left text-xs text-muted-foreground">
-                  <th className="px-3 py-3 font-medium">Pelanggan</th>
-                  <th className="hidden md:table-cell px-3 py-3 font-medium">Paket</th>
-                  <th className="hidden md:table-cell px-3 py-3 font-medium">Area</th>
-                  <th className="px-3 py-3 font-medium">Status</th>
-                  <th className="hidden md:table-cell px-3 py-3 font-medium">Expired</th>
-                  <th className="px-3 py-3 font-medium text-right">Tagihan</th>
-                  <th className="px-3 py-3 font-medium text-center">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {visible.map(u => (
-                  <Fragment key={u.id}>
-                    <tr className="hover:bg-accent/30 transition-colors">
-                      {/* Pelanggan */}
-                      <td className="px-3 py-3">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => setExpandedUser(expandedUser === u.id ? null : u.id)}
-                            className="p-0.5 rounded hover:bg-muted"
-                          >
-                            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${expandedUser === u.id ? 'rotate-180' : ''}`} />
-                          </button>
-                          <div className="min-w-0">
-                            <div className="font-semibold text-foreground truncate">{u.name}</div>
-                            <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-                              <span className="font-mono">{u.customerId || u.username}</span>
-                              <span>·</span>
-                              <span className="flex items-center gap-0.5"><Phone className="w-3 h-3" />{u.phone || '-'}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      {/* Paket — hidden on mobile, shown in the expanded detail below instead */}
-                      <td className="hidden md:table-cell px-3 py-3">
-                        {u.profile ? (
-                          <div>
-                            <div className="text-xs font-medium text-foreground flex items-center gap-1">
-                              <Wifi className="w-3 h-3 text-muted-foreground" />
-                              {u.profile.name}
-                            </div>
-                            <div className="text-xs text-muted-foreground">{fmtRp(u.profile.price)}/bln</div>
-                          </div>
-                        ) : <span className="text-muted-foreground">-</span>}
-                      </td>
-                      {/* Area — hidden on mobile, shown in the expanded detail below instead */}
-                      <td className="hidden md:table-cell px-3 py-3">
-                        {u.area ? (
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <MapPin className="w-3 h-3" />
-                            {u.area.name}
-                          </span>
-                        ) : <span className="text-muted-foreground">-</span>}
-                      </td>
-                      {/* Status */}
-                      <td className="px-3 py-3">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                          u.status === 'active' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
-                          u.status === 'isolated' || u.status === 'suspended' ? 'bg-red-500/10 text-red-600 dark:text-red-400' :
-                          'bg-muted text-muted-foreground'
-                        }`}>
-                          {u.status === 'active' ? 'Aktif' : u.status === 'isolated' || u.status === 'suspended' ? 'Isolir' : u.status}
-                        </span>
-                      </td>
-                      {/* Expired — hidden on mobile, shown in the expanded detail below instead */}
-                      <td className="hidden md:table-cell px-3 py-3">
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {fmtDate(u.expiredAt)}
-                        </span>
-                      </td>
-                      {/* Tagihan */}
-                      <td className="px-3 py-3 text-right">
-                        {!u.is_paid ? (
-                          <div>
-                            <div className="text-sm font-bold text-orange-600 dark:text-orange-400">{fmtRp(u.unpaid_amount)}</div>
-                            <div className="text-xs text-muted-foreground">{u.unpaid_count} invoice</div>
-                          </div>
-                        ) : u.invoices?.length > 0 ? (
-                          <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Lunas</span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">-</span>
-                        )}
-                      </td>
-                      {/* Aksi */}
-                      <td className="px-3 py-3">
-                        <div className="flex items-center justify-center">
-                          <button
-                            onClick={() => setExpandedUser(expandedUser === u.id ? null : u.id)}
-                            className="text-xs text-emerald-600 dark:text-emerald-400 font-medium hover:underline"
-                          >
-                            {u.invoices?.length || 0} invoice
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                    {/* Expanded invoice rows */}
-                    {expandedUser === u.id && (
-                      <tr className="bg-accent/20">
-                        <td colSpan={7} className="px-3 py-3">
-                          {/* Customer detail */}
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3 text-xs">
-                            <div>
-                              <span className="text-muted-foreground">Username:</span>{' '}
-                              <span className="font-mono text-foreground">{u.username}</span>
-                            </div>
-                            {/* Paket/Area/Expired are their own columns on desktop (md:table-cell
-                                above); on mobile those columns are hidden, so surface them here
-                                instead of losing the information entirely. */}
-                            {u.profile && (
-                              <div className="md:hidden">
-                                <span className="text-muted-foreground">Paket:</span>{' '}
-                                <span className="text-foreground">{u.profile.name} ({fmtRp(u.profile.price)}/bln)</span>
-                              </div>
-                            )}
-                            {u.area && (
-                              <div className="md:hidden">
-                                <span className="text-muted-foreground">Area:</span>{' '}
-                                <span className="text-foreground">{u.area.name}</span>
-                              </div>
-                            )}
-                            <div className="md:hidden">
-                              <span className="text-muted-foreground">Expired:</span>{' '}
-                              <span className="text-foreground">{fmtDate(u.expiredAt)}</span>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">Tipe:</span>{' '}
-                              <span className="text-foreground">{u.subscriptionType === 'POSTPAID' ? 'Pascabayar' : 'Prabayar'}</span>
-                            </div>
-                            <div>
-                              <span className="text-muted-foreground">Koneksi:</span>{' '}
-                              <span className="text-foreground">{u.connectionType || 'PPPOE'}</span>
-                            </div>
-                            {u.router && (
-                              <div>
-                                <span className="text-muted-foreground">Router:</span>{' '}
-                                <span className="text-foreground">{u.router.name}</span>
-                              </div>
-                            )}
-                            {u.address && (
-                              <div className="col-span-2 md:col-span-4">
-                                <span className="text-muted-foreground">Alamat:</span>{' '}
-                                <span className="text-foreground">{u.address}</span>
-                              </div>
-                            )}
-                          </div>
+          <p className="text-xs text-muted-foreground mb-2">{filtered.length} pelanggan</p>
+          <ul className="space-y-2">
+            {visible.map(u => {
+              const st = customerStatus(u.status);
+              const open = expandedUser === u.id;
+              return (
+                <li key={u.id} className={ui.card}>
+                  <button
+                    type="button"
+                    onClick={() => setExpandedUser(open ? null : u.id)}
+                    aria-expanded={open}
+                    className="w-full text-left p-4 flex items-start gap-3 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <p className="font-semibold text-foreground truncate">{u.name}</p>
+                        <StatusPill tone={st.tone}>{st.label}</StatusPill>
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">
+                        {[u.customerId || u.username, u.phone, u.area?.name].filter(Boolean).join(' · ')}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      {!u.is_paid ? (
+                        <>
+                          <p className={cn('text-sm font-bold', toneText('red'))}>{fmtRp(u.unpaid_amount)}</p>
+                          <p className="text-xs text-muted-foreground">{u.unpaid_count} tagihan</p>
+                        </>
+                      ) : u.invoices?.length > 0 ? (
+                        <p className={cn('text-sm font-semibold', toneText('green'))}>Lunas</p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">Tanpa tagihan</p>
+                      )}
+                    </div>
+                    <ChevronDown className={cn('w-5 h-5 mt-0.5 shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')} aria-hidden />
+                  </button>
 
-                          {/* Invoice table */}
-                          {u.invoices && u.invoices.length > 0 ? (
-                            <div className="overflow-x-auto rounded-lg border border-border">
-                              <table className="w-full text-xs">
-                                <thead className="bg-card border-b border-border">
-                                  <tr className="text-left text-muted-foreground">
-                                    <th className="px-3 py-2 font-medium">No. Invoice</th>
-                                    <th className="px-3 py-2 font-medium">Jatuh Tempo</th>
-                                    <th className="px-3 py-2 font-medium">Status</th>
-                                    <th className="px-3 py-2 font-medium text-right">Jumlah</th>
-                                    <th className="px-3 py-2 font-medium text-center">Aksi</th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y divide-border">
-                                  {u.invoices.map((inv: any) => (
-                                    <tr key={inv.id} className="bg-card/50">
-                                      <td className="px-3 py-2 font-mono text-foreground">#{inv.invoiceNumber}</td>
-                                      <td className="px-3 py-2 text-muted-foreground">{fmtDate(inv.dueDate)}</td>
-                                      <td className="px-3 py-2">
-                                        {inv.status === 'PAID' ? (
-                                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">Lunas</span>
-                                        ) : (
-                                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-500/10 text-orange-600 dark:text-orange-400">{inv.status}</span>
-                                        )}
-                                      </td>
-                                      <td className="px-3 py-2 text-right font-bold text-foreground">{fmtRp(inv.amount)}</td>
-                                      <td className="px-3 py-2">
-                                        <div className="flex items-center justify-center gap-1">
-                                          {/* Unpaid: Cash + TF buttons */}
-                                          {inv.status !== 'PAID' && (
-                                            <>
-                                              <button
-                                                onClick={() => {
-                                                  setPayModal({ invoiceId: inv.id, invoiceNumber: inv.invoiceNumber, amount: inv.amount, customerName: u.name });
-                                                  setPaymentMethod('cash');
-                                                  setProofPreview(null);
-                                                  setProofFile(null);
-                                                }}
-                                                className="px-3 py-2.5 min-h-[40px] text-xs rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-all flex items-center gap-1"
-                                                title="Bayar Tunai"
-                                              >
-                                                <Wallet className="w-3 h-3" />
-                                                Cash
-                                              </button>
-                                              <button
-                                                onClick={() => {
-                                                  setPayModal({ invoiceId: inv.id, invoiceNumber: inv.invoiceNumber, amount: inv.amount, customerName: u.name });
-                                                  setPaymentMethod('transfer');
-                                                  setProofPreview(null);
-                                                  setProofFile(null);
-                                                }}
-                                                className="px-3 py-2.5 min-h-[40px] text-xs rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-all flex items-center gap-1"
-                                                title="Upload Bukti Transfer"
-                                              >
-                                                <Upload className="w-3 h-3" />
-                                                TF
-                                              </button>
-                                              <button
-                                                onClick={() => openPromiseModal(u.id, inv.id, u.name)}
-                                                className="px-3 py-2.5 min-h-[40px] text-xs rounded-lg bg-amber-600 text-white font-medium hover:bg-amber-700 transition-all flex items-center gap-1"
-                                                title="Janji Bayar (dengan lokasi GPS)"
-                                              >
-                                                <CalendarClock className="w-3 h-3" />
-                                                Janji
-                                              </button>
-                                            </>
-                                          )}
-                                          {/* Paid: Print + WhatsApp buttons */}
-                                          {inv.status === 'PAID' && (
-                                            <>
-                                              <div className="relative" ref={showPrintMenu === inv.id ? printMenuRef : null}>
-                                                <button
-                                                  onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setShowPrintMenu(showPrintMenu === inv.id ? null : inv.id);
-                                                  }}
-                                                  disabled={actionLoading?.startsWith('a4-') && actionLoading === `a4-${inv.id}` || actionLoading?.startsWith('thermal-') && actionLoading === `thermal-${inv.id}` || actionLoading?.startsWith('bt-') && actionLoading === `bt-${inv.id}`}
-                                                  className="p-1 rounded text-muted-foreground hover:bg-accent transition-all"
-                                                  title="Cetak"
-                                                >
-                                                  {actionLoading === `a4-${inv.id}` || actionLoading === `thermal-${inv.id}` || actionLoading === `bt-${inv.id}` ? (
-                                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                                  ) : (
-                                                    <Printer className="w-3.5 h-3.5" />
-                                                  )}
-                                                </button>
-                                                {showPrintMenu === inv.id && (
-                                                  <div className="absolute right-0 top-full mt-1 z-20 bg-card border border-border rounded-lg shadow-lg py-1 min-w-[180px]">
-                                                    <button
-                                                      onClick={(e) => { e.stopPropagation(); handlePrintA4(inv.id); }}
-                                                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-accent text-left"
-                                                    >
-                                                      <FileText className="w-3.5 h-3.5" />
-                                                      Cetak Invoice A4
-                                                    </button>
-                                                    <button
-                                                      onClick={(e) => { e.stopPropagation(); handlePrintThermal(inv.id); }}
-                                                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-accent text-left"
-                                                    >
-                                                      <Printer className="w-3.5 h-3.5" />
-                                                      Cetak Struk 80mm
-                                                    </button>
-                                                    <button
-                                                      onClick={(e) => { e.stopPropagation(); handlePrintBluetooth(inv.id); }}
-                                                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-accent text-left"
-                                                    >
-                                                      <Bluetooth className="w-3.5 h-3.5" />
-                                                      Cetak via Bluetooth
-                                                    </button>
-                                                  </div>
-                                                )}
-                                              </div>
-                                              <button
-                                                onClick={(e) => {
-                                                  e.stopPropagation();
-                                                  handleSendWhatsApp(inv.id, inv.invoiceNumber, u.name);
-                                                }}
-                                                disabled={actionLoading === `wa-${inv.id}`}
-                                                className="p-1 rounded text-muted-foreground hover:text-green-600 hover:bg-accent transition-all"
-                                                title="Kirim Bukti Lunas via WhatsApp"
-                                              >
-                                                {actionLoading === `wa-${inv.id}` ? (
-                                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                                ) : (
-                                                  <MessageCircle className="w-3.5 h-3.5" />
-                                                )}
-                                              </button>
-                                            </>
-                                          )}
+                  {open && (
+                    <div className="border-t border-border px-4 pb-4">
+                      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 py-3 text-xs">
+                        {u.profile && (<div><dt className="text-muted-foreground">Paket</dt><dd className="text-foreground font-medium">{u.profile.name} · {fmtRp(u.profile.price)}</dd></div>)}
+                        <div><dt className="text-muted-foreground">Aktif s/d</dt><dd className="text-foreground font-medium">{fmtDate(u.expiredAt)}</dd></div>
+                        <div><dt className="text-muted-foreground">Username</dt><dd className="text-foreground font-medium break-all">{u.username}</dd></div>
+                        <div><dt className="text-muted-foreground">Tipe</dt><dd className="text-foreground font-medium">{u.subscriptionType === 'POSTPAID' ? 'Pascabayar' : 'Prabayar'} · {u.connectionType || 'PPPOE'}</dd></div>
+                        {u.router && (<div><dt className="text-muted-foreground">Router/NAS</dt><dd className="text-foreground font-medium">{u.router.name}</dd></div>)}
+                        {u.phone && (<div><dt className="text-muted-foreground">Telepon</dt><dd><a href={`tel:${u.phone}`} className="font-medium text-blue-700 dark:text-blue-400 inline-flex items-center gap-1"><Phone className="w-3 h-3" />{u.phone}</a></dd></div>)}
+                        {u.address && (<div className="col-span-2"><dt className="text-muted-foreground">Alamat</dt><dd className="text-foreground">{u.address}</dd></div>)}
+                      </dl>
+
+                      {u.invoices && u.invoices.length > 0 ? (
+                        <ul className="space-y-2">
+                          {u.invoices.map((inv: any) => {
+                            const paid = inv.status === 'PAID';
+                            return (
+                              <li key={inv.id} className="rounded-xl border border-border bg-background p-3">
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-semibold text-foreground">{fmtRp(inv.amount)}</p>
+                                    <p className="text-xs text-muted-foreground truncate">#{inv.invoiceNumber} · jatuh tempo {fmtDate(inv.dueDate)}</p>
+                                  </div>
+                                  <StatusPill tone={paid ? 'green' : inv.status === 'OVERDUE' ? 'red' : 'amber'}>
+                                    {paid ? 'Lunas' : inv.status === 'OVERDUE' ? 'Lewat tempo' : 'Belum bayar'}
+                                  </StatusPill>
+                                </div>
+
+                                {!paid ? (
+                                  <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:justify-end">
+                                    <button type="button" onClick={() => openPromiseModal(u.id, inv.id, u.name)} className={cn(ui.btnSecondary, 'h-10 text-amber-700 dark:text-amber-400')}>
+                                      <CalendarClock className="w-4 h-4" /> Janji bayar
+                                    </button>
+                                    <button type="button" onClick={() => openPay(inv, u, 'transfer')} className={cn(ui.btnSecondary, 'h-10')}>
+                                      <Upload className="w-4 h-4" /> Transfer
+                                    </button>
+                                    <button type="button" onClick={() => openPay(inv, u, 'cash')} className={cn(ui.btnPrimary, 'h-10 col-span-2 sm:col-span-1')}>
+                                      <Wallet className="w-4 h-4" /> Lunas tunai
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="mt-3 flex flex-wrap justify-end gap-2">
+                                    <div className="relative" ref={showPrintMenu === inv.id ? printMenuRef : null}>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => { e.stopPropagation(); setShowPrintMenu(showPrintMenu === inv.id ? null : inv.id); }}
+                                        disabled={busy(inv.id)}
+                                        aria-expanded={showPrintMenu === inv.id}
+                                        className={cn(ui.btnSecondary, 'h-10')}
+                                      >
+                                        {busy(inv.id) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />} Cetak
+                                      </button>
+                                      {showPrintMenu === inv.id && (
+                                        <div className="absolute right-0 bottom-full mb-1 z-20 rounded-xl border border-border bg-card py-1 min-w-[200px]" role="menu">
+                                          <button type="button" role="menuitem" onClick={(e) => { e.stopPropagation(); handlePrintA4(inv.id); }} className="w-full flex items-center gap-2 h-11 px-3 text-sm text-foreground hover:bg-muted text-left">
+                                            <FileText className="w-4 h-4" /> Invoice A4
+                                          </button>
+                                          <button type="button" role="menuitem" onClick={(e) => { e.stopPropagation(); handlePrintThermal(inv.id); }} className="w-full flex items-center gap-2 h-11 px-3 text-sm text-foreground hover:bg-muted text-left">
+                                            <Printer className="w-4 h-4" /> Struk 80mm
+                                          </button>
+                                          <button type="button" role="menuitem" onClick={(e) => { e.stopPropagation(); handlePrintBluetooth(inv.id); }} className="w-full flex items-center gap-2 h-11 px-3 text-sm text-foreground hover:bg-muted text-left">
+                                            <Bluetooth className="w-4 h-4" /> Printer Bluetooth
+                                          </button>
                                         </div>
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          ) : (
-                            <div className="text-xs text-muted-foreground text-center py-3">Tidak ada invoice</div>
-                          )}
-                        </td>
-                      </tr>
-                    )}
-                  </Fragment>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                                      )}
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.stopPropagation(); handleSendWhatsApp(inv.id, inv.invoiceNumber, u.name); }}
+                                      disabled={actionLoading === `wa-${inv.id}`}
+                                      className={cn(ui.btnSecondary, 'h-10')}
+                                    >
+                                      {actionLoading === `wa-${inv.id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />} Kirim bukti lunas
+                                    </button>
+                                  </div>
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-muted-foreground py-2">Belum ada tagihan untuk pelanggan ini.</p>
+                      )}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
 
           {visibleCount < filtered.length && (
-            <div className="text-center mt-4">
-              <button
-                onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
-                className="px-6 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent flex items-center gap-2"
-              >
-                <ChevronDown className="w-4 h-4" /> Muat {Math.min(PAGE_SIZE, filtered.length - visibleCount)} lagi ({visibleCount}/{filtered.length})
-              </button>
-            </div>
+            <button type="button" onClick={() => setVisibleCount(c => c + PAGE_SIZE)} className={cn(ui.btnSecondary, 'mt-4 w-full')}>
+              Tampilkan {Math.min(PAGE_SIZE, filtered.length - visibleCount)} lagi ({visibleCount} dari {filtered.length})
+            </button>
           )}
         </>
       )}
 
-      {/* Payment Modal */}
+      {/* Payment dialog */}
       {payModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setPayModal(null)}>
-          <div className="bg-card border border-border rounded-xl p-6 max-w-sm w-full" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-foreground mb-1">Konfirmasi Pembayaran</h3>
-            <p className="text-sm text-muted-foreground mb-4">Invoice #{payModal.invoiceNumber} - {payModal.customerName}</p>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="pay-title">
+          <button type="button" aria-label="Tutup" className="absolute inset-0 bg-black/50" onClick={() => setPayModal(null)} />
+          <div className="relative w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl border border-border bg-card p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] max-h-[90dvh] overflow-y-auto">
+            <h3 id="pay-title" className="text-lg font-bold text-foreground">Tandai lunas</h3>
+            <p className="text-sm text-muted-foreground">{payModal.customerName} · #{payModal.invoiceNumber}</p>
 
-            <div className="bg-accent/30 rounded-lg p-3 mb-4">
-              <div className="text-xs text-muted-foreground">Jumlah Tagihan</div>
-              <div className="text-xl font-bold text-foreground">{fmtRp(payModal.amount)}</div>
+            <div className="mt-4 rounded-xl bg-muted p-3">
+              <p className="text-xs text-muted-foreground">Jumlah diterima</p>
+              <p className="text-2xl font-extrabold tracking-tight text-foreground">{fmtRp(payModal.amount)}</p>
             </div>
 
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-foreground mb-2">Metode Pembayaran</label>
-              <div className="flex gap-2">
+            <fieldset className="mt-4">
+              <legend className="text-sm font-medium text-foreground mb-2">Cara bayar</legend>
+              <div className="grid grid-cols-2 gap-2">
                 {[
                   { key: 'cash', label: 'Tunai', icon: Wallet },
                   { key: 'transfer', label: 'Transfer', icon: Upload },
@@ -772,132 +591,115 @@ export default function CollectorBillingPage() {
                   return (
                     <button
                       key={m.key}
+                      type="button"
+                      aria-pressed={paymentMethod === m.key}
                       onClick={() => { setPaymentMethod(m.key); if (m.key === 'cash') { setProofPreview(null); setProofFile(null); } }}
-                      className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
-                        paymentMethod === m.key
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-accent text-muted-foreground hover:bg-accent/80'
-                      }`}
+                      className={chipClass(paymentMethod === m.key) + ' h-11 flex items-center justify-center gap-2'}
                     >
-                      <Icon className="w-4 h-4" />
-                      {m.label}
+                      <Icon className="w-4 h-4" /> {m.label}
                     </button>
                   );
                 })}
               </div>
-            </div>
+            </fieldset>
 
             {paymentMethod === 'transfer' && (
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-foreground mb-2">Bukti Transfer</label>
+              <div className="mt-4">
+                <p className="text-sm font-medium text-foreground mb-2">Bukti transfer</p>
                 {proofPreview ? (
                   <div className="relative">
-                    <img src={proofPreview} alt="Bukti Transfer" className="w-full rounded-lg border border-border max-h-48 object-contain" />
-                    <button
-                      onClick={() => { setProofPreview(null); setProofFile(null); }}
-                      className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80"
-                    >
+                    {/* eslint-disable-next-line @next/next/no-img-element -- local preview of a picked file */}
+                    <img src={proofPreview} alt="Bukti transfer" className="w-full rounded-xl border border-border max-h-48 object-contain" />
+                    <button type="button" aria-label="Hapus bukti" onClick={() => { setProofPreview(null); setProofFile(null); }} className="absolute top-2 right-2 h-9 w-9 flex items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80">
                       <X className="w-4 h-4" />
                     </button>
                   </div>
                 ) : (
-                  <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded-lg p-6 cursor-pointer hover:bg-accent/30 transition-all">
-                    <Upload className="w-8 h-8 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Klik untuk upload bukti transfer</span>
-                    <input type="file" accept="image/*" onChange={handleProofSelect} className="hidden" />
+                  <label className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border p-6 cursor-pointer hover:bg-muted focus-within:ring-2 focus-within:ring-blue-600">
+                    <Upload className="w-6 h-6 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Ambil foto atau pilih gambar</span>
+                    <input type="file" accept="image/*" onChange={handleProofSelect} className="sr-only" />
                   </label>
                 )}
               </div>
             )}
 
-            <p className="text-xs text-muted-foreground mb-4">
-              Tindakan ini akan menandai invoice sebagai lunas dan tidak bisa dibatalkan. Bukti pembayaran akan dikirim ke pelanggan via WhatsApp.
+            <p className="text-xs text-muted-foreground mt-4">
+              Tagihan ditandai lunas dan tidak bisa dibatalkan dari sini. Pelanggan menerima bukti lunas lewat WhatsApp.
             </p>
 
-            <div className="flex gap-2">
-              <button
-                onClick={() => setPayModal(null)}
-                className="flex-1 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handlePay}
-                disabled={payLoading}
-                className="flex-1 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {payLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                Konfirmasi
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => setPayModal(null)} className={ui.btnSecondary}>Batal</button>
+              <button type="button" onClick={handlePay} disabled={payLoading} className={ui.btnPrimary}>
+                {payLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />} Tandai lunas
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Janji Bayar Modal */}
+      {/* Promise-to-pay dialog */}
       {promiseModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setPromiseModal(null)}>
-          <div className="bg-card border border-border rounded-xl p-6 max-w-sm w-full" onClick={e => e.stopPropagation()}>
-            <h3 className="text-lg font-bold text-foreground mb-1">Buat Janji Bayar</h3>
-            <p className="text-sm text-muted-foreground mb-4">{promiseModal.customerName}</p>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="promise-title">
+          <button type="button" aria-label="Tutup" className="absolute inset-0 bg-black/50" onClick={() => setPromiseModal(null)} />
+          <div className="relative w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl border border-border bg-card p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] max-h-[90dvh] overflow-y-auto">
+            <h3 id="promise-title" className="text-lg font-bold text-foreground">Janji bayar</h3>
+            <p className="text-sm text-muted-foreground">{promiseModal.customerName}</p>
 
-            {/* GPS status — mandatory, proves the visit actually happened here */}
-            <div className={`rounded-lg p-3 mb-4 flex items-center gap-2 text-xs ${
-              gpsStatus === 'ok' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' :
-              gpsStatus === 'denied' ? 'bg-destructive/10 text-destructive' :
-              'bg-muted text-muted-foreground'
-            }`}>
+            {/* GPS is mandatory: it records that the visit happened here. */}
+            <div
+              className={cn(
+                'mt-4 rounded-xl p-3 flex items-center gap-2 text-sm',
+                gpsStatus === 'ok' ? 'bg-emerald-600/10 ' + toneText('green') : gpsStatus === 'denied' ? 'bg-red-600/10 ' + toneText('red') : 'bg-muted text-muted-foreground',
+              )}
+              role="status"
+            >
               {gpsStatus === 'capturing' && <Loader2 className="w-4 h-4 animate-spin shrink-0" />}
               {gpsStatus === 'ok' && <LocateFixed className="w-4 h-4 shrink-0" />}
               {gpsStatus === 'denied' && <MapPin className="w-4 h-4 shrink-0" />}
-              <div className="flex-1">
-                {gpsStatus === 'capturing' && 'Mendapatkan lokasi GPS...'}
-                {gpsStatus === 'ok' && gpsCoords && `Lokasi didapat (${gpsCoords.latitude.toFixed(5)}, ${gpsCoords.longitude.toFixed(5)})`}
-                {gpsStatus === 'denied' && 'Gagal mendapat lokasi. Aktifkan izin lokasi lalu coba lagi.'}
-              </div>
+              <span className="flex-1">
+                {gpsStatus === 'capturing' && 'Mengambil lokasi GPS...'}
+                {gpsStatus === 'ok' && gpsCoords && `Lokasi tercatat (${gpsCoords.latitude.toFixed(5)}, ${gpsCoords.longitude.toFixed(5)})`}
+                {gpsStatus === 'denied' && 'Lokasi tidak didapat. Izinkan akses lokasi, lalu coba lagi.'}
+              </span>
               {gpsStatus === 'denied' && (
-                <button onClick={captureGps} className="shrink-0 text-xs font-semibold underline">Coba lagi</button>
+                <button type="button" onClick={captureGps} className="shrink-0 h-9 px-3 rounded-lg text-xs font-semibold underline">Coba lagi</button>
               )}
             </div>
 
-            <div className="space-y-3">
+            <div className="mt-4 space-y-3">
               <div>
-                <label className="block text-sm font-medium mb-1 text-foreground">Tanggal Janji Bayar *</label>
+                <label htmlFor="promise-date" className="block text-sm font-medium mb-1 text-foreground">Tanggal janji bayar</label>
                 <input
+                  id="promise-date"
                   type="date"
                   value={promiseDate}
                   onChange={e => setPromiseDate(e.target.value)}
                   min={new Date(Date.now() + 86400000).toISOString().slice(0, 10)}
-                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded"
+                  className={ui.input}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1 text-foreground">Catatan (opsional)</label>
+                <label htmlFor="promise-notes" className="block text-sm font-medium mb-1 text-foreground">Catatan <span className="font-normal text-muted-foreground">(opsional)</span></label>
                 <textarea
+                  id="promise-notes"
                   value={promiseNotes}
                   onChange={e => setPromiseNotes(e.target.value)}
-                  placeholder="Mis: Janji bayar tanggal gajian..."
+                  placeholder="Contoh: bayar setelah gajian tanggal 25"
                   rows={3}
-                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded"
+                  className={cn(ui.input, 'h-auto py-2')}
                 />
               </div>
             </div>
 
-            <p className="text-xs text-muted-foreground mt-3 mb-4">
-              Lokasi GPS Anda saat ini akan dicatat sebagai bukti kunjungan. Akses internet pelanggan akan dibuka hingga tanggal janji.
+            <p className="text-xs text-muted-foreground mt-3">
+              Lokasi Anda dicatat sebagai bukti kunjungan. Internet pelanggan dibuka sampai tanggal janji.
             </p>
 
-            <div className="flex gap-2">
-              <button onClick={() => setPromiseModal(null)} className="flex-1 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent">
-                Batal
-              </button>
-              <button
-                onClick={handleCreatePromise}
-                disabled={promiseLoading || gpsStatus !== 'ok'}
-                className="flex-1 py-2 rounded-lg bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 disabled:opacity-50 flex items-center justify-center gap-2"
-              >
-                {promiseLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarClock className="w-4 h-4" />}
-                Simpan Janji
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => setPromiseModal(null)} className={ui.btnSecondary}>Batal</button>
+              <button type="button" onClick={handleCreatePromise} disabled={promiseLoading || gpsStatus !== 'ok'} className={ui.btnPrimary}>
+                {promiseLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarClock className="w-4 h-4" />} Simpan janji
               </button>
             </div>
           </div>

@@ -1,11 +1,30 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { apiAdmin } from '@/lib/api/client';
-import { Wallet, UserX, FileText, TrendingUp, DollarSign, Banknote, Smartphone, ChevronLeft, ChevronRight, CheckCircle2, Receipt } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Receipt, UserX, Wallet, Banknote, Smartphone, BadgePercent, CalendarCheck } from 'lucide-react';
 import { ScopeFilter, scopeQuery, type ScopeValue } from '@/components/collector/ScopeFilter';
+import { PageHeader, IconBox, ErrorState, ui, fmtRp, toneText } from '@/components/collector/ui';
+import { cn } from '@/lib/utils';
 
-const fmtRp = (v: number) => `Rp ${Number(v || 0).toLocaleString('id-ID')}`;
+interface Summary {
+  period: string;
+  invoice_count: number;
+  total_amount: number;
+  cash_amount: number;
+  transfer_amount: number;
+  discount_amount: number;
+  today_count: number;
+  today_amount: number;
+  isolir_count: number;
+  bill_count: number;
+  bill_amount: number;
+  bill_paid_count: number;
+  bill_paid_amount: number;
+  unpaid_count: number;
+  unpaid_amount: number;
+}
 
 const thisMonth = () => {
   const d = new Date();
@@ -23,111 +42,151 @@ const monthLabel = (period: string) => {
   return new Date(y, m - 1, 1).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
 };
 
-type Card = { label: string; value: string | number; icon: React.ReactNode; color: string; note?: string; raw?: boolean };
-
-const colorMap: Record<string, string> = {
-  emerald: 'from-emerald-500 to-teal-500',
-  blue: 'from-blue-500 to-cyan-500',
-  cyan: 'from-cyan-500 to-blue-500',
-  purple: 'from-primary to-pink-500',
-  amber: 'from-amber-500 to-orange-500',
-  red: 'from-red-500 to-rose-500',
-  orange: 'from-orange-500 to-amber-500',
-  slate: 'from-slate-500 to-gray-500',
-};
-
-function CardGrid({ cards }: { cards: Card[] }) {
-  return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-      {cards.map((card) => (
-        <div key={card.label} className="bg-card border border-border rounded-xl p-4">
-          <div className="flex items-center justify-between gap-2 mb-3 min-w-0">
-            <div className={`w-10 h-10 shrink-0 rounded-lg bg-gradient-to-br ${colorMap[card.color]} flex items-center justify-center text-white`}>
-              {card.icon}
-            </div>
-            {card.note && <span className="text-xs text-muted-foreground bg-accent px-2 py-0.5 rounded-full truncate">{card.note}</span>}
-          </div>
-          <div className="text-xs text-muted-foreground mb-1">{card.label}</div>
-          <div className={`font-bold ${card.raw ? 'text-2xl' : 'text-lg'} text-foreground break-words`}>{card.value}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export default function CollectorDashboardPage() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [period, setPeriod] = useState(thisMonth);
   const [scope, setScope] = useState<ScopeValue>({ areaId: '', routerId: '' });
 
   const loadData = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      const res = await apiAdmin<{ summary: any }>(`/api/collector/dashboard?period=${period}${scopeQuery(scope)}`);
+      const res = await apiAdmin<{ summary: Summary }>(`/api/collector/dashboard?period=${period}${scopeQuery(scope)}`);
       setData(res.summary);
-    } catch {}
-    finally { setLoading(false); }
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Ringkasan gagal dimuat');
+    } finally {
+      setLoading(false);
+    }
   }, [period, scope]);
 
-  useEffect(() => { loadData() }, [loadData]);
+  useEffect(() => { loadData(); }, [loadData]);
 
-  const s = data || {};
   const month = monthLabel(period);
   const isCurrent = period === thisMonth();
-  const tx = (n: number) => `${n || 0} transaksi`;
-  const inv = (n: number) => `${n || 0} tagihan`;
-
-  const collections: Card[] = [
-    ...(isCurrent ? [{ label: 'Setoran Hari Ini', value: fmtRp(s.today_amount), icon: <DollarSign className="w-5 h-5" />, color: 'emerald', note: tx(s.today_count) }] : []),
-    { label: `Total Setoran ${month}`, value: fmtRp(s.total_amount), icon: <Wallet className="w-5 h-5" />, color: 'blue', note: tx(s.invoice_count) },
-    { label: 'Tunai', value: fmtRp(s.cash_amount), icon: <Banknote className="w-5 h-5" />, color: 'cyan' },
-    { label: 'Transfer', value: fmtRp(s.transfer_amount), icon: <Smartphone className="w-5 h-5" />, color: 'purple' },
-    { label: 'Diskon', value: fmtRp(s.discount_amount), icon: <TrendingUp className="w-5 h-5" />, color: 'amber' },
-  ];
-
-  const billing: Card[] = [
-    { label: 'Total Tagihan', value: fmtRp(s.bill_amount), icon: <Receipt className="w-5 h-5" />, color: 'slate', note: inv(s.bill_count) },
-    { label: 'Sudah Lunas', value: fmtRp(s.bill_paid_amount), icon: <CheckCircle2 className="w-5 h-5" />, color: 'emerald', note: inv(s.bill_paid_count) },
-    { label: 'Belum Bayar', value: fmtRp(s.unpaid_amount), icon: <FileText className="w-5 h-5" />, color: 'orange', note: inv(s.unpaid_count) },
-    { label: 'Pelanggan Isolir', value: s.isolir_count || 0, icon: <UserX className="w-5 h-5" />, color: 'red', note: 'saat ini', raw: true },
-  ];
-
-  const navBtn = 'h-9 w-9 flex items-center justify-center rounded-lg border border-border bg-card text-foreground hover:bg-accent transition-colors';
+  const s = data;
+  // Share of this month's billing already paid, by amount (real figures only).
+  const paidShare = s && s.bill_amount > 0 ? Math.round((s.bill_paid_amount / s.bill_amount) * 100) : 0;
 
   return (
-    <div className="animate-fade-in">
-      <div className="mb-4 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-bold text-foreground">Dashboard Kolektor</h2>
-          <p className="text-sm text-muted-foreground mt-1">Ringkasan penagihan dan setoran per bulan</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button type="button" aria-label="Bulan sebelumnya" onClick={() => setPeriod((p) => shiftMonth(p, -1))} className={navBtn}>
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <div className="min-w-[9.5rem] text-center text-sm font-semibold text-foreground capitalize">{month}</div>
-          <button type="button" aria-label="Bulan berikutnya" onClick={() => setPeriod((p) => shiftMonth(p, 1))} className={navBtn}>
-            <ChevronRight className="w-4 h-4" />
-          </button>
-          {!isCurrent && (
-            <button type="button" onClick={() => setPeriod(thisMonth())} className="h-9 px-3 rounded-lg text-xs font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition-colors">
-              Bulan ini
+    <div>
+      <PageHeader
+        title="Ringkasan"
+        description="Tagihan pelanggan Anda dan setoran per bulan"
+        actions={
+          <>
+            <button type="button" aria-label="Bulan sebelumnya" onClick={() => setPeriod((p) => shiftMonth(p, -1))} className={ui.iconBtn}>
+              <ChevronLeft className="w-4 h-4" />
             </button>
-          )}
-        </div>
-      </div>
+            <div className="flex-1 sm:flex-none min-w-[9.5rem] text-center text-sm font-semibold text-foreground capitalize" aria-live="polite">{month}</div>
+            <button type="button" aria-label="Bulan berikutnya" onClick={() => setPeriod((p) => shiftMonth(p, 1))} className={ui.iconBtn}>
+              <ChevronRight className="w-4 h-4" />
+            </button>
+            {!isCurrent && (
+              <button type="button" onClick={() => setPeriod(thisMonth())} className={cn(ui.btnSecondary, 'px-3')}>
+                Bulan ini
+              </button>
+            )}
+          </>
+        }
+      />
 
       <ScopeFilter value={scope} onChange={setScope} />
 
-      <div className={loading ? 'opacity-60 transition-opacity' : 'transition-opacity'}>
-        <h3 className="text-sm font-semibold text-foreground mb-2 mt-2">Setoran Saya</h3>
-        <CardGrid cards={collections} />
+      {error && !s ? (
+        <ErrorState message={error} onRetry={loadData} />
+      ) : !s ? (
+        <div className={cn(ui.card, 'h-56 animate-pulse')} aria-label="Memuat ringkasan" />
+      ) : (
+        <div className={cn('grid gap-4 lg:grid-cols-5 lg:items-start transition-opacity', loading && 'opacity-60')}>
+          {/* Focal point: what is still to collect this month. */}
+          <section className={cn(ui.card, 'p-5 lg:col-span-3')} aria-labelledby="billing-title">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h3 id="billing-title" className="text-sm font-semibold text-foreground capitalize">Tagihan {month}</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Jatuh tempo bulan ini, pelanggan di wilayah tugas Anda</p>
+              </div>
+              <IconBox tone="blue"><Receipt className="w-5 h-5" /></IconBox>
+            </div>
 
-        <h3 className="text-sm font-semibold text-foreground mb-2 mt-6">Tagihan {month}</h3>
-        <p className="text-xs text-muted-foreground -mt-1 mb-2">Tagihan pelanggan Anda yang jatuh tempo di bulan ini.</p>
-        <CardGrid cards={billing} />
-      </div>
+            <div className="mt-4">
+              <p className="text-xs font-medium text-muted-foreground">Belum dibayar</p>
+              <p className={cn('text-3xl font-extrabold tracking-tight', s.unpaid_amount > 0 ? toneText('red') : 'text-foreground')}>
+                {fmtRp(s.unpaid_amount)}
+              </p>
+              <p className="text-sm text-muted-foreground">{s.unpaid_count} tagihan</p>
+            </div>
+
+            {s.bill_count > 0 ? (
+              <div className="mt-4">
+                <div className="h-2 rounded-full bg-muted overflow-hidden" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={paidShare} aria-label="Bagian tagihan yang sudah lunas">
+                  <div className="h-full rounded-full bg-emerald-600 dark:bg-emerald-400" style={{ width: `${paidShare}%` }} />
+                </div>
+                <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Sudah lunas ({paidShare}%)</dt>
+                    <dd className={cn('font-semibold', toneText('green'))}>{fmtRp(s.bill_paid_amount)} <span className="font-normal text-muted-foreground">· {s.bill_paid_count}</span></dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Total tagihan</dt>
+                    <dd className="font-semibold text-foreground">{fmtRp(s.bill_amount)} <span className="font-normal text-muted-foreground">· {s.bill_count}</span></dd>
+                  </div>
+                </dl>
+              </div>
+            ) : (
+              <p className="mt-4 text-sm text-muted-foreground">Belum ada tagihan yang jatuh tempo di bulan ini.</p>
+            )}
+
+            <div className="mt-5 flex flex-col sm:flex-row gap-2">
+              <Link href="/collector/billing" className={cn(ui.btnPrimary, 'sm:flex-1')}>Buka daftar tagihan</Link>
+              <Link href="/collector/isolir" className={cn(ui.btnSecondary, 'sm:flex-1')}>
+                <UserX className="w-4 h-4" /> {s.isolir_count} pelanggan isolir saat ini
+              </Link>
+            </div>
+          </section>
+
+          {/* Collections: a breakdown list, not four equal tiles. */}
+          <section className={cn(ui.card, 'p-5 lg:col-span-2')} aria-labelledby="collect-title">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h3 id="collect-title" className="text-sm font-semibold text-foreground">Setoran saya</h3>
+                <p className="text-xs text-muted-foreground mt-0.5 capitalize">{month}</p>
+              </div>
+              <IconBox tone="green"><Wallet className="w-5 h-5" /></IconBox>
+            </div>
+            <p className="mt-3 text-2xl font-extrabold tracking-tight text-foreground">{fmtRp(s.total_amount)}</p>
+            <p className="text-sm text-muted-foreground">{s.invoice_count} transaksi</p>
+
+            <ul className="mt-4 divide-y divide-border border-t border-border">
+              {isCurrent && (
+                <li className="flex items-center gap-3 py-3">
+                  <IconBox tone="blue" size="sm"><CalendarCheck className="w-4 h-4" /></IconBox>
+                  <span className="flex-1 text-sm text-foreground">Hari ini <span className="text-muted-foreground">· {s.today_count} transaksi</span></span>
+                  <span className="text-sm font-semibold text-foreground">{fmtRp(s.today_amount)}</span>
+                </li>
+              )}
+              <li className="flex items-center gap-3 py-3">
+                <IconBox tone="slate" size="sm"><Banknote className="w-4 h-4" /></IconBox>
+                <span className="flex-1 text-sm text-foreground">Tunai</span>
+                <span className="text-sm font-semibold text-foreground">{fmtRp(s.cash_amount)}</span>
+              </li>
+              <li className="flex items-center gap-3 py-3">
+                <IconBox tone="slate" size="sm"><Smartphone className="w-4 h-4" /></IconBox>
+                <span className="flex-1 text-sm text-foreground">Transfer</span>
+                <span className="text-sm font-semibold text-foreground">{fmtRp(s.transfer_amount)}</span>
+              </li>
+              <li className="flex items-center gap-3 py-3">
+                <IconBox tone="slate" size="sm"><BadgePercent className="w-4 h-4" /></IconBox>
+                <span className="flex-1 text-sm text-foreground">Diskon</span>
+                <span className="text-sm font-semibold text-foreground">{fmtRp(s.discount_amount)}</span>
+              </li>
+            </ul>
+            <Link href="/collector/settlements" className={cn(ui.btnSecondary, 'mt-2 w-full')}>Lihat setoran per hari</Link>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
