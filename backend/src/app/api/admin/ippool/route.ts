@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { requirePermission } from '@/server/middleware/api-auth';
+import { requireAnyPermission, requirePermission } from '@/server/middleware/api-auth';
 import { reloadFreeRadius } from '@/server/services/radius/freeradius.service';
 
 // GET /api/admin/ippool — list pools
+// Pool names and ranges are read by the PPPoE profile form too, so staff
+// who can see customers may list them; changing pools stays with settings.
 export async function GET(_request: NextRequest) {
-  const authCheck = await requirePermission('settings.view');
+  const authCheck = await requireAnyPermission(['settings.view', 'customers.view']);
   if (!authCheck.authorized) return authCheck.response;
 
   try {
