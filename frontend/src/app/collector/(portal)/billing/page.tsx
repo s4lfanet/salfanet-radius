@@ -490,7 +490,7 @@ export default function CollectorBillingPage() {
                                 <div className="flex items-start justify-between gap-3">
                                   <div className="min-w-0">
                                     <p className="text-sm font-semibold text-foreground">{fmtRp(inv.amount)}</p>
-                                    <p className="text-xs text-muted-foreground truncate">#{inv.invoiceNumber} · jatuh tempo {fmtDate(inv.dueDate)}</p>
+                                    <p className="text-xs text-muted-foreground break-words">#{inv.invoiceNumber} · jatuh tempo {fmtDate(inv.dueDate)}</p>
                                   </div>
                                   <StatusPill tone={paid ? 'green' : inv.status === 'OVERDUE' ? 'red' : 'amber'}>
                                     {paid ? 'Lunas' : inv.status === 'OVERDUE' ? 'Lewat tempo' : 'Belum bayar'}
