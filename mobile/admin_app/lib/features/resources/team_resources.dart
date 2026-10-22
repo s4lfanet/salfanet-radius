@@ -173,7 +173,14 @@ CrudConfig collectorsConfig() => CrudConfig(
   parse: (res) => extractList(res, listKey: 'users').where((u) => u['role'] == 'COLLECTOR').toList(),
   header: (context, _) => const LoginLinks(title: 'Alamat login kolektor', links: [('Kolektor', '/collector/login')]),
   titleOf: (u) => str(u, 'name') ?? str(u, 'username') ?? '-',
-  subtitleOf: (u) => '@${u['username']}${mapOf(u, 'area') != null ? ' · ${mapOf(u, 'area')!['name']}' : ''}',
+  subtitleOf: (u) {
+    final routers = (u['collectorRouterIds'] as List?)?.length ?? 0;
+    return [
+      '@${u['username']}',
+      mapOf(u, 'area')?['name'],
+      if (routers > 0) '$routers router',
+    ].whereType<String>().join(' · ');
+  },
   metaOf: (u) => str(u, 'phone'),
   statusOf: _activePill,
   fields: (u) => [
@@ -181,7 +188,15 @@ CrudConfig collectorsConfig() => CrudConfig(
     const FieldSpec('name', 'Nama', required: true),
     const FieldSpec('phone', 'Telepon', type: FieldType.phone),
     const FieldSpec('email', 'Email', type: FieldType.email),
-    FieldSpec('areaId', 'Area tagih', type: FieldType.select, required: true, loadOptions: Lookups.areas),
+    // Area, routers, or both; the server refuses a collector with neither.
+    const FieldSpec('areaId', 'Area tagih', type: FieldType.select, loadOptions: Lookups.areas, helper: 'Kosongkan untuk semua area pada router yang dipilih.'),
+    const FieldSpec(
+      'collectorRouterIds',
+      'Router / NAS',
+      type: FieldType.multiSelect,
+      loadOptions: Lookups.routers,
+      helper: 'Kosongkan untuk semua router di area itu.',
+    ),
     FieldSpec('password', u == null ? 'Password' : 'Password baru', type: FieldType.password, required: u == null, omitWhenEmpty: true),
     if (u != null) const FieldSpec('isActive', 'Aktif', type: FieldType.toggle, initial: true),
   ],

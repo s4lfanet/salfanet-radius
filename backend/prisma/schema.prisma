@@ -1659,6 +1659,9 @@ model adminUser {
   isActive          Boolean                 @default(true)
   phone             String?
   areaId            String?                 @map("area_id") // For COLLECTOR role: assigned pppoeArea
+  // For COLLECTOR role: routers/NAS whose customers they collect from (JSON
+  // array of router ids). Together with areaId; empty means any router.
+  collectorRouterIds Json?                  @map("collector_router_ids")
   createdAt         DateTime                @default(now())
   updatedAt         DateTime                @updatedAt
   lastLogin         DateTime?

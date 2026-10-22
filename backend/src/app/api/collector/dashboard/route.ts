@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { verifyCollector } from '@/server/auth/collector-auth';
+import { getCollectorScope, scopeWhere } from '@/server/auth/collector-scope';
 
 export async function GET(req: NextRequest) {
   const collector = await verifyCollector(req);
@@ -62,24 +63,18 @@ export async function GET(req: NextRequest) {
     let isolirCount = 0;
     let unpaidCount = 0;
 
-    const adminUser = await prisma.adminUser.findUnique({
-      where: { id: collector.id },
-      select: { areaId: true },
-    });
+    const scope = await getCollectorScope(collector.id);
 
-    if (adminUser?.areaId) {
+    if (scope) {
       const suspendedUsers = await prisma.pppoeUser.count({
-        where: {
-          areaId: adminUser.areaId,
-          status: { in: ['suspended', 'isolated'] },
-        },
+        where: { AND: [scopeWhere(scope), { status: { in: ['suspended', 'isolated'] } }] },
       });
       isolirCount = suspendedUsers;
 
       const unpaidInvoices = await prisma.invoice.count({
         where: {
           status: { in: ['PENDING', 'OVERDUE'] },
-          user: { areaId: adminUser.areaId },
+          user: scopeWhere(scope),
         },
       });
       unpaidCount = unpaidInvoices;

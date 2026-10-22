@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { verifyCollector } from '@/server/auth/collector-auth';
+import { getCollectorScope, scopeWhere } from '@/server/auth/collector-scope';
 
 export async function GET(req: NextRequest) {
   const collector = await verifyCollector(req);
@@ -13,19 +14,14 @@ export async function GET(req: NextRequest) {
   const filter = ['unpaid', 'all', 'paid'].includes(rawFilter) ? rawFilter : 'unpaid';
 
   try {
-    const adminUser = await prisma.adminUser.findUnique({
-      where: { id: collector.id },
-      select: { areaId: true },
-    });
-
-    if (!adminUser?.areaId) {
+    const scope = await getCollectorScope(collector.id);
+    if (!scope) {
       return NextResponse.json({ users: [] });
     }
 
+    // The portal's Area / Router filter narrows within the collector's scope.
     const users = await prisma.pppoeUser.findMany({
-      where: {
-        areaId: adminUser.areaId,
-      },
+      where: scopeWhere(scope, { areaId: searchParams.get('areaId'), routerId: searchParams.get('routerId') }),
       select: {
         id: true,
         username: true,

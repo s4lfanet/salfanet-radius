@@ -3,6 +3,7 @@ import { prisma } from '@/server/db/client';
 import { formatCurrencyExport, formatDateExport } from '@/lib/utils/export';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { verifyCollector } from '@/server/auth/collector-auth';
+import { getCollectorScope, inScope } from '@/server/auth/collector-scope';
 
 // Get single invoice PDF data
 export async function GET(
@@ -55,6 +56,7 @@ export async function GET(
             address: true,
             customerId: true,
             areaId: true,
+            routerId: true,
             area: { select: { name: true } },
             profile: { select: { name: true, price: true } }
           }
@@ -73,15 +75,9 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
-    // If authenticated as a collector, verify the invoice is in their area
-    if (collectorId) {
-      const collectorAccount = await prisma.adminUser.findUnique({
-        where: { id: collectorId },
-        select: { areaId: true },
-      });
-      if (!collectorAccount?.areaId || invoice.user?.areaId !== collectorAccount.areaId) {
-        return NextResponse.json({ success: false, error: 'Invoice bukan di area Anda' }, { status: 403 });
-      }
+    // If authenticated as a collector, the customer must be in their area / routers
+    if (collectorId && !inScope(await getCollectorScope(collectorId), invoice.user)) {
+      return NextResponse.json({ success: false, error: 'Pelanggan ini bukan di area atau router Anda' }, { status: 403 });
     }
 
     // Get company info

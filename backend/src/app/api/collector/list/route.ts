@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
+import { parseRouterIds } from '@/server/auth/collector-scope';
 
 export async function GET(_req: NextRequest) {
   const authCheck = await requirePermission('users.view');
@@ -17,6 +18,7 @@ export async function GET(_req: NextRequest) {
         phone: true,
         isActive: true,
         areaId: true,
+        collectorRouterIds: true,
         lastLogin: true,
         createdAt: true,
       },
@@ -31,10 +33,18 @@ export async function GET(_req: NextRequest) {
     });
     const areaMap = new Map(areas.map(a => [a.id, a.name]));
 
-    const enriched = collectors.map(c => ({
-      ...c,
-      areaName: c.areaId ? areaMap.get(c.areaId) || null : null,
-    }));
+    const routers = await prisma.router.findMany({ select: { id: true, name: true } });
+    const routerMap = new Map(routers.map(r => [r.id, r.name]));
+
+    const enriched = collectors.map(c => {
+      const routerIds = parseRouterIds(c.collectorRouterIds).filter(id => routerMap.has(id));
+      return {
+        ...c,
+        collectorRouterIds: routerIds,
+        areaName: c.areaId ? areaMap.get(c.areaId) || null : null,
+        routerNames: routerIds.map(id => routerMap.get(id) as string),
+      };
+    });
 
     return NextResponse.json({ collectors: enriched });
   } catch (error) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { verifyCollector } from '@/server/auth/collector-auth';
+import { getCollectorScope, inScope } from '@/server/auth/collector-scope';
 
 // GET - list ONT removals for this collector
 export async function GET(req: NextRequest) {
@@ -93,16 +94,16 @@ export async function POST(req: NextRequest) {
     // customer is actually suspended/isolated — otherwise any collector
     // could fabricate removal records for arbitrary or nonexistent
     // usernames (same missing-scope class as the mark-paid IDOR fix).
-    const [collectorAccount, customer] = await Promise.all([
-      prisma.adminUser.findUnique({ where: { id: collector.id }, select: { areaId: true } }),
-      prisma.pppoeUser.findUnique({ where: { username }, select: { areaId: true, status: true } }),
+    const [scope, customer] = await Promise.all([
+      getCollectorScope(collector.id),
+      prisma.pppoeUser.findUnique({ where: { username }, select: { areaId: true, routerId: true, status: true } }),
     ]);
 
     if (!customer) {
       return NextResponse.json({ error: 'Pelanggan tidak ditemukan' }, { status: 404 });
     }
-    if (!collectorAccount?.areaId || customer.areaId !== collectorAccount.areaId) {
-      return NextResponse.json({ error: 'Pelanggan bukan di area Anda' }, { status: 403 });
+    if (!inScope(scope, customer)) {
+      return NextResponse.json({ error: 'Pelanggan ini bukan di area atau router Anda' }, { status: 403 });
     }
     if (!['suspended', 'isolated'].includes(customer.status)) {
       return NextResponse.json(
