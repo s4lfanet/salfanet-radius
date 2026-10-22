@@ -178,8 +178,8 @@ export default function AdminTechniciansPage() {
             <thead>
               <tr className="border-b border-border text-left">
                 <th className="px-4 py-3 font-semibold text-muted-foreground">Nama</th>
-                <th className="px-4 py-3 font-semibold text-muted-foreground">Kontak</th>
-                <th className="px-4 py-3 font-semibold text-muted-foreground">Login Terakhir</th>
+                <th className="hidden md:table-cell px-4 py-3 font-semibold text-muted-foreground">Kontak</th>
+                <th className="hidden md:table-cell px-4 py-3 font-semibold text-muted-foreground">Login Terakhir</th>
                 <th className="px-4 py-3 font-semibold text-muted-foreground">Status</th>
                 <th className="px-4 py-3 font-semibold text-muted-foreground">Aksi</th>
               </tr>
@@ -195,11 +195,11 @@ export default function AdminTechniciansPage() {
                       <p className="text-xs text-amber-600 dark:text-amber-400 font-normal">Belum bisa login: isi username dan password lewat Edit</p>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground text-xs">
+                  <td className="hidden md:table-cell px-4 py-3 text-muted-foreground text-xs">
                     <p className="flex items-center gap-1"><Phone className="w-3 h-3" /> {t.phoneNumber}</p>
                     {t.email && <p className="flex items-center gap-1 mt-0.5"><Mail className="w-3 h-3" /> {t.email}</p>}
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">
+                  <td className="hidden md:table-cell px-4 py-3 text-xs text-muted-foreground">
                     {t.lastLoginAt ? formatWIB(t.lastLoginAt, 'dd MMM yyyy HH:mm') : 'Belum pernah'}
                   </td>
                   <td className="px-4 py-3">
@@ -212,11 +212,11 @@ export default function AdminTechniciansPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1">
-                      <button onClick={() => openEdit(t)} title="Edit" className="inline-flex items-center gap-1 h-7 px-2 rounded-md text-xs font-medium text-foreground hover:bg-muted transition-colors">
-                        <Pencil className="w-3.5 h-3.5" /> Edit
+                      <button onClick={() => openEdit(t)} title="Edit" aria-label="Edit" className="inline-flex items-center gap-1 h-7 px-2 rounded-md text-xs font-medium text-foreground hover:bg-muted transition-colors">
+                        <Pencil className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Edit</span>
                       </button>
-                      <button onClick={() => remove(t)} title="Hapus" className="inline-flex items-center gap-1 h-7 px-2 rounded-md text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors">
-                        <Trash2 className="w-3.5 h-3.5" /> Hapus
+                      <button onClick={() => remove(t)} title="Hapus" aria-label="Hapus" className="inline-flex items-center gap-1 h-7 px-2 rounded-md text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors">
+                        <Trash2 className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Hapus</span>
                       </button>
                     </div>
                   </td>
