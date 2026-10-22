@@ -2245,7 +2245,6 @@ model technicianOtp {
 
   @@index([technicianId])
   @@index([phoneNumber])
-  @@index([username])
   @@index([otpCode])
   @@index([expiresAt])
   @@map("technician_otps")
