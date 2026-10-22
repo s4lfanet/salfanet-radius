@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { usePermissions } from '@/hooks/usePermissions';
 import { 
   Settings as SettingsIcon,
   MessageSquare,
@@ -13,6 +14,8 @@ import {
   Smartphone,
   Loader2
 } from 'lucide-react';
+
+type WaTab = 'providers' | 'templates' | 'notifications' | 'send' | 'history';
 
 // Dynamic imports for better performance
 const ProvidersPageContent = dynamic(() => import('@/app/admin/whatsapp/providers/page'), {
@@ -35,16 +38,30 @@ export default function WhatsAppSettingsPage() {
   const { t } = useTranslation();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const tabParam = searchParams.get('tab') as 'providers' | 'templates' | 'notifications' | 'send' | 'history' | null;
-  const [activeTab, setActiveTab] = useState<'providers' | 'templates' | 'notifications' | 'send' | 'history'>(tabParam || 'providers');
+  const { hasPermission, loading: permsLoading } = usePermissions();
+  // Same permissions as the tabs' APIs (and the sidebar), so a role only
+  // sees the tabs it can use: customer service and marketing send and read
+  // history, but providers and templates are for those who manage them.
+  const tabs: { id: WaTab; label: string; icon: React.ReactNode; permission: string }[] = [
+    { id: 'providers', label: t('whatsapp.providers'), icon: <Smartphone className="w-3.5 h-3.5 sm:w-4 sm:h-4 inline mr-1" />, permission: 'whatsapp.providers' },
+    { id: 'templates', label: t('whatsapp.templates'), icon: <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 inline mr-1" />, permission: 'whatsapp.templates' },
+    { id: 'notifications', label: t('whatsapp.reminderSettings'), icon: <SettingsIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 inline mr-1" />, permission: 'whatsapp.view' },
+    { id: 'send', label: t('whatsapp.sendMessage'), icon: <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4 inline mr-1" />, permission: 'whatsapp.send' },
+    { id: 'history', label: t('common.history'), icon: <History className="w-3.5 h-3.5 sm:w-4 sm:h-4 inline mr-1" />, permission: 'whatsapp.view' },
+  ];
+  const visibleTabs = tabs.filter((tab) => hasPermission(tab.permission));
+  const tabParam = searchParams.get('tab') as WaTab | null;
+  const [requestedTab, setActiveTab] = useState<WaTab>(tabParam || 'providers');
+  const activeTab: WaTab | undefined = visibleTabs.some((tab) => tab.id === requestedTab) ? requestedTab : visibleTabs[0]?.id;
 
   useEffect(() => {
-    if (tabParam && ['providers', 'templates', 'notifications', 'send', 'history'].includes(tabParam)) {
+    if (tabParam && tabs.some((tab) => tab.id === tabParam)) {
       setActiveTab(tabParam);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tabParam]);
 
-  const handleTabChange = (tab: 'providers' | 'templates' | 'notifications' | 'send' | 'history') => {
+  const handleTabChange = (tab: WaTab) => {
     setActiveTab(tab);
     router.push(`/admin/settings/whatsapp?tab=${tab}`, { scroll: false });
   };
@@ -75,66 +92,28 @@ export default function WhatsAppSettingsPage() {
       {/* Tabs */}
       <div className="border-b border-border">
         <div className="flex flex-wrap gap-1 sm:gap-2">
-          <button
-            onClick={() => handleTabChange('providers')}
-            className={`pb-2 px-2 sm:px-3 text-xs sm:text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'providers'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <Smartphone className="w-3.5 h-3.5 sm:w-4 sm:h-4 inline mr-1" />
-            {t('whatsapp.providers')}
-          </button>
-          <button
-            onClick={() => handleTabChange('templates')}
-            className={`pb-2 px-2 sm:px-3 text-xs sm:text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'templates'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 inline mr-1" />
-            {t('whatsapp.templates')}
-          </button>
-          <button
-            onClick={() => handleTabChange('notifications')}
-            className={`pb-2 px-2 sm:px-3 text-xs sm:text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'notifications'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <SettingsIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 inline mr-1" />
-            {t('whatsapp.reminderSettings')}
-          </button>
-          <button
-            onClick={() => handleTabChange('send')}
-            className={`pb-2 px-2 sm:px-3 text-xs sm:text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'send'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4 inline mr-1" />
-            {t('whatsapp.sendMessage')}
-          </button>
-          <button
-            onClick={() => handleTabChange('history')}
-            className={`pb-2 px-2 sm:px-3 text-xs sm:text-sm font-medium border-b-2 transition-colors ${
-              activeTab === 'history'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <History className="w-3.5 h-3.5 sm:w-4 sm:h-4 inline mr-1" />
-            {t('common.history')}
-          </button>
+          {visibleTabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => handleTabChange(tab.id)}
+              className={`pb-2 px-2 sm:px-3 text-xs sm:text-sm font-medium border-b-2 transition-colors ${
+                activeTab === tab.id
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {tab.icon}
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 
       {/* Tab Content */}
       <div className="mt-4">
+        {!permsLoading && !activeTab && (
+          <p className="text-sm text-muted-foreground">Akun Anda tidak punya akses ke menu WhatsApp.</p>
+        )}
         {activeTab === 'providers' && <ProvidersPageContent />}
         {activeTab === 'templates' && <TemplatesPageContent />}
         {activeTab === 'notifications' && <NotificationsPageContent />}

@@ -1,11 +1,12 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { generateExcelBuffer, formatDateExport, formatBytes, formatDuration } from '@/lib/utils/export';
-import { checkAuth } from '@/server/middleware/api-auth';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { formatWIB } from '@/lib/timezone';
 
 export async function GET(req: NextRequest) {
-  const auth = await checkAuth();
+  // Any signed-in admin could export before; now the same permission as the list.
+  const auth = await requirePermission('sessions.view');
   if (!auth.authorized) {
     return auth.response;
   }

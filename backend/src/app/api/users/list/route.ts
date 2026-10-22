@@ -4,7 +4,7 @@ import { requirePermission } from '@/server/middleware/api-auth';
 
 export async function GET(request: NextRequest) {
   // Check authentication
-  const authCheck = await requirePermission('users.view');
+  const authCheck = await requirePermission('customers.view');
   if (!authCheck.authorized) return authCheck.response;
 
   try {
