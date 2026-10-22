@@ -226,7 +226,7 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
         </header>
 
         {/* Bottom padding keeps the last row clear of the phone's bottom bar. */}
-        <main className="flex-1 w-full max-w-5xl mx-auto px-4 pt-4 lg:px-8 lg:pt-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-10">
+        <main className="flex-1 w-full max-w-[1440px] px-4 pt-4 lg:px-8 lg:pt-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-10">
           {children}
         </main>
       </div>

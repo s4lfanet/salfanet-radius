@@ -78,7 +78,7 @@ export default function CollectorProofsPage() {
   const visible = filtered.slice(0, visibleCount);
 
   return (
-    <div>
+    <div className="max-w-4xl">
       <PageHeader title="Bukti Transfer" description="Bukti transfer pelanggan di wilayah tugas Anda dan status pemeriksaan admin" />
 
       <div className="flex gap-2 mb-3 overflow-x-auto pb-1 -mx-4 px-4 lg:mx-0 lg:px-0" role="group" aria-label="Filter status">

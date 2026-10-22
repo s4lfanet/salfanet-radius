@@ -31,7 +31,7 @@ export default function CollectorOntPage() {
   useEffect(() => { loadData(); }, [loadData]);
 
   return (
-    <div>
+    <div className="max-w-4xl">
       <PageHeader
         title="Cabut ONT"
         description="Perangkat yang Anda catat sudah dicabut dari pelanggan isolir"

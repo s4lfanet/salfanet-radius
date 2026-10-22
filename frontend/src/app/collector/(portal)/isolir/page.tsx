@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Fragment } from 'react';
 import { ScopeFilter, scopeQuery, type ScopeValue } from '@/components/collector/ScopeFilter';
 import { PageHeader, StatusPill, LoadingState, ErrorState, EmptyState, chipClass, ui, fmtRp, toneText } from '@/components/collector/ui';
 import { apiAdmin, ApiError } from '@/lib/api/client';
@@ -69,6 +69,46 @@ export default function CollectorIsolirPage() {
       (u.phone || '').toLowerCase().includes(q);
   });
   const visible = filtered.slice(0, visibleCount);
+
+  // Open invoices plus Cabut ONT for one customer; shared by phone cards and the desktop table.
+  const renderInvoices = (u: any) => (
+    <>
+      {u.invoices && u.invoices.length > 0 ? (
+        <ul className="space-y-2">
+          {u.invoices.map((inv: any) => (
+            <li key={inv.id} className="rounded-xl border border-border bg-background p-3 md:flex md:items-center md:gap-4">
+              <div className="flex items-start justify-between gap-3 md:flex-1 md:min-w-0">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground">{fmtRp(inv.amount)}</p>
+                  <p className="text-xs text-muted-foreground break-words">#{inv.invoiceNumber} · jatuh tempo {fmtDate(inv.dueDate)}</p>
+                </div>
+                <StatusPill tone={inv.status === 'OVERDUE' ? 'red' : 'amber'}>{inv.status === 'OVERDUE' ? 'Lewat tempo' : 'Belum bayar'}</StatusPill>
+              </div>
+              <div className="mt-3 md:mt-0 grid grid-cols-2 gap-2 sm:flex sm:justify-end">
+                <button type="button" onClick={() => openPayModal(inv, u.name, 'transfer')} className={cn(ui.btnSecondary, 'h-10')}>
+                  <Upload className="w-4 h-4" /> Transfer
+                </button>
+                <button type="button" onClick={() => openPayModal(inv, u.name, 'cash')} className={cn(ui.btnPrimary, 'h-10')}>
+                  <Wallet className="w-4 h-4" /> Lunas tunai
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-sm text-muted-foreground py-2">Tidak ada tagihan terbuka.</p>
+      )}
+      <div className="mt-3 flex md:justify-end">
+        <button
+          type="button"
+          onClick={() => { setCabutTarget(u); setCabutNotes(''); }}
+          className={cn(ui.btnSecondary, 'w-full md:w-auto text-red-700 dark:text-red-400')}
+        >
+          <Unplug className="w-4 h-4" /> Catat cabut ONT
+        </button>
+      </div>
+    </>
+  );
 
   const submitCabut = async () => {
     if (!cabutTarget) return;
@@ -193,7 +233,74 @@ export default function CollectorIsolirPage() {
       ) : (
         <>
           <p className="text-xs text-muted-foreground mb-2">{filtered.length} pelanggan isolir</p>
-          <ul className="space-y-2">
+
+          {/* Table: tablets and up. A row opens to its open invoices and Cabut ONT. */}
+          <div className={cn(ui.card, 'hidden md:block overflow-x-auto')}>
+            <table className="w-full text-sm">
+              <thead className="border-b border-border bg-muted/50 text-xs text-muted-foreground">
+                <tr>
+                  <th scope="col" className="px-3 py-2.5 text-left font-medium">Pelanggan</th>
+                  <th scope="col" className="px-3 py-2.5 text-left font-medium hidden lg:table-cell">Paket</th>
+                  <th scope="col" className="px-3 py-2.5 text-left font-medium hidden xl:table-cell">Router / Area</th>
+                  <th scope="col" className="px-3 py-2.5 text-left font-medium hidden lg:table-cell">Telepon</th>
+                  <th scope="col" className="px-3 py-2.5 text-left font-medium hidden xl:table-cell">Aktif s/d</th>
+                  <th scope="col" className="px-3 py-2.5 text-right font-medium">Tunggakan</th>
+                  <th scope="col" className="px-3 py-2.5 text-right font-medium"><span className="sr-only">Buka</span></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {visible.map(u => {
+                  const open = expandedUser === u.id;
+                  return (
+                    <Fragment key={u.id}>
+                      <tr className={cn('align-top', open ? 'bg-muted/40' : 'hover:bg-muted/40')}>
+                        <td className="px-3 py-3 min-w-[12rem]">
+                          <p className="font-semibold text-foreground">{u.name}</p>
+                          <p className="text-xs text-muted-foreground">{u.customerId || u.username}{u.customerId ? ` · ${u.username}` : ''}</p>
+                        </td>
+                        <td className="px-3 py-3 hidden lg:table-cell">
+                          {u.profile ? <><p className="text-foreground">{u.profile.name}</p><p className="text-xs text-muted-foreground">{fmtRp(u.profile.price)}/bln</p></> : <span className="text-muted-foreground">-</span>}
+                        </td>
+                        <td className="px-3 py-3 hidden xl:table-cell">
+                          <p className="text-foreground">{u.router?.name || '-'}</p>
+                          <p className="text-xs text-muted-foreground">{u.area?.name || '-'}</p>
+                        </td>
+                        <td className="px-3 py-3 hidden lg:table-cell whitespace-nowrap">
+                          {u.phone ? <a href={`tel:${u.phone}`} className="text-blue-700 dark:text-blue-400 hover:underline">{u.phone}</a> : <span className="text-muted-foreground">-</span>}
+                        </td>
+                        <td className="px-3 py-3 hidden xl:table-cell whitespace-nowrap text-muted-foreground">{fmtDate(u.expiredAt)}</td>
+                        <td className="px-3 py-3 text-right whitespace-nowrap">
+                          {!u.is_paid ? (
+                            <>
+                              <p className={cn('font-bold', toneText('red'))}>{fmtRp(u.unpaid_amount)}</p>
+                              <p className="text-xs text-muted-foreground">{u.unpaid_count} tagihan</p>
+                            </>
+                          ) : <p className={cn('font-semibold', toneText('green'))}>Lunas</p>}
+                        </td>
+                        <td className="px-3 py-3 text-right">
+                          <button type="button" onClick={() => setExpandedUser(open ? null : u.id)} aria-expanded={open} className={cn(open ? ui.btnSecondary : ui.btnPrimary, 'h-9 px-3 text-xs')}>
+                            {open ? 'Tutup' : 'Tindak'}
+                            <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', open && 'rotate-180')} />
+                          </button>
+                        </td>
+                      </tr>
+                      {open && (
+                        <tr className="bg-muted/40">
+                          <td colSpan={7} className="px-3 pb-3">
+                            {u.address && <p className="text-xs text-muted-foreground mb-2">Alamat: <span className="text-foreground">{u.address}</span></p>}
+                            {renderInvoices(u)}
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Cards: phones */}
+          <ul className="md:hidden space-y-2">
             {visible.map(u => {
               const open = expandedUser === u.id;
               return (
@@ -238,39 +345,7 @@ export default function CollectorIsolirPage() {
                         {u.address && (<div className="col-span-2"><dt className="text-muted-foreground">Alamat</dt><dd className="text-foreground">{u.address}</dd></div>)}
                       </dl>
 
-                      {u.invoices && u.invoices.length > 0 ? (
-                        <ul className="space-y-2">
-                          {u.invoices.map((inv: any) => (
-                            <li key={inv.id} className="rounded-xl border border-border bg-background p-3">
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0">
-                                  <p className="text-sm font-semibold text-foreground">{fmtRp(inv.amount)}</p>
-                                  <p className="text-xs text-muted-foreground break-words">#{inv.invoiceNumber} · jatuh tempo {fmtDate(inv.dueDate)}</p>
-                                </div>
-                                <StatusPill tone={inv.status === 'OVERDUE' ? 'red' : 'amber'}>{inv.status === 'OVERDUE' ? 'Lewat tempo' : 'Belum bayar'}</StatusPill>
-                              </div>
-                              <div className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:justify-end">
-                                <button type="button" onClick={() => openPayModal(inv, u.name, 'transfer')} className={cn(ui.btnSecondary, 'h-10')}>
-                                  <Upload className="w-4 h-4" /> Transfer
-                                </button>
-                                <button type="button" onClick={() => openPayModal(inv, u.name, 'cash')} className={cn(ui.btnPrimary, 'h-10')}>
-                                  <Wallet className="w-4 h-4" /> Lunas tunai
-                                </button>
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p className="text-sm text-muted-foreground py-2">Tidak ada tagihan terbuka.</p>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={() => { setCabutTarget(u); setCabutNotes(''); }}
-                        className={cn(ui.btnSecondary, 'mt-3 w-full text-red-700 dark:text-red-400')}
-                      >
-                        <Unplug className="w-4 h-4" /> Catat cabut ONT
-                      </button>
+                      {renderInvoices(u)}
                     </div>
                   )}
                 </li>
