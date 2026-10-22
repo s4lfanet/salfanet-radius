@@ -208,7 +208,7 @@ export default function AdminCollectorsPage() {
                 <tr key={c.id} className="border-b border-border/50">
                   <td className="px-4 py-3 font-medium text-foreground cursor-pointer hover:underline" onClick={() => openEdit(c)}>
                     {c.name}
-                    <p className="text-xs text-muted-foreground font-normal">@{c.username}</p>
+                    <p className="text-xs text-muted-foreground font-normal">{c.username}</p>
                   </td>
                   <td className="hidden md:table-cell px-4 py-3 text-muted-foreground text-xs">
                     {c.phone && <p className="flex items-center gap-1"><Phone className="w-3 h-3" /> {c.phone}</p>}

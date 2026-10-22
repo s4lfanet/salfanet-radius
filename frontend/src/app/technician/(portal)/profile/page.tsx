@@ -101,7 +101,7 @@ export default function TechnicianProfilePage() {
           </div>
           <div>
             <p className="text-base font-bold text-foreground">{profile?.name}</p>
-            <p className="text-xs text-muted-foreground">@{profile?.username}</p>
+            <p className="text-xs text-muted-foreground">{profile?.username}</p>
           </div>
         </div>
 
