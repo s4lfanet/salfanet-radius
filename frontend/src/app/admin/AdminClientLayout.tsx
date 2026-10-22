@@ -65,7 +65,7 @@ const menuGroups: MenuGroup[] = [
           { titleKey: 'nav.profiles', href: '/admin/pppoe/profiles', requiredPermission: 'customers.view' },
           { titleKey: 'nav.manageAreas', href: '/admin/pppoe/areas', requiredPermission: 'customers.view' },
           { titleKey: 'nav.addons', href: '/admin/pppoe/addons', requiredPermission: 'customers.view' },
-          { titleKey: 'nav.approvals', href: '/admin/pppoe/approvals', badge: 'pending', requiredPermission: 'customers.view' },
+          { titleKey: 'nav.approvals', href: '/admin/pppoe/approvals', badge: 'pending', requiredPermission: 'registrations.approve' },
           { titleKey: 'nav.registrations', href: '/admin/pppoe/registrations', badge: 'pending', requiredPermission: 'registrations.view' },
           { titleKey: 'nav.suspendRequests', href: '/admin/suspend-requests', requiredPermission: 'customers.view' },
         ],
@@ -78,7 +78,7 @@ const menuGroups: MenuGroup[] = [
           { titleKey: 'nav.voucher', href: '/admin/hotspot/voucher', requiredPermission: 'vouchers.view' },
           { titleKey: 'nav.profile', href: '/admin/hotspot/profile', requiredPermission: 'hotspot.view' },
           { titleKey: 'nav.template', href: '/admin/hotspot/template', requiredPermission: 'hotspot.view' },
-          { titleKey: 'nav.evoucher', href: '/admin/hotspot/evoucher', requiredPermission: 'vouchers.view' },
+          { titleKey: 'nav.evoucher', href: '/admin/hotspot/evoucher', requiredPermission: 'invoices.view' },
         ],
       },
       {
@@ -87,8 +87,7 @@ const menuGroups: MenuGroup[] = [
         requiredPermission: 'hotspot.view',
         children: [
           { titleKey: 'nav.agentList', href: '/admin/hotspot/agent', requiredPermission: 'hotspot.view' },
-          { titleKey: 'nav.agentReport', href: '/admin/hotspot/agent-report', requiredPermission: 'hotspot.view' },
-          { titleKey: 'nav.topupRequests', href: '/admin/topup-requests', requiredPermission: 'invoices.view' },
+          { titleKey: 'nav.agentReport', href: '/admin/hotspot/agent-report', requiredPermission: 'reports.view' },
         ],
       },
       {
@@ -97,7 +96,7 @@ const menuGroups: MenuGroup[] = [
         requiredPermission: 'customers.view',
         children: [
           { titleKey: 'nav.isolatedUsers', href: '/admin/isolated-users', requiredPermission: 'customers.view' },
-          { titleKey: 'nav.ontRemovalTasks', href: '/admin/ont-removal-tasks', requiredPermission: 'customers.view' },
+          { titleKey: 'nav.ontRemovalTasks', href: '/admin/ont-removal-tasks', requiredPermission: 'customers.isolate' },
           { titleKey: 'nav.isolationSettings', href: '/admin/settings/isolation', requiredPermission: 'settings.view' },
           { titleKey: 'nav.mikrotikSetup', href: '/admin/settings/isolation/mikrotik', requiredPermission: 'settings.view' },
         ],
@@ -125,10 +124,11 @@ const menuGroups: MenuGroup[] = [
       {
         titleKey: 'nav.payment',
         icon: <CreditCard className="w-4 h-4" />,
-        requiredPermission: 'settings.payment',
+        // No group permission: Keuangan needs Pembayaran Manual without the
+        // gateway settings; each item carries its own.
         children: [
           { titleKey: 'nav.paymentGateway', href: '/admin/payment-gateway', requiredPermission: 'settings.payment' },
-          { titleKey: 'nav.manualPayments', href: '/admin/manual-payments', badge: 'manualPayments', requiredPermission: 'invoices.view' },
+          { titleKey: 'nav.manualPayments', href: '/admin/manual-payments', badge: 'manualPayments', requiredPermission: 'invoices.edit' },
           { titleKey: 'nav.bankAccounts', href: '/admin/payment/bank-accounts', requiredPermission: 'settings.payment' },
         ],
       },
@@ -148,13 +148,19 @@ const menuGroups: MenuGroup[] = [
         titleKey: 'nav.agentDeposits',
         icon: <Wallet className="w-4 h-4" />,
         href: '/admin/hotspot/agent/deposits',
-        requiredPermission: 'hotspot.view',
+        requiredPermission: 'invoices.approve',
+      },
+      {
+        titleKey: 'nav.topupRequests',
+        icon: <Wallet className="w-4 h-4" />,
+        href: '/admin/topup-requests',
+        requiredPermission: 'invoices.approve',
       },
       {
         titleKey: 'nav.rekapVoucher',
         icon: <BarChart3 className="w-4 h-4" />,
         href: '/admin/hotspot/rekap-voucher',
-        requiredPermission: 'vouchers.view',
+        requiredPermission: 'reports.view',
       },
       {
         titleKey: 'nav.collectorSettlements',
@@ -282,9 +288,9 @@ const menuGroups: MenuGroup[] = [
       {
         titleKey: 'nav.tickets',
         icon: <MessageSquare className="w-4 h-4" />,
-        requiredPermission: 'dashboard.view',
+        requiredPermission: 'customers.view',
         children: [
-          { titleKey: 'nav.allTickets', href: '/admin/tickets', requiredPermission: 'dashboard.view' },
+          { titleKey: 'nav.allTickets', href: '/admin/tickets', requiredPermission: 'customers.view' },
           { titleKey: 'nav.ticketCategories', href: '/admin/tickets/categories', requiredPermission: 'settings.view' },
         ],
       },
@@ -344,7 +350,7 @@ const menuGroups: MenuGroup[] = [
         titleKey: 'nav.pushNotifications',
         icon: <Bell className="w-4 h-4" />,
         href: '/admin/notifications/push',
-        requiredPermission: 'dashboard.view',
+        requiredPermission: 'notifications.manage',
       },
       {
         titleKey: 'nav.whatsapp',
@@ -352,10 +358,10 @@ const menuGroups: MenuGroup[] = [
         href: '/admin/settings/whatsapp',
         requiredPermission: 'whatsapp.view',
         children: [
-          { titleKey: 'nav.providers', href: '/admin/settings/whatsapp?tab=providers', requiredPermission: 'whatsapp.view' },
-          { titleKey: 'nav.templates', href: '/admin/settings/whatsapp?tab=templates', requiredPermission: 'whatsapp.view' },
+          { titleKey: 'nav.providers', href: '/admin/settings/whatsapp?tab=providers', requiredPermission: 'whatsapp.providers' },
+          { titleKey: 'nav.templates', href: '/admin/settings/whatsapp?tab=templates', requiredPermission: 'whatsapp.templates' },
           { titleKey: 'nav.notifications', href: '/admin/settings/whatsapp?tab=notifications', requiredPermission: 'whatsapp.view' },
-          { titleKey: 'nav.send', href: '/admin/settings/whatsapp?tab=send', requiredPermission: 'whatsapp.view' },
+          { titleKey: 'nav.send', href: '/admin/settings/whatsapp?tab=send', requiredPermission: 'whatsapp.send' },
           { titleKey: 'nav.history', href: '/admin/settings/whatsapp?tab=history', requiredPermission: 'whatsapp.view' },
         ],
       },

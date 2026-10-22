@@ -1,11 +1,12 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { generateExcelBuffer, formatDateExport } from '@/lib/utils/export';
-import { checkAuth } from '@/server/middleware/api-auth';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { formatWIB } from '@/lib/timezone';
 
 export async function GET(req: NextRequest) {
-  const auth = await checkAuth();
+  // Any signed-in admin could export before; now the same permission as the list.
+  const auth = await requirePermission('customers.view');
   if (!auth.authorized) {
     return auth.response;
   }
@@ -19,6 +20,10 @@ export async function GET(req: NextRequest) {
   // P0 security: passwords are excluded by default. Admin must explicitly
   // request includePassword=true for backup exports containing credentials.
   const includePassword = searchParams.get('includePassword') === 'true';
+  // PPPoE passwords are credentials for every customer line: Super Admin only.
+  if (includePassword && auth.session.user.role !== 'SUPER_ADMIN') {
+    return NextResponse.json({ error: 'Hanya Super Admin yang bisa mengekspor password pelanggan.' }, { status: 403 });
+  }
 
   try {
     // Build query filters
