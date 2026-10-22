@@ -63,7 +63,7 @@ export default function CustomerDetailSheet({
   actions?: ReactNode;
   children?: ReactNode;
 }) {
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<'ok' | 'fail' | null>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const st = customerStatus(customer.status);
   const hasPoint = customer.latitude != null && customer.longitude != null;
@@ -77,14 +77,30 @@ export default function CustomerDetailSheet({
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
+  // navigator.clipboard exists only on HTTPS; installs opened over plain
+  // http fall back to a hidden textarea and execCommand.
   const copy = async () => {
+    let ok = false;
     try {
-      await navigator.clipboard.writeText(coords);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(coords);
+        ok = true;
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = coords;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        ok = document.execCommand('copy');
+        ta.remove();
+      }
     } catch {
-      setCopied(false);
+      ok = false;
     }
+    setCopied(ok ? 'ok' : 'fail');
+    setTimeout(() => setCopied(null), 2000);
   };
 
   const speed = customer.profile?.downloadSpeed ? ` · ${customer.profile.downloadSpeed}/${customer.profile.uploadSpeed ?? '-'} Mbps` : '';
@@ -129,7 +145,7 @@ export default function CustomerDetailSheet({
                 <div className="mt-2 flex items-center justify-between gap-2">
                   <span className="text-xs text-muted-foreground tabular-nums">{coords}</span>
                   <button type="button" onClick={copy} className="h-9 px-2 pointer-coarse:h-11 inline-flex items-center gap-1 rounded-lg text-xs font-medium text-blue-700 dark:text-blue-400 hover:bg-muted">
-                    {copied ? <><Check className="w-3.5 h-3.5" /> Tersalin</> : <><Copy className="w-3.5 h-3.5" /> Salin koordinat</>}
+                    {copied === 'ok' ? <><Check className="w-3.5 h-3.5" /> Tersalin</> : copied === 'fail' ? 'Gagal menyalin, salin manual' : <><Copy className="w-3.5 h-3.5" /> Salin koordinat</>}
                   </button>
                 </div>
                 <div className="mt-2 grid grid-cols-2 gap-2">
