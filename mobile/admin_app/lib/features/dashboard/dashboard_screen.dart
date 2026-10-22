@@ -125,6 +125,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _content(BuildContext context, DashboardProvider dash) {
     final s = dash.stats!;
     final user = context.watch<AuthProvider>().user;
+    bool can(String key) => user?.can(key) ?? true;
     final upcoming = s.upcomingInvoices;
 
     return ListView(
@@ -146,16 +147,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         const SizedBox(height: Gap.lg),
 
+        // Only the shortcuts this account may use (same keys as the menus).
         _QuickActions(
           actions: [
-            _Quick(Icons.person_add_alt_1_rounded, Tone.primary, 'Pelanggan Baru', _newCustomer),
-            _Quick(Icons.confirmation_number_rounded, Tone.violet, 'Buat Voucher', _newVouchers),
-            _Quick(Icons.qr_code_2_rounded, Tone.success, 'Kasir QRIS', () => _open(const QrisCashierScreen())),
-            _Quick(Icons.fact_check_rounded, Tone.warning, 'Cek Transfer', () => _openGuided('/admin/manual-payments', const ManualPaymentListScreen())),
-            _Quick(Icons.wifi_tethering_rounded, Tone.accent, 'Sesi Online', () => _openGuided('/admin/sessions/pppoe', const SessionListScreen())),
-            _Quick(Icons.support_agent_rounded, Tone.danger, 'Tiket', () => _openGuided('/admin/tickets', const TicketListScreen())),
-            _Quick(Icons.chat_rounded, Tone.success, 'Kirim WhatsApp', () => _openGuided('/admin/settings/whatsapp', const WhatsappSendScreen())),
-            _Quick(Icons.map_rounded, Tone.primary, 'Peta Jaringan', () => _openGuided('/admin/network/map', const NetworkMapScreen())),
+            if (can('customers.create')) _Quick(Icons.person_add_alt_1_rounded, Tone.primary, 'Pelanggan Baru', _newCustomer),
+            if (can('vouchers.generate')) _Quick(Icons.confirmation_number_rounded, Tone.violet, 'Buat Voucher', _newVouchers),
+            if (can('settings.payment')) _Quick(Icons.qr_code_2_rounded, Tone.success, 'Kasir QRIS', () => _open(const QrisCashierScreen())),
+            if (can('invoices.edit')) _Quick(Icons.fact_check_rounded, Tone.warning, 'Cek Transfer', () => _openGuided('/admin/manual-payments', const ManualPaymentListScreen())),
+            if (can('sessions.view')) _Quick(Icons.wifi_tethering_rounded, Tone.accent, 'Sesi Online', () => _openGuided('/admin/sessions/pppoe', const SessionListScreen())),
+            if (can('customers.view')) _Quick(Icons.support_agent_rounded, Tone.danger, 'Tiket', () => _openGuided('/admin/tickets', const TicketListScreen())),
+            if (can('whatsapp.send')) _Quick(Icons.chat_rounded, Tone.success, 'Kirim WhatsApp', () => _openGuided('/admin/settings/whatsapp', const WhatsappSendScreen())),
+            if (can('network.view')) _Quick(Icons.map_rounded, Tone.primary, 'Peta Jaringan', () => _openGuided('/admin/network/map', const NetworkMapScreen())),
           ],
         ),
         const SizedBox(height: Gap.xl),
@@ -164,6 +166,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _RowsCard(
           dividerIndent: 68,
           children: [
+            if (can('registrations.view'))
             _ActionRow(
               icon: Icons.person_add_alt_1_rounded,
               tone: Tone.accent,
@@ -172,6 +175,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               count: s.newRegistrations,
               onTap: () => _open(const RegistrationListScreen()),
             ),
+            if (can('invoices.view'))
             _ActionRow(
               icon: Icons.receipt_long_rounded,
               tone: Tone.warning,
@@ -182,6 +186,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               count: s.unpaidInvoicesCount,
               onTap: _openInvoices,
             ),
+            if (can('customers.view'))
             _ActionRow(
               icon: Icons.block_rounded,
               tone: Tone.danger,
@@ -190,7 +195,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               count: s.isolatedCount,
               onTap: () => _open(CrudListScreen(config: isolatedUsersConfig())),
             ),
-            if (dash.pendingManualPayments != null)
+            if (dash.pendingManualPayments != null && can('invoices.edit'))
               _ActionRow(
                 icon: Icons.fact_check_rounded,
                 tone: Tone.success,
