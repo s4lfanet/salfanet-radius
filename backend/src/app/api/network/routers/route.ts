@@ -1,7 +1,8 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { reloadFreeRadius } from '@/server/services/radius/freeradius.service';
 import { logActivity } from '@/server/services/activity-log.service';
-import { requirePermission } from '@/server/middleware/api-auth';
+import { requireAnyPermission, requirePermission } from '@/server/middleware/api-auth';
+import { hasPermission, isSuperAdmin } from '@/server/auth/permissions';
 import crypto from 'crypto';
 import os from 'os';
 const RouterOSAPI = require('node-routeros').RouterOSAPI;
@@ -26,9 +27,13 @@ const getServerIp = (): string => {
 const getRadiusServerIp = () => process.env.RADIUS_SERVER_IP || process.env.VPS_IP || getServerIp();
 
 // GET - Load all routers
+// Customer, voucher and hotspot pages need the router names for their
+// filters and forms; those roles get the list without credentials (API
+// password, RADIUS secret, VPN logins). The full list needs routers.view.
 export async function GET() {
-  const authCheck = await requirePermission('routers.view');
+  const authCheck = await requireAnyPermission(['routers.view', 'customers.view', 'vouchers.view', 'hotspot.view']);
   if (!authCheck.authorized) return authCheck.response;
+  const fullAccess = (await isSuperAdmin(authCheck.userId)) || (await hasPermission(authCheck.userId, 'routers.view'));
   try {
     const radiusServerIp = getRadiusServerIp();
 
@@ -97,6 +102,18 @@ export async function GET() {
       ...router,
       radiusServerIp: radiusServerIp,
     }));
+
+    if (!fullAccess) {
+      const names = cached.routers.map((r) => ({
+        id: r.id,
+        name: r.name,
+        shortname: r.shortname,
+        nasname: r.nasname,
+        ipAddress: r.ipAddress,
+        isActive: r.isActive,
+      }));
+      return NextResponse.json({ routers: names, vpnClients: [] });
+    }
 
     return NextResponse.json({ routers: routersWithServerIp, vpnClients: cached.vpnClients, radiusServerIp });
   } catch (error) {

@@ -1,7 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { WA_VOUCHER_PAYMENT_LINK, WA_VOUCHER_PURCHASE_SUCCESS } from '@/server/services/notifications/voucher-order-templates';
 import { prisma } from '@/server/db/client';
-import { requirePermission } from '@/server/middleware/api-auth';
+import { requireAnyPermission, requirePermission } from '@/server/middleware/api-auth';
 
 // Default templates (includes both broadcast and notification templates)
 const defaultTemplates = [
@@ -476,7 +476,9 @@ Selamat berselancar kembali! 🌐
 // GET - List all templates (auto-seed if empty or missing)
 export async function GET() {
   try {
-    const authCheck = await requirePermission('whatsapp.templates');
+    // Reading templates is part of sending (Kirim WhatsApp picks one);
+    // changing them still needs whatsapp.templates.
+    const authCheck = await requireAnyPermission(['whatsapp.templates', 'whatsapp.send']);
     if (!authCheck.authorized) return authCheck.response;
 
     let templates = await prisma.whatsapp_templates.findMany({
