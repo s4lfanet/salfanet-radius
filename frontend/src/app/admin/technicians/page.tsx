@@ -236,6 +236,17 @@ export default function AdminTechniciansPage() {
             </div>
             <div className="space-y-3">
               <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1 block">Username</label>
+                <input
+                  value={form.username}
+                  onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
+                  disabled={!!editing?.username}
+                  autoComplete="off"
+                  className="w-full px-3 py-2 bg-muted/50 border border-border rounded-lg text-sm text-foreground disabled:opacity-60"
+                />
+                {editing?.username && <p className="text-[10px] text-muted-foreground mt-1">Username tidak bisa diubah setelah dibuat.</p>}
+              </div>
+              <div>
                 <label className="text-xs font-semibold text-muted-foreground mb-1 block">Nama</label>
                 <input
                   value={form.name}
@@ -261,17 +272,6 @@ export default function AdminTechniciansPage() {
                   onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                   className="w-full px-3 py-2 bg-muted/50 border border-border rounded-lg text-sm text-foreground"
                 />
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-muted-foreground mb-1 block">Username</label>
-                <input
-                  value={form.username}
-                  onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
-                  disabled={!!editing?.username}
-                  autoComplete="off"
-                  className="w-full px-3 py-2 bg-muted/50 border border-border rounded-lg text-sm text-foreground disabled:opacity-60"
-                />
-                {editing?.username && <p className="text-[10px] text-muted-foreground mt-1">Username tidak bisa diubah setelah dibuat.</p>}
               </div>
               <div>
                 <label className="text-xs font-semibold text-muted-foreground mb-1 block">
