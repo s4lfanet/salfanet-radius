@@ -155,7 +155,7 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium text-foreground truncate">{collector.name}</div>
-              <div className="text-xs text-muted-foreground truncate">@{collector.username}</div>
+              <div className="text-xs text-muted-foreground truncate">{collector.username}</div>
               {collector.scopeLabel && (
                 <div className="text-xs text-muted-foreground truncate" title={collector.scopeLabel}>{collector.scopeLabel}</div>
               )}

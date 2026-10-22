@@ -176,7 +176,7 @@ CrudConfig collectorsConfig() => CrudConfig(
   subtitleOf: (u) {
     final routers = (u['collectorRouterIds'] as List?)?.length ?? 0;
     return [
-      '@${u['username']}',
+      str(u, 'username'),
       mapOf(u, 'area')?['name'],
       if (routers > 0) '$routers router',
     ].whereType<String>().join(' · ');
@@ -217,7 +217,7 @@ CrudConfig techniciansConfig() => CrudConfig(
   header: (context, _) => const LoginLinks(title: 'Alamat login teknisi', links: [('Teknisi', '/technician/login')]),
   titleOf: (t) => str(t, 'name') ?? '-',
   subtitleOf: (t) => [
-    if (t['username'] != null && t['hasPassword'] == true) '@${t['username']}' else 'Belum bisa login: isi username dan password',
+    if (t['username'] != null && t['hasPassword'] == true) str(t, 'username') else 'Belum bisa login: isi username dan password',
     str(t, 'phoneNumber'),
   ].whereType<String>().join(' · '),
   metaOf: (t) => [

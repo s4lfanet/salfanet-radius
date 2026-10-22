@@ -190,7 +190,7 @@ export default function AdminTechniciansPage() {
                   <td className="px-4 py-3 font-medium text-foreground cursor-pointer hover:underline" onClick={() => openEdit(t)}>
                     {t.name}
                     {t.username && t.hasPassword ? (
-                      <p className="text-xs text-muted-foreground font-normal">@{t.username}</p>
+                      <p className="text-xs text-muted-foreground font-normal">{t.username}</p>
                     ) : (
                       <p className="text-xs text-amber-600 dark:text-amber-400 font-normal">Belum bisa login: isi username dan password lewat Edit</p>
                     )}
