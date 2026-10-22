@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
+import bcrypt from 'bcryptjs';
 import { logActivity } from '@/server/services/activity-log.service';
+import { TECHNICIAN_PUBLIC_SELECT, toPublicTechnician, checkUsername, checkPassword, usernameTaken } from '@/server/services/technician-account.service';
 
 function normalizePhone(phoneNumber: string): string {
   const digits = phoneNumber.replace(/\D/g, '');
@@ -10,26 +12,18 @@ function normalizePhone(phoneNumber: string): string {
   return '62' + digits;
 }
 
-// GET - list all technicians (the OTP-login `technician` model used by the
-// /technician/* portal — separate from adminUser accounts with role=TECHNICIAN)
+// GET - list all technicians (the `technician` model used by the /technician
+// portal; older technician accounts from Admin & Role live in admin_users)
 export async function GET() {
   const authCheck = await requirePermission('users.view');
   if (!authCheck.authorized) return authCheck.response;
 
   try {
-    const technicians = await prisma.technician.findMany({
+    const rows = await prisma.technician.findMany({
       orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        name: true,
-        phoneNumber: true,
-        email: true,
-        isActive: true,
-        requireOtp: true,
-        lastLoginAt: true,
-        createdAt: true,
-      },
+      select: TECHNICIAN_PUBLIC_SELECT,
     });
+    const technicians = rows.map(toPublicTechnician);
 
     return NextResponse.json({ technicians });
   } catch (error) {
@@ -38,19 +32,22 @@ export async function GET() {
   }
 }
 
-// POST - admin pre-registers a technician (in addition to the existing
-// self-service path where a technician is auto-created on their first
-// request-otp call — this lets admin onboard one ahead of time, or note
-// who's expected, without waiting for that self-registration).
+// POST - add a technician with the username + password they sign in with.
 export async function POST(req: NextRequest) {
   const authCheck = await requirePermission('users.create');
   if (!authCheck.authorized) return authCheck.response;
 
   try {
-    const { name, phoneNumber, email } = await req.json();
+    const { name, phoneNumber, email, username, password } = await req.json();
 
     if (!name || !phoneNumber) {
       return NextResponse.json({ error: 'Nama dan nomor telepon wajib diisi' }, { status: 400 });
+    }
+    const invalid = checkUsername(username) || checkPassword(password);
+    if (invalid) return NextResponse.json({ error: invalid }, { status: 400 });
+    const login = String(username).trim();
+    if (await usernameTaken(login)) {
+      return NextResponse.json({ error: 'Username sudah dipakai' }, { status: 409 });
     }
 
     const formattedPhone = normalizePhone(phoneNumber);
@@ -65,8 +62,11 @@ export async function POST(req: NextRequest) {
         name,
         phoneNumber: formattedPhone,
         email: email || null,
+        username: login,
+        password: await bcrypt.hash(password, 10),
         isActive: true,
       },
+      select: TECHNICIAN_PUBLIC_SELECT,
     });
 
     await logActivity({
@@ -74,14 +74,14 @@ export async function POST(req: NextRequest) {
       username: (authCheck.session.user as any)?.username || 'Admin',
       userRole: (authCheck.session.user as any)?.role,
       action: 'CREATE_TECHNICIAN',
-      description: `Membuat akun teknisi: ${name} (${formattedPhone})`,
+      description: `Membuat akun teknisi: ${name} (@${login})`,
       module: 'user',
       status: 'success',
       request: req,
       metadata: { technicianId: technician.id, phoneNumber: formattedPhone },
     });
 
-    return NextResponse.json({ success: true, technician });
+    return NextResponse.json({ success: true, technician: toPublicTechnician(technician) });
   } catch (error) {
     console.error('Create technician error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

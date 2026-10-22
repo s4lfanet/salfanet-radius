@@ -201,7 +201,10 @@ CrudConfig techniciansConfig() => CrudConfig(
   listKey: 'technicians',
   header: (context, _) => const LoginLinks(title: 'Alamat login teknisi', links: [('Teknisi', '/technician/login')]),
   titleOf: (t) => str(t, 'name') ?? '-',
-  subtitleOf: (t) => str(t, 'phoneNumber'),
+  subtitleOf: (t) => [
+    if (t['username'] != null && t['hasPassword'] == true) '@${t['username']}' else 'Belum bisa login: isi username dan password',
+    str(t, 'phoneNumber'),
+  ].whereType<String>().join(' · '),
   metaOf: (t) => [
     str(t, 'email'),
     if (t['lastLoginAt'] != null) 'Login ${formatDateTimeOrNull(dateOf(t, 'lastLoginAt'))}',
@@ -211,16 +214,32 @@ CrudConfig techniciansConfig() => CrudConfig(
     const FieldSpec('name', 'Nama', required: true),
     FieldSpec(
       'phoneNumber',
-      'No. HP (untuk login)',
+      'No. HP',
       type: FieldType.phone,
       required: t == null,
       readOnly: t != null,
-      helper: t != null ? 'Nomor login tidak bisa diubah.' : 'Teknisi masuk dengan nomor ini dan kode OTP WhatsApp.',
+      helper: t != null ? 'Nomor HP tidak bisa diubah.' : null,
     ),
     const FieldSpec('email', 'Email', type: FieldType.email),
+    // Same sign-in as collectors. Technicians from before this have no
+    // username or password; both are filled in once here.
+    FieldSpec('username', 'Username', required: true, readOnly: t?['username'] != null),
+    FieldSpec(
+      'password',
+      t?['hasPassword'] == true ? 'Password baru' : 'Password',
+      type: FieldType.password,
+      required: t?['hasPassword'] != true,
+      omitWhenEmpty: true,
+    ),
   ],
+  initialOf: (t) => {...t, 'password': null},
   create: CrudRoutes.postTo('/api/admin/technicians'),
-  update: (t, v) => _api.patch('/api/admin/technicians/${t['id']}', data: {'name': v['name'], 'email': v['email']}),
+  update: (t, v) => _api.patch('/api/admin/technicians/${t['id']}', data: {
+    'name': v['name'],
+    'email': v['email'],
+    if (t['username'] == null) 'username': v['username'],
+    if ((v['password'] as String?)?.isNotEmpty ?? false) 'password': v['password'],
+  }),
   delete: CrudRoutes.deleteById('/api/admin/technicians'),
   itemActions: [
     CrudAction(
