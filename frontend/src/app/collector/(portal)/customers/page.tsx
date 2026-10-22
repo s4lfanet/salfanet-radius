@@ -2,12 +2,17 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+import CustomerDetailSheet from '@/components/field/CustomerDetailSheet';
+import { mapsLinks, type MapPoint } from '@/components/field/CustomerMap';
 import { apiAdmin } from '@/lib/api/client';
 import { formatWIB } from '@/lib/timezone';
 import { ScopeFilter, scopeQuery, type ScopeValue } from '@/components/collector/ScopeFilter';
 import { PageHeader, StatusPill, customerStatus, chipClass, LoadingState, ErrorState, EmptyState, ui, fmtRp, toneText } from '@/components/collector/ui';
-import { Search, X, Users, Phone, MapPin, Router, Wifi, CalendarDays, MessageCircle, Receipt, ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, X, Users, Phone, MapPin, Router, Wifi, CalendarDays, MessageCircle, Receipt, ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight, Map as MapIcon, List, Navigation } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+const CustomerMap = dynamic(() => import('@/components/field/CustomerMap'), { ssr: false });
 
 interface Customer {
   id: string;
@@ -19,6 +24,11 @@ interface Customer {
   status: string;
   expiredAt: string | null;
   subscriptionType: string | null;
+  connectionType: string | null;
+  email: string | null;
+  installDate: string | null;
+  latitude: number | null;
+  longitude: number | null;
   profile: { name: string; price: number } | null;
   area: { name: string } | null;
   router: { name: string } | null;
@@ -70,6 +80,8 @@ export default function CollectorCustomersPage() {
   const [pageSize, setPageSize] = useState(25);
   const [page, setPage] = useState(1);
   const [assigned, setAssigned] = useState('');
+  const [view, setView] = useState<'table' | 'map'>('table');
+  const [detailId, setDetailId] = useState<string | null>(null);
 
   useEffect(() => {
     apiAdmin<{ collector?: { scopeLabel?: string } }>('/api/collector/auth/session')
@@ -119,6 +131,28 @@ export default function CollectorCustomersPage() {
   const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const shown = filtered.slice((page - 1) * pageSize, page * pageSize);
   const totalUnpaid = filtered.reduce((s, c) => s + c.unpaid_amount, 0);
+
+  // The map shows every filtered customer that has coordinates, not just one page.
+  const mapPoints: MapPoint[] = useMemo(() => filtered
+    .filter((c) => c.latitude != null && c.longitude != null)
+    .map((c) => {
+      const st = customerStatus(c.status);
+      return {
+        id: c.id,
+        name: c.name || c.username,
+        subtitle: c.unpaid_count > 0 ? `Tunggakan ${fmtRp(c.unpaid_amount)}` : st.label,
+        lat: c.latitude as number,
+        lng: c.longitude as number,
+        tone: c.unpaid_count > 0 ? 'red' : st.tone === 'green' ? 'green' : st.tone === 'red' ? 'red' : 'slate',
+      };
+    }), [filtered]);
+  const detail = detailId ? customers.find((c) => c.id === detailId) || null : null;
+
+  const nameButton = (c: Customer, className?: string) => (
+    <button type="button" onClick={() => setDetailId(c.id)} className={cn('text-left font-semibold text-foreground hover:text-blue-700 dark:hover:text-blue-400 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 rounded', className)}>
+      {c.name || c.username}
+    </button>
+  );
 
   const toggleSort = (key: SortKey) => setSort((s) => (s.key === key ? { key, dir: s.dir === 1 ? -1 : 1 } : { key, dir: 1 }));
 
@@ -204,14 +238,54 @@ export default function CollectorCustomersPage() {
               {filtered.length} pelanggan
               {totalUnpaid > 0 && <> · tunggakan <span className={cn('font-semibold', toneText('red'))}>{fmtRp(totalUnpaid)}</span></>}
             </p>
-            <label className="hidden md:flex items-center gap-2 text-muted-foreground">
-              Baris per halaman
-              <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))} className="h-9 rounded-xl border border-border bg-card px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
-                {[25, 50, 100].map((n) => <option key={n} value={n}>{n}</option>)}
-              </select>
-            </label>
+            <div className="flex items-center gap-3">
+              {view === 'table' && (
+                <label className="hidden md:flex items-center gap-2 text-muted-foreground">
+                  Baris per halaman
+                  <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))} className="h-9 rounded-xl border border-border bg-card px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
+                    {[25, 50, 100].map((n) => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </label>
+              )}
+              <div className="flex rounded-xl border border-border bg-card p-0.5" role="group" aria-label="Tampilan">
+                {([['table', 'Daftar', List], ['map', 'Peta', MapIcon]] as const).map(([key, label, Icon]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    aria-pressed={view === key}
+                    onClick={() => setView(key)}
+                    className={cn(
+                      'h-9 pointer-coarse:h-11 px-3 inline-flex items-center gap-1.5 rounded-lg text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
+                      view === key ? 'bg-blue-600 text-white' : 'text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    <Icon className="w-4 h-4" /> {label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
+          {view === 'map' ? (
+            <section aria-label="Peta pelanggan">
+              {mapPoints.length > 0 ? (
+                <>
+                  <CustomerMap points={mapPoints} onSelect={setDetailId} selectedId={detailId} className="h-[60dvh] min-h-[360px]" />
+                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                    <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#DC2626]" aria-hidden /> Ada tunggakan atau isolir</span>
+                    <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#059669]" aria-hidden /> Aktif, tanpa tunggakan</span>
+                    <span>Ketuk titik untuk melihat detail pelanggan.</span>
+                  </div>
+                </>
+              ) : (
+                <EmptyState icon={<MapPin className="w-5 h-5" />} title="Belum ada pelanggan dengan koordinat" hint="Koordinat diisi admin atau teknisi di data pelanggan." />
+              )}
+              {filtered.length > mapPoints.length && mapPoints.length > 0 && (
+                <p className="mt-1 text-xs text-muted-foreground">{filtered.length - mapPoints.length} pelanggan belum punya koordinat dan tidak tampil di peta.</p>
+              )}
+            </section>
+          ) : (
+          <>
           {/* Table: tablets and up */}
           <div className={cn(ui.card, 'hidden md:block overflow-x-auto')}>
             <table className="w-full text-sm">
@@ -221,6 +295,7 @@ export default function CollectorCustomersPage() {
                   <SortHead k="name">Pelanggan</SortHead>
                   <SortHead k="profile" className="hidden lg:table-cell">Paket</SortHead>
                   <th scope="col" className="px-3 py-2.5 text-left font-medium hidden xl:table-cell">Router / Area</th>
+                  <th scope="col" className="px-3 py-2.5 text-left font-medium hidden lg:table-cell">Lokasi</th>
                   <th scope="col" className="px-3 py-2.5 text-left font-medium hidden lg:table-cell">Telepon</th>
                   <SortHead k="expiredAt" className="hidden xl:table-cell">Aktif s/d</SortHead>
                   <SortHead k="status">Status</SortHead>
@@ -238,7 +313,7 @@ export default function CollectorCustomersPage() {
                         <p className="break-all">{c.username}</p>
                       </td>
                       <td className="px-3 py-3 min-w-[12rem]">
-                        <p className="font-semibold text-foreground">{c.name || c.username}</p>
+                        {nameButton(c)}
                         {c.address && <p className="text-xs text-muted-foreground line-clamp-1 max-w-xs" title={c.address}>{c.address}</p>}
                         {/* Columns hidden below lg/xl fold into the name cell. */}
                         <p className="text-xs text-muted-foreground lg:hidden">{[c.profile?.name, c.phone].filter(Boolean).join(' · ')}</p>
@@ -254,6 +329,16 @@ export default function CollectorCustomersPage() {
                       <td className="px-3 py-3 hidden xl:table-cell">
                         <p className="text-foreground">{c.router?.name || '-'}</p>
                         <p className="text-xs text-muted-foreground">{c.area?.name || '-'}</p>
+                      </td>
+                      <td className="px-3 py-3 hidden lg:table-cell whitespace-nowrap">
+                        {c.latitude != null && c.longitude != null ? (
+                          <>
+                            <p className="text-xs text-muted-foreground tabular-nums">{c.latitude.toFixed(5)}, {c.longitude.toFixed(5)}</p>
+                            <a href={mapsLinks(c.latitude, c.longitude).directions} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 dark:text-blue-400 hover:underline">
+                              <Navigation className="w-3 h-3" /> Rute
+                            </a>
+                          </>
+                        ) : <span className="text-xs text-muted-foreground">Belum ada</span>}
                       </td>
                       <td className="px-3 py-3 hidden lg:table-cell text-muted-foreground whitespace-nowrap">{c.phone || '-'}</td>
                       <td className="px-3 py-3 hidden xl:table-cell text-muted-foreground whitespace-nowrap">{fmtDate(c.expiredAt)}</td>
@@ -282,7 +367,7 @@ export default function CollectorCustomersPage() {
                 <li key={c.id} className={cn(ui.card, 'p-4')}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="font-semibold text-foreground truncate">{c.name || c.username}</p>
+                      {nameButton(c, 'block truncate max-w-full')}
                       <p className="text-xs text-muted-foreground truncate">{[c.customerId, c.username].filter(Boolean).join(' · ')}</p>
                     </div>
                     <StatusPill tone={st.tone}>{st.label}</StatusPill>
@@ -297,6 +382,12 @@ export default function CollectorCustomersPage() {
                     )}
                     {c.expiredAt && <span className="flex items-center gap-2"><CalendarDays className="w-4 h-4 shrink-0" />Aktif s/d {fmtDate(c.expiredAt)}</span>}
                     {c.address && <span className="flex items-start gap-2 min-w-0"><MapPin className="w-4 h-4 shrink-0 mt-0.5" /><span className="line-clamp-2">{c.address}</span></span>}
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <button type="button" onClick={() => setDetailId(c.id)} className={cn(ui.btnSecondary, 'h-10')}>Detail</button>
+                    {c.latitude != null && c.longitude != null
+                      ? <a href={mapsLinks(c.latitude, c.longitude).directions} target="_blank" rel="noopener noreferrer" className={cn(ui.btnSecondary, 'h-10')}><Navigation className="w-4 h-4" /> Rute</a>
+                      : <span className="h-10 inline-flex items-center justify-center rounded-xl bg-muted text-xs text-muted-foreground">Belum ada koordinat</span>}
                   </div>
                   <div className="mt-3 pt-3 border-t border-border flex items-center justify-between gap-3">
                     {c.unpaid_count > 0
@@ -325,7 +416,30 @@ export default function CollectorCustomersPage() {
               </div>
             </nav>
           )}
+          </>
+          )}
         </>
+      )}
+
+      {detail && (
+        <CustomerDetailSheet
+          customer={detail}
+          onClose={() => setDetailId(null)}
+          actions={detail.unpaid_count > 0 ? (
+            <Link href={`/collector/billing?q=${encodeURIComponent(detail.username)}`} className={cn(ui.btnPrimary, 'w-full')}>
+              <Receipt className="w-4 h-4" /> Tagih {fmtRp(detail.unpaid_amount)}
+            </Link>
+          ) : undefined}
+        >
+          <section aria-labelledby="bill-title">
+            <h4 id="bill-title" className="text-sm font-semibold text-foreground mb-1">Tagihan</h4>
+            <p className="text-sm text-muted-foreground">
+              {detail.unpaid_count > 0
+                ? <><span className={cn('font-semibold', toneText('red'))}>{fmtRp(detail.unpaid_amount)}</span> belum dibayar dari {detail.unpaid_count} tagihan.</>
+                : 'Tidak ada tagihan yang belum dibayar.'}
+            </p>
+          </section>
+        </CustomerDetailSheet>
       )}
     </div>
   );
