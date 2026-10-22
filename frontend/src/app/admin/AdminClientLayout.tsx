@@ -788,9 +788,14 @@ function AdminLayoutContent({
       .catch(console.error);
   }, [setCompany]);
 
+  // Badge counts load only for accounts allowed to read them; otherwise
+  // every page polled an endpoint that answered 403.
+  const canSeeRegistrations = userPermissions.includes('registrations.view');
+  const canCheckTransfers = userPermissions.includes('invoices.edit');
+
   // Load pending registrations
   useEffect(() => {
-    if (status !== 'authenticated') return;
+    if (status !== 'authenticated' || !canSeeRegistrations) return;
 
     const loadPending = () => {
       apiAdmin<{ stats?: { pending?: number } }>('/api/admin/registrations?status=PENDING')
@@ -803,11 +808,11 @@ function AdminLayoutContent({
     loadPending();
     const interval = setInterval(loadPending, 30000);
     return () => clearInterval(interval);
-  }, [status]);
+  }, [status, canSeeRegistrations]);
 
   // Load pending manual payments
   useEffect(() => {
-    if (status !== 'authenticated') return;
+    if (status !== 'authenticated' || !canCheckTransfers) return;
 
     const loadPendingPayments = () => {
       apiAdmin<{ success: boolean; data?: unknown[] }>('/api/manual-payments?status=PENDING')
@@ -820,7 +825,7 @@ function AdminLayoutContent({
     loadPendingPayments();
     const interval = setInterval(loadPendingPayments, 30000);
     return () => clearInterval(interval);
-  }, [status]);
+  }, [status, canCheckTransfers]);
 
   // Load unread notifications + show toasts for new ones
   useEffect(() => {
@@ -1036,7 +1041,7 @@ function AdminLayoutContent({
 
           {/* Version badge */}
           <div className="flex-shrink-0 px-3 py-1.5">
-            <AppVersionBadge />
+            <AppVersionBadge systemAccess={userPermissions.includes('settings.view')} />
           </div>
 
           {/* User - fixed at bottom */}
@@ -1201,16 +1206,34 @@ function AdminLayoutContent({
 }
 
 // ── Version badge in sidebar footer ───────────────────────
-function AppVersionBadge() {
-  const [info, setInfo] = useState<{ version: string; commit: string; hasUpdate: boolean } | null>(null);
+// Accounts without settings.view get the version from the public health
+// endpoint, as plain text: the System page and its update check are not theirs.
+function AppVersionBadge({ systemAccess }: { systemAccess: boolean }) {
+  const [info, setInfo] = useState<{ version: string; commit?: string; hasUpdate?: boolean } | null>(null);
 
   useEffect(() => {
-    apiAdmin<{ version: string; commit: string; hasUpdate: boolean } | null>('/api/admin/system/info')
-      .then(d => { if (d) setInfo(d); })
-      .catch(() => {});
-  }, []);
+    if (systemAccess) {
+      apiAdmin<{ version: string; commit: string; hasUpdate: boolean } | null>('/api/admin/system/info')
+        .then(d => { if (d) setInfo(d); })
+        .catch(() => {});
+    } else {
+      fetch('/api/health')
+        .then(r => (r.ok ? r.json() : null))
+        .then((d: { version?: string } | null) => { if (d?.version) setInfo({ version: d.version }); })
+        .catch(() => {});
+    }
+  }, [systemAccess]);
 
   if (!info) return null;
+
+  if (!systemAccess) {
+    return (
+      <div className="flex items-center gap-1.5 w-full px-2.5 py-1.5">
+        <GitBranch className="w-3 h-3 text-sidebar-foreground/60" />
+        <span className="text-[10px] font-mono text-sidebar-foreground/70">v{info.version}</span>
+      </div>
+    );
+  }
 
   return (
     <Link
