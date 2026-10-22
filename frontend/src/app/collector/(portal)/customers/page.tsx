@@ -41,8 +41,8 @@ function statusBadge(status: string) {
   return { text: status, cls: 'bg-slate-500/10 text-slate-600 dark:text-slate-400' };
 }
 
-// Every customer in the collector's area / routers, not only those with an
-// open invoice (that is Tagihan).
+// The customers in the area / routers an admin assigned to this collector
+// (Kelola Kolektor), not only those with an open invoice (that is Tagihan).
 export default function CollectorCustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,6 +51,13 @@ export default function CollectorCustomersPage() {
   const [status, setStatus] = useState<(typeof STATUS)[number]['key']>('all');
   const [search, setSearch] = useState('');
   const [visible, setVisible] = useState(PAGE_SIZE);
+  const [assigned, setAssigned] = useState('');
+
+  useEffect(() => {
+    apiAdmin<{ collector?: { scopeLabel?: string } }>('/api/collector/auth/session')
+      .then((d) => setAssigned(d.collector?.scopeLabel || ''))
+      .catch(() => {});
+  }, []);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -89,7 +96,9 @@ export default function CollectorCustomersPage() {
     <div className="animate-fade-in">
       <div className="mb-4">
         <h2 className="text-xl font-bold text-foreground">Pelanggan</h2>
-        <p className="text-sm text-muted-foreground mt-1">Semua pelanggan di area dan router/NAS Anda</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {assigned ? <>Pelanggan di <span className="font-medium text-foreground">{assigned}</span>, sesuai penugasan admin</> : 'Pelanggan sesuai area dan router/NAS yang ditugaskan admin'}
+        </p>
       </div>
 
       <ScopeFilter value={scope} onChange={(v) => { setScope(v); setVisible(PAGE_SIZE); }} />
