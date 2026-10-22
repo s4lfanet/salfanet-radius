@@ -323,6 +323,11 @@ if [ -f "${appDir}/deploy/fix-pm2-limits.sh" ]; then
   APP_DIR="${appDir}" bash "${appDir}/deploy/fix-pm2-limits.sh" --apply >> "$LOG_FILE" 2>&1 || true
 fi
 
+# /uploads/ in the nginx site; installer-made sites lacked it.
+if [ -f "${appDir}/deploy/fix-nginx-uploads.sh" ]; then
+  APP_DIR="${appDir}" bash "${appDir}/deploy/fix-nginx-uploads.sh" >> "$LOG_FILE" 2>&1 || true
+fi
+
 # FreeRADIUS fixes that only new installs get from the installer.
 if [ -f "${appDir}/deploy/freeradius/fix-runtime-config.sh" ]; then
   bash "${appDir}/deploy/freeradius/fix-runtime-config.sh" >> "$LOG_FILE" 2>&1 || true
