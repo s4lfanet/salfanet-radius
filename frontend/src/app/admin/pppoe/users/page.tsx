@@ -595,7 +595,8 @@ export default function PppoeUsersPage() {
     '/api/invoices/counts',
     {
       params: { userIds },
-      enabled: users.length > 0,
+      // Roles without invoices.view (Marketing) would only get a 403.
+      enabled: users.length > 0 && hasPermission('invoices.view'),
     },
   );
   const invoiceCounts: Record<string, number> = invoiceCountsQuery.data?.counts || {};
