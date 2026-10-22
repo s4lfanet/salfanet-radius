@@ -137,16 +137,16 @@ export default function CollectorCustomersPage() {
   const actions = (c: Customer, compact = false) => (
     <div className={cn('flex items-center gap-1.5', compact ? 'justify-end' : '')}>
       {c.unpaid_count > 0 && (
-        <Link href={`/collector/billing?q=${encodeURIComponent(c.username)}`} className={cn(ui.btnPrimary, 'h-9 px-3 text-xs')} title="Buka tagihan pelanggan ini">
+        <Link href={`/collector/billing?q=${encodeURIComponent(c.username)}`} className={cn(ui.btnPrimary, 'h-9 px-3 text-xs pointer-coarse:h-11')} title="Buka tagihan pelanggan ini">
           <Receipt className="w-3.5 h-3.5" /> Tagih
         </Link>
       )}
       {c.phone && (
         <>
-          <a href={`tel:${c.phone}`} aria-label={`Telepon ${c.name || c.username}`} className="h-9 w-9 inline-flex items-center justify-center rounded-xl border border-border bg-card text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
+          <a href={`tel:${c.phone}`} aria-label={`Telepon ${c.name || c.username}`} className="h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 inline-flex items-center justify-center rounded-xl border border-border bg-card text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
             <Phone className="w-4 h-4" />
           </a>
-          <a href={`https://wa.me/${waNumber(c.phone)}`} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${c.name || c.username}`} className="h-9 w-9 inline-flex items-center justify-center rounded-xl border border-border bg-card text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
+          <a href={`https://wa.me/${waNumber(c.phone)}`} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${c.name || c.username}`} className="h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 inline-flex items-center justify-center rounded-xl border border-border bg-card text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
             <MessageCircle className="w-4 h-4" />
           </a>
         </>

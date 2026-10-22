@@ -475,7 +475,7 @@ export default function CollectorBillingPage() {
           btConnected ? (
             <div className="flex items-center gap-2">
               <StatusPill tone="green"><Bluetooth className="w-3.5 h-3.5 mr-1" />Printer terhubung</StatusPill>
-              <button type="button" onClick={handleBluetoothDisconnect} className={cn(ui.btnSecondary, 'h-9 px-3 text-xs')}>Putuskan</button>
+              <button type="button" onClick={handleBluetoothDisconnect} className={cn(ui.btnSecondary, 'h-9 px-3 text-xs pointer-coarse:h-11')}>Putuskan</button>
             </div>
           ) : (
             <button type="button" onClick={handleBluetoothConnect} disabled={actionLoading === 'bt-connect'} className={cn(ui.btnSecondary, 'w-full sm:w-auto')}>
@@ -580,7 +580,7 @@ export default function CollectorBillingPage() {
                             type="button"
                             onClick={() => setExpandedUser(open ? null : u.id)}
                             aria-expanded={open}
-                            className={cn(open ? ui.btnSecondary : ui.btnPrimary, 'h-9 px-3 text-xs')}
+                            className={cn(open ? ui.btnSecondary : ui.btnPrimary, 'h-9 px-3 text-xs pointer-coarse:h-11')}
                           >
                             {open ? 'Tutup' : u.is_paid ? 'Lihat' : 'Tagih'}
                             <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', open && 'rotate-180')} />

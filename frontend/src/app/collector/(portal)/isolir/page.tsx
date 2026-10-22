@@ -278,7 +278,7 @@ export default function CollectorIsolirPage() {
                           ) : <p className={cn('font-semibold', toneText('green'))}>Lunas</p>}
                         </td>
                         <td className="px-3 py-3 text-right">
-                          <button type="button" onClick={() => setExpandedUser(open ? null : u.id)} aria-expanded={open} className={cn(open ? ui.btnSecondary : ui.btnPrimary, 'h-9 px-3 text-xs')}>
+                          <button type="button" onClick={() => setExpandedUser(open ? null : u.id)} aria-expanded={open} className={cn(open ? ui.btnSecondary : ui.btnPrimary, 'h-9 px-3 text-xs pointer-coarse:h-11')}>
                             {open ? 'Tutup' : 'Tindak'}
                             <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', open && 'rotate-180')} />
                           </button>
