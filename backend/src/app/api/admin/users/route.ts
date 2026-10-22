@@ -2,6 +2,7 @@
 import { prisma } from '@/server/db/client';
 import bcrypt from 'bcryptjs';
 import { requirePermission } from '@/server/middleware/api-auth';
+import { cleanRouterIds, NO_SCOPE_ERROR } from '@/server/auth/collector-scope';
 import { isSuperAdmin } from '@/server/auth/permissions';
 
 /**
@@ -24,6 +25,7 @@ export async function GET(_request: NextRequest) {
         isActive: true,
         phone: true,
         areaId: true,
+        collectorRouterIds: true,
         createdAt: true,
         updatedAt: true,
         lastLogin: true,
@@ -69,7 +71,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { username, email, password, name, role, phone, isActive, permissions, areaId } = body;
+    const { username, email, password, name, role, phone, isActive, permissions, areaId, collectorRouterIds } = body;
 
     // Validate required fields
     if (!username || !password) {
@@ -129,6 +131,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // A collector works on an area, a set of routers/NAS, or both.
+    const routerIds = finalRole === 'COLLECTOR' ? (await cleanRouterIds(collectorRouterIds)) ?? [] : [];
+    if (finalRole === 'COLLECTOR' && !areaId && !routerIds.length) {
+      return NextResponse.json({ success: false, error: NO_SCOPE_ERROR }, { status: 400 });
+    }
+
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -142,6 +150,7 @@ export async function POST(request: NextRequest) {
         role: finalRole,
         phone: formattedPhone || null,
         areaId: areaId || null,
+        ...(finalRole === 'COLLECTOR' ? { collectorRouterIds: routerIds } : {}),
         isActive: isActive !== undefined ? isActive : true,
       },
       select: {

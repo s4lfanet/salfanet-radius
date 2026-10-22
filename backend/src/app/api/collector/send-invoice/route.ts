@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { verifyCollector } from '@/server/auth/collector-auth';
+import { getCollectorScope, inScope } from '@/server/auth/collector-scope';
 import { WhatsAppService } from '@/server/services/notifications/whatsapp.service';
 import { getCurrentTimezone } from '@/lib/timezone';
 
@@ -33,6 +34,7 @@ export async function POST(req: NextRequest) {
             username: true,
             customerId: true,
             areaId: true,
+            routerId: true,
             area: { select: { name: true } },
             profile: { select: { name: true } },
           },
@@ -44,14 +46,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invoice tidak ditemukan' }, { status: 404 });
     }
 
-    // Area ownership check
-    const collectorAccount = await prisma.adminUser.findUnique({
-      where: { id: collector.id },
-      select: { areaId: true },
-    });
-
-    if (!collectorAccount?.areaId || invoice.user?.areaId !== collectorAccount.areaId) {
-      return NextResponse.json({ error: 'Invoice bukan di area Anda' }, { status: 403 });
+    if (!inScope(await getCollectorScope(collector.id), invoice.user)) {
+      return NextResponse.json({ error: 'Pelanggan ini bukan di area atau router Anda' }, { status: 403 });
     }
 
     if (invoice.status !== 'PAID') {

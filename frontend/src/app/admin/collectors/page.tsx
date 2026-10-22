@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, Search, RefreshCw, Loader2, Plus, X, Phone, Mail, MapPin, Pencil, Trash2 } from 'lucide-react';
+import { Users, Search, RefreshCw, Loader2, Plus, X, Phone, Mail, MapPin, Pencil, Trash2, Router } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
 import { LoginLinks } from '@/components/admin/LoginLinks';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
@@ -17,6 +17,8 @@ interface Collector {
   isActive: boolean;
   areaId: string | null;
   areaName: string | null;
+  collectorRouterIds: string[];
+  routerNames: string[];
   lastLogin: string | null;
   createdAt: string;
 }
@@ -26,7 +28,7 @@ interface Area {
   name: string;
 }
 
-const emptyForm = { username: '', name: '', email: '', phone: '', password: '', areaId: '' };
+const emptyForm = { username: '', name: '', email: '', phone: '', password: '', areaId: '', routerIds: [] as string[] };
 
 export default function AdminCollectorsPage() {
   const queryClient = useQueryClient();
@@ -35,6 +37,9 @@ export default function AdminCollectorsPage() {
 
   const { data: areasData } = useApiQuery<{ areas: Area[] } | Area[]>('/api/pppoe/areas', { staleTime: 5 * 60 * 1000 });
   const areas: Area[] = Array.isArray(areasData) ? areasData : (areasData?.areas || []);
+
+  const { data: routersData } = useApiQuery<{ routers?: Area[] }>('/api/network/routers', { staleTime: 5 * 60 * 1000 });
+  const routers: Area[] = routersData?.routers || [];
 
   const [search, setSearch] = useState('');
   const [showCreate, setShowCreate] = useState(false);
@@ -58,13 +63,17 @@ export default function AdminCollectorsPage() {
 
   const openEdit = (c: Collector) => {
     setEditing(c);
-    setForm({ username: c.username, name: c.name, email: c.email || '', phone: c.phone || '', password: '', areaId: c.areaId || '' });
+    setForm({ username: c.username, name: c.name, email: c.email || '', phone: c.phone || '', password: '', areaId: c.areaId || '', routerIds: c.collectorRouterIds || [] });
     setShowCreate(true);
   };
 
   const submit = async () => {
-    if (!form.username.trim() || !form.name.trim() || !form.areaId) {
-      showError('Username, nama, dan area wajib diisi');
+    if (!form.username.trim() || !form.name.trim()) {
+      showError('Username dan nama wajib diisi');
+      return;
+    }
+    if (!form.areaId && form.routerIds.length === 0) {
+      showError('Pilih area atau minimal satu router/NAS');
       return;
     }
     if (!editing && !form.password.trim()) {
@@ -83,7 +92,8 @@ export default function AdminCollectorsPage() {
         email: form.email.trim() || undefined,
         phone: form.phone.trim() || undefined,
         role: 'COLLECTOR',
-        areaId: form.areaId,
+        areaId: form.areaId || null,
+        collectorRouterIds: form.routerIds,
       };
       if (form.password.trim()) payload.password = form.password.trim();
 
@@ -116,7 +126,8 @@ export default function AdminCollectorsPage() {
       await apiAdmin(`/api/admin/users/${c.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: c.username, name: c.name, role: 'COLLECTOR', areaId: c.areaId, isActive: !c.isActive }),
+        // The update API clears email and phone when they are left out.
+        body: JSON.stringify({ username: c.username, name: c.name, email: c.email, phone: c.phone, role: 'COLLECTOR', areaId: c.areaId, isActive: !c.isActive }),
       });
       showSuccess(c.isActive ? 'Kolektor dinonaktifkan' : 'Kolektor diaktifkan');
       invalidate();
@@ -145,7 +156,7 @@ export default function AdminCollectorsPage() {
             <Users className="w-5 h-5" /> Kelola Kolektor
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Akun kolektor (penagih lapangan) beserta area yang ditugaskan
+            Akun kolektor (penagih lapangan) beserta area dan router/NAS yang ditugaskan
           </p>
         </div>
         <div className="flex gap-2">
@@ -186,7 +197,7 @@ export default function AdminCollectorsPage() {
               <tr className="border-b border-border text-left">
                 <th className="px-4 py-3 font-semibold text-muted-foreground">Nama</th>
                 <th className="hidden md:table-cell px-4 py-3 font-semibold text-muted-foreground">Kontak</th>
-                <th className="px-4 py-3 font-semibold text-muted-foreground">Area</th>
+                <th className="px-4 py-3 font-semibold text-muted-foreground">Area / Router</th>
                 <th className="hidden md:table-cell px-4 py-3 font-semibold text-muted-foreground">Login Terakhir</th>
                 <th className="px-4 py-3 font-semibold text-muted-foreground">Status</th>
                 <th className="px-4 py-3 font-semibold text-muted-foreground">Aksi</th>
@@ -204,10 +215,10 @@ export default function AdminCollectorsPage() {
                     {c.email && <p className="flex items-center gap-1 mt-0.5"><Mail className="w-3 h-3" /> {c.email}</p>}
                   </td>
                   <td className="px-4 py-3 text-xs">
-                    {c.areaName ? (
-                      <span className="flex items-center gap-1 text-foreground"><MapPin className="w-3 h-3" /> {c.areaName}</span>
-                    ) : (
-                      <span className="text-red-500">Belum di-assign</span>
+                    {!c.areaName && c.routerNames.length === 0 && <span className="text-red-500">Belum di-assign</span>}
+                    {c.areaName && <span className="flex items-center gap-1 text-foreground"><MapPin className="w-3 h-3 shrink-0" /> {c.areaName}</span>}
+                    {c.routerNames.length > 0 && (
+                      <span className="flex items-center gap-1 text-foreground mt-0.5"><Router className="w-3 h-3 shrink-0" /> {c.routerNames.join(', ')}</span>
                     )}
                   </td>
                   <td className="hidden md:table-cell px-4 py-3 text-xs text-muted-foreground">
@@ -298,10 +309,32 @@ export default function AdminCollectorsPage() {
                   onChange={(e) => setForm((f) => ({ ...f, areaId: e.target.value }))}
                   className="w-full px-3 py-2 bg-muted/50 border border-border rounded-lg text-sm text-foreground"
                 >
-                  <option value="">-- Pilih Area --</option>
+                  <option value="">Semua area</option>
                   {areas.map((area) => (<option key={area.id} value={area.id}>{area.name}</option>))}
                 </select>
-                <p className="text-[10px] text-muted-foreground mt-1">Kolektor hanya bisa mengelola pelanggan di area ini.</p>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1 block">Router / NAS yang Ditugaskan</label>
+                <div className="max-h-40 overflow-y-auto rounded-lg border border-border bg-muted/30 divide-y divide-border/60">
+                  {routers.length === 0 && <p className="px-3 py-2 text-xs text-muted-foreground">Belum ada router.</p>}
+                  {routers.map((r) => (
+                    <label key={r.id} className="flex items-center gap-2 px-3 py-2 text-sm text-foreground cursor-pointer hover:bg-muted/50">
+                      <input
+                        type="checkbox"
+                        checked={form.routerIds.includes(r.id)}
+                        onChange={(e) => setForm((f) => ({
+                          ...f,
+                          routerIds: e.target.checked ? [...f.routerIds, r.id] : f.routerIds.filter((id) => id !== r.id),
+                        }))}
+                        className="w-4 h-4"
+                      />
+                      {r.name}
+                    </label>
+                  ))}
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1 leading-relaxed">
+                  Kolektor hanya melihat pelanggan yang cocok dengan area dan router yang dipilih. Tanpa router dicentang: semua router di area itu. Tanpa area: semua area pada router yang dicentang.
+                </p>
               </div>
             </div>
             <div className="flex gap-2 pt-2">

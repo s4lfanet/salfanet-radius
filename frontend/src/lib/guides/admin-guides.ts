@@ -940,9 +940,10 @@ export const GUIDES: PageGuide[] = [
     path: '/admin/collectors',
     title: 'Kelola Kolektor',
     section: S.management,
-    summary: 'Akun penagih lapangan. Kolektor hanya melihat pelanggan di area yang ditugaskan.',
+    summary: 'Akun penagih lapangan. Kolektor hanya melihat pelanggan di area dan router/NAS yang ditugaskan.',
     steps: [
-      'Klik Tambah Kolektor, isi username, password (minimal 6 karakter), dan area.',
+      'Klik Tambah Kolektor, isi username dan password (minimal 6 karakter).',
+      'Pilih area, centang router/NAS, atau keduanya. Area dan router sekaligus: hanya pelanggan di area itu pada router tersebut, sehingga satu area bisa dibagi ke beberapa kolektor per router.',
       'Bagikan alamat login kolektor beserta username dan passwordnya.',
       'Pakai Edit untuk mengganti data, area, atau password, dan Hapus untuk menghapus akun.',
       'Pantau hasil tagihan di Setoran Kolektor.',

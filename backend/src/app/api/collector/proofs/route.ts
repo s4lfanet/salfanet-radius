@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { verifyCollector } from '@/server/auth/collector-auth';
+import { getCollectorScope, scopeWhere } from '@/server/auth/collector-scope';
 
 export async function GET(req: NextRequest) {
   const collector = await verifyCollector(req);
@@ -13,19 +14,15 @@ export async function GET(req: NextRequest) {
   const filter = ['pending', 'approved', 'rejected'].includes(rawFilter) ? rawFilter : 'pending';
 
   try {
-    const adminUser = await prisma.adminUser.findUnique({
-      where: { id: collector.id },
-      select: { areaId: true },
-    });
-
-    if (!adminUser?.areaId) {
+    const scope = await getCollectorScope(collector.id);
+    if (!scope) {
       return NextResponse.json({ proofs: [] });
     }
 
     // Get payment proofs — query by collectorId first (proofs uploaded by this collector)
     // Also get proofs for users in this collector's area via username matching
     const areaUsers = await prisma.pppoeUser.findMany({
-      where: { areaId: adminUser.areaId },
+      where: scopeWhere(scope),
       select: {
         username: true,
         name: true,

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { prisma } from '@/server/db/client';
+import { getCollectorScope, scopeFilterOptions, describeScope } from '@/server/auth/collector-scope';
 import { TECH_JWT_SECRET } from '@/server/auth/technician-secret';
 
 export async function GET(req: NextRequest) {
@@ -26,14 +27,17 @@ export async function GET(req: NextRequest) {
         phone: true,
         email: true,
         isActive: true,
+        role: true,
         areaId: true,
+        collectorRouterIds: true,
       },
     });
 
-    if (!user || !user.isActive) {
+    if (!user || !user.isActive || user.role !== 'COLLECTOR') {
       return NextResponse.json({ error: 'User not found or inactive' }, { status: 404 });
     }
 
+    const scope = await getCollectorScope(user.id);
     let area = null;
     if (user.areaId) {
       area = await prisma.pppoeArea.findUnique({
@@ -52,7 +56,12 @@ export async function GET(req: NextRequest) {
         email: user.email,
         areaId: user.areaId,
         areaName: area?.name || null,
+        routerIds: scope?.routerIds ?? [],
+        scopeLabel: await describeScope(scope),
       },
+      // Choices for the portal's Area / Router filter: what occurs among
+      // this collector's customers.
+      filters: scope ? await scopeFilterOptions(scope) : { areas: [], routers: [] },
     });
   } catch (error) {
     console.error('Get collector session error:', error);

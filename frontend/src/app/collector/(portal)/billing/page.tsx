@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, Fragment } from 'react';
+import { ScopeFilter, scopeQuery, type ScopeValue } from '@/components/collector/ScopeFilter';
 import { apiAdmin, ApiError } from '@/lib/api/client';
 import { printInvoiceStandard, printInvoiceThermal } from '@/lib/invoice-print';
 import { BluetoothPrinter, type ThermalReceiptData } from '@/lib/bluetooth-printer';
@@ -17,6 +18,7 @@ export default function CollectorBillingPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('unpaid');
+  const [scope, setScope] = useState<ScopeValue>({ areaId: '', routerId: '' });
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [payModal, setPayModal] = useState<{ invoiceId: string; invoiceNumber: string; amount: number; customerName: string } | null>(null);
@@ -41,13 +43,13 @@ export default function CollectorBillingPage() {
     setLoading(true);
     setLoadError(null);
     try {
-      const res = await apiAdmin<{ users: any[] }>(`/api/collector/users?filter=${filter}`);
+      const res = await apiAdmin<{ users: any[] }>(`/api/collector/users?filter=${filter}${scopeQuery(scope)}`);
       setUsers(res.users || []);
     } catch (e: unknown) {
       setLoadError(e instanceof Error ? e.message : 'Gagal memuat data pelanggan');
     }
     finally { setLoading(false); }
-  }, [filter]);
+  }, [filter, scope]);
 
   useEffect(() => { loadData() }, [loadData]);
 
@@ -399,6 +401,8 @@ export default function CollectorBillingPage() {
           </button>
         ))}
       </div>
+
+      <ScopeFilter value={scope} onChange={(v) => { setScope(v); setVisibleCount(PAGE_SIZE); }} />
 
       {/* Search */}
       <div className="relative mb-4">

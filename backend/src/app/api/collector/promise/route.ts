@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { verifyCollector } from '@/server/auth/collector-auth';
+import { getCollectorScope, inScope } from '@/server/auth/collector-scope';
 import { managePppSecret, kickPppoeSession, shouldManagePppSecretForSuspend } from '@/server/services/mikrotik/ppp-secret.service';
 import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service';
 
@@ -57,6 +58,7 @@ export async function POST(req: NextRequest) {
         ipAddress: true,
         status: true,
         areaId: true,
+        routerId: true,
         profile: { select: { groupName: true } },
         router: { select: { id: true, authMode: true } },
       },
@@ -65,14 +67,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Ownership check: a collector may only act on customers in their own
-    // assigned area — mirrors collector/mark-paid's guard.
-    const collectorAccount = await prisma.adminUser.findUnique({
-      where: { id: collector.id },
-      select: { areaId: true },
-    });
-    if (!collectorAccount?.areaId || !user.areaId || user.areaId !== collectorAccount.areaId) {
-      return NextResponse.json({ error: 'Pelanggan bukan di area Anda' }, { status: 403 });
+    // Ownership check, same as collector/mark-paid.
+    if (!inScope(await getCollectorScope(collector.id), user)) {
+      return NextResponse.json({ error: 'Pelanggan ini bukan di area atau router Anda' }, { status: 403 });
     }
 
     // Check no existing active promise

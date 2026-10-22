@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { verifyCollector } from '@/server/auth/collector-auth';
+import { getCollectorScope, inScope } from '@/server/auth/collector-scope';
 import { cancelPendingOntTasksForPaidUser } from '@/server/services/ont-removal-task.service';
 import { nowWIB, toUTC, getCurrentTimezone } from '@/lib/timezone';
 import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service';
@@ -70,19 +71,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Ownership check: a collector may only settle invoices for customers in
-    // their own assigned area — without this, any collector could mark any
-    // customer's invoice as paid regardless of who they actually collect for.
-    const collectorAccount = await prisma.adminUser.findUnique({
-      where: { id: collector.id },
-      select: { areaId: true },
-    });
-
-    if (
-      !collectorAccount?.areaId ||
-      !user.areaId ||
-      user.areaId !== collectorAccount.areaId
-    ) {
-      return NextResponse.json({ error: 'Invoice bukan di area Anda' }, { status: 403 });
+    // their own area / routers; without it any collector could mark any
+    // customer's invoice as paid.
+    if (!inScope(await getCollectorScope(collector.id), user)) {
+      return NextResponse.json({ error: 'Pelanggan ini bukan di area atau router Anda' }, { status: 403 });
     }
 
     const method = paymentMethod || 'cash';

@@ -2,6 +2,7 @@
 import { prisma } from '@/server/db/client';
 import bcrypt from 'bcryptjs';
 import { requirePermission } from '@/server/middleware/api-auth';
+import { cleanRouterIds, parseRouterIds, NO_SCOPE_ERROR } from '@/server/auth/collector-scope';
 import { isSuperAdmin } from '@/server/auth/permissions';
 import type { Prisma } from '@prisma/client';
 
@@ -19,7 +20,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { email, password, name, role, phone, isActive, permissions, areaId } = body;
+    const { email, password, name, role, phone, isActive, permissions, areaId, collectorRouterIds } = body;
 
     // Check if user exists
     const existing = await prisma.adminUser.findUnique({
@@ -86,12 +87,24 @@ export async function PUT(
     }
 
     // Prepare update data with explicit typing
-    const updateData: Prisma.adminUserUpdateInput = {
-      email: email || null,
-      name,
-      phone: formattedPhone || null,
-    };
+    // Fields left out of the request keep their value; sending them empty
+    // clears them. (A status toggle used to wipe email and phone.)
+    const updateData: Prisma.adminUserUpdateInput = {};
+    if (email !== undefined) updateData.email = email || null;
+    if (name !== undefined) updateData.name = name;
+    if (phone !== undefined) updateData.phone = formattedPhone || null;
     if (areaId !== undefined) updateData.area = areaId ? { connect: { id: areaId } } : { disconnect: true };
+
+    // Collector scope after this change must still name an area or a router.
+    if ((role ?? existing.role) === 'COLLECTOR') {
+      const routerIds = await cleanRouterIds(collectorRouterIds);
+      if (routerIds !== undefined) updateData.collectorRouterIds = routerIds;
+      const nextArea = areaId !== undefined ? areaId : existing.areaId;
+      const nextRouters = routerIds ?? parseRouterIds(existing.collectorRouterIds);
+      if (!nextArea && !nextRouters.length) {
+        return NextResponse.json({ success: false, error: NO_SCOPE_ERROR }, { status: 400 });
+      }
+    }
     if (role !== undefined) updateData.role = role;
     if (isActive !== undefined) updateData.isActive = isActive;
 

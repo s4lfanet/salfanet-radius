@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, Fragment } from 'react';
+import { ScopeFilter, scopeQuery, type ScopeValue } from '@/components/collector/ScopeFilter';
 import { apiAdmin, ApiError } from '@/lib/api/client';
 import { formatWIB } from '@/lib/timezone';
 import { UserX, Search, Unplug, ChevronDown, X, Loader2, Wallet, Upload, MapPin, Wifi, Calendar, Phone, CheckCircle } from 'lucide-react';
@@ -13,6 +14,7 @@ export default function CollectorIsolirPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [scope, setScope] = useState<ScopeValue>({ areaId: '', routerId: '' });
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
 
@@ -31,11 +33,11 @@ export default function CollectorIsolirPage() {
 
   const loadData = useCallback(async () => {
     try {
-      const res = await apiAdmin<{ users: any[] }>('/api/collector/isolir');
+      const res = await apiAdmin<{ users: any[] }>(`/api/collector/isolir?${scopeQuery(scope).slice(1)}`);
       setUsers(res.users || []);
     } catch {}
     finally { setLoading(false); }
-  }, []);
+  }, [scope]);
 
   useEffect(() => { loadData() }, [loadData]);
 
@@ -165,6 +167,8 @@ export default function CollectorIsolirPage() {
       </div>
 
       {/* Search */}
+      <ScopeFilter value={scope} onChange={(v) => { setScope(v); setVisibleCount(PAGE_SIZE); }} />
+
       <div className="relative mb-4">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <input
