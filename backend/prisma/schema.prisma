@@ -2212,7 +2212,9 @@ model technician {
   phoneNumber         String                       @unique
   // Sign-in, same as collectors: username + password set in Kelola Teknisi.
   // Null on technicians made before that until an admin fills them in.
-  username            String?                      @unique
+  // Unique by the API (usernameTaken), not a constraint: db push in the
+  // web updater refuses to add a unique constraint without --accept-data-loss.
+  username            String?
   password            String?
   email               String?
   isActive            Boolean                      @default(true)
@@ -2226,6 +2228,7 @@ model technician {
   registeredCustomers pppoeUser[]
 
   @@index([phoneNumber])
+  @@index([username])
   @@index([isActive])
   @@map("technicians")
 }
@@ -2242,6 +2245,7 @@ model technicianOtp {
 
   @@index([technicianId])
   @@index([phoneNumber])
+  @@index([username])
   @@index([otpCode])
   @@index([expiresAt])
   @@map("technician_otps")
