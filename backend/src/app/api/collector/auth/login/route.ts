@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
 
     if (!username || !password) {
       return NextResponse.json(
-        { error: 'Username and password are required' },
+        { error: 'Username dan password wajib diisi' },
         { status: 400 }
       );
     }
@@ -26,7 +26,8 @@ export async function POST(req: NextRequest) {
       where: { username },
     });
 
-    if (!user || user.role !== 'COLLECTOR') {
+    // Password first, so the account's state is only told to its owner.
+    if (!user || user.role !== 'COLLECTOR' || !(await bcrypt.compare(password, user.password))) {
       return NextResponse.json(
         { error: 'Username atau password salah' },
         { status: 401 }
@@ -37,14 +38,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: 'Akun tidak aktif' },
         { status: 403 }
-      );
-    }
-
-    const isValid = await bcrypt.compare(password, user.password);
-    if (!isValid) {
-      return NextResponse.json(
-        { error: 'Username atau password salah' },
-        { status: 401 }
       );
     }
 

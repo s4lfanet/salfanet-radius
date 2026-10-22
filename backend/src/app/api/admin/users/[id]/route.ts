@@ -186,6 +186,19 @@ export async function DELETE(
       );
     }
 
+    // Invoices keep the collector only as an id (paidById). Deleting one who
+    // already collected would drop those payments from the settlement recap,
+    // so such a collector is deactivated instead.
+    if (existing.role === 'COLLECTOR') {
+      const collected = await prisma.invoice.count({ where: { paidById: id } });
+      if (collected > 0) {
+        return NextResponse.json(
+          { success: false, error: `Kolektor ini sudah menagih ${collected} tagihan. Nonaktifkan saja agar riwayat setorannya tetap tercatat.` },
+          { status: 409 }
+        );
+      }
+    }
+
     // Delete user
     await prisma.adminUser.delete({
       where: { id },

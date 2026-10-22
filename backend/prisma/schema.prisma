@@ -2210,6 +2210,10 @@ model technician {
   id                  String                       @id @default(cuid())
   name                String
   phoneNumber         String                       @unique
+  // Sign-in, same as collectors: username + password set in Kelola Teknisi.
+  // Null on technicians made before that until an admin fills them in.
+  username            String?                      @unique
+  password            String?
   email               String?
   isActive            Boolean                      @default(true)
   requireOtp          Boolean                      @default(true)

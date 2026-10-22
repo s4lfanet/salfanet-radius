@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Wrench, Search, RefreshCw, Loader2, Plus, X, Phone, Mail } from 'lucide-react';
+import { Wrench, Search, RefreshCw, Loader2, Plus, X, Phone, Mail, Pencil, Trash2 } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
 import { LoginLinks } from '@/components/admin/LoginLinks';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
@@ -11,6 +11,8 @@ import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 interface Technician {
   id: string;
   name: string;
+  username: string | null;
+  hasPassword: boolean;
   phoneNumber: string;
   email: string | null;
   isActive: boolean;
@@ -18,7 +20,7 @@ interface Technician {
   createdAt: string;
 }
 
-const emptyForm = { name: '', phoneNumber: '', email: '' };
+const emptyForm = { name: '', username: '', password: '', phoneNumber: '', email: '' };
 
 export default function AdminTechniciansPage() {
   const queryClient = useQueryClient();
@@ -35,6 +37,7 @@ export default function AdminTechniciansPage() {
 
   const filtered = technicians.filter((t) =>
     t.name.toLowerCase().includes(search.toLowerCase()) ||
+    (t.username || '').toLowerCase().includes(search.toLowerCase()) ||
     t.phoneNumber.includes(search)
   );
 
@@ -46,13 +49,22 @@ export default function AdminTechniciansPage() {
 
   const openEdit = (t: Technician) => {
     setEditing(t);
-    setForm({ name: t.name, phoneNumber: t.phoneNumber, email: t.email || '' });
+    setForm({ name: t.name, username: t.username || '', password: '', phoneNumber: t.phoneNumber, email: t.email || '' });
     setShowCreate(true);
   };
 
   const submit = async () => {
-    if (!form.name.trim() || (!editing && !form.phoneNumber.trim())) {
-      showError('Nama dan nomor telepon wajib diisi');
+    if (!form.name.trim() || !form.username.trim() || (!editing && !form.phoneNumber.trim())) {
+      showError('Nama, username, dan nomor telepon wajib diisi');
+      return;
+    }
+    // Technicians from before sign-in by username have no password yet.
+    if ((!editing || !editing.hasPassword) && !form.password) {
+      showError('Password wajib diisi');
+      return;
+    }
+    if (form.password && form.password.length < 6) {
+      showError('Password minimal 6 karakter');
       return;
     }
     setSaving(true);
@@ -61,7 +73,12 @@ export default function AdminTechniciansPage() {
         await apiAdmin(`/api/admin/technicians/${editing.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: form.name.trim(), email: form.email.trim() || null }),
+          body: JSON.stringify({
+            name: form.name.trim(),
+            email: form.email.trim() || null,
+            ...(editing.username ? {} : { username: form.username.trim() }),
+            ...(form.password ? { password: form.password } : {}),
+          }),
         });
         showSuccess('Data teknisi berhasil diperbarui');
       } else {
@@ -72,6 +89,8 @@ export default function AdminTechniciansPage() {
             name: form.name.trim(),
             phoneNumber: form.phoneNumber.trim(),
             email: form.email.trim() || undefined,
+            username: form.username.trim(),
+            password: form.password,
           }),
         });
         showSuccess('Teknisi berhasil didaftarkan');
@@ -106,8 +125,8 @@ export default function AdminTechniciansPage() {
       await apiAdmin(`/api/admin/technicians/${t.id}`, { method: 'DELETE' });
       showSuccess('Teknisi dihapus');
       invalidate();
-    } catch {
-      showError('Gagal menghapus teknisi');
+    } catch (err: any) {
+      showError(err?.message || 'Gagal menghapus teknisi');
     }
   };
 
@@ -119,7 +138,7 @@ export default function AdminTechniciansPage() {
             <Wrench className="w-5 h-5" /> Kelola Teknisi
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-            Akun teknisi (login OTP via WhatsApp) yang dipakai portal /technician
+            Akun teknisi lapangan. Login di portal teknisi dengan username dan password.
           </p>
         </div>
         <div className="flex gap-2">
@@ -139,7 +158,7 @@ export default function AdminTechniciansPage() {
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Cari nama / nomor telepon..."
+          placeholder="Cari nama / username / nomor telepon..."
           className="w-full pl-10 pr-3 py-2.5 bg-card border border-border rounded-xl text-sm text-foreground placeholder:text-muted-foreground"
         />
       </div>
@@ -162,7 +181,7 @@ export default function AdminTechniciansPage() {
                 <th className="px-4 py-3 font-semibold text-muted-foreground">Kontak</th>
                 <th className="px-4 py-3 font-semibold text-muted-foreground">Login Terakhir</th>
                 <th className="px-4 py-3 font-semibold text-muted-foreground">Status</th>
-                <th className="px-4 py-3 font-semibold text-muted-foreground"></th>
+                <th className="px-4 py-3 font-semibold text-muted-foreground">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -170,6 +189,11 @@ export default function AdminTechniciansPage() {
                 <tr key={t.id} className="border-b border-border/50">
                   <td className="px-4 py-3 font-medium text-foreground cursor-pointer hover:underline" onClick={() => openEdit(t)}>
                     {t.name}
+                    {t.username && t.hasPassword ? (
+                      <p className="text-xs text-muted-foreground font-normal">@{t.username}</p>
+                    ) : (
+                      <p className="text-xs text-amber-600 dark:text-amber-400 font-normal">Belum bisa login: isi username dan password lewat Edit</p>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground text-xs">
                     <p className="flex items-center gap-1"><Phone className="w-3 h-3" /> {t.phoneNumber}</p>
@@ -187,9 +211,14 @@ export default function AdminTechniciansPage() {
                     </button>
                   </td>
                   <td className="px-4 py-3">
-                    <button onClick={() => remove(t)} className="text-xs text-red-600 dark:text-red-400 hover:underline font-medium">
-                      Hapus
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => openEdit(t)} title="Edit" className="inline-flex items-center gap-1 h-7 px-2 rounded-md text-xs font-medium text-foreground hover:bg-muted transition-colors">
+                        <Pencil className="w-3.5 h-3.5" /> Edit
+                      </button>
+                      <button onClick={() => remove(t)} title="Hapus" className="inline-flex items-center gap-1 h-7 px-2 rounded-md text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors">
+                        <Trash2 className="w-3.5 h-3.5" /> Hapus
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -215,7 +244,7 @@ export default function AdminTechniciansPage() {
                 />
               </div>
               <div>
-                <label className="text-xs font-semibold text-muted-foreground mb-1 block">Nomor Telepon (WhatsApp)</label>
+                <label className="text-xs font-semibold text-muted-foreground mb-1 block">Nomor Telepon</label>
                 <input
                   value={form.phoneNumber}
                   onChange={(e) => setForm((f) => ({ ...f, phoneNumber: e.target.value }))}
@@ -233,9 +262,29 @@ export default function AdminTechniciansPage() {
                   className="w-full px-3 py-2 bg-muted/50 border border-border rounded-lg text-sm text-foreground"
                 />
               </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Teknisi masuk di /technician/login dengan nomor HP ini dan kode OTP yang dikirim lewat WhatsApp.
-              </p>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1 block">Username</label>
+                <input
+                  value={form.username}
+                  onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
+                  disabled={!!editing?.username}
+                  autoComplete="off"
+                  className="w-full px-3 py-2 bg-muted/50 border border-border rounded-lg text-sm text-foreground disabled:opacity-60"
+                />
+                {editing?.username && <p className="text-[10px] text-muted-foreground mt-1">Username tidak bisa diubah setelah dibuat.</p>}
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1 block">
+                  Password {editing?.hasPassword && <span className="text-muted-foreground">(kosongkan jika tidak diubah)</span>}
+                </label>
+                <input
+                  type="password"
+                  value={form.password}
+                  onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                  autoComplete="new-password"
+                  className="w-full px-3 py-2 bg-muted/50 border border-border rounded-lg text-sm text-foreground"
+                />
+              </div>
             </div>
             <div className="flex gap-2 pt-2">
               <button onClick={() => setShowCreate(false)} className="flex-1 px-3 py-2 bg-muted text-muted-foreground text-sm font-bold rounded-lg transition">

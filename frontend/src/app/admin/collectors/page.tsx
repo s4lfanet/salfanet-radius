@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Users, Search, RefreshCw, Loader2, Plus, X, Phone, Mail, MapPin } from 'lucide-react';
+import { Users, Search, RefreshCw, Loader2, Plus, X, Phone, Mail, MapPin, Pencil, Trash2 } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
 import { LoginLinks } from '@/components/admin/LoginLinks';
-import { showSuccess, showError } from '@/lib/sweetalert';
+import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
@@ -71,6 +71,10 @@ export default function AdminCollectorsPage() {
       showError('Password wajib diisi untuk kolektor baru');
       return;
     }
+    if (form.password.trim() && form.password.trim().length < 6) {
+      showError('Password minimal 6 karakter');
+      return;
+    }
     setSaving(true);
     try {
       const payload: Record<string, unknown> = {
@@ -118,6 +122,18 @@ export default function AdminCollectorsPage() {
       invalidate();
     } catch {
       showError('Gagal mengubah status kolektor');
+    }
+  };
+
+  const remove = async (c: Collector) => {
+    const ok = await showConfirm(`Hapus akun kolektor "${c.name}"? Tindakan ini tidak bisa dibatalkan.`, 'Hapus Kolektor');
+    if (!ok) return;
+    try {
+      await apiAdmin(`/api/admin/users/${c.id}`, { method: 'DELETE' });
+      showSuccess('Kolektor dihapus');
+      invalidate();
+    } catch (err: any) {
+      showError(err?.message || 'Gagal menghapus kolektor');
     }
   };
 
@@ -173,6 +189,7 @@ export default function AdminCollectorsPage() {
                 <th className="px-4 py-3 font-semibold text-muted-foreground">Area</th>
                 <th className="px-4 py-3 font-semibold text-muted-foreground">Login Terakhir</th>
                 <th className="px-4 py-3 font-semibold text-muted-foreground">Status</th>
+                <th className="px-4 py-3 font-semibold text-muted-foreground">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -203,6 +220,16 @@ export default function AdminCollectorsPage() {
                     >
                       {c.isActive ? 'Aktif' : 'Nonaktif'}
                     </button>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => openEdit(c)} title="Edit" className="inline-flex items-center gap-1 h-7 px-2 rounded-md text-xs font-medium text-foreground hover:bg-muted transition-colors">
+                        <Pencil className="w-3.5 h-3.5" /> Edit
+                      </button>
+                      <button onClick={() => remove(c)} title="Hapus" className="inline-flex items-center gap-1 h-7 px-2 rounded-md text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors">
+                        <Trash2 className="w-3.5 h-3.5" /> Hapus
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
