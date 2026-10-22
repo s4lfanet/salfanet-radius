@@ -16,7 +16,13 @@ import {
   X,
   MapPin,
   Phone,
+  Navigation,
+  List,
+  Map as MapIcon,
 } from 'lucide-react';
+import nextDynamic from 'next/dynamic';
+import CustomerDetailSheet from '@/components/field/CustomerDetailSheet';
+import { mapsLinks, type MapPoint } from '@/components/field/CustomerMap';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatWIB } from '@/lib/timezone';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -35,6 +41,10 @@ interface Customer {
   subscriptionType: string;
   expiredAt: string | null;
   createdAt: string;
+  latitude: number | null;
+  longitude: number | null;
+  connectionType: string | null;
+  installDate: string | null;
   profile: {
     id: string;
     name: string;
@@ -75,6 +85,11 @@ const STATUS_CONFIG: Record<string, { dot: string; badge: string; icon: React.Re
 };
 
 const STATUS_FILTERS = ['active', 'isolated', 'stopped', 'blocked', 'expired'] as const;
+
+const CustomerMap = nextDynamic(() => import('@/components/field/CustomerMap'), { ssr: false });
+
+const toneOf = (status: string): MapPoint['tone'] =>
+  status === 'active' ? 'green' : status === 'isolated' || status === 'suspended' ? 'red' : status === 'expired' || status === 'blocked' ? 'amber' : 'slate';
 
 function formatIDR(n: number) {
   return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
@@ -131,6 +146,51 @@ export default function TechnicianCustomersPage() {
   useEffect(() => { setPage(1); }, [search, filterStatus]);
   useEffect(() => { loadCustomers(); }, [loadCustomers]);
 
+  // Map view: all matching customers with coordinates, not just this page.
+  const [view, setView] = useState<'list' | 'map'>('list');
+  const [mapCustomers, setMapCustomers] = useState<Customer[]>([]);
+  const [mapLoading, setMapLoading] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
+  const [detail, setDetail] = useState<Customer | null>(null);
+
+  const loadMap = useCallback(async () => {
+    setMapLoading(true);
+    setMapError(null);
+    try {
+      const p = new URLSearchParams({ map: '1' });
+      if (search) p.set('search', search);
+      if (filterStatus) p.set('status', filterStatus);
+      const data = await apiAdmin<{ points: Customer[] }>(`/api/technician/customers?${p}`);
+      setMapCustomers(data.points ?? []);
+    } catch (e: unknown) {
+      setMapError(e instanceof Error ? e.message : 'Peta pelanggan gagal dimuat');
+    } finally {
+      setMapLoading(false);
+    }
+  }, [search, filterStatus]);
+
+  useEffect(() => { if (view === 'map') loadMap(); }, [view, loadMap]);
+
+  const mapPoints: MapPoint[] = mapCustomers.map((c) => ({
+    id: c.id,
+    name: c.name || c.username,
+    subtitle: [c.profile?.name, c.area?.name].filter(Boolean).join(' · '),
+    lat: c.latitude as number,
+    lng: c.longitude as number,
+    tone: toneOf(c.status),
+  }));
+
+  const openDetail = (c: Customer) => setDetail(c);
+  const nameButton = (c: Customer, className = '') => (
+    <button
+      type="button"
+      onClick={() => openDetail(c)}
+      className={`text-left font-semibold text-foreground text-[13px] hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded ${className}`}
+    >
+      {c.name}
+    </button>
+  );
+
   return (
     <div className="p-4 lg:p-6 space-y-4">
 
@@ -144,14 +204,30 @@ export default function TechnicianCustomersPage() {
             {total.toLocaleString('id-ID')} {t('techPortal.customersSubtitle')}
           </p>
         </div>
-        <button
-          onClick={loadCustomers}
-          disabled={loading}
-          className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-card hover:bg-accent text-muted-foreground border border-border rounded-xl transition-all shadow-sm"
-        >
-          <RefreshCcw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span className="hidden sm:inline">{t('techPortal.refresh')}</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="flex rounded-xl border border-border bg-card p-0.5" role="group" aria-label="Tampilan">
+            {([['list', 'Daftar', List], ['map', 'Peta', MapIcon]] as const).map(([key, label, Icon]) => (
+              <button
+                key={key}
+                type="button"
+                aria-pressed={view === key}
+                onClick={() => setView(key)}
+                className={`h-9 pointer-coarse:h-11 px-3 inline-flex items-center gap-1.5 rounded-lg text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${view === key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              >
+                <Icon className="w-3.5 h-3.5" /> {label}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={view === 'map' ? loadMap : loadCustomers}
+            disabled={loading || mapLoading}
+            aria-label={t('techPortal.refresh')}
+            className="flex items-center gap-1.5 px-3 h-9 pointer-coarse:h-11 text-xs font-semibold bg-card hover:bg-muted text-muted-foreground border border-border rounded-xl transition-all"
+          >
+            <RefreshCcw className={`w-3.5 h-3.5 ${loading || mapLoading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">{t('techPortal.refresh')}</span>
+          </button>
+        </div>
       </div>
 
       {/* Search + Filter */}
@@ -197,8 +273,35 @@ export default function TechnicianCustomersPage() {
         </div>
       )}
 
-      {/* Table */}
-      {loading ? (
+      {view === 'map' ? (
+        <section aria-label="Peta pelanggan">
+          {mapLoading && mapCustomers.length === 0 ? (
+            <div className="flex items-center justify-center py-20 gap-2 text-sm text-muted-foreground"><Loader2 className="w-4 h-4 animate-spin" /> Memuat peta...</div>
+          ) : mapError ? (
+            <div className="rounded-2xl border border-border bg-card p-6 text-center">
+              <p className="text-sm font-semibold text-foreground">Peta gagal dimuat</p>
+              <p className="text-sm text-muted-foreground mt-1">{mapError}</p>
+              <button type="button" onClick={loadMap} className="mt-3 h-10 px-4 rounded-xl border border-border text-sm font-medium hover:bg-muted">Coba lagi</button>
+            </div>
+          ) : mapPoints.length === 0 ? (
+            <div className="rounded-2xl border border-border bg-card p-8 text-center">
+              <MapPin className="w-6 h-6 mx-auto text-muted-foreground" />
+              <p className="text-sm font-semibold text-foreground mt-2">Belum ada pelanggan dengan koordinat</p>
+              <p className="text-sm text-muted-foreground mt-1">Isi koordinat saat mendaftarkan pelanggan, atau minta admin melengkapinya.</p>
+            </div>
+          ) : (
+            <>
+              <CustomerMap points={mapPoints} onSelect={(id) => setDetail(mapCustomers.find((c) => c.id === id) ?? null)} selectedId={detail?.id} className="h-[62dvh] min-h-[360px]" />
+              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#059669]" aria-hidden /> Aktif</span>
+                <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#DC2626]" aria-hidden /> Isolir</span>
+                <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#D97706]" aria-hidden /> Kedaluwarsa / diblokir</span>
+                <span>{mapPoints.length} pelanggan berkoordinat. Ketuk titik untuk detail.</span>
+              </div>
+            </>
+          )}
+        </section>
+      ) : loading ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
           <p className="text-xs text-slate-400 dark:text-muted-foreground/40">{t('techPortal.loading')}</p>
@@ -228,7 +331,7 @@ export default function TechnicianCustomersPage() {
                     <div className="flex items-center gap-2 min-w-0">
                       <span className={`w-1.5 h-8 rounded-full flex-shrink-0 ${cfg.dot}`} />
                       <div className="min-w-0">
-                        <p className="font-semibold text-foreground text-[13px] truncate">{c.name}</p>
+                        {nameButton(c, 'block truncate max-w-full')}
                         <p className="text-[11px] font-mono text-[#00bcd4] dark:text-brand-500 truncate">
                           {c.username}
                           {c.customerId && <span className="ml-1.5 text-primary/60">#{c.customerId}</span>}
@@ -270,6 +373,12 @@ export default function TechnicianCustomersPage() {
                       </div>
                     )}
                   </div>
+                  <div className="grid grid-cols-2 gap-2 ml-3.5 pt-1">
+                    <button type="button" onClick={() => openDetail(c)} className="h-10 rounded-xl border border-border text-xs font-semibold text-foreground hover:bg-muted">Detail</button>
+                    {c.latitude != null && c.longitude != null
+                      ? <a href={mapsLinks(c.latitude, c.longitude).directions} target="_blank" rel="noopener noreferrer" className="h-10 inline-flex items-center justify-center gap-1.5 rounded-xl border border-border text-xs font-semibold text-foreground hover:bg-muted"><Navigation className="w-3.5 h-3.5" /> Rute</a>
+                      : <span className="h-10 inline-flex items-center justify-center rounded-xl bg-muted text-[11px] text-muted-foreground">Belum ada koordinat</span>}
+                  </div>
                 </div>
               );
             })}
@@ -294,6 +403,9 @@ export default function TechnicianCustomersPage() {
                       Area / Router
                     </th>
                     <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 whitespace-nowrap">
+                      Lokasi
+                    </th>
+                    <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 whitespace-nowrap">
                       Expired
                     </th>
                     <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 whitespace-nowrap">
@@ -315,9 +427,7 @@ export default function TechnicianCustomersPage() {
                           <div className="flex items-center gap-2.5">
                             <span className={`w-1.5 h-8 rounded-full flex-shrink-0 ${cfg.dot}`} />
                             <div className="min-w-0">
-                              <p className="font-semibold text-foreground text-[13px] truncate max-w-[160px]">
-                                {c.name}
-                              </p>
+                              {nameButton(c, 'block truncate max-w-[160px]')}
                               <p className="text-[11px] font-mono text-[#00bcd4] dark:text-brand-500 truncate">
                                 {c.username}
                                 {c.customerId && (
@@ -374,6 +484,18 @@ export default function TechnicianCustomersPage() {
                           </div>
                         </td>
 
+                        {/* Location */}
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          {c.latitude != null && c.longitude != null ? (
+                            <>
+                              <p className="text-[11px] text-muted-foreground tabular-nums">{c.latitude.toFixed(5)}, {c.longitude.toFixed(5)}</p>
+                              <a href={mapsLinks(c.latitude, c.longitude).directions} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline">
+                                <Navigation className="w-3 h-3" /> Rute
+                              </a>
+                            </>
+                          ) : <span className="text-[11px] text-muted-foreground">Belum ada</span>}
+                        </td>
+
                         {/* Expiry */}
                         <td className="px-4 py-3 whitespace-nowrap">
                           {c.expiredAt ? (
@@ -411,6 +533,8 @@ export default function TechnicianCustomersPage() {
           />
         </>
       )}
+
+      {detail && <CustomerDetailSheet customer={detail} onClose={() => setDetail(null)} />}
     </div>
   );
 }

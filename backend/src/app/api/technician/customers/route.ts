@@ -56,25 +56,42 @@ export async function GET(req: NextRequest) {
     ];
   }
 
+  const select = {
+    id: true,
+    username: true,
+    customerId: true,
+    name: true,
+    phone: true,
+    email: true,
+    address: true,
+    status: true,
+    subscriptionType: true,
+    expiredAt: true,
+    createdAt: true,
+    latitude: true,
+    longitude: true,
+    connectionType: true,
+    installDate: true,
+    profile: { select: { id: true, name: true, price: true, downloadSpeed: true, uploadSpeed: true } },
+    area: { select: { id: true, name: true } },
+    router: { select: { id: true, name: true } },
+  } as const;
+
+  // ?map=1: every matching customer that has coordinates (not one page), so
+  // the map can show them all and open any one's details.
+  if (searchParams.get('map') === '1') {
+    const points = await prisma.pppoeUser.findMany({
+      where: { ...where, latitude: { not: null }, longitude: { not: null } },
+      select,
+      take: 5000,
+    });
+    return NextResponse.json({ points });
+  }
+
   const [users, total] = await Promise.all([
     prisma.pppoeUser.findMany({
       where,
-      select: {
-        id: true,
-        username: true,
-        customerId: true,
-        name: true,
-        phone: true,
-        email: true,
-        address: true,
-        status: true,
-        subscriptionType: true,
-        expiredAt: true,
-        createdAt: true,
-        profile: { select: { id: true, name: true, price: true, downloadSpeed: true, uploadSpeed: true } },
-        area: { select: { id: true, name: true } },
-        router: { select: { id: true, name: true } },
-      },
+      select,
       orderBy: { createdAt: 'desc' },
       skip,
       take: limit,
