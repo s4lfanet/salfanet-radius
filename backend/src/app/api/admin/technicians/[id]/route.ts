@@ -3,7 +3,8 @@ import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { logActivity } from '@/server/services/activity-log.service';
 
-// PATCH - update a technician: activate/deactivate, toggle requireOtp, edit name/email
+// PATCH - update a technician: activate/deactivate, edit name/email.
+// Sign-in always needs the WhatsApp code; the old requireOtp switch is ignored.
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -13,7 +14,7 @@ export async function PATCH(
 
   try {
     const { id } = await params;
-    const { name, email, isActive, requireOtp } = await req.json();
+    const { name, email, isActive } = await req.json();
 
     const existing = await prisma.technician.findUnique({ where: { id } });
     if (!existing) {
@@ -24,7 +25,6 @@ export async function PATCH(
     if (name !== undefined) data.name = name;
     if (email !== undefined) data.email = email || null;
     if (isActive !== undefined) data.isActive = !!isActive;
-    if (requireOtp !== undefined) data.requireOtp = !!requireOtp;
 
     const technician = await prisma.technician.update({ where: { id }, data });
 

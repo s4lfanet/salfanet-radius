@@ -3,6 +3,7 @@ import { prisma } from '@/server/db/client';
 import { SignJWT } from 'jose';
 import { TECH_JWT_SECRET } from '@/server/auth/technician-secret';
 import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
+import { isSecureRequest } from '@/server/auth/portal-cookie';
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,11 +12,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Too many attempts. Try again later.' }, { status: 429 });
     }
 
-    const { phoneNumber, otpCode, skipOtp } = await req.json();
+    const { phoneNumber, otpCode } = await req.json();
 
     if (!phoneNumber) {
       return NextResponse.json(
-        { error: 'Phone number is required' },
+        { error: 'Nomor HP wajib diisi' },
         { status: 400 }
       );
     }
@@ -35,59 +36,55 @@ export async function POST(req: NextRequest) {
 
     if (!technician) {
       return NextResponse.json(
-        { error: 'Technician not found' },
+        { error: 'Nomor ini belum terdaftar sebagai teknisi.' },
         { status: 404 }
       );
     }
 
     if (!technician.isActive) {
       return NextResponse.json(
-        { error: 'Technician account is inactive' },
+        { error: 'Akun teknisi ini dinonaktifkan.' },
         { status: 403 }
       );
     }
 
-    // Skip OTP verification only if the server-side flag allows it.
-    // `skipOtp` from the client is never trusted on its own — otherwise anyone
-    // who knows a technician's phone number could log in with no OTP at all.
-    const canSkipOtp = skipOtp && !technician.requireOtp;
-
-    if (!canSkipOtp) {
-      if (!otpCode || typeof otpCode !== 'string') {
-        return NextResponse.json(
-          { error: 'OTP code is required' },
-          { status: 400 }
-        );
-      }
-
-      // Find valid OTP
-      const otpToken = await prisma.technicianOtp.findFirst({
-        where: {
-          technicianId: technician.id,
-          otpCode,
-          isUsed: false,
-          expiresAt: {
-            gte: new Date(),
-          },
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      });
-
-      if (!otpToken) {
-        return NextResponse.json(
-          { error: 'Invalid or expired OTP code' },
-          { status: 401 }
-        );
-      }
-
-      // Mark OTP as used
-      await prisma.technicianOtp.update({
-        where: { id: otpToken.id },
-        data: { isUsed: true },
-      });
+    // Every sign-in needs the WhatsApp code. Technician accounts have no
+    // password, so the old "OTP off" option let anyone who knew the phone
+    // number in with nothing else.
+    if (!otpCode || typeof otpCode !== 'string') {
+      return NextResponse.json(
+        { error: 'Kode OTP wajib diisi' },
+        { status: 400 }
+      );
     }
+
+    // Find valid OTP
+    const otpToken = await prisma.technicianOtp.findFirst({
+      where: {
+        technicianId: technician.id,
+        otpCode,
+        isUsed: false,
+        expiresAt: {
+          gte: new Date(),
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    if (!otpToken) {
+      return NextResponse.json(
+        { error: 'Kode OTP salah atau sudah kedaluwarsa.' },
+        { status: 401 }
+      );
+    }
+
+    // Mark OTP as used
+    await prisma.technicianOtp.update({
+      where: { id: otpToken.id },
+      data: { isUsed: true },
+    });
 
     // Update last login
     await prisma.technician.update({
@@ -119,13 +116,12 @@ export async function POST(req: NextRequest) {
         phoneNumber: technician.phoneNumber,
         email: technician.email,
       },
-      token,
     });
 
     // Set HTTP-only cookie
     response.cookies.set('technician-token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isSecureRequest(req),
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: '/',

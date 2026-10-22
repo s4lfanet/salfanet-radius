@@ -5,11 +5,18 @@ import { useRouter } from 'next/navigation';
 import { LoginLogo } from '@/components/auth/LoginLogo';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin, ApiError } from '@/lib/api';
-import { User, Lock, Loader2, Wrench, AlertCircle } from 'lucide-react';
+import { User, Lock, Loader2, Wrench, AlertCircle, Phone, KeyRound, MessageCircle } from 'lucide-react';
 
 export default function TechnicianLoginPage() {
   const { t: _t } = useTranslation();
   const router = useRouter();
+  // Technicians added in Kelola Teknisi sign in with phone + WhatsApp code;
+  // username + password is kept for technician accounts made before that.
+  const [mode, setMode] = useState<'otp' | 'password'>('otp');
+  const [phone, setPhone] = useState('');
+  const [otpSentTo, setOtpSentTo] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [resendIn, setResendIn] = useState(0);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -38,6 +45,50 @@ export default function TechnicianLoginPage() {
       .catch(() => {})
       .finally(() => setBrandLoaded(true));
   }, []);
+
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const timer = setTimeout(() => setResendIn((s) => s - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendIn]);
+
+  const showError = (err: unknown, fallback: string) => {
+    setError(err instanceof ApiError ? err.message || fallback : 'Terjadi kesalahan. Silakan coba lagi.');
+  };
+
+  const requestOtp = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const data = await apiAdmin<{ phoneNumber: string }>('/api/technician/auth/request-otp', {
+        method: 'POST',
+        body: JSON.stringify({ phoneNumber: phone }),
+      });
+      setOtpSentTo(data.phoneNumber);
+      setOtpCode('');
+      setResendIn(60);
+    } catch (err) {
+      showError(err, 'Kode OTP gagal dikirim');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      await apiAdmin('/api/technician/auth/verify-otp', {
+        method: 'POST',
+        body: JSON.stringify({ phoneNumber: otpSentTo, otpCode }),
+      });
+      router.push('/technician/dashboard');
+    } catch (err) {
+      showError(err, 'Login gagal');
+      setLoading(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,49 +157,121 @@ export default function TechnicianLoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-slate-600 focus-within:border-blue-500 dark:focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-200 dark:focus-within:ring-blue-800/50 transition-all">
-              <div className="bg-blue-600 px-4 flex items-center justify-center flex-shrink-0">
-                <User className="w-5 h-5 text-white" />
+          {mode === 'otp' ? (
+            otpSentTo ? (
+              <form onSubmit={verifyOtp} className="space-y-4">
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Kode 6 angka dikirim ke WhatsApp <span className="font-semibold text-foreground">+{otpSentTo}</span>. Berlaku 5 menit.
+                </p>
+                <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-slate-600 focus-within:border-blue-500 dark:focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-200 dark:focus-within:ring-blue-800/50 transition-all">
+                  <div className="bg-blue-600 px-4 flex items-center justify-center flex-shrink-0">
+                    <KeyRound className="w-5 h-5 text-white" />
+                  </div>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                    placeholder="Kode OTP"
+                    required
+                    autoFocus
+                    className="flex-1 px-4 py-3 text-sm bg-blue-50 dark:bg-slate-900 text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none transition-colors tracking-[0.3em]"
+                  />
+                </div>
+                <button type="submit" disabled={loading || otpCode.length !== 6} className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-all shadow-sm flex items-center justify-center gap-2">
+                  {loading ? <><Loader2 className="w-4 h-4 animate-spin" />Memproses...</> : <><Wrench className="w-4 h-4" />Masuk</>}
+                </button>
+                <div className="flex items-center justify-between">
+                  <button type="button" onClick={() => { setOtpSentTo(''); setOtpCode(''); setError(''); }} className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50 disabled:no-underline">
+                    Ganti nomor
+                  </button>
+                  <button type="button" onClick={() => requestOtp()} disabled={loading || resendIn > 0} className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50 disabled:no-underline">
+                    {resendIn > 0 ? `Kirim ulang (${resendIn} dtk)` : 'Kirim ulang kode'}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={(e) => { e.preventDefault(); requestOtp(); }} className="space-y-4">
+                <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-slate-600 focus-within:border-blue-500 dark:focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-200 dark:focus-within:ring-blue-800/50 transition-all">
+                  <div className="bg-blue-600 px-4 flex items-center justify-center flex-shrink-0">
+                    <Phone className="w-5 h-5 text-white" />
+                  </div>
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="Nomor HP (WhatsApp)"
+                    required
+                    className="flex-1 px-4 py-3 text-sm bg-blue-50 dark:bg-slate-900 text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none transition-colors"
+                  />
+                </div>
+                <button type="submit" disabled={loading} className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-all shadow-sm flex items-center justify-center gap-2">
+                  {loading ? <><Loader2 className="w-4 h-4 animate-spin" />Mengirim...</> : <><MessageCircle className="w-4 h-4" />Kirim kode OTP</>}
+                </button>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Pakai nomor yang didaftarkan admin di Kelola Teknisi.
+                </p>
+              </form>
+            )
+          ) : (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-slate-600 focus-within:border-blue-500 dark:focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-200 dark:focus-within:ring-blue-800/50 transition-all">
+                <div className="bg-blue-600 px-4 flex items-center justify-center flex-shrink-0">
+                  <User className="w-5 h-5 text-white" />
+                </div>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Masukkan username"
+                  required
+                  autoComplete="username"
+                  className="flex-1 px-4 py-3 text-sm bg-blue-50 dark:bg-slate-900 text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none transition-colors"
+                />
               </div>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Masukkan username"
-                required
-                autoComplete="username"
-                className="flex-1 px-4 py-3 text-sm bg-blue-50 dark:bg-slate-900 text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none transition-colors"
-              />
-            </div>
 
-            <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-slate-600 focus-within:border-blue-500 dark:focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-200 dark:focus-within:ring-blue-800/50 transition-all">
-              <div className="bg-blue-600 px-4 flex items-center justify-center flex-shrink-0">
-                <Lock className="w-5 h-5 text-white" />
+              <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-slate-600 focus-within:border-blue-500 dark:focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-200 dark:focus-within:ring-blue-800/50 transition-all">
+                <div className="bg-blue-600 px-4 flex items-center justify-center flex-shrink-0">
+                  <Lock className="w-5 h-5 text-white" />
+                </div>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Masukkan password"
+                  required
+                  autoComplete="current-password"
+                  className="flex-1 px-4 py-3 text-sm bg-blue-50 dark:bg-slate-900 text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none transition-colors"
+                />
               </div>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Masukkan password"
-                required
-                autoComplete="current-password"
-                className="flex-1 px-4 py-3 text-sm bg-blue-50 dark:bg-slate-900 text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none transition-colors"
-              />
-            </div>
 
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-all shadow-sm flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" />Memproses...</>
+                ) : (
+                  <><Wrench className="w-4 h-4" />Masuk</>
+                )}
+              </button>
+            </form>
+          )}
+
+          <div className="mt-5 text-center">
             <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-all shadow-sm flex items-center justify-center gap-2"
+              type="button"
+              onClick={() => { setMode(mode === 'otp' ? 'password' : 'otp'); setError(''); }}
+              className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50 disabled:no-underline"
             >
-              {loading ? (
-                <><Loader2 className="w-4 h-4 animate-spin" />Memproses...</>
-              ) : (
-                <><Wrench className="w-4 h-4" />Masuk</>
-              )}
+              {mode === 'otp' ? 'Akun lama? Masuk dengan username dan password' : 'Masuk dengan nomor HP dan kode OTP'}
             </button>
-          </form>
+          </div>
 
           {/* Footer */}
           <p className="text-center text-xs text-gray-400 dark:text-slate-500 mt-8">{footerText}</p>

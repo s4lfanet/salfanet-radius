@@ -174,7 +174,7 @@ export default function TechnicianTicketsPage() {
   const loadMessages = useCallback(async (ticketId: string) => {
     setMessagesLoading(true);
     try {
-      const data = await apiAdmin<TicketMessage[]>(`/api/tickets/messages?ticketId=${ticketId}`);
+      const data = await apiAdmin<TicketMessage[]>(`/api/technician/tickets?ticketId=${encodeURIComponent(ticketId)}`);
       setMessages(Array.isArray(data) ? data : []);
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     } catch {

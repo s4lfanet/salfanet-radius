@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
   if (!authCheck.authorized) return authCheck.response;
 
   try {
-    const { name, phoneNumber, email, requireOtp } = await req.json();
+    const { name, phoneNumber, email } = await req.json();
 
     if (!name || !phoneNumber) {
       return NextResponse.json({ error: 'Nama dan nomor telepon wajib diisi' }, { status: 400 });
@@ -65,7 +65,6 @@ export async function POST(req: NextRequest) {
         name,
         phoneNumber: formattedPhone,
         email: email || null,
-        requireOtp: requireOtp !== undefined ? !!requireOtp : true,
         isActive: true,
       },
     });

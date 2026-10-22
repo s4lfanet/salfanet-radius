@@ -520,7 +520,7 @@ export default function TechnicianRegisterPage() {
                           const fd = new FormData();
                           fd.append('file', file);
                           fd.append('type', 'idCard');
-                          const result = await apiAdmin<{ success: boolean; url?: string; error?: string }>('/api/upload/pppoe-customer', { method: 'POST', body: fd });
+                          const result = await apiAdmin<{ success: boolean; url?: string; error?: string }>('/api/technician/upload', { method: 'POST', body: fd });
                           if (result.success) { setForm((f) => ({ ...f, idCardPhoto: result.url ?? '' })); return result.url ?? null; }
                           addToast({ type: 'error', title: result.error || 'Upload KTP gagal' }); return null;
                         } catch { addToast({ type: 'error', title: 'Upload KTP gagal' }); return null; }
@@ -564,7 +564,7 @@ export default function TechnicianRegisterPage() {
                             const fd = new FormData();
                             fd.append('file', file);
                             fd.append('type', 'installation');
-                            const result = await apiAdmin<{ success: boolean; url?: string; error?: string }>('/api/upload/pppoe-customer', { method: 'POST', body: fd });
+                            const result = await apiAdmin<{ success: boolean; url?: string; error?: string }>('/api/technician/upload', { method: 'POST', body: fd });
                             if (result.success && result.url) {
                               const url = result.url;
                               setForm((f) => ({ ...f, installationPhotos: [...f.installationPhotos, url] }));

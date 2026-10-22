@@ -204,7 +204,6 @@ CrudConfig techniciansConfig() => CrudConfig(
   subtitleOf: (t) => str(t, 'phoneNumber'),
   metaOf: (t) => [
     str(t, 'email'),
-    t['requireOtp'] == true ? 'Login OTP' : null,
     if (t['lastLoginAt'] != null) 'Login ${formatDateTimeOrNull(dateOf(t, 'lastLoginAt'))}',
   ].whereType<String>().join(' · '),
   statusOf: _activePill,
@@ -216,13 +215,12 @@ CrudConfig techniciansConfig() => CrudConfig(
       type: FieldType.phone,
       required: t == null,
       readOnly: t != null,
-      helper: t != null ? 'Nomor login tidak bisa diubah.' : null,
+      helper: t != null ? 'Nomor login tidak bisa diubah.' : 'Teknisi masuk dengan nomor ini dan kode OTP WhatsApp.',
     ),
     const FieldSpec('email', 'Email', type: FieldType.email),
-    const FieldSpec('requireOtp', 'Wajib OTP WhatsApp saat login', type: FieldType.toggle, initial: true),
   ],
   create: CrudRoutes.postTo('/api/admin/technicians'),
-  update: (t, v) => _api.patch('/api/admin/technicians/${t['id']}', data: {'name': v['name'], 'email': v['email'], 'requireOtp': v['requireOtp']}),
+  update: (t, v) => _api.patch('/api/admin/technicians/${t['id']}', data: {'name': v['name'], 'email': v['email']}),
   delete: CrudRoutes.deleteById('/api/admin/technicians'),
   itemActions: [
     CrudAction(

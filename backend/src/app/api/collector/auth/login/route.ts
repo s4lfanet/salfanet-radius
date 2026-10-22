@@ -4,6 +4,7 @@ import { SignJWT } from 'jose';
 import bcrypt from 'bcryptjs';
 import { TECH_JWT_SECRET } from '@/server/auth/technician-secret';
 import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
+import { isSecureRequest } from '@/server/auth/portal-cookie';
 
 export async function POST(req: NextRequest) {
   try {
@@ -81,7 +82,7 @@ export async function POST(req: NextRequest) {
 
     response.cookies.set('collector-token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isSecureRequest(req),
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7,
       path: '/',
