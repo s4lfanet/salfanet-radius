@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     const name = username.trim();
     let session: { payload: Record<string, unknown>; user: Record<string, unknown> } | null = null;
 
-    const tech = await prisma.technician.findUnique({ where: { username: name } });
+    const tech = await prisma.technician.findFirst({ where: { username: name } });
     if (tech) {
       if (!tech.password || !(await bcrypt.compare(password, tech.password))) {
         return NextResponse.json({ error: WRONG }, { status: 401 });

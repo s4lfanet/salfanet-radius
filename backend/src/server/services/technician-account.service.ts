@@ -42,7 +42,7 @@ export function checkPassword(password: unknown): string | null {
  */
 export async function usernameTaken(username: string, exceptTechnicianId?: string): Promise<boolean> {
   const [tech, admin] = await Promise.all([
-    prisma.technician.findUnique({ where: { username }, select: { id: true } }),
+    prisma.technician.findFirst({ where: { username }, select: { id: true } }),
     prisma.adminUser.findUnique({ where: { username }, select: { role: true } }),
   ]);
   if (tech && tech.id !== exceptTechnicianId) return true;
