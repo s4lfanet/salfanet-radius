@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
-import { X, Phone, MessageCircle, Navigation, MapPin, Copy, Check, ExternalLink } from 'lucide-react';
+import { X, Phone, MessageCircle, Navigation, MapPin, Copy, Check, ExternalLink, Map as MapIcon, LocateFixed, Loader2 } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
 import { StatusPill, customerStatus, ui, fmtRp } from '@/components/collector/ui';
 import { mapsLinks } from './CustomerMap';
 import { cn } from '@/lib/utils';
 
 const CustomerMap = dynamic(() => import('./CustomerMap'), { ssr: false });
+const MapPicker = dynamic(() => import('@/components/MapPicker'), { ssr: false });
 
 export interface DetailCustomer {
   id: string;
@@ -56,26 +57,74 @@ export default function CustomerDetailSheet({
   onClose,
   actions,
   children,
+  onSaveLocation,
 }: {
   customer: DetailCustomer;
   onClose: () => void;
   /** Extra buttons next to Telepon / WhatsApp (e.g. Tagih). */
   actions?: ReactNode;
   children?: ReactNode;
+  /** When given, the location can be changed here (Pilih di Peta / GPS Auto), like the admin's detail. */
+  onSaveLocation?: (lat: number, lng: number) => Promise<void>;
 }) {
   const [copied, setCopied] = useState<'ok' | 'fail' | null>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  // A picked point waits here until Simpan, so a mis-tap never overwrites the saved one.
+  const [pending, setPending] = useState<{ lat: number; lng: number; accuracy?: number } | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [gpsState, setGpsState] = useState<'idle' | 'reading' | string>('idle');
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
   const st = customerStatus(customer.status);
-  const hasPoint = customer.latitude != null && customer.longitude != null;
-  const coords = hasPoint ? `${customer.latitude!.toFixed(6)}, ${customer.longitude!.toFixed(6)}` : '';
-  const links = hasPoint ? mapsLinks(customer.latitude!, customer.longitude!) : null;
+  const lat = pending?.lat ?? customer.latitude ?? null;
+  const lng = pending?.lng ?? customer.longitude ?? null;
+  const hasPoint = lat != null && lng != null;
+  const coords = hasPoint ? `${lat!.toFixed(6)}, ${lng!.toFixed(6)}` : '';
+  const links = hasPoint ? mapsLinks(lat!, lng!) : null;
 
   useEffect(() => {
     closeRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !pickerOpen) onClose(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [onClose, pickerOpen]);
+
+  // Phone GPS needs a secure page (HTTPS); say so instead of failing silently.
+  const readGps = () => {
+    setSaveError(null);
+    if (!window.isSecureContext || !navigator.geolocation) {
+      setGpsState('GPS Auto butuh alamat HTTPS. Pakai Pilih di Peta.');
+      return;
+    }
+    setGpsState('reading');
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setPending({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy });
+        setGpsState('idle');
+      },
+      (err) => setGpsState(
+        err.code === err.PERMISSION_DENIED ? 'Izin lokasi ditolak. Izinkan lokasi untuk browser ini, lalu coba lagi.'
+          : err.code === err.TIMEOUT ? 'GPS terlalu lama merespons. Coba di tempat terbuka.'
+          : 'Lokasi tidak didapat dari GPS.',
+      ),
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+    );
+  };
+
+  const save = async () => {
+    if (!pending || !onSaveLocation) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await onSaveLocation(pending.lat, pending.lng);
+      setPending(null);
+    } catch (e: unknown) {
+      setSaveError(e instanceof Error ? e.message : 'Lokasi gagal disimpan');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // navigator.clipboard exists only on HTTPS; installs opened over plain
   // http fall back to a hidden textarea and execCommand.
@@ -138,16 +187,47 @@ export default function CustomerDetailSheet({
           <section aria-labelledby="loc-title">
             <h4 id="loc-title" className="text-sm font-semibold text-foreground mb-2">Lokasi GPS</h4>
             {customer.address && <p className="text-sm text-foreground mb-3 flex items-start gap-2"><MapPin className="w-4 h-4 mt-0.5 shrink-0 text-muted-foreground" />{customer.address}</p>}
+            {onSaveLocation && (
+              <div className="mb-3 space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <button type="button" onClick={() => { setSaveError(null); setPickerOpen(true); }} className={ui.btnSecondary}>
+                    <MapIcon className="w-4 h-4" /> Pilih di Peta
+                  </button>
+                  <button type="button" onClick={readGps} disabled={gpsState === 'reading'} className={ui.btnSecondary}>
+                    {gpsState === 'reading' ? <Loader2 className="w-4 h-4 animate-spin" /> : <LocateFixed className="w-4 h-4" />} GPS Auto
+                  </button>
+                </div>
+                {gpsState !== 'idle' && gpsState !== 'reading' && (
+                  <p className="text-sm text-amber-700 dark:text-amber-400" role="status">{gpsState}</p>
+                )}
+                {pending && (
+                  <div className="rounded-xl border border-blue-600/40 bg-blue-600/10 p-3" role="status">
+                    <p className="text-sm font-semibold text-foreground">Titik baru belum disimpan</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Periksa pin di peta.{pending.accuracy ? ` Akurasi GPS sekitar ${Math.round(pending.accuracy)} m.` : ''}
+                      {customer.latitude != null && customer.longitude != null ? ` Titik lama: ${customer.latitude.toFixed(6)}, ${customer.longitude.toFixed(6)}.` : ''}
+                    </p>
+                    {saveError && <p className="text-sm text-red-700 dark:text-red-400 mt-2" role="alert">{saveError}</p>}
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      <button type="button" onClick={() => { setPending(null); setSaveError(null); }} className={ui.btnSecondary}>Batal</button>
+                      <button type="button" onClick={save} disabled={saving} className={ui.btnPrimary}>
+                        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />} Simpan lokasi
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
             {hasPoint && links ? (
               <>
                 <dl className="grid grid-cols-2 gap-2 mb-3">
-                  <div className="rounded-xl border border-border bg-background px-3 py-2">
+                  <div className={cn('rounded-xl border bg-background px-3 py-2', pending ? 'border-blue-600/60' : 'border-border')}>
                     <dt className="text-xs text-muted-foreground">Latitude</dt>
-                    <dd className="text-sm font-semibold text-foreground tabular-nums">{customer.latitude!.toFixed(6)}</dd>
+                    <dd className="text-sm font-semibold text-foreground tabular-nums">{lat!.toFixed(6)}</dd>
                   </div>
-                  <div className="rounded-xl border border-border bg-background px-3 py-2">
+                  <div className={cn('rounded-xl border bg-background px-3 py-2', pending ? 'border-blue-600/60' : 'border-border')}>
                     <dt className="text-xs text-muted-foreground">Longitude</dt>
-                    <dd className="text-sm font-semibold text-foreground tabular-nums">{customer.longitude!.toFixed(6)}</dd>
+                    <dd className="text-sm font-semibold text-foreground tabular-nums">{lng!.toFixed(6)}</dd>
                   </div>
                 </dl>
                 <div className="rounded-2xl border border-border overflow-hidden">
@@ -155,7 +235,7 @@ export default function CustomerDetailSheet({
                     pin
                     zoom={17}
                     className="h-56 rounded-none border-0"
-                    points={[{ id: customer.id, name: customer.name || customer.username, subtitle: customer.address || undefined, lat: customer.latitude!, lng: customer.longitude!, tone: 'slate' }]}
+                    points={[{ id: customer.id, name: customer.name || customer.username, subtitle: customer.address || undefined, lat: lat!, lng: lng!, tone: 'slate' }]}
                   />
                   <div className="flex items-center justify-between gap-2 px-3 py-2 bg-muted/40 border-t border-border">
                     <span className="text-xs text-muted-foreground tabular-nums">{coords}</span>
@@ -172,9 +252,20 @@ export default function CustomerDetailSheet({
                 </div>
               </>
             ) : (
-              <p className="text-sm text-muted-foreground rounded-xl bg-muted p-3">Koordinat belum diisi. Admin atau teknisi bisa menambahkannya di data pelanggan.</p>
+              <p className="text-sm text-muted-foreground rounded-xl bg-muted p-3">
+                {onSaveLocation ? 'Koordinat belum diisi. Pakai Pilih di Peta atau GPS Auto di atas.' : 'Koordinat belum diisi. Admin atau teknisi bisa menambahkannya di data pelanggan.'}
+              </p>
             )}
           </section>
+
+          {pickerOpen && (
+            <MapPicker
+              isOpen={pickerOpen}
+              onClose={() => setPickerOpen(false)}
+              onSelect={(pLat, pLng) => { setPending({ lat: pLat, lng: pLng }); setPickerOpen(false); }}
+              {...(lat != null && lng != null ? { initialLat: lat, initialLng: lng } : {})}
+            />
+          )}
 
           <section aria-labelledby="svc-title">
             <h4 id="svc-title" className="text-sm font-semibold text-foreground mb-1">Layanan</h4>

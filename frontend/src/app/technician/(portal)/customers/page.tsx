@@ -534,7 +534,23 @@ export default function TechnicianCustomersPage() {
         </>
       )}
 
-      {detail && <CustomerDetailSheet customer={detail} onClose={() => setDetail(null)} />}
+      {detail && (
+        <CustomerDetailSheet
+          customer={detail}
+          onClose={() => setDetail(null)}
+          onSaveLocation={async (lat, lng) => {
+            const res = await apiAdmin<{ latitude: number; longitude: number }>(`/api/technician/customers/${detail.id}/location`, {
+              method: 'PATCH',
+              body: JSON.stringify({ latitude: lat, longitude: lng }),
+            });
+            const patch = (c: Customer) => (c.id === detail.id ? { ...c, latitude: res.latitude, longitude: res.longitude } : c);
+            setDetail((d) => (d ? patch(d) : d));
+            setCustomers((list) => list.map(patch));
+            setMapCustomers((list) => (list.some((c) => c.id === detail.id) ? list.map(patch) : [...list, patch(detail)]));
+            addToast({ type: 'success', title: 'Lokasi pelanggan disimpan' });
+          }}
+        />
+      )}
     </div>
   );
 }
