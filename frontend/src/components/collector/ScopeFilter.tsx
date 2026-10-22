@@ -40,13 +40,13 @@ export function ScopeFilter({ value, onChange }: { value: ScopeValue; onChange: 
 
   if (areas.length < 2 && routers.length < 2) return null;
 
-  const select = 'w-full pl-8 pr-3 py-2 rounded-lg border border-border bg-card text-foreground text-sm outline-none focus:ring-2 focus:ring-emerald-500';
+  const select = 'w-full h-11 pl-9 pr-3 rounded-xl border border-border bg-card text-foreground text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-600/60';
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
       {areas.length > 1 && (
         <div className="relative">
-          <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
           <select aria-label="Filter area" value={value.areaId} onChange={(e) => onChange({ ...value, areaId: e.target.value })} className={select}>
             <option value="">Semua area</option>
             {areas.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -55,7 +55,7 @@ export function ScopeFilter({ value, onChange }: { value: ScopeValue; onChange: 
       )}
       {routers.length > 1 && (
         <div className="relative">
-          <Router className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <Router className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
           <select aria-label="Filter router" value={value.routerId} onChange={(e) => onChange({ ...value, routerId: e.target.value })} className={select}>
             <option value="">Semua router/NAS</option>
             {routers.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}

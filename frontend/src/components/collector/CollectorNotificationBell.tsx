@@ -152,34 +152,47 @@ export default function CollectorNotificationBell() {
 
   const pushOn = pushSubscribed && permission === 'granted';
 
+  useEffect(() => {
+    if (!bellOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setBellOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [bellOpen]);
+
+  const iconBtn = 'relative h-11 w-11 flex items-center justify-center rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600';
+
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1">
       {/* Push toggle */}
       {pushSupported && (
         <button
+          type="button"
           onClick={handlePushToggle}
           disabled={pushLoading || permission === 'denied'}
-          title={pushOn ? 'Notif Push: ON' : permission === 'denied' ? 'Notif diblokir' : 'Notif Push: OFF'}
+          aria-pressed={pushOn}
+          aria-label={pushOn ? 'Notifikasi push aktif, ketuk untuk mematikan' : permission === 'denied' ? 'Notifikasi push diblokir browser' : 'Aktifkan notifikasi push'}
           className={cn(
-            'p-2 rounded-lg transition-colors',
-            pushOn ? 'text-emerald-500 bg-emerald-500/10' : 'text-muted-foreground hover:bg-accent',
+            iconBtn,
+            pushOn ? 'text-blue-700 dark:text-blue-400 bg-blue-600/10' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
             permission === 'denied' && 'opacity-50 cursor-not-allowed',
           )}
         >
-          {pushLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : pushOn ? <Bell className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
+          {pushLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : pushOn ? <Bell className="w-5 h-5" /> : <BellOff className="w-5 h-5" />}
         </button>
       )}
 
       {/* Notification bell */}
       <div className="relative">
         <button
+          type="button"
           onClick={() => setBellOpen(!bellOpen)}
-          className="relative p-2 rounded-lg hover:bg-accent text-muted-foreground transition-colors"
-          aria-label="Notifications"
+          aria-expanded={bellOpen}
+          aria-label={notifications.length ? `Notifikasi, ${notifications.length} baru` : 'Notifikasi'}
+          className={cn(iconBtn, 'text-muted-foreground hover:bg-muted hover:text-foreground')}
         >
-          <Bell className="w-4 h-4" />
+          <Bell className="w-5 h-5" />
           {notifications.length > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+            <span className="absolute top-1.5 right-1.5 min-w-4 h-4 px-1 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center" aria-hidden>
               {notifications.length > 9 ? '9+' : notifications.length}
             </span>
           )}
@@ -187,37 +200,37 @@ export default function CollectorNotificationBell() {
 
         {bellOpen && (
           <>
-            <div className="fixed inset-0 z-40" onClick={() => setBellOpen(false)} />
-            <div className="absolute right-0 top-full mt-2 w-80 max-h-96 overflow-y-auto bg-card border border-border rounded-xl shadow-xl z-50">
-              <div className="sticky top-0 bg-card border-b border-border px-4 py-3 flex items-center justify-between">
-                <span className="text-xs font-bold">Notifikasi</span>
-                <button onClick={() => setBellOpen(false)} className="p-1 hover:bg-accent rounded-lg">
-                  <X className="w-3.5 h-3.5" />
+            <button type="button" aria-label="Tutup notifikasi" className="fixed inset-0 z-40 cursor-default" onClick={() => setBellOpen(false)} />
+            <div className="absolute right-0 top-full mt-2 w-[min(20rem,calc(100vw-2rem))] max-h-96 overflow-y-auto bg-card border border-border rounded-2xl z-50" role="dialog" aria-label="Notifikasi">
+              <div className="sticky top-0 bg-card border-b border-border pl-4 pr-1 h-12 flex items-center justify-between">
+                <span className="text-sm font-semibold text-foreground">Notifikasi</span>
+                <button type="button" onClick={() => setBellOpen(false)} aria-label="Tutup" className="h-11 w-11 flex items-center justify-center rounded-xl hover:bg-muted text-muted-foreground">
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
               {loading ? (
-                <div className="p-4 text-center text-xs text-muted-foreground">Memuat...</div>
+                <div className="p-4 text-center text-sm text-muted-foreground">Memuat...</div>
               ) : notifications.length === 0 ? (
-                <div className="p-4 sm:p-8 text-center">
-                  <Bell className="w-8 h-8 mx-auto text-muted-foreground/30 mb-2" />
-                  <p className="text-xs text-muted-foreground">Tidak ada notifikasi</p>
+                <div className="p-6 text-center">
+                  <p className="text-sm font-medium text-foreground">Belum ada notifikasi</p>
+                  <p className="text-xs text-muted-foreground mt-1">Pembayaran yang Anda catat dan tiket untuk Anda muncul di sini.</p>
                 </div>
               ) : (
-                <div className="divide-y divide-border">
+                <ul className="divide-y divide-border">
                   {notifications.map((n) => (
-                    <div key={n.id} className="flex gap-3 p-3 hover:bg-accent transition-colors">
-                      <span className="p-1.5 rounded-lg flex-shrink-0 text-emerald-500 bg-emerald-500/10">
+                    <li key={n.id} className="flex gap-3 p-3">
+                      <span className="h-8 w-8 rounded-xl flex items-center justify-center shrink-0 text-blue-700 dark:text-blue-400 bg-blue-600/10">
                         {getIcon(n.type)}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold truncate">{n.title}</p>
-                        <p className="text-[11px] text-muted-foreground line-clamp-2">{n.message}</p>
-                        <p className="text-[10px] text-muted-foreground/60 mt-0.5">{formatTime(n.timestamp)}</p>
+                        <p className="text-sm font-semibold text-foreground truncate">{n.title}</p>
+                        <p className="text-xs text-muted-foreground line-clamp-2">{n.message}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{formatTime(n.timestamp)}</p>
                       </div>
-                    </div>
+                    </li>
                   ))}
-                </div>
+                </ul>
               )}
             </div>
           </>
