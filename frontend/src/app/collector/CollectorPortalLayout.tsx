@@ -18,6 +18,7 @@ import {
   Loader2,
   Inbox,
   History,
+  Contact,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiAdmin } from '@/lib/api/client';
@@ -38,6 +39,7 @@ interface CollectorData {
 const MENU_ITEMS = [
   { title: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" />, href: '/collector/dashboard' },
   { title: 'Tagihan', icon: <Users className="w-4 h-4" />, href: '/collector/billing' },
+  { title: 'Pelanggan', icon: <Contact className="w-4 h-4" />, href: '/collector/customers' },
   { title: 'Setoran Saya', icon: <Wallet className="w-4 h-4" />, href: '/collector/settlements' },
   { title: 'Koleksi Saya', icon: <History className="w-4 h-4" />, href: '/collector/my-collections' },
   { title: 'Bukti Transfer', icon: <Inbox className="w-4 h-4" />, href: '/collector/proofs' },
