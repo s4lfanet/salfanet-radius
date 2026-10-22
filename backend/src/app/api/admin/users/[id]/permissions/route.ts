@@ -1,6 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { getUserPermissions, setUserPermissions, resetUserPermissionsToRole } from '@/server/auth/permissions';
-import { requirePermission } from '@/server/middleware/api-auth';
+import { checkAuth, requirePermission } from '@/server/middleware/api-auth';
 
 /**
  * GET /api/admin/users/[id]/permissions - Get user's permissions
@@ -10,10 +10,18 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = await requirePermission('users.view');
-    if (!auth.authorized) return auth.response;
-
     const { id } = await params;
+
+    // Everyone may read their own permissions: the sidebar and the admin
+    // app build their menus from them. Requiring users.view here gave
+    // Keuangan, Customer Service and Marketing a 403 and an empty sidebar.
+    // Reading someone else's still needs users.view.
+    const self = await checkAuth();
+    if (!self.authorized) return self.response;
+    if (self.userId !== id) {
+      const auth = await requirePermission('users.view');
+      if (!auth.authorized) return auth.response;
+    }
     
     // Validate ID
     if (!id || id === 'undefined' || id === 'null') {

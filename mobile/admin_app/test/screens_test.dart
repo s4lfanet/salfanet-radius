@@ -185,7 +185,7 @@ void main() {
 
   setUp(() => ApiClient.instance.initForTest(_Fixtures()));
 
-  Future<void> pump(WidgetTester tester, Widget screen, bool dark, double width) async {
+  Future<void> pump(WidgetTester tester, Widget screen, bool dark, double width, {AdminUser? user}) async {
     tester.view.physicalSize = Size(width, 1600);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -193,7 +193,7 @@ void main() {
       MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (_) => ThemeController()),
-          ChangeNotifierProvider(create: (_) => AuthProvider()..user = AdminUser(id: '1', username: 'admin', name: 'Rina Kartika', role: 'SUPER_ADMIN')),
+          ChangeNotifierProvider(create: (_) => AuthProvider()..user = user ?? AdminUser(id: '1', username: 'admin', name: 'Rina Kartika', role: 'SUPER_ADMIN')),
           ChangeNotifierProvider(create: (_) => DashboardProvider()),
           ChangeNotifierProvider(create: (_) => PppoeProvider()),
           ChangeNotifierProvider(create: (_) => InvoiceProvider()),
@@ -225,6 +225,68 @@ void main() {
     'guide-hub': () => const GuideHubScreen(),
   };
   final tabs = {'pelanggan': 'Pelanggan', 'tagihan': 'Tagihan', 'lainnya': 'Lainnya'};
+
+  // Role templates as seeded (backend/prisma/seeds/permissions.ts).
+  const finance = {
+    'dashboard.view', 'dashboard.stats', 'invoices.view', 'invoices.create', 'invoices.edit', 'invoices.delete', 'invoices.approve',
+    'customers.view', 'keuangan.view', 'keuangan.create', 'keuangan.edit', 'keuangan.delete', 'keuangan.categories',
+    'reports.view', 'reports.export', 'reports.financial', 'notifications.view',
+  };
+  const customerService = {
+    'dashboard.view', 'customers.view', 'customers.create', 'customers.edit', 'customers.isolate', 'invoices.view', 'invoices.create',
+    'registrations.view', 'registrations.approve', 'registrations.reject', 'whatsapp.view', 'whatsapp.send', 'notifications.view',
+    'hotspot.view', 'vouchers.view', 'vouchers.generate', 'sessions.view',
+  };
+  const marketing = {
+    'dashboard.view', 'dashboard.stats', 'customers.view', 'registrations.view', 'hotspot.view', 'hotspot.manage', 'vouchers.view',
+    'vouchers.generate', 'whatsapp.view', 'whatsapp.send', 'whatsapp.broadcast', 'whatsapp.templates', 'reports.view', 'reports.export',
+    'notifications.view',
+  };
+  AdminUser staff(String role, Set<String> perms) => AdminUser(id: '2', username: 'staf', name: 'Dewi Lestari', role: role, permissions: perms);
+
+  testWidgets('Keuangan sees billing tools, not network or customer setup', (tester) async {
+    await pump(tester, const MainShell(), false, 360, user: staff('FINANCE', finance));
+    expect(find.text('Tagihan'), findsWidgets);
+    expect(find.text('Cek Transfer'), findsOneWidget);
+    expect(find.text('Pelanggan Baru'), findsNothing);
+    expect(find.text('Kasir QRIS'), findsNothing);
+    expect(find.text('Peta Jaringan'), findsNothing);
+    await tester.tap(find.text('Lainnya').last);
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Pembayaran Manual'), findsOneWidget);
+    expect(find.text('Router / NAS'), findsNothing);
+    expect(find.text('Staf & Tim'), findsNothing);
+  });
+
+  testWidgets('Customer service sees customer tools, not finance', (tester) async {
+    await pump(tester, const MainShell(), false, 360, user: staff('CUSTOMER_SERVICE', customerService));
+    expect(find.text('Pelanggan Baru'), findsOneWidget);
+    expect(find.text('Sesi Online'), findsOneWidget);
+    expect(find.text('Cek Transfer'), findsNothing);
+    await tester.tap(find.text('Lainnya').last);
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Persetujuan'), findsOneWidget);
+    expect(find.text('Keuangan'), findsNothing);
+    expect(find.text('Provider WhatsApp'), findsNothing);
+  });
+
+  testWidgets('Marketing has no Tagihan tab and no network menus', (tester) async {
+    await pump(tester, const MainShell(), false, 360, user: staff('MARKETING', marketing));
+    expect(find.widgetWithText(NavigationDestination, 'Tagihan'), findsNothing);
+    expect(find.text('Buat Voucher'), findsOneWidget);
+    expect(find.text('Pelanggan Baru'), findsNothing);
+    await tester.tap(find.text('Lainnya').last);
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Template WhatsApp'), findsOneWidget);
+    expect(find.text('Pembayaran Manual'), findsNothing);
+    expect(find.text('Sesi Online'), findsNothing);
+  });
+
+  testWidgets('unknown permissions hide nothing', (tester) async {
+    await pump(tester, const MainShell(), false, 360, user: AdminUser(id: '3', username: 'lama', name: 'Akun Lama', role: 'FINANCE'));
+    expect(find.text('Kasir QRIS'), findsOneWidget);
+    expect(find.widgetWithText(NavigationDestination, 'Tagihan'), findsOneWidget);
+  });
 
   for (final (width, dark) in [(360.0, false), (360.0, true), (320.0, false)]) {
     final label = '${width.toInt()}-${dark ? 'dark' : 'light'}';

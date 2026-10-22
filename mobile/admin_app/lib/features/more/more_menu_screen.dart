@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/crud/crud_list_screen.dart';
 import '../../core/guides/guides.dart';
@@ -17,6 +18,7 @@ import '../resources/settings_resources.dart';
 import '../resources/team_resources.dart';
 import '../tickets/ticket_tools.dart';
 import '../agents/agent_deposit_list_screen.dart';
+import '../auth/auth_provider.dart';
 import '../approvals/approval_list_screen.dart';
 import '../collector_settlements/collector_settlement_screen.dart';
 import '../keuangan/biaya_screen.dart';
@@ -202,12 +204,17 @@ class MoreMenuScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<AuthProvider>().user;
+    final sections = [
+      for (final (title, entries) in _sections)
+        (title, [for (final e in entries) if (user?.can(_permissions[e.label]) ?? true) e]),
+    ].where((s) => s.$2.isNotEmpty);
     return Scaffold(
       appBar: AppBar(title: const Text('Lainnya')),
       body: ListView(
         padding: EdgeInsets.fromLTRB(Gap.page, Gap.xs, Gap.page, listBottomPadding(context)),
         children: [
-          for (final (title, entries) in _sections) ...[
+          for (final (title, entries) in sections) ...[
             Padding(
               padding: const EdgeInsets.fromLTRB(2, Gap.lg, 0, Gap.sm),
               child: Text(
@@ -229,6 +236,91 @@ class MoreMenuScreen extends StatelessWidget {
     );
   }
 }
+
+/// The permission each menu entry's API checks (the same key the web
+/// sidebar uses for that page), so a role only sees what it can open.
+/// Entries not listed are open to every account.
+const _permissions = <String, String>{
+  'Registrasi': 'registrations.view',
+  'Persetujuan': 'registrations.approve',
+  'Pelanggan Terisolir': 'customers.view',
+  'Permintaan Suspend': 'customers.view',
+  'Tiket Bantuan': 'customers.view',
+  'Kategori Tiket': 'settings.view',
+  'Paket PPPoE': 'customers.view',
+  'Area': 'customers.view',
+  'Add-on Layanan': 'customers.view',
+  'IP Pool RADIUS': 'settings.view',
+  'Pembayaran Manual': 'invoices.edit',
+  'Bukti Pembayaran Kolektor': 'keuangan.view',
+  'Setoran Kolektor': 'keuangan.view',
+  'Top Up Saldo': 'invoices.approve',
+  'Keuangan': 'keuangan.view',
+  'Biaya Operasional': 'keuangan.view',
+  'Kategori Keuangan': 'keuangan.categories',
+  'Ajak Teman': 'customers.view',
+  'Payment Gateway': 'settings.payment',
+  'Kasir QRIS': 'settings.payment',
+  'Rekening Bank': 'settings.payment',
+  'Laporan': 'reports.view',
+  'Rekap Voucher': 'reports.view',
+  'Laporan Agent': 'reports.view',
+  'Voucher Hotspot': 'vouchers.view',
+  'Profil Hotspot': 'hotspot.view',
+  'Template Voucher': 'vouchers.view',
+  'Pesanan E-Voucher': 'invoices.view',
+  'Agent': 'hotspot.view',
+  'Deposit Agent': 'invoices.approve',
+  'Peta Jaringan': 'network.view',
+  'Sesi Online': 'sessions.view',
+  'Router / NAS': 'routers.view',
+  'Status OLT': 'network.view',
+  'Data OLT': 'network.view',
+  'Alert OLT': 'network.view',
+  'ODC': 'network.view',
+  'ODP': 'network.view',
+  'Pelanggan per ODP': 'network.view',
+  'Joint Closure': 'network.view',
+  'OTB': 'network.view',
+  'Kabel Fiber': 'network.view',
+  'Core Fiber': 'network.view',
+  'Titik Sambung': 'network.view',
+  'Trace Fiber': 'network.view',
+  'Server': 'network.view',
+  'VPN Server': 'routers.view',
+  'VPN Client': 'routers.view',
+  'Penarikan ONT': 'customers.isolate',
+  'FreeRADIUS': 'settings.view',
+  'GenieACS': 'settings.genieacs',
+  'Jadwal Otomatis': 'settings.cron',
+  'Backup Database': 'settings.view',
+  'Cloudflare Tunnel': 'settings.view',
+  'Sistem & Pembaruan': 'settings.view',
+  'Build APK': 'settings.view',
+  'Broadcast Notifikasi': 'notifications.manage',
+  'Kirim WhatsApp': 'whatsapp.send',
+  'Provider WhatsApp': 'whatsapp.providers',
+  'Template WhatsApp': 'whatsapp.templates',
+  'Pengingat & OTP': 'whatsapp.view',
+  'Riwayat WhatsApp': 'whatsapp.view',
+  'Email SMTP': 'settings.view',
+  'Template Email': 'settings.view',
+  'Riwayat Email': 'settings.view',
+  'Telegram Backup': 'settings.view',
+  'Bot Telegram': 'settings.view',
+  'Notifikasi': 'notifications.view',
+  'Staf & Tim': 'users.view',
+  'Kolektor': 'users.view',
+  'Teknisi Lapangan': 'users.view',
+  'Log Aktivitas': 'settings.view',
+  'Profil Perusahaan': 'settings.view',
+  'Footer Portal': 'settings.view',
+  'Isolir': 'settings.view',
+  'Template Isolir': 'settings.view',
+  'Banner Promo': 'settings.view',
+  'Program Ajak Teman': 'settings.view',
+  'Peta': 'settings.view',
+};
 
 /// The web page each menu entry mirrors, for the Panduan button of the
 /// screen it opens. Entries without a web counterpart have none.

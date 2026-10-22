@@ -29,9 +29,24 @@ class AuthProvider extends ChangeNotifier {
       final session = await ApiClient.instance.fetchSession();
       if (session == null) return false;
       user = AdminUser.fromJson(session);
+      user!.permissions = await _loadPermissions(user!.id);
       return true;
     } catch (_) {
       return false;
+    }
+  }
+
+  /// The account's own permissions; null when they cannot be read, so the
+  /// app shows every menu rather than locking the account out.
+  static Future<Set<String>?> _loadPermissions(String userId) async {
+    if (userId.isEmpty) return null;
+    try {
+      final res = await ApiClient.instance.get('/api/admin/users/$userId/permissions');
+      final list = res is Map ? res['permissions'] : null;
+      if (res is! Map || res['success'] != true || res['warning'] != null || list is! List || list.isEmpty) return null;
+      return {for (final p in list) p.toString()};
+    } catch (_) {
+      return null;
     }
   }
 
