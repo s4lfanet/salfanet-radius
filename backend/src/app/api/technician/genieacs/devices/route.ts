@@ -92,15 +92,6 @@ export async function GET(req: NextRequest) {
   const routerId = searchParams.get('routerId') || undefined;
   const areaId = searchParams.get('areaId') || undefined;
 
-  // Field technicians must scope their query to a router or area
-  // (same security pattern as the customers route)
-  if (!tech.isAdminUser && !routerId && !areaId) {
-    return NextResponse.json(
-      { error: 'routerId or areaId parameter is required' },
-      { status: 400 },
-    );
-  }
-
   const credentials = await getGenieACSCredentials();
   if (!credentials) {
     return NextResponse.json({
@@ -116,10 +107,10 @@ export async function GET(req: NextRequest) {
   const timeoutId = setTimeout(() => controller.abort(), 30000);
 
   try {
-    // If field technician with router/area scope, get the list of
-    // customer usernames/IPs that belong to that scope for filtering.
+    // Optional router/area filter. Technicians have no assigned area, so
+    // without one they see every device, as the portal page expects.
     let allowedUsernames: Set<string> | null = null;
-    if (!tech.isAdminUser && (routerId || areaId)) {
+    if (routerId || areaId) {
       const users = await prisma.pppoeUser.findMany({
         where: {
           ...(routerId ? { routerId } : {}),

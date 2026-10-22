@@ -228,8 +228,8 @@ Authorization: Bearer {{token}}
 - `/api/customer/upgrade` - Package upgrade
 
 ### **Technician APIs:**
-- `/api/technician/work-orders` - Work orders
-- `/api/technician/tasks` - Task management
+- `/api/technician/tickets` - Tiket (daftar, klaim, status, balasan, `?ticketId=` untuk percakapan)
+- `/api/technician/customers` - Data pelanggan
 
 ---
 

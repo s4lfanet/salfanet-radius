@@ -14,12 +14,11 @@ interface Technician {
   phoneNumber: string;
   email: string | null;
   isActive: boolean;
-  requireOtp: boolean;
   lastLoginAt: string | null;
   createdAt: string;
 }
 
-const emptyForm = { name: '', phoneNumber: '', email: '', requireOtp: true };
+const emptyForm = { name: '', phoneNumber: '', email: '' };
 
 export default function AdminTechniciansPage() {
   const queryClient = useQueryClient();
@@ -47,7 +46,7 @@ export default function AdminTechniciansPage() {
 
   const openEdit = (t: Technician) => {
     setEditing(t);
-    setForm({ name: t.name, phoneNumber: t.phoneNumber, email: t.email || '', requireOtp: t.requireOtp });
+    setForm({ name: t.name, phoneNumber: t.phoneNumber, email: t.email || '' });
     setShowCreate(true);
   };
 
@@ -62,7 +61,7 @@ export default function AdminTechniciansPage() {
         await apiAdmin(`/api/admin/technicians/${editing.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: form.name.trim(), email: form.email.trim() || null, requireOtp: form.requireOtp }),
+          body: JSON.stringify({ name: form.name.trim(), email: form.email.trim() || null }),
         });
         showSuccess('Data teknisi berhasil diperbarui');
       } else {
@@ -73,7 +72,6 @@ export default function AdminTechniciansPage() {
             name: form.name.trim(),
             phoneNumber: form.phoneNumber.trim(),
             email: form.email.trim() || undefined,
-            requireOtp: form.requireOtp,
           }),
         });
         showSuccess('Teknisi berhasil didaftarkan');
@@ -162,7 +160,6 @@ export default function AdminTechniciansPage() {
               <tr className="border-b border-border text-left">
                 <th className="px-4 py-3 font-semibold text-muted-foreground">Nama</th>
                 <th className="px-4 py-3 font-semibold text-muted-foreground">Kontak</th>
-                <th className="px-4 py-3 font-semibold text-muted-foreground">Wajib OTP</th>
                 <th className="px-4 py-3 font-semibold text-muted-foreground">Login Terakhir</th>
                 <th className="px-4 py-3 font-semibold text-muted-foreground">Status</th>
                 <th className="px-4 py-3 font-semibold text-muted-foreground"></th>
@@ -177,11 +174,6 @@ export default function AdminTechniciansPage() {
                   <td className="px-4 py-3 text-muted-foreground text-xs">
                     <p className="flex items-center gap-1"><Phone className="w-3 h-3" /> {t.phoneNumber}</p>
                     {t.email && <p className="flex items-center gap-1 mt-0.5"><Mail className="w-3 h-3" /> {t.email}</p>}
-                  </td>
-                  <td className="px-4 py-3 text-xs">
-                    <span className={`inline-flex px-2 py-0.5 rounded-full font-bold ${t.requireOtp ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'bg-slate-500/10 text-slate-500'}`}>
-                      {t.requireOtp ? 'Ya' : 'Tidak'}
-                    </span>
                   </td>
                   <td className="px-4 py-3 text-xs text-muted-foreground">
                     {t.lastLoginAt ? formatWIB(t.lastLoginAt, 'dd MMM yyyy HH:mm') : 'Belum pernah'}
@@ -241,15 +233,9 @@ export default function AdminTechniciansPage() {
                   className="w-full px-3 py-2 bg-muted/50 border border-border rounded-lg text-sm text-foreground"
                 />
               </div>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={form.requireOtp}
-                  onChange={(e) => setForm((f) => ({ ...f, requireOtp: e.target.checked }))}
-                  className="w-4 h-4"
-                />
-                <span className="text-sm text-foreground">Wajib verifikasi OTP saat login</span>
-              </label>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Teknisi masuk di /technician/login dengan nomor HP ini dan kode OTP yang dikirim lewat WhatsApp.
+              </p>
             </div>
             <div className="flex gap-2 pt-2">
               <button onClick={() => setShowCreate(false)} className="flex-1 px-3 py-2 bg-muted text-muted-foreground text-sm font-bold rounded-lg transition">

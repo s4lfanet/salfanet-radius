@@ -34,6 +34,24 @@ export async function GET(req: NextRequest) {
   if (!tech) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
+
+  // ?ticketId= returns that ticket's conversation. The portal used the admin
+  // messages API, which needs an admin session, so it always got 401.
+  const ticketId = searchParams.get('ticketId');
+  if (ticketId) {
+    const ticket = await prisma.ticket.findUnique({
+      where: { id: ticketId },
+      select: { assignedToId: true, assignedToType: true },
+    });
+    const visible = ticket && (ticket.assignedToId === null || (ticket.assignedToId === tech.id && ticket.assignedToType === 'TECHNICIAN'));
+    if (!visible) return NextResponse.json({ error: 'Tiket tidak ditemukan' }, { status: 404 });
+    const messages = await prisma.ticketMessage.findMany({
+      where: { ticketId, isInternal: false },
+      orderBy: { createdAt: 'asc' },
+    });
+    return NextResponse.json(messages);
+  }
+
   const status = searchParams.get('status') || undefined;
   const priority = searchParams.get('priority') || undefined;
   const mine = searchParams.get('mine') === 'true';

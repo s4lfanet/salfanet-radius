@@ -3,6 +3,7 @@ import { jwtVerify } from 'jose';
 import { prisma } from '@/server/db/client';
 import { getGenieACSCredentials } from '@/app/api/settings/genieacs/route';
 import { TECH_JWT_SECRET } from '@/server/auth/technician-secret';
+import { logActivity } from '@/server/services/activity-log.service';
 import {
   safeString,
   getParameterValue,
@@ -21,14 +22,14 @@ async function verifyTechnician(req: NextRequest) {
     if (payload.type === 'admin_user') {
       const adminUser = await prisma.adminUser.findUnique({
         where: { id: payload.id as string },
-        select: { id: true, isActive: true, role: true },
+        select: { id: true, name: true, isActive: true, role: true },
       });
       if (!adminUser?.isActive || adminUser.role !== 'TECHNICIAN') return null;
-      return { id: adminUser.id, isAdminUser: true as const };
+      return { id: adminUser.id, name: adminUser.name, isAdminUser: true as const };
     }
     const tech = await prisma.technician.findUnique({
       where: { id: payload.id as string },
-      select: { id: true, isActive: true },
+      select: { id: true, name: true, isActive: true },
     });
     return tech?.isActive ? { ...tech, isAdminUser: false as const } : null;
   } catch {
@@ -313,6 +314,21 @@ export async function POST(
 
   const { action } = body;
 
+  // Reboots and WiFi changes reach a customer's device, so each one is
+  // recorded under Log Aktivitas with the technician's name.
+  const record = (description: string) =>
+    logActivity({
+      userId: tech.id,
+      username: tech.name,
+      userRole: 'TECHNICIAN',
+      action: action === 'reboot' ? 'ONT_REBOOT' : 'ONT_WIFI_UPDATE',
+      description,
+      module: 'genieacs',
+      status: 'success',
+      request: req,
+      metadata: { deviceId },
+    });
+
   if (action === 'reboot') {
     try {
       const controller = new AbortController();
@@ -328,6 +344,7 @@ export async function POST(
       );
       clearTimeout(timeoutId);
       if (response.ok || response.status === 202) {
+        await record(`Reboot ONT ${deviceId}`);
         return NextResponse.json({ success: true, message: 'Reboot task sent successfully' });
       }
       if (response.status === 504) {
@@ -345,7 +362,17 @@ export async function POST(
   if (action === 'setWifi') {
     const { wifiIndex, ssid, wifiPassword } = body;
     const paramValues: [string, string, string][] = [];
-    const idx = wifiIndex || 1;
+    // wifiIndex goes into the TR-069 path, so only a small whole number.
+    const idx = Number(wifiIndex ?? 1);
+    if (!Number.isInteger(idx) || idx < 1 || idx > 8) {
+      return NextResponse.json({ error: 'Nomor WiFi tidak valid' }, { status: 400 });
+    }
+    if (ssid !== undefined && ssid !== '' && (typeof ssid !== 'string' || ssid.length > 32)) {
+      return NextResponse.json({ error: 'Nama WiFi maksimal 32 karakter' }, { status: 400 });
+    }
+    if (wifiPassword && (typeof wifiPassword !== 'string' || wifiPassword.length < 8 || wifiPassword.length > 63)) {
+      return NextResponse.json({ error: 'Password WiFi harus 8 sampai 63 karakter' }, { status: 400 });
+    }
     const base = `InternetGatewayDevice.LANDevice.1.WLANConfiguration.${idx}`;
     if (ssid) paramValues.push([`${base}.SSID`, ssid, 'xsd:string']);
     if (wifiPassword) paramValues.push([`${base}.KeyPassphrase`, wifiPassword, 'xsd:string']);
@@ -366,6 +393,7 @@ export async function POST(
       );
       clearTimeout(timeoutId);
       if (response.ok || response.status === 202) {
+        await record(`Ubah WiFi ${idx} ONT ${deviceId}${ssid ? ` (SSID: ${ssid})` : ''}${wifiPassword ? ', password diganti' : ''}`);
         return NextResponse.json({ success: true, message: 'WiFi settings updated successfully' });
       }
       if (response.status === 504) {

@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
+import { randomInt } from 'crypto';
 import { WhatsAppService } from '@/server/services/notifications/whatsapp.service';
+import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
 
 export async function POST(req: NextRequest) {
   try {
+    const limited = await rateLimit(req, RateLimitPresets.strict);
+    if (limited) {
+      return NextResponse.json({ error: 'Terlalu banyak percobaan. Coba lagi sebentar lagi.' }, { status: 429 });
+    }
+
     const { phoneNumber } = await req.json();
 
     if (!phoneNumber) {
@@ -23,47 +30,29 @@ export async function POST(req: NextRequest) {
       ? '62' + normalizedPhone.substring(1)
       : '62' + normalizedPhone;
 
-    // Find or create technician
-    let technician = await prisma.technician.findUnique({
+    // Only numbers an admin registered in Kelola Teknisi get a code. This
+    // used to create an active technician for any unknown number, so anyone
+    // could sign up with their own WhatsApp and reach every customer.
+    const technician = await prisma.technician.findUnique({
       where: { phoneNumber: formattedPhone },
     });
 
     if (!technician) {
-      // Create new technician with default name (can be updated later)
-      technician = await prisma.technician.create({
-        data: {
-          phoneNumber: formattedPhone,
-          name: `Teknisi ${formattedPhone.substring(formattedPhone.length - 4)}`,
-          isActive: true,
-        },
-      });
+      return NextResponse.json(
+        { error: 'Nomor ini belum terdaftar sebagai teknisi. Minta admin menambahkannya di Kelola Teknisi.' },
+        { status: 404 }
+      );
     }
 
     if (!technician.isActive) {
       return NextResponse.json(
-        { error: 'Technician account is inactive' },
+        { error: 'Akun teknisi ini dinonaktifkan.' },
         { status: 403 }
       );
     }
 
-    // Check if OTP is required
-    if (!technician.requireOtp) {
-      return NextResponse.json(
-        { 
-          message: 'OTP not required for this account',
-          requireOtp: false,
-          technician: {
-            id: technician.id,
-            name: technician.name,
-            phoneNumber: technician.phoneNumber,
-          }
-        },
-        { status: 200 }
-      );
-    }
-
     // Generate 6-digit OTP
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpCode = randomInt(100000, 1000000).toString();
 
     // Expire old OTPs for this technician
     await prisma.technicianOtp.updateMany({
@@ -95,23 +84,29 @@ export async function POST(req: NextRequest) {
       const company = await prisma.company.findFirst();
       const companyName = company?.name || 'SALFANET RADIUS';
       
-      const message = `?? *Kode OTP Teknisi*\n\nKode OTP Anda: *${otpCode}*\n\nKode ini berlaku selama *5 menit*.\nJangan bagikan kode ini kepada siapa pun.\n\n_Pesan otomatis dari sistem ${companyName}_`;
+      const message = `*Kode OTP Teknisi*\n\nKode OTP Anda: *${otpCode}*\n\nKode ini berlaku selama *5 menit*.\nJangan bagikan kode ini kepada siapa pun.\n\n_Pesan otomatis dari sistem ${companyName}_`;
 
-      await WhatsAppService.sendMessage({
+      const sent = await WhatsAppService.sendMessage({
         phone: formattedPhone,
         message: message,
       });
+      if (!sent.success) throw new Error(sent.error);
 
       // P0 security: never log OTP codes to console
       console.log(`✅ OTP sent via WhatsApp to ${formattedPhone}`);
     } catch (error) {
+      // The technician cannot sign in without the code, so say so instead
+      // of reporting success for a message that never left.
       console.error('❌ Failed to send WhatsApp OTP:', error);
-      // Continue even if WhatsApp fails - OTP is still created
+      return NextResponse.json(
+        { error: 'Kode OTP gagal dikirim lewat WhatsApp. Pastikan WhatsApp sistem tersambung, lalu coba lagi.' },
+        { status: 502 }
+      );
     }
 
     return NextResponse.json({
       success: true,
-      message: 'OTP sent to your WhatsApp number',
+      message: 'Kode OTP dikirim ke WhatsApp Anda.',
       phoneNumber: formattedPhone,
       // P0 security: never return OTP code in API response, even in development
     });

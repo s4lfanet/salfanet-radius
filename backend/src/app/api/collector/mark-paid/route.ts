@@ -121,9 +121,12 @@ export async function POST(req: NextRequest) {
     // Wrap invoice update + proof creation in a transaction so they
     // either both succeed or both roll back — prevents orphaned PAID
     // invoices with no proof record if the second write fails.
-    await prisma.$transaction(async (tx) => {
-      await tx.invoice.update({
-        where: { id: invoiceId },
+    // The PAID check above runs outside the transaction; two taps at once
+    // both passed it and each extended the subscription. Only the request
+    // that flips the invoice from unpaid goes on.
+    const settled = await prisma.$transaction(async (tx) => {
+      const flipped = await tx.invoice.updateMany({
+        where: { id: invoiceId, status: { not: 'PAID' } },
         data: {
           status: 'PAID',
           paidAt: new Date(),
@@ -132,6 +135,7 @@ export async function POST(req: NextRequest) {
           collectorProof: collectorProof || null,
         },
       });
+      if (flipped.count === 0) return false;
 
       // For transfer payments with proof: create a pending paymentProof record for admin verification
       if (method === 'transfer' && collectorProof) {
@@ -178,7 +182,12 @@ export async function POST(req: NextRequest) {
           status: newStatus,
         },
       });
+      return true;
     });
+
+    if (!settled) {
+      return NextResponse.json({ error: 'Invoice sudah lunas' }, { status: 400 });
+    }
 
     // ─── Notifications (best-effort) ──────────────────────────────────────
     // Mirrors handleInvoicePayment in the payment webhook — a collector cash/

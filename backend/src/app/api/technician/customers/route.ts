@@ -41,14 +41,8 @@ export async function GET(req: NextRequest) {
   const limit = Math.min(100, parseInt(searchParams.get('limit') || '30', 10));
   const skip = (page - 1) * limit;
 
-  // Field technicians must scope their query to a router or area
-  if (!tech.isAdminUser && !routerId && !areaId) {
-    return NextResponse.json(
-      { error: 'routerId or areaId parameter is required' },
-      { status: 400 },
-    );
-  }
-
+  // routerId/areaId are optional filters. Technicians have no assigned
+  // area; requiring one made the page (which sends neither) always fail.
   const where: Record<string, unknown> = {};
   if (status) where.status = status;
   if (routerId) where.routerId = routerId;
