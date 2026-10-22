@@ -129,6 +129,18 @@ _proxy_locations() {
         proxy_hide_header X-Content-Type-Options;
     }
 
+    # Uploaded files (payment proofs, KTP, ticket photos): images only,
+    # straight from the persistent upload dir. Without this block every
+    # /uploads/ link went to the frontend and answered 404.
+    location /uploads/ {
+        alias /var/data/salfanet/uploads/;
+        access_log off;
+        try_files $uri =404;
+        location ~* \.(php|js|mjs|html|htm|xhtml|svg|exe|sh|css)$ { deny all; }
+        expires 30d;
+        add_header X-Content-Type-Options "nosniff" always;
+    }
+
     location / {
         proxy_pass         http://127.0.0.1:3000;
         proxy_http_version 1.1;
