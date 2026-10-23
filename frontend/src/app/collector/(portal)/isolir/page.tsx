@@ -76,19 +76,19 @@ export default function CollectorIsolirPage() {
       {u.invoices && u.invoices.length > 0 ? (
         <ul className="space-y-2">
           {u.invoices.map((inv: any) => (
-            <li key={inv.id} className="rounded-xl border border-border bg-background p-3 md:flex md:items-center md:gap-4">
-              <div className="flex items-start justify-between gap-3 md:flex-1 md:min-w-0">
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-foreground">{fmtRp(inv.amount)}</p>
-                  <p className="text-xs text-muted-foreground break-words">#{inv.invoiceNumber} · jatuh tempo {fmtDate(inv.dueDate)}</p>
+            <li key={inv.id} className="rounded-xl border border-border bg-card p-3 md:flex md:items-center md:justify-between md:gap-6">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-bold text-foreground tabular-nums">{fmtRp(inv.amount)}</p>
+                  <StatusPill tone={inv.status === 'OVERDUE' ? 'red' : 'amber'}>{inv.status === 'OVERDUE' ? 'Lewat tempo' : 'Belum bayar'}</StatusPill>
                 </div>
-                <StatusPill tone={inv.status === 'OVERDUE' ? 'red' : 'amber'}>{inv.status === 'OVERDUE' ? 'Lewat tempo' : 'Belum bayar'}</StatusPill>
+                <p className="mt-0.5 text-xs text-muted-foreground break-words">#{inv.invoiceNumber} · jatuh tempo {fmtDate(inv.dueDate)}</p>
               </div>
-              <div className="mt-3 md:mt-0 grid grid-cols-2 gap-2 sm:flex sm:justify-end">
-                <button type="button" onClick={() => openPayModal(inv, u.name, 'transfer')} className={cn(ui.btnSecondary, 'h-10')}>
-                  <Upload className="w-4 h-4" /> Transfer
+              <div className="mt-3 md:mt-0 grid grid-cols-2 gap-2 sm:flex sm:items-center sm:justify-end md:shrink-0">
+                <button type="button" onClick={() => openPayModal(inv, u.name, 'transfer')} className={cn(ui.btnSecondary, 'h-10 px-3.5')}>
+                  <Upload className="w-4 h-4 text-muted-foreground" /> Transfer
                 </button>
-                <button type="button" onClick={() => openPayModal(inv, u.name, 'cash')} className={cn(ui.btnPrimary, 'h-10')}>
+                <button type="button" onClick={() => openPayModal(inv, u.name, 'cash')} className={cn(ui.btnPrimary, 'h-10 px-3.5')}>
                   <Wallet className="w-4 h-4" /> Lunas tunai
                 </button>
               </div>
@@ -253,7 +253,7 @@ export default function CollectorIsolirPage() {
                   const open = expandedUser === u.id;
                   return (
                     <Fragment key={u.id}>
-                      <tr className={cn('align-top', open ? 'bg-muted/40' : 'hover:bg-muted/40')}>
+                      <tr onClick={(e) => { if (!(e.target as HTMLElement).closest('a,button')) setExpandedUser(open ? null : u.id); }} className={cn('align-middle cursor-pointer', open ? 'bg-muted/40' : 'hover:bg-muted/40')}>
                         <td className="px-3 py-3 min-w-[12rem]">
                           <p className="font-semibold text-foreground">{u.name}</p>
                           <p className="text-xs text-muted-foreground">{u.customerId || u.username}{u.customerId ? ` · ${u.username}` : ''}</p>
@@ -266,7 +266,7 @@ export default function CollectorIsolirPage() {
                           <p className="text-xs text-muted-foreground">{u.area?.name || '-'}</p>
                         </td>
                         <td className="px-3 py-3 hidden lg:table-cell whitespace-nowrap">
-                          {u.phone ? <a href={`tel:${u.phone}`} className="text-blue-700 dark:text-blue-400 hover:underline">{u.phone}</a> : <span className="text-muted-foreground">-</span>}
+                          {u.phone ? <a href={`tel:${u.phone}`} className="text-sm tabular-nums text-blue-700 dark:text-blue-400 hover:underline">{u.phone}</a> : <span className="text-muted-foreground">-</span>}
                         </td>
                         <td className="px-3 py-3 hidden xl:table-cell whitespace-nowrap text-muted-foreground">{fmtDate(u.expiredAt)}</td>
                         <td className="px-3 py-3 text-right whitespace-nowrap">
@@ -278,7 +278,7 @@ export default function CollectorIsolirPage() {
                           ) : <p className={cn('font-semibold', toneText('green'))}>Lunas</p>}
                         </td>
                         <td className="px-3 py-3 text-right">
-                          <button type="button" onClick={() => setExpandedUser(open ? null : u.id)} aria-expanded={open} className={cn(open ? ui.btnSecondary : ui.btnPrimary, 'h-9 px-3 text-xs pointer-coarse:h-11')}>
+                          <button type="button" onClick={() => setExpandedUser(open ? null : u.id)} aria-expanded={open} className={cn(open ? ui.btnSecondary : ui.btnPrimary, 'h-9 w-24 px-0 text-sm pointer-coarse:h-11')}>
                             {open ? 'Tutup' : 'Tindak'}
                             <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', open && 'rotate-180')} />
                           </button>
