@@ -203,18 +203,18 @@ export default function CollectorNotificationBell() {
             <button type="button" aria-label="Tutup notifikasi" className="fixed inset-0 z-40 cursor-default" onClick={() => setBellOpen(false)} />
             <div className="absolute right-0 top-full mt-2 w-[min(20rem,calc(100vw-2rem))] max-h-96 overflow-y-auto bg-card border border-border rounded-2xl z-50" role="dialog" aria-label="Notifikasi">
               <div className="sticky top-0 bg-card border-b border-border pl-4 pr-1 h-12 flex items-center justify-between">
-                <span className="text-sm font-semibold text-foreground">Notifikasi</span>
+                <span className="text-[13px] font-semibold text-foreground">Notifikasi</span>
                 <button type="button" onClick={() => setBellOpen(false)} aria-label="Tutup" className="h-[40px] pointer-coarse:h-[44px] w-[40px] pointer-coarse:w-[44px] flex items-center justify-center rounded-xl hover:bg-muted text-muted-foreground">
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
               {loading ? (
-                <div className="p-4 text-center text-sm text-muted-foreground">Memuat...</div>
+                <div className="p-4 text-center text-[13px] text-muted-foreground">Memuat...</div>
               ) : notifications.length === 0 ? (
                 <div className="p-6 text-center">
-                  <p className="text-sm font-medium text-foreground">Belum ada notifikasi</p>
-                  <p className="text-xs text-muted-foreground mt-1">Pembayaran yang Anda catat dan tiket untuk Anda muncul di sini.</p>
+                  <p className="text-[13px] font-medium text-foreground">Belum ada notifikasi</p>
+                  <p className="text-[12px] text-muted-foreground mt-1">Pembayaran yang Anda catat dan tiket untuk Anda muncul di sini.</p>
                 </div>
               ) : (
                 <ul className="divide-y divide-border">
@@ -224,9 +224,9 @@ export default function CollectorNotificationBell() {
                         {getIcon(n.type)}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground truncate">{n.title}</p>
-                        <p className="text-xs text-muted-foreground line-clamp-2">{n.message}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{formatTime(n.timestamp)}</p>
+                        <p className="text-[13px] font-semibold text-foreground truncate">{n.title}</p>
+                        <p className="text-[12px] text-muted-foreground line-clamp-2">{n.message}</p>
+                        <p className="text-[12px] text-muted-foreground mt-0.5">{formatTime(n.timestamp)}</p>
                       </div>
                     </li>
                   ))}

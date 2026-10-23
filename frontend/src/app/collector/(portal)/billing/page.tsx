@@ -390,12 +390,12 @@ export default function CollectorBillingPage() {
             <li key={inv.id} className="rounded-xl border border-border bg-card p-3 md:flex md:items-center md:justify-between md:gap-6">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-bold text-foreground tabular-nums">{fmtRp(inv.amount)}</p>
+                  <p className="text-[13px] font-bold text-foreground tabular-nums">{fmtRp(inv.amount)}</p>
                   <StatusPill tone={paid ? 'green' : inv.status === 'OVERDUE' ? 'red' : 'amber'}>
                     {paid ? 'Lunas' : inv.status === 'OVERDUE' ? 'Lewat tempo' : 'Belum bayar'}
                   </StatusPill>
                 </div>
-                <p className="mt-0.5 text-xs text-muted-foreground break-words">#{inv.invoiceNumber} · jatuh tempo {fmtDate(inv.dueDate)}</p>
+                <p className="mt-0.5 text-[12px] text-muted-foreground break-words">#{inv.invoiceNumber} · jatuh tempo {fmtDate(inv.dueDate)}</p>
               </div>
 
               {!paid ? (
@@ -424,13 +424,13 @@ export default function CollectorBillingPage() {
                     </button>
                     {showPrintMenu === inv.id && (
                       <div className="absolute right-0 bottom-full mb-1 z-20 rounded-xl border border-border bg-card py-1 min-w-[200px]" role="menu">
-                        <button type="button" role="menuitem" onClick={(e) => { e.stopPropagation(); handlePrintA4(inv.id); }} className="w-full flex items-center gap-2 h-[40px] pointer-coarse:h-[44px] px-3 text-sm text-foreground hover:bg-muted text-left">
+                        <button type="button" role="menuitem" onClick={(e) => { e.stopPropagation(); handlePrintA4(inv.id); }} className="w-full flex items-center gap-2 h-[40px] pointer-coarse:h-[44px] px-3 text-[13px] text-foreground hover:bg-muted text-left">
                           <FileText className="w-4 h-4" /> Invoice A4
                         </button>
-                        <button type="button" role="menuitem" onClick={(e) => { e.stopPropagation(); handlePrintThermal(inv.id); }} className="w-full flex items-center gap-2 h-[40px] pointer-coarse:h-[44px] px-3 text-sm text-foreground hover:bg-muted text-left">
+                        <button type="button" role="menuitem" onClick={(e) => { e.stopPropagation(); handlePrintThermal(inv.id); }} className="w-full flex items-center gap-2 h-[40px] pointer-coarse:h-[44px] px-3 text-[13px] text-foreground hover:bg-muted text-left">
                           <Printer className="w-4 h-4" /> Struk 80mm
                         </button>
-                        <button type="button" role="menuitem" onClick={(e) => { e.stopPropagation(); handlePrintBluetooth(inv.id); }} className="w-full flex items-center gap-2 h-[40px] pointer-coarse:h-[44px] px-3 text-sm text-foreground hover:bg-muted text-left">
+                        <button type="button" role="menuitem" onClick={(e) => { e.stopPropagation(); handlePrintBluetooth(inv.id); }} className="w-full flex items-center gap-2 h-[40px] pointer-coarse:h-[44px] px-3 text-[13px] text-foreground hover:bg-muted text-left">
                           <Bluetooth className="w-4 h-4" /> Printer Bluetooth
                         </button>
                       </div>
@@ -451,20 +451,20 @@ export default function CollectorBillingPage() {
         })}
       </ul>
     ) : (
-      <p className="text-sm text-muted-foreground py-2">Belum ada tagihan untuk pelanggan ini.</p>
+      <p className="text-[13px] text-muted-foreground py-2">Belum ada tagihan untuk pelanggan ini.</p>
     )
   );
 
   const amountCell = (u: any, align: 'left' | 'right' = 'right') => (
     !u.is_paid ? (
       <div className={align === 'right' ? 'text-right' : ''}>
-        <p className={cn('text-sm font-bold', toneText('red'))}>{fmtRp(u.unpaid_amount)}</p>
-        <p className="text-xs text-muted-foreground">{u.unpaid_count} tagihan</p>
+        <p className={cn('text-[13px] font-bold', toneText('red'))}>{fmtRp(u.unpaid_amount)}</p>
+        <p className="text-[12px] text-muted-foreground">{u.unpaid_count} tagihan</p>
       </div>
     ) : u.invoices?.length > 0 ? (
-      <p className={cn('text-sm font-semibold', toneText('green'))}>Lunas</p>
+      <p className={cn('text-[13px] font-semibold', toneText('green'))}>Lunas</p>
     ) : (
-      <p className="text-xs text-muted-foreground">Tanpa tagihan</p>
+      <p className="text-[12px] text-muted-foreground">Tanpa tagihan</p>
     )
   );
 
@@ -477,7 +477,7 @@ export default function CollectorBillingPage() {
           btConnected ? (
             <div className="flex items-center gap-2">
               <StatusPill tone="green"><Bluetooth className="w-3.5 h-3.5 mr-1" />Printer terhubung</StatusPill>
-              <button type="button" onClick={handleBluetoothDisconnect} className={cn(ui.btnSecondary, 'h-[36px] px-3 text-xs pointer-coarse:h-[44px]')}>Putuskan</button>
+              <button type="button" onClick={handleBluetoothDisconnect} className={cn(ui.btnSecondary, 'h-[36px] px-3 text-[12px] pointer-coarse:h-[44px]')}>Putuskan</button>
             </div>
           ) : (
             <button type="button" onClick={handleBluetoothConnect} disabled={actionLoading === 'bt-connect'} className={cn(ui.btnSecondary, 'w-full sm:w-auto')}>
@@ -523,8 +523,8 @@ export default function CollectorBillingPage() {
 
       {loadError && users.length > 0 && (
         <div className={cn(ui.card, 'p-3 mb-3 flex items-center justify-between gap-3')} role="alert">
-          <span className={cn('text-sm', toneText('red'))}>Data terbaru gagal dimuat, yang tampil mungkin belum terbaru.</span>
-          <button type="button" onClick={loadData} className={cn(ui.btnSecondary, 'h-[36px] px-3 text-xs shrink-0')}>Coba lagi</button>
+          <span className={cn('text-[13px]', toneText('red'))}>Data terbaru gagal dimuat, yang tampil mungkin belum terbaru.</span>
+          <button type="button" onClick={loadData} className={cn(ui.btnSecondary, 'h-[36px] px-3 text-[12px] shrink-0')}>Coba lagi</button>
         </div>
       )}
 
@@ -538,12 +538,12 @@ export default function CollectorBillingPage() {
           : <EmptyState icon={<Users className="w-5 h-5" />} title="Tidak ada yang cocok" hint="Ubah kata kunci atau pilih filter Semua." />
       ) : (
         <>
-          <p className="text-xs text-muted-foreground mb-2">{filtered.length} pelanggan</p>
+          <p className="text-[12px] text-muted-foreground mb-2">{filtered.length} pelanggan</p>
 
           {/* Table: tablets and up. A row opens to its invoices. */}
           <div className={cn(ui.card, 'hidden md:block overflow-x-auto')}>
-            <table className="w-full text-sm">
-              <thead className="border-b border-border bg-muted/50 text-xs text-muted-foreground">
+            <table className="w-full text-[13px]">
+              <thead className="border-b border-border bg-muted/50 text-[12px] text-muted-foreground">
                 <tr>
                   <th scope="col" className="px-3 py-2.5 text-left font-medium">Pelanggan</th>
                   <th scope="col" className="px-3 py-2.5 text-left font-medium hidden lg:table-cell">Paket</th>
@@ -566,17 +566,17 @@ export default function CollectorBillingPage() {
                       >
                         <td className="px-3 py-3 min-w-[12rem]">
                           <p className="font-semibold text-foreground">{u.name}</p>
-                          <p className="text-xs text-muted-foreground">{u.customerId || u.username}{u.customerId ? ` · ${u.username}` : ''}</p>
+                          <p className="text-[12px] text-muted-foreground">{u.customerId || u.username}{u.customerId ? ` · ${u.username}` : ''}</p>
                         </td>
                         <td className="px-3 py-3 hidden lg:table-cell">
-                          {u.profile ? <><p className="text-foreground">{u.profile.name}</p><p className="text-xs text-muted-foreground">{fmtRp(u.profile.price)}/bln</p></> : <span className="text-muted-foreground">-</span>}
+                          {u.profile ? <><p className="text-foreground">{u.profile.name}</p><p className="text-[12px] text-muted-foreground">{fmtRp(u.profile.price)}/bln</p></> : <span className="text-muted-foreground">-</span>}
                         </td>
                         <td className="px-3 py-3 hidden xl:table-cell">
                           <p className="text-foreground">{u.router?.name || '-'}</p>
-                          <p className="text-xs text-muted-foreground">{u.area?.name || '-'}</p>
+                          <p className="text-[12px] text-muted-foreground">{u.area?.name || '-'}</p>
                         </td>
                         <td className="px-3 py-3 hidden lg:table-cell whitespace-nowrap">
-                          {u.phone ? <a href={`tel:${u.phone}`} className="text-sm tabular-nums text-blue-700 dark:text-blue-400 hover:underline">{u.phone}</a> : <span className="text-muted-foreground">-</span>}
+                          {u.phone ? <a href={`tel:${u.phone}`} className="text-[13px] tabular-nums text-blue-700 dark:text-blue-400 hover:underline">{u.phone}</a> : <span className="text-muted-foreground">-</span>}
                         </td>
                         <td className="px-3 py-3"><StatusPill tone={st.tone}>{st.label}</StatusPill></td>
                         <td className="px-3 py-3 whitespace-nowrap">{amountCell(u)}</td>
@@ -585,7 +585,7 @@ export default function CollectorBillingPage() {
                             type="button"
                             onClick={() => setExpandedUser(open ? null : u.id)}
                             aria-expanded={open}
-                            className={cn(open || u.is_paid ? ui.btnSecondary : ui.btnPrimary, 'h-[40px] w-24 px-0 text-sm pointer-coarse:h-[44px]')}
+                            className={cn(open || u.is_paid ? ui.btnSecondary : ui.btnPrimary, 'h-[40px] w-24 px-0 text-[13px] pointer-coarse:h-[44px]')}
                           >
                             {open ? 'Tutup' : u.is_paid ? 'Lihat' : 'Tagih'}
                             <ChevronDown className={cn('w-4 h-4 transition-transform', open && 'rotate-180')} />
@@ -595,7 +595,7 @@ export default function CollectorBillingPage() {
                       {open && (
                         <tr className="bg-muted/40">
                           <td colSpan={7} className="px-3 pt-0 pb-3">
-                            {u.address && <p className="text-xs text-muted-foreground mb-2 px-0.5">Alamat: <span className="text-foreground">{u.address}</span></p>}
+                            {u.address && <p className="text-[12px] text-muted-foreground mb-2 px-0.5">Alamat: <span className="text-foreground">{u.address}</span></p>}
                             {renderInvoices(u)}
                           </td>
                         </tr>
@@ -625,20 +625,20 @@ export default function CollectorBillingPage() {
                         <p className="font-semibold text-foreground truncate">{u.name}</p>
                         <StatusPill tone={st.tone}>{st.label}</StatusPill>
                       </div>
-                      <p className="text-xs text-muted-foreground truncate mt-0.5">
+                      <p className="text-[12px] text-muted-foreground truncate mt-0.5">
                         {[u.customerId || u.username, u.phone, u.area?.name].filter(Boolean).join(' · ')}
                       </p>
                     </div>
                     <div className="text-right shrink-0">
                       {!u.is_paid ? (
                         <>
-                          <p className={cn('text-sm font-bold', toneText('red'))}>{fmtRp(u.unpaid_amount)}</p>
-                          <p className="text-xs text-muted-foreground">{u.unpaid_count} tagihan</p>
+                          <p className={cn('text-[13px] font-bold', toneText('red'))}>{fmtRp(u.unpaid_amount)}</p>
+                          <p className="text-[12px] text-muted-foreground">{u.unpaid_count} tagihan</p>
                         </>
                       ) : u.invoices?.length > 0 ? (
-                        <p className={cn('text-sm font-semibold', toneText('green'))}>Lunas</p>
+                        <p className={cn('text-[13px] font-semibold', toneText('green'))}>Lunas</p>
                       ) : (
-                        <p className="text-xs text-muted-foreground">Tanpa tagihan</p>
+                        <p className="text-[12px] text-muted-foreground">Tanpa tagihan</p>
                       )}
                     </div>
                     <ChevronDown className={cn('w-5 h-5 mt-0.5 shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')} aria-hidden />
@@ -646,7 +646,7 @@ export default function CollectorBillingPage() {
 
                   {open && (
                     <div className="border-t border-border px-4 pb-4">
-                      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 py-3 text-xs">
+                      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 py-3 text-[12px]">
                         {u.profile && (<div><dt className="text-muted-foreground">Paket</dt><dd className="text-foreground font-medium">{u.profile.name} · {fmtRp(u.profile.price)}</dd></div>)}
                         <div><dt className="text-muted-foreground">Aktif s/d</dt><dd className="text-foreground font-medium">{fmtDate(u.expiredAt)}</dd></div>
                         <div><dt className="text-muted-foreground">Username</dt><dd className="text-foreground font-medium break-all">{u.username}</dd></div>
@@ -676,16 +676,16 @@ export default function CollectorBillingPage() {
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="pay-title">
           <button type="button" aria-label="Tutup" className="absolute inset-0 bg-black/50" onClick={() => setPayModal(null)} />
           <div className="relative w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl border border-border bg-card p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] max-h-[90dvh] overflow-y-auto">
-            <h3 id="pay-title" className="text-lg font-bold text-foreground">Tandai lunas</h3>
-            <p className="text-sm text-muted-foreground">{payModal.customerName} · #{payModal.invoiceNumber}</p>
+            <h3 id="pay-title" className="text-[16px] font-bold text-foreground">Tandai lunas</h3>
+            <p className="text-[13px] text-muted-foreground">{payModal.customerName} · #{payModal.invoiceNumber}</p>
 
             <div className="mt-4 rounded-xl bg-muted p-3">
-              <p className="text-xs text-muted-foreground">Jumlah diterima</p>
+              <p className="text-[12px] text-muted-foreground">Jumlah diterima</p>
               <p className="text-2xl font-extrabold tracking-tight text-foreground">{fmtRp(payModal.amount)}</p>
             </div>
 
             <fieldset className="mt-4">
-              <legend className="text-sm font-medium text-foreground mb-2">Cara bayar</legend>
+              <legend className="text-[13px] font-medium text-foreground mb-2">Cara bayar</legend>
               <div className="grid grid-cols-2 gap-2">
                 {[
                   { key: 'cash', label: 'Tunai', icon: Wallet },
@@ -709,7 +709,7 @@ export default function CollectorBillingPage() {
 
             {paymentMethod === 'transfer' && (
               <div className="mt-4">
-                <p className="text-sm font-medium text-foreground mb-2">Bukti transfer</p>
+                <p className="text-[13px] font-medium text-foreground mb-2">Bukti transfer</p>
                 {proofPreview ? (
                   <div className="relative">
                     {/* eslint-disable-next-line @next/next/no-img-element -- local preview of a picked file */}
@@ -721,14 +721,14 @@ export default function CollectorBillingPage() {
                 ) : (
                   <label className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border p-6 cursor-pointer hover:bg-muted focus-within:ring-2 focus-within:ring-blue-600">
                     <Upload className="w-6 h-6 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Ambil foto atau pilih gambar</span>
+                    <span className="text-[13px] text-muted-foreground">Ambil foto atau pilih gambar</span>
                     <input type="file" accept="image/*" onChange={handleProofSelect} className="sr-only" />
                   </label>
                 )}
               </div>
             )}
 
-            <p className="text-xs text-muted-foreground mt-4">
+            <p className="text-[12px] text-muted-foreground mt-4">
               Tagihan ditandai lunas dan tidak bisa dibatalkan dari sini. Pelanggan menerima bukti lunas lewat WhatsApp.
             </p>
 
@@ -747,13 +747,13 @@ export default function CollectorBillingPage() {
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="promise-title">
           <button type="button" aria-label="Tutup" className="absolute inset-0 bg-black/50" onClick={() => setPromiseModal(null)} />
           <div className="relative w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl border border-border bg-card p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] max-h-[90dvh] overflow-y-auto">
-            <h3 id="promise-title" className="text-lg font-bold text-foreground">Janji bayar</h3>
-            <p className="text-sm text-muted-foreground">{promiseModal.customerName}</p>
+            <h3 id="promise-title" className="text-[16px] font-bold text-foreground">Janji bayar</h3>
+            <p className="text-[13px] text-muted-foreground">{promiseModal.customerName}</p>
 
             {/* GPS is mandatory: it records that the visit happened here. */}
             <div
               className={cn(
-                'mt-4 rounded-xl p-3 flex items-center gap-2 text-sm',
+                'mt-4 rounded-xl p-3 flex items-center gap-2 text-[13px]',
                 gpsStatus === 'ok' ? 'bg-emerald-600/10 ' + toneText('green') : gpsStatus === 'denied' ? 'bg-red-600/10 ' + toneText('red') : 'bg-muted text-muted-foreground',
               )}
               role="status"
@@ -767,13 +767,13 @@ export default function CollectorBillingPage() {
                 {gpsStatus === 'denied' && 'Lokasi tidak didapat. Izinkan akses lokasi, lalu coba lagi.'}
               </span>
               {gpsStatus === 'denied' && (
-                <button type="button" onClick={captureGps} className="shrink-0 h-[36px] px-3 rounded-lg text-xs font-semibold underline">Coba lagi</button>
+                <button type="button" onClick={captureGps} className="shrink-0 h-[36px] px-3 rounded-lg text-[12px] font-semibold underline">Coba lagi</button>
               )}
             </div>
 
             <div className="mt-4 space-y-3">
               <div>
-                <label htmlFor="promise-date" className="block text-sm font-medium mb-1 text-foreground">Tanggal janji bayar</label>
+                <label htmlFor="promise-date" className="block text-[13px] font-medium mb-1 text-foreground">Tanggal janji bayar</label>
                 <input
                   id="promise-date"
                   type="date"
@@ -784,7 +784,7 @@ export default function CollectorBillingPage() {
                 />
               </div>
               <div>
-                <label htmlFor="promise-notes" className="block text-sm font-medium mb-1 text-foreground">Catatan <span className="font-normal text-muted-foreground">(opsional)</span></label>
+                <label htmlFor="promise-notes" className="block text-[13px] font-medium mb-1 text-foreground">Catatan <span className="font-normal text-muted-foreground">(opsional)</span></label>
                 <textarea
                   id="promise-notes"
                   value={promiseNotes}
@@ -796,7 +796,7 @@ export default function CollectorBillingPage() {
               </div>
             </div>
 
-            <p className="text-xs text-muted-foreground mt-3">
+            <p className="text-[12px] text-muted-foreground mt-3">
               Lokasi Anda dicatat sebagai bukti kunjungan. Internet pelanggan dibuka sampai tanggal janji.
             </p>
 

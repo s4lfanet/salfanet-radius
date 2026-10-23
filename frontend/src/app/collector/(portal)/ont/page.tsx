@@ -44,11 +44,11 @@ export default function CollectorOntPage() {
 
       <div className={cn(ui.card, 'p-4 mb-4 grid grid-cols-2 divide-x divide-border')}>
         <div className="pr-4">
-          <p className="text-xs text-muted-foreground">Bulan ini</p>
+          <p className="text-[12px] text-muted-foreground">Bulan ini</p>
           <p className="text-2xl font-extrabold tracking-tight text-foreground">{meta.thisMonth}</p>
         </div>
         <div className="pl-4">
-          <p className="text-xs text-muted-foreground">Bulan lalu</p>
+          <p className="text-[12px] text-muted-foreground">Bulan lalu</p>
           <p className="text-2xl font-extrabold tracking-tight text-foreground">{meta.lastMonth}</p>
         </div>
       </div>
@@ -66,12 +66,12 @@ export default function CollectorOntPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="font-medium text-foreground truncate">{r.fullname}</p>
-                  <p className="text-xs text-muted-foreground truncate">{[r.customerId || r.username, r.profileName, r.areaName].filter(Boolean).join(' · ')}</p>
+                  <p className="text-[12px] text-muted-foreground truncate">{[r.customerId || r.username, r.profileName, r.areaName].filter(Boolean).join(' · ')}</p>
                 </div>
-                <p className="text-xs text-muted-foreground shrink-0 text-right">{fmtWhen(r.removedAt)}</p>
+                <p className="text-[12px] text-muted-foreground shrink-0 text-right">{fmtWhen(r.removedAt)}</p>
               </div>
               {(r.address || r.notes) && (
-                <div className="mt-2 text-sm text-muted-foreground space-y-0.5">
+                <div className="mt-2 text-[13px] text-muted-foreground space-y-0.5">
                   {r.address && <p className="line-clamp-2">{r.address}</p>}
                   {r.notes && <p className="text-foreground">Catatan: {r.notes}</p>}
                 </div>

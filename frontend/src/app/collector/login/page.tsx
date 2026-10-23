@@ -89,19 +89,19 @@ export default function CollectorLoginPage() {
 
           <div className="text-center mb-6">
             <h1 className="text-xl font-bold text-foreground">{companyName || 'Portal Kolektor'}</h1>
-            <p className="text-sm text-muted-foreground mt-1">Masuk ke portal kolektor</p>
+            <p className="text-[13px] text-muted-foreground mt-1">Masuk ke portal kolektor</p>
           </div>
 
           <form onSubmit={handleLogin} className={cn(ui.card, 'p-5 space-y-4')} noValidate>
             {error && (
               <div className="p-3 rounded-xl bg-red-600/10 flex items-start gap-2" role="alert">
                 <AlertCircle className="w-4 h-4 text-red-700 dark:text-red-400 shrink-0 mt-0.5" />
-                <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+                <p className="text-[13px] text-red-700 dark:text-red-400">{error}</p>
               </div>
             )}
 
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-foreground mb-1">Username</label>
+              <label htmlFor="username" className="block text-[13px] font-medium text-foreground mb-1">Username</label>
               <input
                 id="username"
                 type="text"
@@ -116,7 +116,7 @@ export default function CollectorLoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-foreground mb-1">Password</label>
+              <label htmlFor="password" className="block text-[13px] font-medium text-foreground mb-1">Password</label>
               <div className="relative">
                 <input
                   id="password"
@@ -143,10 +143,10 @@ export default function CollectorLoginPage() {
             </button>
           </form>
 
-          <p className="text-center text-xs text-muted-foreground mt-6">
+          <p className="text-center text-[12px] text-muted-foreground mt-6">
             Lupa password? Minta admin menggantinya di Kelola Kolektor.
           </p>
-          {footerText && <p className="text-center text-xs text-muted-foreground mt-2">{footerText}</p>}
+          {footerText && <p className="text-center text-[12px] text-muted-foreground mt-2">{footerText}</p>}
         </div>
       </main>
     </div>
