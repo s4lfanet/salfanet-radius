@@ -2,13 +2,12 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
-import { X, Phone, MessageCircle, Navigation, MapPin, Copy, Check, ExternalLink, Map as MapIcon, LocateFixed, Loader2 } from 'lucide-react';
+import { X, Phone, MessageCircle, Navigation, MapPin, Copy, Check, Map as MapIcon, LocateFixed, Loader2 } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
 import { StatusPill, customerStatus, ui, fmtRp } from '@/components/collector/ui';
 import { mapsLinks } from './CustomerMap';
 import { cn } from '@/lib/utils';
 
-const CustomerMap = dynamic(() => import('./CustomerMap'), { ssr: false });
 const MapPicker = dynamic(() => import('@/components/MapPicker'), { ssr: false });
 
 export interface DetailCustomer {
@@ -220,27 +219,31 @@ export default function CustomerDetailSheet({
             )}
             {hasPoint && links ? (
               <>
-                <dl className="grid grid-cols-2 gap-2 mb-3">
-                  <div className={cn('rounded-xl border bg-background px-3 py-2', pending ? 'border-blue-600/60' : 'border-border')}>
-                    <dt className="text-xs text-muted-foreground">Latitude</dt>
-                    <dd className="text-sm font-semibold text-foreground tabular-nums">{lat!.toFixed(6)}</dd>
-                  </div>
-                  <div className={cn('rounded-xl border bg-background px-3 py-2', pending ? 'border-blue-600/60' : 'border-border')}>
-                    <dt className="text-xs text-muted-foreground">Longitude</dt>
-                    <dd className="text-sm font-semibold text-foreground tabular-nums">{lng!.toFixed(6)}</dd>
-                  </div>
-                </dl>
-                <div className="rounded-2xl border border-border overflow-hidden">
-                  <CustomerMap
-                    pin
-                    zoom={17}
-                    className="h-56 rounded-none border-0"
-                    points={[{ id: customer.id, name: customer.name || customer.username, subtitle: customer.address || undefined, lat: lat!, lng: lng!, tone: 'slate' }]}
+                {/* Read-only copy of the admin's GPS fields and OpenStreetMap preview. */}
+                <div className="grid grid-cols-2 gap-2">
+                  {[['Latitude', lat!], ['Longitude', lng!]].map(([label, value]) => (
+                    <div
+                      key={label as string}
+                      aria-label={label as string}
+                      className={cn('h-11 flex items-center rounded-xl border bg-background px-3 font-mono text-sm text-foreground tabular-nums', pending ? 'border-blue-600/60' : 'border-border')}
+                    >
+                      {(value as number).toFixed(6)}
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-1.5 text-xs text-muted-foreground">Latitude, Longitude</p>
+                <div className="mt-3 rounded-xl overflow-hidden border border-border">
+                  <iframe
+                    key={coords}
+                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${lng! - 0.005}%2C${lat! - 0.005}%2C${lng! + 0.005}%2C${lat! + 0.005}&layer=mapnik&marker=${lat}%2C${lng}`}
+                    className="w-full h-[220px] border-0 block"
+                    title={`Peta lokasi ${customer.name || customer.username}`}
+                    loading="lazy"
                   />
                   <div className="flex items-center justify-between gap-2 px-3 py-2 bg-muted/40 border-t border-border">
-                    <span className="text-xs text-muted-foreground tabular-nums">{coords}</span>
+                    <span className="font-mono text-xs text-muted-foreground">{coords}</span>
                     <a href={links.view} target="_blank" rel="noopener noreferrer" className="h-9 pointer-coarse:h-11 inline-flex items-center gap-1 text-xs font-medium text-blue-700 dark:text-blue-400 hover:underline">
-                      <ExternalLink className="w-3.5 h-3.5" /> Buka di Google Maps
+                      <MapPin className="w-3.5 h-3.5" /> Buka di Google Maps
                     </a>
                   </div>
                 </div>
