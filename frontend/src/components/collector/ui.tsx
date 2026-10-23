@@ -34,11 +34,11 @@ export const toneText = (t: Tone) => TONE_TEXT[t];
 export const ui = {
   card: 'rounded-2xl border border-border bg-card',
   input:
-    'w-full h-[40px] pointer-coarse:h-[44px] rounded-xl border border-border bg-card px-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-blue-600/60',
+    'w-full h-[40px] pointer-coarse:h-[44px] rounded-xl border border-border bg-card px-3 text-[13px] text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-blue-600/60',
   btnPrimary:
-    'inline-flex items-center justify-center gap-2 h-[40px] pointer-coarse:h-[44px] px-4 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+    'inline-flex items-center justify-center gap-2 h-[40px] pointer-coarse:h-[44px] px-4 rounded-xl bg-blue-600 text-white text-[13px] font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
   btnSecondary:
-    'inline-flex items-center justify-center gap-2 h-[40px] pointer-coarse:h-[44px] px-4 rounded-xl border border-border bg-card text-foreground text-sm font-medium hover:bg-muted disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
+    'inline-flex items-center justify-center gap-2 h-[40px] pointer-coarse:h-[44px] px-4 rounded-xl border border-border bg-card text-foreground text-[13px] font-medium hover:bg-muted disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
   iconBtn:
     'inline-flex items-center justify-center h-[40px] pointer-coarse:h-[44px] w-[40px] pointer-coarse:w-[44px] rounded-xl border border-border bg-card text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
 };
@@ -46,7 +46,7 @@ export const ui = {
 /** Segmented filter chip: selected one filled blue, the rest bordered. */
 export function chipClass(active: boolean) {
   return cn(
-    'shrink-0 h-[40px] px-3.5 rounded-xl text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
+    'shrink-0 h-[40px] px-3.5 rounded-xl text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
     active ? 'bg-blue-600 text-white' : 'border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground',
   );
 }
@@ -57,7 +57,7 @@ export function PageHeader({ title, description, actions }: { title: string; des
       <div className="min-w-0">
         {/* The top bar already shows the page title on every screen size. */}
         <h2 className="sr-only">{title}</h2>
-        {description && <p className="text-sm text-muted-foreground">{description}</p>}
+        {description && <p className="text-[13px] text-muted-foreground">{description}</p>}
       </div>
       {actions && <div className="flex items-center gap-2">{actions}</div>}
     </div>
@@ -74,7 +74,7 @@ export function IconBox({ tone = 'blue', children, size = 'md' }: { tone?: Tone;
 }
 
 export function StatusPill({ tone, children }: { tone: Tone; children: ReactNode }) {
-  return <span className={cn('inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-xs font-semibold', TONE_BG[tone], TONE_TEXT[tone])}>{children}</span>;
+  return <span className={cn('inline-flex shrink-0 items-center rounded-full px-2.5 py-0.5 text-[12px] font-semibold', TONE_BG[tone], TONE_TEXT[tone])}>{children}</span>;
 }
 
 /** Customer status as the panel shows it everywhere in the portal. */
@@ -87,7 +87,7 @@ export function customerStatus(status: string): { tone: Tone; label: string } {
 
 export function LoadingState({ label = 'Memuat data...' }: { label?: string }) {
   return (
-    <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground" role="status">
+    <div className="flex items-center justify-center gap-2 py-16 text-[13px] text-muted-foreground" role="status">
       <Loader2 className="h-4 w-4 animate-spin" /> {label}
     </div>
   );
@@ -98,8 +98,8 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
     <div className={cn(ui.card, 'flex flex-col items-center gap-3 p-6 text-center')} role="alert">
       <IconBox tone="red"><AlertTriangle className="h-5 w-5" /></IconBox>
       <div>
-        <p className="text-sm font-semibold text-foreground">Data gagal dimuat</p>
-        <p className="mt-1 text-sm text-muted-foreground">{message}</p>
+        <p className="text-[13px] font-semibold text-foreground">Data gagal dimuat</p>
+        <p className="mt-1 text-[13px] text-muted-foreground">{message}</p>
       </div>
       {onRetry && (
         <button type="button" onClick={onRetry} className={ui.btnSecondary}>
@@ -115,8 +115,8 @@ export function EmptyState({ icon, title, hint }: { icon: ReactNode; title: stri
     <div className={cn(ui.card, 'flex flex-col items-center gap-3 px-6 py-10 text-center')}>
       <IconBox tone="slate">{icon}</IconBox>
       <div>
-        <p className="text-sm font-semibold text-foreground">{title}</p>
-        {hint && <p className="mt-1 text-sm text-muted-foreground">{hint}</p>}
+        <p className="text-[13px] font-semibold text-foreground">{title}</p>
+        {hint && <p className="mt-1 text-[13px] text-muted-foreground">{hint}</p>}
       </div>
     </div>
   );

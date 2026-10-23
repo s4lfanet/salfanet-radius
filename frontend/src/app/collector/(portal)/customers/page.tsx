@@ -171,7 +171,7 @@ export default function CollectorCustomersPage() {
   const actions = (c: Customer, compact = false) => (
     <div className={cn('flex items-center gap-1.5', compact ? 'justify-end' : '')}>
       {c.unpaid_count > 0 && (
-        <Link href={`/collector/billing?q=${encodeURIComponent(c.username)}`} className={cn(ui.btnPrimary, 'h-[36px] px-3 text-xs pointer-coarse:h-[44px]')} title="Buka tagihan pelanggan ini">
+        <Link href={`/collector/billing?q=${encodeURIComponent(c.username)}`} className={cn(ui.btnPrimary, 'h-[36px] px-3 text-[12px] pointer-coarse:h-[44px]')} title="Buka tagihan pelanggan ini">
           <Receipt className="w-3.5 h-3.5" /> Tagih
         </Link>
       )}
@@ -233,7 +233,7 @@ export default function CollectorCustomersPage() {
         <EmptyState icon={<Search className="w-5 h-5" />} title="Tidak ada yang cocok" hint="Ubah kata kunci atau pilih filter Semua." />
       ) : (
         <>
-          <div className="flex items-center justify-between gap-3 mb-2 text-sm">
+          <div className="flex items-center justify-between gap-3 mb-2 text-[13px]">
             <p className="text-muted-foreground">
               {filtered.length} pelanggan
               {totalUnpaid > 0 && <> · tunggakan <span className={cn('font-semibold', toneText('red'))}>{fmtRp(totalUnpaid)}</span></>}
@@ -242,7 +242,7 @@ export default function CollectorCustomersPage() {
               {view === 'table' && (
                 <label className="hidden md:flex items-center gap-2 text-muted-foreground">
                   Baris per halaman
-                  <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))} className="h-[36px] rounded-xl border border-border bg-card px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
+                  <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))} className="h-[36px] rounded-xl border border-border bg-card px-2 text-[13px] text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
                     {[25, 50, 100].map((n) => <option key={n} value={n}>{n}</option>)}
                   </select>
                 </label>
@@ -255,7 +255,7 @@ export default function CollectorCustomersPage() {
                     aria-pressed={view === key}
                     onClick={() => setView(key)}
                     className={cn(
-                      'h-[36px] pointer-coarse:h-[44px] px-3 inline-flex items-center gap-1.5 rounded-lg text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
+                      'h-[36px] pointer-coarse:h-[44px] px-3 inline-flex items-center gap-1.5 rounded-lg text-[13px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
                       view === key ? 'bg-blue-600 text-white' : 'text-muted-foreground hover:text-foreground',
                     )}
                   >
@@ -271,7 +271,7 @@ export default function CollectorCustomersPage() {
               {mapPoints.length > 0 ? (
                 <>
                   <CustomerMap points={mapPoints} onSelect={setDetailId} selectedId={detailId} className="h-[60dvh] min-h-[360px]" />
-                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-muted-foreground">
                     <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#DC2626]" aria-hidden /> Ada tunggakan atau isolir</span>
                     <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#059669]" aria-hidden /> Aktif, tanpa tunggakan</span>
                     <span>Ketuk titik untuk melihat detail pelanggan.</span>
@@ -281,15 +281,15 @@ export default function CollectorCustomersPage() {
                 <EmptyState icon={<MapPin className="w-5 h-5" />} title="Belum ada pelanggan dengan koordinat" hint="Koordinat diisi admin atau teknisi di data pelanggan." />
               )}
               {filtered.length > mapPoints.length && mapPoints.length > 0 && (
-                <p className="mt-1 text-xs text-muted-foreground">{filtered.length - mapPoints.length} pelanggan belum punya koordinat dan tidak tampil di peta.</p>
+                <p className="mt-1 text-[12px] text-muted-foreground">{filtered.length - mapPoints.length} pelanggan belum punya koordinat dan tidak tampil di peta.</p>
               )}
             </section>
           ) : (
           <>
           {/* Table: tablets and up */}
           <div className={cn(ui.card, 'hidden md:block overflow-x-auto')}>
-            <table className="w-full text-sm">
-              <thead className="border-b border-border bg-muted/50 text-xs text-muted-foreground">
+            <table className="w-full text-[13px]">
+              <thead className="border-b border-border bg-muted/50 text-[12px] text-muted-foreground">
                 <tr>
                   <SortHead k="customerId" className="w-36">No. Layanan</SortHead>
                   <SortHead k="name">Pelanggan</SortHead>
@@ -308,37 +308,37 @@ export default function CollectorCustomersPage() {
                   const st = customerStatus(c.status);
                   return (
                     <tr key={c.id} className="hover:bg-muted/40 align-top">
-                      <td className="px-3 py-3 text-xs text-muted-foreground tabular-nums">
+                      <td className="px-3 py-3 text-[12px] text-muted-foreground tabular-nums">
                         <p className="text-foreground font-medium">{c.customerId || '-'}</p>
                         <p className="break-all">{c.username}</p>
                       </td>
                       <td className="px-3 py-3 min-w-[12rem]">
                         {nameButton(c)}
-                        {c.address && <p className="text-xs text-muted-foreground line-clamp-1 max-w-xs" title={c.address}>{c.address}</p>}
+                        {c.address && <p className="text-[12px] text-muted-foreground line-clamp-1 max-w-xs" title={c.address}>{c.address}</p>}
                         {/* Columns hidden below lg/xl fold into the name cell. */}
-                        <p className="text-xs text-muted-foreground lg:hidden">{[c.profile?.name, c.phone].filter(Boolean).join(' · ')}</p>
+                        <p className="text-[12px] text-muted-foreground lg:hidden">{[c.profile?.name, c.phone].filter(Boolean).join(' · ')}</p>
                       </td>
                       <td className="px-3 py-3 hidden lg:table-cell">
                         {c.profile ? (
                           <>
                             <p className="text-foreground">{c.profile.name}</p>
-                            <p className="text-xs text-muted-foreground">{fmtRp(c.profile.price)}/bln</p>
+                            <p className="text-[12px] text-muted-foreground">{fmtRp(c.profile.price)}/bln</p>
                           </>
                         ) : <span className="text-muted-foreground">-</span>}
                       </td>
                       <td className="px-3 py-3 hidden xl:table-cell">
                         <p className="text-foreground">{c.router?.name || '-'}</p>
-                        <p className="text-xs text-muted-foreground">{c.area?.name || '-'}</p>
+                        <p className="text-[12px] text-muted-foreground">{c.area?.name || '-'}</p>
                       </td>
                       <td className="px-3 py-3 hidden lg:table-cell whitespace-nowrap">
                         {c.latitude != null && c.longitude != null ? (
                           <>
-                            <p className="text-xs text-muted-foreground tabular-nums">{c.latitude.toFixed(5)}, {c.longitude.toFixed(5)}</p>
-                            <a href={mapsLinks(c.latitude, c.longitude).directions} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 dark:text-blue-400 hover:underline">
+                            <p className="text-[12px] text-muted-foreground tabular-nums">{c.latitude.toFixed(5)}, {c.longitude.toFixed(5)}</p>
+                            <a href={mapsLinks(c.latitude, c.longitude).directions} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[12px] font-medium text-blue-700 dark:text-blue-400 hover:underline">
                               <Navigation className="w-3 h-3" /> Rute
                             </a>
                           </>
-                        ) : <span className="text-xs text-muted-foreground">Belum ada</span>}
+                        ) : <span className="text-[12px] text-muted-foreground">Belum ada</span>}
                       </td>
                       <td className="px-3 py-3 hidden lg:table-cell text-muted-foreground whitespace-nowrap">{c.phone || '-'}</td>
                       <td className="px-3 py-3 hidden xl:table-cell text-muted-foreground whitespace-nowrap">{fmtDate(c.expiredAt)}</td>
@@ -347,7 +347,7 @@ export default function CollectorCustomersPage() {
                         {c.unpaid_count > 0 ? (
                           <>
                             <p className={cn('font-semibold', toneText('red'))}>{fmtRp(c.unpaid_amount)}</p>
-                            <p className="text-xs text-muted-foreground">{c.unpaid_count} tagihan</p>
+                            <p className="text-[12px] text-muted-foreground">{c.unpaid_count} tagihan</p>
                           </>
                         ) : <span className="text-muted-foreground">-</span>}
                       </td>
@@ -368,11 +368,11 @@ export default function CollectorCustomersPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       {nameButton(c, 'block truncate max-w-full')}
-                      <p className="text-xs text-muted-foreground truncate">{[c.customerId, c.username].filter(Boolean).join(' · ')}</p>
+                      <p className="text-[12px] text-muted-foreground truncate">{[c.customerId, c.username].filter(Boolean).join(' · ')}</p>
                     </div>
                     <StatusPill tone={st.tone}>{st.label}</StatusPill>
                   </div>
-                  <div className="mt-3 grid grid-cols-1 gap-y-1.5 text-sm text-muted-foreground">
+                  <div className="mt-3 grid grid-cols-1 gap-y-1.5 text-[13px] text-muted-foreground">
                     {c.profile && <span className="flex items-center gap-2 min-w-0"><Wifi className="w-4 h-4 shrink-0" /><span className="truncate">{c.profile.name} · {fmtRp(c.profile.price)}</span></span>}
                     {(c.area || c.router) && (
                       <span className="flex items-center gap-2 min-w-0">
@@ -387,12 +387,12 @@ export default function CollectorCustomersPage() {
                     <button type="button" onClick={() => setDetailId(c.id)} className={cn(ui.btnSecondary, 'h-[40px]')}>Detail</button>
                     {c.latitude != null && c.longitude != null
                       ? <a href={mapsLinks(c.latitude, c.longitude).directions} target="_blank" rel="noopener noreferrer" className={cn(ui.btnSecondary, 'h-[40px]')}><Navigation className="w-4 h-4" /> Rute</a>
-                      : <span className="h-[40px] inline-flex items-center justify-center rounded-xl bg-muted text-xs text-muted-foreground">Belum ada koordinat</span>}
+                      : <span className="h-[40px] inline-flex items-center justify-center rounded-xl bg-muted text-[12px] text-muted-foreground">Belum ada koordinat</span>}
                   </div>
                   <div className="mt-3 pt-3 border-t border-border flex items-center justify-between gap-3">
                     {c.unpaid_count > 0
-                      ? <p className={cn('text-sm font-semibold', toneText('red'))}>{fmtRp(c.unpaid_amount)} <span className="font-normal text-muted-foreground">· {c.unpaid_count} tagihan</span></p>
-                      : <p className="text-sm text-muted-foreground">Tidak ada tunggakan</p>}
+                      ? <p className={cn('text-[13px] font-semibold', toneText('red'))}>{fmtRp(c.unpaid_amount)} <span className="font-normal text-muted-foreground">· {c.unpaid_count} tagihan</span></p>
+                      : <p className="text-[13px] text-muted-foreground">Tidak ada tunggakan</p>}
                     {actions(c, true)}
                   </div>
                 </li>
@@ -402,14 +402,14 @@ export default function CollectorCustomersPage() {
 
           {pages > 1 && (
             <nav className="mt-4 flex items-center justify-between gap-3" aria-label="Halaman">
-              <p className="text-sm text-muted-foreground">
+              <p className="text-[13px] text-muted-foreground">
                 {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, filtered.length)} dari {filtered.length}
               </p>
               <div className="flex items-center gap-2">
                 <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} aria-label="Halaman sebelumnya" className={cn(ui.iconBtn, 'disabled:opacity-40')}>
                   <ChevronLeft className="w-4 h-4" />
                 </button>
-                <span className="text-sm font-medium text-foreground tabular-nums">{page} / {pages}</span>
+                <span className="text-[13px] font-medium text-foreground tabular-nums">{page} / {pages}</span>
                 <button type="button" onClick={() => setPage((p) => Math.min(pages, p + 1))} disabled={page === pages} aria-label="Halaman berikutnya" className={cn(ui.iconBtn, 'disabled:opacity-40')}>
                   <ChevronRight className="w-4 h-4" />
                 </button>
@@ -432,8 +432,8 @@ export default function CollectorCustomersPage() {
           ) : undefined}
         >
           <section aria-labelledby="bill-title">
-            <h4 id="bill-title" className="text-sm font-semibold text-foreground mb-1">Tagihan</h4>
-            <p className="text-sm text-muted-foreground">
+            <h4 id="bill-title" className="text-[13px] font-semibold text-foreground mb-1">Tagihan</h4>
+            <p className="text-[13px] text-muted-foreground">
               {detail.unpaid_count > 0
                 ? <><span className={cn('font-semibold', toneText('red'))}>{fmtRp(detail.unpaid_amount)}</span> belum dibayar dari {detail.unpaid_count} tagihan.</>
                 : 'Tidak ada tagihan yang belum dibayar.'}

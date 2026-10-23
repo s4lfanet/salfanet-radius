@@ -119,7 +119,7 @@ export default function CollectorProofsPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-semibold text-foreground truncate">{p.fullname || p.username}</p>
-                    <p className="text-xs text-muted-foreground truncate">
+                    <p className="text-[12px] text-muted-foreground truncate">
                       {[p.customerId || p.username, p.profileName, p.areaName].filter(Boolean).join(' · ')}
                     </p>
                   </div>
@@ -129,16 +129,16 @@ export default function CollectorProofsPage() {
                 </div>
                 <div className="mt-3 flex items-end justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-foreground">{fmtRp(p.amount)}</p>
-                    <p className="text-xs text-muted-foreground">#{p.invoice_number} · dikirim {fmtDate(p.submitted_at)}</p>
-                    {p.is_my_upload && <p className="text-xs text-muted-foreground">Diunggah oleh Anda</p>}
+                    <p className="text-[13px] font-bold text-foreground">{fmtRp(p.amount)}</p>
+                    <p className="text-[12px] text-muted-foreground">#{p.invoice_number} · dikirim {fmtDate(p.submitted_at)}</p>
+                    {p.is_my_upload && <p className="text-[12px] text-muted-foreground">Diunggah oleh Anda</p>}
                   </div>
                   <button type="button" onClick={() => setViewImage(p.proof_image)} className={cn(ui.btnSecondary, 'h-[40px] shrink-0')}>
                     <Eye className="w-4 h-4" /> Lihat bukti
                   </button>
                 </div>
                 {p.status === 'rejected' && p.reject_reason && (
-                  <p className="mt-3 pt-3 border-t border-border text-sm text-red-700 dark:text-red-400">Alasan ditolak: {p.reject_reason}</p>
+                  <p className="mt-3 pt-3 border-t border-border text-[13px] text-red-700 dark:text-red-400">Alasan ditolak: {p.reject_reason}</p>
                 )}
               </li>
             ))}
