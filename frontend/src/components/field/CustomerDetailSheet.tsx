@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
-import { X, Phone, MessageCircle, Navigation, MapPin, Copy, Check, Map as MapIcon, LocateFixed, Loader2 } from 'lucide-react';
+import { X, Phone, MessageCircle, Navigation, MapPin, Copy, Check, ExternalLink, Map as MapIcon, LocateFixed, Loader2 } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
 import { StatusPill, customerStatus, ui, fmtRp } from '@/components/collector/ui';
 import { mapsLinks } from './CustomerMap';
@@ -76,11 +76,18 @@ export default function CustomerDetailSheet({
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const st = customerStatus(customer.status);
-  const lat = pending?.lat ?? customer.latitude ?? null;
-  const lng = pending?.lng ?? customer.longitude ?? null;
+  // Coordinates can arrive as strings (older API builds, form input); doing
+  // arithmetic on a string concatenates, which threw the map off its pin.
+  const num = (v: unknown) => (v === null || v === undefined || v === '' ? null : Number.isFinite(Number(v)) ? Number(v) : null);
+  const lat = num(pending?.lat ?? customer.latitude);
+  const lng = num(pending?.lng ?? customer.longitude);
   const hasPoint = lat != null && lng != null;
   const coords = hasPoint ? `${lat!.toFixed(6)}, ${lng!.toFixed(6)}` : '';
   const links = hasPoint ? mapsLinks(lat!, lng!) : null;
+  // OpenStreetMap embed (as in the admin), framed tightly around the pin so it sits in the middle.
+  const osmSrc = hasPoint
+    ? `https://www.openstreetmap.org/export/embed.html?bbox=${(lng! - 0.003).toFixed(6)}%2C${(lat! - 0.002).toFixed(6)}%2C${(lng! + 0.003).toFixed(6)}%2C${(lat! + 0.002).toFixed(6)}&layer=mapnik&marker=${lat!.toFixed(6)}%2C${lng!.toFixed(6)}`
+    : '';
 
   useEffect(() => {
     closeRef.current?.focus();
@@ -154,48 +161,56 @@ export default function CustomerDetailSheet({
   const speed = customer.profile?.downloadSpeed ? ` · ${customer.profile.downloadSpeed}/${customer.profile.uploadSpeed ?? '-'} Mbps` : '';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-stretch md:justify-end" role="dialog" aria-modal="true" aria-labelledby="customer-detail-title">
+    // Compact: a centred dialog on wide screens, a bottom sheet on phones;
+    // never taller than 85% of the screen.
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="customer-detail-title">
       <button type="button" aria-label="Tutup" className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative w-full md:w-[440px] max-h-[92dvh] md:max-h-none md:h-full overflow-y-auto rounded-t-2xl md:rounded-none border border-border bg-card pb-[env(safe-area-inset-bottom)]">
-        <div className="sticky top-0 z-10 bg-card border-b border-border px-5 py-4 flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h3 id="customer-detail-title" className="text-lg font-bold text-foreground truncate">{customer.name || customer.username}</h3>
+      <div className="relative w-full sm:max-w-[480px] max-h-[85dvh] overflow-y-auto rounded-t-2xl sm:rounded-2xl border border-border bg-card pb-[env(safe-area-inset-bottom)]">
+        <div className="sticky top-0 z-10 bg-card border-b border-border pl-5 pr-2 py-3 flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 min-w-0">
+              <h3 id="customer-detail-title" className="text-base font-bold text-foreground truncate">{customer.name || customer.username}</h3>
+              <StatusPill tone={st.tone}>{st.label}</StatusPill>
+            </div>
             <p className="text-xs text-muted-foreground truncate">{[customer.customerId, customer.username].filter(Boolean).join(' · ')}</p>
-            <div className="mt-2"><StatusPill tone={st.tone}>{st.label}</StatusPill></div>
           </div>
+          {customer.phone && (
+            <>
+              <a href={`tel:${customer.phone}`} aria-label="Telepon pelanggan" className="h-11 w-11 shrink-0 flex items-center justify-center rounded-xl hover:bg-muted text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
+                <Phone className="w-5 h-5" />
+              </a>
+              <a href={`https://wa.me/${waNumber(customer.phone)}`} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp pelanggan" className="h-11 w-11 shrink-0 flex items-center justify-center rounded-xl hover:bg-muted text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
+                <MessageCircle className="w-5 h-5" />
+              </a>
+            </>
+          )}
           <button ref={closeRef} type="button" onClick={onClose} aria-label="Tutup detail" className="h-11 w-11 shrink-0 flex items-center justify-center rounded-xl hover:bg-muted text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="px-5 py-4 space-y-5">
-          {(customer.phone || actions) && (
-            <div className="flex flex-wrap gap-2">
-              {actions}
-              {customer.phone && (
-                <>
-                  <a href={`tel:${customer.phone}`} className={cn(ui.btnSecondary, 'flex-1')}><Phone className="w-4 h-4" /> Telepon</a>
-                  <a href={`https://wa.me/${waNumber(customer.phone)}`} target="_blank" rel="noopener noreferrer" className={cn(ui.btnSecondary, 'flex-1')}><MessageCircle className="w-4 h-4" /> WhatsApp</a>
-                </>
-              )}
-            </div>
-          )}
+          {actions && <div className="flex">{actions}</div>}
 
           {/* Same layout as the admin's customer detail: address, latitude and
               longitude, a map with a pin on the customer, then the link out. */}
           <section aria-labelledby="loc-title">
-            <h4 id="loc-title" className="text-sm font-semibold text-foreground mb-2">Lokasi GPS</h4>
-            {customer.address && <p className="text-sm text-foreground mb-3 flex items-start gap-2"><MapPin className="w-4 h-4 mt-0.5 shrink-0 text-muted-foreground" />{customer.address}</p>}
-            {onSaveLocation && (
-              <div className="mb-3 space-y-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <button type="button" onClick={() => { setSaveError(null); setPickerOpen(true); }} className={ui.btnSecondary}>
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <h4 id="loc-title" className="text-sm font-semibold text-foreground">Lokasi GPS</h4>
+              {onSaveLocation && (
+                <div className="flex items-center gap-1">
+                  <button type="button" onClick={() => { setSaveError(null); setPickerOpen(true); }} className="h-9 pointer-coarse:h-11 px-2.5 inline-flex items-center gap-1.5 rounded-lg text-xs font-medium text-blue-700 dark:text-blue-400 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
                     <MapIcon className="w-4 h-4" /> Pilih di Peta
                   </button>
-                  <button type="button" onClick={readGps} disabled={gpsState === 'reading'} className={ui.btnSecondary}>
+                  <button type="button" onClick={readGps} disabled={gpsState === 'reading'} className="h-9 pointer-coarse:h-11 px-2.5 inline-flex items-center gap-1.5 rounded-lg text-xs font-medium text-blue-700 dark:text-blue-400 hover:bg-muted disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
                     {gpsState === 'reading' ? <Loader2 className="w-4 h-4 animate-spin" /> : <LocateFixed className="w-4 h-4" />} GPS Auto
                   </button>
                 </div>
+              )}
+            </div>
+            {customer.address && <p className="text-sm text-muted-foreground mb-2 flex items-start gap-2"><MapPin className="w-4 h-4 mt-0.5 shrink-0" />{customer.address}</p>}
+            {onSaveLocation && (
+              <div className="mb-2 space-y-2">
                 {gpsState !== 'idle' && gpsState !== 'reading' && (
                   <p className="text-sm text-amber-700 dark:text-amber-400" role="status">{gpsState}</p>
                 )}
@@ -218,42 +233,35 @@ export default function CustomerDetailSheet({
               </div>
             )}
             {hasPoint && links ? (
-              <>
-                {/* Read-only copy of the admin's GPS fields and OpenStreetMap preview. */}
-                <div className="grid grid-cols-2 gap-2">
-                  {[['Latitude', lat!], ['Longitude', lng!]].map(([label, value]) => (
-                    <div
-                      key={label as string}
-                      aria-label={label as string}
-                      className={cn('h-11 flex items-center rounded-xl border bg-background px-3 font-mono text-sm text-foreground tabular-nums', pending ? 'border-blue-600/60' : 'border-border')}
-                    >
-                      {(value as number).toFixed(6)}
-                    </div>
-                  ))}
-                </div>
-                <p className="mt-1.5 text-xs text-muted-foreground">Latitude, Longitude</p>
-                <div className="mt-3 rounded-xl overflow-hidden border border-border">
-                  <iframe
-                    key={coords}
-                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${lng! - 0.005}%2C${lat! - 0.005}%2C${lng! + 0.005}%2C${lat! + 0.005}&layer=mapnik&marker=${lat}%2C${lng}`}
-                    className="w-full h-[220px] border-0 block"
-                    title={`Peta lokasi ${customer.name || customer.username}`}
-                    loading="lazy"
-                  />
-                  <div className="flex items-center justify-between gap-2 px-3 py-2 bg-muted/40 border-t border-border">
-                    <span className="font-mono text-xs text-muted-foreground">{coords}</span>
-                    <a href={links.view} target="_blank" rel="noopener noreferrer" className="h-9 pointer-coarse:h-11 inline-flex items-center gap-1 text-xs font-medium text-blue-700 dark:text-blue-400 hover:underline">
-                      <MapPin className="w-3.5 h-3.5" /> Buka di Google Maps
-                    </a>
-                  </div>
-                </div>
-                <div className="mt-2 grid grid-cols-2 gap-2">
-                  <a href={links.directions} target="_blank" rel="noopener noreferrer" className={ui.btnPrimary}><Navigation className="w-4 h-4" /> Navigasi ke sini</a>
-                  <button type="button" onClick={copy} className={ui.btnSecondary}>
-                    {copied === 'ok' ? <><Check className="w-4 h-4" /> Tersalin</> : copied === 'fail' ? 'Gagal, salin manual' : <><Copy className="w-4 h-4" /> Salin koordinat</>}
+              // One card: the admin's OpenStreetMap preview with the pin, then
+              // latitude / longitude once, with copy and Google Maps beside them.
+              <div className={cn('rounded-xl overflow-hidden border', pending ? 'border-blue-600/60' : 'border-border')}>
+                <iframe
+                  key={osmSrc}
+                  src={osmSrc}
+                  className="w-full h-44 border-0 block"
+                  title={`Peta lokasi ${customer.name || customer.username}`}
+                  loading="lazy"
+                />
+                <div className="flex items-center gap-1 pl-3 pr-1 py-1 border-t border-border bg-muted/40">
+                  <dl className="flex-1 min-w-0 grid grid-cols-2 gap-x-3 font-mono text-xs tabular-nums">
+                    <div className="min-w-0"><dt className="sr-only">Latitude</dt><dd aria-label="Latitude" className="text-foreground truncate"><span className="text-muted-foreground">Lat </span>{lat!.toFixed(6)}</dd></div>
+                    <div className="min-w-0"><dt className="sr-only">Longitude</dt><dd aria-label="Longitude" className="text-foreground truncate"><span className="text-muted-foreground">Lng </span>{lng!.toFixed(6)}</dd></div>
+                  </dl>
+                  <button type="button" onClick={copy} aria-label={copied === 'ok' ? 'Koordinat tersalin' : 'Salin koordinat'} title="Salin koordinat" className="h-10 w-10 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
+                    {copied === 'ok' ? <Check className="w-4 h-4 text-emerald-700 dark:text-emerald-400" /> : <Copy className="w-4 h-4" />}
                   </button>
+                  <a href={links.view} target="_blank" rel="noopener noreferrer" aria-label="Buka di Google Maps" title="Buka di Google Maps" className="h-10 w-10 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
                 </div>
-              </>
+                {copied === 'fail' && <p className="px-3 pb-2 text-xs text-amber-700 dark:text-amber-400" role="status">Tidak bisa menyalin otomatis. Tekan lama koordinat untuk menyalin.</p>}
+                <div className="p-2 border-t border-border">
+                  <a href={links.directions} target="_blank" rel="noopener noreferrer" className={cn(ui.btnPrimary, 'w-full')}>
+                    <Navigation className="w-4 h-4" /> Navigasi ke lokasi
+                  </a>
+                </div>
+              </div>
             ) : (
               <p className="text-sm text-muted-foreground rounded-xl bg-muted p-3">
                 {onSaveLocation ? 'Koordinat belum diisi. Pakai Pilih di Peta atau GPS Auto di atas.' : 'Koordinat belum diisi. Admin atau teknisi bisa menambahkannya di data pelanggan.'}
