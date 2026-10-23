@@ -39,7 +39,7 @@ const waNumber = (phone: string) => {
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex items-start justify-between gap-4 py-2">
+    <div className="flex items-start justify-between gap-4 py-1.5">
       <dt className="text-sm text-muted-foreground shrink-0">{label}</dt>
       <dd className="text-sm text-foreground text-right min-w-0 break-words">{children}</dd>
     </div>
@@ -165,7 +165,7 @@ export default function CustomerDetailSheet({
     // never taller than 85% of the screen.
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="customer-detail-title">
       <button type="button" aria-label="Tutup" className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative w-full sm:max-w-[480px] max-h-[85dvh] overflow-y-auto rounded-t-2xl sm:rounded-2xl border border-border bg-card pb-[env(safe-area-inset-bottom)]">
+      <div className="relative w-full sm:max-w-[480px] md:max-w-[860px] max-h-[85dvh] sm:max-h-[calc(100dvh-4rem)] overflow-y-auto rounded-t-2xl sm:rounded-2xl border border-border bg-card pb-[env(safe-area-inset-bottom)]">
         <div className="sticky top-0 z-10 bg-card border-b border-border pl-5 pr-2 py-3 flex items-center gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 min-w-0">
@@ -189,12 +189,14 @@ export default function CustomerDetailSheet({
           </button>
         </div>
 
-        <div className="px-5 py-4 space-y-5">
-          {actions && <div className="flex">{actions}</div>}
+        {/* Wide screens: map on the left, details on the right, so the dialog
+            stays short enough to see whole. Phones: one column. */}
+        <div className="px-5 py-4 grid gap-5 md:grid-cols-2 md:gap-6">
+          {actions && <div className="flex md:col-span-2">{actions}</div>}
 
           {/* Same layout as the admin's customer detail: address, latitude and
               longitude, a map with a pin on the customer, then the link out. */}
-          <section aria-labelledby="loc-title">
+          <section aria-labelledby="loc-title" className="min-w-0">
             <div className="flex items-center justify-between gap-2 mb-2">
               <h4 id="loc-title" className="text-sm font-semibold text-foreground">Lokasi GPS</h4>
               {onSaveLocation && (
@@ -278,29 +280,22 @@ export default function CustomerDetailSheet({
             />
           )}
 
-          <section aria-labelledby="svc-title">
-            <h4 id="svc-title" className="text-sm font-semibold text-foreground mb-1">Layanan</h4>
-            <dl className="divide-y divide-border">
-              <Row label="Paket">{customer.profile ? `${customer.profile.name} · ${fmtRp(customer.profile.price)}/bln${speed}` : '-'}</Row>
-              <Row label="Router/NAS">{customer.router?.name || '-'}</Row>
-              <Row label="Area">{customer.area?.name || '-'}</Row>
-              <Row label="Tipe">{customer.subscriptionType === 'POSTPAID' ? 'Pascabayar' : customer.subscriptionType ? 'Prabayar' : '-'}{customer.connectionType ? ` · ${customer.connectionType}` : ''}</Row>
-              <Row label="Aktif s/d">{fmtDate(customer.expiredAt)}</Row>
-              {customer.installDate !== undefined && <Row label="Tanggal pasang">{fmtDate(customer.installDate)}</Row>}
-            </dl>
-          </section>
-
-          {(customer.phone || customer.email) && (
-            <section aria-labelledby="contact-title">
-              <h4 id="contact-title" className="text-sm font-semibold text-foreground mb-1">Kontak</h4>
+          <div className="min-w-0 space-y-4">
+            <section aria-labelledby="svc-title">
+              <h4 id="svc-title" className="text-sm font-semibold text-foreground mb-1">Data pelanggan</h4>
               <dl className="divide-y divide-border">
+                <Row label="Paket">{customer.profile ? `${customer.profile.name} · ${fmtRp(customer.profile.price)}/bln${speed}` : '-'}</Row>
+                <Row label="Router/NAS">{customer.router?.name || '-'}</Row>
+                <Row label="Area">{customer.area?.name || '-'}</Row>
+                <Row label="Tipe">{customer.subscriptionType === 'POSTPAID' ? 'Pascabayar' : customer.subscriptionType ? 'Prabayar' : '-'}{customer.connectionType ? ` · ${customer.connectionType}` : ''}</Row>
+                <Row label="Aktif s/d">{fmtDate(customer.expiredAt)}</Row>
+                {customer.installDate !== undefined && <Row label="Tanggal pasang">{fmtDate(customer.installDate)}</Row>}
                 {customer.phone && <Row label="Telepon">{customer.phone}</Row>}
                 {customer.email && <Row label="Email">{customer.email}</Row>}
               </dl>
             </section>
-          )}
-
-          {children}
+            {children}
+          </div>
         </div>
       </div>
     </div>
