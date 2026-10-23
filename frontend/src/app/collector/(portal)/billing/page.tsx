@@ -400,13 +400,13 @@ export default function CollectorBillingPage() {
 
               {!paid ? (
                 <div className="mt-3 md:mt-0 grid grid-cols-2 gap-2 sm:flex sm:items-center sm:justify-end md:shrink-0">
-                  <button type="button" onClick={() => openPromiseModal(u.id, inv.id, u.name)} className={cn(ui.btnSecondary, 'h-10 px-3.5')}>
+                  <button type="button" onClick={() => openPromiseModal(u.id, inv.id, u.name)} className={cn(ui.btnSecondary, 'h-10 px-3.5 pointer-coarse:h-11')}>
                     <CalendarClock className="w-4 h-4 text-amber-700 dark:text-amber-400" /> Janji bayar
                   </button>
-                  <button type="button" onClick={() => openPay(inv, u, 'transfer')} className={cn(ui.btnSecondary, 'h-10 px-3.5')}>
+                  <button type="button" onClick={() => openPay(inv, u, 'transfer')} className={cn(ui.btnSecondary, 'h-10 px-3.5 pointer-coarse:h-11')}>
                     <Upload className="w-4 h-4 text-muted-foreground" /> Transfer
                   </button>
-                  <button type="button" onClick={() => openPay(inv, u, 'cash')} className={cn(ui.btnPrimary, 'h-10 px-3.5 col-span-2 sm:col-span-1')}>
+                  <button type="button" onClick={() => openPay(inv, u, 'cash')} className={cn(ui.btnPrimary, 'h-10 px-3.5 pointer-coarse:h-11 col-span-2 sm:col-span-1')}>
                     <Wallet className="w-4 h-4" /> Lunas tunai
                   </button>
                 </div>
@@ -585,7 +585,7 @@ export default function CollectorBillingPage() {
                             type="button"
                             onClick={() => setExpandedUser(open ? null : u.id)}
                             aria-expanded={open}
-                            className={cn(open || u.is_paid ? ui.btnSecondary : ui.btnPrimary, 'h-9 w-24 px-0 text-sm pointer-coarse:h-11')}
+                            className={cn(open || u.is_paid ? ui.btnSecondary : ui.btnPrimary, 'h-10 w-24 px-0 text-sm pointer-coarse:h-11')}
                           >
                             {open ? 'Tutup' : u.is_paid ? 'Lihat' : 'Tagih'}
                             <ChevronDown className={cn('w-4 h-4 transition-transform', open && 'rotate-180')} />

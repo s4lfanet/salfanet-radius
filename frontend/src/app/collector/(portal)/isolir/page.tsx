@@ -85,10 +85,10 @@ export default function CollectorIsolirPage() {
                 <p className="mt-0.5 text-xs text-muted-foreground break-words">#{inv.invoiceNumber} · jatuh tempo {fmtDate(inv.dueDate)}</p>
               </div>
               <div className="mt-3 md:mt-0 grid grid-cols-2 gap-2 sm:flex sm:items-center sm:justify-end md:shrink-0">
-                <button type="button" onClick={() => openPayModal(inv, u.name, 'transfer')} className={cn(ui.btnSecondary, 'h-10 px-3.5')}>
+                <button type="button" onClick={() => openPayModal(inv, u.name, 'transfer')} className={cn(ui.btnSecondary, 'h-10 px-3.5 pointer-coarse:h-11')}>
                   <Upload className="w-4 h-4 text-muted-foreground" /> Transfer
                 </button>
-                <button type="button" onClick={() => openPayModal(inv, u.name, 'cash')} className={cn(ui.btnPrimary, 'h-10 px-3.5')}>
+                <button type="button" onClick={() => openPayModal(inv, u.name, 'cash')} className={cn(ui.btnPrimary, 'h-10 px-3.5 pointer-coarse:h-11')}>
                   <Wallet className="w-4 h-4" /> Lunas tunai
                 </button>
               </div>
@@ -278,7 +278,7 @@ export default function CollectorIsolirPage() {
                           ) : <p className={cn('font-semibold', toneText('green'))}>Lunas</p>}
                         </td>
                         <td className="px-3 py-3 text-right">
-                          <button type="button" onClick={() => setExpandedUser(open ? null : u.id)} aria-expanded={open} className={cn(open ? ui.btnSecondary : ui.btnPrimary, 'h-9 w-24 px-0 text-sm pointer-coarse:h-11')}>
+                          <button type="button" onClick={() => setExpandedUser(open ? null : u.id)} aria-expanded={open} className={cn(open ? ui.btnSecondary : ui.btnPrimary, 'h-10 w-24 px-0 text-sm pointer-coarse:h-11')}>
                             {open ? 'Tutup' : 'Tindak'}
                             <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', open && 'rotate-180')} />
                           </button>
