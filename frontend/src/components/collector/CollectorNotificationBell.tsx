@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Bell, BellOff, Loader2, X, Ticket, Wrench, Receipt } from 'lucide-react';
+import { Bell, BellOff, BellRing, Loader2, X, Ticket, Wrench, Receipt } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiAdmin } from '@/lib/api/client';
 import { formatWIB } from '@/lib/timezone';
@@ -177,7 +177,7 @@ export default function CollectorNotificationBell() {
             permission === 'denied' && 'opacity-50 cursor-not-allowed',
           )}
         >
-          {pushLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : pushOn ? <Bell className="w-5 h-5" /> : <BellOff className="w-5 h-5" />}
+          {pushLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : pushOn ? <BellRing className="w-5 h-5" /> : <BellOff className="w-5 h-5" />}
         </button>
       )}
 
