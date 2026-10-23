@@ -20,17 +20,9 @@ export const viewport: Viewport = {
   themeColor: '#2563EB',
 };
 
-// globals.css shrinks the root font to 14px (13px on phones) for the admin
-// panel. The collector portal is sized on a 16px rem (DESIGN.md): at 14px its
-// 44px tap targets came out at 36-38px and text-sm at 11-12px. This style
-// lives only while a collector page is mounted.
-const ROOT_SIZE = 'html{font-size:16px}';
-
+// Type follows the panel's root size (14px, 13px on phones) so the portal
+// reads at the same scale as the admin panel. Control heights are set in px
+// instead (40px, 44px on touch screens), so tap targets do not shrink with it.
 export default function CollectorRootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className={jakarta.className}>
-      <style>{ROOT_SIZE}</style>
-      {children}
-    </div>
-  );
+  return <div className={jakarta.className}>{children}</div>;
 }

@@ -34,19 +34,19 @@ export const toneText = (t: Tone) => TONE_TEXT[t];
 export const ui = {
   card: 'rounded-2xl border border-border bg-card',
   input:
-    'w-full h-11 rounded-xl border border-border bg-card px-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-blue-600/60',
+    'w-full h-[40px] pointer-coarse:h-[44px] rounded-xl border border-border bg-card px-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-blue-600/60',
   btnPrimary:
-    'inline-flex items-center justify-center gap-2 h-11 px-4 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+    'inline-flex items-center justify-center gap-2 h-[40px] pointer-coarse:h-[44px] px-4 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
   btnSecondary:
-    'inline-flex items-center justify-center gap-2 h-11 px-4 rounded-xl border border-border bg-card text-foreground text-sm font-medium hover:bg-muted disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
+    'inline-flex items-center justify-center gap-2 h-[40px] pointer-coarse:h-[44px] px-4 rounded-xl border border-border bg-card text-foreground text-sm font-medium hover:bg-muted disabled:opacity-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
   iconBtn:
-    'inline-flex items-center justify-center h-11 w-11 rounded-xl border border-border bg-card text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
+    'inline-flex items-center justify-center h-[40px] pointer-coarse:h-[44px] w-[40px] pointer-coarse:w-[44px] rounded-xl border border-border bg-card text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
 };
 
 /** Segmented filter chip: selected one filled blue, the rest bordered. */
 export function chipClass(active: boolean) {
   return cn(
-    'shrink-0 h-10 px-3.5 rounded-xl text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
+    'shrink-0 h-[40px] px-3.5 rounded-xl text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
     active ? 'bg-blue-600 text-white' : 'border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground',
   );
 }
@@ -67,7 +67,7 @@ export function PageHeader({ title, description, actions }: { title: string; des
 /** The motif: a tinted rounded square holding a meaningful icon. */
 export function IconBox({ tone = 'blue', children, size = 'md' }: { tone?: Tone; children: ReactNode; size?: 'sm' | 'md' }) {
   return (
-    <div className={cn('flex shrink-0 items-center justify-center rounded-xl', TONE_BG[tone], TONE_TEXT[tone], size === 'md' ? 'h-10 w-10' : 'h-8 w-8')}>
+    <div className={cn('flex shrink-0 items-center justify-center rounded-xl', TONE_BG[tone], TONE_TEXT[tone], size === 'md' ? 'h-[40px] w-[40px]' : 'h-8 w-8')}>
       {children}
     </div>
   );

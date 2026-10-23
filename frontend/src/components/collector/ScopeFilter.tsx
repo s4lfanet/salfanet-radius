@@ -40,7 +40,7 @@ export function ScopeFilter({ value, onChange }: { value: ScopeValue; onChange: 
 
   if (areas.length < 2 && routers.length < 2) return null;
 
-  const select = 'w-full h-11 pl-9 pr-3 rounded-xl border border-border bg-card text-foreground text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-600/60';
+  const select = 'w-full h-[40px] pointer-coarse:h-[44px] pl-9 pr-3 rounded-xl border border-border bg-card text-foreground text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-600/60';
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">

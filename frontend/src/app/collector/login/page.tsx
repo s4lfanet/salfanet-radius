@@ -66,7 +66,7 @@ export default function CollectorLoginPage() {
           type="button"
           onClick={toggleTheme}
           aria-label={isDark ? 'Pakai tema terang' : 'Pakai tema gelap'}
-          className="h-11 w-11 flex items-center justify-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+          className="h-[40px] pointer-coarse:h-[44px] w-[40px] pointer-coarse:w-[44px] flex items-center justify-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
         >
           {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </button>
@@ -82,7 +82,7 @@ export default function CollectorLoginPage() {
               </div>
             ) : (
               <div className="w-20 h-20 rounded-[20px] bg-gradient-to-br from-[#2563EB] to-[#4F46E5] text-white flex items-center justify-center" aria-hidden>
-                <Wallet className="w-9 h-9" />
+                <Wallet className="w-[36px] h-[36px]" />
               </div>
             )}
           </div>
@@ -131,7 +131,7 @@ export default function CollectorLoginPage() {
                   type="button"
                   onClick={() => setShowPassword(v => !v)}
                   aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
-                  className="absolute right-0 top-0 h-11 w-11 flex items-center justify-center text-muted-foreground hover:text-foreground"
+                  className="absolute right-0 top-0 h-[40px] pointer-coarse:h-[44px] w-[40px] pointer-coarse:w-[44px] flex items-center justify-center text-muted-foreground hover:text-foreground"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
