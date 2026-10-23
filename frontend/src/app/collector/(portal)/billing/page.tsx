@@ -400,13 +400,13 @@ export default function CollectorBillingPage() {
 
               {!paid ? (
                 <div className="mt-3 md:mt-0 grid grid-cols-2 gap-2 sm:flex sm:items-center sm:justify-end md:shrink-0">
-                  <button type="button" onClick={() => openPromiseModal(u.id, inv.id, u.name)} className={cn(ui.btnSecondary, 'h-10 px-3.5 pointer-coarse:h-11')}>
+                  <button type="button" onClick={() => openPromiseModal(u.id, inv.id, u.name)} className={cn(ui.btnSecondary, 'h-[40px] px-3.5 pointer-coarse:h-[44px]')}>
                     <CalendarClock className="w-4 h-4 text-amber-700 dark:text-amber-400" /> Janji bayar
                   </button>
-                  <button type="button" onClick={() => openPay(inv, u, 'transfer')} className={cn(ui.btnSecondary, 'h-10 px-3.5 pointer-coarse:h-11')}>
+                  <button type="button" onClick={() => openPay(inv, u, 'transfer')} className={cn(ui.btnSecondary, 'h-[40px] px-3.5 pointer-coarse:h-[44px]')}>
                     <Upload className="w-4 h-4 text-muted-foreground" /> Transfer
                   </button>
-                  <button type="button" onClick={() => openPay(inv, u, 'cash')} className={cn(ui.btnPrimary, 'h-10 px-3.5 pointer-coarse:h-11 col-span-2 sm:col-span-1')}>
+                  <button type="button" onClick={() => openPay(inv, u, 'cash')} className={cn(ui.btnPrimary, 'h-[40px] px-3.5 pointer-coarse:h-[44px] col-span-2 sm:col-span-1')}>
                     <Wallet className="w-4 h-4" /> Lunas tunai
                   </button>
                 </div>
@@ -418,19 +418,19 @@ export default function CollectorBillingPage() {
                       onClick={(e) => { e.stopPropagation(); setShowPrintMenu(showPrintMenu === inv.id ? null : inv.id); }}
                       disabled={busy(inv.id)}
                       aria-expanded={showPrintMenu === inv.id}
-                      className={cn(ui.btnSecondary, 'h-10')}
+                      className={cn(ui.btnSecondary, 'h-[40px]')}
                     >
                       {busy(inv.id) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />} Cetak
                     </button>
                     {showPrintMenu === inv.id && (
                       <div className="absolute right-0 bottom-full mb-1 z-20 rounded-xl border border-border bg-card py-1 min-w-[200px]" role="menu">
-                        <button type="button" role="menuitem" onClick={(e) => { e.stopPropagation(); handlePrintA4(inv.id); }} className="w-full flex items-center gap-2 h-11 px-3 text-sm text-foreground hover:bg-muted text-left">
+                        <button type="button" role="menuitem" onClick={(e) => { e.stopPropagation(); handlePrintA4(inv.id); }} className="w-full flex items-center gap-2 h-[40px] pointer-coarse:h-[44px] px-3 text-sm text-foreground hover:bg-muted text-left">
                           <FileText className="w-4 h-4" /> Invoice A4
                         </button>
-                        <button type="button" role="menuitem" onClick={(e) => { e.stopPropagation(); handlePrintThermal(inv.id); }} className="w-full flex items-center gap-2 h-11 px-3 text-sm text-foreground hover:bg-muted text-left">
+                        <button type="button" role="menuitem" onClick={(e) => { e.stopPropagation(); handlePrintThermal(inv.id); }} className="w-full flex items-center gap-2 h-[40px] pointer-coarse:h-[44px] px-3 text-sm text-foreground hover:bg-muted text-left">
                           <Printer className="w-4 h-4" /> Struk 80mm
                         </button>
-                        <button type="button" role="menuitem" onClick={(e) => { e.stopPropagation(); handlePrintBluetooth(inv.id); }} className="w-full flex items-center gap-2 h-11 px-3 text-sm text-foreground hover:bg-muted text-left">
+                        <button type="button" role="menuitem" onClick={(e) => { e.stopPropagation(); handlePrintBluetooth(inv.id); }} className="w-full flex items-center gap-2 h-[40px] pointer-coarse:h-[44px] px-3 text-sm text-foreground hover:bg-muted text-left">
                           <Bluetooth className="w-4 h-4" /> Printer Bluetooth
                         </button>
                       </div>
@@ -440,7 +440,7 @@ export default function CollectorBillingPage() {
                     type="button"
                     onClick={(e) => { e.stopPropagation(); handleSendWhatsApp(inv.id, inv.invoiceNumber, u.name); }}
                     disabled={actionLoading === `wa-${inv.id}`}
-                    className={cn(ui.btnSecondary, 'h-10')}
+                    className={cn(ui.btnSecondary, 'h-[40px]')}
                   >
                     {actionLoading === `wa-${inv.id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />} Kirim bukti lunas
                   </button>
@@ -477,7 +477,7 @@ export default function CollectorBillingPage() {
           btConnected ? (
             <div className="flex items-center gap-2">
               <StatusPill tone="green"><Bluetooth className="w-3.5 h-3.5 mr-1" />Printer terhubung</StatusPill>
-              <button type="button" onClick={handleBluetoothDisconnect} className={cn(ui.btnSecondary, 'h-9 px-3 text-xs pointer-coarse:h-11')}>Putuskan</button>
+              <button type="button" onClick={handleBluetoothDisconnect} className={cn(ui.btnSecondary, 'h-[36px] px-3 text-xs pointer-coarse:h-[44px]')}>Putuskan</button>
             </div>
           ) : (
             <button type="button" onClick={handleBluetoothConnect} disabled={actionLoading === 'bt-connect'} className={cn(ui.btnSecondary, 'w-full sm:w-auto')}>
@@ -500,7 +500,7 @@ export default function CollectorBillingPage() {
           aria-label="Cari pelanggan"
         />
         {search && (
-          <button type="button" aria-label="Hapus pencarian" onClick={() => setSearch('')} className="absolute right-0 top-0 h-11 w-11 flex items-center justify-center text-muted-foreground hover:text-foreground">
+          <button type="button" aria-label="Hapus pencarian" onClick={() => setSearch('')} className="absolute right-0 top-0 h-[40px] pointer-coarse:h-[44px] w-[40px] pointer-coarse:w-[44px] flex items-center justify-center text-muted-foreground hover:text-foreground">
             <X className="w-4 h-4" />
           </button>
         )}
@@ -524,7 +524,7 @@ export default function CollectorBillingPage() {
       {loadError && users.length > 0 && (
         <div className={cn(ui.card, 'p-3 mb-3 flex items-center justify-between gap-3')} role="alert">
           <span className={cn('text-sm', toneText('red'))}>Data terbaru gagal dimuat, yang tampil mungkin belum terbaru.</span>
-          <button type="button" onClick={loadData} className={cn(ui.btnSecondary, 'h-9 px-3 text-xs shrink-0')}>Coba lagi</button>
+          <button type="button" onClick={loadData} className={cn(ui.btnSecondary, 'h-[36px] px-3 text-xs shrink-0')}>Coba lagi</button>
         </div>
       )}
 
@@ -585,7 +585,7 @@ export default function CollectorBillingPage() {
                             type="button"
                             onClick={() => setExpandedUser(open ? null : u.id)}
                             aria-expanded={open}
-                            className={cn(open || u.is_paid ? ui.btnSecondary : ui.btnPrimary, 'h-10 w-24 px-0 text-sm pointer-coarse:h-11')}
+                            className={cn(open || u.is_paid ? ui.btnSecondary : ui.btnPrimary, 'h-[40px] w-24 px-0 text-sm pointer-coarse:h-[44px]')}
                           >
                             {open ? 'Tutup' : u.is_paid ? 'Lihat' : 'Tagih'}
                             <ChevronDown className={cn('w-4 h-4 transition-transform', open && 'rotate-180')} />
@@ -698,7 +698,7 @@ export default function CollectorBillingPage() {
                       type="button"
                       aria-pressed={paymentMethod === m.key}
                       onClick={() => { setPaymentMethod(m.key); if (m.key === 'cash') { setProofPreview(null); setProofFile(null); } }}
-                      className={chipClass(paymentMethod === m.key) + ' h-11 flex items-center justify-center gap-2'}
+                      className={chipClass(paymentMethod === m.key) + ' h-[40px] pointer-coarse:h-[44px] flex items-center justify-center gap-2'}
                     >
                       <Icon className="w-4 h-4" /> {m.label}
                     </button>
@@ -714,7 +714,7 @@ export default function CollectorBillingPage() {
                   <div className="relative">
                     {/* eslint-disable-next-line @next/next/no-img-element -- local preview of a picked file */}
                     <img src={proofPreview} alt="Bukti transfer" className="w-full rounded-xl border border-border max-h-48 object-contain" />
-                    <button type="button" aria-label="Hapus bukti" onClick={() => { setProofPreview(null); setProofFile(null); }} className="absolute top-2 right-2 h-9 w-9 flex items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80">
+                    <button type="button" aria-label="Hapus bukti" onClick={() => { setProofPreview(null); setProofFile(null); }} className="absolute top-2 right-2 h-[36px] w-[36px] flex items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80">
                       <X className="w-4 h-4" />
                     </button>
                   </div>
@@ -767,7 +767,7 @@ export default function CollectorBillingPage() {
                 {gpsStatus === 'denied' && 'Lokasi tidak didapat. Izinkan akses lokasi, lalu coba lagi.'}
               </span>
               {gpsStatus === 'denied' && (
-                <button type="button" onClick={captureGps} className="shrink-0 h-9 px-3 rounded-lg text-xs font-semibold underline">Coba lagi</button>
+                <button type="button" onClick={captureGps} className="shrink-0 h-[36px] px-3 rounded-lg text-xs font-semibold underline">Coba lagi</button>
               )}
             </div>
 

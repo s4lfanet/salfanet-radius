@@ -133,7 +133,7 @@ export default function CollectorProofsPage() {
                     <p className="text-xs text-muted-foreground">#{p.invoice_number} · dikirim {fmtDate(p.submitted_at)}</p>
                     {p.is_my_upload && <p className="text-xs text-muted-foreground">Diunggah oleh Anda</p>}
                   </div>
-                  <button type="button" onClick={() => setViewImage(p.proof_image)} className={cn(ui.btnSecondary, 'h-10 shrink-0')}>
+                  <button type="button" onClick={() => setViewImage(p.proof_image)} className={cn(ui.btnSecondary, 'h-[40px] shrink-0')}>
                     <Eye className="w-4 h-4" /> Lihat bukti
                   </button>
                 </div>
@@ -155,7 +155,7 @@ export default function CollectorProofsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Bukti transfer">
           <button type="button" aria-label="Tutup" className="absolute inset-0 bg-black/80" onClick={() => setViewImage(null)} />
           <div className="relative w-full max-w-2xl">
-            <button type="button" onClick={() => setViewImage(null)} aria-label="Tutup" className="absolute -top-12 right-0 h-11 w-11 flex items-center justify-center rounded-xl text-white hover:bg-white/10">
+            <button type="button" onClick={() => setViewImage(null)} aria-label="Tutup" className="absolute -top-12 right-0 h-[40px] pointer-coarse:h-[44px] w-[40px] pointer-coarse:w-[44px] flex items-center justify-center rounded-xl text-white hover:bg-white/10">
               <X className="w-6 h-6" />
             </button>
             {/* eslint-disable-next-line @next/next/no-img-element -- proof is a data URL or upload path of any size */}

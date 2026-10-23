@@ -176,15 +176,15 @@ export default function CustomerDetailSheet({
           </div>
           {customer.phone && (
             <>
-              <a href={`tel:${customer.phone}`} aria-label="Telepon pelanggan" className="h-11 w-11 shrink-0 flex items-center justify-center rounded-xl hover:bg-muted text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
+              <a href={`tel:${customer.phone}`} aria-label="Telepon pelanggan" className="h-[40px] pointer-coarse:h-[44px] w-[40px] pointer-coarse:w-[44px] shrink-0 flex items-center justify-center rounded-xl hover:bg-muted text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
                 <Phone className="w-5 h-5" />
               </a>
-              <a href={`https://wa.me/${waNumber(customer.phone)}`} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp pelanggan" className="h-11 w-11 shrink-0 flex items-center justify-center rounded-xl hover:bg-muted text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
+              <a href={`https://wa.me/${waNumber(customer.phone)}`} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp pelanggan" className="h-[40px] pointer-coarse:h-[44px] w-[40px] pointer-coarse:w-[44px] shrink-0 flex items-center justify-center rounded-xl hover:bg-muted text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
                 <MessageCircle className="w-5 h-5" />
               </a>
             </>
           )}
-          <button ref={closeRef} type="button" onClick={onClose} aria-label="Tutup detail" className="h-11 w-11 shrink-0 flex items-center justify-center rounded-xl hover:bg-muted text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
+          <button ref={closeRef} type="button" onClick={onClose} aria-label="Tutup detail" className="h-[40px] pointer-coarse:h-[44px] w-[40px] pointer-coarse:w-[44px] shrink-0 flex items-center justify-center rounded-xl hover:bg-muted text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -201,10 +201,10 @@ export default function CustomerDetailSheet({
               <h4 id="loc-title" className="text-sm font-semibold text-foreground">Lokasi GPS</h4>
               {onSaveLocation && (
                 <div className="flex items-center gap-1">
-                  <button type="button" onClick={() => { setSaveError(null); setPickerOpen(true); }} className="h-9 pointer-coarse:h-11 px-2.5 inline-flex items-center gap-1.5 rounded-lg text-xs font-medium text-blue-700 dark:text-blue-400 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
+                  <button type="button" onClick={() => { setSaveError(null); setPickerOpen(true); }} className="h-[36px] pointer-coarse:h-[44px] px-2.5 inline-flex items-center gap-1.5 rounded-lg text-xs font-medium text-blue-700 dark:text-blue-400 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
                     <MapIcon className="w-4 h-4" /> Pilih di Peta
                   </button>
-                  <button type="button" onClick={readGps} disabled={gpsState === 'reading'} className="h-9 pointer-coarse:h-11 px-2.5 inline-flex items-center gap-1.5 rounded-lg text-xs font-medium text-blue-700 dark:text-blue-400 hover:bg-muted disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
+                  <button type="button" onClick={readGps} disabled={gpsState === 'reading'} className="h-[36px] pointer-coarse:h-[44px] px-2.5 inline-flex items-center gap-1.5 rounded-lg text-xs font-medium text-blue-700 dark:text-blue-400 hover:bg-muted disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
                     {gpsState === 'reading' ? <Loader2 className="w-4 h-4 animate-spin" /> : <LocateFixed className="w-4 h-4" />} GPS Auto
                   </button>
                 </div>
@@ -250,10 +250,10 @@ export default function CustomerDetailSheet({
                     <div className="min-w-0"><dt className="sr-only">Latitude</dt><dd aria-label="Latitude" className="text-foreground truncate"><span className="text-muted-foreground">Lat </span>{lat!.toFixed(6)}</dd></div>
                     <div className="min-w-0"><dt className="sr-only">Longitude</dt><dd aria-label="Longitude" className="text-foreground truncate"><span className="text-muted-foreground">Lng </span>{lng!.toFixed(6)}</dd></div>
                   </dl>
-                  <button type="button" onClick={copy} aria-label={copied === 'ok' ? 'Koordinat tersalin' : 'Salin koordinat'} title="Salin koordinat" className="h-10 w-10 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
+                  <button type="button" onClick={copy} aria-label={copied === 'ok' ? 'Koordinat tersalin' : 'Salin koordinat'} title="Salin koordinat" className="h-[40px] w-[40px] pointer-coarse:h-[44px] pointer-coarse:w-[44px] shrink-0 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
                     {copied === 'ok' ? <Check className="w-4 h-4 text-emerald-700 dark:text-emerald-400" /> : <Copy className="w-4 h-4" />}
                   </button>
-                  <a href={links.view} target="_blank" rel="noopener noreferrer" aria-label="Buka di Google Maps" title="Buka di Google Maps" className="h-10 w-10 pointer-coarse:h-11 pointer-coarse:w-11 shrink-0 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
+                  <a href={links.view} target="_blank" rel="noopener noreferrer" aria-label="Buka di Google Maps" title="Buka di Google Maps" className="h-[40px] w-[40px] pointer-coarse:h-[44px] pointer-coarse:w-[44px] shrink-0 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
                     <ExternalLink className="w-4 h-4" />
                   </a>
                 </div>

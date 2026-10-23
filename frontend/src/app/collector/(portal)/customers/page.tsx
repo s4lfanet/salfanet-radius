@@ -171,16 +171,16 @@ export default function CollectorCustomersPage() {
   const actions = (c: Customer, compact = false) => (
     <div className={cn('flex items-center gap-1.5', compact ? 'justify-end' : '')}>
       {c.unpaid_count > 0 && (
-        <Link href={`/collector/billing?q=${encodeURIComponent(c.username)}`} className={cn(ui.btnPrimary, 'h-9 px-3 text-xs pointer-coarse:h-11')} title="Buka tagihan pelanggan ini">
+        <Link href={`/collector/billing?q=${encodeURIComponent(c.username)}`} className={cn(ui.btnPrimary, 'h-[36px] px-3 text-xs pointer-coarse:h-[44px]')} title="Buka tagihan pelanggan ini">
           <Receipt className="w-3.5 h-3.5" /> Tagih
         </Link>
       )}
       {c.phone && (
         <>
-          <a href={`tel:${c.phone}`} aria-label={`Telepon ${c.name || c.username}`} className="h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 inline-flex items-center justify-center rounded-xl border border-border bg-card text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
+          <a href={`tel:${c.phone}`} aria-label={`Telepon ${c.name || c.username}`} className="h-[36px] w-[36px] pointer-coarse:h-[44px] pointer-coarse:w-[44px] inline-flex items-center justify-center rounded-xl border border-border bg-card text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
             <Phone className="w-4 h-4" />
           </a>
-          <a href={`https://wa.me/${waNumber(c.phone)}`} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${c.name || c.username}`} className="h-9 w-9 pointer-coarse:h-11 pointer-coarse:w-11 inline-flex items-center justify-center rounded-xl border border-border bg-card text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
+          <a href={`https://wa.me/${waNumber(c.phone)}`} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${c.name || c.username}`} className="h-[36px] w-[36px] pointer-coarse:h-[44px] pointer-coarse:w-[44px] inline-flex items-center justify-center rounded-xl border border-border bg-card text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
             <MessageCircle className="w-4 h-4" />
           </a>
         </>
@@ -207,7 +207,7 @@ export default function CollectorCustomersPage() {
             aria-label="Cari pelanggan"
           />
           {search && (
-            <button type="button" aria-label="Hapus pencarian" onClick={() => setSearch('')} className="absolute right-0 top-0 h-11 w-11 flex items-center justify-center text-muted-foreground hover:text-foreground">
+            <button type="button" aria-label="Hapus pencarian" onClick={() => setSearch('')} className="absolute right-0 top-0 h-[40px] pointer-coarse:h-[44px] w-[40px] pointer-coarse:w-[44px] flex items-center justify-center text-muted-foreground hover:text-foreground">
               <X className="w-4 h-4" />
             </button>
           )}
@@ -242,7 +242,7 @@ export default function CollectorCustomersPage() {
               {view === 'table' && (
                 <label className="hidden md:flex items-center gap-2 text-muted-foreground">
                   Baris per halaman
-                  <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))} className="h-9 rounded-xl border border-border bg-card px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
+                  <select value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))} className="h-[36px] rounded-xl border border-border bg-card px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
                     {[25, 50, 100].map((n) => <option key={n} value={n}>{n}</option>)}
                   </select>
                 </label>
@@ -255,7 +255,7 @@ export default function CollectorCustomersPage() {
                     aria-pressed={view === key}
                     onClick={() => setView(key)}
                     className={cn(
-                      'h-9 pointer-coarse:h-11 px-3 inline-flex items-center gap-1.5 rounded-lg text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
+                      'h-[36px] pointer-coarse:h-[44px] px-3 inline-flex items-center gap-1.5 rounded-lg text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
                       view === key ? 'bg-blue-600 text-white' : 'text-muted-foreground hover:text-foreground',
                     )}
                   >
@@ -384,10 +384,10 @@ export default function CollectorCustomersPage() {
                     {c.address && <span className="flex items-start gap-2 min-w-0"><MapPin className="w-4 h-4 shrink-0 mt-0.5" /><span className="line-clamp-2">{c.address}</span></span>}
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-2">
-                    <button type="button" onClick={() => setDetailId(c.id)} className={cn(ui.btnSecondary, 'h-10')}>Detail</button>
+                    <button type="button" onClick={() => setDetailId(c.id)} className={cn(ui.btnSecondary, 'h-[40px]')}>Detail</button>
                     {c.latitude != null && c.longitude != null
-                      ? <a href={mapsLinks(c.latitude, c.longitude).directions} target="_blank" rel="noopener noreferrer" className={cn(ui.btnSecondary, 'h-10')}><Navigation className="w-4 h-4" /> Rute</a>
-                      : <span className="h-10 inline-flex items-center justify-center rounded-xl bg-muted text-xs text-muted-foreground">Belum ada koordinat</span>}
+                      ? <a href={mapsLinks(c.latitude, c.longitude).directions} target="_blank" rel="noopener noreferrer" className={cn(ui.btnSecondary, 'h-[40px]')}><Navigation className="w-4 h-4" /> Rute</a>
+                      : <span className="h-[40px] inline-flex items-center justify-center rounded-xl bg-muted text-xs text-muted-foreground">Belum ada koordinat</span>}
                   </div>
                   <div className="mt-3 pt-3 border-t border-border flex items-center justify-between gap-3">
                     {c.unpaid_count > 0

@@ -159,7 +159,7 @@ export default function CollectorNotificationBell() {
     return () => window.removeEventListener('keydown', onKey);
   }, [bellOpen]);
 
-  const iconBtn = 'relative h-11 w-11 flex items-center justify-center rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600';
+  const iconBtn = 'relative h-[40px] pointer-coarse:h-[44px] w-[40px] pointer-coarse:w-[44px] flex items-center justify-center rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600';
 
   return (
     <div className="flex items-center gap-1">
@@ -204,7 +204,7 @@ export default function CollectorNotificationBell() {
             <div className="absolute right-0 top-full mt-2 w-[min(20rem,calc(100vw-2rem))] max-h-96 overflow-y-auto bg-card border border-border rounded-2xl z-50" role="dialog" aria-label="Notifikasi">
               <div className="sticky top-0 bg-card border-b border-border pl-4 pr-1 h-12 flex items-center justify-between">
                 <span className="text-sm font-semibold text-foreground">Notifikasi</span>
-                <button type="button" onClick={() => setBellOpen(false)} aria-label="Tutup" className="h-11 w-11 flex items-center justify-center rounded-xl hover:bg-muted text-muted-foreground">
+                <button type="button" onClick={() => setBellOpen(false)} aria-label="Tutup" className="h-[40px] pointer-coarse:h-[44px] w-[40px] pointer-coarse:w-[44px] flex items-center justify-center rounded-xl hover:bg-muted text-muted-foreground">
                   <X className="w-4 h-4" />
                 </button>
               </div>

@@ -85,10 +85,10 @@ export default function CollectorIsolirPage() {
                 <p className="mt-0.5 text-xs text-muted-foreground break-words">#{inv.invoiceNumber} · jatuh tempo {fmtDate(inv.dueDate)}</p>
               </div>
               <div className="mt-3 md:mt-0 grid grid-cols-2 gap-2 sm:flex sm:items-center sm:justify-end md:shrink-0">
-                <button type="button" onClick={() => openPayModal(inv, u.name, 'transfer')} className={cn(ui.btnSecondary, 'h-10 px-3.5 pointer-coarse:h-11')}>
+                <button type="button" onClick={() => openPayModal(inv, u.name, 'transfer')} className={cn(ui.btnSecondary, 'h-[40px] px-3.5 pointer-coarse:h-[44px]')}>
                   <Upload className="w-4 h-4 text-muted-foreground" /> Transfer
                 </button>
-                <button type="button" onClick={() => openPayModal(inv, u.name, 'cash')} className={cn(ui.btnPrimary, 'h-10 px-3.5 pointer-coarse:h-11')}>
+                <button type="button" onClick={() => openPayModal(inv, u.name, 'cash')} className={cn(ui.btnPrimary, 'h-[40px] px-3.5 pointer-coarse:h-[44px]')}>
                   <Wallet className="w-4 h-4" /> Lunas tunai
                 </button>
               </div>
@@ -216,7 +216,7 @@ export default function CollectorIsolirPage() {
           aria-label="Cari pelanggan isolir"
         />
         {search && (
-          <button type="button" aria-label="Hapus pencarian" onClick={() => setSearch('')} className="absolute right-0 top-0 h-11 w-11 flex items-center justify-center text-muted-foreground hover:text-foreground">
+          <button type="button" aria-label="Hapus pencarian" onClick={() => setSearch('')} className="absolute right-0 top-0 h-[40px] pointer-coarse:h-[44px] w-[40px] pointer-coarse:w-[44px] flex items-center justify-center text-muted-foreground hover:text-foreground">
             <X className="w-4 h-4" />
           </button>
         )}
@@ -278,7 +278,7 @@ export default function CollectorIsolirPage() {
                           ) : <p className={cn('font-semibold', toneText('green'))}>Lunas</p>}
                         </td>
                         <td className="px-3 py-3 text-right">
-                          <button type="button" onClick={() => setExpandedUser(open ? null : u.id)} aria-expanded={open} className={cn(open ? ui.btnSecondary : ui.btnPrimary, 'h-10 w-24 px-0 text-sm pointer-coarse:h-11')}>
+                          <button type="button" onClick={() => setExpandedUser(open ? null : u.id)} aria-expanded={open} className={cn(open ? ui.btnSecondary : ui.btnPrimary, 'h-[40px] w-24 px-0 text-sm pointer-coarse:h-[44px]')}>
                             {open ? 'Tutup' : 'Tindak'}
                             <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', open && 'rotate-180')} />
                           </button>
@@ -383,7 +383,7 @@ export default function CollectorIsolirPage() {
                 type="button"
                 onClick={submitCabut}
                 disabled={cabutLoading}
-                className="inline-flex items-center justify-center gap-2 h-11 px-4 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                className="inline-flex items-center justify-center gap-2 h-[40px] pointer-coarse:h-[44px] px-4 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 {cabutLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Unplug className="w-4 h-4" />} Catat cabut
               </button>
@@ -419,7 +419,7 @@ export default function CollectorIsolirPage() {
                       type="button"
                       aria-pressed={paymentMethod === m.key}
                       onClick={() => { setPaymentMethod(m.key); if (m.key === 'cash') { setProofPreview(null); setProofFile(null); } }}
-                      className={chipClass(paymentMethod === m.key) + ' h-11 flex items-center justify-center gap-2'}
+                      className={chipClass(paymentMethod === m.key) + ' h-[40px] pointer-coarse:h-[44px] flex items-center justify-center gap-2'}
                     >
                       <Icon className="w-4 h-4" /> {m.label}
                     </button>
@@ -435,7 +435,7 @@ export default function CollectorIsolirPage() {
                   <div className="relative">
                     {/* eslint-disable-next-line @next/next/no-img-element -- local preview of a picked file */}
                     <img src={proofPreview} alt="Bukti transfer" className="w-full rounded-xl border border-border max-h-48 object-contain" />
-                    <button type="button" aria-label="Hapus bukti" onClick={() => { setProofPreview(null); setProofFile(null); }} className="absolute top-2 right-2 h-9 w-9 flex items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80">
+                    <button type="button" aria-label="Hapus bukti" onClick={() => { setProofPreview(null); setProofFile(null); }} className="absolute top-2 right-2 h-[36px] w-[36px] flex items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80">
                       <X className="w-4 h-4" />
                     </button>
                   </div>

@@ -115,11 +115,11 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
   const brand = (
     <div className="flex items-center gap-3 min-w-0">
       {companyLogo ? (
-        <div className="w-10 h-10 shrink-0 rounded-xl bg-white border border-border p-1 flex items-center justify-center overflow-hidden">
+        <div className="w-[40px] h-[40px] shrink-0 rounded-xl bg-white border border-border p-1 flex items-center justify-center overflow-hidden">
           <Image unoptimized src={companyLogo} alt={companyName} width={40} height={40} className="max-w-full max-h-full w-auto h-auto object-contain" />
         </div>
       ) : (
-        <div className="w-10 h-10 shrink-0 rounded-xl bg-blue-600/10 text-blue-700 dark:text-blue-400 flex items-center justify-center">
+        <div className="w-[40px] h-[40px] shrink-0 rounded-xl bg-blue-600/10 text-blue-700 dark:text-blue-400 flex items-center justify-center">
           <Wallet className="w-5 h-5" />
         </div>
       )}
@@ -139,7 +139,7 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
         href={item.href}
         aria-current={active ? 'page' : undefined}
         className={cn(
-          'flex items-center gap-3 h-11 px-3 rounded-xl text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
+          'flex items-center gap-3 h-[40px] pointer-coarse:h-[44px] px-3 rounded-xl text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
           active ? 'bg-blue-600/10 text-blue-700 dark:text-blue-400' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
         )}
       >
@@ -152,7 +152,7 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
   const account = (
     <div className="border-t border-border p-3">
       <div className="flex items-center gap-3 px-2 mb-2">
-        <div className="w-9 h-9 shrink-0 rounded-xl bg-blue-600/10 text-blue-700 dark:text-blue-400 flex items-center justify-center text-sm font-bold" aria-hidden>
+        <div className="w-[36px] h-[36px] shrink-0 rounded-xl bg-blue-600/10 text-blue-700 dark:text-blue-400 flex items-center justify-center text-sm font-bold" aria-hidden>
           {collector.name.charAt(0).toUpperCase()}
         </div>
         <div className="min-w-0">
@@ -168,7 +168,7 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
       <button
         type="button"
         onClick={handleLogout}
-        className="w-full flex items-center gap-3 h-11 px-3 rounded-xl text-sm font-medium text-red-700 dark:text-red-400 hover:bg-red-600/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
+        className="w-full flex items-center gap-3 h-[40px] pointer-coarse:h-[44px] px-3 rounded-xl text-sm font-medium text-red-700 dark:text-red-400 hover:bg-red-600/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
       >
         <LogOut className="w-[18px] h-[18px]" /> Keluar
       </button>
@@ -195,7 +195,7 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
           <div className="absolute inset-y-0 left-0 w-[86%] max-w-xs bg-card border-r border-border flex flex-col">
             <div className="p-4 border-b border-border flex items-center justify-between gap-2">
               {brand}
-              <button type="button" onClick={() => setMenuOpen(false)} aria-label="Tutup menu" className="h-11 w-11 shrink-0 flex items-center justify-center rounded-xl hover:bg-muted text-muted-foreground">
+              <button type="button" onClick={() => setMenuOpen(false)} aria-label="Tutup menu" className="h-[40px] pointer-coarse:h-[44px] w-[40px] pointer-coarse:w-[44px] shrink-0 flex items-center justify-center rounded-xl hover:bg-muted text-muted-foreground">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -218,7 +218,7 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
               type="button"
               onClick={toggleTheme}
               aria-label={isDark ? 'Pakai tema terang' : 'Pakai tema gelap'}
-              className="h-11 w-11 flex items-center justify-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
+              className="h-[40px] pointer-coarse:h-[44px] w-[40px] pointer-coarse:w-[44px] flex items-center justify-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
             >
               {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
