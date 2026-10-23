@@ -239,7 +239,7 @@ export default function CustomerDetailSheet({
                 <iframe
                   key={osmSrc}
                   src={osmSrc}
-                  className="w-full h-44 border-0 block"
+                  className="w-full h-52 border-0 block"
                   title={`Peta lokasi ${customer.name || customer.username}`}
                   loading="lazy"
                 />
