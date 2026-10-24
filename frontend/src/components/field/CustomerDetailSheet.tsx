@@ -176,11 +176,12 @@ export default function CustomerDetailSheet({
           </div>
           {customer.phone && (
             <>
-              <a href={`tel:${customer.phone}`} aria-label="Telepon pelanggan" className="h-[40px] pointer-coarse:h-[44px] w-[40px] pointer-coarse:w-[44px] shrink-0 flex items-center justify-center rounded-xl hover:bg-muted text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
-                <Phone className="w-5 h-5" />
+              {/* Labelled from sm up; on a phone the header has room for icons only. */}
+              <a href={`tel:${customer.phone}`} aria-label="Telepon pelanggan" title={`Telepon ${customer.phone}`} className="h-[40px] pointer-coarse:h-[44px] min-w-[40px] pointer-coarse:min-w-[44px] sm:px-3 shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl border border-border text-xs font-medium hover:bg-muted text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
+                <Phone className="w-4 h-4" /><span className="hidden sm:inline">Telepon</span>
               </a>
-              <a href={`https://wa.me/${waNumber(customer.phone)}`} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp pelanggan" className="h-[40px] pointer-coarse:h-[44px] w-[40px] pointer-coarse:w-[44px] shrink-0 flex items-center justify-center rounded-xl hover:bg-muted text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
-                <MessageCircle className="w-5 h-5" />
+              <a href={`https://wa.me/${waNumber(customer.phone)}`} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp pelanggan" title={`Kirim WhatsApp ke ${customer.phone}`} className="h-[40px] pointer-coarse:h-[44px] min-w-[40px] pointer-coarse:min-w-[44px] sm:px-3 shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl border border-border text-xs font-medium hover:bg-muted text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
+                <MessageCircle className="w-4 h-4 text-emerald-700 dark:text-emerald-400" /><span className="hidden sm:inline">WhatsApp</span>
               </a>
             </>
           )}
