@@ -51,15 +51,25 @@ export function inScope(scope: CollectorScope | null, customer: { areaId: string
   return true;
 }
 
-/** Areas and routers that occur among the collector's customers, for the portal's filters. */
+/**
+ * Areas and routers for the portal's filters: the ones the admin assigned,
+ * plus any that occur among the collector's customers (an area-only
+ * collector gets the routers its customers sit on).
+ */
 export async function scopeFilterOptions(scope: CollectorScope) {
-  const rows = await prisma.pppoeUser.findMany({
-    where: scopeWhere(scope),
-    select: { area: { select: { id: true, name: true } }, router: { select: { id: true, name: true } } },
-    distinct: ['areaId', 'routerId'],
-  });
+  const [rows, assignedArea, assignedRouters] = await Promise.all([
+    prisma.pppoeUser.findMany({
+      where: scopeWhere(scope),
+      select: { area: { select: { id: true, name: true } }, router: { select: { id: true, name: true } } },
+      distinct: ['areaId', 'routerId'],
+    }),
+    scope.areaId ? prisma.pppoeArea.findUnique({ where: { id: scope.areaId }, select: { id: true, name: true } }) : null,
+    scope.routerIds.length ? prisma.router.findMany({ where: { id: { in: scope.routerIds } }, select: { id: true, name: true } }) : [],
+  ]);
   const areas = new Map<string, string>();
   const routers = new Map<string, string>();
+  if (assignedArea) areas.set(assignedArea.id, assignedArea.name);
+  for (const r of assignedRouters) routers.set(r.id, r.name);
   for (const r of rows) {
     if (r.area) areas.set(r.area.id, r.area.name);
     if (r.router) routers.set(r.router.id, r.router.name);
