@@ -433,6 +433,36 @@ export interface InvoiceReminderResult {
 const dayLabel = (d: number) => (d === 0 ? 'hari H' : d < 0 ? `H${d}` : `H+${d}`);
 
 /**
+ * When a run sends nothing: where the unpaid invoices stand, so the admin
+ * sees whether that is expected (next reminder on a later day) or a gap in
+ * the settings (overdue invoices, but no H+ day chosen).
+ */
+async function unpaidOutlook(now: Date, days: number[]): Promise<string> {
+  const unpaid = await prisma.invoice.findMany({
+    where: { status: { in: ['PENDING', 'OVERDUE'] } },
+    select: { dueDate: true },
+  });
+  if (unpaid.length === 0) return '. Tidak ada invoice belum lunas';
+
+  const offsets = unpaid.map((i) => -daysUntilDueLocal(i.dueDate, now)); // same sign as the settings: -3 = 3 days before
+  const overdue = offsets.filter((o) => o > 0).length;
+  const parts = [`. Invoice belum lunas: ${unpaid.length}`];
+  if (overdue) {
+    parts.push(days.some((d) => d > 0)
+      ? `${overdue} sudah lewat jatuh tempo`
+      : `${overdue} sudah lewat jatuh tempo dan tidak akan diingatkan karena tidak ada hari H+ di pengaturan reminder`);
+  }
+  // Next day on which some invoice reaches a reminder offset.
+  let next = Infinity;
+  for (const o of offsets) for (const d of days) if (d > o && d - o < next) next = d - o;
+  if (Number.isFinite(next)) {
+    const at = new Date(now.getTime() + next * 86_400_000);
+    parts.push(`reminder berikutnya ${formatWIB(at, 'dd/MM/yyyy')}`);
+  }
+  return parts.join(', ');
+}
+
+/**
  * `manual`: started by an admin from the cron page, so the send time is not
  * waited for (the scheduled days and once-per-day rule still apply).
  */
@@ -590,7 +620,7 @@ export async function runInvoiceReminder(opts: { manual?: boolean } = {}): Promi
 
   const days = [...schedule.days].sort((a, b) => a - b).map(dayLabel).join(', ');
   const note = [
-    due.length === 0 ? `tidak ada invoice belum lunas yang jatuh tempo pada hari reminder (${days}) hari ini` : '',
+    due.length === 0 ? `tidak ada invoice belum lunas yang jatuh tempo pada hari reminder (${days}) hari ini${await unpaidOutlook(now, schedule.days)}` : '',
     !waAvailable ? 'tidak ada provider WhatsApp aktif' : '',
     reasons.alreadySent ? `${reasons.alreadySent} sudah dikirim hari ini` : '',
     reasons.noPhone ? `${reasons.noPhone} tanpa nomor HP` : '',
