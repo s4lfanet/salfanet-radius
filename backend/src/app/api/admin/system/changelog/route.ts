@@ -238,6 +238,19 @@ copy_standalone() {
   return 0
 }
 
+# One retry with an empty build cache, run from inside the app's folder. A
+# fetch that fails once during a build (Google Fonts, for one) can be cached
+# by Turbopack and fail every later build until .next/cache is removed.
+retry_clean_build() {
+  log "Build $1 failed; retrying once with an empty .next/cache"
+  rm -rf .next/cache
+  if [ "$1" = "backend" ]; then
+    NODE_OPTIONS="--max-old-space-size=1536" pnpm build >> "$LOG_FILE" 2>&1
+  else
+    pnpm build >> "$LOG_FILE" 2>&1
+  fi
+}
+
 log "=== UPDATE STARTED ==="
 
 # A build needs a few GB of free disk; stop before touching anything when it
@@ -278,7 +291,7 @@ cd "${appDir}"
 pnpm install --no-frozen-lockfile --config.confirm-modules-purges=false >> "$LOG_FILE" 2>&1
 cd "${appDir}/backend"
 node $PRISMA_BIN generate >> "$LOG_FILE" 2>&1
-NODE_OPTIONS="--max-old-space-size=1536" pnpm build >> "$LOG_FILE" 2>&1
+NODE_OPTIONS="--max-old-space-size=1536" pnpm build >> "$LOG_FILE" 2>&1 || retry_clean_build backend
 if [ $? -ne 0 ]; then
   write_status '{"phase":"error","step":"Backend build","error":"backend build failed","finishedAt":'$(date +%s)'}'
   log "ERROR: Backend build failed"
@@ -292,7 +305,7 @@ log "Backend build OK"
 write_status '{"phase":"running","step":"Frontend build"}'
 log "Step 4: Frontend build"
 cd "${appDir}/frontend"
-pnpm build >> "$LOG_FILE" 2>&1
+pnpm build >> "$LOG_FILE" 2>&1 || retry_clean_build frontend
 if [ $? -ne 0 ]; then
   write_status '{"phase":"error","step":"Frontend build","error":"frontend build failed","finishedAt":'$(date +%s)'}'
   log "ERROR: Frontend build failed"
