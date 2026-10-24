@@ -182,25 +182,31 @@ export default function CollectorCustomersPage() {
     );
   };
 
-  const actions = (c: Customer, compact = false) => (
-    <div className={cn('flex items-center gap-1.5', compact ? 'justify-end' : '')}>
-      {c.unpaid_count > 0 && (
-        <Link href={`/collector/billing?q=${encodeURIComponent(c.username)}`} className={cn(ui.btnPrimary, 'h-[36px] px-3 text-xs pointer-coarse:h-[44px]')} title="Buka tagihan pelanggan ini">
-          <Receipt className="w-3.5 h-3.5" /> Tagih
-        </Link>
-      )}
-      {c.phone && (
-        <>
-          <a href={`tel:${c.phone}`} aria-label={`Telepon ${c.name || c.username}`} className="h-[36px] w-[36px] pointer-coarse:h-[44px] pointer-coarse:w-[44px] inline-flex items-center justify-center rounded-xl border border-border bg-card text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
-            <Phone className="w-4 h-4" />
-          </a>
-          <a href={`https://wa.me/${waNumber(c.phone)}`} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${c.name || c.username}`} className="h-[36px] w-[36px] pointer-coarse:h-[44px] pointer-coarse:w-[44px] inline-flex items-center justify-center rounded-xl border border-border bg-card text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
-            <MessageCircle className="w-4 h-4" />
-          </a>
-        </>
-      )}
-    </div>
-  );
+  // Labelled buttons: an icon alone did not say what a tap would do.
+  // In the table they sit in a row; on phone cards they share a full row.
+  const actions = (c: Customer, layout: 'row' | 'grid' = 'row') => {
+    const btn = cn(ui.btnSecondary, 'h-[36px] px-3 text-xs pointer-coarse:h-[44px] whitespace-nowrap', layout === 'grid' && 'w-full px-2');
+    const who = c.name || c.username;
+    return (
+      <div className={layout === 'grid' ? 'grid grid-cols-3 gap-2' : 'flex items-center justify-end gap-1.5'}>
+        {c.unpaid_count > 0 && (
+          <Link href={`/collector/billing?q=${encodeURIComponent(c.username)}`} className={cn(ui.btnPrimary, 'h-[36px] px-3 text-xs pointer-coarse:h-[44px] whitespace-nowrap', layout === 'grid' && 'w-full px-2')} title={`Buka tagihan ${who}`}>
+            <Receipt className="w-3.5 h-3.5 shrink-0" /> Tagih
+          </Link>
+        )}
+        {c.phone && (
+          <>
+            <a href={`tel:${c.phone}`} className={btn} title={`Telepon ${who} (${c.phone})`}>
+              <Phone className="w-3.5 h-3.5 shrink-0" /> Telepon
+            </a>
+            <a href={`https://wa.me/${waNumber(c.phone)}`} target="_blank" rel="noopener noreferrer" className={btn} title={`Kirim WhatsApp ke ${who} (${c.phone})`}>
+              <MessageCircle className={cn('w-3.5 h-3.5 shrink-0', toneText('green'))} /> WhatsApp
+            </a>
+          </>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div>
@@ -365,7 +371,7 @@ export default function CollectorCustomersPage() {
                           <p className="mt-1 text-xs text-muted-foreground">Dibayar {fmtDate(c.last_paid_at)}</p>
                         ) : null}
                       </td>
-                      <td className="px-3 py-3">{actions(c, true)}</td>
+                      <td className="px-3 py-3">{actions(c)}</td>
                     </tr>
                   );
                 })}
@@ -403,14 +409,14 @@ export default function CollectorCustomersPage() {
                       ? <a href={mapsLinks(c.latitude, c.longitude).directions} target="_blank" rel="noopener noreferrer" className={cn(ui.btnSecondary, 'h-[40px]')}><Navigation className="w-4 h-4" /> Rute</a>
                       : <span className="h-[40px] inline-flex items-center justify-center rounded-xl bg-muted text-xs text-muted-foreground">Belum ada koordinat</span>}
                   </div>
-                  <div className="mt-3 pt-3 border-t border-border flex items-center justify-between gap-3">
-                    <div className="min-w-0">
+                  <div className="mt-3 pt-3 border-t border-border space-y-3">
+                    <div className="flex items-center justify-between gap-3">
                       <StatusPill tone={payStatus(c).tone}>{payStatus(c).label}</StatusPill>
                       {c.unpaid_count > 0
-                        ? <p className="mt-1 text-sm"><span className={cn('font-semibold', toneText('red'))}>{fmtRp(c.unpaid_amount)}</span> <span className="text-muted-foreground">· {c.unpaid_count} tagihan</span></p>
-                        : c.last_paid_at && <p className="mt-1 text-xs text-muted-foreground">Dibayar {fmtDate(c.last_paid_at)}</p>}
+                        ? <p className="text-sm text-right"><span className={cn('font-semibold', toneText('red'))}>{fmtRp(c.unpaid_amount)}</span> <span className="text-muted-foreground">· {c.unpaid_count} tagihan</span></p>
+                        : c.last_paid_at && <p className="text-xs text-muted-foreground">Dibayar {fmtDate(c.last_paid_at)}</p>}
                     </div>
-                    {actions(c, true)}
+                    {(c.unpaid_count > 0 || c.phone) && actions(c, 'grid')}
                   </div>
                 </li>
               );
