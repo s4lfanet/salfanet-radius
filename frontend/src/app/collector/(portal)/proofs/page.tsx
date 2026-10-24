@@ -78,10 +78,11 @@ export default function CollectorProofsPage() {
   const visible = filtered.slice(0, visibleCount);
 
   return (
-    <div className="max-w-4xl">
+    <div>
       <PageHeader title="Bukti Transfer" description="Bukti transfer pelanggan di wilayah tugas Anda dan status pemeriksaan admin" />
 
-      <div className="flex gap-2 mb-3 overflow-x-auto pb-1 -mx-4 px-4 lg:mx-0 lg:px-0" role="group" aria-label="Filter status">
+      <div className="flex flex-col lg:flex-row-reverse lg:items-center lg:justify-end gap-3 mb-4">
+      <div className="flex gap-2 overflow-x-auto pb-1 lg:pb-0 -mx-4 px-4 lg:mx-0 lg:px-0" role="group" aria-label="Filter status">
         {FILTERS.map((f) => (
           <button key={f.key} type="button" aria-pressed={filter === f.key} onClick={() => { setFilter(f.key); setVisibleCount(STEP); }} className={chipClass(filter === f.key)}>
             {f.label}
@@ -89,7 +90,7 @@ export default function CollectorProofsPage() {
         ))}
       </div>
 
-      <div className="relative mb-4">
+      <div className="relative lg:w-96">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
         <input
           type="search"
@@ -99,6 +100,7 @@ export default function CollectorProofsPage() {
           placeholder="Cari nama, username, No. HP"
           aria-label="Cari bukti transfer"
         />
+      </div>
       </div>
 
       {loading ? (
@@ -113,9 +115,9 @@ export default function CollectorProofsPage() {
         />
       ) : (
         <>
-          <ul className="space-y-2">
+          <ul className="grid gap-2 lg:grid-cols-2 2xl:grid-cols-3 lg:gap-3">
             {visible.map((p) => (
-              <li key={p.id} className={cn(ui.card, 'p-4')}>
+              <li key={p.id} className={cn(ui.card, 'p-4 flex flex-col')}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-semibold text-foreground truncate">{p.fullname || p.username}</p>
@@ -127,7 +129,7 @@ export default function CollectorProofsPage() {
                     : p.status === 'rejected' ? <StatusPill tone="red">Ditolak</StatusPill>
                     : <StatusPill tone="amber">Menunggu</StatusPill>}
                 </div>
-                <div className="mt-3 flex items-end justify-between gap-3">
+                <div className="mt-auto pt-3 flex items-end justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-foreground">{fmtRp(p.amount)}</p>
                     <p className="text-xs text-muted-foreground">#{p.invoice_number} · dikirim {fmtDate(p.submitted_at)}</p>

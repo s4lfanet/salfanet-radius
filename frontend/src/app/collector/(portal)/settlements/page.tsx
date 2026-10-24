@@ -4,19 +4,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { apiAdmin } from '@/lib/api/client';
 import { formatWIB } from '@/lib/timezone';
 import { ChevronDown, RefreshCw, Wallet, CalendarRange } from 'lucide-react';
-import { PageHeader, StatusPill, LoadingState, ErrorState, EmptyState, chipClass, ui, fmtRp, type Tone } from '@/components/collector/ui';
+import { PageHeader, StatusPill, LoadingState, ErrorState, EmptyState, chipClass, ui, fmtRp } from '@/components/collector/ui';
+import { PaymentList } from '@/components/collector/PaymentList';
 import { cn } from '@/lib/utils';
 
-const fmtTime = (d: string) => d ? formatWIB(d, 'dd MMM HH:mm') : '-';
 const fmtDate = (d: string) => d ? formatWIB(d, 'EEEE, dd MMMM yyyy') : '-';
-
-const METHOD: Record<string, { label: string; tone: Tone }> = {
-  cash: { label: 'Tunai', tone: 'slate' },
-  transfer: { label: 'Transfer', tone: 'blue' },
-  online: { label: 'Transfer', tone: 'blue' },
-  discount: { label: 'Diskon', tone: 'amber' },
-};
-const method = (m: string) => METHOD[m || 'cash'] || { label: m, tone: 'slate' as Tone };
 
 function Confirmation({ by, at }: { by?: string; at?: string }) {
   return by
@@ -31,7 +23,7 @@ function Summary({ summary }: { summary: any }) {
     { label: 'Diskon', value: summary?.discount_amount },
   ];
   return (
-    <div className={cn(ui.card, 'p-4 mb-3')}>
+    <div className={cn(ui.card, 'p-4 mb-3 lg:mb-0')}>
       <p className="text-xs text-muted-foreground">Total setoran · {summary?.invoice_count || 0} tagihan</p>
       <p className="text-2xl font-extrabold tracking-tight text-foreground">{fmtRp(summary?.total_amount)}</p>
       <dl className="mt-3 grid grid-cols-3 gap-2 border-t border-border pt-3">
@@ -50,27 +42,7 @@ function Payments({ invoices = [] }: { invoices?: any[] }) {
   if (!invoices.length) {
     return <EmptyState icon={<Wallet className="w-5 h-5" />} title="Belum ada pembayaran" hint="Tagihan yang Anda tandai lunas di tanggal ini akan muncul di sini." />;
   }
-  return (
-    <ul className={cn(ui.card, 'divide-y divide-border')}>
-      {invoices.map((inv) => {
-        const m = method(inv.paymentMethod);
-        return (
-          <li key={inv.id} className="p-4 flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="font-medium text-foreground truncate">{inv.customerName || inv.customerUsername || '-'}</p>
-              <p className="text-xs text-muted-foreground truncate">
-                {[inv.customerId || inv.customerUsername, inv.profileName, inv.areaName, fmtTime(inv.paidAt)].filter(Boolean).join(' · ')}
-              </p>
-            </div>
-            <div className="text-right shrink-0">
-              <p className="text-sm font-semibold text-foreground">{fmtRp(inv.amount)}</p>
-              <StatusPill tone={m.tone}>{m.label}</StatusPill>
-            </div>
-          </li>
-        );
-      })}
-    </ul>
-  );
+  return <PaymentList rows={invoices} />;
 }
 
 export default function CollectorSettlementsPage() {
@@ -136,7 +108,7 @@ export default function CollectorSettlementsPage() {
   useEffect(() => { if (mode === 'range') fetchRange(); }, [mode]);
 
   return (
-    <div className="max-w-4xl">
+    <div>
       <PageHeader title="Setoran Saya" description="Tagihan yang Anda tandai lunas, per hari atau per rentang tanggal" />
 
       <div className="flex gap-2 mb-4" role="group" aria-label="Tampilan">
@@ -164,12 +136,15 @@ export default function CollectorSettlementsPage() {
           ) : dailyError ? (
             <ErrorState message={dailyError} onRetry={() => fetchDaily(date)} />
           ) : data ? (
-            <div className={cn(loading && 'opacity-60')}>
-              <div className="flex items-center justify-between gap-2 flex-wrap mb-3">
-                <p className="text-sm font-medium text-foreground">{fmtDate(data.date)}</p>
-                <Confirmation by={data.confirmation?.confirmed_by} at={data.confirmation?.confirmed_at} />
+            // Wide screens: the day's total beside its payments table.
+            <div className={cn('lg:grid lg:grid-cols-[320px_minmax(0,1fr)] lg:gap-4 lg:items-start', loading && 'opacity-60')}>
+              <div>
+                <div className="flex items-center justify-between gap-2 flex-wrap mb-3">
+                  <p className="text-sm font-medium text-foreground">{fmtDate(data.date)}</p>
+                  <Confirmation by={data.confirmation?.confirmed_by} at={data.confirmation?.confirmed_at} />
+                </div>
+                <Summary summary={data.summary} />
               </div>
-              <Summary summary={data.summary} />
               <Payments invoices={data.invoices} />
             </div>
           ) : null}

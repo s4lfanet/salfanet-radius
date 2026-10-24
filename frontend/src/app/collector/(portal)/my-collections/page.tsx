@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { History, Receipt } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
-import { PageHeader, StatusPill, LoadingState, ErrorState, EmptyState, ui, fmtRp, type Tone } from '@/components/collector/ui';
+import { PageHeader, LoadingState, ErrorState, EmptyState, ui, fmtRp } from '@/components/collector/ui';
+import { PaymentList } from '@/components/collector/PaymentList';
 import { cn } from '@/lib/utils';
 
 interface MonthlyData {
@@ -40,14 +41,6 @@ const fmtMonth = (m: string) => {
   const [y, mo] = m.split('-');
   return `${MONTHS[parseInt(mo) - 1]} ${y}`;
 };
-const fmtTime = (d: string | null) => d ? new Date(d).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '-';
-
-const METHOD: Record<string, { label: string; tone: Tone }> = {
-  cash: { label: 'Tunai', tone: 'slate' },
-  transfer: { label: 'Transfer', tone: 'blue' },
-  online: { label: 'Transfer', tone: 'blue' },
-  discount: { label: 'Diskon', tone: 'amber' },
-};
 
 export default function CollectorMyCollectionsPage() {
   const [data, setData] = useState<CollectionData | null>(null);
@@ -72,7 +65,7 @@ export default function CollectorMyCollectionsPage() {
   const transfer = data?.monthly.reduce((s, m) => s + m.transfer_amount, 0) ?? 0;
 
   return (
-    <div className="max-w-4xl">
+    <div>
       <PageHeader title="Koleksi Saya" description="Semua yang Anda tagih dalam 6 bulan terakhir" />
 
       {loading ? (
@@ -80,7 +73,9 @@ export default function CollectorMyCollectionsPage() {
       ) : error || !data ? (
         <ErrorState message={error || 'Riwayat koleksi gagal dimuat'} onRetry={fetchData} />
       ) : (
-        <div className="space-y-4">
+        // Wide screens: totals and months on the left, recent payments as a table on the right.
+        <div className="space-y-4 lg:space-y-0 lg:grid lg:grid-cols-[360px_minmax(0,1fr)] lg:gap-4 lg:items-start">
+          <div className="space-y-4">
           <section className={cn(ui.card, 'p-4')}>
             <p className="text-xs text-muted-foreground">Total 6 bulan · {data.total_count} transaksi</p>
             <p className="text-2xl font-extrabold tracking-tight text-foreground">{fmtRp(data.total_amount)}</p>
@@ -108,32 +103,14 @@ export default function CollectorMyCollectionsPage() {
               </ul>
             )}
           </section>
+          </div>
 
           <section aria-labelledby="recent">
             <h3 id="recent" className="text-sm font-semibold text-foreground mb-2">Terbaru</h3>
             {data.recent.length === 0 ? (
               <EmptyState icon={<Receipt className="w-5 h-5" />} title="Belum ada koleksi" />
             ) : (
-              <ul className={cn(ui.card, 'divide-y divide-border')}>
-                {data.recent.map((inv) => {
-                  const m = METHOD[inv.paymentMethod || 'cash'] || { label: inv.paymentMethod || '-', tone: 'slate' as Tone };
-                  return (
-                    <li key={inv.id} className="p-4 flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="font-medium text-foreground truncate">{inv.customerName || inv.customerUsername}</p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {[inv.customerId || inv.customerUsername, inv.profileName, inv.areaName].filter(Boolean).join(' · ')}
-                        </p>
-                        <p className="text-xs text-muted-foreground">#{inv.invoiceNumber} · {fmtTime(inv.paidAt)}</p>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-sm font-semibold text-foreground">{fmtRp(inv.amount)}</p>
-                        <StatusPill tone={m.tone}>{m.label}</StatusPill>
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
+              <PaymentList rows={data.recent} />
             )}
           </section>
         </div>

@@ -31,7 +31,7 @@ export default function CollectorOntPage() {
   useEffect(() => { loadData(); }, [loadData]);
 
   return (
-    <div className="max-w-4xl">
+    <div>
       <PageHeader
         title="Cabut ONT"
         description="Perangkat yang Anda catat sudah dicabut dari pelanggan isolir"
@@ -60,7 +60,40 @@ export default function CollectorOntPage() {
       ) : removals.length === 0 ? (
         <EmptyState icon={<Unplug className="w-5 h-5" />} title="Belum ada cabut ONT tercatat" hint="Catat dari halaman Pelanggan Isolir setelah perangkat diambil." />
       ) : (
-        <ul className={cn(ui.card, 'divide-y divide-border')}>
+        <>
+        {/* Table: tablets and up */}
+        <div className={cn(ui.card, 'hidden md:block overflow-x-auto')}>
+          <table className="w-full text-[13px]">
+            <thead className="border-b border-border bg-muted/50 text-[13px] text-muted-foreground">
+              <tr>
+                <th scope="col" className="px-3 py-2.5 text-left font-medium">Dicabut</th>
+                <th scope="col" className="px-3 py-2.5 text-left font-medium">Pelanggan</th>
+                <th scope="col" className="px-3 py-2.5 text-left font-medium hidden lg:table-cell">Paket</th>
+                <th scope="col" className="px-3 py-2.5 text-left font-medium hidden lg:table-cell">Area</th>
+                <th scope="col" className="px-3 py-2.5 text-left font-medium">Alamat</th>
+                <th scope="col" className="px-3 py-2.5 text-left font-medium">Catatan</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {removals.map((r) => (
+                <tr key={r.id} className="hover:bg-muted/40 align-top">
+                  <td className="px-3 py-3 text-muted-foreground whitespace-nowrap tabular-nums">{fmtWhen(r.removedAt)}</td>
+                  <td className="px-3 py-3 min-w-[12rem]">
+                    <p className="font-medium text-foreground">{r.fullname}</p>
+                    <p className="text-xs text-muted-foreground">{r.customerId || r.username}</p>
+                  </td>
+                  <td className="px-3 py-3 hidden lg:table-cell text-foreground">{r.profileName || '-'}</td>
+                  <td className="px-3 py-3 hidden lg:table-cell text-muted-foreground">{r.areaName || '-'}</td>
+                  <td className="px-3 py-3 text-muted-foreground max-w-xs"><span className="line-clamp-2">{r.address || '-'}</span></td>
+                  <td className="px-3 py-3 text-foreground max-w-xs">{r.notes || <span className="text-muted-foreground">-</span>}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Cards: phones */}
+        <ul className={cn(ui.card, 'md:hidden divide-y divide-border')}>
           {removals.map((r) => (
             <li key={r.id} className="p-4">
               <div className="flex items-start justify-between gap-3">
@@ -79,6 +112,7 @@ export default function CollectorOntPage() {
             </li>
           ))}
         </ul>
+        </>
       )}
     </div>
   );
