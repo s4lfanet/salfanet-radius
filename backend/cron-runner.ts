@@ -523,19 +523,23 @@ async function main() {
     process.exit(0)
   }
 
-  // Rows this runner left at 'running' when it was restarted mid-job (deploys)
-  // would stay that way forever. Nothing runs longer than the largest job
-  // timeout, so anything older is orphaned.
-  try {
-    const maxTimeoutMs = Math.max(DEFAULT_JOB_TIMEOUT, ...Object.values(JOB_TIMEOUTS)) * 1000
-    const { count } = await prisma.cronHistory.updateMany({
-      where: { status: 'running', startedAt: { lt: new Date(Date.now() - maxTimeoutMs - 60_000) } },
-      data: { status: 'error', completedAt: nowLocal(), error: 'Interrupted (process restarted before job finished)' },
-    })
-    if (count) console.log(`  Marked ${count} orphaned 'running' history row(s) as interrupted`)
-  } catch (err) {
-    console.error('[CRON] Orphaned history cleanup failed (non-fatal):', err instanceof Error ? err.message : err)
+  // Rows left at 'running' by a restart mid-job (deploys) would stay that way
+  // forever. Nothing runs longer than the largest job timeout, so anything
+  // older is orphaned. On start, then every 15 minutes.
+  const markOrphans = async () => {
+    try {
+      const maxTimeoutMs = Math.max(DEFAULT_JOB_TIMEOUT, ...Object.values(JOB_TIMEOUTS)) * 1000
+      const { count } = await prisma.cronHistory.updateMany({
+        where: { status: 'running', startedAt: { lt: new Date(Date.now() - maxTimeoutMs - 60_000) } },
+        data: { status: 'error', completedAt: nowLocal(), error: 'Interrupted (process restarted before job finished)' },
+      })
+      if (count) console.log(`[CRON] Marked ${count} orphaned 'running' history row(s) as interrupted`)
+    } catch (err) {
+      console.error('[CRON] Orphaned history cleanup failed (non-fatal):', err instanceof Error ? err.message : err)
+    }
   }
+  await markOrphans()
+  setInterval(markOrphans, 15 * 60 * 1000)
 
   // Schedule all jobs using company timezone
   const tasks: ReturnType<typeof cron.schedule>[] = []

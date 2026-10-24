@@ -318,18 +318,9 @@ export default function CronSettingsPage() {
     }
   };
 
-  const typeLabels: Record<string, string> = {
-    voucher_sync: 'Voucher Sync', agent_sales: 'Agent Sales',
-    invoice_generate: 'Invoice Gen', invoice_reminder: 'Reminders',
-    auto_isolir: 'Auto Isolir', disconnect_sessions: 'Disconnect Sessions',
-    activity_log_cleanup: 'Activity Log Cleanup', telegram_backup: 'Telegram Backup',
-    telegram_health: 'Telegram Health', notification_check: 'Notification Check',
-    auto_renewal: 'Auto Renewal', webhook_log_cleanup: 'Webhook Cleanup',
-    hotspot_sync: 'Hotspot Sync', pppoe_auto_isolir: 'PPPoE Auto Isolir',
-    pppoe_session_sync: 'PPPoE Session Sync', session_monitor: 'Session Monitor',
-    suspend_check: 'Suspend Check', freeradius_health: 'RADIUS Health',
-    invoice_status_update: 'Invoice Status', cron_history_cleanup: 'History Cleanup',
-  };
+  // Names come from the server's job list, so a newly added job never shows
+  // up as its raw type (radius_sync_retry, acs_alert, ...).
+  const typeLabels: Record<string, string> = Object.fromEntries(jobs.map((j) => [j.type, j.name]));
 
   if (loading) {
     return (
