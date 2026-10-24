@@ -102,6 +102,10 @@ export async function GET(req: NextRequest) {
         unpaid_count: unpaid.length,
         unpaid_amount: unpaid.reduce((s, i) => s + i.amount, 0),
         is_paid: userAllInvoices.length > 0 && unpaid.length === 0,
+        // Payment status for the customer list: open invoices, all settled, or none issued yet.
+        pay_status: unpaid.length > 0 ? 'unpaid' : paid.length > 0 ? 'paid' : 'none',
+        has_overdue: unpaid.some(i => i.status === 'OVERDUE'),
+        last_paid_at: paid.reduce<Date | null>((d, i) => (i.paidAt && (!d || i.paidAt > d) ? i.paidAt : d), null),
         has_paid_by_collector: paid.some(i => i.paidById === collector.id),
       };
     });

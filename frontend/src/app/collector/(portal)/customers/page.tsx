@@ -34,19 +34,31 @@ interface Customer {
   router: { name: string } | null;
   unpaid_count: number;
   unpaid_amount: number;
+  pay_status?: 'paid' | 'unpaid' | 'none';
+  has_overdue?: boolean;
+  last_paid_at?: string | null;
 }
 
 const STATUS = [
   { key: 'all', label: 'Semua' },
   { key: 'active', label: 'Aktif' },
   { key: 'isolir', label: 'Isolir' },
-  { key: 'unpaid', label: 'Ada tunggakan' },
+  { key: 'unpaid', label: 'Belum lunas' },
+  { key: 'paid', label: 'Lunas' },
 ] as const;
 
 type SortKey = 'name' | 'customerId' | 'profile' | 'expiredAt' | 'unpaid' | 'status';
 
 const isIsolir = (s: string) => s === 'isolated' || s === 'suspended';
 const fmtDate = (d: string | null) => (d ? formatWIB(d, 'dd MMM yyyy') : '-');
+
+/** Payment status of a customer's invoices, as the list and detail show it. */
+const payStatus = (c: Customer): { tone: 'green' | 'red' | 'amber' | 'slate'; label: string } => {
+  const s = c.pay_status ?? (c.unpaid_count > 0 ? 'unpaid' : 'none');
+  if (s === 'unpaid') return c.has_overdue ? { tone: 'red', label: 'Terlambat' } : { tone: 'amber', label: 'Belum lunas' };
+  if (s === 'paid') return { tone: 'green', label: 'Lunas' };
+  return { tone: 'slate', label: 'Belum ada tagihan' };
+};
 
 /** wa.me wants the number with country code and no symbols. */
 const waNumber = (phone: string) => {
@@ -111,6 +123,7 @@ export default function CollectorCustomersPage() {
       if (status === 'active' && c.status !== 'active') return false;
       if (status === 'isolir' && !isIsolir(c.status)) return false;
       if (status === 'unpaid' && !(c.unpaid_count > 0)) return false;
+      if (status === 'paid' && c.pay_status !== 'paid') return false;
       if (!q) return true;
       return [c.name, c.username, c.customerId, c.phone, c.address].some((v) => (v || '').toLowerCase().includes(q));
     });
@@ -126,6 +139,7 @@ export default function CollectorCustomersPage() {
     active: customers.filter((c) => c.status === 'active').length,
     isolir: customers.filter((c) => isIsolir(c.status)).length,
     unpaid: customers.filter((c) => c.unpaid_count > 0).length,
+    paid: customers.filter((c) => c.pay_status === 'paid').length,
   }), [customers]);
 
   const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -299,7 +313,7 @@ export default function CollectorCustomersPage() {
                   <th scope="col" className="px-3 py-2.5 text-left font-medium hidden lg:table-cell">Telepon</th>
                   <SortHead k="expiredAt" className="hidden xl:table-cell">Aktif s/d</SortHead>
                   <SortHead k="status">Status</SortHead>
-                  <SortHead k="unpaid" className="text-right">Tunggakan</SortHead>
+                  <SortHead k="unpaid">Pembayaran</SortHead>
                   <th scope="col" className="px-3 py-2.5 text-right font-medium">Aksi</th>
                 </tr>
               </thead>
@@ -343,13 +357,13 @@ export default function CollectorCustomersPage() {
                       <td className="px-3 py-3 hidden lg:table-cell text-muted-foreground whitespace-nowrap">{c.phone || '-'}</td>
                       <td className="px-3 py-3 hidden xl:table-cell text-muted-foreground whitespace-nowrap">{fmtDate(c.expiredAt)}</td>
                       <td className="px-3 py-3"><StatusPill tone={st.tone}>{st.label}</StatusPill></td>
-                      <td className="px-3 py-3 text-right whitespace-nowrap">
+                      <td className="px-3 py-3 whitespace-nowrap">
+                        <StatusPill tone={payStatus(c).tone}>{payStatus(c).label}</StatusPill>
                         {c.unpaid_count > 0 ? (
-                          <>
-                            <p className={cn('font-semibold', toneText('red'))}>{fmtRp(c.unpaid_amount)}</p>
-                            <p className="text-xs text-muted-foreground">{c.unpaid_count} tagihan</p>
-                          </>
-                        ) : <span className="text-muted-foreground">-</span>}
+                          <p className="mt-1 text-xs text-muted-foreground"><span className={cn('font-semibold', toneText('red'))}>{fmtRp(c.unpaid_amount)}</span> · {c.unpaid_count} tagihan</p>
+                        ) : c.last_paid_at ? (
+                          <p className="mt-1 text-xs text-muted-foreground">Dibayar {fmtDate(c.last_paid_at)}</p>
+                        ) : null}
                       </td>
                       <td className="px-3 py-3">{actions(c, true)}</td>
                     </tr>
@@ -390,9 +404,12 @@ export default function CollectorCustomersPage() {
                       : <span className="h-[40px] inline-flex items-center justify-center rounded-xl bg-muted text-xs text-muted-foreground">Belum ada koordinat</span>}
                   </div>
                   <div className="mt-3 pt-3 border-t border-border flex items-center justify-between gap-3">
-                    {c.unpaid_count > 0
-                      ? <p className={cn('text-sm font-semibold', toneText('red'))}>{fmtRp(c.unpaid_amount)} <span className="font-normal text-muted-foreground">· {c.unpaid_count} tagihan</span></p>
-                      : <p className="text-sm text-muted-foreground">Tidak ada tunggakan</p>}
+                    <div className="min-w-0">
+                      <StatusPill tone={payStatus(c).tone}>{payStatus(c).label}</StatusPill>
+                      {c.unpaid_count > 0
+                        ? <p className="mt-1 text-sm"><span className={cn('font-semibold', toneText('red'))}>{fmtRp(c.unpaid_amount)}</span> <span className="text-muted-foreground">· {c.unpaid_count} tagihan</span></p>
+                        : c.last_paid_at && <p className="mt-1 text-xs text-muted-foreground">Dibayar {fmtDate(c.last_paid_at)}</p>}
+                    </div>
                     {actions(c, true)}
                   </div>
                 </li>
@@ -436,7 +453,9 @@ export default function CollectorCustomersPage() {
             <p className="text-sm text-muted-foreground">
               {detail.unpaid_count > 0
                 ? <><span className={cn('font-semibold', toneText('red'))}>{fmtRp(detail.unpaid_amount)}</span> belum dibayar dari {detail.unpaid_count} tagihan.</>
-                : 'Tidak ada tagihan yang belum dibayar.'}
+                : detail.pay_status === 'paid'
+                  ? <>Lunas{detail.last_paid_at ? <>, terakhir dibayar {fmtDate(detail.last_paid_at)}</> : null}.</>
+                  : 'Belum ada tagihan untuk pelanggan ini.'}
             </p>
           </section>
         </CustomerDetailSheet>
