@@ -5,6 +5,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import CustomerDetailSheet from '@/components/field/CustomerDetailSheet';
 import { mapsLinks, type MapPoint } from '@/components/field/CustomerMap';
+import { waLink, collectorWaText } from '@/components/field/whatsapp';
 import { apiAdmin } from '@/lib/api/client';
 import { formatWIB } from '@/lib/timezone';
 import { ScopeFilter, scopeQuery, type ScopeValue } from '@/components/collector/ScopeFilter';
@@ -60,11 +61,6 @@ const payStatus = (c: Customer): { tone: 'green' | 'red' | 'amber' | 'slate'; la
   return { tone: 'slate', label: 'Belum ada tagihan' };
 };
 
-/** wa.me wants the number with country code and no symbols. */
-const waNumber = (phone: string) => {
-  const d = phone.replace(/\D/g, '');
-  return d.startsWith('0') ? '62' + d.slice(1) : d;
-};
 
 const sortValue = (c: Customer, key: SortKey): string | number => {
   switch (key) {
@@ -94,6 +90,14 @@ export default function CollectorCustomersPage() {
   const [assigned, setAssigned] = useState('');
   const [view, setView] = useState<'table' | 'map'>('table');
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [company, setCompany] = useState('');
+
+  useEffect(() => {
+    fetch('/api/public/company')
+      .then((r) => r.json())
+      .then((d) => { if (d.success && d.company?.name) setCompany(d.company.name); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     apiAdmin<{ collector?: { scopeLabel?: string } }>('/api/collector/auth/session')
@@ -200,7 +204,7 @@ export default function CollectorCustomersPage() {
             <a href={`tel:${c.phone}`} className={btn} title={`Telepon ${who} (${c.phone})`}>
               <Phone className="w-3.5 h-3.5 shrink-0" /> Telepon
             </a>
-            <a href={`https://wa.me/${waNumber(c.phone)}`} target="_blank" rel="noopener noreferrer" className={btn} title={`Kirim WhatsApp ke ${who} (${c.phone})`}>
+            <a href={waLink(c.phone, collectorWaText(c, company))} target="_blank" rel="noopener noreferrer" className={btn} title={`Kirim WhatsApp ke ${who} (${c.phone})`}>
               <MessageCircle className={cn('w-3.5 h-3.5 shrink-0', toneText('green'))} /> WhatsApp
             </a>
           </>
@@ -369,7 +373,7 @@ export default function CollectorCustomersPage() {
                               <a href={`tel:${c.phone}`} title={`Telepon ${c.name || c.username}`} className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 dark:text-blue-400 hover:underline">
                                 <Phone className="w-3 h-3" /> Telepon
                               </a>
-                              <a href={`https://wa.me/${waNumber(c.phone)}`} target="_blank" rel="noopener noreferrer" title={`Kirim WhatsApp ke ${c.name || c.username}`} className={cn('inline-flex items-center gap-1 text-xs font-medium hover:underline', toneText('green'))}>
+                              <a href={waLink(c.phone, collectorWaText(c, company))} target="_blank" rel="noopener noreferrer" title={`Kirim WhatsApp ke ${c.name || c.username}`} className={cn('inline-flex items-center gap-1 text-xs font-medium hover:underline', toneText('green'))}>
                                 <MessageCircle className="w-3 h-3" /> WhatsApp
                               </a>
                             </div>
@@ -463,6 +467,7 @@ export default function CollectorCustomersPage() {
         <CustomerDetailSheet
           customer={detail}
           onClose={() => setDetailId(null)}
+          waText={collectorWaText(detail, company)}
           actions={detail.unpaid_count > 0 ? (
             <Link href={`/collector/billing?q=${encodeURIComponent(detail.username)}`} className={cn(ui.btnPrimary, 'w-full')}>
               <Receipt className="w-4 h-4" /> Tagih {fmtRp(detail.unpaid_amount)}

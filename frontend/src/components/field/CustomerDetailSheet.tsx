@@ -6,6 +6,7 @@ import { X, Phone, MessageCircle, Navigation, MapPin, Copy, Check, ExternalLink,
 import { formatWIB } from '@/lib/timezone';
 import { StatusPill, customerStatus, ui, fmtRp } from '@/components/collector/ui';
 import { mapsLinks } from './CustomerMap';
+import { waLink } from './whatsapp';
 import { cn } from '@/lib/utils';
 
 const MapPicker = dynamic(() => import('@/components/MapPicker'), { ssr: false });
@@ -32,10 +33,6 @@ export interface DetailCustomer {
 }
 
 const fmtDate = (d?: string | null) => (d ? formatWIB(d, 'dd MMM yyyy') : '-');
-const waNumber = (phone: string) => {
-  const d = phone.replace(/\D/g, '');
-  return d.startsWith('0') ? '62' + d.slice(1) : d;
-};
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -57,9 +54,12 @@ export default function CustomerDetailSheet({
   actions,
   children,
   onSaveLocation,
+  waText,
 }: {
   customer: DetailCustomer;
   onClose: () => void;
+  /** Message typed into WhatsApp; defaults to a greeting with the customer's name. */
+  waText?: string;
   /** Extra buttons next to Telepon / WhatsApp (e.g. Tagih). */
   actions?: ReactNode;
   children?: ReactNode;
@@ -180,7 +180,7 @@ export default function CustomerDetailSheet({
               <a href={`tel:${customer.phone}`} aria-label="Telepon pelanggan" title={`Telepon ${customer.phone}`} className="h-[40px] pointer-coarse:h-[44px] min-w-[40px] pointer-coarse:min-w-[44px] sm:px-3 shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl border border-border text-xs font-medium hover:bg-muted text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
                 <Phone className="w-4 h-4" /><span className="hidden sm:inline">Telepon</span>
               </a>
-              <a href={`https://wa.me/${waNumber(customer.phone)}`} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp pelanggan" title={`Kirim WhatsApp ke ${customer.phone}`} className="h-[40px] pointer-coarse:h-[44px] min-w-[40px] pointer-coarse:min-w-[44px] sm:px-3 shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl border border-border text-xs font-medium hover:bg-muted text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
+              <a href={waLink(customer.phone, waText ?? `Halo Bapak/Ibu ${customer.name || customer.username},\n\n`)} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp pelanggan" title={`Kirim WhatsApp ke ${customer.phone}`} className="h-[40px] pointer-coarse:h-[44px] min-w-[40px] pointer-coarse:min-w-[44px] sm:px-3 shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl border border-border text-xs font-medium hover:bg-muted text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
                 <MessageCircle className="w-4 h-4 text-emerald-700 dark:text-emerald-400" /><span className="hidden sm:inline">WhatsApp</span>
               </a>
             </>
