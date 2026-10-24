@@ -79,10 +79,10 @@ export default function CollectorIsolirPage() {
             <li key={inv.id} className="rounded-xl border border-border bg-card p-3 md:flex md:items-center md:justify-between md:gap-6">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="text-[13px] font-bold text-foreground tabular-nums">{fmtRp(inv.amount)}</p>
+                  <p className="text-sm font-bold text-foreground tabular-nums">{fmtRp(inv.amount)}</p>
                   <StatusPill tone={inv.status === 'OVERDUE' ? 'red' : 'amber'}>{inv.status === 'OVERDUE' ? 'Lewat tempo' : 'Belum bayar'}</StatusPill>
                 </div>
-                <p className="mt-0.5 text-[12px] text-muted-foreground break-words">#{inv.invoiceNumber} · jatuh tempo {fmtDate(inv.dueDate)}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground break-words">#{inv.invoiceNumber} · jatuh tempo {fmtDate(inv.dueDate)}</p>
               </div>
               <div className="mt-3 md:mt-0 grid grid-cols-2 gap-2 sm:flex sm:items-center sm:justify-end md:shrink-0">
                 <button type="button" onClick={() => openPayModal(inv, u.name, 'transfer')} className={cn(ui.btnSecondary, 'h-[40px] px-3.5 pointer-coarse:h-[44px]')}>
@@ -96,7 +96,7 @@ export default function CollectorIsolirPage() {
           ))}
         </ul>
       ) : (
-        <p className="text-[13px] text-muted-foreground py-2">Tidak ada tagihan terbuka.</p>
+        <p className="text-sm text-muted-foreground py-2">Tidak ada tagihan terbuka.</p>
       )}
       <div className="mt-3 flex md:justify-end">
         <button
@@ -232,7 +232,7 @@ export default function CollectorIsolirPage() {
         <EmptyState icon={<Search className="w-5 h-5" />} title="Tidak ada yang cocok" hint="Ubah kata kunci pencarian." />
       ) : (
         <>
-          <p className="text-[12px] text-muted-foreground mb-2">{filtered.length} pelanggan isolir</p>
+          <p className="text-xs text-muted-foreground mb-2">{filtered.length} pelanggan isolir</p>
 
           {/* Table: tablets and up. A row opens to its open invoices and Cabut ONT. */}
           <div className={cn(ui.card, 'hidden md:block overflow-x-auto')}>
@@ -256,29 +256,29 @@ export default function CollectorIsolirPage() {
                       <tr onClick={(e) => { if (!(e.target as HTMLElement).closest('a,button')) setExpandedUser(open ? null : u.id); }} className={cn('align-middle cursor-pointer', open ? 'bg-muted/40' : 'hover:bg-muted/40')}>
                         <td className="px-3 py-3 min-w-[12rem]">
                           <p className="font-semibold text-foreground">{u.name}</p>
-                          <p className="text-[12px] text-muted-foreground">{u.customerId || u.username}{u.customerId ? ` · ${u.username}` : ''}</p>
+                          <p className="text-xs text-muted-foreground">{u.customerId || u.username}{u.customerId ? ` · ${u.username}` : ''}</p>
                         </td>
                         <td className="px-3 py-3 hidden lg:table-cell">
-                          {u.profile ? <><p className="text-foreground">{u.profile.name}</p><p className="text-[12px] text-muted-foreground">{fmtRp(u.profile.price)}/bln</p></> : <span className="text-muted-foreground">-</span>}
+                          {u.profile ? <><p className="text-foreground">{u.profile.name}</p><p className="text-xs text-muted-foreground">{fmtRp(u.profile.price)}/bln</p></> : <span className="text-muted-foreground">-</span>}
                         </td>
                         <td className="px-3 py-3 hidden xl:table-cell">
                           <p className="text-foreground">{u.router?.name || '-'}</p>
-                          <p className="text-[12px] text-muted-foreground">{u.area?.name || '-'}</p>
+                          <p className="text-xs text-muted-foreground">{u.area?.name || '-'}</p>
                         </td>
                         <td className="px-3 py-3 hidden lg:table-cell whitespace-nowrap">
-                          {u.phone ? <a href={`tel:${u.phone}`} className="text-[13px] tabular-nums text-blue-700 dark:text-blue-400 hover:underline">{u.phone}</a> : <span className="text-muted-foreground">-</span>}
+                          {u.phone ? <a href={`tel:${u.phone}`} className="text-sm tabular-nums text-blue-700 dark:text-blue-400 hover:underline">{u.phone}</a> : <span className="text-muted-foreground">-</span>}
                         </td>
                         <td className="px-3 py-3 hidden xl:table-cell whitespace-nowrap text-muted-foreground">{fmtDate(u.expiredAt)}</td>
                         <td className="px-3 py-3 text-right whitespace-nowrap">
                           {!u.is_paid ? (
                             <>
                               <p className={cn('font-bold', toneText('red'))}>{fmtRp(u.unpaid_amount)}</p>
-                              <p className="text-[12px] text-muted-foreground">{u.unpaid_count} tagihan</p>
+                              <p className="text-xs text-muted-foreground">{u.unpaid_count} tagihan</p>
                             </>
                           ) : <p className={cn('font-semibold', toneText('green'))}>Lunas</p>}
                         </td>
                         <td className="px-3 py-3 text-right">
-                          <button type="button" onClick={() => setExpandedUser(open ? null : u.id)} aria-expanded={open} className={cn(open ? ui.btnSecondary : ui.btnPrimary, 'h-[40px] w-24 px-0 text-[13px] pointer-coarse:h-[44px]')}>
+                          <button type="button" onClick={() => setExpandedUser(open ? null : u.id)} aria-expanded={open} className={cn(open ? ui.btnSecondary : ui.btnPrimary, 'h-[40px] w-24 px-0 text-sm pointer-coarse:h-[44px]')}>
                             {open ? 'Tutup' : 'Tindak'}
                             <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', open && 'rotate-180')} />
                           </button>
@@ -287,7 +287,7 @@ export default function CollectorIsolirPage() {
                       {open && (
                         <tr className="bg-muted/40">
                           <td colSpan={7} className="px-3 pb-3">
-                            {u.address && <p className="text-[12px] text-muted-foreground mb-2">Alamat: <span className="text-foreground">{u.address}</span></p>}
+                            {u.address && <p className="text-xs text-muted-foreground mb-2">Alamat: <span className="text-foreground">{u.address}</span></p>}
                             {renderInvoices(u)}
                           </td>
                         </tr>
@@ -316,18 +316,18 @@ export default function CollectorIsolirPage() {
                         <p className="font-semibold text-foreground truncate">{u.name}</p>
                         <StatusPill tone="red">Isolir</StatusPill>
                       </div>
-                      <p className="text-[12px] text-muted-foreground truncate mt-0.5">
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">
                         {[u.customerId || u.username, u.phone, u.area?.name].filter(Boolean).join(' · ')}
                       </p>
                     </div>
                     <div className="text-right shrink-0">
                       {!u.is_paid ? (
                         <>
-                          <p className={cn('text-[13px] font-bold', toneText('red'))}>{fmtRp(u.unpaid_amount)}</p>
-                          <p className="text-[12px] text-muted-foreground">{u.unpaid_count} tagihan</p>
+                          <p className={cn('text-sm font-bold', toneText('red'))}>{fmtRp(u.unpaid_amount)}</p>
+                          <p className="text-xs text-muted-foreground">{u.unpaid_count} tagihan</p>
                         </>
                       ) : (
-                        <p className={cn('text-[13px] font-semibold', toneText('green'))}>Lunas</p>
+                        <p className={cn('text-sm font-semibold', toneText('green'))}>Lunas</p>
                       )}
                     </div>
                     <ChevronDown className={cn('w-5 h-5 mt-0.5 shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')} aria-hidden />
@@ -335,7 +335,7 @@ export default function CollectorIsolirPage() {
 
                   {open && (
                     <div className="border-t border-border px-4 pb-4">
-                      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 py-3 text-[12px]">
+                      <dl className="grid grid-cols-2 gap-x-4 gap-y-2 py-3 text-xs">
                         {u.profile && (<div><dt className="text-muted-foreground">Paket</dt><dd className="text-foreground font-medium">{u.profile.name} · {fmtRp(u.profile.price)}</dd></div>)}
                         <div><dt className="text-muted-foreground">Aktif s/d</dt><dd className="text-foreground font-medium">{fmtDate(u.expiredAt)}</dd></div>
                         <div><dt className="text-muted-foreground">Username</dt><dd className="text-foreground font-medium break-all">{u.username}</dd></div>
@@ -366,9 +366,9 @@ export default function CollectorIsolirPage() {
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="cabut-title">
           <button type="button" aria-label="Tutup" className="absolute inset-0 bg-black/50" onClick={() => setCabutTarget(null)} />
           <div className="relative w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl border border-border bg-card p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
-            <h3 id="cabut-title" className="text-[16px] font-bold text-foreground">Catat cabut ONT</h3>
-            <p className="text-[13px] text-muted-foreground">{cabutTarget.name} · {cabutTarget.username}</p>
-            <label htmlFor="cabut-notes" className="block text-[13px] font-medium text-foreground mt-4 mb-1">Catatan <span className="font-normal text-muted-foreground">(opsional)</span></label>
+            <h3 id="cabut-title" className="text-base font-bold text-foreground">Catat cabut ONT</h3>
+            <p className="text-sm text-muted-foreground">{cabutTarget.name} · {cabutTarget.username}</p>
+            <label htmlFor="cabut-notes" className="block text-sm font-medium text-foreground mt-4 mb-1">Catatan <span className="font-normal text-muted-foreground">(opsional)</span></label>
             <textarea
               id="cabut-notes"
               value={cabutNotes}
@@ -383,7 +383,7 @@ export default function CollectorIsolirPage() {
                 type="button"
                 onClick={submitCabut}
                 disabled={cabutLoading}
-                className="inline-flex items-center justify-center gap-2 h-[40px] pointer-coarse:h-[44px] px-4 rounded-xl bg-red-600 text-white text-[13px] font-semibold hover:bg-red-700 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                className="inline-flex items-center justify-center gap-2 h-[40px] pointer-coarse:h-[44px] px-4 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 {cabutLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Unplug className="w-4 h-4" />} Catat cabut
               </button>
@@ -397,16 +397,16 @@ export default function CollectorIsolirPage() {
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="pay-title">
           <button type="button" aria-label="Tutup" className="absolute inset-0 bg-black/50" onClick={() => setPayModal(null)} />
           <div className="relative w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl border border-border bg-card p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] max-h-[90dvh] overflow-y-auto">
-            <h3 id="pay-title" className="text-[16px] font-bold text-foreground">Tandai lunas</h3>
-            <p className="text-[13px] text-muted-foreground">{payModal.customerName} · #{payModal.invoiceNumber}</p>
+            <h3 id="pay-title" className="text-base font-bold text-foreground">Tandai lunas</h3>
+            <p className="text-sm text-muted-foreground">{payModal.customerName} · #{payModal.invoiceNumber}</p>
 
             <div className="mt-4 rounded-xl bg-muted p-3">
-              <p className="text-[12px] text-muted-foreground">Jumlah diterima</p>
+              <p className="text-xs text-muted-foreground">Jumlah diterima</p>
               <p className="text-2xl font-extrabold tracking-tight text-foreground">{fmtRp(payModal.amount)}</p>
             </div>
 
             <fieldset className="mt-4">
-              <legend className="text-[13px] font-medium text-foreground mb-2">Cara bayar</legend>
+              <legend className="text-sm font-medium text-foreground mb-2">Cara bayar</legend>
               <div className="grid grid-cols-2 gap-2">
                 {[
                   { key: 'cash', label: 'Tunai', icon: Wallet },
@@ -430,7 +430,7 @@ export default function CollectorIsolirPage() {
 
             {paymentMethod === 'transfer' && (
               <div className="mt-4">
-                <p className="text-[13px] font-medium text-foreground mb-2">Bukti transfer</p>
+                <p className="text-sm font-medium text-foreground mb-2">Bukti transfer</p>
                 {proofPreview ? (
                   <div className="relative">
                     {/* eslint-disable-next-line @next/next/no-img-element -- local preview of a picked file */}
@@ -442,14 +442,14 @@ export default function CollectorIsolirPage() {
                 ) : (
                   <label className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border p-6 cursor-pointer hover:bg-muted focus-within:ring-2 focus-within:ring-blue-600">
                     <Upload className="w-6 h-6 text-muted-foreground" />
-                    <span className="text-[13px] text-muted-foreground">Ambil foto atau pilih gambar</span>
+                    <span className="text-sm text-muted-foreground">Ambil foto atau pilih gambar</span>
                     <input type="file" accept="image/*" onChange={handleProofSelect} className="sr-only" />
                   </label>
                 )}
               </div>
             )}
 
-            <p className="text-[12px] text-muted-foreground mt-4">
+            <p className="text-xs text-muted-foreground mt-4">
               Tagihan ditandai lunas dan tidak bisa dibatalkan dari sini. Internet pelanggan dibuka kembali setelah lunas.
             </p>
 

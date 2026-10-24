@@ -32,13 +32,13 @@ function Summary({ summary }: { summary: any }) {
   ];
   return (
     <div className={cn(ui.card, 'p-4 mb-3')}>
-      <p className="text-[12px] text-muted-foreground">Total setoran · {summary?.invoice_count || 0} tagihan</p>
+      <p className="text-xs text-muted-foreground">Total setoran · {summary?.invoice_count || 0} tagihan</p>
       <p className="text-2xl font-extrabold tracking-tight text-foreground">{fmtRp(summary?.total_amount)}</p>
       <dl className="mt-3 grid grid-cols-3 gap-2 border-t border-border pt-3">
         {rows.map((r) => (
           <div key={r.label}>
-            <dt className="text-[12px] text-muted-foreground">{r.label}</dt>
-            <dd className="text-[13px] font-semibold text-foreground">{fmtRp(r.value)}</dd>
+            <dt className="text-xs text-muted-foreground">{r.label}</dt>
+            <dd className="text-sm font-semibold text-foreground">{fmtRp(r.value)}</dd>
           </div>
         ))}
       </dl>
@@ -58,12 +58,12 @@ function Payments({ invoices = [] }: { invoices?: any[] }) {
           <li key={inv.id} className="p-4 flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="font-medium text-foreground truncate">{inv.customerName || inv.customerUsername || '-'}</p>
-              <p className="text-[12px] text-muted-foreground truncate">
+              <p className="text-xs text-muted-foreground truncate">
                 {[inv.customerId || inv.customerUsername, inv.profileName, inv.areaName, fmtTime(inv.paidAt)].filter(Boolean).join(' · ')}
               </p>
             </div>
             <div className="text-right shrink-0">
-              <p className="text-[13px] font-semibold text-foreground">{fmtRp(inv.amount)}</p>
+              <p className="text-sm font-semibold text-foreground">{fmtRp(inv.amount)}</p>
               <StatusPill tone={m.tone}>{m.label}</StatusPill>
             </div>
           </li>
@@ -151,7 +151,7 @@ export default function CollectorSettlementsPage() {
         <div>
           <div className="flex gap-2 items-end mb-4">
             <div className="flex-1 sm:flex-none sm:w-56">
-              <label htmlFor="day" className="text-[12px] text-muted-foreground block mb-1">Tanggal</label>
+              <label htmlFor="day" className="text-xs text-muted-foreground block mb-1">Tanggal</label>
               <input id="day" type="date" value={date} onChange={(e) => { setDate(e.target.value); fetchDaily(e.target.value); }} className={ui.input} />
             </div>
             <button type="button" onClick={() => fetchDaily(date)} aria-label="Muat ulang" className={ui.iconBtn}>
@@ -166,7 +166,7 @@ export default function CollectorSettlementsPage() {
           ) : data ? (
             <div className={cn(loading && 'opacity-60')}>
               <div className="flex items-center justify-between gap-2 flex-wrap mb-3">
-                <p className="text-[13px] font-medium text-foreground">{fmtDate(data.date)}</p>
+                <p className="text-sm font-medium text-foreground">{fmtDate(data.date)}</p>
                 <Confirmation by={data.confirmation?.confirmed_by} at={data.confirmation?.confirmed_at} />
               </div>
               <Summary summary={data.summary} />
@@ -178,11 +178,11 @@ export default function CollectorSettlementsPage() {
         <div>
           <div className="grid grid-cols-2 sm:flex gap-2 items-end mb-4">
             <div className="sm:w-48">
-              <label htmlFor="from" className="text-[12px] text-muted-foreground block mb-1">Dari</label>
+              <label htmlFor="from" className="text-xs text-muted-foreground block mb-1">Dari</label>
               <input id="from" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className={ui.input} />
             </div>
             <div className="sm:w-48">
-              <label htmlFor="to" className="text-[12px] text-muted-foreground block mb-1">Sampai</label>
+              <label htmlFor="to" className="text-xs text-muted-foreground block mb-1">Sampai</label>
               <input id="to" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className={ui.input} />
             </div>
             <button type="button" onClick={fetchRange} className={cn(ui.btnPrimary, 'col-span-2')}>
@@ -211,12 +211,12 @@ export default function CollectorSettlementsPage() {
                       >
                         <div className="min-w-0 flex-1">
                           <p className="font-semibold text-foreground">{formatWIB(row.date, 'EEE, dd MMM yyyy')}</p>
-                          <p className="text-[12px] text-muted-foreground mt-0.5">
+                          <p className="text-xs text-muted-foreground mt-0.5">
                             {row.invoice_count} tagihan · tunai {fmtRp(row.cash_amount)} · transfer {fmtRp(row.transfer_amount)}
                           </p>
                           <div className="mt-2"><Confirmation by={row.confirmed_by} at={row.confirmed_at} /></div>
                         </div>
-                        <p className="text-[13px] font-bold text-foreground shrink-0">{fmtRp(row.total_amount)}</p>
+                        <p className="text-sm font-bold text-foreground shrink-0">{fmtRp(row.total_amount)}</p>
                         <ChevronDown className={cn('w-5 h-5 shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')} aria-hidden />
                       </button>
                       {open && (

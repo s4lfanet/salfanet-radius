@@ -124,8 +124,8 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
         </div>
       )}
       <div className="min-w-0">
-        <p className="text-[13px] font-bold text-foreground truncate">{companyName || 'Portal Kolektor'}</p>
-        <p className="text-[12px] text-muted-foreground">Portal Kolektor</p>
+        <p className="text-sm font-bold text-foreground truncate">{companyName || 'Portal Kolektor'}</p>
+        <p className="text-xs text-muted-foreground">Portal Kolektor</p>
       </div>
     </div>
   );
@@ -139,7 +139,7 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
         href={item.href}
         aria-current={active ? 'page' : undefined}
         className={cn(
-          'flex items-center gap-3 h-[40px] pointer-coarse:h-[44px] px-3 rounded-xl text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
+          'flex items-center gap-3 h-[40px] pointer-coarse:h-[44px] px-3 rounded-xl text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
           active ? 'bg-blue-600/10 text-blue-700 dark:text-blue-400' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
         )}
       >
@@ -152,23 +152,23 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
   const account = (
     <div className="border-t border-border p-3">
       <div className="flex items-center gap-3 px-2 mb-2">
-        <div className="w-[36px] h-[36px] shrink-0 rounded-xl bg-blue-600/10 text-blue-700 dark:text-blue-400 flex items-center justify-center text-[13px] font-bold" aria-hidden>
+        <div className="w-[36px] h-[36px] shrink-0 rounded-xl bg-blue-600/10 text-blue-700 dark:text-blue-400 flex items-center justify-center text-sm font-bold" aria-hidden>
           {collector.name.charAt(0).toUpperCase()}
         </div>
         <div className="min-w-0">
-          <p className="text-[13px] font-semibold text-foreground truncate">{collector.name}</p>
-          <p className="text-[12px] text-muted-foreground truncate">{collector.username}</p>
+          <p className="text-sm font-semibold text-foreground truncate">{collector.name}</p>
+          <p className="text-xs text-muted-foreground truncate">{collector.username}</p>
         </div>
       </div>
       {collector.scopeLabel && (
-        <p className="px-2 mb-2 text-[12px] text-muted-foreground leading-relaxed">
+        <p className="px-2 mb-2 text-xs text-muted-foreground leading-relaxed">
           Wilayah tugas: <span className="font-medium text-foreground">{collector.scopeLabel}</span>
         </p>
       )}
       <button
         type="button"
         onClick={handleLogout}
-        className="w-full flex items-center gap-3 h-[40px] pointer-coarse:h-[44px] px-3 rounded-xl text-[13px] font-medium text-red-700 dark:text-red-400 hover:bg-red-600/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
+        className="w-full flex items-center gap-3 h-[40px] pointer-coarse:h-[44px] px-3 rounded-xl text-xs font-medium text-red-700 dark:text-red-400 hover:bg-red-600/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
       >
         <LogOut className="w-[18px] h-[18px]" /> Keluar
       </button>
@@ -211,7 +211,7 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
 
       <div className="flex-1 min-w-0 flex flex-col">
         <header className="h-14 lg:h-16 sticky top-0 z-30 border-b border-border bg-card flex items-center justify-between gap-2 px-4 lg:px-6">
-          <h1 className="text-[15px] lg:text-[16px] font-bold text-foreground truncate">{current?.title || 'Portal Kolektor'}</h1>
+          <h1 className="text-sm lg:text-base font-bold text-foreground truncate">{current?.title || 'Portal Kolektor'}</h1>
           <div className="flex items-center gap-1">
             <CollectorNotificationBell />
             <button
@@ -246,7 +246,7 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
                 href={item.href}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
-                  'flex flex-col items-center justify-center gap-0.5 h-16 text-[11px] font-medium focus-visible:outline-none focus-visible:bg-muted',
+                  'flex flex-col items-center justify-center gap-0.5 h-16 text-[10px] font-medium focus-visible:outline-none focus-visible:bg-muted',
                   active ? 'text-blue-700 dark:text-blue-400' : 'text-muted-foreground',
                 )}
               >
@@ -262,7 +262,7 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
             onClick={() => setMenuOpen(true)}
             aria-expanded={menuOpen}
             className={cn(
-              'flex flex-col items-center justify-center gap-0.5 h-16 text-[11px] font-medium focus-visible:outline-none focus-visible:bg-muted',
+              'flex flex-col items-center justify-center gap-0.5 h-16 text-[10px] font-medium focus-visible:outline-none focus-visible:bg-muted',
               SECONDARY.some((i) => isActive(pathname, i.href)) ? 'text-blue-700 dark:text-blue-400' : 'text-muted-foreground',
             )}
           >

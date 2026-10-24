@@ -147,7 +147,7 @@ export default function CustomerMap({
             aria-pressed={basemap === b}
             onClick={() => setBasemap(b)}
             className={cn(
-              'h-[36px] px-3 rounded-lg text-[12px] font-medium pointer-coarse:h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
+              'h-[36px] px-3 rounded-lg text-xs font-medium pointer-coarse:h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
               basemap === b ? 'bg-blue-600 text-white' : 'text-muted-foreground hover:text-foreground',
             )}
           >
