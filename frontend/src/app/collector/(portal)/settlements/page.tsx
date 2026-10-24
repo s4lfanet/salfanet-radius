@@ -136,16 +136,16 @@ export default function CollectorSettlementsPage() {
           ) : dailyError ? (
             <ErrorState message={dailyError} onRetry={() => fetchDaily(date)} />
           ) : data ? (
-            // Wide screens: the day's total beside its payments table.
-            <div className={cn('lg:grid lg:grid-cols-[320px_minmax(0,1fr)] lg:gap-4 lg:items-start', loading && 'opacity-60')}>
-              <div>
-                <div className="flex items-center justify-between gap-2 flex-wrap mb-3">
-                  <p className="text-sm font-medium text-foreground">{fmtDate(data.date)}</p>
-                  <Confirmation by={data.confirmation?.confirmed_by} at={data.confirmation?.confirmed_at} />
-                </div>
-                <Summary summary={data.summary} />
+            <div className={cn(loading && 'opacity-60')}>
+              <div className="flex items-center gap-x-3 gap-y-2 flex-wrap mb-3">
+                <p className="text-sm font-medium text-foreground">{fmtDate(data.date)}</p>
+                <Confirmation by={data.confirmation?.confirmed_by} at={data.confirmation?.confirmed_at} />
               </div>
-              <Payments invoices={data.invoices} />
+              {/* Wide screens: the day's total beside its payments table. */}
+              <div className="lg:grid lg:grid-cols-[320px_minmax(0,1fr)] lg:gap-4 lg:items-start">
+                <Summary summary={data.summary} />
+                <Payments invoices={data.invoices} />
+              </div>
             </div>
           ) : null}
         </div>
