@@ -183,9 +183,10 @@ export default function CollectorCustomersPage() {
   };
 
   // Labelled buttons: an icon alone did not say what a tap would do.
-  // In the table they sit in a row; on phone cards they share a full row.
+  // In the table they sit in a row, and from lg up they move under the number
+  // in the Telepon column; on phone cards they share a full row.
   const actions = (c: Customer, layout: 'row' | 'grid' = 'row') => {
-    const btn = cn(ui.btnSecondary, 'h-[36px] px-3 text-xs pointer-coarse:h-[44px] whitespace-nowrap', layout === 'grid' && 'w-full px-2');
+    const btn = cn(ui.btnSecondary, 'h-[36px] px-3 text-xs pointer-coarse:h-[44px] whitespace-nowrap', layout === 'grid' ? 'w-full px-2' : 'lg:hidden');
     const who = c.name || c.username;
     return (
       <div className={layout === 'grid' ? 'grid grid-cols-3 gap-2' : 'flex items-center justify-end gap-1.5'}>
@@ -360,7 +361,21 @@ export default function CollectorCustomersPage() {
                           </>
                         ) : <span className="text-xs text-muted-foreground">Belum ada</span>}
                       </td>
-                      <td className="px-3 py-3 hidden lg:table-cell text-muted-foreground whitespace-nowrap">{c.phone || '-'}</td>
+                      <td className="px-3 py-3 hidden lg:table-cell whitespace-nowrap">
+                        {c.phone ? (
+                          <>
+                            <p className="text-muted-foreground tabular-nums">{c.phone}</p>
+                            <div className="flex items-center gap-3">
+                              <a href={`tel:${c.phone}`} title={`Telepon ${c.name || c.username}`} className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 dark:text-blue-400 hover:underline">
+                                <Phone className="w-3 h-3" /> Telepon
+                              </a>
+                              <a href={`https://wa.me/${waNumber(c.phone)}`} target="_blank" rel="noopener noreferrer" title={`Kirim WhatsApp ke ${c.name || c.username}`} className={cn('inline-flex items-center gap-1 text-xs font-medium hover:underline', toneText('green'))}>
+                                <MessageCircle className="w-3 h-3" /> WhatsApp
+                              </a>
+                            </div>
+                          </>
+                        ) : <span className="text-muted-foreground">-</span>}
+                      </td>
                       <td className="px-3 py-3 hidden xl:table-cell text-muted-foreground whitespace-nowrap">{fmtDate(c.expiredAt)}</td>
                       <td className="px-3 py-3"><StatusPill tone={st.tone}>{st.label}</StatusPill></td>
                       <td className="px-3 py-3 whitespace-nowrap">
