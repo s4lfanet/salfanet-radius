@@ -82,16 +82,16 @@ export default function CollectorMyCollectionsPage() {
       ) : (
         <div className="space-y-4">
           <section className={cn(ui.card, 'p-4')}>
-            <p className="text-[12px] text-muted-foreground">Total 6 bulan · {data.total_count} transaksi</p>
+            <p className="text-xs text-muted-foreground">Total 6 bulan · {data.total_count} transaksi</p>
             <p className="text-2xl font-extrabold tracking-tight text-foreground">{fmtRp(data.total_amount)}</p>
             <dl className="mt-3 grid grid-cols-2 gap-2 border-t border-border pt-3">
-              <div><dt className="text-[12px] text-muted-foreground">Tunai</dt><dd className="text-[13px] font-semibold text-foreground">{fmtRp(cash)}</dd></div>
-              <div><dt className="text-[12px] text-muted-foreground">Transfer</dt><dd className="text-[13px] font-semibold text-foreground">{fmtRp(transfer)}</dd></div>
+              <div><dt className="text-xs text-muted-foreground">Tunai</dt><dd className="text-sm font-semibold text-foreground">{fmtRp(cash)}</dd></div>
+              <div><dt className="text-xs text-muted-foreground">Transfer</dt><dd className="text-sm font-semibold text-foreground">{fmtRp(transfer)}</dd></div>
             </dl>
           </section>
 
           <section aria-labelledby="monthly">
-            <h3 id="monthly" className="text-[13px] font-semibold text-foreground mb-2">Per bulan</h3>
+            <h3 id="monthly" className="text-sm font-semibold text-foreground mb-2">Per bulan</h3>
             {data.monthly.length === 0 ? (
               <EmptyState icon={<History className="w-5 h-5" />} title="Belum ada koleksi" hint="Tagihan yang Anda tandai lunas akan terhitung di sini." />
             ) : (
@@ -100,9 +100,9 @@ export default function CollectorMyCollectionsPage() {
                   <li key={m.month} className="p-4 flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <p className="font-medium text-foreground">{fmtMonth(m.month)}</p>
-                      <p className="text-[12px] text-muted-foreground">{m.total_count} tagihan · tunai {fmtRp(m.cash_amount)} · transfer {fmtRp(m.transfer_amount)}</p>
+                      <p className="text-xs text-muted-foreground">{m.total_count} tagihan · tunai {fmtRp(m.cash_amount)} · transfer {fmtRp(m.transfer_amount)}</p>
                     </div>
-                    <p className="text-[13px] font-bold text-foreground shrink-0">{fmtRp(m.total_amount)}</p>
+                    <p className="text-sm font-bold text-foreground shrink-0">{fmtRp(m.total_amount)}</p>
                   </li>
                 ))}
               </ul>
@@ -110,7 +110,7 @@ export default function CollectorMyCollectionsPage() {
           </section>
 
           <section aria-labelledby="recent">
-            <h3 id="recent" className="text-[13px] font-semibold text-foreground mb-2">Terbaru</h3>
+            <h3 id="recent" className="text-sm font-semibold text-foreground mb-2">Terbaru</h3>
             {data.recent.length === 0 ? (
               <EmptyState icon={<Receipt className="w-5 h-5" />} title="Belum ada koleksi" />
             ) : (
@@ -121,13 +121,13 @@ export default function CollectorMyCollectionsPage() {
                     <li key={inv.id} className="p-4 flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="font-medium text-foreground truncate">{inv.customerName || inv.customerUsername}</p>
-                        <p className="text-[12px] text-muted-foreground truncate">
+                        <p className="text-xs text-muted-foreground truncate">
                           {[inv.customerId || inv.customerUsername, inv.profileName, inv.areaName].filter(Boolean).join(' · ')}
                         </p>
-                        <p className="text-[12px] text-muted-foreground">#{inv.invoiceNumber} · {fmtTime(inv.paidAt)}</p>
+                        <p className="text-xs text-muted-foreground">#{inv.invoiceNumber} · {fmtTime(inv.paidAt)}</p>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="text-[13px] font-semibold text-foreground">{fmtRp(inv.amount)}</p>
+                        <p className="text-sm font-semibold text-foreground">{fmtRp(inv.amount)}</p>
                         <StatusPill tone={m.tone}>{m.label}</StatusPill>
                       </div>
                     </li>

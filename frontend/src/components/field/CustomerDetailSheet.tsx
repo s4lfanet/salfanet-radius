@@ -40,8 +40,8 @@ const waNumber = (phone: string) => {
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-4 py-1.5">
-      <dt className="text-[13px] text-muted-foreground shrink-0">{label}</dt>
-      <dd className="text-[13px] text-foreground text-right min-w-0 break-words">{children}</dd>
+      <dt className="text-sm text-muted-foreground shrink-0">{label}</dt>
+      <dd className="text-sm text-foreground text-right min-w-0 break-words">{children}</dd>
     </div>
   );
 }
@@ -169,10 +169,10 @@ export default function CustomerDetailSheet({
         <div className="sticky top-0 z-10 bg-card border-b border-border pl-5 pr-2 py-3 flex items-center gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 min-w-0">
-              <h3 id="customer-detail-title" className="text-[15px] font-bold text-foreground truncate">{customer.name || customer.username}</h3>
+              <h3 id="customer-detail-title" className="text-sm font-bold text-foreground truncate">{customer.name || customer.username}</h3>
               <StatusPill tone={st.tone}>{st.label}</StatusPill>
             </div>
-            <p className="text-[12px] text-muted-foreground truncate">{[customer.customerId, customer.username].filter(Boolean).join(' · ')}</p>
+            <p className="text-xs text-muted-foreground truncate">{[customer.customerId, customer.username].filter(Boolean).join(' · ')}</p>
           </div>
           {customer.phone && (
             <>
@@ -198,32 +198,32 @@ export default function CustomerDetailSheet({
               longitude, a map with a pin on the customer, then the link out. */}
           <section aria-labelledby="loc-title" className="min-w-0">
             <div className="flex items-center justify-between gap-2 mb-2">
-              <h4 id="loc-title" className="text-[13px] font-semibold text-foreground">Lokasi GPS</h4>
+              <h4 id="loc-title" className="text-sm font-semibold text-foreground">Lokasi GPS</h4>
               {onSaveLocation && (
                 <div className="flex items-center gap-1">
-                  <button type="button" onClick={() => { setSaveError(null); setPickerOpen(true); }} className="h-[36px] pointer-coarse:h-[44px] px-2.5 inline-flex items-center gap-1.5 rounded-lg text-[12px] font-medium text-blue-700 dark:text-blue-400 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
+                  <button type="button" onClick={() => { setSaveError(null); setPickerOpen(true); }} className="h-[36px] pointer-coarse:h-[44px] px-2.5 inline-flex items-center gap-1.5 rounded-lg text-xs font-medium text-blue-700 dark:text-blue-400 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
                     <MapIcon className="w-4 h-4" /> Pilih di Peta
                   </button>
-                  <button type="button" onClick={readGps} disabled={gpsState === 'reading'} className="h-[36px] pointer-coarse:h-[44px] px-2.5 inline-flex items-center gap-1.5 rounded-lg text-[12px] font-medium text-blue-700 dark:text-blue-400 hover:bg-muted disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
+                  <button type="button" onClick={readGps} disabled={gpsState === 'reading'} className="h-[36px] pointer-coarse:h-[44px] px-2.5 inline-flex items-center gap-1.5 rounded-lg text-xs font-medium text-blue-700 dark:text-blue-400 hover:bg-muted disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
                     {gpsState === 'reading' ? <Loader2 className="w-4 h-4 animate-spin" /> : <LocateFixed className="w-4 h-4" />} GPS Auto
                   </button>
                 </div>
               )}
             </div>
-            {customer.address && <p className="text-[13px] text-muted-foreground mb-2 flex items-start gap-2"><MapPin className="w-4 h-4 mt-0.5 shrink-0" />{customer.address}</p>}
+            {customer.address && <p className="text-sm text-muted-foreground mb-2 flex items-start gap-2"><MapPin className="w-4 h-4 mt-0.5 shrink-0" />{customer.address}</p>}
             {onSaveLocation && (
               <div className="mb-2 space-y-2">
                 {gpsState !== 'idle' && gpsState !== 'reading' && (
-                  <p className="text-[13px] text-amber-700 dark:text-amber-400" role="status">{gpsState}</p>
+                  <p className="text-sm text-amber-700 dark:text-amber-400" role="status">{gpsState}</p>
                 )}
                 {pending && (
                   <div className="rounded-xl border border-blue-600/40 bg-blue-600/10 p-3" role="status">
-                    <p className="text-[13px] font-semibold text-foreground">Titik baru belum disimpan</p>
-                    <p className="text-[12px] text-muted-foreground mt-0.5">
+                    <p className="text-sm font-semibold text-foreground">Titik baru belum disimpan</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       Periksa pin di peta.{pending.accuracy ? ` Akurasi GPS sekitar ${Math.round(pending.accuracy)} m.` : ''}
                       {customer.latitude != null && customer.longitude != null ? ` Titik lama: ${customer.latitude.toFixed(6)}, ${customer.longitude.toFixed(6)}.` : ''}
                     </p>
-                    {saveError && <p className="text-[13px] text-red-700 dark:text-red-400 mt-2" role="alert">{saveError}</p>}
+                    {saveError && <p className="text-sm text-red-700 dark:text-red-400 mt-2" role="alert">{saveError}</p>}
                     <div className="mt-2 grid grid-cols-2 gap-2">
                       <button type="button" onClick={() => { setPending(null); setSaveError(null); }} className={ui.btnSecondary}>Batal</button>
                       <button type="button" onClick={save} disabled={saving} className={ui.btnPrimary}>
@@ -246,7 +246,7 @@ export default function CustomerDetailSheet({
                   loading="lazy"
                 />
                 <div className="flex items-center gap-1 pl-3 pr-1 py-1 border-t border-border bg-muted/40">
-                  <dl className="flex-1 min-w-0 grid grid-cols-2 gap-x-3 font-mono text-[12px] tabular-nums">
+                  <dl className="flex-1 min-w-0 grid grid-cols-2 gap-x-3 font-mono text-xs tabular-nums">
                     <div className="min-w-0"><dt className="sr-only">Latitude</dt><dd aria-label="Latitude" className="text-foreground truncate"><span className="text-muted-foreground">Lat </span>{lat!.toFixed(6)}</dd></div>
                     <div className="min-w-0"><dt className="sr-only">Longitude</dt><dd aria-label="Longitude" className="text-foreground truncate"><span className="text-muted-foreground">Lng </span>{lng!.toFixed(6)}</dd></div>
                   </dl>
@@ -257,7 +257,7 @@ export default function CustomerDetailSheet({
                     <ExternalLink className="w-4 h-4" />
                   </a>
                 </div>
-                {copied === 'fail' && <p className="px-3 pb-2 text-[12px] text-amber-700 dark:text-amber-400" role="status">Tidak bisa menyalin otomatis. Tekan lama koordinat untuk menyalin.</p>}
+                {copied === 'fail' && <p className="px-3 pb-2 text-xs text-amber-700 dark:text-amber-400" role="status">Tidak bisa menyalin otomatis. Tekan lama koordinat untuk menyalin.</p>}
                 <div className="p-2 border-t border-border">
                   <a href={links.directions} target="_blank" rel="noopener noreferrer" className={cn(ui.btnPrimary, 'w-full')}>
                     <Navigation className="w-4 h-4" /> Navigasi ke lokasi
@@ -265,7 +265,7 @@ export default function CustomerDetailSheet({
                 </div>
               </div>
             ) : (
-              <p className="text-[13px] text-muted-foreground rounded-xl bg-muted p-3">
+              <p className="text-sm text-muted-foreground rounded-xl bg-muted p-3">
                 {onSaveLocation ? 'Koordinat belum diisi. Pakai Pilih di Peta atau GPS Auto di atas.' : 'Koordinat belum diisi. Admin atau teknisi bisa menambahkannya di data pelanggan.'}
               </p>
             )}
@@ -282,7 +282,7 @@ export default function CustomerDetailSheet({
 
           <div className="min-w-0 space-y-4">
             <section aria-labelledby="svc-title">
-              <h4 id="svc-title" className="text-[13px] font-semibold text-foreground mb-1">Data pelanggan</h4>
+              <h4 id="svc-title" className="text-sm font-semibold text-foreground mb-1">Data pelanggan</h4>
               <dl className="divide-y divide-border">
                 <Row label="Paket">{customer.profile ? `${customer.profile.name} · ${fmtRp(customer.profile.price)}/bln${speed}` : '-'}</Row>
                 <Row label="Router/NAS">{customer.router?.name || '-'}</Row>
