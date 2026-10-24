@@ -22,8 +22,9 @@ export function scopeQuery(v: ScopeValue): string {
 
 /**
  * Area and Router/NAS filter for the collector's lists. The choices are the
- * areas and routers among this collector's own customers; a select appears
- * only when there is more than one to choose from.
+ * areas and routers assigned to this collector, plus any its customers sit
+ * on. Both selects show whenever there is something to pick, so the filter
+ * stays in the same place for every collector.
  */
 export function ScopeFilter({ value, onChange }: { value: ScopeValue; onChange: (v: ScopeValue) => void }) {
   const [areas, setAreas] = useState<Option[]>([]);
@@ -38,13 +39,13 @@ export function ScopeFilter({ value, onChange }: { value: ScopeValue; onChange: 
       .catch(() => {});
   }, []);
 
-  if (areas.length < 2 && routers.length < 2) return null;
+  if (!areas.length && !routers.length) return null;
 
   const select = 'w-full h-[40px] pointer-coarse:h-[44px] pl-9 pr-3 rounded-xl border border-border bg-card text-foreground text-sm outline-none focus-visible:ring-2 focus-visible:ring-blue-600/60';
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
-      {areas.length > 1 && (
+      {areas.length > 0 && (
         <div className="relative">
           <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
           <select aria-label="Filter area" value={value.areaId} onChange={(e) => onChange({ ...value, areaId: e.target.value })} className={select}>
@@ -53,7 +54,7 @@ export function ScopeFilter({ value, onChange }: { value: ScopeValue; onChange: 
           </select>
         </div>
       )}
-      {routers.length > 1 && (
+      {routers.length > 0 && (
         <div className="relative">
           <Router className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
           <select aria-label="Filter router" value={value.routerId} onChange={(e) => onChange({ ...value, routerId: e.target.value })} className={select}>
