@@ -240,7 +240,7 @@ export default function CronSettingsPage() {
         body: JSON.stringify({ type: jobType, ...(jobType === 'invoice_generate' ? { force: true } : {}) })
       });
       if (data.success) {
-        addToast({ type: 'success', title: t('common.success'), description: data.message || 'Job triggered successfully', duration: 2000 });
+        addToast({ type: 'success', title: t('common.success'), description: data.message || 'Job triggered successfully', duration: data.message?.includes(': ') ? 9000 : 2000 });
       } else {
         addToast({ type: 'error', title: t('common.error'), description: data.error || t('common.failed') });
       }

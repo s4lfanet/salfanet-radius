@@ -420,7 +420,23 @@ async function releaseReminder(invoiceId: string, key: string): Promise<void> {
  * on the days and from the time set in the reminder settings. Runs hourly;
  * each channel is sent at most once per invoice per scheduled day.
  */
-export async function runInvoiceReminder(): Promise<{ sent: number; skipped: number; total: number; errors: string[]; note?: string }> {
+export interface InvoiceReminderResult {
+  sent: number;
+  skipped: number;
+  total: number;
+  errors: string[];
+  note?: string;
+  /** Why invoices got no message, so a run that sends nothing says why. */
+  reasons?: { alreadySent: number; noPhone: number; noTemplate: number; waFailed: number };
+}
+
+const dayLabel = (d: number) => (d === 0 ? 'hari H' : d < 0 ? `H${d}` : `H+${d}`);
+
+/**
+ * `manual`: started by an admin from the cron page, so the send time is not
+ * waited for (the scheduled days and once-per-day rule still apply).
+ */
+export async function runInvoiceReminder(opts: { manual?: boolean } = {}): Promise<InvoiceReminderResult> {
   const started = Date.now();
   const now = await nowWIBAsync();
   const errors: string[] = [];
@@ -429,7 +445,7 @@ export async function runInvoiceReminder(): Promise<{ sent: number; skipped: num
   if (!schedule.enabled) {
     return { sent: 0, skipped: 0, total: 0, errors, note: 'Reminder invoice dinonaktifkan di pengaturan' };
   }
-  if (formatWIB(now, 'HH:mm') < schedule.time) {
+  if (!opts.manual && formatWIB(now, 'HH:mm') < schedule.time) {
     return { sent: 0, skipped: 0, total: 0, errors, note: `Belum jam kirim (${schedule.time})` };
   }
   if (schedule.days.length === 0) {
@@ -486,6 +502,7 @@ export async function runInvoiceReminder(): Promise<{ sent: number; skipped: num
   let skipped = 0;
   let waInBatch = 0;
   let stoppedEarly = false;
+  const reasons = { alreadySent: 0, noPhone: 0, noTemplate: 0, waFailed: 0 };
 
   for (const { inv, day } of due) {
     if (Date.now() - started > REMINDER_RUN_BUDGET_MS) { stoppedEarly = true; break; }
@@ -514,20 +531,28 @@ export async function runInvoiceReminder(): Promise<{ sent: number; skipped: num
     let any = false;
 
     try {
-      if (waAvailable && inv.customerPhone && await claimReminder(inv.id, `w:${day}`, day)) {
-        // Pace WhatsApp sends per the batch settings to avoid provider bans.
-        if (waInBatch >= schedule.batchSize) {
-          await sleep(schedule.batchDelaySec * 1000);
-          waInBatch = 0;
-        }
-        try {
-          const ok = await sendInvoiceReminder({ phone: inv.customerPhone, ...common });
-          waInBatch++;
-          if (ok) any = true;
-          else await releaseReminder(inv.id, `w:${day}`);
-        } catch (e: any) {
-          await releaseReminder(inv.id, `w:${day}`);
-          errors.push(`${inv.invoiceNumber} WA: ${e?.message || e}`);
+      if (waAvailable && !inv.customerPhone) reasons.noPhone++;
+      else if (waAvailable && inv.customerPhone) {
+        if (!await claimReminder(inv.id, `w:${day}`, day)) reasons.alreadySent++;
+        else {
+          // Pace WhatsApp sends per the batch settings to avoid provider bans.
+          if (waInBatch >= schedule.batchSize) {
+            await sleep(schedule.batchDelaySec * 1000);
+            waInBatch = 0;
+          }
+          try {
+            const ok = await sendInvoiceReminder({ phone: inv.customerPhone, ...common });
+            waInBatch++;
+            if (ok) any = true;
+            else {
+              reasons.noTemplate++;
+              await releaseReminder(inv.id, `w:${day}`);
+            }
+          } catch (e: any) {
+            reasons.waFailed++;
+            await releaseReminder(inv.id, `w:${day}`);
+            errors.push(`${inv.invoiceNumber} WA: ${e?.message || e}`);
+          }
         }
       }
 
@@ -563,13 +588,19 @@ export async function runInvoiceReminder(): Promise<{ sent: number; skipped: num
     else skipped++;
   }
 
+  const days = [...schedule.days].sort((a, b) => a - b).map(dayLabel).join(', ');
   const note = [
+    due.length === 0 ? `tidak ada invoice belum lunas yang jatuh tempo pada hari reminder (${days}) hari ini` : '',
     !waAvailable ? 'tidak ada provider WhatsApp aktif' : '',
+    reasons.alreadySent ? `${reasons.alreadySent} sudah dikirim hari ini` : '',
+    reasons.noPhone ? `${reasons.noPhone} tanpa nomor HP` : '',
+    reasons.noTemplate ? `${reasons.noTemplate} gagal: template invoice-reminder/overdue tidak aktif` : '',
+    reasons.waFailed ? `${reasons.waFailed} gagal dikirim provider WhatsApp` : '',
     !emailAvailable ? 'email reminder nonaktif' : '',
     stoppedEarly ? 'batas waktu tercapai, sisa dikirim di jalan berikutnya' : '',
   ].filter(Boolean).join('; ') || undefined;
   console.log(`[INVOICE_REMINDER] due=${due.length} sent=${sent} skipped=${skipped} errors=${errors.length}${note ? ` (${note})` : ''}`);
-  return { sent, skipped, total: due.length, errors, note };
+  return { sent, skipped, total: due.length, errors, note, reasons };
 }
 
 /**

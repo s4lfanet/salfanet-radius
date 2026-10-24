@@ -253,10 +253,6 @@ export async function sendPushToUser(
         name: true,
         username: true,
         address: true,
-        pushSubscriptions: {
-          where: { isActive: true },
-          select: { id: true },
-        },
       },
     });
 
@@ -265,10 +261,9 @@ export async function sendPushToUser(
       return { success: false, sent: 0, failed: 0 };
     }
 
-    if (user.pushSubscriptions.length === 0) {
-      console.log(`[Push] No web push subscriptions found for user ${userId}`);
-      return { success: false, sent: 0, failed: 0 };
-    }
+    // No early return when the customer has no browser subscription:
+    // sendWebPushToUser also sends to the customer app's FCM tokens, and
+    // stopping here meant app-only customers never got a push at all.
 
     if (!data.customerName) {
       data.customerName = user.name || user.username;

@@ -1,6 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { requirePermission } from '@/server/middleware/api-auth';
-import { WhatsAppService } from '@/server/services/notifications/whatsapp.service';
+import { WhatsAppService, WhatsAppSendError } from '@/server/services/notifications/whatsapp.service';
 import { rateLimit } from '@/server/middleware/rate-limit';
 
 export async function POST(request: NextRequest) {
@@ -26,28 +26,26 @@ export async function POST(request: NextRequest) {
     }
 
     // Use WhatsApp failover service
-    const result = await WhatsAppService.sendMessage({ phone, message });
-
-    if (result.success) {
+    try {
+      const result = await WhatsAppService.sendMessage({ phone, message });
       return NextResponse.json({
         success: true,
         provider: result.provider,
         attempts: result.attempts,
         response: result.response,
       });
-    } else {
-      // All providers failed — include per-provider attempt details so the user
-      // can see exactly which provider failed and why.
-      const attempts = result.attempts ?? [];
-      const providerDetails = attempts
-        .map((a: any) => `${a.provider} (${a.type}): ${a.error || 'unknown error'}`)
+    } catch (sendError) {
+      if (!(sendError instanceof WhatsAppSendError)) throw sendError;
+      // Per-provider details so the admin sees which provider failed and why.
+      const providerDetails = sendError.attempts
+        .map((a) => `${a.provider} (${a.type}): ${a.error || 'unknown error'}`)
         .join(' | ');
       return NextResponse.json(
         {
           success: false,
-          error: providerDetails || (result as any).error || 'All providers failed',
-          detail: (result as any).error,
-          attempts,
+          error: providerDetails || sendError.message,
+          detail: sendError.message,
+          attempts: sendError.attempts,
         },
         { status: 500 }
       );

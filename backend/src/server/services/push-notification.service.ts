@@ -231,10 +231,18 @@ async function sendToStoredSubscriptions(
   payload: PushNotificationPayload,
   role: 'customer' | 'agent' | 'technician' | 'admin' = 'customer',
 ) {
-  ensureVapidConfiguration();
-
   if (subscriptions.length === 0) {
     return { sent: 0, failed: 0, total: 0 };
+  }
+
+  // Without VAPID keys browser push cannot be sent. Report it as failed
+  // instead of throwing: the callers send FCM alongside in a Promise.all,
+  // and a throw here discarded the app push too on installs with no VAPID.
+  try {
+    ensureVapidConfiguration();
+  } catch (error) {
+    console.warn(`[WebPush] ${error instanceof Error ? error.message : error}; ${subscriptions.length} browser subscription(s) skipped`);
+    return { sent: 0, failed: subscriptions.length, total: subscriptions.length };
   }
 
   const serializedPayload = buildNotificationPayload(payload);
