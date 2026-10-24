@@ -543,7 +543,7 @@ export default function CollectorBillingPage() {
           {/* Table: tablets and up. A row opens to its invoices. */}
           <div className={cn(ui.card, 'hidden md:block overflow-x-auto')}>
             <table className="w-full text-[13px]">
-              <thead className="border-b border-border bg-muted/50 text-[12px] text-muted-foreground">
+              <thead className="border-b border-border bg-muted/50 text-[13px] text-muted-foreground">
                 <tr>
                   <th scope="col" className="px-3 py-2.5 text-left font-medium">Pelanggan</th>
                   <th scope="col" className="px-3 py-2.5 text-left font-medium hidden lg:table-cell">Paket</th>
