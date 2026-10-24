@@ -211,7 +211,7 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
 
       <div className="flex-1 min-w-0 flex flex-col">
         <header className="h-14 lg:h-16 sticky top-0 z-30 border-b border-border bg-card flex items-center justify-between gap-2 px-4 lg:px-6">
-          <h1 className="text-sm lg:text-base font-bold text-foreground truncate">{current?.title || 'Portal Kolektor'}</h1>
+          <h1 className="text-sm font-bold text-foreground truncate">{current?.title || 'Portal Kolektor'}</h1>
           <div className="flex items-center gap-1">
             <CollectorNotificationBell />
             <button

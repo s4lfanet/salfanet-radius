@@ -289,7 +289,7 @@ export default function CollectorCustomersPage() {
           {/* Table: tablets and up */}
           <div className={cn(ui.card, 'hidden md:block overflow-x-auto')}>
             <table className="w-full text-[13px]">
-              <thead className="border-b border-border bg-muted/50 text-[12px] text-muted-foreground">
+              <thead className="border-b border-border bg-muted/50 text-[13px] text-muted-foreground">
                 <tr>
                   <SortHead k="customerId" className="w-36">No. Layanan</SortHead>
                   <SortHead k="name">Pelanggan</SortHead>
@@ -308,7 +308,7 @@ export default function CollectorCustomersPage() {
                   const st = customerStatus(c.status);
                   return (
                     <tr key={c.id} className="hover:bg-muted/40 align-top">
-                      <td className="px-3 py-3 text-xs text-muted-foreground tabular-nums">
+                      <td className="px-3 py-3 text-muted-foreground tabular-nums">
                         <p className="text-foreground font-medium">{c.customerId || '-'}</p>
                         <p className="break-all">{c.username}</p>
                       </td>
