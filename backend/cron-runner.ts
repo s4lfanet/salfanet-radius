@@ -84,6 +84,8 @@ interface CronJobDef {
   name: string
   description: string
   defaultSchedule: string
+  /** Off until an admin turns it on; mirrors src/server/cron/jobs.ts. */
+  defaultEnabled?: boolean
 }
 
 const CRON_JOB_DEFS: CronJobDef[] = [
@@ -102,7 +104,7 @@ const CRON_JOB_DEFS: CronJobDef[] = [
   { type: 'webhook_log_cleanup',   name: 'Webhook Log Cleanup',    description: 'Hapus webhook log >7 hari', defaultSchedule: '0 3 * * *' },
   { type: 'freeradius_health',     name: 'FreeRADIUS Health',      description: 'Cek kesehatan FreeRADIUS', defaultSchedule: '*/5 * * * *' },
   { type: 'pppoe_session_sync',    name: 'PPPoE Session Sync',     description: 'Sync sesi PPPoE ke radacct', defaultSchedule: '*/5 * * * *' },
-  { type: 'auto_stop',             name: 'Auto Stop',              description: 'Stop user isolated >30 hari', defaultSchedule: '0 5 * * *' },
+  { type: 'auto_stop',             name: 'Auto Stop',              description: 'Stop user isolated >30 hari', defaultSchedule: '0 5 * * *', defaultEnabled: false },
   { type: 'suspend_check',         name: 'Suspend Check',          description: 'Cek user yang perlu disuspend', defaultSchedule: '0 * * * *' },
   { type: 'cron_history_cleanup',  name: 'History Cleanup',        description: 'Hapus cron history >30 hari', defaultSchedule: '0 4 * * *' },
   { type: 'radius_sync_retry',     name: 'RADIUS Sync Retry',      description: 'Retry failed FreeRADIUS syncs', defaultSchedule: '*/5 * * * *' },
@@ -127,7 +129,7 @@ async function getEffectiveSchedule(jobType: string): Promise<{ schedule: string
   } catch {
     // Table might not exist yet
   }
-  return { schedule: def.defaultSchedule, enabled: true }
+  return { schedule: def.defaultSchedule, enabled: def.defaultEnabled ?? true }
 }
 
 // ─── HTTP trigger to /api/cron ──────────────────────────────────────────────
@@ -163,14 +165,38 @@ function getJobTimeout(jobType: string): number {
  * The API route handles all business logic (can import from src/server/*).
  * Returns the job result from the API.
  */
-async function triggerJobViaAPI(jobType: string): Promise<{ success?: boolean; error?: string; [key: string]: unknown }> {
+type TriggerResult = { success?: boolean; error?: string; [key: string]: unknown }
+
+// Connection never reached the API, so sending again cannot run a job twice.
+const CONNECT_ERRORS = new Set(['ECONNREFUSED', 'ETIMEDOUT', 'EADDRNOTAVAIL', 'ENETUNREACH'])
+
+/** Node's dual-stack connect fails with an AggregateError whose message is empty. */
+function describeError(err: any): string {
+  const inner = Array.isArray(err?.errors) ? err.errors.map((e: any) => `${e.code || e.message}@${e.address || '?'}`).join(', ') : ''
+  return [err?.code, err?.message, inner].filter(Boolean).join(' ') || String(err)
+}
+
+async function triggerJobViaAPI(jobType: string): Promise<TriggerResult> {
+  const first = await triggerOnce(jobType)
+  if (first.connectError) {
+    await new Promise((r) => setTimeout(r, 2000))
+    const second = await triggerOnce(jobType)
+    return second.result
+  }
+  return first.result
+}
+
+async function triggerOnce(jobType: string): Promise<{ result: TriggerResult; connectError?: boolean }> {
   const body = JSON.stringify({ type: jobType })
   const timeout = getJobTimeout(jobType)
 
-  // Parse API_URL to extract host/port
+  // Parse API_URL to extract host/port. "localhost" resolves to ::1 first on
+  // these servers while the API listens on 127.0.0.1 only; when a dozen jobs
+  // start on the same tick the IPv6-then-IPv4 fallback timed out and the job
+  // failed with an empty "HTTP request failed:". Connect to IPv4 directly.
   const url = new URL(API_URL)
   const options: http.RequestOptions = {
-    hostname: url.hostname,
+    hostname: url.hostname === 'localhost' ? '127.0.0.1' : url.hostname,
     port: url.port || '80',
     path: '/api/cron',
     method: 'POST',
@@ -182,25 +208,31 @@ async function triggerJobViaAPI(jobType: string): Promise<{ success?: boolean; e
   }
 
   return new Promise((resolve) => {
+    let connected = false
     const req = http.request(options, (res) => {
       let data = ''
       res.on('data', (chunk) => { data += chunk })
       res.on('end', () => {
         try {
-          resolve(JSON.parse(data))
+          resolve({ result: JSON.parse(data) })
         } catch {
-          resolve({ success: false, raw: data.slice(0, 500) })
+          resolve({ result: { success: false, error: `HTTP ${res.statusCode}`, raw: data.slice(0, 500) } })
         }
       })
     })
+    req.on('socket', (socket) => socket.on('connect', () => { connected = true }))
 
-    req.on('error', (err) => {
-      resolve({ success: false, error: `HTTP request failed: ${err.message}` })
+    req.on('error', (err: any) => {
+      const codes = [err?.code, ...(Array.isArray(err?.errors) ? err.errors.map((e: any) => e.code) : [])]
+      resolve({
+        result: { success: false, error: `HTTP request failed: ${describeError(err)}` },
+        connectError: !connected && codes.some((c) => CONNECT_ERRORS.has(c)),
+      })
     })
 
     req.setTimeout(timeout, () => {
       req.destroy(new Error('Job timeout'))
-      resolve({ success: false, error: `Job timeout after ${timeout / 1000}s` })
+      resolve({ result: { success: false, error: `Job timeout after ${timeout / 1000}s` } })
     })
 
     req.write(body)
@@ -489,6 +521,20 @@ async function main() {
     await runJob(jobType)
     await prisma.$disconnect()
     process.exit(0)
+  }
+
+  // Rows this runner left at 'running' when it was restarted mid-job (deploys)
+  // would stay that way forever. Nothing runs longer than the largest job
+  // timeout, so anything older is orphaned.
+  try {
+    const maxTimeoutMs = Math.max(DEFAULT_JOB_TIMEOUT, ...Object.values(JOB_TIMEOUTS)) * 1000
+    const { count } = await prisma.cronHistory.updateMany({
+      where: { status: 'running', startedAt: { lt: new Date(Date.now() - maxTimeoutMs - 60_000) } },
+      data: { status: 'error', completedAt: nowLocal(), error: 'Interrupted (process restarted before job finished)' },
+    })
+    if (count) console.log(`  Marked ${count} orphaned 'running' history row(s) as interrupted`)
+  } catch (err) {
+    console.error('[CRON] Orphaned history cleanup failed (non-fatal):', err instanceof Error ? err.message : err)
   }
 
   // Schedule all jobs using company timezone

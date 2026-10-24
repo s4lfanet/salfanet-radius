@@ -120,39 +120,40 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // History: the cron-runner writes its own row for scheduled runs, so this
+    // route records only manual runs. Writing both gave two rows per run, and
+    // the two writers deadlocked on cron_history (P2034) every few minutes.
+    const recordHistory = !hasCronSecret
+
     // Reconcile orphaned history rows for this same job type before starting a
     // new run. A row can be left stuck at status='running' forever if the
     // backend process gets killed/restarted mid-execution — e.g. by a deploy —
     // since nothing then ever runs the success/error update below for that row.
-    //
-    // In practice, near-simultaneous requests for the same jobType DO happen
-    // (e.g. cron-runner's own history row plus this route's, or two ticks
-    // racing a few ms apart), so a still-'running' row is not automatically
-    // orphaned just because a fresh run started — only rows well past any
-    // realistic job duration are. The `startedAt` cutoff avoids reconciling
-    // a row that's actually still in flight, which previously caused a real
-    // MySQL deadlock (P2034) when two updateMany calls raced on the same rows.
-    // Any failure here is logged and swallowed — it must never block the job
-    // itself from starting.
-    try {
-      await prisma.cronHistory.updateMany({
-        where: {
-          jobType,
-          status: 'running',
-          startedAt: { lt: new Date(Date.now() - 3 * 60 * 1000) },
-        },
-        data: { status: 'error', completedAt: nowWIB(), error: 'Interrupted (process restarted before job finished)' },
-      })
-    } catch (reconcileError) {
-      console.error(`[CRON] Reconciliation of orphaned '${jobType}' history rows failed (non-fatal):`, reconcileError)
+    // Only on manual runs, which hold this job's lock, so no row of this type
+    // can still be in flight. Any failure here is logged and swallowed.
+    if (recordHistory) {
+      try {
+        await prisma.cronHistory.updateMany({
+          where: {
+            jobType,
+            status: 'running',
+            startedAt: { lt: new Date(nowWIB().getTime() - 3 * 60 * 1000) },
+          },
+          data: { status: 'error', completedAt: nowWIB(), error: 'Interrupted (process restarted before job finished)' },
+        })
+      } catch (reconcileError) {
+        console.error(`[CRON] Reconciliation of orphaned '${jobType}' history rows failed (non-fatal):`, reconcileError)
+      }
     }
 
     // Create history record
     const jobId = `cron_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
     const startedAt = nowWIB()
-    await prisma.cronHistory.create({
-      data: { id: jobId, jobType, status: 'running', startedAt },
-    })
+    if (recordHistory) {
+      await prisma.cronHistory.create({
+        data: { id: jobId, jobType, status: 'running', startedAt },
+      })
+    }
 
     try {
       let result: any
@@ -174,7 +175,7 @@ export async function POST(request: NextRequest) {
           result = await runInvoiceAutoCancel()
           break
         case 'invoice_reminder':
-          result = await runInvoiceReminder()
+          result = await runInvoiceReminder({ manual: !hasCronSecret })
           break
         case 'auto_renewal':
           result = await runAutoRenewal()
@@ -249,7 +250,7 @@ export async function POST(request: NextRequest) {
 
       const completedAt = nowWIB()
       const duration = completedAt.getTime() - startedAt.getTime()
-      await prisma.cronHistory.update({
+      if (recordHistory) await prisma.cronHistory.update({
         where: { id: jobId },
         data: {
           status: 'success',
@@ -259,11 +260,11 @@ export async function POST(request: NextRequest) {
         },
       })
 
-      return NextResponse.json({ success: true, message: `${def.name} completed`, result })
+      return NextResponse.json({ success: true, message: `${def.name} completed${summarize(result)}`, result })
     } catch (jobError: any) {
       const completedAt = nowWIB()
       const duration = completedAt.getTime() - startedAt.getTime()
-      await prisma.cronHistory.update({
+      if (recordHistory) await prisma.cronHistory.update({
         where: { id: jobId },
         data: {
           status: 'error',
@@ -282,6 +283,22 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     return safeErrorResponse(error)
   }
+}
+
+/**
+ * One line for the admin's toast, so a run that did nothing says so instead
+ * of only "completed" (the full result stays in the history).
+ */
+function summarize(result: any): string {
+  if (!result || typeof result !== 'object') return ''
+  const parts: string[] = []
+  if (typeof result.sent === 'number' && typeof result.total === 'number') {
+    parts.push(`terkirim ${result.sent} dari ${result.total}`)
+  }
+  if (Array.isArray(result.errors) && result.errors.length) parts.push(`${result.errors.length} error`)
+  if (typeof result.note === 'string' && result.note) parts.push(result.note)
+  if (result.success === false && typeof result.error === 'string') parts.push(result.error)
+  return parts.length ? `: ${parts.join('; ')}` : ''
 }
 
 // ─── Simple job implementations ─────────────────────────────────────────────

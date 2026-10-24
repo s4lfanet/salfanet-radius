@@ -17,6 +17,22 @@ interface SendMessageParams {
   message: string;
 }
 
+export interface SendAttempt {
+  provider: string;
+  type: string;
+  success: boolean;
+  error?: string;
+  response?: any;
+}
+
+/** Every active provider failed; `attempts` says which and why. */
+export class WhatsAppSendError extends Error {
+  constructor(message: string, public attempts: SendAttempt[]) {
+    super(message);
+    this.name = 'WhatsAppSendError';
+  }
+}
+
 /**
  * WhatsApp Service with Failover
  * Automatically tries next provider if current one fails
@@ -57,13 +73,7 @@ export class WhatsAppService {
     }
     
     let lastError: Error | null = null;
-    const attempts: Array<{
-      provider: string;
-      type: string;
-      success: boolean;
-      error?: string;
-      response?: any;
-    }> = [];
+    const attempts: SendAttempt[] = [];
     
     // Try each provider in priority order
     for (const provider of providers) {
@@ -126,14 +136,10 @@ export class WhatsAppService {
       }
     }
     
-    // All providers failed — return structured failure instead of throwing
-    // so the route can include per-provider attempt details in the response.
-    return {
-      success: false as const,
-      provider: null,
-      error: `All WhatsApp providers failed. Last error: ${lastError?.message}`,
-      attempts,
-    };
+    // All providers failed. Throw: nearly every caller wraps this in
+    // try/catch, and a returned failure was read as "sent" by all of them
+    // (invoice reminders were marked done and never retried).
+    throw new WhatsAppSendError(`All WhatsApp providers failed. Last error: ${lastError?.message}`, attempts);
   }
 
   /**

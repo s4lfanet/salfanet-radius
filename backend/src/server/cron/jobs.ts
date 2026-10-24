@@ -16,6 +16,8 @@ export interface CronJobDef {
   description: string;
   defaultSchedule: string;
   defaultScheduleLabel: string;
+  /** Off until an admin turns it on (jobs whose effect cannot be undone). */
+  defaultEnabled?: boolean;
 }
 
 export const CRON_JOB_DEFS: CronJobDef[] = [
@@ -45,6 +47,7 @@ export const CRON_JOB_DEFS: CronJobDef[] = [
   { type: 'radpostauth_cleanup',     name: 'RADIUS Auth Log Cleanup', description: 'Hapus log autentikasi RADIUS >30 hari',                 defaultSchedule: '30 3 * * *',   defaultScheduleLabel: 'Daily at 3:30 AM' },
   { type: 'telegram_backup',         name: 'Telegram Backup',         description: 'Backup database ke Telegram sesuai jadwal di Pengaturan Telegram', defaultSchedule: '*/5 * * * *',  defaultScheduleLabel: 'Every 5 minutes (checks the Telegram schedule)' },
   { type: 'acs_alert',               name: 'ACS Alert',               description: 'Deteksi RX degradation & offline ONU via GenieACS',     defaultSchedule: '*/3 * * * *',  defaultScheduleLabel: 'Every 3 minutes' },
+  { type: 'auto_stop',               name: 'Auto Stop',               description: 'Stop pelanggan yang terisolir lebih dari 30 hari (hapus dari RADIUS). Nonaktif sampai diaktifkan admin.', defaultSchedule: '0 5 * * *',   defaultScheduleLabel: 'Daily at 5 AM', defaultEnabled: false },
 ];
 
 export const CRON_JOB_MAP = new Map(CRON_JOB_DEFS.map(j => [j.type, j]));
@@ -60,7 +63,7 @@ export async function getEffectiveSchedule(jobType: string): Promise<{ schedule:
   if (config) {
     return { schedule: config.schedule, enabled: config.enabled, hasOverride: config.schedule !== def.defaultSchedule };
   }
-  return { schedule: def.defaultSchedule, enabled: true, hasOverride: false };
+  return { schedule: def.defaultSchedule, enabled: def.defaultEnabled ?? true, hasOverride: false };
 }
 
 /**
@@ -79,7 +82,7 @@ export async function getAllScheduleConfigs() {
       defaultSchedule: def.defaultSchedule,
       defaultScheduleLabel: def.defaultScheduleLabel,
       schedule: cfg?.schedule || def.defaultSchedule,
-      enabled: cfg?.enabled ?? true,
+      enabled: cfg?.enabled ?? def.defaultEnabled ?? true,
       hasOverride: !!cfg,
       updatedAt: cfg?.updatedAt || null,
     };
@@ -119,7 +122,7 @@ export async function getAllCronStatuses() {
   return CRON_JOB_DEFS.map(def => {
     const lastRun = lastRunMap.get(def.type);
     const sched = scheduleMap.get(def.type);
-    const enabled = sched?.enabled ?? true;
+    const enabled = sched?.enabled ?? def.defaultEnabled ?? true;
     const schedule = sched?.schedule || def.defaultSchedule;
 
     // Calculate next run using cron-parser (accurate, not heuristic).
