@@ -483,8 +483,8 @@ If issues persist after following this guide:
 
 2. Review documentation:
    - [ISOLATION_SYSTEM_WORKFLOW.md](./ISOLATION_SYSTEM_WORKFLOW.md)
-   - [FIREWALL_PAYMENT_INTEGRATION.md](./FIREWALL_PAYMENT_INTEGRATION.md)
-   - [ISOLATION_NAT_VS_PROXY.md](./ISOLATION_NAT_VS_PROXY.md)
+   - [FIREWALL_PAYMENT_INTEGRATION.md](../mikrotik/FIREWALL_PAYMENT_INTEGRATION.md)
+   - ISOLATION_NAT_VS_PROXY.md
 
 3. Contact support with:
    - Test results from this guide

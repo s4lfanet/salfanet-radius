@@ -28,10 +28,10 @@ Progress update (2026-03-28):
 - Lanjut: eliminasi sisa shell/command injection pattern dan audit endpoint file API lain agar path traversal benar-benar tertutup.
 
 Target file prioritas minggu ini:
-- [src/app/api/agent/deposit/webhook/route.ts](src/app/api/agent/deposit/webhook/route.ts) - tambahkan signature/token verification per gateway.
-- [src/app/api/admin/system/update/route.ts](src/app/api/admin/system/update/route.ts) - tambah role guard (minimal SUPER_ADMIN) dan kurangi shell string execution.
-- [src/app/api/admin/system/info/route.ts](src/app/api/admin/system/info/route.ts) - tambah role guard (minimal SUPER_ADMIN) dan review pemanggilan git/kill.
-- [src/app/api/auth/logout-log/route.ts](src/app/api/auth/logout-log/route.ts) - wajibkan auth, jangan percaya role dari body.
+- [src/app/api/agent/deposit/webhook/route.ts](../../backend/src/app/api/agent/deposit/webhook/route.ts) - tambahkan signature/token verification per gateway.
+- src/app/api/admin/system/update/route.ts - tambah role guard (minimal SUPER_ADMIN) dan kurangi shell string execution.
+- [src/app/api/admin/system/info/route.ts](../../backend/src/app/api/admin/system/info/route.ts) - tambah role guard (minimal SUPER_ADMIN) dan review pemanggilan git/kill.
+- [src/app/api/auth/logout-log/route.ts](../../frontend/src/app/api/auth/logout-log/route.ts) - wajibkan auth, jangan percaya role dari body.
 - [src/app/api/uploads/logos/[filename]/route.ts](src/app/api/uploads/logos/[filename]/route.ts) - validasi filename allowlist + extension whitelist ketat.
 
 Definition of done:

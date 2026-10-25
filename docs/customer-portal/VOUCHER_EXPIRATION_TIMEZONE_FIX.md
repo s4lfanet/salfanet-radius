@@ -138,13 +138,13 @@ WHERE status = 'ACTIVE'
 
 4. **Restart PM2:**
    ```bash
-   pm2 restart salfanet-radius
+   pm2 restart salfanet-backend
    ```
 
 5. **Verify:**
    ```bash
    # Check cron logs
-   pm2 logs salfanet-radius --lines 50
+   pm2 logs salfanet-backend --lines 50
    
    # Or manually check database
    mysql -usalfanet_user -psalfanetradius123 salfanet_radius \

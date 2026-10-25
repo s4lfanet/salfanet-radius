@@ -549,9 +549,9 @@ ORDER BY total_messages DESC;
 ## 🆘 Support & Resources
 
 ### Documentation
-- [Notification System Docs](../docs/guides/notification/NOTIFICATION_SYSTEM_DOCUMENTATION.md)
-- [API Testing Guide](../API_TESTING_GUIDE.md)
-- [Roadmap Progress](../docs/ROADMAP_PROGRESS_2026-02-17.md)
+- Notification System Docs
+- [API Testing Guide](../getting-started/API_TESTING_GUIDE.md)
+- Roadmap Progress
 
 ### Provider Documentation
 - **Fonnte:** [https://api.fonnte.com/docs](https://api.fonnte.com/docs)

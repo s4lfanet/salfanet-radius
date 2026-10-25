@@ -185,21 +185,27 @@ Cron jobs are plain async functions in `backend/src/server/cron/*.ts`
 `financial-reconciliation.ts`), registered with `node-cron` in
 `backend/cron-runner.ts` — the entrypoint for the separate `salfanet-cron`
 PM2 process. Definitions (name, default schedule, description) live in
-`jobs.ts`'s `CRON_JOB_DEFINITIONS`; admins can override each job's schedule
+`jobs.ts`'s `CRON_JOB_DEFS`; admins can override each job's schedule
 from the admin UI (persisted in the `cronScheduleConfig` table), and every
 run acquires a row in `cronLock` first so overlapping/duplicate PM2
 processes can't double-run the same job.
 
-To add a job: write the handler, add an entry to `CRON_JOB_DEFINITIONS` in
-`jobs.ts`, wire it into `cron-runner.ts`'s schedule map, and add its
-`jobType` string to the manual-trigger switch in
-`backend/src/app/api/cron/route.ts`.
+To add a job: write the handler, add an entry to `CRON_JOB_DEFS` in
+`jobs.ts` **and the same entry to `CRON_JOB_DEFS` in `cron-runner.ts`** (the
+runner keeps its own copy and schedules only what is listed there; a job
+missing from either side is either never scheduled or rejected as unknown by
+the API), then add its `type` string to the `switch` in
+`backend/src/app/api/cron/route.ts`. Set `defaultEnabled: false` on both for a
+job that must stay off until an admin turns it on. Add a timeout in
+`JOB_TIMEOUTS` in the runner if it can run longer than 2 minutes.
 
-Manual trigger via API (admin auth or `x-cron-secret` header):
+Manual trigger via API (admin session with the Super Admin role, or the
+`x-cron-secret` header):
 ```
 POST /api/cron
-{ "jobType": "hotspot_sync" }
+{ "type": "hotspot_sync" }
 ```
+Full description: [features/CRON-SYSTEM.md](./features/CRON-SYSTEM.md).
 
 ## Testing
 

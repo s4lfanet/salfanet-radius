@@ -433,9 +433,10 @@ Perangkat berikut mendukung import massal dari file Excel:
 
 | Perangkat | Endpoint | Template |
 |---|---|---|
-| ODC | `POST /api/network/odcs/import` | `GET /api/network/odcs/template` |
-| ODP | `POST /api/network/odps/import` | `GET /api/network/odps/template` |
+| OLT | `POST /api/network/olts/import` | `GET /api/network/olts/template` |
 | Joint Closure | `POST /api/network/joint-closures/import` | `GET /api/network/joint-closures/template` |
+
+ODC dan ODP tidak punya import Excel; keduanya dibuat satu per satu.
 
 ---
 
@@ -481,20 +482,16 @@ Endpoint `GET /api/network/otbs/stats` mengembalikan:
 |---|---|---|
 | GET | `/api/network/odcs` | List ODC + info OLT + jumlah ODP |
 | POST | `/api/network/odcs` | Buat ODC baru |
-| GET | `/api/network/odcs/:id` | Detail ODC |
-| PUT | `/api/network/odcs/:id` | Update ODC |
-| DELETE | `/api/network/odcs/:id` | Hapus ODC |
-| POST | `/api/network/odcs/import` | Import ODC dari Excel |
+| PUT | `/api/network/odcs` | Update ODC (`id` di body) |
+| DELETE | `/api/network/odcs?id=` | Hapus ODC |
 
 ### ODP
 | Method | URL | Fungsi |
 |---|---|---|
-| GET | `/api/network/odps` | List ODP (filter: routerId) |
+| GET | `/api/network/odps` | List ODP |
 | POST | `/api/network/odps` | Buat ODP baru |
-| GET | `/api/network/odps/:id` | Detail ODP + jumlah pelanggan |
-| PUT | `/api/network/odps/:id` | Update ODP |
-| DELETE | `/api/network/odps/:id` | Hapus ODP |
-| POST | `/api/network/odps/import` | Import ODP dari Excel |
+| PUT | `/api/network/odps` | Update ODP (`id` di body) |
+| DELETE | `/api/network/odps?id=` | Hapus ODP |
 
 ### Joint Closure
 | Method | URL | Fungsi |
@@ -540,7 +537,6 @@ Endpoint `GET /api/network/otbs/stats` mengembalikan:
 |---|---|---|
 | GET | `/api/network/customers/assign?customerId=X` | Cari ODP terdekat dengan port kosong |
 | POST | `/api/network/customers/assign` | Assign pelanggan ke port ODP |
-| GET | `/api/network/olt-routers` | List OLT-Router connections |
 | GET/POST/PUT/DELETE | `/api/network/olts` | CRUD OLT |
 
 ---

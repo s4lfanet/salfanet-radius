@@ -142,92 +142,49 @@ Silakan lakukan pembayaran ulang atau hubungi kami jika ada pertanyaan.
 
 ## API Endpoints
 
-### 1. Upload Manual Payment
-**Endpoint**: `POST /api/payment/manual`
+Pembayaran manual disimpan di tabel `manualPayment` (status `PENDING`, `APPROVED`, `REJECTED`). Ada dua jalur masuk: pelanggan mengunggah sendiri dari portal atau aplikasi, atau admin mencatatkan atas nama pelanggan.
+
+### 1. Pelanggan mengunggah bukti
+**Endpoint**: `POST /api/customer/invoices/{invoiceId}/manual-payment` (token pelanggan)
+
+Hanya untuk tagihan milik pelanggan itu yang belum lunas. Bila sudah ada bukti `PENDING` untuk tagihan yang sama, jawabannya 409 ("Bukti transfer sudah dikirim dan sedang menunggu konfirmasi admin").
+
+### 2. Admin mencatat pembayaran manual
+**Endpoint**: `POST /api/manual-payments` (izin `invoices.create`)
 
 **Request**:
 ```json
 {
-  "invoiceId": 123,
-  "proofImage": "base64_image_data",
-  "senderName": "John Doe",
-  "senderBank": "BCA",
-  "senderAccount": "1234567890",
+  "invoiceId": "…",
+  "userId": "…",
+  "amount": 150000,
+  "bankName": "BCA",
+  "accountNumber": "1234567890",
+  "accountName": "John Doe",
+  "paymentDate": "2026-10-20",
+  "receiptImage": "/uploads/…",
   "notes": "Transfer dari rekening istri"
 }
 ```
+`invoiceId`, `userId`, `amount`, `bankName`, `accountName`, `paymentDate`, dan `receiptImage` wajib; selain itu jawabannya 400.
 
-**Response**:
+### 3. Daftar dan detail
+- `GET /api/manual-payments` memuat daftar pembayaran manual untuk ditinjau
+- `GET /api/manual-payments/{id}` memuat detailnya
+
+### 4. Setujui atau tolak
+**Endpoint**: `PATCH /api/manual-payments/{id}` (izin `invoices.edit`)
+
 ```json
-{
-  "success": true,
-  "message": "Bukti pembayaran berhasil diupload",
-  "paymentId": 456
-}
+{ "action": "APPROVE" }
 ```
-
-### 2. Get Manual Payments for Review
-**Endpoint**: `GET /api/admin/payments/manual`
-
-**Response**:
 ```json
-{
-  "payments": [
-    {
-      "id": 456,
-      "invoiceId": 123,
-      "invoiceNumber": "INV-2024-0001",
-      "amount": 150000,
-      "customerName": "John Doe",
-      "customerId": "CUST001",
-      "proofImageUrl": "/uploads/proofs/xxx.jpg",
-      "senderName": "John Doe",
-      "senderBank": "BCA",
-      "senderAccount": "1234567890",
-      "notes": "Transfer dari rekening istri",
-      "uploadedAt": "2024-01-15T10:30:00Z",
-      "status": "MANUAL_REVIEW"
-    }
-  ]
-}
+{ "action": "REJECT", "rejectionReason": "Bukti tidak jelas, nominal tidak sesuai" }
 ```
+`action` adalah `APPROVE` atau `REJECT` (huruf besar atau kecil). Alasan penolakan wajib. Menyetujui menandai invoice lunas, memperpanjang masa aktif, mengaktifkan kembali pelanggan yang terisolir, dan mengirim notifikasi lewat WhatsApp serta push.
 
-### 3. Approve Manual Payment
-**Endpoint**: `POST /api/admin/payments/manual/{id}/approve`
-
-**Request**:
-```json
-{
-  "notes": "Pembayaran sesuai"
-}
-```
-
-**Response**:
-```json
-{
-  "success": true,
-  "message": "Pembayaran berhasil dikonfirmasi",
-  "newExpiry": "2024-02-15"
-}
-```
-
-### 4. Reject Manual Payment
-**Endpoint**: `POST /api/admin/payments/manual/{id}/reject`
-
-**Request**:
-```json
-{
-  "reason": "Bukti tidak jelas, nominal tidak sesuai"
-}
-```
-
-**Response**:
-```json
-{
-  "success": true,
-  "message": "Pembayaran ditolak"
-}
-```
+### 5. Hapus
+`DELETE /api/manual-payments/{id}` menghapus catatan pembayaran manual.
 
 ## Database Schema
 

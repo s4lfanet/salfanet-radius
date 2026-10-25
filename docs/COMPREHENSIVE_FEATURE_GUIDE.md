@@ -4,6 +4,8 @@
 **Last Updated**: March 27, 2026  
 **Project**: ISP/RTRW.NET Billing & RADIUS Management System
 
+> **Catatan (Oktober 2026):** Panduan ini disusun pada v2.11.6 dan hanya sebagian yang diperbarui sesudahnya. Fitur dan angka yang lebih baru (portal kolektor dan setoran, notifikasi dan web push, 27 job cron, aplikasi Android, Peta Jaringan, QRIS Mandiri) ada di [README.md](../README.md), [CHANGELOG.md](../CHANGELOG.md), dan [ARCHITECTURE.md](./ARCHITECTURE.md). Bila ada beda, kode dan ketiga berkas itu yang benar.
+
 > **Ringkasan Lengkap**: Dokumentasi ini merangkum semua fitur dan kemampuan dari SALFANET RADIUS. Konten dasar guide ini mencakup fitur hingga v2.7.5; untuk fitur baru v2.10.x–v2.11.x (Dark Mode, Admin Dashboard v2, PPPoE Session Sync, PPN Fix, Area badge, billingDay recalc, dll) lihat [`CHANGELOG.md`](getting-started/CHANGELOG.md) dan [`ROADMAP.md`](ROADMAP.md).
 
 ---
@@ -31,8 +33,8 @@
 ## 🎯 System Overview
 
 ### Platform Details
-- **Framework**: Next.js 16.0.8 + React 19
-- **Backend**: Node.js 20.x + Prisma ORM
+- **Framework**: Next.js 16 + React 19 (dua aplikasi: frontend dan backend)
+- **Backend**: Node.js 22.x + Prisma ORM
 - **Database**: MySQL 8.0
 - **RADIUS Server**: FreeRADIUS 3.0.26
 - **Process Manager**: PM2
@@ -56,7 +58,7 @@
 ## 🚀 Core Features
 
 ### 1. FreeRADIUS Integration
-**Reference**: [FREERADIUS-SETUP.md](FREERADIUS-SETUP.md)
+**Reference**: [FREERADIUS-SETUP.md](./setup/FREERADIUS-SETUP.md)
 
 - **Full RADIUS Server**: FreeRADIUS 3.0.26 dengan MySQL backend
 - **Multi-Protocol**: PAP, CHAP, MS-CHAP support
@@ -75,7 +77,7 @@
 - Multi-router management with single RADIUS server
 
 ### 2. Multiple NAS Same IP Support
-**Reference**: [MULTIPLE_NAS_SAME_IP.md](MULTIPLE_NAS_SAME_IP.md)
+**Reference**: [MULTIPLE_NAS_SAME_IP.md](./mikrotik/MULTIPLE_NAS_SAME_IP.md)
 
 **Problem Solved**: Manage multiple routers behind single public IP (VPN scenario)
 
@@ -94,7 +96,7 @@ Public IP: 103.67.244.131
 ```
 
 ### 3. Complete Database Seeding
-**Reference**: [CHAT_HISTORY_2025-12-23.md](../CHAT_HISTORY_2025-12-23.md)
+**Reference**: CHAT_HISTORY_2025-12-23.md
 
 **Seed Files** (10 essential TypeScript files, 110 KB):
 1. Company settings & isolation config
@@ -150,7 +152,7 @@ Public IP: 103.67.244.131
 - `stopped` - Berhenti berlangganan
 
 ### 2. Subscription Types
-**Reference**: [PREPAID_POSTPAID_IMPLEMENTATION.md](PREPAID_POSTPAID_IMPLEMENTATION.md)
+**Reference**: [PREPAID_POSTPAID_IMPLEMENTATION.md](./billing/PREPAID_POSTPAID_WORKFLOW_V3.md)
 
 #### PREPAID (Bayar Dimuka)
 - Bayar sebelum masa aktif
@@ -185,7 +187,7 @@ Public IP: 103.67.244.131
 6. Status changed to `active`
 
 **GPS Location Feature**:
-**Reference**: [GPS_LOCATION_FEATURE.md](GPS_LOCATION_FEATURE.md)
+**Reference**: [GPS_LOCATION_FEATURE.md](./features/GPS_LOCATION_FEATURE.md)
 
 - Capture customer GPS coordinates saat registrasi
 - Store latitude & longitude
@@ -200,7 +202,7 @@ Public IP: 103.67.244.131
 - Area statistics & analytics
 
 ### 5. Import PPPoE Users
-**Reference**: [IMPORT_PPPOE_USERS.md](IMPORT_PPPOE_USERS.md)
+**Reference**: [IMPORT_PPPOE_USERS.md](./features/IMPORT_PPPOE_USERS.md)
 
 **Feature**: Sync existing PPPoE secrets dari MikroTik ke database
 
@@ -240,7 +242,7 @@ totalAmount: 166000     // Grand total
 ```
 
 **Invoice Number Format**:
-**Reference**: [INVOICE_NUMBER_FORMAT.md](INVOICE_NUMBER_FORMAT.md)
+**Reference**: [INVOICE_NUMBER_FORMAT.md](./billing/INVOICE_NUMBER_FORMAT.md)
 
 ```
 Format: INV-20251223-00001
@@ -259,7 +261,7 @@ Format: INV-20251223-00001
 ### 2. Payment Methods
 
 #### A. Manual Payment (Upload Bukti Transfer)
-**Reference**: [MANUAL_PAYMENT_AND_NOTIFICATION_SYSTEM.md](MANUAL_PAYMENT_AND_NOTIFICATION_SYSTEM.md)
+**Reference**: [MANUAL_PAYMENT_AND_NOTIFICATION_SYSTEM.md](./billing/MANUAL_PAYMENT_AND_NOTIFICATION_SYSTEM.md)
 
 **Customer Side**:
 1. Upload foto bukti transfer (JPG/PNG/WebP, max 5MB)
@@ -297,7 +299,7 @@ Format: INV-20251223-00001
 6. Auto-activate user
 
 ### 3. Agent Deposit System
-**Reference**: [AGENT_DEPOSIT_SYSTEM.md](AGENT_DEPOSIT_SYSTEM.md)
+**Reference**: [AGENT_DEPOSIT_SYSTEM.md](./billing/AGENT_DEPOSIT_SYSTEM.md)
 
 **Features**:
 - Agent balance management
@@ -363,7 +365,7 @@ agent_sales:
 - Custom combinations
 
 ### 2. Hotspot Sync (Cron Job)
-**Reference**: [CRON-SYSTEM.md](CRON-SYSTEM.md)
+**Reference**: [CRON-SYSTEM.md](./features/CRON-SYSTEM.md)
 
 **Schedule**: Every 5 minutes
 
@@ -483,7 +485,7 @@ profit: 1000           // Keuntungan per voucher
 - Delivery tracking
 
 ### 3. Broadcast Notification System
-**Reference**: [BROADCAST_NOTIFICATION_SYSTEM.md](BROADCAST_NOTIFICATION_SYSTEM.md)
+**Reference**: [BROADCAST_NOTIFICATION_SYSTEM.md](./notifications/BROADCAST_NOTIFICATION_SYSTEM.md)
 
 **Features**:
 - Mass notification ke selected users
@@ -507,9 +509,9 @@ profit: 1000           // Keuntungan per voucher
 - WhatsApp + Email (both)
 
 ### 4. Outage Notification System
-**Reference**: [OUTAGE_NOTIFICATION_SYSTEM.md](OUTAGE_NOTIFICATION_SYSTEM.md)
+**Reference**: [OUTAGE_NOTIFICATION_SYSTEM.md](./notifications/OUTAGE_NOTIFICATION_SYSTEM.md)
 
-**API**: `POST /api/notifications/outage`
+**API**: `POST /api/pppoe/users/send-notification` dengan `notificationType: "outage"`
 
 **Parameters**:
 ```typescript
@@ -595,7 +597,7 @@ profit: 1000           // Keuntungan per voucher
 
 ## ⚙️ Automation & Cron Jobs
 
-**Reference**: [CRON-SYSTEM.md](CRON-SYSTEM.md)
+**Reference**: [CRON-SYSTEM.md](./features/CRON-SYSTEM.md)
 
 ### Job Definitions (10 Jobs)
 
@@ -679,7 +681,7 @@ cron_executions:
 ## 📈 Monitoring & Reporting
 
 ### 1. Activity Log System
-**Reference**: [ACTIVITY_LOG_IMPLEMENTATION.md](ACTIVITY_LOG_IMPLEMENTATION.md)
+**Reference**: ACTIVITY_LOG_IMPLEMENTATION.md
 
 **Features**:
 - Comprehensive action tracking
@@ -757,7 +759,7 @@ await logActivity({
 
 ## 🔧 GenieACS Integration
 
-**Reference**: [GENIEACS-GUIDE.md](GENIEACS-GUIDE.md)
+**Reference**: [GENIEACS-GUIDE.md](./features/GENIEACS-GUIDE.md)
 
 ### Overview
 GenieACS = Auto Configuration Server (ACS) untuk TR-069 devices (ONT/ONU)
@@ -918,7 +920,7 @@ genieacs_parameter_display:
 
 ## 🚀 Deployment & Infrastructure
 
-**Reference**: [DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md), [VPS_OPTIMIZATION_GUIDE.md](VPS_OPTIMIZATION_GUIDE.md)
+**Reference**: [DEPLOYMENT-GUIDE.md](../deploy/README.md), [VPS_OPTIMIZATION_GUIDE.md](./setup/VPS_OPTIMIZATION_GUIDE.md)
 
 ### 1. Server Requirements
 
@@ -937,18 +939,18 @@ genieacs_parameter_display:
 
 ### 2. Installation Methods
 
-#### A. Quick Deploy (vps-install.sh)
+#### A. Quick Deploy (vps-installer.sh)
 ```bash
 # Upload project
 scp -r salfanet-radius root@VPS_IP:/root/
 
 # Run installer
-chmod +x vps-install.sh
-./vps-install.sh
+cd /root/salfanet-radius
+bash frontend/vps-install/vps-installer.sh
 ```
 
 **Auto-installs**:
-- Node.js 20.x
+- Node.js 22.x
 - MySQL 8.0
 - FreeRADIUS 3.0.26
 - Nginx
@@ -956,18 +958,17 @@ chmod +x vps-install.sh
 - SSL certificate (Let's Encrypt)
 
 #### B. Manual Installation
-Step-by-step documented in [DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md)
+Step-by-step documented in [DEPLOYMENT-GUIDE.md](../deploy/README.md)
 
-#### C. Update Existing (vps-update.sh)
+#### C. Update Existing (updater.sh atau Update Sekarang)
 ```bash
-chmod +x vps-update.sh
-./vps-update.sh
+# Dari server: rilis terbaru, atau --version vX.Y.Z, atau --branch master
+bash frontend/vps-install/updater.sh
 
-# Select mode:
-# 1 = FULL (backup, npm install, migrations, build)
-# 2 = QUICK (skip backups)
-# 3 = HOTFIX (code only, fastest)
+# Tanpa backup sebelum update (tidak disarankan di produksi)
+bash frontend/vps-install/updater.sh --skip-backup
 ```
+Dari panel admin: **Sistem, Update Sekarang**. Rinciannya di [VPS Installer](../frontend/vps-install/README.md).
 
 ### 3. VPS Optimization
 
@@ -1035,7 +1036,7 @@ certbot renew --dry-run
 **Retention**: 7 daily + 4 weekly + 3 monthly
 
 ### 6. VPN Setup for Remote Routers
-**Reference**: [VPN_CLIENT_SETUP_GUIDE.md](VPN_CLIENT_SETUP_GUIDE.md)
+**Reference**: [VPN_CLIENT_SETUP_GUIDE.md](./setup/VPN_CLIENT_SETUP_GUIDE.md)
 
 **Scenario**: MikroTik di lokasi remote → VPN ke VPS → RADIUS authentication
 
@@ -1097,13 +1098,12 @@ isolationNotifyWhatsapp: true
 
 ### 3. API Integration
 
-**Public API Endpoints**:
-- `/api/radius/*` - RADIUS integration
-- `/api/webhook/*` - Payment gateway webhooks
-- `/api/public/check-voucher` - Voucher validation
-- `/api/public/check-user` - User status check
+**Endpoint yang sudah ada**:
+- `/api/radius/*` - hook REST FreeRADIUS (authorize, post-auth, accounting, coa), dipanggil FreeRADIUS, bukan untuk umum
+- `/api/payment/webhook` - webhook payment gateway
+- `/api/public/*` - data publik: company, areas, profiles, payment-gateways, stats, promo-banners, apk-releases, upload-registration
 
-**Authentication**: API Key or JWT token
+**Belum ada (rencana)**: validasi voucher dan status pengguna lewat API publik, dan autentikasi API key untuk integrasi pihak ketiga.
 
 ### 4. Custom Reports
 
@@ -1151,37 +1151,37 @@ formatWIB(date)     // Format for display
 
 ### Getting Started
 - [README.md](../README.md) - Project overview & quick start
-- [DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md) - Installation guide
-- [TESTING_GUIDE.md](TESTING_GUIDE.md) - Testing procedures
+- [DEPLOYMENT-GUIDE.md](../deploy/README.md) - Installation guide
+- [TESTING_GUIDE.md](./getting-started/API_TESTING_GUIDE.md) - Testing procedures
 
 ### Core Systems
-- [FREERADIUS-SETUP.md](FREERADIUS-SETUP.md) - RADIUS server setup
-- [CRON-SYSTEM.md](CRON-SYSTEM.md) - Automation & scheduled jobs
-- [ACTIVITY_LOG_IMPLEMENTATION.md](ACTIVITY_LOG_IMPLEMENTATION.md) - Logging system
+- [FREERADIUS-SETUP.md](./setup/FREERADIUS-SETUP.md) - RADIUS server setup
+- [CRON-SYSTEM.md](./features/CRON-SYSTEM.md) - Automation & scheduled jobs
+- ACTIVITY_LOG_IMPLEMENTATION.md - Logging system
 
 ### Features
-- [PREPAID_POSTPAID_IMPLEMENTATION.md](PREPAID_POSTPAID_IMPLEMENTATION.md) - Billing types
-- [AGENT_DEPOSIT_SYSTEM.md](AGENT_DEPOSIT_SYSTEM.md) - Agent/reseller system
-- [MANUAL_PAYMENT_AND_NOTIFICATION_SYSTEM.md](MANUAL_PAYMENT_AND_NOTIFICATION_SYSTEM.md) - Payment approval
-- [BROADCAST_NOTIFICATION_SYSTEM.md](BROADCAST_NOTIFICATION_SYSTEM.md) - Mass notifications
-- [OUTAGE_NOTIFICATION_SYSTEM.md](OUTAGE_NOTIFICATION_SYSTEM.md) - Downtime alerts
-- [GENIEACS-GUIDE.md](GENIEACS-GUIDE.md) - TR-069 device management
+- [PREPAID_POSTPAID_IMPLEMENTATION.md](./billing/PREPAID_POSTPAID_WORKFLOW_V3.md) - Billing types
+- [AGENT_DEPOSIT_SYSTEM.md](./billing/AGENT_DEPOSIT_SYSTEM.md) - Agent/reseller system
+- [MANUAL_PAYMENT_AND_NOTIFICATION_SYSTEM.md](./billing/MANUAL_PAYMENT_AND_NOTIFICATION_SYSTEM.md) - Payment approval
+- [BROADCAST_NOTIFICATION_SYSTEM.md](./notifications/BROADCAST_NOTIFICATION_SYSTEM.md) - Mass notifications
+- [OUTAGE_NOTIFICATION_SYSTEM.md](./notifications/OUTAGE_NOTIFICATION_SYSTEM.md) - Downtime alerts
+- [GENIEACS-GUIDE.md](./features/GENIEACS-GUIDE.md) - TR-069 device management
 
 ### Technical
-- [MULTIPLE_NAS_SAME_IP.md](MULTIPLE_NAS_SAME_IP.md) - VPN router support
-- [IMPORT_PPPOE_USERS.md](IMPORT_PPPOE_USERS.md) - MikroTik sync
-- [GPS_LOCATION_FEATURE.md](GPS_LOCATION_FEATURE.md) - Location tracking
-- [INVOICE_NUMBER_FORMAT.md](INVOICE_NUMBER_FORMAT.md) - Invoice numbering
-- [VPN_CLIENT_SETUP_GUIDE.md](VPN_CLIENT_SETUP_GUIDE.md) - VPN configuration
-- [VPS_OPTIMIZATION_GUIDE.md](VPS_OPTIMIZATION_GUIDE.md) - Performance tuning
+- [MULTIPLE_NAS_SAME_IP.md](./mikrotik/MULTIPLE_NAS_SAME_IP.md) - VPN router support
+- [IMPORT_PPPOE_USERS.md](./features/IMPORT_PPPOE_USERS.md) - MikroTik sync
+- [GPS_LOCATION_FEATURE.md](./features/GPS_LOCATION_FEATURE.md) - Location tracking
+- [INVOICE_NUMBER_FORMAT.md](./billing/INVOICE_NUMBER_FORMAT.md) - Invoice numbering
+- [VPN_CLIENT_SETUP_GUIDE.md](./setup/VPN_CLIENT_SETUP_GUIDE.md) - VPN configuration
+- [VPS_OPTIMIZATION_GUIDE.md](./setup/VPS_OPTIMIZATION_GUIDE.md) - Performance tuning
 
 ### Troubleshooting
-- [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common issues & solutions
+- [TROUBLESHOOTING.md](./getting-started/TROUBLESHOOTING.md) - Common issues & solutions
 
 ### Session Notes
-- [SESSION_2025-12-23_BUG_FIXES.md](SESSION_2025-12-23_BUG_FIXES.md) - Recent bug fixes
-- [SESSION_2025-12-23_THEME_AND_API_FIXES.md](SESSION_2025-12-23_THEME_AND_API_FIXES.md) - UI/API improvements
-- [CHAT_HISTORY_2025-12-23.md](../CHAT_HISTORY_2025-12-23.md) - Development session log
+- SESSION_2025-12-23_BUG_FIXES.md - Recent bug fixes
+- SESSION_2025-12-23_THEME_AND_API_FIXES.md - UI/API improvements
+- CHAT_HISTORY_2025-12-23.md - Development session log
 
 ---
 

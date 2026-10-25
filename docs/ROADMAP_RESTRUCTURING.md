@@ -6,7 +6,7 @@
 > **Dibuat:** March 10, 2026  
 > **Estimasi Total:** 5 Fase  
 > **Panduan Lengkap:** [RESTRUCTURING_GUIDE.md](./RESTRUCTURING_GUIDE.md)  
-> **Progress Detail:** [restructuring/](./restructuring/)
+> **Progress Detail:** restructuring/
 
 ---
 
@@ -28,7 +28,7 @@ Phase 5 ── Jobs & Final Cleanup      (1-2 hari)   ✅ Selesai
 > **Estimasi:** 1-2 hari  
 > **Status:** ✅ Selesai — March 10, 2026  
 > **Risk:** Rendah — hanya memindahkan file singleton, tidak mengubah logic  
-> **Detail:** [restructuring/PHASE_1_COMPLETE.md](./restructuring/PHASE_1_COMPLETE.md)
+> **Detail:** restructuring/PHASE_1_COMPLETE.md
 
 ### Tujuan
 Buat struktur folder target dan pindahkan file-file "foundation" (Prisma, Redis, Auth) tanpa mengubah business logic apapun.
@@ -78,7 +78,7 @@ Buat struktur folder target dan pindahkan file-file "foundation" (Prisma, Redis,
 
 ## Phase 2 — Service Layer Extraction
 > **Estimasi:** 3-5 hari  
-> **Status:** ✅ Selesai — [restructuring/PHASE_2_COMPLETE.md](./restructuring/PHASE_2_COMPLETE.md)  
+> **Status:** ✅ Selesai — restructuring/PHASE_2_COMPLETE.md  
 > **Risk:** Sedang — memindahkan business logic, potensi import circular
 
 ### Tujuan
@@ -164,7 +164,7 @@ Pindahkan semua service/integrasi dari `src/lib/` ke `src/server/services/` deng
 
 ## Phase 3 — Feature Modules
 > **Estimasi:** 5-7 hari  
-> **Status:** ✅ Selesai — [restructuring/PHASE_3_COMPLETE.md](./restructuring/PHASE_3_COMPLETE.md)  
+> **Status:** ✅ Selesai — restructuring/PHASE_3_COMPLETE.md  
 > **Risk:** Sedang-Tinggi — memindahkan komponen, perlu perhatian "use client"/"use server"
 
 ### Tujuan
@@ -379,9 +379,9 @@ Integrasikan cron jobs ke dalam `src/server/jobs/`, bersihkan sisa-sisa migratio
 | Fase | Status | Dimulai | Selesai | Catatan |
 |------|--------|---------|---------|---------|
 | Phase 1 — Foundation | ✅ Selesai | Mar 10 | Mar 10 | 7 file dipindahkan, re-export proxy untuk 353+ existing imports |
-| Phase 2 — Services | ✅ Selesai | Mar 10 | Mar 10 | 26 services, 26 proxies, 6 repositories — [PHASE_2_COMPLETE.md](./restructuring/PHASE_2_COMPLETE.md) |
-| Phase 3 — Features | ✅ Selesai | Mar 10 | Mar 10 | Zod, 7 feature slices, shared validators, component dirs — [PHASE_3_COMPLETE.md](./restructuring/PHASE_3_COMPLETE.md) |
-| Phase 4 — API Thinning | ✅ Selesai | Mar 10 | Mar 10 | 2 service extractions, helpers applied, 25 PrismaClient bugs fixed — [PHASE_4_COMPLETE.md](./restructuring/PHASE_4_COMPLETE.md) |
+| Phase 2 — Services | ✅ Selesai | Mar 10 | Mar 10 | 26 services, 26 proxies, 6 repositories — PHASE_2_COMPLETE.md |
+| Phase 3 — Features | ✅ Selesai | Mar 10 | Mar 10 | Zod, 7 feature slices, shared validators, component dirs — PHASE_3_COMPLETE.md |
+| Phase 4 — API Thinning | ✅ Selesai | Mar 10 | Mar 10 | 2 service extractions, helpers applied, 25 PrismaClient bugs fixed — PHASE_4_COMPLETE.md |
 | Phase 5 — Jobs & Cleanup | ✅ Selesai | Mar 10 | Mar 10 | ESLint fixed, 4 missing jobs added, 44 proxy files deleted, 270 imports updated, tsc+lint+build+tests semua clean, ZIP ready |
 | VPS Deployment | ✅ Selesai | Mar 10 | Mar 10 | Update v2.10.9→v2.10.25 berhasil: 66.4 MB uploaded, rebuilt on VPS, PM2 online (salfanet-radius + salfanet-cron), HTTP 200 login & admin pages, cron executing |
 

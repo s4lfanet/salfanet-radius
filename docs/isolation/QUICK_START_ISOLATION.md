@@ -159,7 +159,7 @@ DELETE FROM radcheck WHERE username = 'testuser' AND attribute = 'Auth-Type';
 ### User Not Redirected
 ```bash
 # Check middleware logs
-pm2 logs salfanet-radius | grep MIDDLEWARE
+pm2 logs salfanet-backend | grep MIDDLEWARE
 ```
 
 ### User Can Access All Sites
@@ -192,9 +192,9 @@ pm2 logs salfanet-radius | grep MIDDLEWARE
 
 ## 📚 Full Documentation
 
-- [IMPLEMENTATION_SUMMARY.md](./IMPLEMENTATION_SUMMARY.md) - Complete changes
+- IMPLEMENTATION_SUMMARY.md - Complete changes
 - [ISOLATION_TESTING_GUIDE.md](./ISOLATION_TESTING_GUIDE.md) - Detailed testing
-- [FIREWALL_PAYMENT_INTEGRATION.md](./FIREWALL_PAYMENT_INTEGRATION.md) - Firewall guide
+- [FIREWALL_PAYMENT_INTEGRATION.md](../mikrotik/FIREWALL_PAYMENT_INTEGRATION.md) - Firewall guide
 
 ---
 

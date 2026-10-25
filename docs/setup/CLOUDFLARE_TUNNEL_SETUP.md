@@ -317,10 +317,10 @@ cloudflared tunnel route dns salfanet-radius radius.salfa.my.id --overwrite-dns
 **Solusi**:
 ```bash
 # Check app logs
-pm2 logs salfanet-radius
+pm2 logs salfanet-backend
 
 # Restart app
-pm2 restart salfanet-radius
+pm2 restart salfanet-backend
 
 # Restart tunnel
 sudo systemctl restart cloudflared

@@ -207,16 +207,15 @@ Authorization: Bearer {{token}}
 
 ### **Public APIs (No Auth Required):**
 - `/api/health` - Health check
-- `/api/company` - Company info
-- `/api/settings/company` - Company settings
-- `/api/payment-gateways` - Payment options
+- `/api/company/info` - Company info
+- `/api/public/*` - Public data (company, areas, profiles, payment-gateways, stats, promo-banners)
 - `/api/customer/auth/*` - Customer login/OTP
 
 ### **Admin Protected APIs:**
-- `/api/pppoe` - PPPoE users management
-- `/api/hotspot` - Hotspot vouchers
+- `/api/pppoe/*` - PPPoE users management
+- `/api/hotspot/*` - Hotspot vouchers
 - `/api/invoices` - Invoice management
-- `/api/nas` - Network access servers
+- `/api/network/routers` - Routers / NAS
 - `/api/backup` - Backup & restore
 - `/api/whatsapp/*` - WhatsApp integration
 - `/api/tickets/*` - Support tickets
@@ -285,28 +284,23 @@ Expected response times:
 ### **Check Server Logs:**
 ```bash
 # PM2 logs
-pm2 logs salfanet-radius
+pm2 logs salfanet-backend
 
 # Or file logs
 tail -f logs/out.log
 tail -f logs/error.log
 ```
 
-### **Enable Debug Mode:**
+### **Development Server:**
 ```bash
-# Add to .env
-DEBUG=true
-LOG_LEVEL=debug
-
-# Restart
-npm run dev
+pnpm dev:all   # frontend (3000) and backend (3001) together
 ```
+Errors are printed to the terminal. There is no `DEBUG` or `LOG_LEVEL` setting.
 
 ### **Database Queries:**
 ```bash
-# Check Prisma logs
-# Add to .env
-DATABASE_LOGGING=true
+# Look at the table directly
+mysql -u salfanet -p salfanet_radius -e "SELECT id, jobType, status, startedAt FROM cron_history ORDER BY startedAt DESC LIMIT 10;"
 ```
 
 ### **Network Issues:**
@@ -349,7 +343,7 @@ curl -v http://localhost:3000/api/health
 ### **API Returns 500:**
 ```bash
 # Check logs
-pm2 logs salfanet-radius --err
+pm2 logs salfanet-backend --err
 
 # Check database
 mysql -u root -p -e "SHOW PROCESSLIST;"

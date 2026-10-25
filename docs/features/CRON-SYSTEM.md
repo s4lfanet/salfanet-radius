@@ -523,9 +523,9 @@ result: 'Success'
 ## Related Documentation
 
 - [Timezone Architecture](../README.md#-timezone--date-handling)
-- [Activity Log System](./ACTIVITY_LOG_IMPLEMENTATION.md)
-- [FreeRADIUS Setup](./FREERADIUS-SETUP.md)
-- [Deployment Guide](./DEPLOYMENT-GUIDE.md)
+- Activity Log System
+- [FreeRADIUS Setup](../setup/FREERADIUS-SETUP.md)
+- [Deployment Guide](../../deploy/README.md)
 
 ---
 

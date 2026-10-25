@@ -246,7 +246,7 @@ Check `schema.prisma`:
 ### Step 4: Restart Application
 ```bash
 npm run build
-pm2 restart salfanet-radius
+pm2 restart salfanet-backend
 ```
 
 ### Step 5: Test
@@ -327,7 +327,7 @@ POST /api/network/routers
 ```bash
 npx prisma migrate deploy
 npx prisma generate
-pm2 restart salfanet-radius
+pm2 restart salfanet-backend
 ```
 
 ### Error: "P2002: Unique constraint failed"
@@ -382,9 +382,9 @@ UNIQUE KEY `unique_nas_config` (`nasname`,`ports`,`secret`)  -- ✅ Allow duplic
 
 ## 📚 Related Documentation
 
-- **FreeRADIUS NAS Table**: [docs/FREERADIUS-SETUP.md](FREERADIUS-SETUP.md)
-- **Router Management**: [docs/DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md)
-- **Database Schema**: [prisma/schema.prisma](../prisma/schema.prisma)
+- **FreeRADIUS NAS Table**: [docs/FREERADIUS-SETUP.md](../setup/FREERADIUS-SETUP.md)
+- **Router Management**: [docs/DEPLOYMENT-GUIDE.md](../../deploy/README.md)
+- **Database Schema**: [prisma/schema.prisma](../../backend/prisma/schema.prisma)
 
 ---
 

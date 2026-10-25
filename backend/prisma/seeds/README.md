@@ -15,9 +15,8 @@ Koleksi seed scripts untuk initialize database dengan data default.
 
 **Usage**:
 ```bash
+cd backend
 npx tsx prisma/seeds/seed-company.ts
-# atau
-npm run db:seed:company
 ```
 
 **Data Created**:
@@ -27,7 +26,7 @@ npm run db:seed:company
 - Rate Limit: `64k/64k`
 - Grace period: `0` days
 
-### 2. Isolation Templates (`seed-isolation-templates.ts`)
+### 2. Isolation Templates (`isolation-templates.ts`)
 
 **Purpose**: Create default isolation notification templates
 
@@ -41,9 +40,8 @@ npm run db:seed:company
 
 **Usage**:
 ```bash
-npx tsx prisma/seeds/seed-isolation-templates.ts
-# atau
-npm run db:seed:templates
+cd backend
+npx tsx prisma/seeds/isolation-templates.ts
 ```
 
 **Templates Created**:
@@ -67,11 +65,13 @@ npm run db:seed:templates
 
 ### 3. All Seeds (`seed-all.ts`)
 
-**Purpose**: Run all seed scripts at once
+**Purpose**: Run all seed scripts at once: permissions and role templates, the default admin, company record, transaction categories, WhatsApp, email, invoice, isolation and manual-extension templates, ticket categories, and parameter display config. The VPS installer runs this.
 
 **Usage**:
 ```bash
-npm run db:seed
+pnpm --filter backend db:seed
+# atau dari folder backend
+pnpm db:seed
 ```
 
 ## 🚀 Installation Guide
@@ -83,31 +83,26 @@ npm run db:seed
 npx prisma db push
 ```
 
-2. **Seed Company Data** (Required):
+2. **Run All Seeds** (company, templates, permissions, default admin):
 ```bash
-npm run db:seed:company
+pnpm db:seed
 ```
 
-3. **Seed Templates** (Optional but recommended):
+3. **Or one at a time**, for example only the company record:
 ```bash
-npm run db:seed:templates
-```
-
-4. **Or Run All Seeds**:
-```bash
-npm run db:seed
+npx tsx prisma/seeds/seed-company.ts
 ```
 
 ### Production Deployment
 
 ```bash
-cd /var/www/salfanet-radius
+cd /var/www/salfanet-radius/backend
 
-# Run seeds after migration
-npx prisma migrate deploy
-npm run db:seed:company
-npm run db:seed:templates
+npx prisma db push
+pnpm db:seed
 ```
+
+> **Perhatian:** `pnpm db:seed` menimpa izin tiap role dengan template bawaan (`ROLE_TEMPLATES` di `permissions.ts`). Jalankan di server yang sudah berjalan hanya bila izin role memang ingin dikembalikan ke bawaan; update biasa lewat Update Sekarang tidak menjalankannya. Akun Super Admin dan data perusahaan yang sudah ada tidak ditimpa.
 
 ## 🔍 Troubleshooting
 
@@ -150,6 +145,6 @@ FLUSH PRIVILEGES;
 ## 📚 Documentation
 
 See also:
-- [Install Wizard](../../install-wizard.html) - Complete installation guide
-- [CHANGELOG.md](../../CHANGELOG.md) - Version history
-- [README.md](../../README.md) - Project overview
+- [Install Wizard](../../../frontend/production/install-wizard.html) - Complete installation guide
+- [CHANGELOG.md](../../../CHANGELOG.md) - Version history
+- [README.md](../../../README.md) - Project overview

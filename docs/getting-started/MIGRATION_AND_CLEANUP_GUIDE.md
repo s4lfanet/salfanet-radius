@@ -405,9 +405,9 @@ npx prisma migrate deploy
 ## 📚 Related Documentation
 
 - [DATABASE_MIGRATION_GUIDE.md](DATABASE_MIGRATION_GUIDE.md) - General migration guide
-- [ROADMAP_PROGRESS_2026-02-17.md](ROADMAP_PROGRESS_2026-02-17.md) - Implementation progress
-- [TESTING_GUIDE_2026-02-17.md](TESTING_GUIDE_2026-02-17.md) - Testing procedures
-- [API_TESTING_GUIDE.md](../API_TESTING_GUIDE.md) - API testing
+- ROADMAP_PROGRESS_2026-02-17.md - Implementation progress
+- TESTING_GUIDE_2026-02-17.md - Testing procedures
+- [API_TESTING_GUIDE.md](./API_TESTING_GUIDE.md) - API testing
 
 ---
 

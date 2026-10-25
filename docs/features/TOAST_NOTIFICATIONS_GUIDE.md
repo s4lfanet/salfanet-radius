@@ -385,7 +385,7 @@ const showToast = () => {
 
 - [Shadcn UI Toast Documentation](https://ui.shadcn.com/docs/components/toast)
 - [React Hook Form Integration](https://react-hook-form.com/)
-- [SALFANET API Documentation](./API_DOCUMENTATION.md)
+- SALFANET API Documentation
 
 ---
 

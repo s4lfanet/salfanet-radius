@@ -1,207 +1,112 @@
-# Regression Test Checklist — Salfanet Radius Migration
+# Regression Test Checklist — Salfanet Radius
 
-This checklist must be completed on a staging/test VPS before removing
-legacy Next.js API routes and cron runner.
+Daftar uji untuk server percobaan sebelum sebuah rilis dipakai di produksi. Centang tiap butir setelah dijalankan; catat butir yang gagal beserta pesannya. Gunakan data uji, bukan pelanggan sungguhan.
 
-## Test Environment
+## 0. Persiapan
 
-- [ ] Backend running on port 3001 (`pm2 logs salfanet-backend`)
-- [ ] Frontend running on port 3000 (`pm2 logs salfanet-frontend`)
-- [ ] Nginx proxying `/api/v1/*` → backend, `/` → frontend
-- [ ] Database accessible from backend
-- [ ] `NEXT_PUBLIC_API_URL=http://127.0.0.1:3001` set in frontend env
+- [ ] `pm2 status`: `salfanet-frontend`, `salfanet-backend`, `salfanet-cron`, dan `salfanet-wa` semuanya `online`
+- [ ] `pm2 logs salfanet-backend --lines 50` tanpa error berulang
+- [ ] Halaman login admin terbuka, dan kolom versi di sidebar sesuai rilis (`vX.Y.Z+jumlah commit`)
+- [ ] `systemctl is-active freeradius` aktif, dan tidak ada `rest: ERROR` berulang di log FreeRADIUS
+- [ ] Nginx: `/api/auth/*` ke frontend, `/api/*` ke backend, `/uploads/` menyajikan gambar
+- [ ] Update Sekarang selesai tanpa error, dan halaman Sistem menampilkan versi baru
 
-## 1. Authentication
+## 1. Login dan akses
 
-- [ ] Admin login via `/api/v1/auth/login` — returns JWT token
-- [ ] Customer login (phone + OTP)
-- [ ] Agent login
-- [ ] Technician login (phone + OTP)
-- [ ] Invalid credentials rejected (401)
-- [ ] Protected routes reject missing token (401)
-- [ ] Protected routes reject invalid token (401)
-- [ ] Role-based access control works (admin vs customer vs agent)
+- [ ] Admin masuk, dan sesi habis setelah idle
+- [ ] Kata sandi salah ditolak, dan halaman admin tanpa sesi diarahkan ke login
+- [ ] Setiap peran (Keuangan, Customer Service, Marketing, Teknisi, Viewer) hanya melihat menu yang bisa dibuka, tanpa panggilan API yang ditolak (403) di konsol
+- [ ] Pelanggan masuk ke portal pelanggan
+- [ ] Agen masuk ke portal agen
+- [ ] Teknisi masuk dengan **username dan password** (Kelola Teknisi), dan teknisi tanpa password belum bisa masuk
+- [ ] Kolektor masuk dengan username dan password, dan melihat hanya data wilayah tugasnya
 
-## 2. Dashboard & Stats
+## 2. PPPoE dan Hotspot
 
-- [ ] `GET /api/v1/dashboard` — returns admin stats
-- [ ] Customer dashboard returns user-specific data
-- [ ] Agent dashboard returns agent-specific data
+- [ ] Buat, ubah, dan hapus pelanggan PPPoE; baris `radcheck` dan `radusergroup` ikut berubah
+- [ ] Pelanggan baru bisa terhubung (PAP/CHAP), dan tampil online di daftar
+- [ ] Profil dan sinkron ke MikroTik
+- [ ] Buat batch voucher hotspot; login pertama memulai masa berlaku
+- [ ] Pelanggan atau voucher yang diblokir atau kedaluwarsa ditolak (hook REST FreeRADIUS `/authorize`)
+- [ ] Log Autentikasi menampilkan waktu yang benar dan hitungan hari ini
 
-## 3. PPPoE Management
+## 3. Isolir dan perpanjangan
 
-- [ ] `GET /api/v1/pppoe` — list users
-- [ ] Create PPPoE user
-- [ ] Update PPPoE user
-- [ ] Delete PPPoE user
-- [ ] PPPoE sync to RADIUS (radcheck + radusergroup)
-- [ ] PPPoE profile sync to MikroTik
+- [ ] Pelanggan prabayar yang kedaluwarsa terisolir oleh `pppoe_auto_isolir`, dan sesinya diputus
+- [ ] Pelanggan terisolir mendapat halaman pembayaran
+- [ ] Setelah bayar (gateway, manual, atau kolektor), pelanggan aktif lagi dan masa aktif bertambah
+- [ ] Auto Renewal memotong saldo dan memperpanjang
+- [ ] `auto_stop` nonaktif secara bawaan di halaman Cron (jangan dinyalakan di server percobaan yang berisi data asli)
 
-## 4. Hotspot Management
+## 4. Invoice dan pembayaran
 
-- [ ] `GET /api/v1/hotspot` — list vouchers
-- [ ] Create hotspot voucher
-- [ ] Voucher sync to RADIUS
-- [ ] Voucher status update (WAITING → ACTIVE → EXPIRED)
-- [ ] Hotspot profile management
+- [ ] Invoice bulanan dibuat oleh `invoice_generate` untuk pascabayar
+- [ ] Tandai Lunas di Tagihan; dengan memilih kolektor, pembayaran masuk Setoran Kolektor, tanpa memilih kolektor pembayaran muncul di panel "tidak masuk setoran kolektor manapun"
+- [ ] Pembayaran gateway (Midtrans, Xendit, Duitku, Tripay) dan webhook-nya melunasi invoice; tanda tangan webhook diperiksa
+- [ ] QRIS Mandiri: nominal dengan kode unik terdeteksi dan melunasi
+- [ ] Pembayaran manual: pelanggan mengunggah bukti, admin menyetujui atau menolak (alasan wajib), pelanggan menerima notifikasi
+- [ ] PDF invoice dan ekspor Excel terunduh
 
-## 5. Invoices & Billing
+## 5. Pengingat dan notifikasi
 
-- [ ] `GET /api/v1/invoices` — list invoices
-- [ ] Create invoice
-- [ ] Invoice PDF generation (`/api/v1/export/invoice/:id/pdf`)
-- [ ] Invoice Excel export (`/api/v1/export/invoices/excel`)
-- [ ] Invoice status update (PENDING → OVERDUE → PAID)
-- [ ] Invoice reminder (WhatsApp + Email)
+- [ ] Pengaturan WhatsApp, Notifikasi: hari pengingat, jam kirim, dan batch tersimpan
+- [ ] Test manual **Pengingat Invoice** di Settings, Cron menampilkan ringkasan alasan (terkirim, atau mengapa tidak)
+- [ ] Dengan provider WhatsApp yang sengaja dimatikan, pengingat gagal dilaporkan (bukan dianggap terkirim) dan dicoba lagi di putaran berikutnya
+- [ ] Pesan WhatsApp, email, dan push pengingat sampai ke pelanggan uji
+- [ ] Push ke aplikasi pelanggan (FCM) sampai, termasuk untuk pelanggan yang hanya memakai aplikasi
+- [ ] Siaran notifikasi (broadcast) sampai ke target yang dipilih
 
-## 6. Payment Gateway
+## 6. Portal kolektor dan setoran
 
-- [ ] `POST /api/v1/payment-gateway/create` — Midtrans payment
-- [ ] `POST /api/v1/payment-gateway/create` — Xendit payment
-- [ ] `POST /api/v1/payment-gateway/create` — Duitku payment
-- [ ] `POST /api/v1/payment-gateway/create` — Tripay payment
-- [ ] Payment webhook (`POST /api/v1/payment-gateway/webhook`)
-- [ ] Webhook signature verification
-- [ ] Manual payment submission
-- [ ] Manual payment verification
+- [ ] Kelola Kolektor: area, beberapa router/NAS, Edit, dan Hapus (kolektor yang pernah menagih tidak bisa dihapus)
+- [ ] Kolektor tanpa area dan NAS tidak melihat data; kolektor lain tidak melihat pelanggan di luar wilayahnya
+- [ ] Filter area dan router/NAS tampil, dan mengubah daftar Pelanggan, Tagihan, dan Isolir
+- [ ] Tandai lunas tunai, dan transfer dengan foto bukti; tandai lunas dua kali bersamaan tidak memperpanjang dua kali
+- [ ] Pelanggan: status pembayaran, peta, detail GPS, tombol Telepon dan WhatsApp (pesan terisi)
+- [ ] Setoran Saya (harian dan rentang) sama dengan yang terlihat admin untuk hari yang sama
+- [ ] Setoran Kolektor di admin: daftar pembayaran, konfirmasi per baris, centang beberapa lalu konfirmasi, batalkan, rentang tanggal
+- [ ] Lonceng kolektor: notifikasi muncul, klik membuka halamannya dan menandai dibaca, Tandai semua dibaca
+- [ ] Web push kolektor (lewat HTTPS dengan kunci VAPID): tombol Aktifkan, notifikasi sistem muncul walau portal tertutup
 
-## 7. Network & MikroTik
+## 7. Portal teknisi
 
-- [ ] `GET /api/v1/network/routers` — list routers
-- [ ] Router CRUD
-- [ ] MikroTik API connection test
-- [ ] Router status check (identity + uptime)
-- [ ] Router interfaces listing
-- [ ] PPPoE session sync from MikroTik
-- [ ] Hotspot session disconnect via MikroTik API
-- [ ] Setup isolir script
-- [ ] Setup RADIUS script
+- [ ] Daftar tiket dan pesan, ubah status
+- [ ] Data Pelanggan: peta, detail, dan ubah lokasi (Pilih di Peta atau GPS Otomatis)
+- [ ] Unggah foto (instalasi, KTP, tiket) tampil kembali lewat `/uploads/`
+- [ ] Pendaftaran pelanggan dan work order
 
-## 8. FreeRADIUS
+## 8. Jaringan, GenieACS, VPN
 
-- [ ] `GET /api/v1/freeradius/status` — service status
-- [ ] FreeRADIUS config list
-- [ ] FreeRADIUS config read
-- [ ] FreeRADIUS config save (with backup + syntax check)
-- [ ] FreeRADIUS logs
-- [ ] Service start/stop/restart
+- [ ] Router: tambah, uji koneksi, dan status
+- [ ] OLT: daftar, polling (`olt_poll`), ONU
+- [ ] Peta Jaringan: OLT, ODC, ODP, jalur kabel
+- [ ] GenieACS: daftar perangkat, ubah SSID dan kata sandi WiFi, reboot
+- [ ] VPN: server dan klien (L2TP, WireGuard), skrip RouterOS
 
-## 9. OLT/ONU & GenieACS
+## 9. Cron (27 job)
 
-- [ ] `GET /api/v1/olt` — list OLTs
-- [ ] OLT CRUD
-- [ ] `GET /api/v1/genieacs/devices` — list devices
-- [ ] GenieACS device reboot
-- [ ] GenieACS device factory reset
-- [ ] OLT polling (ping check)
+- [ ] Halaman Settings, Cron menampilkan semua job dengan status dan jadwal berikutnya
+- [ ] Tidak ada baris riwayat ganda untuk satu run, dan tidak ada error deadlock di riwayat
+- [ ] Job per menit (`hotspot_sync`, `external_task_processor`) dan per 5 menit berjalan tanpa `HTTP request failed`
+- [ ] Jalankan Sekarang berhasil untuk satu job; tombol restart cron menerapkan jadwal baru
+- [ ] Setelah restart `salfanet-cron`, baris yang tertinggal `running` ditandai `Interrupted` dan tidak menumpuk
+- [ ] Job harian yang terlewat dikejar saat runner start (`invoice_generate`, `auto_renewal`, dan lainnya)
+- [ ] Pembersihan (`activity_log_cleanup`, `webhook_log_cleanup`, `radpostauth_cleanup`, `cron_history_cleanup`) berjalan
 
-## 10. VPN Management
+## 10. Backup dan sistem
 
-- [ ] `GET /api/v1/vpn` — list VPN servers/clients
-- [ ] VPN server CRUD
-- [ ] VPN client CRUD
-- [ ] VPN setup on MikroTik (L2TP/PPTP/SSTP)
-- [ ] VPN routing via SSH
+- [ ] Backup database ke Telegram sesuai jadwal; laporan kesehatan masuk topic Health
+- [ ] Backup, unduh, dan restore FreeRADIUS (khusus Super Admin); config lama kembali bila restore ditolak
+- [ ] Rilis APK admin dan pelanggan: unggah, versi terbaca, aplikasi menawarkan pembaruan
+- [ ] Panduan: tombol Panduan membuka panduan halaman yang sedang dibuka
 
-## 11. Notifications
+## 11. Aplikasi Android
 
-- [ ] WhatsApp send (`POST /api/v1/whatsapp/send`)
-- [ ] WhatsApp templates CRUD
-- [ ] Email send (test email)
-- [ ] Email settings update
-- [ ] Email templates CRUD
-- [ ] Push notification subscribe
-- [ ] Push notification send
-- [ ] Telegram backup
-- [ ] Telegram health check
+- [ ] Admin: login, menu sesuai peran, Aksi Cepat, Kasir QRIS, Peta Jaringan, Panduan
+- [ ] Pelanggan: login, tagihan, bayar di dalam aplikasi, push FCM
+- [ ] Pembaruan dari dalam aplikasi: unduh, pasang, data dan login tetap
 
-## 12. Cron Jobs (17 total)
+## Setelah semua lulus
 
-- [ ] `hotspot_sync` — voucher status updates
-- [ ] `pppoe_auto_isolir` — expired users isolated
-- [ ] `agent_sales` — sales recorded
-- [ ] `invoice_generate` — monthly invoices created
-- [ ] `invoice_reminder` — WhatsApp + Email sent
-- [ ] `invoice_status_update` — PENDING → OVERDUE
-- [ ] `notification_check` — counts correct
-- [ ] `session_monitor` — active session count
-- [ ] `disconnect_sessions` — MikroTik disconnect works
-- [ ] `activity_log_cleanup` — old logs deleted
-- [ ] `auto_renewal` — balance deducted, expiry extended
-- [ ] `webhook_log_cleanup` — old logs deleted
-- [ ] `freeradius_health` — service check + auto-restart
-- [ ] `pppoe_session_sync` — MikroTik ↔ radacct sync
-- [ ] `suspend_check` — suspends activated/restored
-- [ ] `cron_history_cleanup` — old history deleted
-- [ ] `olt_poll` — OLT reachability checked
-- [ ] Verify: no duplicate cron execution (backend + legacy)
-- [ ] Verify: `pm2 logs salfanet-backend` shows cron job logs
-
-## 13. Customer Portal
-
-- [ ] Customer login
-- [ ] View invoices
-- [ ] Pay invoice (payment gateway redirect)
-- [ ] View usage history
-- [ ] ONT reboot request
-- [ ] Suspend request
-- [ ] Push notification subscription
-
-## 14. Agent Portal
-
-- [ ] Agent login
-- [ ] Generate voucher
-- [ ] View voucher list
-- [ ] View sales history
-- [ ] View commission
-- [ ] Deposit management
-
-## 15. Technician Portal
-
-- [ ] Technician login (OTP)
-- [ ] View assigned tickets
-- [ ] Update ticket status
-- [ ] View customer info
-- [ ] Upload work order photos
-
-## 16. Settings & Admin
-
-- [ ] Company settings CRUD
-- [ ] User management
-- [ ] Permission management
-- [ ] Isolation settings
-- [ ] GenieACS settings
-- [ ] Email settings
-- [ ] WhatsApp provider management
-- [ ] Payment gateway settings
-- [ ] Map settings
-
-## 17. Export & Reports
-
-- [ ] Invoice PDF download
-- [ ] Invoice Excel export
-- [ ] PPPoE users Excel export
-- [ ] Hotspot vouchers Excel export
-- [ ] Hotspot rekap Excel export
-
-## 18. Activity Logs
-
-- [ ] `GET /api/v1/activity-log` — list logs
-- [ ] Activity log created on key actions (login, CRUD, etc.)
-- [ ] Activity log cleanup works
-
-## Post-Test Actions
-
-After all tests pass:
-
-- [ ] Stop legacy cron runner: `pm2 stop salfanet-cron`
-- [ ] Verify backend cron still runs: `pm2 logs salfanet-backend | grep CRON`
-- [ ] Remove `src/app/api/` from frontend
-- [ ] Remove `src/server/` from frontend
-- [ ] Remove `src/cron/` from frontend
-- [ ] Move `prisma/` to backend or shared package
-- [ ] Update `frontend/package.json` — remove server-only deps
-- [ ] Frontend build without Prisma
-- [ ] Full deploy test: `./deploy/deploy.sh`
-- [ ] Update PM2 config — remove `salfanet-cron` process
-- [ ] Update documentation
+- [ ] Catat versi, tanggal, dan penguji; simpan butir yang gagal di CHANGELOG atau tiket
+- [ ] Jalankan Update Sekarang di produksi pada jam sepi, lalu ulangi bagian 0

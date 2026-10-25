@@ -450,7 +450,7 @@ ss -tlnp | grep -E "80|443|3000"
 
 # Cek PM2
 pm2 list
-pm2 logs salfanet-radius --lines 50
+pm2 logs salfanet-backend --lines 50
 ```
 
 ### MySQL gagal start di LXC

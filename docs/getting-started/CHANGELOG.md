@@ -3802,9 +3802,9 @@ ping -c 3 -I ppp2 8.8.8.8         # Internet via tunnel
 ### 📖 Documentation Index
 
 For complete project information, see:
-- **[AI_PROJECT_MEMORY.md](docs/AI_PROJECT_MEMORY.md)** - Comprehensive project context
-- **[VPN_CLIENT_SETUP_GUIDE.md](docs/VPN_CLIENT_SETUP_GUIDE.md)** - L2TP setup and troubleshooting
-- **[PROXMOX_L2TP_SETUP.md](docs/PROXMOX_L2TP_SETUP.md)** - Proxmox-specific L2TP fixes
+- **AI_PROJECT_MEMORY.md** - Comprehensive project context
+- **[VPN_CLIENT_SETUP_GUIDE.md](../setup/VPN_CLIENT_SETUP_GUIDE.md)** - L2TP setup and troubleshooting
+- **[PROXMOX_L2TP_SETUP.md](../setup/PROXMOX_L2TP_SETUP.md)** - Proxmox-specific L2TP fixes
 
 ---
 
