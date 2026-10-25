@@ -1,16 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { checkAuth } from '@/server/middleware/api-auth';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 // POST - confirm settlement for a collector on a date
 export async function POST(req: NextRequest) {
-  const authCheck = await checkAuth();
+  const authCheck = await requirePermission('keuangan.edit');
   if (!authCheck.authorized) return authCheck.response;
-
-  const role = (authCheck.session.user as any).role;
-  if (role !== 'SUPER_ADMIN' && role !== 'FINANCE') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
 
   try {
     const { collectorId, date } = await req.json();
@@ -44,13 +39,8 @@ export async function POST(req: NextRequest) {
 
 // DELETE - unconfirm settlement
 export async function DELETE(req: NextRequest) {
-  const authCheck = await checkAuth();
+  const authCheck = await requirePermission('keuangan.edit');
   if (!authCheck.authorized) return authCheck.response;
-
-  const role = (authCheck.session.user as any).role;
-  if (role !== 'SUPER_ADMIN' && role !== 'FINANCE') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
 
   try {
     const { searchParams } = new URL(req.url);

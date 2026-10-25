@@ -1,41 +1,55 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { checkAuth } from '@/server/middleware/api-auth';
+import { requirePermission } from '@/server/middleware/api-auth';
+import { startOfDayWIBtoUTC, endOfDayWIBtoUTC, refreshTimezoneFromDB, todayWIBStr, formatWIB } from '@/lib/timezone';
 
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const MAX_RANGE_DAYS = 93;
+
+const isCash = (m: string | null) => !m || m === 'cash';
+
+/**
+ * Settlement per collector: what each collector took in over one day, or over
+ * a range with a row per day. Days follow the company time zone, the same as
+ * the collector's own Setoran Saya, so both screens agree on which day a
+ * payment belongs to.
+ *
+ * `date` keeps the original response (an array of collectors) for the admin
+ * app; `from` + `to` adds `days` to each collector.
+ */
 export async function GET(req: NextRequest) {
-  const authCheck = await checkAuth();
+  const authCheck = await requirePermission('keuangan.view');
   if (!authCheck.authorized) return authCheck.response;
 
-  const role = (authCheck.session.user as any).role;
-  if (role !== 'SUPER_ADMIN' && role !== 'FINANCE') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const { searchParams } = new URL(req.url);
+  const from = searchParams.get('from');
+  const to = searchParams.get('to');
+  const isRange = !!(from && to);
+
+  if (isRange && (!DATE.test(from!) || !DATE.test(to!) || from! > to!)) {
+    return NextResponse.json({ error: 'Rentang tanggal tidak valid' }, { status: 400 });
+  }
+  const dateParam = searchParams.get('date');
+  if (dateParam && !DATE.test(dateParam)) {
+    return NextResponse.json({ error: 'Format tanggal harus YYYY-MM-DD' }, { status: 400 });
   }
 
-  const { searchParams } = new URL(req.url);
-  const date = searchParams.get('date');
-
   try {
-    // Get all collectors
-    const collectors = await prisma.adminUser.findMany({
-      where: { role: 'COLLECTOR', isActive: true },
-      select: { id: true, name: true, username: true, phone: true },
-    });
-
-    // Get invoices paid by collectors
-    const where: any = {
-      status: 'PAID',
-      paidById: { not: null },
-      paymentMethod: { not: 'discount' },
-    };
-    if (date) {
-      where.paidAt = {
-        gte: new Date(date + 'T00:00:00'),
-        lte: new Date(date + 'T23:59:59'),
-      };
+    await refreshTimezoneFromDB();
+    const first = isRange ? from! : dateParam || todayWIBStr();
+    const last = isRange ? to! : first;
+    const spanDays = Math.round((Date.parse(last) - Date.parse(first)) / 86_400_000) + 1;
+    if (spanDays > MAX_RANGE_DAYS) {
+      return NextResponse.json({ error: `Rentang paling lama ${MAX_RANGE_DAYS} hari` }, { status: 400 });
     }
 
     const invoices = await prisma.invoice.findMany({
-      where,
+      where: {
+        status: 'PAID',
+        paidById: { not: null },
+        paymentMethod: { not: 'discount' },
+        paidAt: { gte: startOfDayWIBtoUTC(first), lte: endOfDayWIBtoUTC(last) },
+      },
       select: {
         id: true,
         amount: true,
@@ -43,49 +57,68 @@ export async function GET(req: NextRequest) {
         paidAt: true,
         paidById: true,
         invoiceNumber: true,
-        userId: true,
         customerName: true,
         customerUsername: true,
-        customerPhone: true,
         collectorProof: true,
       },
+      orderBy: { paidAt: 'desc' },
     });
 
-    // Get confirmations for this date
-    const confirmations = await prisma.collectorSettlementConfirmation.findMany({
-      where: { date: date || new Date().toISOString().slice(0, 10) },
-      select: { collectorId: true, confirmedBy: true, confirmedAt: true },
+    // Active collectors, plus any deactivated one who still has payments in
+    // the period: their money has not vanished because the account was.
+    const paidIds = [...new Set(invoices.map((i) => i.paidById).filter((v): v is string => !!v))];
+    const collectors = await prisma.adminUser.findMany({
+      where: { role: 'COLLECTOR', OR: [{ isActive: true }, { id: { in: paidIds } }] },
+      select: { id: true, name: true, username: true, isActive: true },
+      orderBy: { name: 'asc' },
     });
-    // Batch fetch admin names to avoid N+1 queries
-    const adminIds = [...new Set(confirmations.map(c => c.confirmedBy))];
+
+    const confirmations = await prisma.collectorSettlementConfirmation.findMany({
+      where: { date: { gte: first, lte: last } },
+      select: { collectorId: true, date: true, confirmedBy: true, confirmedAt: true },
+    });
     const admins = await prisma.adminUser.findMany({
-      where: { id: { in: adminIds } },
+      where: { id: { in: [...new Set(confirmations.map((c) => c.confirmedBy))] } },
       select: { id: true, name: true },
     });
-    const adminMap = new Map(admins.map(a => [a.id, a.name]));
-    const confirmMap: Record<string, { confirmed_by: string; confirmed_at: Date }> = {};
-    for (const c of confirmations) {
-      confirmMap[c.collectorId] = { confirmed_by: adminMap.get(c.confirmedBy) || 'Admin', confirmed_at: c.confirmedAt };
-    }
+    const adminName = new Map(admins.map((a) => [a.id, a.name]));
+    const confirmationOf = new Map(confirmations.map((c) => [`${c.collectorId}|${c.date}`, c]));
 
-    const result = collectors.map(c => {
-      const cInvoices = invoices.filter(i => i.paidById === c.id);
-      const totalAmount = cInvoices.reduce((s, i) => s + i.amount, 0);
-      const cashAmount = cInvoices.filter(i => !i.paymentMethod || i.paymentMethod === 'cash').reduce((s, i) => s + i.amount, 0);
-      const transferAmount = cInvoices.filter(i => i.paymentMethod && i.paymentMethod !== 'cash').reduce((s, i) => s + i.amount, 0);
+    const totals = (rows: typeof invoices) => ({
+      invoice_count: rows.length,
+      total_amount: rows.reduce((s, i) => s + i.amount, 0),
+      cash_amount: rows.filter((i) => isCash(i.paymentMethod)).reduce((s, i) => s + i.amount, 0),
+      transfer_amount: rows.filter((i) => !isCash(i.paymentMethod)).reduce((s, i) => s + i.amount, 0),
+    });
 
-      const conf = confirmMap[c.id];
+    const result = collectors.map((c) => {
+      const own = invoices.filter((i) => i.paidById === c.id);
+      const conf = confirmationOf.get(`${c.id}|${first}`);
+
+      const days = isRange
+        ? [...new Set(own.map((i) => formatWIB(i.paidAt!, 'yyyy-MM-dd')))].sort().reverse().map((day) => {
+            const dayRows = own.filter((i) => formatWIB(i.paidAt!, 'yyyy-MM-dd') === day);
+            const dayConf = confirmationOf.get(`${c.id}|${day}`);
+            return {
+              date: day,
+              ...totals(dayRows),
+              confirmed_by: dayConf ? adminName.get(dayConf.confirmedBy) || 'Admin' : null,
+              confirmed_at: dayConf?.confirmedAt || null,
+            };
+          })
+        : undefined;
+
       return {
         collector_id: c.id,
         collector_name: c.name,
         collector_username: c.username,
-        invoice_count: cInvoices.length,
-        total_amount: totalAmount,
-        cash_amount: cashAmount,
-        transfer_amount: transferAmount,
-        confirmed_by: conf?.confirmed_by || null,
-        confirmed_at: conf?.confirmed_at || null,
-        invoices: cInvoices.map(i => ({
+        is_active: c.isActive,
+        ...totals(own),
+        // One day: the confirmation of that day. A range has one per day, in `days`.
+        confirmed_by: !isRange && conf ? adminName.get(conf.confirmedBy) || 'Admin' : null,
+        confirmed_at: !isRange && conf ? conf.confirmedAt : null,
+        ...(days && { days }),
+        invoices: own.map((i) => ({
           id: i.id,
           invoiceNumber: i.invoiceNumber,
           amount: i.amount,

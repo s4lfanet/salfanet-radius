@@ -271,9 +271,24 @@ export async function PUT(request: NextRequest) {
   if (!authCheck.authorized) return authCheck.response;
   try {
     const body = await request.json();
-    const { id, status, paidAt } = body;
+    const { id, status, paidAt, collectorId, paymentMethod } = body;
 
     if (!id) return badRequest('Invoice ID is required');
+
+    // The admin can record that a collector took the money. It is what puts
+    // the payment into that collector's Setoran; without it the invoice is
+    // paid but belongs to nobody's settlement.
+    if (collectorId) {
+      if (status !== 'PAID') return badRequest('collectorId hanya berlaku saat menandai lunas');
+      const collector = await prisma.adminUser.findFirst({
+        where: { id: String(collectorId), role: 'COLLECTOR', isActive: true },
+        select: { id: true },
+      });
+      if (!collector) return badRequest('Kolektor tidak ditemukan atau tidak aktif');
+    }
+    if (paymentMethod !== undefined && !['cash', 'transfer'].includes(paymentMethod)) {
+      return badRequest('Metode bayar harus cash atau transfer');
+    }
 
     // Get existing invoice with user and profile
     const existingInvoice = await prisma.invoice.findUnique({
@@ -299,6 +314,11 @@ export async function PUT(request: NextRequest) {
       updateData.paidAt = new Date();
     } else if (paidAt) {
       updateData.paidAt = new Date(paidAt);
+    }
+    if (status === 'PAID') {
+      if (collectorId) updateData.paidById = String(collectorId);
+      if (paymentMethod) updateData.paymentMethod = paymentMethod;
+      else if (collectorId) updateData.paymentMethod = 'cash';
     }
 
     // Update invoice — for PAID use atomic updateMany so only ONE concurrent request
