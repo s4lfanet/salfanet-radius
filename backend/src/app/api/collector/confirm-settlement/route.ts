@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
+import { setDayConfirmation } from '@/server/services/settlement.service';
 
 // POST - confirm settlement for a collector on a date
 export async function POST(req: NextRequest) {
@@ -30,6 +31,8 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    await setDayConfirmation(collectorId, date, true, authCheck.userId);
+
     return NextResponse.json({ success: true, id: confirmation.id });
   } catch (error) {
     console.error('Confirm settlement error:', error);
@@ -51,11 +54,9 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'collectorId and date are required' }, { status: 400 });
     }
 
-    await prisma.collectorSettlementConfirmation.delete({
-      where: {
-        collectorId_date: { collectorId, date },
-      },
-    });
+    // deleteMany: a day confirmed payment by payment has no day row to delete.
+    await prisma.collectorSettlementConfirmation.deleteMany({ where: { collectorId, date } });
+    await setDayConfirmation(collectorId, date, false, authCheck.userId);
 
     return NextResponse.json({ success: true });
   } catch (error) {
