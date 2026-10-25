@@ -11,6 +11,7 @@ import { nanoid } from 'nanoid';
 import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
 import { startOfDayWIBtoUTC, endOfDayWIBtoUTC, toUTC, nowWIB } from '@/lib/timezone';
 import { ok, created, badRequest, notFound, serverError } from '@/lib/api-response';
+import { notifyCollector, fmtRupiah } from '@/server/services/collector-notification.service';
 // Generate secure random token for payment link
 function generatePaymentToken(): string {
   return randomBytes(32).toString('hex');
@@ -358,6 +359,15 @@ export async function PUT(request: NextRequest) {
     // If marking as PAID and this request was the one that actually changed the status
     if (status === 'PAID' && paidUpdateCount > 0) {
       const user = existingInvoice.user;
+
+      if (collectorId) {
+        await notifyCollector(String(collectorId), {
+          type: 'payment_assigned',
+          title: 'Pembayaran dicatat ke Anda',
+          message: `${existingInvoice.customerName || user?.name || 'Pelanggan'} (${existingInvoice.invoiceNumber}, ${fmtRupiah(existingInvoice.amount)}) dicatat admin sebagai setoran Anda.`,
+          link: '/collector/settlements',
+        });
+      }
 
       if (!user) {
         console.log('[Invoice Payment] User not found, skipping activation');

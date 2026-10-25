@@ -216,6 +216,16 @@ async function markTechnicianSubscriptionsUsed(ids: string[]) {
   await prisma.technicianPushSubscription.updateMany({ where: { id: { in: ids } }, data: { lastUsedAt: new Date() } });
 }
 
+async function deactivateCollectorSubscriptions(ids: string[]) {
+  if (ids.length === 0) return;
+  await prisma.collectorPushSubscription.updateMany({ where: { id: { in: ids } }, data: { isActive: false } });
+}
+
+async function markCollectorSubscriptionsUsed(ids: string[]) {
+  if (ids.length === 0) return;
+  await prisma.collectorPushSubscription.updateMany({ where: { id: { in: ids } }, data: { lastUsedAt: new Date() } });
+}
+
 async function deactivateAdminSubscriptions(ids: string[]) {
   if (ids.length === 0) return;
   await prisma.adminPushSubscription.updateMany({ where: { id: { in: ids } }, data: { isActive: false } });
@@ -229,7 +239,7 @@ async function markAdminSubscriptionsUsed(ids: string[]) {
 async function sendToStoredSubscriptions(
   subscriptions: StoredSubscription[],
   payload: PushNotificationPayload,
-  role: 'customer' | 'agent' | 'technician' | 'admin' = 'customer',
+  role: 'customer' | 'agent' | 'technician' | 'admin' | 'collector' = 'customer',
 ) {
   if (subscriptions.length === 0) {
     return { sent: 0, failed: 0, total: 0 };
@@ -277,14 +287,18 @@ async function sendToStoredSubscriptions(
         ? deactivateTechnicianSubscriptions(expiredIds)
         : role === 'admin'
           ? deactivateAdminSubscriptions(expiredIds)
-          : deactivateSubscriptions(expiredIds),
+          : role === 'collector'
+            ? deactivateCollectorSubscriptions(expiredIds)
+            : deactivateSubscriptions(expiredIds),
     role === 'agent'
       ? markAgentSubscriptionsUsed(usedIds)
       : role === 'technician'
         ? markTechnicianSubscriptionsUsed(usedIds)
         : role === 'admin'
           ? markAdminSubscriptionsUsed(usedIds)
-          : markSubscriptionsUsed(usedIds),
+          : role === 'collector'
+            ? markCollectorSubscriptionsUsed(usedIds)
+            : markSubscriptionsUsed(usedIds),
   ]);
 
   return { sent, failed, total: subscriptions.length };
@@ -785,6 +799,45 @@ export async function sendWebPushToTechnician(
     select: { id: true, endpoint: true, p256dh: true, auth: true, expirationTime: true },
   });
   return sendToStoredSubscriptions(subscriptions, payload, 'technician');
+}
+
+export async function upsertCollectorPushSubscription(collectorId: string, subscription: WebPushSubscriptionInput, userAgent?: string | null) {
+  const endpoint = subscription.endpoint?.trim();
+  const p256dh = subscription.keys?.p256dh?.trim();
+  const auth = subscription.keys?.auth?.trim();
+
+  if (!endpoint || !p256dh || !auth) {
+    throw new Error('Invalid push subscription payload');
+  }
+
+  const fields = {
+    collectorId,
+    p256dh,
+    auth,
+    userAgent: userAgent || null,
+    expirationTime: subscription.expirationTime ? new Date(subscription.expirationTime) : null,
+    isActive: true,
+    lastUsedAt: new Date(),
+  };
+  // One browser endpoint belongs to one person: signing in as another
+  // collector on the same browser moves it.
+  return prisma.collectorPushSubscription.upsert({ where: { endpoint }, update: fields, create: { endpoint, ...fields } });
+}
+
+export async function removeCollectorPushSubscription(collectorId: string, endpoint?: string | null) {
+  const where: { collectorId: string; endpoint?: string } = { collectorId };
+  if (endpoint?.trim()) where.endpoint = endpoint.trim();
+  const result = await prisma.collectorPushSubscription.deleteMany({ where });
+  return result.count;
+}
+
+/** Send web push to one collector's browsers. */
+export async function sendWebPushToCollector(collectorId: string, payload: PushNotificationPayload): Promise<PushSendResult> {
+  const subscriptions = await prisma.collectorPushSubscription.findMany({
+    where: { collectorId, isActive: true },
+    select: { id: true, endpoint: true, p256dh: true, auth: true, expirationTime: true },
+  });
+  return sendToStoredSubscriptions(subscriptions, payload, 'collector');
 }
 
 /**

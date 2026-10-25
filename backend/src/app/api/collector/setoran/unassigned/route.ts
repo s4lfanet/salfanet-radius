@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
+import { notifyCollector, fmtRupiah } from '@/server/services/collector-notification.service';
 import { startOfDayWIBtoUTC, endOfDayWIBtoUTC, refreshTimezoneFromDB, todayWIBStr } from '@/lib/timezone';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -82,6 +83,13 @@ export async function POST(req: NextRequest) {
     if (claimed.count === 0) {
       return NextResponse.json({ error: 'Invoice tidak ditemukan, belum lunas, atau sudah punya kolektor' }, { status: 409 });
     }
+    const inv = await prisma.invoice.findUnique({ where: { id: String(invoiceId) }, select: { invoiceNumber: true, customerName: true, amount: true } });
+    await notifyCollector(collector.id, {
+      type: 'payment_assigned',
+      title: 'Pembayaran dicatat ke Anda',
+      message: `${inv?.customerName || 'Pelanggan'} (${inv?.invoiceNumber || 'invoice'}, ${fmtRupiah(inv?.amount || 0)}) dicatat admin sebagai setoran Anda.`,
+      link: '/collector/settlements',
+    });
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Assign settlement error:', error);

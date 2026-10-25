@@ -311,7 +311,11 @@ async function runNotificationCheck() {
 async function runActivityLogCleanup() {
   const thirtyDaysAgo = new Date(nowWIB().getTime() - 30 * 24 * 60 * 60 * 1000)
   const result = await prisma.activityLog.deleteMany({ where: { createdAt: { lt: thirtyDaysAgo } } })
-  return { deleted: result.count }
+  // The collector bell lists 30 days; read ones go then, unread ones after 60.
+  const notices = await prisma.collectorNotification.deleteMany({
+    where: { OR: [{ readAt: { not: null }, createdAt: { lt: thirtyDaysAgo } }, { createdAt: { lt: new Date(nowWIB().getTime() - 60 * 24 * 60 * 60 * 1000) } }] },
+  })
+  return { deleted: result.count, collectorNotifications: notices.count }
 }
 
 async function runWebhookLogCleanup() {

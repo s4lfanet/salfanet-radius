@@ -1676,6 +1676,9 @@ model adminUser {
   userPermissions   userPermission[]
   pushSubscriptions adminPushSubscription[]
   pushTokens        adminPushToken[]
+  // Collector portal only (role COLLECTOR)
+  collectorNotifications      collectorNotification[]
+  collectorPushSubscriptions  collectorPushSubscription[]
   area              pppoeArea?              @relation(fields: [areaId], references: [id], onDelete: SetNull)
 
   @@index([username])
@@ -1698,6 +1701,45 @@ model adminPushToken {
 
   @@index([adminId])
   @@map("admin_push_tokens")
+}
+
+// What the collector portal's bell lists. Stored, so each one can be marked
+// read; older versions derived them from the last 24 hours on every poll.
+model collectorNotification {
+  id          String    @id @default(cuid())
+  collectorId String
+  collector   adminUser @relation(fields: [collectorId], references: [id], onDelete: Cascade)
+  type        String    @db.VarChar(40)
+  title       String    @db.VarChar(160)
+  message     String    @db.VarChar(500)
+  link        String?   @db.VarChar(200)
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([collectorId, readAt, createdAt])
+  @@index([createdAt])
+  @@map("collector_notifications")
+}
+
+// Browser push subscriptions of the collector portal. Kept apart from
+// adminPushSubscription: admin broadcasts go to every row of that table, and
+// a collector must not receive them.
+model collectorPushSubscription {
+  id             String    @id @default(cuid())
+  collectorId    String
+  collector      adminUser @relation(fields: [collectorId], references: [id], onDelete: Cascade)
+  endpoint       String    @unique @db.VarChar(500)
+  p256dh         String    @db.Text
+  auth           String    @db.Text
+  expirationTime DateTime?
+  userAgent      String?   @db.Text
+  isActive       Boolean   @default(true)
+  lastUsedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([collectorId, isActive])
+  @@map("collector_push_subscriptions")
 }
 
 model adminPushSubscription {

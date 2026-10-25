@@ -1,6 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { checkAuth } from '@/server/middleware/api-auth';
+import { notifyCollector, fmtRupiah } from '@/server/services/collector-notification.service';
+
+/** Tell the collector who uploaded a transfer proof how admin ruled on it. */
+async function notifyProofReview(proof: { collectorId: string | null; invoiceId: string; amount: number; username: string }, approved: boolean, reason?: string) {
+  if (!proof.collectorId) return;
+  const inv = await prisma.invoice.findUnique({ where: { id: proof.invoiceId }, select: { invoiceNumber: true, customerName: true } });
+  const who = `${inv?.customerName || proof.username} (${inv?.invoiceNumber || 'invoice'}, ${fmtRupiah(proof.amount)})`;
+  await notifyCollector(proof.collectorId, approved
+    ? { type: 'proof_approved', title: 'Bukti transfer disetujui', message: `${who} sudah diperiksa admin.`, link: '/collector/proofs' }
+    : { type: 'proof_rejected', title: 'Bukti transfer ditolak', message: `${who} kembali belum lunas. Alasan: ${reason}`, link: '/collector/billing' });
+}
 
 // PUT - approve or reject a payment proof
 export async function PUT(
@@ -46,6 +57,7 @@ export async function PUT(
         },
       });
 
+      await notifyProofReview(proof, true);
       return NextResponse.json({ success: true, message: 'Bukti transfer disetujui. Invoice tetap lunas.' });
     } else {
       // Wrap proof rejection + invoice revert in a transaction so they
@@ -74,6 +86,7 @@ export async function PUT(
         });
       });
 
+      await notifyProofReview(proof, false, rejectReason || 'Ditolak oleh admin');
       return NextResponse.json({ success: true, message: 'Bukti transfer ditolak. Invoice dikembalikan ke belum lunas.' });
     }
   } catch (error) {
