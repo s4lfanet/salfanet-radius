@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import { apiAdmin } from '@/lib/api/client';
 import { useTheme } from '@/hooks/useTheme';
 import CollectorNotificationBell from '@/components/collector/CollectorNotificationBell';
+import { CollectorPushProvider, CollectorPushPrompt, CollectorPushRow } from '@/components/collector/CollectorPush';
 
 interface CollectorData {
   id: string;
@@ -165,6 +166,7 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
           Wilayah tugas: <span className="font-medium text-foreground">{collector.scopeLabel}</span>
         </p>
       )}
+      <CollectorPushRow />
       <button
         type="button"
         onClick={handleLogout}
@@ -176,6 +178,7 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
   );
 
   return (
+    <CollectorPushProvider>
     <div className="min-h-dvh bg-background lg:flex" data-role="collector">
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex lg:flex-col w-64 shrink-0 h-dvh sticky top-0 border-r border-border bg-card">
@@ -227,6 +230,7 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
 
         {/* Bottom padding keeps the last row clear of the phone's bottom bar. */}
         <main className="flex-1 w-full max-w-[1440px] px-4 pt-4 lg:px-8 lg:pt-6 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-10">
+          <CollectorPushPrompt />
           {children}
         </main>
       </div>
@@ -274,5 +278,6 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
         </div>
       </nav>
     </div>
+    </CollectorPushProvider>
   );
 }
