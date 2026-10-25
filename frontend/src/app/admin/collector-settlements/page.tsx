@@ -506,9 +506,15 @@ export default function AdminCollectorSettlementsPage() {
                 </>
               )}
 
-              {/* Appears with the first tick */}
+              {/* Appears with the first tick. Fixed rather than sticky: the admin
+                  layout clips overflow-x, which stops sticky from sticking. It floats
+                  over the rows, hence the border and shadow, and starts after the
+                  sidebar (lg:pl-64 in the layout). */}
               {chosen.length > 0 && (
-                <div className="sticky bottom-3 z-20 flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card p-3 shadow-lg" role="region" aria-label="Aksi untuk pembayaran terpilih">
+                <div className="h-24 sm:h-16" aria-hidden />
+              )}
+              {chosen.length > 0 && (
+                <div className="fixed inset-x-3 bottom-3 z-40 flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-card p-3 shadow-lg lg:left-[calc(16rem+0.75rem)]" role="region" aria-label="Aksi untuk pembayaran terpilih">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-foreground">{chosen.length} pembayaran dipilih · {fmtRp(chosenTotal)}</p>
                     <p className="text-xs text-muted-foreground">Tunai {fmtRp(chosenCash)} · Transfer {fmtRp(chosenTotal - chosenCash)}</p>
