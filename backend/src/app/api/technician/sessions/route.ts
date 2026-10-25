@@ -102,8 +102,26 @@ export async function GET(req: NextRequest) {
 
   // Live byte counters: radacct octets only refresh on interim-update/stop,
   // so overlay the real counters from each router's pppoe-in interface stats.
+  // Router comes from the session's nasipaddress (authoritative) with the
+  // customer's assigned router as fallback — an unassigned router must not
+  // silently kill the overlay.
+  const nasIps = [...new Set(radacctSessions.map((s) => s.nasipaddress).filter(Boolean))] as string[];
+  const nasRouters = nasIps.length
+    ? await prisma.router.findMany({
+        where: { OR: [{ ipAddress: { in: nasIps } }, { nasname: { in: nasIps } }] },
+        select: { id: true, ipAddress: true, nasname: true },
+      })
+    : [];
+  const routerByNas = new Map<string, string>();
+  for (const r of nasRouters) {
+    if (r.ipAddress) routerByNas.set(r.ipAddress, r.id);
+    if (r.nasname) routerByNas.set(r.nasname, r.id);
+  }
+
   const routerIds = [...new Set(
-    pppoeUsers.map((u) => u.router?.id).filter((id): id is string => Boolean(id)),
+    radacctSessions
+      .map((s) => (s.nasipaddress ? routerByNas.get(s.nasipaddress) : undefined))
+      .filter((id): id is string => Boolean(id)),
   )];
   const liveBytes = new Map<string, { rx: number; tx: number }>();
   await Promise.all(routerIds.map(async (routerId) => {
@@ -131,7 +149,8 @@ export async function GET(req: NextRequest) {
       const pUser = userMap.get(s.username)!;
       const startMs = s.acctstarttime ? new Date(s.acctstarttime).getTime() : now;
       const durationSec = Math.max(0, Math.floor((now - startMs) / 1000));
-      const live = pUser.router?.id ? liveBytes.get(`${pUser.router.id}:${s.username}`) : undefined;
+      const liveRouterId = (s.nasipaddress ? routerByNas.get(s.nasipaddress) : undefined) ?? pUser.router?.id;
+      const live = liveRouterId ? liveBytes.get(`${liveRouterId}:${s.username}`) : undefined;
       const dl = live?.tx ?? Number(s.acctoutputoctets ?? 0);
       const ul = live?.rx ?? Number(s.acctinputoctets ?? 0);
       return {
