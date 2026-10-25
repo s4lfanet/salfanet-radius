@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Ticket, Wifi, WifiOff, UserPlus, LogOut, Menu, X, Wrench, Phone, Sun, Moon, Loader2, ChevronRight, User, Bell, BellOff, Cpu, Clock, Unplug } from 'lucide-react';
+import { LayoutDashboard, Ticket, Wifi, WifiOff, UserPlus, LogOut, Menu, X, Wrench, Phone, Sun, Moon, Loader2, ChevronRight, User, Bell, Cpu, Clock, Unplug } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { onUnauthorized, apiAdmin } from '@/lib/api/client';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTheme } from '@/hooks/useTheme';
 import { useAppStore } from '@/lib/store';
 import { CyberToastProvider, useToast } from '@/components/cyberpunk/CyberToast';
+import SidebarPushToggle from '@/components/push/SidebarPushToggle';
 import { registerGlobalToast, registerGlobalConfirm } from '@/lib/sweetalert';
 import { formatInTimeZone } from 'date-fns-tz';
 import { getCurrentTimezone } from '@/lib/timezone';
@@ -69,182 +70,6 @@ const MENU_ITEMS: MenuItem[] = [
 ];
 
 /* â”€â”€â”€ Notification Bell â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-
-/* --- Sidebar Push Notification Toggle --- */
-function SidebarPushToggle({ techId }: { techId: string }) {
-  const [isSupported, setIsSupported] = useState(false);
-  const [subscribed, setSubscribed] = useState(false);
-  const [permission, setPermission] = useState<NotificationPermission>('default');
-  const [loading, setLoading] = useState(false);
-  const { addToast } = useToast();
-
-  const checkSupport = () =>
-    typeof window !== 'undefined' &&
-    'Notification' in window &&
-    'serviceWorker' in navigator &&
-    'PushManager' in window;
-
-  const urlBase64ToUint8Array = (base64String: string) => {
-    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-    const rawData = window.atob(base64);
-    return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
-  };
-
-  const refresh = async () => {
-    const supported = checkSupport();
-    setIsSupported(supported);
-    if (!supported) return;
-    setPermission(Notification.permission);
-    try {
-      const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
-      await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
-      setSubscribed(!!sub);
-      // Sync: if browser has subscription but DB might not (e.g. after DB restore), re-register
-      if (sub && techId) {
-        fetch('/api/push/technician-subscribe', {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ technicianId: techId, subscription: sub.toJSON() }),
-        }).catch(() => { /* silent sync */ });
-      }
-    } catch (e: unknown) { /* ignore - service worker may not be available */ console.warn('Service worker registration failed:', e); }
-  };
-
-  useEffect(() => {
-    if (!techId) return;
-    void refresh();
-    window.addEventListener('focus', refresh);
-    return () => window.removeEventListener('focus', refresh);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [techId]);
-
-  const handleToggle = async () => {
-    if (!isSupported || !techId) return;
-    setLoading(true);
-    try {
-      if (subscribed) {
-        const reg = await navigator.serviceWorker.ready;
-        const sub = await reg.pushManager.getSubscription();
-        const endpoint = sub?.endpoint;
-        if (sub) await sub.unsubscribe();
-        await fetch('/api/push/technician-unsubscribe', {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ technicianId: techId, endpoint }),
-        });
-        setSubscribed(false);
-        setPermission(Notification.permission);
-      } else {
-        let perm = Notification.permission;
-        if (perm === 'default') {
-          perm = await Notification.requestPermission();
-          setPermission(perm);
-        }
-        if (perm !== 'granted') return;
-        const vapidRes = await fetch('/api/push/vapid-public-key');
-        const vapidData = await vapidRes.json().catch(() => ({ success: false }));
-        if (!vapidData.success || !vapidData.publicKey) {
-          throw new Error('Server push notification belum dikonfigurasi (VAPID keys missing)');
-        }
-        const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
-        await navigator.serviceWorker.ready;
-        let sub = await reg.pushManager.getSubscription();
-        if (!sub) {
-          sub = await reg.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(vapidData.publicKey),
-          });
-        }
-        const subRes = await fetch('/api/push/technician-subscribe', {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ technicianId: techId, subscription: sub.toJSON() }),
-        });
-        const subData = await subRes.json().catch(() => ({ success: false }));
-        if (!subData.success) {
-          // Unsubscribe browser-side to keep UI in sync with server state
-          await sub.unsubscribe();
-          throw new Error(subData.error || 'Gagal mendaftarkan notifikasi push ke server');
-        }
-        setSubscribed(true);
-        setPermission('granted');
-        addToast({ type: 'success', title: 'Push notification aktif', description: 'Terdaftar di server' });
-      }
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Gagal mengaktifkan notifikasi';
-      console.error('[SidebarPush]', e);
-      addToast({ type: 'error', title: 'Gagal aktifkan notifikasi', description: msg });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const isOn = subscribed && permission === 'granted';
-  const isDenied = permission === 'denied';
-
-  return (
-    <button
-      onClick={handleToggle}
-      disabled={loading || isDenied || !isSupported}
-      title={
-        !isSupported ? 'Browser tidak mendukung push notification'
-        : isDenied ? 'Notifikasi diblokir - ubah di pengaturan browser'
-        : isOn ? 'Klik untuk nonaktifkan notifikasi push'
-        : 'Klik untuk aktifkan notifikasi push'
-      }
-      className={cn(
-        'w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold rounded-xl transition-all duration-300 border',
-        isOn
-          ? 'text-brand-500 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/[0.12] border-brand-200 dark:border-brand-500/30 shadow-sm'
-          : isDenied || !isSupported
-          ? 'text-gray-400 dark:text-gray-500 border-transparent opacity-60 cursor-not-allowed'
-          : 'text-gray-700 dark:text-gray-300 border-transparent hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-white/5 hover:border-gray-200 dark:hover:border-white/10',
-      )}
-    >
-      <span
-        className={cn(
-          'p-1.5 rounded-lg flex-shrink-0 flex items-center justify-center transition-all duration-300',
-          isOn ? 'text-brand-500 dark:text-brand-400 bg-brand-100 dark:bg-brand-500/20' : 'text-gray-400 dark:text-gray-500',
-        )}
-      >
-        {loading ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
-        ) : isOn ? (
-          <Bell className="w-4 h-4" />
-        ) : (
-          <BellOff className="w-4 h-4" />
-        )}
-      </span>
-      <span className="flex-1 text-left tracking-wide">
-        {isOn ? 'Notif Push: ON' : isDenied ? 'Notif Push: Diblokir' : !isSupported ? 'Notif Push: OFF' : 'Notif Push: OFF'}
-      </span>
-      {isSupported && (
-        <span
-          className={cn(
-            'relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 transition-all duration-300',
-            isOn
-              ? 'border-sidebar-primary bg-sidebar-primary'
-              : isDenied
-              ? 'border-sidebar-foreground/20 bg-sidebar-foreground/10'
-              : 'border-sidebar-foreground/20 bg-sidebar-foreground/10',
-          )}
-        >
-          <span
-            className={cn(
-              'pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-md transform transition-transform duration-300',
-              isOn ? 'translate-x-4' : 'translate-x-0',
-            )}
-          />
-        </span>
-      )}
-    </button>
-  );
-}
 
 function NotificationBell() {
   const { addToast } = useToast();
@@ -519,7 +344,7 @@ function TechSidebar({
             </span>
             <span className="tracking-wide">{t('techPortal.profile')}</span>
           </Link>
-          {tech && <SidebarPushToggle techId={tech.id} />}
+          {tech && <SidebarPushToggle role="technician" extraBody={{ technicianId: tech.id }} />}
           <button
             onClick={onLogout}
             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-red-400 hover:text-white bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-xl transition-all duration-300"

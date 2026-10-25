@@ -1,8 +1,8 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
-import { BellRing, BellOff, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { BellRing, Loader2 } from 'lucide-react';
+import { PushToggleRow } from '@/components/push/SidebarPushToggle';
 
 /*
  * Browser push for the collector portal, shared by the bell, the sidebar and
@@ -207,34 +207,16 @@ export function CollectorPushPrompt() {
 /** The always-present control for the sidebar and drawer: state, the switch, or the reason it cannot work. */
 export function CollectorPushRow() {
   const push = useCollectorPush();
-
-  if (!push.supported) {
-    return (
-      <div className="px-2 mb-2">
-        <p className="flex items-center gap-2 text-xs font-medium text-foreground"><BellOff className="w-4 h-4 shrink-0 text-muted-foreground" /> Notifikasi push tidak tersedia</p>
-        {push.reason && <p className="mt-1 text-xs text-muted-foreground leading-relaxed">{push.reason}</p>}
-      </div>
-    );
-  }
-  const blocked = push.permission === 'denied';
   return (
     <div className="px-2 mb-2">
-      <button
-        type="button"
-        onClick={push.toggle}
-        disabled={push.loading || blocked}
-        aria-pressed={push.on}
-        className={cn(
-          'w-full flex items-center gap-3 h-[40px] pointer-coarse:h-[44px] px-3 rounded-xl text-xs font-medium transition-colors disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
-          push.on ? 'bg-blue-600/10 text-blue-700 dark:text-blue-400' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-        )}
-      >
-        {push.loading ? <Loader2 className="w-[18px] h-[18px] animate-spin" /> : push.on ? <BellRing className="w-[18px] h-[18px]" /> : <BellOff className="w-[18px] h-[18px]" />}
-        <span className="flex-1 text-left">{push.on ? 'Notifikasi push aktif' : 'Aktifkan notifikasi push'}</span>
-        {push.on && <span className="text-xs font-normal opacity-70">Matikan</span>}
-      </button>
-      {blocked && <p className="mt-1 px-1 text-xs text-muted-foreground">Diblokir di pengaturan browser. Izinkan notifikasi untuk situs ini.</p>}
-      {push.error && <p className="mt-1 px-1 text-xs text-red-700 dark:text-red-400" role="alert">{push.error}</p>}
+      <PushToggleRow
+        on={push.on}
+        denied={push.permission === 'denied'}
+        reason={push.supported ? null : (push.reason ?? 'Notifikasi push tidak tersedia')}
+        loading={push.loading}
+        error={push.error}
+        onToggle={() => { void push.toggle(); }}
+      />
     </div>
   );
 }

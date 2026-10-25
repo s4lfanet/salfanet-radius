@@ -18,7 +18,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useIdleTimeout } from '@/hooks/useIdleTimeout';
 import { useTheme } from '@/hooks/useTheme';
 import { CyberToastProvider, useToast } from '@/components/cyberpunk/CyberToast';
-import AdminPushToggle from '@/components/admin/AdminPushToggle';
+import SidebarPushToggle from '@/components/push/SidebarPushToggle';
 import { registerGlobalToast, registerGlobalConfirm } from '@/lib/sweetalert';
 import { formatInTimeZone } from 'date-fns-tz';
 import { getCurrentTimezone } from '@/lib/timezone';
@@ -1075,7 +1075,7 @@ function AdminLayoutContent({
                     </p>
                   </div>
                   <div className="p-2 border-b border-sidebar-border">
-                    <AdminPushToggle />
+                    <SidebarPushToggle role="admin" />
                   </div>
                   <button
                     onClick={handleLogout}

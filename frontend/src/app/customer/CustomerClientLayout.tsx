@@ -13,7 +13,7 @@ import { formatInTimeZone } from 'date-fns-tz';
 import { getCurrentTimezone } from '@/lib/timezone';
 import { id as localeId } from 'date-fns/locale';
 import { useTheme } from '@/hooks/useTheme';
-import { PushNotificationToggle } from '@/components/push-notification-toggle';
+import SidebarPushToggle from '@/components/push/SidebarPushToggle';
 import { useQueryClient } from '@tanstack/react-query';
 import { useApkRelease } from '@/hooks/useApkRelease';
 
@@ -384,7 +384,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
               <span>Unduh Aplikasi Android</span>
             </a>
           )}
-          <PushNotificationToggle compact />
+          <SidebarPushToggle role="customer" />
           <button
             onClick={handleLogout}
             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-red-400 hover:text-white bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-xl transition-all duration-300"
