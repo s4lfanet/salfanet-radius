@@ -199,6 +199,17 @@ export default function TechnicianRegisterPage() {
   const selectClass = 'w-full pl-9 pr-9 py-2.5 text-sm bg-input/80 border border-border rounded-xl text-foreground focus:outline-none focus:border-brand-500/60 focus:ring-1 focus:ring-brand-500/30 appearance-none';
   const labelClass = 'block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5';
 
+  // Field wajib di tab "Informasi Dasar" — Next/tab tidak bisa diklik
+  // sampai semuanya terisi, agar teknisi tidak lanjut dengan data setengah.
+  const missingBasic = [
+    !form.username.trim() && 'Username',
+    form.password.length < 6 && 'Password (min. 6 karakter)',
+    !form.name.trim() && 'Nama Lengkap',
+    !form.phone.trim() && 'Nomor HP',
+    (!form.latitude.trim() || !form.longitude.trim()) && 'Lokasi GPS',
+  ].filter(Boolean) as string[];
+  const basicValid = missingBasic.length === 0;
+
   return (
     <div className="p-4 lg:p-6">
       <div className="w-full">
@@ -232,9 +243,12 @@ export default function TechnicianRegisterPage() {
           <button
             type="button"
             onClick={() => setActiveTab('network')}
+            disabled={!basicValid}
             className={`flex-1 py-2 px-3 text-sm font-semibold rounded-lg transition-all ${
               activeTab === 'network'
                 ? 'bg-card text-foreground shadow-sm border border-border'
+                : !basicValid
+                ? 'text-slate-400/60 dark:text-slate-600 cursor-not-allowed'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
@@ -380,11 +394,17 @@ export default function TechnicianRegisterPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('network')}
-                className="w-full py-3 px-4 bg-muted/50 border border-border text-foreground font-semibold text-sm rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2"
+                disabled={!basicValid}
+                className="w-full py-3 px-4 bg-muted/50 border border-border text-foreground font-semibold text-sm rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Selanjutnya: Paket &amp; Dokumen
                 <ChevronDown className="w-4 h-4 -rotate-90" />
               </button>
+              {!basicValid && (
+                <p className="text-xs text-amber-600 dark:text-amber-400 text-center -mt-2">
+                  Lengkapi dulu: {missingBasic.join(', ')}
+                </p>
+              )}
             </div>
           )}
 
@@ -615,23 +635,39 @@ export default function TechnicianRegisterPage() {
               </div>
 
               {/* Submit */}
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full py-3.5 px-4 bg-gradient-to-r from-primary to-brand-500 text-white font-bold text-sm rounded-xl hover:opacity-90 disabled:opacity-70 transition-all flex items-center justify-center gap-2"
-              >
-                {submitting ? (
+              {(() => {
+                const missingSubmit = [
+                  !form.profileId && 'Paket Internet',
+                  !form.idCardPhoto.trim() && 'Foto KTP',
+                ].filter(Boolean) as string[];
+                const canSubmit = missingSubmit.length === 0;
+                return (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Membuat Pelanggan...
+                    <button
+                      type="submit"
+                      disabled={submitting || !canSubmit}
+                      className="w-full py-3.5 px-4 bg-gradient-to-r from-primary to-brand-500 text-white font-bold text-sm rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                    >
+                      {submitting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Membuat Pelanggan...
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="w-4 h-4" />
+                          Buat Pelanggan Baru
+                        </>
+                      )}
+                    </button>
+                    {!canSubmit && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400 text-center -mt-2">
+                        Lengkapi dulu: {missingSubmit.join(', ')}
+                      </p>
+                    )}
                   </>
-                ) : (
-                  <>
-                    <UserPlus className="w-4 h-4" />
-                    Buat Pelanggan Baru
-                  </>
-                )}
-              </button>
+                );
+              })()}
             </div>
           )}
         </form>
