@@ -3,6 +3,7 @@ import { jwtVerify } from 'jose';
 import { prisma } from '@/server/db/client';
 import { getTimezoneOffsetMs } from '@/lib/timezone';
 import { TECH_JWT_SECRET } from '@/server/auth/technician-secret';
+import { listPppActiveDetailed } from '@/server/services/mikrotik/active-sessions.service';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -99,6 +100,21 @@ export async function GET(req: NextRequest) {
     : [];
   const userMap = new Map(pppoeUsers.map((u) => [u.username, u]));
 
+  // Live byte counters: radacct octets only refresh on interim-update/stop,
+  // so overlay the real counters from each router's pppoe-in interface stats.
+  const routerIds = [...new Set(
+    pppoeUsers.map((u) => u.router?.id).filter((id): id is string => Boolean(id)),
+  )];
+  const liveBytes = new Map<string, { rx: number; tx: number }>();
+  await Promise.all(routerIds.map(async (routerId) => {
+    try {
+      const active = await listPppActiveDetailed(routerId);
+      for (const s of active) {
+        liveBytes.set(`${routerId}:${s.username}`, { rx: s.rxBytes ?? 0, tx: s.txBytes ?? 0 });
+      }
+    } catch { /* router unreachable — fall back to radacct counters */ }
+  }));
+
   const TZ_OFFSET_MS = getTimezoneOffsetMs();
   const now = Date.now() + TZ_OFFSET_MS; // WIB-as-UTC for duration calc
 
@@ -115,8 +131,9 @@ export async function GET(req: NextRequest) {
       const pUser = userMap.get(s.username)!;
       const startMs = s.acctstarttime ? new Date(s.acctstarttime).getTime() : now;
       const durationSec = Math.max(0, Math.floor((now - startMs) / 1000));
-      const dl = Number(s.acctoutputoctets ?? 0);
-      const ul = Number(s.acctinputoctets ?? 0);
+      const live = pUser.router?.id ? liveBytes.get(`${pUser.router.id}:${s.username}`) : undefined;
+      const dl = live?.tx ?? Number(s.acctoutputoctets ?? 0);
+      const ul = live?.rx ?? Number(s.acctinputoctets ?? 0);
       return {
         id: s.acctuniqueid ?? String(s.radacctid),
         username: s.username,

@@ -535,6 +535,25 @@ export async function GET(request: NextRequest) {
       } as typeof s;
     });
 
+    // ── 4e1a. Overlay live byte counters on PPPoE radacct sessions ────────
+    // radacct octets only refresh on interim-update/stop; the MikroTik
+    // interface counters fetched above are real-time. Same overlay as 4e1
+    // but only for the counter fields (IP/MAC handled in 4e1b below).
+    allSessions = allSessions.map((s) => {
+      if (s.dataSource !== 'radius' || s.type !== 'pppoe') return s;
+      const mt = mtSessionByUsername.get(s.username);
+      if (!mt) return s;
+      return {
+        ...s,
+        uploadBytes: mt.rxBytes,
+        downloadBytes: mt.txBytes,
+        totalBytes: mt.rxBytes + mt.txBytes,
+        uploadFormatted: formatBytes(mt.rxBytes),
+        downloadFormatted: formatBytes(mt.txBytes),
+        totalFormatted: formatBytes(mt.rxBytes + mt.txBytes),
+      };
+    });
+
     // ── 4e1b. Fill blank IP / MAC on any RADIUS session from live MikroTik ──
     // 4e1 only covers hotspot. PPPoE rows can also arrive without
     // framedipaddress / callingstationid — notably the synthetic rows the
