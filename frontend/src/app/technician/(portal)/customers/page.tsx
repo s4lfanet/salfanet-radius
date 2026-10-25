@@ -38,6 +38,7 @@ interface Customer {
   email: string | null;
   address: string | null;
   status: string;
+  paymentStatus?: 'paid' | 'unpaid' | 'overdue';
   subscriptionType: string;
   expiredAt: string | null;
   createdAt: string;
@@ -338,10 +339,21 @@ export default function TechnicianCustomersPage() {
                         </p>
                       </div>
                     </div>
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full flex-shrink-0 ${cfg.badge}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-                      {STATUS_LABEL[c.status] ?? c.status}
-                    </span>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      {c.paymentStatus && c.paymentStatus !== 'paid' && (
+                        <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-bold rounded-full ${
+                          c.paymentStatus === 'overdue'
+                            ? 'bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-500/30'
+                            : 'bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30'
+                        }`}>
+                          {c.paymentStatus === 'overdue' ? 'Terlambat' : 'Belum Lunas'}
+                        </span>
+                      )}
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full ${cfg.badge}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                        {STATUS_LABEL[c.status] ?? c.status}
+                      </span>
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] ml-3.5">
                     <div className="flex items-center gap-1 text-muted-foreground/70">
