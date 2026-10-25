@@ -1,6 +1,6 @@
 # Salfanet Radius — Documentation Index
 
-> Index page last touched: 2026-04-10 (structure below still accurate) | Project is now v5.21.0 — see [CHANGELOG.md](../CHANGELOG.md) for current state; [ARCHITECTURE.md](ARCHITECTURE.md) for the current (non-NestJS) architecture.
+> Index page last touched: 2026-04-10 (structure below still accurate) | Project is now v5.24.0 — see [CHANGELOG.md](../CHANGELOG.md) for current state; [ARCHITECTURE.md](ARCHITECTURE.md) for the current (non-NestJS) architecture.
 
 ---
 

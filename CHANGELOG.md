@@ -6,6 +6,76 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.24.0] - 2026-10-25 - Portal Kolektor Baru + Setoran Per Pembayaran + Notifikasi dan Web Push Kolektor
+
+### Summary
+Rilis setelah 5.23.0 (63 commit). Portal kolektor dirancang ulang dan bekerja per area dan router/NAS yang ditetapkan admin. Setoran Kolektor di admin menjadi satu daftar pembayaran yang bisa dikonfirmasi satu per satu atau banyak sekaligus, dan Tagihan bisa mencatat kolektor yang menerima uang. Lonceng kolektor punya status baca dan web push yang benar-benar jalan. Teknisi masuk dengan username dan password. Pengingat tagihan WhatsApp, cron, dan push FCM diaudit dan diperbaiki, begitu juga akses per role, FreeRADIUS, dan installer. Aplikasi admin 1.0.13.
+
+### Portal Kolektor
+- **[FEATURE]** Wilayah tugas per kolektor: satu area, satu atau beberapa router/NAS, atau keduanya (Kelola Kolektor di web dan aplikasi admin). Pelanggan, tagihan, isolir, dashboard, bukti transfer, dan cabut ONT hanya dari wilayah itu; kolektor tanpa area dan NAS tidak melihat data. Beberapa kolektor bisa berbagi satu area dengan membaginya per NAS
+- **[SECURITY]** Semua rute kolektor memeriksa wilayah tugas, termasuk tandai lunas, janji bayar, kirim invoice, dan PDF invoice
+- **[FIX]** Menandai lunas dua kali bersamaan tidak lagi memperpanjang langganan dua kali
+- **[FEATURE]** Dashboard per bulan (bulan lalu dan bulan depan), total tagihan per periode, dan filter area dan router/NAS yang selalu tampil bila kolektor punya area atau NAS
+- **[UI]** Desain ulang: sidebar di desktop, bar bawah dan menu geser di HP, tabel di Pelanggan, Tagihan, Isolir, Setoran Saya, Koleksi Saya, dan Cabut ONT memakai lebar penuh, ukuran huruf sama dengan panel admin, aksi pada tagihan rata dan mudah ditekan, dan halaman login mengikuti portal peran lain
+- **[FEATURE]** Daftar pelanggan seperti di admin: tabel yang bisa diurutkan, status pembayaran (Lunas, Belum lunas, Terlambat) dengan filter, tampilan Daftar atau Peta
+- **[FEATURE]** Peta dan koordinat per pelanggan serta detail pelanggan (GPS, pratinjau OpenStreetMap, salin koordinat, navigasi Google Maps). Sama untuk portal teknisi, yang juga bisa mengubah lokasi pelanggan (Pilih di Peta atau GPS Otomatis)
+- **[FEATURE]** Tombol Telepon dan WhatsApp berlabel; WhatsApp terbuka dengan pesan pengingat tagihan yang sudah terisi, memakai nama perusahaan dari pengaturan
+- **[FIX]** Rekap Setoran Saya mengelompokkan hari memakai tanggal UTC, sehingga pembayaran pukul 00.00 sampai 06.59 WIB masuk ke hari sebelumnya. Hari kini mengikuti zona waktu perusahaan, sama dengan admin
+
+### Notifikasi dan Web Push Kolektor
+- **[FIX]** Lonceng menghitung ulang pembayaran dan tiket 24 jam terakhir tiap 30 detik tanpa status baca, sehingga tidak ada yang bisa dihapus dan entri yang sama terus kembali. Notifikasi kini disimpan dengan status baca: klik untuk membaca dan membuka halamannya, Tandai semua dibaca, dan badge hanya menghitung yang belum dibaca
+- **[FEATURE]** Notifikasi baru untuk kolektor: setoran dikonfirmasi, konfirmasi setoran dibatalkan, bukti transfer disetujui atau ditolak (dengan alasan), pembayaran dicatat admin ke kolektor, dan tiket ditugaskan. Pembayaran yang dicatat kolektor sendiri tidak lagi memunculkan notifikasi
+- **[FIX]** Web push tidak pernah terdaftar untuk kolektor: lonceng memakai jalur teknisi yang meminta sesi admin, dan kolektor memakai cookie sendiri (selalu 401). Kolektor kini punya jalur subscribe dan tabel langganan sendiri, terpisah dari tabel admin supaya siaran admin tidak sampai ke kolektor
+- **[FEATURE]** Setiap notifikasi juga dikirim sebagai web push; lonceng langsung berubah bila push tiba saat portal terbuka
+- **[FEATURE]** Tombol Aktifkan notifikasi terlihat: banner di halaman (bisa ditunda), baris di sidebar dan menu geser, dan panel lonceng. Bila perangkat tidak bisa push, alasannya tertulis (tanpa HTTPS, iPhone belum dipasang ke Layar Utama, browser tidak mendukung, izin diblokir, kunci VAPID belum diatur di server)
+- **[CHORE]** Job pembersihan harian menghapus notifikasi kolektor yang sudah dibaca setelah 30 hari dan yang belum dibaca setelah 60 hari
+
+### Setoran Kolektor (Admin)
+- **[FIX]** Pembayaran yang ditandai lunas dari halaman Tagihan admin tidak pernah masuk Setoran Kolektor, karena hanya status yang dikirim, tanpa kolektor dan metode bayar. Dialog Tandai Lunas kini punya pilihan Diterima oleh (kolektor) dan metode Tunai atau Transfer
+- **[FEATURE]** Invoice lunas yang tidak dimiliki kolektor mana pun tampil di panel tersendiri, dan bisa dicatat ke kolektor yang menerima uangnya (tidak bisa dipindah dari kolektor lain; pembayaran gateway dan transfer yang diajukan pelanggan tidak dimasukkan)
+- **[UI]** Halaman dirombak menjadi satu daftar pembayaran: pelanggan (nama, ID, username, HP, alamat, area, paket), kolektor, invoice, metode Tunai atau Transfer, ada tidaknya bukti, jumlah, dan status. Ada ringkasan Belum dikonfirmasi, pencarian, filter kolektor, status, dan metode, serta tampilan kartu di HP
+- **[FEATURE]** Konfirmasi per pembayaran: tombol Konfirmasi atau Batalkan di setiap baris, kotak centang dan pilih semua, lalu konfirmasi atau batalkan banyak pembayaran sekaligus (maksimal 500)
+- **[FEATURE]** Mode Rentang tanggal berfungsi (sebelumnya hanya tulisan segera hadir), dan tanggal bisa digeser per hari
+- **[FIX]** Setoran dan konfirmasi memakai izin keuangan.view dan keuangan.edit, bukan dua peran yang ditulis tetap; akun berizin lain sebelumnya melihat daftar kosong tanpa pesan. Kolektor nonaktif yang masih punya pembayaran tetap tampil
+- **[CHORE]** Konfirmasi kini disimpan per pembayaran. Konfirmasi harian yang sudah ada, termasuk dari aplikasi admin, tetap berlaku untuk semua pembayaran di hari itu
+
+### Teknisi, Staf dan Role
+- **[FEATURE]** Teknisi masuk dengan username dan password seperti kolektor, diisi di Kelola Teknisi; teknisi yang belum punya password diberi tanda. Login OTP WhatsApp dihapus: nomor yang tidak terdaftar bisa membuat akun teknisi aktif, dan opsi OTP mati membuat nomor saja cukup untuk masuk
+- **[FEATURE]** Kelola Teknisi dan Kelola Kolektor punya tombol Edit dan Hapus. Kolektor yang pernah menagih tidak bisa dihapus (nonaktifkan saja), karena rekap setoran akan kehilangan pembayarannya
+- **[FIX]** Username kolektor dan teknisi tampil dan diinput tanpa tanda @
+- **[FIX]** Menu dan akses per role sesuai yang bisa dipakai: Keuangan, Customer Service, dan Marketing sebelumnya melihat halaman yang ditolak API dan kehilangan halaman yang mereka butuhkan; staf bisa membaca izin miliknya sendiri; daftar router untuk peran pelanggan, voucher, dan hotspot tanpa kredensial; ekspor butuh izin
+- **[FIX]** Portal teknisi dan kolektor: akses data, unggah foto, dan pesan tiket diperbaiki
+
+### Pengingat Tagihan, Cron dan Push
+- **[FIX]** Pengiriman WhatsApp yang gagal di semua provider dianggap berhasil oleh semua pemanggil, sehingga pengingat tagihan ditandai terkirim hari itu dan tidak dicoba lagi. Kegagalan kini dilaporkan dan dicoba lagi pada putaran berikutnya
+- **[FIX]** Test manual Pengingat Invoice tidak menunggu jam kirim, dan hasilnya menjelaskan kenapa tidak ada yang terkirim: tidak ada invoice di hari pengingat, sudah dikirim hari ini, tanpa nomor HP, template nonaktif, provider gagal, atau invoice yang sudah lewat jatuh tempo tidak diingatkan karena tidak ada hari H+ di pengaturan
+- **[FIX]** Job cron yang gagal dengan pesan kosong "HTTP request failed": runner kini terhubung ke 127.0.0.1, mencoba ulang sekali, dan mencatat kode error
+- **[FIX]** Setiap job terjadwal tercatat dua kali di riwayat dan keduanya saling mengunci tabel (deadlock). Kini satu baris per run, baris yang tertinggal berstatus running dibereskan tiap 15 menit, dan nama job di riwayat memakai nama dari daftar server
+- **[FIX]** Job Auto Stop dijadwalkan runner tetapi ditolak server, sehingga tidak pernah berjalan. Kini terdaftar di halaman Cron dalam keadaan nonaktif (menghentikan pelanggan yang terisolir lebih dari 30 hari), dan diaktifkan oleh admin
+- **[FIX]** Push ke aplikasi pelanggan (FCM) tidak terkirim ke pelanggan yang hanya memakai aplikasi: pengiriman berhenti bila tidak ada langganan browser, dan kunci VAPID yang kosong ikut membatalkan push aplikasi
+
+### Sistem, FreeRADIUS dan Installer
+- **[FEATURE]** Panduan di panel: tombol Panduan di bilah atas membuka panduan halaman yang sedang dibuka, dan Pusat Panduan memuat urutan pengaturan awal serta semua panduan yang bisa dicari
+- **[CHORE]** Pemakaian Data (web dan aplikasi) dihapus beserta API-nya: halaman itu menyebut agregasi harian yang tidak pernah ada, jadi hanya terisi setelah ditekan manual. Tabelnya dibiarkan
+- **[FIX]** Log Autentikasi menampilkan waktu terlambat 7 jam dan hitungan hari ini mulai dari pukul 07.00 hari sebelumnya; kini mengikuti zona waktu perusahaan. Job baru `radpostauth_cleanup` menyimpan 30 hari log (tabelnya sempat mencapai 2,8 juta baris)
+- **[FIX]** FreeRADIUS: hook REST menuju API (bukan frontend), sehingga akun diblokir atau kedaluwarsa kini ditolak dan voucher hotspot mendapat waktu login pertama dan masa berlaku; koneksi SQL diperbarui tiap jam sehingga login pertama setelah sepi tidak ditolak; salinan modul di `mods-enabled` ikut diperbaiki
+- **[FIX]** PM2: backend tidak lagi dimatikan setiap menit yang sibuk (batas memori dinaikkan ke 768M, dipasang oleh `deploy/fix-pm2-limits.sh` dan updater)
+- **[FIX]** Installer: instalasi baru dan uninstall berjalan tanpa macet (cron crash saat start, `clear` tanpa TERM, `pm2 delete` yang menggantung, password root MySQL salah), dan nginx menyajikan `/uploads/` dari folder unggahan sehingga foto bukti dan KTP tidak 404
+- **[FIX]** Update Sekarang mengulang build satu kali dengan `.next/cache` kosong bila build gagal, karena cache yang rusak membuat build gagal dengan pesan modul font tidak ditemukan
+
+### Aplikasi Admin Android
+- **[FEATURE]** Pusat Panduan dan tombol Panduan per layar, Aksi Cepat di dashboard, dan menu yang ditampilkan menurut izin role
+- **[FEATURE]** Username dan password teknisi, serta router/NAS pada kolektor, di Kelola Teknisi dan Kolektor
+- **[CHORE]** Aplikasi admin naik ke 1.0.13
+
+### Catatan Pembaruan
+- Update Sekarang menjalankan `prisma db push` yang membuat tabel `collector_notifications` dan `collector_push_subscriptions` serta menambah kolom nullable (username dan password teknisi, router kolektor, dan konfirmasi setoran per invoice). Tidak ada data yang dihapus
+- Web push butuh `VAPID_PUBLIC_KEY` dan `VAPID_PRIVATE_KEY` di `.env` backend (buat dengan `npx web-push generate-vapid-keys`), dan portal dibuka lewat HTTPS
+- Teknisi lama harus diisi username dan password di Kelola Teknisi sebelum bisa masuk
+- **[CHORE]** Bump versi root, frontend, dan backend ke 5.24.0
+
+---
+
 ## [5.23.0] - 2026-10-20 - Bayar di Dalam Aplikasi + Update APK dari Aplikasi + Kasir QRIS di Aplikasi Admin + Peta Jaringan
 
 ### Summary
