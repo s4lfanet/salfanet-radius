@@ -72,10 +72,14 @@ export function usePushNotification(role: PushRole = 'customer', extraBody?: Rec
   // `refresh` useCallback below (and the useEffect that runs it) got a new
   // identity every render too — re-running the subscription check +
   // "silent sync" POST on every re-render of whatever mounts this hook,
-  // not just on mount/focus as intended.
+  // not just on mount/focus as intended. `extraBody` is usually an inline
+  // literal (e.g. `{ technicianId: id }`), so it is serialized for a stable
+  // dependency instead of being compared by reference.
+  const extraBodyKey = extraBody ? JSON.stringify(extraBody) : '';
   const config = useMemo(
-    () => ({ ...ROLE_CONFIGS[role], extraBody: { ...ROLE_CONFIGS[role].extraBody, ...extraBody } }),
-    [role, extraBody]
+    () => ({ ...ROLE_CONFIGS[role], extraBody: { ...ROLE_CONFIGS[role].extraBody, ...(extraBodyKey ? JSON.parse(extraBodyKey) : {}) } }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [role, extraBodyKey]
   );
 
   const [isSupported, setIsSupported] = useState(false);
