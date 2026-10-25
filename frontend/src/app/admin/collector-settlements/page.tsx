@@ -176,6 +176,101 @@ export default function AdminCollectorSettlementsPage() {
   };
 
   const activeCollectors = data.filter((c) => c.is_active);
+
+  const statusOf = (c: SettlementCollector) => {
+    if (c.invoice_count === 0) return <span className="text-xs text-muted-foreground">Tidak ada pembayaran</span>;
+    if (mode === 'daily') return <ConfirmState by={c.confirmed_by} />;
+    const open = unitsOf(c).filter((u) => u.total_amount > 0 && !u.confirmed_by).length;
+    return open > 0
+      ? <span className="inline-flex rounded-md bg-warning/15 px-2 py-0.5 text-xs font-medium text-warning">{open} hari belum dikonfirmasi</span>
+      : <span className="inline-flex rounded-md bg-success/15 px-2 py-0.5 text-xs font-medium text-success">Semua dikonfirmasi</span>;
+  };
+
+  const actionsOf = (c: SettlementCollector) => {
+    if (c.invoice_count === 0) return null;
+    const open = expanded === c.collector_id;
+    const key = `${c.collector_id}|${date}`;
+    return (
+      <>
+        <Button type="button" variant="outline" size="sm" className="h-8 gap-1 text-xs" aria-expanded={open} onClick={() => setExpanded(open ? null : c.collector_id)}>
+          Rincian <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', open && 'rotate-180')} />
+        </Button>
+        {mode === 'daily' && (c.confirmed_by ? (
+          <Button type="button" variant="outline" size="sm" className="h-8 text-xs text-destructive" disabled={busy === key} onClick={() => confirm(c.collector_id, date, true)}>
+            {busy === key ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Batalkan'}
+          </Button>
+        ) : (
+          <Button type="button" size="sm" className="h-8 text-xs" disabled={busy === key} onClick={() => confirm(c.collector_id, date, false)}>
+            {busy === key ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Konfirmasi'}
+          </Button>
+        ))}
+      </>
+    );
+  };
+
+  const detailOf = (c: SettlementCollector) => (mode === 'daily' ? (
+    <table className="w-full min-w-[30rem] text-sm">
+      <thead className="text-xs text-muted-foreground">
+        <tr>
+          <th scope="col" className="px-4 py-2 text-left font-medium">Pelanggan</th>
+          <th scope="col" className="px-4 py-2 text-left font-medium">Invoice</th>
+          <th scope="col" className="px-4 py-2 text-left font-medium">Metode</th>
+          <th scope="col" className="px-4 py-2 text-left font-medium">Waktu</th>
+          <th scope="col" className="px-4 py-2 text-right font-medium">Jumlah</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-border/60">
+        {c.invoices.map((inv) => (
+          <tr key={inv.id}>
+            <td className="px-4 py-2">
+              <p className="font-medium text-foreground">{inv.customerName || inv.customerUsername || '-'}</p>
+              <p className="text-xs text-muted-foreground">{inv.customerUsername}</p>
+            </td>
+            <td className="px-4 py-2 text-xs text-muted-foreground">{inv.invoiceNumber}</td>
+            <td className="px-4 py-2"><MethodLabel method={inv.paymentMethod} /></td>
+            <td className="whitespace-nowrap px-4 py-2 text-xs text-muted-foreground">{fmtTime(inv.paidAt)}</td>
+            <td className="whitespace-nowrap px-4 py-2 text-right font-semibold tabular-nums text-foreground">{fmtRp(inv.amount)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  ) : (
+    <table className="w-full min-w-[30rem] text-sm">
+      <thead className="text-xs text-muted-foreground">
+        <tr>
+          <th scope="col" className="px-4 py-2 text-left font-medium">Tanggal</th>
+          <th scope="col" className="px-4 py-2 text-right font-medium">Transaksi</th>
+          <th scope="col" className="px-4 py-2 text-right font-medium">Total</th>
+          <th scope="col" className="px-4 py-2 text-left font-medium">Status</th>
+          <th scope="col" className="px-4 py-2 text-right font-medium">Aksi</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-border/60">
+        {(c.days || []).map((d) => {
+          const dayKey = `${c.collector_id}|${d.date}`;
+          return (
+            <tr key={d.date}>
+              <td className="px-4 py-2">
+                <button type="button" className="rounded font-medium text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => { setDate(d.date); setMode('daily'); }}>
+                  {fmtDay(d.date)}
+                </button>
+              </td>
+              <td className="px-4 py-2 text-right tabular-nums text-muted-foreground">{d.invoice_count}</td>
+              <td className="whitespace-nowrap px-4 py-2 text-right font-semibold tabular-nums text-foreground">{fmtRp(d.total_amount)}</td>
+              <td className="px-4 py-2"><ConfirmState by={d.confirmed_by} /></td>
+              <td className="px-4 py-2 text-right">
+                {d.confirmed_by ? (
+                  <Button type="button" variant="outline" size="sm" className="h-8 text-xs text-destructive" disabled={busy === dayKey} onClick={() => confirm(c.collector_id, d.date, true)}>Batalkan</Button>
+                ) : (
+                  <Button type="button" size="sm" className="h-8 text-xs" disabled={busy === dayKey} onClick={() => confirm(c.collector_id, d.date, false)}>Konfirmasi</Button>
+                )}
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  ));
   const input = 'h-9 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring';
   const rangeLabel = mode === 'daily' ? fmtDay(date) : `${fmtDay(from)} sampai ${fmtDay(to)}`;
 
@@ -332,146 +427,69 @@ export default function AdminCollectorSettlementsPage() {
               </p>
             </div>
           ) : (
-            <section className="card overflow-hidden" aria-label="Setoran per kolektor">
-              <div className="overflow-x-auto">
+            <section aria-label="Setoran per kolektor">
+              {/* Tablet and up: one table */}
+              <div className="card hidden overflow-x-auto md:block">
                 <table className="w-full text-sm">
                   <thead className="border-b border-border bg-muted/50 text-xs text-muted-foreground">
                     <tr>
                       <th scope="col" className="px-4 py-2.5 text-left font-medium">Kolektor</th>
                       <th scope="col" className="px-4 py-2.5 text-right font-medium">Transaksi</th>
-                      <th scope="col" className="hidden px-4 py-2.5 text-right font-medium md:table-cell">Tunai</th>
-                      <th scope="col" className="hidden px-4 py-2.5 text-right font-medium md:table-cell">Transfer</th>
+                      <th scope="col" className="hidden px-4 py-2.5 text-right font-medium lg:table-cell">Tunai</th>
+                      <th scope="col" className="hidden px-4 py-2.5 text-right font-medium lg:table-cell">Transfer</th>
                       <th scope="col" className="px-4 py-2.5 text-right font-medium">Total</th>
                       <th scope="col" className="px-4 py-2.5 text-left font-medium">Status</th>
                       <th scope="col" className="px-4 py-2.5 text-right font-medium">Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {rows.map((c) => {
-                      const open = expanded === c.collector_id;
-                      const units = unitsOf(c);
-                      const unconfirmedDays = units.filter((u) => u.total_amount > 0 && !u.confirmed_by).length;
-                      const empty = c.invoice_count === 0;
-                      const key = `${c.collector_id}|${date}`;
-                      return (
-                        <Fragment key={c.collector_id}>
-                          <tr className="border-b border-border last:border-0 hover:bg-muted/30">
-                            <td className="px-4 py-3">
-                              <p className="font-medium text-foreground">{c.collector_name || c.collector_username}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {c.collector_username}{!c.is_active && ' · nonaktif'}
-                              </p>
-                            </td>
-                            <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{c.invoice_count}</td>
-                            <td className="hidden px-4 py-3 text-right tabular-nums text-muted-foreground md:table-cell">{fmtRp(c.cash_amount)}</td>
-                            <td className="hidden px-4 py-3 text-right tabular-nums text-muted-foreground md:table-cell">{fmtRp(c.transfer_amount)}</td>
-                            <td className="whitespace-nowrap px-4 py-3 text-right font-semibold tabular-nums text-foreground">{fmtRp(c.total_amount)}</td>
-                            <td className="px-4 py-3">
-                              {empty
-                                ? <span className="text-xs text-muted-foreground">Tidak ada pembayaran</span>
-                                : mode === 'daily'
-                                  ? <ConfirmState by={c.confirmed_by} />
-                                  : unconfirmedDays > 0
-                                    ? <span className="inline-flex rounded-md bg-warning/15 px-2 py-0.5 text-xs font-medium text-warning">{unconfirmedDays} hari belum dikonfirmasi</span>
-                                    : <span className="inline-flex rounded-md bg-success/15 px-2 py-0.5 text-xs font-medium text-success">Semua dikonfirmasi</span>}
-                            </td>
-                            <td className="px-4 py-3">
-                              <div className="flex items-center justify-end gap-2">
-                                {!empty && (
-                                  <Button type="button" variant="outline" size="sm" className="h-8 gap-1 text-xs" aria-expanded={open} onClick={() => setExpanded(open ? null : c.collector_id)}>
-                                    Rincian <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', open && 'rotate-180')} />
-                                  </Button>
-                                )}
-                                {mode === 'daily' && !empty && (
-                                  c.confirmed_by ? (
-                                    <Button type="button" variant="outline" size="sm" className="h-8 text-xs text-destructive" disabled={busy === key} onClick={() => confirm(c.collector_id, date, true)}>
-                                      {busy === key ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Batalkan'}
-                                    </Button>
-                                  ) : (
-                                    <Button type="button" size="sm" className="h-8 text-xs" disabled={busy === key} onClick={() => confirm(c.collector_id, date, false)}>
-                                      {busy === key ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Konfirmasi'}
-                                    </Button>
-                                  )
-                                )}
-                              </div>
-                            </td>
+                    {rows.map((c) => (
+                      <Fragment key={c.collector_id}>
+                        <tr className="border-b border-border last:border-0 hover:bg-muted/30">
+                          <td className="px-4 py-3">
+                            <p className="font-medium text-foreground">{c.collector_name || c.collector_username}</p>
+                            <p className="text-xs text-muted-foreground">{c.collector_username}{!c.is_active && ' · nonaktif'}</p>
+                          </td>
+                          <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">{c.invoice_count}</td>
+                          <td className="hidden px-4 py-3 text-right tabular-nums text-muted-foreground lg:table-cell">{fmtRp(c.cash_amount)}</td>
+                          <td className="hidden px-4 py-3 text-right tabular-nums text-muted-foreground lg:table-cell">{fmtRp(c.transfer_amount)}</td>
+                          <td className="whitespace-nowrap px-4 py-3 text-right font-semibold tabular-nums text-foreground">{fmtRp(c.total_amount)}</td>
+                          <td className="px-4 py-3">{statusOf(c)}</td>
+                          <td className="px-4 py-3"><div className="flex items-center justify-end gap-2">{actionsOf(c)}</div></td>
+                        </tr>
+                        {expanded === c.collector_id && c.invoice_count > 0 && (
+                          <tr className="border-b border-border bg-muted/20">
+                            <td colSpan={7} className="p-0">{detailOf(c)}</td>
                           </tr>
-
-                          {open && (
-                            <tr className="border-b border-border bg-muted/20">
-                              <td colSpan={7} className="p-0">
-                                {mode === 'daily' ? (
-                                  <table className="w-full text-sm">
-                                    <thead className="text-xs text-muted-foreground">
-                                      <tr>
-                                        <th scope="col" className="px-4 py-2 text-left font-medium">Pelanggan</th>
-                                        <th scope="col" className="px-4 py-2 text-left font-medium">Invoice</th>
-                                        <th scope="col" className="px-4 py-2 text-left font-medium">Metode</th>
-                                        <th scope="col" className="px-4 py-2 text-left font-medium">Waktu</th>
-                                        <th scope="col" className="px-4 py-2 text-right font-medium">Jumlah</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-border/60">
-                                      {c.invoices.map((inv) => (
-                                        <tr key={inv.id}>
-                                          <td className="px-4 py-2">
-                                            <p className="font-medium text-foreground">{inv.customerName || inv.customerUsername || '-'}</p>
-                                            <p className="text-xs text-muted-foreground">{inv.customerUsername}</p>
-                                          </td>
-                                          <td className="px-4 py-2 text-xs text-muted-foreground">{inv.invoiceNumber}</td>
-                                          <td className="px-4 py-2"><MethodLabel method={inv.paymentMethod} /></td>
-                                          <td className="whitespace-nowrap px-4 py-2 text-xs text-muted-foreground">{fmtTime(inv.paidAt)}</td>
-                                          <td className="whitespace-nowrap px-4 py-2 text-right font-semibold tabular-nums text-foreground">{fmtRp(inv.amount)}</td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
-                                ) : (
-                                  <table className="w-full text-sm">
-                                    <thead className="text-xs text-muted-foreground">
-                                      <tr>
-                                        <th scope="col" className="px-4 py-2 text-left font-medium">Tanggal</th>
-                                        <th scope="col" className="px-4 py-2 text-right font-medium">Transaksi</th>
-                                        <th scope="col" className="px-4 py-2 text-right font-medium">Total</th>
-                                        <th scope="col" className="px-4 py-2 text-left font-medium">Status</th>
-                                        <th scope="col" className="px-4 py-2 text-right font-medium">Aksi</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-border/60">
-                                      {(c.days || []).map((d) => {
-                                        const dayKey = `${c.collector_id}|${d.date}`;
-                                        return (
-                                          <tr key={d.date}>
-                                            <td className="px-4 py-2">
-                                              <button type="button" className="font-medium text-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded" onClick={() => { setDate(d.date); setMode('daily'); }}>
-                                                {fmtDay(d.date)}
-                                              </button>
-                                            </td>
-                                            <td className="px-4 py-2 text-right tabular-nums text-muted-foreground">{d.invoice_count}</td>
-                                            <td className="whitespace-nowrap px-4 py-2 text-right font-semibold tabular-nums text-foreground">{fmtRp(d.total_amount)}</td>
-                                            <td className="px-4 py-2"><ConfirmState by={d.confirmed_by} /></td>
-                                            <td className="px-4 py-2 text-right">
-                                              {d.confirmed_by ? (
-                                                <Button type="button" variant="outline" size="sm" className="h-8 text-xs text-destructive" disabled={busy === dayKey} onClick={() => confirm(c.collector_id, d.date, true)}>Batalkan</Button>
-                                              ) : (
-                                                <Button type="button" size="sm" className="h-8 text-xs" disabled={busy === dayKey} onClick={() => confirm(c.collector_id, d.date, false)}>Konfirmasi</Button>
-                                              )}
-                                            </td>
-                                          </tr>
-                                        );
-                                      })}
-                                    </tbody>
-                                  </table>
-                                )}
-                              </td>
-                            </tr>
-                          )}
-                        </Fragment>
-                      );
-                    })}
+                        )}
+                      </Fragment>
+                    ))}
                   </tbody>
                 </table>
               </div>
+
+              {/* Phones: one card per collector, the actions always in view */}
+              <ul className="space-y-3 md:hidden">
+                {rows.map((c) => (
+                  <li key={c.collector_id} className="card overflow-hidden">
+                    <div className="p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-foreground">{c.collector_name || c.collector_username}</p>
+                          <p className="text-xs text-muted-foreground">{c.collector_username}{!c.is_active && ' · nonaktif'}</p>
+                        </div>
+                        <p className="shrink-0 text-base font-bold tabular-nums text-foreground">{fmtRp(c.total_amount)}</p>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {c.invoice_count} transaksi · tunai {fmtRp(c.cash_amount)} · transfer {fmtRp(c.transfer_amount)}
+                      </p>
+                      <div className="mt-3">{statusOf(c)}</div>
+                      {c.invoice_count > 0 && <div className="mt-3 flex items-center gap-2">{actionsOf(c)}</div>}
+                    </div>
+                    {expanded === c.collector_id && c.invoice_count > 0 && <div className="overflow-x-auto border-t border-border bg-muted/20">{detailOf(c)}</div>}
+                  </li>
+                ))}
+              </ul>
             </section>
           )}
         </>
