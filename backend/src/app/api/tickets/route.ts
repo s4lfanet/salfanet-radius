@@ -2,6 +2,7 @@
 import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { createAdminNotification } from '@/server/services/notifications/admin-notification.service';
+import { notifyCollector } from '@/server/services/collector-notification.service';
 
 // Generate unique ticket number
 function generateTicketNumber(): string {
@@ -364,6 +365,19 @@ export async function PUT(req: NextRequest) {
         },
       },
     });
+
+    // A ticket handed to a collector shows up in their bell.
+    if (assignedToId && assignedToId !== existingTicket.assignedToId) {
+      const assignee = await prisma.adminUser.findFirst({ where: { id: String(assignedToId), role: 'COLLECTOR', isActive: true }, select: { id: true } });
+      if (assignee) {
+        await notifyCollector(assignee.id, {
+          type: 'ticket_assigned',
+          title: `Tiket ${ticket.ticketNumber}`,
+          message: `${ticket.subject}${ticket.customer?.name ? `, ${ticket.customer.name}` : ''}`,
+          link: '/collector/dashboard',
+        });
+      }
+    }
 
     return NextResponse.json(ticket);
   } catch (error) {

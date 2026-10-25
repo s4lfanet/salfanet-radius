@@ -1,5 +1,19 @@
 import { prisma } from '@/server/db/client';
 import { startOfDayWIBtoUTC, endOfDayWIBtoUTC, formatWIB, refreshTimezoneFromDB } from '@/lib/timezone';
+import { notifyCollectorsOfPayments, fmtRupiah } from '@/server/services/collector-notification.service';
+
+const confirmedNotice = (count: number, amount: number) => ({
+  type: 'settlement_confirmed',
+  title: 'Setoran dikonfirmasi',
+  message: `${count} pembayaran, ${fmtRupiah(amount)}, sudah dicocokkan dan dikonfirmasi admin.`,
+  link: '/collector/settlements',
+});
+const unconfirmedNotice = (count: number, amount: number) => ({
+  type: 'settlement_unconfirmed',
+  title: 'Konfirmasi setoran dibatalkan',
+  message: `Konfirmasi ${count} pembayaran (${fmtRupiah(amount)}) dibatalkan admin. Hubungi admin jika ada yang perlu dicocokkan ulang.`,
+  link: '/collector/settlements',
+});
 
 /**
  * Finance's check of collector payments, one invoice at a time.
@@ -20,10 +34,12 @@ export async function setInvoiceConfirmation(invoiceIds: string[], confirm: bool
       paidById: { not: null },
       paymentMethod: { not: 'discount' },
     },
-    select: { id: true, paidById: true, paidAt: true },
+    select: { id: true, paidById: true, paidAt: true, amount: true, settlementConfirmedAt: true },
   });
   if (rows.length === 0) return 0;
   const ids = rows.map((r) => r.id);
+  // Whom to tell: only payments whose state actually changes.
+  const changing = confirm ? rows.filter((r) => !r.settlementConfirmedAt) : rows;
 
   await prisma.$transaction(async (tx) => {
     if (!confirm) {
@@ -57,6 +73,7 @@ export async function setInvoiceConfirmation(invoiceIds: string[], confirm: bool
     }
   });
 
+  await notifyCollectorsOfPayments(changing, confirm ? confirmedNotice : unconfirmedNotice);
   return ids.length;
 }
 
@@ -68,6 +85,10 @@ export async function setDayConfirmation(collectorId: string, date: string, conf
     status: 'PAID' as const,
     paidAt: { gte: startOfDayWIBtoUTC(date), lte: endOfDayWIBtoUTC(date) },
   };
+  const affected = await prisma.invoice.findMany({
+    where: confirm ? { ...dayWhere, settlementConfirmedAt: null } : dayWhere,
+    select: { paidById: true, amount: true },
+  });
   if (confirm) {
     await prisma.invoice.updateMany({
       where: { ...dayWhere, settlementConfirmedAt: null },
@@ -76,4 +97,5 @@ export async function setDayConfirmation(collectorId: string, date: string, conf
   } else {
     await prisma.invoice.updateMany({ where: dayWhere, data: { settlementConfirmedById: null, settlementConfirmedAt: null } });
   }
+  await notifyCollectorsOfPayments(affected, confirm ? confirmedNotice : unconfirmedNotice);
 }
