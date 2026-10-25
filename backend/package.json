@@ -1,6 +1,6 @@
 {
   "name": "@salfanet/backend",
-  "version": "5.23.0",
+  "version": "5.24.0",
   "private": true,
   "description": "Salfanet Radius — Next.js backend API server",
   "scripts": {

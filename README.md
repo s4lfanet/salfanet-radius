@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.23.0 - Bayar di Dalam Aplikasi + Update APK dari Aplikasi + Kasir QRIS di Aplikasi Admin + Peta Jaringan
+> **Version:** 5.24.0 - Portal Kolektor Baru + Setoran Per Pembayaran + Notifikasi dan Web Push Kolektor
 
 ---
 
@@ -15,7 +15,6 @@ Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with Free
 | **VPN Management** | MikroTik CHR via API, VPS built-in WireGuard & L2TP/IPsec peer management, configurable IP pool & gateway per protocol, auto-generated RouterOS scripts |
 | **PPPoE Management** | Customer accounts, profile-based bandwidth, isolation, IP assignment, MikroTik auto-sync, foto KTP+instalasi via kamera HP, GPS otomatis, **realtime online/offline status (polling 10s)**, **realtime status isolir/aktif (polling 10s)**, **PSB wizard 3-step (adopt dari home.pmynet.id)**, **true optimistic update (reactivate/delete instant)**, **placeholder MAC rejection** |
 | **IP Pool** | RADIUS ippool module — dynamic IP allocation per speed tier, pool create/expand/delete, Pool-Name → group mapping, utilization stats |
-| **Data Usage Reporting** | Per-user bandwidth tracking (daily aggregation via cron), monthly summary, top consumers, GB upload/download per period |
 | **Hotspot Voucher** | 8 code types, batch up to 25,000, agent distribution, auto-sync with RADIUS, print templates, **MikroTik local-only mode** (voucher sync via RouterOS API, `salfanet:` comment marker, batch cleanup, cron status sync), **Rekap Voucher** (laporan penjualan per hari/minggu/bulan, filter by agent & profile, export Excel, rincian per hari, pendapatan per agent — support both RADIUS & local NAS via `firstLoginAt`) |
 | **Billing** | Postpaid/prepaid invoices, auto-generation, payment reminders, balance/deposit, auto-renewal |
 | **Payment** | Manual upload (bukti transfer), Midtrans/Xendit/Duitku gateway, approval workflow, 0–5 bank accounts |
@@ -25,7 +24,7 @@ Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with Free
 | **Network (FTTH)** | OLT/ODC/ODP management, customer port assignment, network map, distance calculation |
 | **GenieACS TR-069** | CPE/ONT management, WiFi config (SSID/password), device status & uptime |
 | **Isolation** | Auto-isolate expired customers, customizable WhatsApp/Email/HTML landing page templates, **fallback MikroTik API kick saat radacct kosong**, **HOTSPOT local mode isolation/reactivation** (manageHotspotUser enable/disable + kick), **connectionType-aware reactivation** (PPPoE & Hotspot) di semua route (webhook, mark-paid, status, bulk-status, extend) |
-| **Cron Jobs** | 17 automated background jobs (tsx runner via PM2 fork), history, distributed locking, manual trigger, **auto-close orphaned/stale sessions** |
+| **Cron Jobs** | 27 automated background jobs (tsx runner via PM2 fork), history, distributed locking, manual trigger, **auto-close orphaned/stale sessions** |
 | **Roles & Permissions** | 53 permissions, 6 portals (Admin/Customer/Agent/Technician/Collector + SuperAdmin) |
 | **Activity Log** | Audit trail with auto-cleanup (30 days) |
 | **Security** | Session timeout 30 min, idle warning, RBAC, HTTPS/SSL |
@@ -34,8 +33,8 @@ Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with Free
 | **RADIUS Setup** | Auto-generated RouterOS script pakai **IP asli VPS** (bukan domain/Cloudflare proxy), VPN-specific address selection |
 | **Bahasa** | Bahasa Indonesia (full) |
 | **PWA** | Installable di semua portal (admin, customer, agent, technician), offline fallback, service worker cache |
-| **Web Push** | VAPID-based browser push notifications, subscribe/unsubscribe toggle per portal (admin, agent, technician, collector), admin broadcast with role targeting (customer/agent/technician/admin/all), cron-triggered push (invoice reminder, auto-isolir, auto-renewal), server-side read state for customer notifications |
-| **Collector Portal** | Portal kolektor dengan dashboard, billing (mark-paid + upload bukti transfer), isolir list, ONT removal workflow, my-collections, settlement/setoran harian, admin verification (approve/reject), area-based access control |
+| **Web Push** | VAPID-based browser push notifications, subscribe/unsubscribe toggle per portal (admin, agent, technician, collector), admin broadcast with role targeting (customer/agent/technician/admin/all), cron-triggered push (invoice reminder, auto-isolir, auto-renewal), server-side read state for customer and collector notifications. Collector subscriptions have their own table, apart from the admin one |
+| **Collector Portal** | Portal kolektor berbasis wilayah tugas (area dan/atau router/NAS): ringkasan per bulan, tagihan (tandai lunas tunai/transfer + bukti), pelanggan dengan status pembayaran, peta dan detail GPS, Telepon/WhatsApp, isolir, setoran, koleksi, bukti transfer, cabut ONT, lonceng notifikasi dengan status baca dan web push. Admin: Setoran Kolektor sebagai daftar pembayaran dengan konfirmasi per baris atau massal |
 | **Mobile App** | Native Flutter customer app (`mobile/customer_app/`) — WiFi control, invoice, payment, tickets, push via FCM. See [README](mobile/customer_app/README.md) |
 | **WhatsApp Baileys** | Native WhatsApp gateway built-in VPS via `@whiskeysockets/baileys`, PM2 proses terpisah, scan QR langsung di admin panel, auto-reconnect |
 
@@ -47,6 +46,10 @@ Source: `mobile/customer_app/`. Same customer-facing feature set as the web port
 talking to the same `backend/src/app/api/customer/*` API. Every install runs on its
 own domain (no hard-coded host — configurable in-app), and every install needs its
 own Firebase project for push notifications.
+
+A second native app for staff lives in `mobile/admin_app/` (customers, invoices, Kasir QRIS,
+network map, in-app guides, quick actions; menus follow each account's role). Both apps can
+update themselves from the APK uploaded in the web panel (Build APK).
 
 - **Build / run it**: [`mobile/customer_app/README.md`](mobile/customer_app/README.md)
 - **Enable push notifications (FCM)**: [`mobile/customer_app/FIREBASE_SETUP.md`](mobile/customer_app/FIREBASE_SETUP.md)
@@ -530,19 +533,6 @@ cd frontend && npx prisma db seed -- --ippool
 # Each: 1022 IPs (/22 subnet) + auto-mapped to RADIUS groups
 ```
 
-### Data Usage Reporting (`/api/v1/data-usage`)
-
-Bandwidth tracking per user per period — diadopsi dari FreeRADIUS `process-radacct.sql`.
-
-| Endpoint | Method | Fungsi |
-|----------|--------|--------|
-| `/api/v1/data-usage` | GET | Bandwidth per user untuk date range |
-| `/api/v1/data-usage/monthly` | GET | Monthly summary per user (sorted by usage) |
-| `/api/v1/data-usage/top` | GET | Top bandwidth consumers |
-| `/api/v1/data-usage/aggregate` | POST | Manual trigger aggregation |
-
-**Cron:** Daily at 00:05 — aggregate `radacct` → `data_usage_by_period` table.
-
 ### Multi-NAS Isolation
 
 Username isolation per-NAS untuk ISP dengan multiple router/MikroTik:
@@ -558,53 +548,62 @@ Persistent user tracking across sessions/NAS untuk billing & audit:
 
 ---
 
-## 🏦 Collector Portal (v5.14.0)
+## 🏦 Collector Portal (v5.24.0)
 
-Portal khusus untuk kolektor (petugas tagihan) dengan akses berbasis area (PPPoE area assignment).
+Portal untuk kolektor (petugas tagihan lapangan). Aksesnya mengikuti **wilayah tugas** yang ditetapkan admin di Kelola Kolektor: satu area, satu atau beberapa router/NAS, atau keduanya. Kolektor tanpa area dan NAS tidak melihat data apa pun.
 
-### Fitur Collector Portal
+### Halaman
 
 | Halaman | Fungsi |
 |---------|--------|
-| **Dashboard** | Summary invoice area (unpaid, paid, isolir count), total tagihan belum dibayar |
-| **Billing** | List invoice area, mark-paid dengan pilihan metode pembayaran (cash/transfer), upload bukti transfer (auto-compress ke base64) |
-| **Isolir** | List pelanggan isolir/suspended di area dengan jumlah tagihan unpaid |
-| **ONT Removal** | Workflow cabut-ONT: list task, create removal record, update status |
-| **My Collections** | Riwayat pembayaran yang dikumpulkan kolektor |
-| **Settlements** | Setoran harian: summary cash vs transfer, konfirmasi setoran |
-| **Proofs** | Bukti transfer yang diupload, admin bisa verify (approve/reject) |
+| **Ringkasan** | Tagihan per bulan (bulan lalu dan bulan depan bisa dibuka), total belum dibayar dan sudah lunas, setoran bulan ini, filter area dan router/NAS |
+| **Tagihan** | Tabel pelanggan dengan invoice yang bisa dibuka. Tandai lunas tunai atau transfer (bukti transfer dikompres otomatis), janji bayar, kirim bukti lunas lewat WhatsApp, cetak ke printer Bluetooth |
+| **Pelanggan** | Semua pelanggan di wilayah tugas: tabel yang bisa diurutkan, status pembayaran (Lunas, Belum lunas, Terlambat) dengan filter, tampilan Daftar atau Peta, detail pelanggan dengan GPS, pratinjau peta, dan navigasi Google Maps, tombol Telepon dan WhatsApp (pesan pengingat tagihan sudah terisi) |
+| **Pelanggan Isolir** | Pelanggan terisolir dengan jumlah tagihan, aksi tagih dan catat cabut ONT |
+| **Setoran Saya** | Pembayaran yang dicatat per hari atau per rentang tanggal, tunai dan transfer, dan status konfirmasi admin |
+| **Koleksi Saya** | Riwayat 6 bulan terakhir per bulan dan transaksi terbaru |
+| **Bukti Transfer** | Bukti transfer pelanggan di wilayah tugas dan hasil pemeriksaan admin |
+| **Cabut ONT** | Riwayat perangkat yang dicabut dari pelanggan isolir |
+| **Lonceng** | Notifikasi dengan status baca (klik untuk membaca, Tandai semua dibaca) dan web push |
 
-### Admin: Kelola Kolektor
+Notifikasi: setoran dikonfirmasi atau dibatalkan, bukti transfer disetujui atau ditolak, pembayaran dicatat admin ke kolektor, tiket ditugaskan. Web push butuh HTTPS dan kunci VAPID di `.env` backend; tombol Aktifkan ada di banner halaman, sidebar, dan panel lonceng, dan menjelaskan alasannya bila perangkat tidak bisa push.
 
-- **Admin → Collectors** — CRUD kolektor: username, nama, email, telepon, area assignment, aktif/non-aktif
-- **Admin → Collector Settlements** — Verifikasi setoran harian: breakdown cash vs transfer, approve/reject dengan invoice detail, expand per kolektor
+### Admin
+
+- **Kelola Kolektor**: tambah, edit, hapus (kolektor yang pernah menagih hanya bisa dinonaktifkan), area opsional, pilihan beberapa router/NAS, alamat login dengan tombol salin
+- **Setoran Kolektor**: satu daftar semua pembayaran kolektor (pelanggan, kolektor, invoice, tunai atau transfer, bukti, status). Konfirmasi per baris, atau centang beberapa dan konfirmasi sekaligus; mode harian dan rentang tanggal
+- **Tagihan, Tandai Lunas**: bisa memilih kolektor yang menerima uang dan metodenya, supaya masuk ke setorannya. Invoice lunas yang tidak dimiliki kolektor tampil di Setoran Kolektor dan bisa dicatat ke kolektor
 
 ### API Endpoints
 
 | Endpoint | Method | Fungsi |
 |----------|--------|--------|
-| `/api/collector/auth/login` | POST | Login kolektor (Bearer token) |
-| `/api/collector/dashboard` | GET | Summary invoice area |
-| `/api/collector/users` | GET | List pelanggan di area (filter: unpaid/all/paid) |
-| `/api/collector/isolir` | GET | List pelanggan isolir di area |
-| `/api/collector/billing` | GET | List invoice di area untuk mark-paid |
-| `/api/collector/mark-paid` | POST | Mark invoice paid + upload bukti transfer |
-| `/api/collector/ont-removals` | GET/POST | ONT removal records |
-| `/api/collector/proofs` | GET | Bukti transfer kolektor |
+| `/api/collector/auth/login` | POST | Login kolektor (cookie `collector-token`) |
+| `/api/collector/auth/session` | GET | Sesi, wilayah tugas, pilihan filter |
+| `/api/collector/dashboard` | GET | Ringkasan per bulan (`period`, `areaId`, `routerId`) |
+| `/api/collector/users` | GET | Pelanggan di wilayah tugas dengan status pembayaran (filter unpaid/all/paid) |
+| `/api/collector/isolir` | GET | Pelanggan isolir di wilayah tugas |
+| `/api/collector/mark-paid` | POST | Tandai invoice lunas, tunai atau transfer dengan bukti |
+| `/api/collector/ont-removals` | GET/POST | Catatan cabut ONT |
+| `/api/collector/proofs` | GET | Bukti transfer di wilayah tugas |
 | `/api/collector/my-collections` | GET | Riwayat koleksi kolektor |
-| `/api/collector/my-settlements` | GET/POST | Setoran harian kolektor |
-| `/api/collector/setoran` | GET | Summary setoran harian |
-| `/api/collector/history` | GET | Riwayat aktivitas kolektor |
-| `/api/collector/list` | GET | List semua kolektor (admin) |
-| `/api/collector/confirm-settlement` | POST | Admin konfirmasi setoran |
+| `/api/collector/my-settlements` | GET | Setoran harian, dan `/range` untuk rentang tanggal |
+| `/api/collector/notifications` | GET/POST | Daftar notifikasi, tandai dibaca (`ids` atau `all`) |
+| `/api/push/collector-subscribe` | POST | Daftarkan web push kolektor (`collector-unsubscribe` untuk mencabut) |
+| `/api/collector/list` | GET | Daftar kolektor (admin) |
+| `/api/collector/setoran` | GET | Setoran semua kolektor per hari (`date`) atau rentang (`from`, `to`) (admin) |
+| `/api/collector/setoran/confirm` | POST | Konfirmasi atau batalkan beberapa pembayaran (`invoiceIds`, `confirm`) (admin) |
+| `/api/collector/setoran/unassigned` | GET/POST | Invoice lunas tanpa kolektor, dan mencatatnya ke kolektor (admin) |
+| `/api/collector/setoran/collectors` | GET | Kolektor aktif untuk pilihan penerima uang (admin) |
+| `/api/collector/confirm-settlement` | POST/DELETE | Konfirmasi atau batalkan setoran satu hari (dipakai aplikasi admin) |
 
 ### Keamanan
 
-- Kolektor hanya bisa akses data di area yang di-assign
-- Bearer token auth (terpisah dari session admin)
-- Validasi `areaId` di setiap query
-- Bukti transfer disimpan sebagai base64 (MediumText) di DB
-- Admin verify bukti transfer sebelum approve setoran
+- Sesi kolektor memakai cookie JWT terpisah dari sesi admin, dan akun dicek ke database di setiap permintaan (aktif dan role COLLECTOR)
+- Setiap rute memeriksa wilayah tugas (area dan router/NAS) di sisi server, termasuk tandai lunas, janji bayar, kirim invoice, dan PDF invoice
+- Setoran dan konfirmasi di admin memakai izin `keuangan.view` dan `keuangan.edit`
+- Langganan web push kolektor disimpan di tabel sendiri, terpisah dari langganan admin
+- Bukti transfer disimpan sebagai base64 (MediumText) di DB dan diperiksa admin di Verifikasi Bukti Transfer
 
 ---
 
@@ -1083,6 +1082,76 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.24.0 — 2026-10-25 - Portal Kolektor Baru + Setoran Per Pembayaran + Notifikasi dan Web Push Kolektor
+
+### Summary
+Rilis setelah 5.23.0 (63 commit). Portal kolektor dirancang ulang dan bekerja per area dan router/NAS yang ditetapkan admin. Setoran Kolektor di admin menjadi satu daftar pembayaran yang bisa dikonfirmasi satu per satu atau banyak sekaligus, dan Tagihan bisa mencatat kolektor yang menerima uang. Lonceng kolektor punya status baca dan web push yang benar-benar jalan. Teknisi masuk dengan username dan password. Pengingat tagihan WhatsApp, cron, dan push FCM diaudit dan diperbaiki, begitu juga akses per role, FreeRADIUS, dan installer. Aplikasi admin 1.0.13.
+
+### Portal Kolektor
+- **[FEATURE]** Wilayah tugas per kolektor: satu area, satu atau beberapa router/NAS, atau keduanya (Kelola Kolektor di web dan aplikasi admin). Pelanggan, tagihan, isolir, dashboard, bukti transfer, dan cabut ONT hanya dari wilayah itu; kolektor tanpa area dan NAS tidak melihat data. Beberapa kolektor bisa berbagi satu area dengan membaginya per NAS
+- **[SECURITY]** Semua rute kolektor memeriksa wilayah tugas, termasuk tandai lunas, janji bayar, kirim invoice, dan PDF invoice
+- **[FIX]** Menandai lunas dua kali bersamaan tidak lagi memperpanjang langganan dua kali
+- **[FEATURE]** Dashboard per bulan (bulan lalu dan bulan depan), total tagihan per periode, dan filter area dan router/NAS yang selalu tampil bila kolektor punya area atau NAS
+- **[UI]** Desain ulang: sidebar di desktop, bar bawah dan menu geser di HP, tabel di Pelanggan, Tagihan, Isolir, Setoran Saya, Koleksi Saya, dan Cabut ONT memakai lebar penuh, ukuran huruf sama dengan panel admin, aksi pada tagihan rata dan mudah ditekan, dan halaman login mengikuti portal peran lain
+- **[FEATURE]** Daftar pelanggan seperti di admin: tabel yang bisa diurutkan, status pembayaran (Lunas, Belum lunas, Terlambat) dengan filter, tampilan Daftar atau Peta
+- **[FEATURE]** Peta dan koordinat per pelanggan serta detail pelanggan (GPS, pratinjau OpenStreetMap, salin koordinat, navigasi Google Maps). Sama untuk portal teknisi, yang juga bisa mengubah lokasi pelanggan (Pilih di Peta atau GPS Otomatis)
+- **[FEATURE]** Tombol Telepon dan WhatsApp berlabel; WhatsApp terbuka dengan pesan pengingat tagihan yang sudah terisi, memakai nama perusahaan dari pengaturan
+- **[FIX]** Rekap Setoran Saya mengelompokkan hari memakai tanggal UTC, sehingga pembayaran pukul 00.00 sampai 06.59 WIB masuk ke hari sebelumnya. Hari kini mengikuti zona waktu perusahaan, sama dengan admin
+
+### Notifikasi dan Web Push Kolektor
+- **[FIX]** Lonceng menghitung ulang pembayaran dan tiket 24 jam terakhir tiap 30 detik tanpa status baca, sehingga tidak ada yang bisa dihapus dan entri yang sama terus kembali. Notifikasi kini disimpan dengan status baca: klik untuk membaca dan membuka halamannya, Tandai semua dibaca, dan badge hanya menghitung yang belum dibaca
+- **[FEATURE]** Notifikasi baru untuk kolektor: setoran dikonfirmasi, konfirmasi setoran dibatalkan, bukti transfer disetujui atau ditolak (dengan alasan), pembayaran dicatat admin ke kolektor, dan tiket ditugaskan. Pembayaran yang dicatat kolektor sendiri tidak lagi memunculkan notifikasi
+- **[FIX]** Web push tidak pernah terdaftar untuk kolektor: lonceng memakai jalur teknisi yang meminta sesi admin, dan kolektor memakai cookie sendiri (selalu 401). Kolektor kini punya jalur subscribe dan tabel langganan sendiri, terpisah dari tabel admin supaya siaran admin tidak sampai ke kolektor
+- **[FEATURE]** Setiap notifikasi juga dikirim sebagai web push; lonceng langsung berubah bila push tiba saat portal terbuka
+- **[FEATURE]** Tombol Aktifkan notifikasi terlihat: banner di halaman (bisa ditunda), baris di sidebar dan menu geser, dan panel lonceng. Bila perangkat tidak bisa push, alasannya tertulis (tanpa HTTPS, iPhone belum dipasang ke Layar Utama, browser tidak mendukung, izin diblokir, kunci VAPID belum diatur di server)
+- **[CHORE]** Job pembersihan harian menghapus notifikasi kolektor yang sudah dibaca setelah 30 hari dan yang belum dibaca setelah 60 hari
+
+### Setoran Kolektor (Admin)
+- **[FIX]** Pembayaran yang ditandai lunas dari halaman Tagihan admin tidak pernah masuk Setoran Kolektor, karena hanya status yang dikirim, tanpa kolektor dan metode bayar. Dialog Tandai Lunas kini punya pilihan Diterima oleh (kolektor) dan metode Tunai atau Transfer
+- **[FEATURE]** Invoice lunas yang tidak dimiliki kolektor mana pun tampil di panel tersendiri, dan bisa dicatat ke kolektor yang menerima uangnya (tidak bisa dipindah dari kolektor lain; pembayaran gateway dan transfer yang diajukan pelanggan tidak dimasukkan)
+- **[UI]** Halaman dirombak menjadi satu daftar pembayaran: pelanggan (nama, ID, username, HP, alamat, area, paket), kolektor, invoice, metode Tunai atau Transfer, ada tidaknya bukti, jumlah, dan status. Ada ringkasan Belum dikonfirmasi, pencarian, filter kolektor, status, dan metode, serta tampilan kartu di HP
+- **[FEATURE]** Konfirmasi per pembayaran: tombol Konfirmasi atau Batalkan di setiap baris, kotak centang dan pilih semua, lalu konfirmasi atau batalkan banyak pembayaran sekaligus (maksimal 500)
+- **[FEATURE]** Mode Rentang tanggal berfungsi (sebelumnya hanya tulisan segera hadir), dan tanggal bisa digeser per hari
+- **[FIX]** Setoran dan konfirmasi memakai izin keuangan.view dan keuangan.edit, bukan dua peran yang ditulis tetap; akun berizin lain sebelumnya melihat daftar kosong tanpa pesan. Kolektor nonaktif yang masih punya pembayaran tetap tampil
+- **[CHORE]** Konfirmasi kini disimpan per pembayaran. Konfirmasi harian yang sudah ada, termasuk dari aplikasi admin, tetap berlaku untuk semua pembayaran di hari itu
+
+### Teknisi, Staf dan Role
+- **[FEATURE]** Teknisi masuk dengan username dan password seperti kolektor, diisi di Kelola Teknisi; teknisi yang belum punya password diberi tanda. Login OTP WhatsApp dihapus: nomor yang tidak terdaftar bisa membuat akun teknisi aktif, dan opsi OTP mati membuat nomor saja cukup untuk masuk
+- **[FEATURE]** Kelola Teknisi dan Kelola Kolektor punya tombol Edit dan Hapus. Kolektor yang pernah menagih tidak bisa dihapus (nonaktifkan saja), karena rekap setoran akan kehilangan pembayarannya
+- **[FIX]** Username kolektor dan teknisi tampil dan diinput tanpa tanda @
+- **[FIX]** Menu dan akses per role sesuai yang bisa dipakai: Keuangan, Customer Service, dan Marketing sebelumnya melihat halaman yang ditolak API dan kehilangan halaman yang mereka butuhkan; staf bisa membaca izin miliknya sendiri; daftar router untuk peran pelanggan, voucher, dan hotspot tanpa kredensial; ekspor butuh izin
+- **[FIX]** Portal teknisi dan kolektor: akses data, unggah foto, dan pesan tiket diperbaiki
+
+### Pengingat Tagihan, Cron dan Push
+- **[FIX]** Pengiriman WhatsApp yang gagal di semua provider dianggap berhasil oleh semua pemanggil, sehingga pengingat tagihan ditandai terkirim hari itu dan tidak dicoba lagi. Kegagalan kini dilaporkan dan dicoba lagi pada putaran berikutnya
+- **[FIX]** Test manual Pengingat Invoice tidak menunggu jam kirim, dan hasilnya menjelaskan kenapa tidak ada yang terkirim: tidak ada invoice di hari pengingat, sudah dikirim hari ini, tanpa nomor HP, template nonaktif, provider gagal, atau invoice yang sudah lewat jatuh tempo tidak diingatkan karena tidak ada hari H+ di pengaturan
+- **[FIX]** Job cron yang gagal dengan pesan kosong "HTTP request failed": runner kini terhubung ke 127.0.0.1, mencoba ulang sekali, dan mencatat kode error
+- **[FIX]** Setiap job terjadwal tercatat dua kali di riwayat dan keduanya saling mengunci tabel (deadlock). Kini satu baris per run, baris yang tertinggal berstatus running dibereskan tiap 15 menit, dan nama job di riwayat memakai nama dari daftar server
+- **[FIX]** Job Auto Stop dijadwalkan runner tetapi ditolak server, sehingga tidak pernah berjalan. Kini terdaftar di halaman Cron dalam keadaan nonaktif (menghentikan pelanggan yang terisolir lebih dari 30 hari), dan diaktifkan oleh admin
+- **[FIX]** Push ke aplikasi pelanggan (FCM) tidak terkirim ke pelanggan yang hanya memakai aplikasi: pengiriman berhenti bila tidak ada langganan browser, dan kunci VAPID yang kosong ikut membatalkan push aplikasi
+
+### Sistem, FreeRADIUS dan Installer
+- **[FEATURE]** Panduan di panel: tombol Panduan di bilah atas membuka panduan halaman yang sedang dibuka, dan Pusat Panduan memuat urutan pengaturan awal serta semua panduan yang bisa dicari
+- **[CHORE]** Pemakaian Data (web dan aplikasi) dihapus beserta API-nya: halaman itu menyebut agregasi harian yang tidak pernah ada, jadi hanya terisi setelah ditekan manual. Tabelnya dibiarkan
+- **[FIX]** Log Autentikasi menampilkan waktu terlambat 7 jam dan hitungan hari ini mulai dari pukul 07.00 hari sebelumnya; kini mengikuti zona waktu perusahaan. Job baru `radpostauth_cleanup` menyimpan 30 hari log (tabelnya sempat mencapai 2,8 juta baris)
+- **[FIX]** FreeRADIUS: hook REST menuju API (bukan frontend), sehingga akun diblokir atau kedaluwarsa kini ditolak dan voucher hotspot mendapat waktu login pertama dan masa berlaku; koneksi SQL diperbarui tiap jam sehingga login pertama setelah sepi tidak ditolak; salinan modul di `mods-enabled` ikut diperbaiki
+- **[FIX]** PM2: backend tidak lagi dimatikan setiap menit yang sibuk (batas memori dinaikkan ke 768M, dipasang oleh `deploy/fix-pm2-limits.sh` dan updater)
+- **[FIX]** Installer: instalasi baru dan uninstall berjalan tanpa macet (cron crash saat start, `clear` tanpa TERM, `pm2 delete` yang menggantung, password root MySQL salah), dan nginx menyajikan `/uploads/` dari folder unggahan sehingga foto bukti dan KTP tidak 404
+- **[FIX]** Update Sekarang mengulang build satu kali dengan `.next/cache` kosong bila build gagal, karena cache yang rusak membuat build gagal dengan pesan modul font tidak ditemukan
+
+### Aplikasi Admin Android
+- **[FEATURE]** Pusat Panduan dan tombol Panduan per layar, Aksi Cepat di dashboard, dan menu yang ditampilkan menurut izin role
+- **[FEATURE]** Username dan password teknisi, serta router/NAS pada kolektor, di Kelola Teknisi dan Kolektor
+- **[CHORE]** Aplikasi admin naik ke 1.0.13
+
+### Catatan Pembaruan
+- Update Sekarang menjalankan `prisma db push` yang membuat tabel `collector_notifications` dan `collector_push_subscriptions` serta menambah kolom nullable (username dan password teknisi, router kolektor, dan konfirmasi setoran per invoice). Tidak ada data yang dihapus
+- Web push butuh `VAPID_PUBLIC_KEY` dan `VAPID_PRIVATE_KEY` di `.env` backend (buat dengan `npx web-push generate-vapid-keys`), dan portal dibuka lewat HTTPS
+- Teknisi lama harus diisi username dan password di Kelola Teknisi sebelum bisa masuk
+- **[CHORE]** Bump versi root, frontend, dan backend ke 5.24.0
+
+---
+
 ### v5.23.0 — 2026-10-20 - Bayar di Dalam Aplikasi + Update APK dari Aplikasi + Kasir QRIS di Aplikasi Admin + Peta Jaringan
 
 ### Summary
@@ -1324,40 +1393,6 @@ Tiga fitur besar: (1) Bulk edit pelanggan PPPoE untuk Router/Hari Tagihan/Auto I
 ### Other
 - **[CHORE]** Bump service worker cache ke v28
 - **[CHORE]** Bump root & frontend package.json version ke 5.20.0
-
----
-
-### v5.19.1 — 2026-09-06 — Rekap Voucher Rombak + PPPoE Profile Sync + CSP Fix
-
-### Summary
-Rombak total laporan Rekap Voucher agar support penjualan harian/mingguan/bulanan berdasarkan tanggal terjual (`firstLoginAt`), bukan tanggal batch dibuat (`createdAt`). Fix PPPoE user stuck di profile isolir setelah restore. Fix Cloudflare Web Analytics CSP error. Cleanup file debug/temp dari repo.
-
-### Rekap Voucher — Rombak Laporan Penjualan
-- **[FEATURE]** Filter periode (Harian/Mingguan/Bulanan) sekarang filter by `firstLoginAt` (tanggal voucher terjual/digunakan), bukan `createdAt` (tanggal batch dibuat)
-- **[FEATURE]** Mode "Semua Data" tetap filter by `createdAt` dengan full batch counts (qty, stock, sold, active, expired)
-- **[FEATURE]** Tabel "Rincian Penjualan per Hari" — rincian penjualan per tanggal dalam periode (sold, active, expired, revenue)
-- **[FEATURE]** Tabel "Pendapatan per Agent" — summary terjual & profit per agent
-- **[FEATURE]** Export Excel ikut rombak — konsisten dengan API
-- **[FEATURE]** Support both RADIUS NAS (`post-auth` hook set `firstLoginAt`) dan Local NAS (sync dari MikroTik `/system/script` format `user/price/sales/date/time/phone/seller`)
-- **[UI]** Rombak tampilan lebih simple & clean — hilangkan efek neon/glow/blur berlebihan, compact stat pills, responsive card/table
-- **[FIX]** colSpan tfoot mode "Semua" (8 → 6) agar baris Total sejajar dengan kolom
-- **[FIX]** `whitespace-nowrap` + `min-w` di semua tabel agar kolom tidak wrap/truncate
-
-### PPPoE Profile Synchronization
-- **[CRITICAL]** User active di DB tapi MikroTik masih pakai profile `isolir` setelah restore — session tidak di-kick, RouterOS retain profile lama
-- **[FIX]** Kick active PPPoE session saat restore dari isolated/blocked/stop ke active (`status/route.ts`, `bulk-status/route.ts`)
-- **[FIX]** CoA handler: gunakan router user yang sebenarnya untuk MikroTik API fallback kick (`coa-handler.service.ts`)
-- **[FIX]** `runSuspendCheck`: sync RADIUS + MikroTik saat manual suspend
-- **[FEATURE]** Reconciliation script: cek MikroTik PPP secret langsung, repair RADIUS group + MikroTik secret profile, kick affected sessions (`profile-sync-repair.service.ts`)
-
-### Cloudflare Web Analytics CSP Fix
-- **[FIX]** `VM... startTime` error dari Cloudflare beacon.min.js yang inject `reportAllChanges`
-- **[FIX]** Remove `https://static.cloudflareinsights.com` dan `https://cloudflareinsights.com` dari CSP `script-src` dan `connect-src` di `frontend/next.config.ts`
-
-### Project Cleanup
-- **[CHORE]** Remove 18 file debug/temp dari git tracking (`.check-*`, `.debug-*`, `.test-*`, `.commit-msg-*`, `.trigger-*`)
-- **[CHORE]** Update `.gitignore` untuk mencegah file debug/temp ter-commit lagi
-- **[CHORE]** Update README — tambah info Rekap Voucher di feature table
 
 ---
 
