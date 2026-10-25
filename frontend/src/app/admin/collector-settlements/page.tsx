@@ -197,13 +197,15 @@ export default function AdminCollectorSettlementsPage() {
     return next;
   });
 
-  const setConfirmed = async (rows: Payment[], confirm: boolean) => {
+  // `rowKey` is set when one row's own button started it: that row shows the
+  // spinner and the ticked rows stay ticked.
+  const setConfirmed = async (rows: Payment[], confirm: boolean, rowKey?: string) => {
     if (rows.length === 0) return;
-    setBusy(confirm ? 'confirm' : 'undo');
+    setBusy(rowKey || (confirm ? 'confirm' : 'undo'));
     try {
       await apiAdmin('/api/collector/setoran/confirm', { method: 'POST', body: JSON.stringify({ invoiceIds: rows.map((r) => r.id), confirm }) });
       showSuccess(confirm ? `${rows.length} pembayaran dikonfirmasi` : `Konfirmasi ${rows.length} pembayaran dibatalkan`);
-      setSelected(new Set());
+      if (!rowKey) setSelected(new Set());
       await load();
     } catch (e) {
       showError(e instanceof Error ? e.message : 'Konfirmasi gagal disimpan');
@@ -228,6 +230,21 @@ export default function AdminCollectorSettlementsPage() {
   };
 
   const activeCollectors = data.filter((c) => c.is_active);
+
+  // The same action on one payment, as its own button next to the row.
+  const rowAction = (p: Payment) => {
+    const key = `row|${p.id}`;
+    const spinning = busy === key;
+    return p.confirmed_by ? (
+      <Button type="button" variant="outline" size="sm" className="h-8 text-xs text-destructive" disabled={busy !== null} aria-label={`Batalkan konfirmasi ${p.invoiceNumber}`} onClick={() => setConfirmed([p], false, key)}>
+        {spinning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Batalkan'}
+      </Button>
+    ) : (
+      <Button type="button" size="sm" className="h-8 text-xs" disabled={busy !== null} aria-label={`Konfirmasi ${p.invoiceNumber}`} onClick={() => setConfirmed([p], true, key)}>
+        {spinning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Konfirmasi'}
+      </Button>
+    );
+  };
   const input = 'h-9 rounded-lg border border-input bg-background px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring';
   const checkbox = 'h-4 w-4 shrink-0 rounded border-input accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
   const rangeLabel = mode === 'daily' ? fmtDay(date) : `${fmtDay(from)} sampai ${fmtDay(to)}`;
@@ -425,6 +442,7 @@ export default function AdminCollectorSettlementsPage() {
                           <th scope="col" className="px-3 py-2.5 text-left font-medium">Metode</th>
                           <th scope="col" className="px-3 py-2.5 text-right font-medium">Jumlah</th>
                           <th scope="col" className="px-3 py-2.5 text-left font-medium">Status</th>
+                          <th scope="col" className="px-3 py-2.5 text-right font-medium">Aksi</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
@@ -458,6 +476,7 @@ export default function AdminCollectorSettlementsPage() {
                               <ConfirmState by={p.confirmed_by} />
                               {p.confirmed_by && <p className="mt-1 text-xs text-muted-foreground">{p.confirmed_by}</p>}
                             </td>
+                            <td className="whitespace-nowrap px-3 py-3 text-right">{rowAction(p)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -487,6 +506,7 @@ export default function AdminCollectorSettlementsPage() {
                               <span className="text-xs text-muted-foreground">{p.collectorName} · {timeOf(p.paidAt)}</span>
                             </div>
                             <p className="mt-1 text-xs text-muted-foreground">{p.invoiceNumber}{p.has_proof && ' · ada bukti transfer'}</p>
+                            <div className="mt-3">{rowAction(p)}</div>
                           </div>
                         </div>
                       </li>
