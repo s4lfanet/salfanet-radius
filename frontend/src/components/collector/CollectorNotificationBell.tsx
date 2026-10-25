@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bell, BellOff, BellRing, CheckCheck, Inbox, Loader2, RotateCcw, Ticket, Wallet, X, XCircle } from 'lucide-react';
+import { Bell, BellRing, CheckCheck, Inbox, Loader2, RotateCcw, Ticket, Wallet, X, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiAdmin } from '@/lib/api/client';
 import { formatWIB } from '@/lib/timezone';
+import { useCollectorPush, CollectorPushRow } from './CollectorPush';
 
 interface NotifEvent {
   id: string;
@@ -21,13 +22,6 @@ interface NotifResponse {
   success: boolean;
   events: NotifEvent[];
   unread: number;
-}
-
-function urlBase64ToUint8Array(base64String: string) {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = window.atob(base64);
-  return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
 }
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -55,11 +49,7 @@ export default function CollectorNotificationBell() {
   const [unread, setUnread] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const [markingAll, setMarkingAll] = useState(false);
-  const [pushSupported, setPushSupported] = useState(false);
-  const [pushSubscribed, setPushSubscribed] = useState(false);
-  const [pushLoading, setPushLoading] = useState(false);
-  const [pushError, setPushError] = useState<string | null>(null);
-  const [permission, setPermission] = useState<NotificationPermission>('default');
+  const push = useCollectorPush();
   const panelRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
@@ -91,31 +81,6 @@ export default function CollectorNotificationBell() {
     navigator.serviceWorker.addEventListener('message', onMessage);
     return () => navigator.serviceWorker.removeEventListener('message', onMessage);
   }, [load, router]);
-
-  // Browser push: is this device already subscribed? If so, make sure the
-  // server knows too (an earlier failed sign-up would otherwise stay silent).
-  useEffect(() => {
-    const supported = typeof window !== 'undefined' && 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
-    setPushSupported(supported);
-    if (!supported) return;
-    setPermission(Notification.permission);
-    (async () => {
-      try {
-        const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
-        await navigator.serviceWorker.ready;
-        const sub = await reg.pushManager.getSubscription();
-        setPushSubscribed(!!sub);
-        if (sub && Notification.permission === 'granted') {
-          await fetch('/api/push/collector-subscribe', {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ subscription: sub.toJSON() }),
-          }).catch(() => {});
-        }
-      } catch { /* the toggle reports problems when it is used */ }
-    })();
-  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -152,72 +117,7 @@ export default function CollectorNotificationBell() {
     }
   };
 
-  const handlePushToggle = async () => {
-    if (!pushSupported) return;
-    setPushLoading(true);
-    setPushError(null);
-    try {
-      if (pushSubscribed) {
-        const reg = await navigator.serviceWorker.ready;
-        const sub = await reg.pushManager.getSubscription();
-        if (sub) {
-          await sub.unsubscribe();
-          await fetch('/api/push/collector-unsubscribe', {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ endpoint: sub.endpoint }),
-          }).catch(() => {});
-        }
-        setPushSubscribed(false);
-        return;
-      }
-
-      let perm = Notification.permission;
-      if (perm === 'default') {
-        perm = await Notification.requestPermission();
-        setPermission(perm);
-      }
-      if (perm !== 'granted') {
-        setPushError('Izin notifikasi ditolak. Aktifkan lewat pengaturan situs di browser.');
-        return;
-      }
-      const vapidRes = await fetch('/api/push/vapid-public-key');
-      const vapid = await vapidRes.json().catch(() => ({ success: false }));
-      if (!vapid.success || !vapid.publicKey) {
-        setPushError('Notifikasi push belum diaktifkan di server. Hubungi admin.');
-        return;
-      }
-      const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
-      await navigator.serviceWorker.ready;
-      let sub = await reg.pushManager.getSubscription();
-      if (!sub) {
-        sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(vapid.publicKey) });
-      }
-      const res = await fetch('/api/push/collector-subscribe', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscription: sub.toJSON() }),
-      });
-      const saved = await res.json().catch(() => ({ success: false }));
-      if (!saved.success) {
-        await sub.unsubscribe();
-        setPushError(saved.error || 'Gagal mendaftarkan notifikasi di server.');
-        return;
-      }
-      setPushSubscribed(true);
-      setPermission('granted');
-    } catch (e) {
-      console.error('[CollectorPush]', e);
-      setPushError('Notifikasi push tidak bisa diaktifkan di browser ini.');
-    } finally {
-      setPushLoading(false);
-    }
-  };
-
   const iconBtn = 'relative h-[40px] pointer-coarse:h-[44px] w-[40px] pointer-coarse:w-[44px] flex items-center justify-center rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600';
-  const pushOn = pushSubscribed && permission === 'granted';
 
   return (
     <div className="relative">
@@ -229,7 +129,7 @@ export default function CollectorNotificationBell() {
         aria-label={unread > 0 ? `Notifikasi, ${unread} belum dibaca` : 'Notifikasi'}
         className={cn(iconBtn, 'text-muted-foreground hover:bg-muted hover:text-foreground')}
       >
-        {pushOn ? <BellRing className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
+        {push.on ? <BellRing className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
         {unread > 0 && (
           <span className="absolute top-1.5 right-1.5 min-w-4 h-4 px-1 bg-red-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center" aria-hidden>
             {unread > 9 ? '9+' : unread}
@@ -296,29 +196,9 @@ export default function CollectorNotificationBell() {
               )}
             </div>
 
-            {pushSupported && (
-              <div className="border-t border-border p-3 shrink-0">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-xs font-medium text-foreground">Notifikasi di perangkat ini</p>
-                    <p className="text-xs text-muted-foreground">
-                      {permission === 'denied' ? 'Diblokir di pengaturan browser' : pushOn ? 'Aktif, muncul walau portal tertutup' : 'Nonaktif'}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handlePushToggle}
-                    disabled={pushLoading || permission === 'denied'}
-                    aria-pressed={pushOn}
-                    className="h-8 shrink-0 px-3 rounded-lg border border-border text-xs font-medium text-foreground hover:bg-muted disabled:opacity-50 inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
-                  >
-                    {pushLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : pushOn ? <BellOff className="w-3.5 h-3.5" /> : <BellRing className="w-3.5 h-3.5" />}
-                    {pushOn ? 'Matikan' : 'Aktifkan'}
-                  </button>
-                </div>
-                {pushError && <p className="mt-2 text-xs text-red-700 dark:text-red-400" role="alert">{pushError}</p>}
-              </div>
-            )}
+            <div className="border-t border-border pt-3 shrink-0">
+              <CollectorPushRow />
+            </div>
           </div>
         </>
       )}
