@@ -99,5 +99,28 @@ export async function GET(req: NextRequest) {
     prisma.pppoeUser.count({ where }),
   ]);
 
-  return NextResponse.json({ users, total, page, limit, pages: Math.ceil(total / limit) });
+  // Payment status per customer, same concept as the collector table:
+  // 'overdue' = an unpaid invoice past its due date, 'unpaid' = an unpaid
+  // invoice not yet due, 'paid' = no outstanding invoice.
+  const userIds = users.map((u) => u.id);
+  const openInvoices = userIds.length
+    ? await prisma.invoice.findMany({
+        where: { userId: { in: userIds }, status: { in: ['pending', 'unpaid', 'overdue'] } },
+        select: { userId: true, status: true, dueDate: true },
+        orderBy: { dueDate: 'desc' },
+      })
+    : [];
+  const now = new Date();
+  const paymentMap = new Map<string, 'overdue' | 'unpaid'>();
+  for (const inv of openInvoices) {
+    if (!inv.userId || paymentMap.get(inv.userId) === 'overdue') continue;
+    const overdue = inv.status === 'overdue' || (inv.dueDate !== null && new Date(inv.dueDate) < now);
+    paymentMap.set(inv.userId, overdue ? 'overdue' : 'unpaid');
+  }
+  const enriched = users.map((u) => ({
+    ...u,
+    paymentStatus: paymentMap.get(u.id) ?? 'paid',
+  }));
+
+  return NextResponse.json({ users: enriched, total, page, limit, pages: Math.ceil(total / limit) });
 }
