@@ -272,6 +272,11 @@ model invoice {
   discountReason String?  @db.VarChar(255) // Reason for discount
   discountById   String?  @map("discount_by_id") // adminUser.id who applied discount
 
+  // Finance's check of what the collector handed over, one payment at a time.
+  // A day confirmed as a whole (collector_settlement_confirmations) also counts.
+  settlementConfirmedById String?   @map("settlement_confirmed_by")
+  settlementConfirmedAt   DateTime? @map("settlement_confirmed_at")
+
   // NEW: Invoice type and tax fields
   invoiceType    InvoiceType @default(MONTHLY)
   baseAmount     Int? // Amount before tax

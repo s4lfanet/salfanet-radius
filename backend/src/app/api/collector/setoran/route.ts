@@ -10,9 +10,10 @@ const isCash = (m: string | null) => !m || m === 'cash';
 
 /**
  * Settlement per collector: what each collector took in over one day, or over
- * a range with a row per day. Days follow the company time zone, the same as
- * the collector's own Setoran Saya, so both screens agree on which day a
- * payment belongs to.
+ * a range. Every payment carries the customer's details and whether finance
+ * has confirmed it. Days follow the company time zone, the same as the
+ * collector's own Setoran Saya, so both screens agree on which day a payment
+ * belongs to.
  *
  * `date` keeps the original response (an array of collectors) for the admin
  * app; `from` + `to` adds `days` to each collector.
@@ -59,7 +60,19 @@ export async function GET(req: NextRequest) {
         invoiceNumber: true,
         customerName: true,
         customerUsername: true,
+        customerPhone: true,
         collectorProof: true,
+        settlementConfirmedById: true,
+        settlementConfirmedAt: true,
+        user: {
+          select: {
+            customerId: true,
+            phone: true,
+            address: true,
+            area: { select: { name: true } },
+            profile: { select: { name: true } },
+          },
+        },
       },
       orderBy: { paidAt: 'desc' },
     });
@@ -73,16 +86,27 @@ export async function GET(req: NextRequest) {
       orderBy: { name: 'asc' },
     });
 
-    const confirmations = await prisma.collectorSettlementConfirmation.findMany({
+    const dayRecords = await prisma.collectorSettlementConfirmation.findMany({
       where: { date: { gte: first, lte: last } },
       select: { collectorId: true, date: true, confirmedBy: true, confirmedAt: true },
     });
-    const admins = await prisma.adminUser.findMany({
-      where: { id: { in: [...new Set(confirmations.map((c) => c.confirmedBy))] } },
-      select: { id: true, name: true },
-    });
-    const adminName = new Map(admins.map((a) => [a.id, a.name]));
-    const confirmationOf = new Map(confirmations.map((c) => [`${c.collectorId}|${c.date}`, c]));
+    const recordOf = new Map(dayRecords.map((c) => [`${c.collectorId}|${c.date}`, c]));
+
+    const confirmerIds = new Set<string>([
+      ...dayRecords.map((c) => c.confirmedBy),
+      ...invoices.map((i) => i.settlementConfirmedById).filter((v): v is string => !!v),
+    ]);
+    const admins = await prisma.adminUser.findMany({ where: { id: { in: [...confirmerIds] } }, select: { id: true, name: true } });
+    const adminName = new Map(admins.map((a) => [a.id, a.name || 'Admin']));
+
+    // A payment is confirmed on its own, or because its collector's day was.
+    const confirmationOf = (i: (typeof invoices)[number]) => {
+      if (i.settlementConfirmedAt && i.settlementConfirmedById) {
+        return { by: adminName.get(i.settlementConfirmedById) || 'Admin', at: i.settlementConfirmedAt };
+      }
+      const rec = i.paidAt && i.paidById ? recordOf.get(`${i.paidById}|${formatWIB(i.paidAt, 'yyyy-MM-dd')}`) : undefined;
+      return rec ? { by: adminName.get(rec.confirmedBy) || 'Admin', at: rec.confirmedAt } : null;
+    };
 
     const totals = (rows: typeof invoices) => ({
       invoice_count: rows.length,
@@ -91,20 +115,23 @@ export async function GET(req: NextRequest) {
       transfer_amount: rows.filter((i) => !isCash(i.paymentMethod)).reduce((s, i) => s + i.amount, 0),
     });
 
+    // A group of payments counts as confirmed when every one of them is.
+    const groupConfirmation = (rows: typeof invoices) => {
+      if (rows.length === 0) return null;
+      const all = rows.map(confirmationOf);
+      if (all.some((c) => !c)) return null;
+      return all.reduce((latest, c) => (c!.at > latest!.at ? c : latest), all[0])!;
+    };
+
     const result = collectors.map((c) => {
       const own = invoices.filter((i) => i.paidById === c.id);
-      const conf = confirmationOf.get(`${c.id}|${first}`);
+      const whole = !isRange ? groupConfirmation(own) : null;
 
       const days = isRange
         ? [...new Set(own.map((i) => formatWIB(i.paidAt!, 'yyyy-MM-dd')))].sort().reverse().map((day) => {
             const dayRows = own.filter((i) => formatWIB(i.paidAt!, 'yyyy-MM-dd') === day);
-            const dayConf = confirmationOf.get(`${c.id}|${day}`);
-            return {
-              date: day,
-              ...totals(dayRows),
-              confirmed_by: dayConf ? adminName.get(dayConf.confirmedBy) || 'Admin' : null,
-              confirmed_at: dayConf?.confirmedAt || null,
-            };
+            const dayConf = groupConfirmation(dayRows);
+            return { date: day, ...totals(dayRows), confirmed_by: dayConf?.by || null, confirmed_at: dayConf?.at || null };
           })
         : undefined;
 
@@ -114,20 +141,29 @@ export async function GET(req: NextRequest) {
         collector_username: c.username,
         is_active: c.isActive,
         ...totals(own),
-        // One day: the confirmation of that day. A range has one per day, in `days`.
-        confirmed_by: !isRange && conf ? adminName.get(conf.confirmedBy) || 'Admin' : null,
-        confirmed_at: !isRange && conf ? conf.confirmedAt : null,
+        confirmed_by: whole?.by || null,
+        confirmed_at: whole?.at || null,
         ...(days && { days }),
-        invoices: own.map((i) => ({
-          id: i.id,
-          invoiceNumber: i.invoiceNumber,
-          amount: i.amount,
-          paymentMethod: i.paymentMethod,
-          paidAt: i.paidAt,
-          customerName: i.customerName,
-          customerUsername: i.customerUsername,
-          has_proof: !!i.collectorProof,
-        })),
+        invoices: own.map((i) => {
+          const conf = confirmationOf(i);
+          return {
+            id: i.id,
+            invoiceNumber: i.invoiceNumber,
+            amount: i.amount,
+            paymentMethod: i.paymentMethod,
+            paidAt: i.paidAt,
+            customerName: i.customerName,
+            customerUsername: i.customerUsername,
+            customerId: i.user?.customerId || null,
+            phone: i.user?.phone || i.customerPhone || null,
+            address: i.user?.address || null,
+            areaName: i.user?.area?.name || null,
+            profileName: i.user?.profile?.name || null,
+            has_proof: !!i.collectorProof,
+            confirmed_by: conf?.by || null,
+            confirmed_at: conf?.at || null,
+          };
+        }),
       };
     });
 
