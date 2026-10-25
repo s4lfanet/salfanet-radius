@@ -2,474 +2,153 @@
 
 ## Overview
 
-SALFANET RADIUS menggunakan **node-cron** untuk automated background tasks. Sistem ini menjalankan **13 scheduled jobs** untuk maintenance dan operasional otomatis.
+SALFANET RADIUS menjalankan **27 job terjadwal** untuk perawatan dan operasional otomatis (isolir, invoice, pengingat, sinkronisasi RADIUS/MikroTik, pembersihan log, backup). Penjadwal adalah proses PM2 terpisah (`salfanet-cron`) yang hanya memanggil API; logika tiap job ada di backend.
 
 ## Architecture
 
 ```
-src/lib/cron/
-├── config.ts               # Job definitions & schedules (13 jobs)
-├── auto-isolation.ts       # Auto isolir PPPoE users
-├── auto-renewal.ts         # Balance auto-renewal (daily 8 AM)
-├── freeradius-health.ts    # FreeRADIUS health monitor (every 5 min)
-├── helpers.ts              # Shared cron utilities
-├── hotspot-sync.ts         # Hotspot voucher sync (every minute)
-├── hotspot-voucher-cron.ts # Hotspot voucher batch operations
-├── invoice-status-updater.ts # Invoice status sync
-├── pppoe-session-sync.ts   # PPPoE session sync ⭐ NEW Mar 2026
-├── pppoe-sync.ts           # PPPoE auto isolir (every hour)
-├── telegram-cron.ts        # Telegram backup & health
-└── voucher-sync.ts         # Voucher & session sync jobs
+backend/
+├── cron-runner.ts                    # Penjadwal (node-cron) + lock + riwayat + catch-up
+└── src/
+    ├── app/api/cron/
+    │   ├── route.ts                  # POST: jalankan satu job. GET: riwayat
+    │   ├── status/route.ts           # Status semua job untuk halaman Cron
+    │   └── schedules/route.ts        # Ubah jadwal atau nonaktifkan job
+    └── server/
+        ├── cron/
+        │   ├── jobs.ts               # Daftar job, jadwal bawaan, status, jadwal efektif
+        │   ├── invoice-jobs.ts       # Invoice, pengingat, auto renewal, suspend
+        │   ├── auto-isolir.ts        # Isolir dan auto stop
+        │   ├── additional-jobs.ts    # Hotspot, agen, sesi
+        │   ├── financial-reconciliation.ts
+        │   └── telegram-backup.ts
+        └── services/cron-lock.service.ts   # Lock terdistribusi (tabel cronLock)
 
-src/app/api/cron/
-└── route.ts            # Manual trigger endpoint
-
-prisma/schema.prisma
-└── cronHistory         # Execution history table
+prisma/schema.prisma: cronHistory (riwayat), cronScheduleConfig (jadwal yang diubah admin), cronLock
 ```
 
-## Job Definitions
-
-### 1. Hotspot Sync (`hotspot_sync`) ⭐ UPDATED v2.7.4
-
-**Schedule:** Every minute (`* * * * *`)
-
-**Function:**
-- ✅ Deteksi first login voucher dari tabel `radacct`
-- ✅ Update status WAITING → USED saat first login
-- ✅ Set `usedAt` dan `expiredAt` berdasarkan validity profile
-- ✅ Deteksi voucher expired (USED → EXPIRED)
-- ✅ **Reply-Message for Expired Vouchers** (v2.7.4):
-  - Set password = "EXPIRED" di `radcheck` (prevent auth)
-  - Add Reply-Message = "Kode Voucher Kadaluarsa" di `radreply`
-  - Remove from `radusergroup` (remove bandwidth)
-
-**Handler:** `src/lib/cron/hotspot-sync.ts → syncHotspotWithRadius()`
-
-**Database Tables:**
-- **Read:** `hotspot_vouchers`, `radacct`, `radusergroup`
-- **Write:** `hotspot_vouchers`, `radcheck`, `radreply`, `radusergroup`
-- **Log:** `cron_history`
-
-**Result Example:** `"Synced 150 vouchers, expired 5 with Reply-Message"`
-
-**MikroTik Log Output (When Expired):**
-```
-user WPCTVR login error: Kode Voucher Kadaluarsa
-```
-
----
-
-### 2. Voucher Sync (`voucher_sync`)
-
-**Schedule:** Every 5 minutes (`*/5 * * * *`)
-
-**Function:**
-- Sync voucher status with FreeRADIUS radcheck/radacct tables
-- Update firstLoginAt, expiresAt, status fields
-- Mark WAITING → ACTIVE when first login detected
-- Mark ACTIVE → EXPIRED when expiry time reached
-
-**Handler:** `src/lib/cron/voucher-sync.ts → syncVouchersWithRadius()`
-
-**Result Example:** `"Synced 150 vouchers"`
-
----
-
-### 3. Disconnect Sessions (`disconnect_sessions`) ⭐ NEW
-
-**Schedule:** Every 5 minutes (`*/5 * * * *`)
-
-**Function:**
-- Find expired vouchers with active RADIUS sessions
-- Send CoA (Change of Authorization) Disconnect-Request to FreeRADIUS
-- Force disconnect users with expired vouchers
-- Prevent continued usage after expiration
-
-**Handler:** `src/lib/cron/voucher-sync.ts → disconnectExpiredVoucherSessions()`
-
-**Result Example:** `"Disconnected 5 expired sessions"`
-
-**Technical Details:**
-```typescript
-// 1. Query expired vouchers with active sessions
-const expiredWithSessions = await prisma.hotspotVoucher.findMany({
-  where: {
-    status: 'EXPIRED',
-    expiresAt: { lt: now },
-    radacct: { some: { acctstoptime: null } }
-  }
-})
-
-// 2. Send CoA Disconnect-Request for each session
-const coaResult = await disconnectExpiredSessions()
-
-// 3. Record result in cron_history
-```
-
----
-
-### 4. Agent Sales (`agent_sales`)
-
-**Schedule:** Daily at 1 AM (`0 1 * * *`)
-
-**Function:**
-- Calculate total sales for each agent
-- Update agent statistics
-- Reset daily/monthly counters
-
-**Handler:** `src/lib/cron/agent.ts → updateAgentSales()`
-
----
-
-### 5. Auto Isolir (`auto_isolir`)
-
-**Schedule:** Every hour (`0 * * * *`)
-
-**Function:**
-- Find PPPoE users with overdue invoices
-- Auto-suspend (isolir) customers beyond grace period
-- Send notification via WhatsApp
-- Update user status to SUSPENDED
-
-**Handler:** `src/lib/cron/isolir.ts → autoIsolirOverdueUsers()`
-
-**Result Example:** `"Suspended 12 overdue users"`
-
-**Fixed Issues (v2.3.1):**
-- ✅ Added missing imports: `nowWIB, formatWIB, startOfDayWIBtoUTC, endOfDayWIBtoUTC`
-- ✅ Fixed "nowWIB is not defined" error
-
----
-
-### 6. Invoice Generation (`invoice_generation`)
-
-**Schedule:** Daily at 2 AM (`0 2 * * *`)
-
-**Function:**
-- Generate monthly invoices for active PPPoE users
-- Calculate total amount based on profile price
-- Set due date based on billing cycle
-- Send invoice notification via WhatsApp
-
-**Handler:** `src/lib/cron/invoice.ts → generateMonthlyInvoices()`
-
----
-
-### 7. Payment Reminder (`payment_reminder`)
-
-**Schedule:** Daily at 8 AM (`0 8 * * *`)
-
-**Function:**
-- Find unpaid invoices approaching due date
-- Send payment reminder via WhatsApp
-- Escalate reminders (first, second, final)
-
-**Handler:** `src/lib/cron/invoice.ts → sendPaymentReminders()`
-
----
-
-### 8. WhatsApp Queue (`whatsapp_queue`)
-
-**Schedule:** Every 10 minutes (`*/10 * * * *`)
-
-**Function:**
-- Process pending WhatsApp messages in queue
-- Rate limit: max 20 messages per batch
-- Retry failed messages (max 3 attempts)
-- Update queue status
-
-**Handler:** `src/lib/cron/whatsapp.ts → processWhatsAppQueue()`
-
----
-
-### 9. Expired Voucher Cleanup (`expired_voucher_cleanup`)
-
-**Schedule:** Daily at 3 AM (`0 3 * * *`)
-
-**Function:**
-- Delete expired vouchers older than 90 days
-- Keep vouchers with transaction history
-- Clean up unused vouchers
-
-**Handler:** `src/lib/cron/voucher-sync.ts → cleanupExpiredVouchers()`
-
-**Result Example:** `"Deleted 234 expired vouchers"`
-
----
-
-### 10. Activity Log Cleanup (`activity_log_cleanup`)
-
-**Schedule:** Daily at 2 AM (`0 2 * * *`)
-
-**Function:**
-- Delete activity logs older than 30 days
-- Maintain database performance
-- Keep recent logs for audit trail
-
-**Handler:** `src/lib/activity-log.ts → cleanOldActivities()`
-
-**Result Example:** `"Cleaned 245 old activities (older than 30 days)"`
-
-**Fixed Issues (v2.3.1):**
-- ✅ Modified to create/update `cron_history` records
-- ✅ Returns proper result message with count
-
----
-
-### 11. Session Cleanup (`session_cleanup`)
-
-**Schedule:** Daily at 4 AM (`0 4 * * *`)
-
-**Function:**
-- Archive old RADIUS session data (radacct)
-- Delete sessions older than 6 months
-- Optimize radacct table size
-
-**Handler:** `src/lib/cron/session.ts → cleanupOldSessions()`
-
----
-
-### 12. FreeRADIUS Health Check (`freeradius_health`) ⭐ NEW v2.9.1
-
-**Schedule:** Every 5 minutes (`*/5 * * * *`)
-
-**Function:**
-- Monitor FreeRADIUS service status and health
-- Check if service is running and responsive
-- Monitor CPU and memory usage
-- **Auto-restart if service is down or unresponsive**
-- Send WhatsApp/Email alerts to admins on issues
-- Log all health check results
-
-**Handler:** `src/lib/cron/freeradius-health.ts → freeradiusHealthCheck()`
-
-**Health Checks Performed:**
-1. **Service Status:** Check if FreeRADIUS is active via systemctl
-2. **Process Info:** Get PID, CPU, Memory usage
-3. **Uptime:** Calculate accurate uptime from systemctl
-4. **Responsiveness:** Test if FreeRADIUS responds to config check (`freeradius -C`)
-
-**Auto-Recovery Actions:**
-- If service is **down** → Automatically restart
-- If service is **unresponsive** → Automatically restart
-- If **restart succeeds** → Send warning alert to admins
-- If **restart fails** → Send critical alert requiring manual intervention
-
-**Alert Thresholds:**
-- CPU usage > 80% → Warning alert
-- Memory usage > 90% → Warning alert
-- Service down → Auto-restart + Warning alert
-- Restart failed → Critical alert
-
-**Result Example:**
-```json
-{
-  "success": true,
-  "status": {
-    "running": true,
-    "pid": 248543,
-    "uptime": "5h 32m",
-    "cpu": 0.2,
-    "memory": 2.1,
-    "responsive": true
-  },
-  "action": null  // or "restarted", "restart_failed"
-}
-```
-
-**Alert Format (WhatsApp/Email):**
-```
-🚨 FreeRADIUS Alert
-
-Severity: WARNING
-
-FreeRADIUS service was down and has been automatically restarted successfully.
-
-Time: 04/01/2026 12:30:45
-```
-
-**Database Logging:**
-All health checks are logged to `activity_logs` table with module `system`:
-- `action: 'health_check'` - Regular check results
-- `action: 'auto_restart'` - Successful auto-restart
-- `action: 'auto_restart_failed'` - Failed restart attempt
-
----
-
-## Execution History
-
-### Database Schema
-
-```prisma
-model cronHistory {
-  id          String   @id @default(cuid())
-  jobType     String   // Job identifier
-  status      String   // 'running', 'success', 'error'
-  startedAt   DateTime
-  completedAt DateTime?
-  duration    Int?     // Milliseconds
-  result      String?  @db.Text
-  error       String?  @db.Text
-  createdAt   DateTime @default(now())
-  
-  @@index([jobType, createdAt])
-}
-```
-
-### Recording Pattern
-
-All cron jobs follow this pattern:
-
-```typescript
-export async function myCronJob() {
-  const startedAt = new Date()
-  
-  // 1. Create history record with 'running' status
-  const history = await prisma.cronHistory.create({
-    data: {
-      id: nanoid(),
-      jobType: 'my_job_type',
-      status: 'running',
-      startedAt,
-    }
-  })
-  
-  try {
-    // 2. Execute job logic
-    const result = await doSomething()
-    
-    // 3. Update history with success
-    const completedAt = new Date()
-    await prisma.cronHistory.update({
-      where: { id: history.id },
-      data: {
-        status: 'success',
-        completedAt,
-        duration: completedAt.getTime() - startedAt.getTime(),
-        result: `Processed ${result.count} items`,
-      }
-    })
-    
-    return { success: true, count: result.count }
-    
-  } catch (error: any) {
-    // 4. Update history with error
-    await prisma.cronHistory.update({
-      where: { id: history.id },
-      data: {
-        status: 'error',
-        completedAt: new Date(),
-        error: error.message,
-      }
-    })
-    
-    return { success: false, error: error.message }
-  }
-}
-```
-
-## Manual Trigger
-
-### Via Admin Panel
-
-1. Navigate to **Settings → Cron**
-2. Find the job you want to trigger
-3. Click **"Trigger Now"** button
-4. Wait for result notification
-5. Check **Execution History** table for details
-
-### Via API
+### Alur satu run terjadwal
+
+1. node-cron memicu job pada waktunya, dalam **zona waktu perusahaan** (bukan zona VPS).
+2. Runner mengambil **lock** di database (TTL 10 menit, diperpanjang tiap 3 menit selama job berjalan). Kalau lock dipegang proses lain, run dilewati.
+3. Runner menulis satu baris `cronHistory` berstatus `running`.
+4. Runner memanggil `POST http://127.0.0.1:3001/api/cron` dengan header `x-cron-secret`. Alamat IPv4 dipakai langsung karena `localhost` bisa mengarah ke IPv6 lebih dulu sementara API hanya mendengarkan di IPv4. Bila sambungan gagal sebelum terhubung (`ECONNREFUSED`, `ETIMEDOUT`, dan sejenisnya), runner mencoba sekali lagi setelah 2 detik; kegagalan lain tidak diulang supaya job tidak jalan dua kali.
+5. API menjalankan job. Pada panggilan dari runner, API **tidak** mengambil lock lagi dan **tidak** menulis baris riwayat kedua.
+6. Runner mengisi baris riwayat: `success` atau `error`, durasi, dan hasil (maksimal 1000 karakter). Bila lock hilang di tengah jalan, run dicatat `error` (`LOCK_LOST`) agar tidak dianggap sah.
+
+Timeout per job (detik): `invoice_reminder` 3300, `telegram_backup` dan `radpostauth_cleanup` 900, `invoice_generate`, `radius_reconciliation`, dan `external_task_processor` 300, `radius_sync_retry`, `pppoe_session_sync`, `auto_renewal`, `auto_stop`, `notification_check`, dan `session_monitor` 180, selain itu 120.
+
+## Daftar Job
+
+| Job | Jadwal bawaan | Fungsi |
+|-----|---------------|--------|
+| hotspot_sync | `* * * * *` | Sinkronisasi voucher hotspot aktif dan kedaluwarsa |
+| external_task_processor | `* * * * *` | Memproses antrean tugas keluar (MikroTik, WhatsApp, email, CoA) |
+| agent_sales | `*/5 * * * *` | Mencatat penjualan voucher agen |
+| disconnect_sessions | `*/5 * * * *` | Memutus sesi pelanggan isolir atau stop |
+| pppoe_session_sync | `*/5 * * * *` | Sinkronisasi sesi PPPoE MikroTik ke radacct |
+| radius_sync_retry | `*/5 * * * *` | Mengulang sinkronisasi FreeRADIUS yang gagal |
+| freeradius_health | `*/5 * * * *` | Cek layanan FreeRADIUS |
+| hotspot_voucher_sync | `*/5 * * * *` | Status voucher dari router mode local-only |
+| olt_poll | `*/5 * * * *` | Polling semua OLT (status, ONU, daya optik) |
+| telegram_backup | `*/5 * * * *` | Backup database ke Telegram sesuai jadwal di Pengaturan Telegram (job memeriksa jadwal itu tiap 5 menit) |
+| acs_alert | `*/3 * * * *` | Penurunan RX dan ONU offline dari GenieACS |
+| session_monitor | `*/15 * * * *` | Sesi mencurigakan |
+| pppoe_auto_isolir | `0 * * * *` | Isolir pelanggan prabayar yang kedaluwarsa |
+| invoice_reminder | `0 * * * *` | Pengingat invoice lewat WhatsApp, email, dan push (lihat di bawah) |
+| invoice_status_update | `0 * * * *` | PENDING menjadi OVERDUE setelah jatuh tempo |
+| suspend_check | `0 * * * *` | Pelanggan yang perlu disuspend |
+| notification_check | `0 */6 * * *` | Notifikasi admin: invoice terlambat, pelanggan kedaluwarsa, pendaftaran menunggu |
+| activity_log_cleanup | `0 2 * * *` | Hapus log aktivitas lebih dari 30 hari, dan notifikasi kolektor (dibaca lebih dari 30 hari, atau belum dibaca lebih dari 60 hari) |
+| webhook_log_cleanup | `0 3 * * *` | Hapus log webhook lebih dari 7 hari |
+| radpostauth_cleanup | `30 3 * * *` | Hapus log autentikasi RADIUS lebih dari 30 hari, per batch |
+| cron_history_cleanup | `0 4 * * *` | Hapus riwayat cron lebih dari 30 hari |
+| financial_reconciliation | `0 5 * * *` | Kecocokan invoice dan pembayaran |
+| auto_stop | `0 5 * * *` | Menghentikan pelanggan yang terisolir lebih dari 30 hari dan menghapusnya dari RADIUS. **Nonaktif bawaan**, diaktifkan admin di halaman Cron |
+| invoice_auto_cancel | `0 6 * * *` | Batalkan invoice basi bila pelanggan sudah memperpanjang |
+| radius_reconciliation | `0 6 * * *` | Selisih data SalfaNet dan FreeRADIUS, dan perbaikan profil yang tertinggal di isolir |
+| invoice_generate | `0 7 * * *` | Buat invoice bulanan pelanggan pascabayar |
+| auto_renewal | `0 8 * * *` | Perpanjang otomatis pelanggan prabayar dari saldo |
+
+Daftar dan jadwal bawaan ada di `backend/src/server/cron/jobs.ts` (`CRON_JOB_DEFS`). Penjadwal membaca daftar yang sama di `backend/cron-runner.ts`; job baru harus ada di kedua tempat, dan `defaultEnabled: false` menandai job yang mati sampai admin menyalakannya.
+
+## Jadwal dan Pengaturan
+
+- **Settings > Cron** menampilkan status, jadwal berikutnya, dan riwayat tiap job. Jadwal bisa diubah atau job dinonaktifkan; perubahan disimpan di `cronScheduleConfig` dan dibaca runner saat start, jadi gunakan tombol restart cron di halaman itu (atau `pm2 restart salfanet-cron`) agar jadwal baru berlaku.
+- Jam dan hari dalam jadwal mengikuti zona waktu perusahaan (Pengaturan Perusahaan).
+
+## Mengejar Job yang Terlewat
+
+Penjadwal hanya berjalan saat prosesnya hidup. Saat runner mulai, job harian penting yang jamnya sudah lewat dan belum berhasil hari ini dijalankan sekali: `invoice_generate` (07:00), `auto_renewal` (08:00), `auto_stop` (05:00), `radius_reconciliation` (06:00), `financial_reconciliation` (05:00). Job yang sering berjalan tidak dikejar karena akan sembuh sendiri di putaran berikutnya.
+
+## Pengingat Invoice (`invoice_reminder`)
+
+Jadwalnya diatur di **Pengaturan WhatsApp > Notifikasi**: hari pengingat (selisih dari jatuh tempo: -7 berarti 7 hari sebelumnya, 0 hari H, 3 berarti 3 hari sesudahnya), jam kirim, ukuran batch dan jeda antar batch, serta urutan acak. Satu jadwal dipakai untuk WhatsApp, email (bila Notifikasi invoice menyala di pengaturan email), dan push aplikasi pelanggan.
+
+- Job berjalan tiap jam, tetapi tidak mengirim sebelum jam kirim.
+- Setiap invoice menerima tiap saluran paling banyak **sekali per hari pengingat**. Tanda terkirim disimpan di `invoice.sentReminders` (`w:` WhatsApp, `e:` email, `p:` push).
+- Bila semua provider WhatsApp gagal, tanda itu dilepas sehingga putaran berikutnya mencoba lagi.
+- Hanya invoice yang jatuh tempo tepat pada salah satu hari pengingat yang dikirimi. **Invoice yang sudah lewat jatuh tempo tidak diingatkan bila pengaturan tidak punya hari H+** (misalnya H+1 atau H+3).
+- Run memakai anggaran 50 menit; sisa pekerjaan dilanjutkan di putaran berikutnya.
+
+Hasil run (di riwayat dan di notifikasi hasil test manual) memuat `sent`, `skipped`, `total`, dan `note` berisi alasan bila tidak ada yang terkirim: tidak ada invoice di hari pengingat (disertai jumlah invoice belum lunas dan tanggal pengingat berikutnya), sudah dikirim hari ini, tanpa nomor HP, template `invoice-reminder` atau `invoice-overdue` tidak aktif, provider WhatsApp gagal, atau tidak ada provider aktif.
+
+## Menjalankan Manual
+
+### Dari panel admin
+
+Settings > Cron, tombol **Jalankan Sekarang** pada job (khusus Super Admin). Hasilnya muncul sebagai notifikasi singkat yang menyebut ringkasan, misalnya "terkirim 0 dari 1; 1 gagal dikirim provider WhatsApp".
+
+- Run manual mengambil lock sendiri (jika job sedang berjalan, jawabannya 409) dan menulis baris riwayatnya sendiri.
+- Khusus `invoice_reminder`, run manual tidak menunggu jam kirim, tetapi tetap hanya untuk invoice di hari pengingat dan tetap maksimal sekali per hari.
+
+### Dari API
 
 ```bash
-# Trigger specific job
-curl -X POST https://your-domain.com/api/cron \
+curl -X POST http://127.0.0.1:3001/api/cron \
   -H "Content-Type: application/json" \
-  -d '{"jobType": "voucher_sync"}'
-
-# Response:
-{
-  "success": true,
-  "synced": 150
-}
+  -H "x-cron-secret: $CRON_SECRET" \
+  -d '{"type":"invoice_reminder"}'
 ```
 
-### Job Type IDs
+`CRON_SECRET` wajib di produksi; tanpa itu API menolak. Nilainya dibandingkan dengan perbandingan waktu-konstan dan tidak pernah ditampilkan.
 
-| Job Type | ID for API |
-|----------|------------|
-| Hotspot Sync | `hotspot_sync` |
-| Voucher Sync | `voucher_sync` |
-| Disconnect Sessions | `disconnect_sessions` |
-| Agent Sales | `agent_sales` |
-| Auto Isolir | `auto_isolir` |
-| Invoice Generation | `invoice_generation` |
-| Payment Reminder | `payment_reminder` |
-| WhatsApp Queue | `whatsapp_queue` |
-| Expired Voucher | `expired_voucher_cleanup` |
-| Activity Log | `activity_log_cleanup` |
-| Session Cleanup | `session_cleanup` |
-| **FreeRADIUS Health** | `freeradius_health` |
+### Dari server
 
-## Frontend UI
-
-### Settings → Cron Page
-
-**Features:**
-- Job cards with schedule information
-- Enable/disable toggle (coming soon)
-- Manual trigger button
-- Execution history table with:
-  - Job type labels
-  - Status badges (success/error/running)
-  - Duration display
-  - Result/error messages
-  - Timestamp (WIB)
-
-**Code Location:** `src/app/admin/settings/cron/page.tsx`
-
-**Type Labels:**
-```typescript
-const typeLabels: Record<string, string> = {
-  voucher_sync: 'Voucher Sync',
-  disconnect_sessions: 'Disconnect Sessions',
-  agent_sales: 'Agent Sales Update',
-  auto_isolir: 'Auto Isolir',
-  invoice_generation: 'Invoice Generation',
-  payment_reminder: 'Payment Reminder',
-  whatsapp_queue: 'WhatsApp Queue',
-  expired_voucher_cleanup: 'Expired Voucher Cleanup',
-  activity_log_cleanup: 'Activity Log Cleanup',
-  session_cleanup: 'Session Cleanup',
-}
+```bash
+npx tsx backend/cron-runner.ts --job=invoice_reminder
 ```
+
+## Riwayat Eksekusi
+
+Tabel `cronHistory`: `jobType`, `status` (`running`, `success`, `error`), `startedAt`, `completedAt`, `duration`, `result`, `error`.
+
+- Satu baris per run terjadwal (ditulis runner) dan satu baris per run manual (ditulis API).
+- Baris yang tertinggal `running` karena proses dimulai ulang di tengah job (misalnya saat update) ditandai `error` dengan pesan *Interrupted (process restarted before job finished)* oleh runner saat start dan tiap 15 menit sesudahnya, bila umurnya melebihi timeout job terpanjang.
+- `cron_history_cleanup` menghapus riwayat lebih dari 30 hari.
+
 
 ## Troubleshooting
 
 ### Cron Jobs Not Running
 
-**Check PM2 logs:**
+**Pastikan proses penjadwal hidup dan jobnya terdaftar:**
 ```bash
-pm2 logs salfanet-radius | grep cron
+pm2 status salfanet-cron
+pm2 logs salfanet-cron --lines 50
 ```
+Saat start, runner mencetak satu baris per job (`[OK]` terjadwal, `[SKIP]` nonaktif, `[ERR]` jadwal tidak valid) dan jumlah job yang terjadwal.
 
-**Check node-cron initialization:**
-```bash
-pm2 logs salfanet-radius | grep "Starting cron"
-```
+**Pesan di riwayat:**
 
-**Verify cron config:**
-```typescript
-// src/lib/cron/config.ts
-export const cronJobs: CronJobConfig[] = [
-  {
-    type: 'voucher_sync',
-    enabled: true,  // ⚠️ Must be true
-    schedule: '*/5 * * * *',
-    handler: async () => { ... }
-  }
-]
-```
+| Pesan | Artinya |
+|-------|---------|
+| `HTTP request failed: ECONNREFUSED ...` | API (`salfanet-backend`, port 3001) belum atau tidak hidup saat job dipicu. Periksa `pm2 status` dan `CRON_API_URL` |
+| `Job timeout after Ns` | Job melewati batas waktunya (lihat daftar timeout di atas) |
+| `Interrupted (process restarted before job finished)` | Proses dimulai ulang di tengah job, misalnya saat update. Wajar, run berikutnya berjalan normal |
+| `LOCK_LOST ...` | Lock job hilang di tengah run; hasilnya tidak dianggap sah |
+| `DB lock failed (production)` | Runner tidak bisa mengambil lock; di produksi job tidak dijalankan |
+| `Server configuration error` | `CRON_SECRET` belum diisi di `.env` backend |
 
 ### "nowWIB is not defined" Error
 
@@ -833,9 +512,9 @@ result: 'Success'
 
 ## Future Enhancements
 
-- [ ] Enable/disable toggle for each job in UI
+- [x] Enable/disable toggle for each job in UI (Settings > Cron)
+- [x] Custom schedule configuration via admin panel
 - [ ] Email notifications for cron failures
-- [ ] Custom schedule configuration via admin panel
 - [ ] Job dependency management (run job B after job A)
 - [ ] Parallel execution for independent jobs
 - [ ] Retry mechanism for failed jobs
@@ -850,5 +529,5 @@ result: 'Success'
 
 ---
 
-**Last Updated:** December 7, 2025  
-**Version:** 2.3.1
+**Last Updated:** October 25, 2026  
+**Version:** 5.24.0

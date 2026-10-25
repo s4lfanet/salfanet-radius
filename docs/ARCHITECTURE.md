@@ -54,8 +54,8 @@ stays on the frontend.
 
 ```
 salfanet-radius/
-├── frontend/          # Next.js — UI (179 pages across 6 portals)
-├── backend/           # Next.js — API routes (466 route.ts) + cron + services
+├── frontend/          # Next.js — UI (183 pages across 6 portals)
+├── backend/           # Next.js — API routes (478 route.ts) + cron + services
 ├── packages/          # @salfanet/shared-types
 ├── deploy/            # PM2, Nginx, deploy scripts
 ├── docs/              # Architecture, roadmaps, feature docs
@@ -98,7 +98,7 @@ backend/
 - **Auth**: NextAuth JWT (admin, via `getServerSession`), Bearer token (customer/agent, from `localStorage`), signed cookie (technician/collector)
 - **Validation**: zod schemas per route (`src/lib/validators/`)
 
-### Cron Jobs (24)
+### Cron Jobs (27)
 
 Cron jobs are plain async functions in `backend/src/server/cron/`, scheduled
 via `node-cron` in `cron-runner.ts` (PM2 process `salfanet-cron`, separate
@@ -121,7 +121,7 @@ the admin UI (`cronScheduleConfig` table) and are distributed-locked via
 | acs_alert | `*/3 * * * *` | RX degradation & offline ONU via GenieACS |
 | session_monitor | `*/15 * * * *` | Detect suspicious sessions |
 | pppoe_auto_isolir | `0 * * * *` | Isolate expired prepaid users |
-| invoice_reminder | `0 * * * *` | Due-date reminders |
+| invoice_reminder | `0 * * * *` | Reminders by WhatsApp, email and push on the days and from the time set in Settings > WhatsApp > Notifikasi |
 | invoice_status_update | `0 * * * *` | Update invoice status (overdue/paid) |
 | suspend_check | `0 * * * *` | Check users needing suspend |
 | financial_reconciliation | `0 5 * * *` | Reconcile invoice/payment consistency |
@@ -129,9 +129,12 @@ the admin UI (`cronScheduleConfig` table) and are distributed-locked via
 | radius_reconciliation | `0 6 * * *` | Detect SalfaNet ↔ FreeRADIUS drift |
 | invoice_generate | `0 7 * * *` | Generate monthly (postpaid) invoices |
 | auto_renewal | `0 8 * * *` | Auto-renew prepaid from balance |
-| activity_log_cleanup | `0 2 * * *` | Delete activity log >30 days |
+| activity_log_cleanup | `0 2 * * *` | Delete activity log >30 days and old collector notifications |
 | webhook_log_cleanup | `0 3 * * *` | Delete webhook log >7 days |
+| radpostauth_cleanup | `30 3 * * *` | Delete RADIUS auth log >30 days |
 | cron_history_cleanup | `0 4 * * *` | Delete cron history >30 days |
+| telegram_backup | `*/5 * * * *` | Database backup to Telegram on the schedule set in Telegram settings |
+| auto_stop | `0 5 * * *` | Stop customers isolated >30 days. Off until an admin enables it |
 | notification_check | `0 */6 * * *` | Check expired/overdue/pending notifications |
 
 ## Frontend (Next.js)
