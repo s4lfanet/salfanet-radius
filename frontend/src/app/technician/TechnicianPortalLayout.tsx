@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Ticket, Wifi, WifiOff, UserPlus, LogOut, Menu, X, Wrench, Phone, Sun, Moon, Loader2, ChevronRight, User, Bell, Cpu, Clock, Unplug } from 'lucide-react';
+import { LayoutDashboard, Ticket, Wifi, WifiOff, UserPlus, LogOut, Menu, X, Wrench, Phone, Sun, Moon, Loader2, ChevronRight, User, Bell, Cpu, Clock, Unplug, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { onUnauthorized, apiAdmin } from '@/lib/api/client';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -51,6 +51,11 @@ const MENU_ITEMS: MenuItem[] = [
     titleKey: 'techPortal.offlineUsers',
     icon: <WifiOff className="w-4 h-4" />,
     href: '/technician/offline',
+  },
+  {
+    titleKey: 'techPortal.isolatedUsers',
+    icon: <AlertCircle className="w-4 h-4" />,
+    href: '/technician/isolated',
   },
   {
     titleKey: 'techPortal.ontTasks',
