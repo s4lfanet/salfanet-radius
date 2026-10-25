@@ -443,9 +443,9 @@ LIMIT 10;
 
 ## 📚 References
 
-- [PREPAID_POSTPAID_IMPLEMENTATION.md](./PREPAID_POSTPAID_IMPLEMENTATION.md) - Main billing system docs
-- [ROADMAP_BILLING_FIX.md](../ROADMAP_BILLING_FIX.md) - Complete roadmap
-- [Cron System Documentation](./CRON-SYSTEM.md) - Cron job configuration
+- [PREPAID_POSTPAID_IMPLEMENTATION.md](./PREPAID_POSTPAID_WORKFLOW_V3.md) - Main billing system docs
+- ROADMAP_BILLING_FIX.md - Complete roadmap
+- [Cron System Documentation](../features/CRON-SYSTEM.md) - Cron job configuration
 
 ---
 

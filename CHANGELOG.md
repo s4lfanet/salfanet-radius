@@ -1393,7 +1393,7 @@ Migrasi massif frontend dari inline `fetch()` ke **centralized API client** (`@/
 
 **Total: 52 batch, 361 inline `fetch()` calls di-migrasi, 0 inline `fetch()` tersisa di halaman yang sudah di-migrasi.**
 
-Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](FRONTEND_AUDIT.md)
+Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](./frontend/FRONTEND_AUDIT.md)
 
 ### Phase 1 — Architectural Cleanup (Prasyarat)
 
@@ -1632,7 +1632,7 @@ Melanjutkan migrasi API client dari Batch 53 sampai Batch 111 (selesai), dilanju
 
 **Total Phase 2: 111 batch, ~510 fetch calls di-migrasi, 55 fetch calls tersisa (semua legitimate blob/FormData/streaming downloads).**
 
-Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](FRONTEND_AUDIT.md)
+Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](./frontend/FRONTEND_AUDIT.md)
 
 ### Phase 2 — Batch 53–111 (Remaining Pages Migration)
 

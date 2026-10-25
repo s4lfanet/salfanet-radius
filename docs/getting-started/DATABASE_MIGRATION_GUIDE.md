@@ -83,7 +83,7 @@ npx prisma db push
 npx prisma generate
 
 # 4. Restart aplikasi
-pm2 restart salfanet-radius
+pm2 restart salfanet-backend
 ```
 
 ---
@@ -203,7 +203,7 @@ npx prisma studio
 npm run dev
 
 # Production
-pm2 restart salfanet-radius
+pm2 restart salfanet-backend
 ```
 
 ---

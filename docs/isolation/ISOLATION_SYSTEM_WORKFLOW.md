@@ -828,10 +828,10 @@ A properly working isolation system should:
 
 ## 📚 Related Documentation
 
-- [MIKROTIK_COA_SETUP.md](MIKROTIK_COA_SETUP.md) - CoA configuration guide
-- [BALANCE_AUTO_RENEWAL.md](BALANCE_AUTO_RENEWAL.md) - Auto-renewal system
-- [CRON-SYSTEM.md](CRON-SYSTEM.md) - Cron job documentation
-- [FREERADIUS-SETUP.md](FREERADIUS-SETUP.md) - RADIUS server setup
+- [MIKROTIK_COA_SETUP.md](../mikrotik/MIKROTIK_COA_SETUP.md) - CoA configuration guide
+- [BALANCE_AUTO_RENEWAL.md](../billing/BALANCE_AUTO_RENEWAL.md) - Auto-renewal system
+- [CRON-SYSTEM.md](../features/CRON-SYSTEM.md) - Cron job documentation
+- [FREERADIUS-SETUP.md](../setup/FREERADIUS-SETUP.md) - RADIUS server setup
 
 ---
 

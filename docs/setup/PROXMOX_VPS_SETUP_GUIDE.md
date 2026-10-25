@@ -431,8 +431,8 @@ print_success "Proxmox VPS PPP/TUN setup completed"
 
 - [FREERADIUS-SETUP.md](FREERADIUS-SETUP.md) - FreeRADIUS configuration
 - [VPN_CLIENT_SETUP_GUIDE.md](VPN_CLIENT_SETUP_GUIDE.md) - L2TP/IPSec setup
-- [DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md) - General deployment guide
-- [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common issues
+- [DEPLOYMENT-GUIDE.md](../../deploy/README.md) - General deployment guide
+- [TROUBLESHOOTING.md](../getting-started/TROUBLESHOOTING.md) - Common issues
 
 ---
 

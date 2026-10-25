@@ -17,11 +17,11 @@ Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with Free
 | **IP Pool** | RADIUS ippool module — dynamic IP allocation per speed tier, pool create/expand/delete, Pool-Name → group mapping, utilization stats |
 | **Hotspot Voucher** | 8 code types, batch up to 25,000, agent distribution, auto-sync with RADIUS, print templates, **MikroTik local-only mode** (voucher sync via RouterOS API, `salfanet:` comment marker, batch cleanup, cron status sync), **Rekap Voucher** (laporan penjualan per hari/minggu/bulan, filter by agent & profile, export Excel, rincian per hari, pendapatan per agent — support both RADIUS & local NAS via `firstLoginAt`) |
 | **Billing** | Postpaid/prepaid invoices, auto-generation, payment reminders, balance/deposit, auto-renewal |
-| **Payment** | Manual upload (bukti transfer), Midtrans/Xendit/Duitku gateway, approval workflow, 0–5 bank accounts |
-| **Notifications** | WhatsApp (Fonnte/WAHA/GOWA/MPWA/Wablas/WABlast/**Kirimi.id**/**Baileys native**), Email SMTP, broadcast (outage/invoice/payment), webhook pesan masuk |
+| **Payment** | Manual upload (bukti transfer), **QRIS Mandiri** (QR dinamis + listener), Midtrans/Xendit/Duitku/**Tripay** gateway, approval workflow, 0–5 bank accounts, halaman bayar publik `/pay/[token]` |
+| **Notifications** | WhatsApp (Fonnte/WAHA/GOWA/MPWA/Wablas/WABlast/**Kirimi.id**/**Baileys native**), Email SMTP, broadcast (outage/invoice/payment), webhook pesan masuk, **Telegram** (backup DB terjadwal + bot 2-arah untuk teknisi: cek redaman/pelanggan) |
 | **Agent/Reseller** | Balance-based voucher generation, commission tracking, sales stats |
 | **Financial** | Income/expense tracking with categories, keuangan reconciliation |
-| **Network (FTTH)** | OLT/ODC/ODP management, customer port assignment, network map, distance calculation |
+| **Network (FTTH)** | OLT multi-vendor (ZTE/Huawei/FiberHome/BDCOM/Hioso/Raisecom) via SNMP+Telnet+SSH, ONU discovery/register/reboot/config (dry-run preview + commit), ODC/ODP/fiber inventory & trace, network map, **OLT poll + low-signal & mass-outage alert per PON**, **ACS RX/offline alert via GenieACS** |
 | **GenieACS TR-069** | CPE/ONT management, WiFi config (SSID/password), device status & uptime |
 | **Isolation** | Auto-isolate expired customers, customizable WhatsApp/Email/HTML landing page templates, **fallback MikroTik API kick saat radacct kosong**, **HOTSPOT local mode isolation/reactivation** (manageHotspotUser enable/disable + kick), **connectionType-aware reactivation** (PPPoE & Hotspot) di semua route (webhook, mark-paid, status, bulk-status, extend) |
 | **Cron Jobs** | 27 automated background jobs (tsx runner via PM2 fork), history, distributed locking, manual trigger, **auto-close orphaned/stale sessions** |
@@ -176,7 +176,7 @@ Di halaman Data Pelanggan, select multiple pelanggan via checkbox, lalu klik tom
 
 Migrasi frontend dari inline `fetch()` ke **centralized API client** (`@/lib/api`) untuk semua halaman admin. Frontend sekarang **UI-only** — tidak ada direct Prisma/DB/MikroTik/SSH/FreeRADIUS access.
 
-Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](FRONTEND_AUDIT.md) · [`CHANGELOG.md`](CHANGELOG.md)
+Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](./frontend/FRONTEND_AUDIT.md) · [`CHANGELOG.md`](CHANGELOG.md)
 
 ### Phase 1 — Architectural Cleanup (Prasyarat)
 
@@ -316,7 +316,7 @@ Melanjutkan migrasi React Query dari Phase 7 untuk **semua halaman admin tersisa
 
 Implementasi @tanstack/react-query v5 untuk caching, deduplication, dan background refetching.
 
-Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](FRONTEND_AUDIT.md)
+Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](./frontend/FRONTEND_AUDIT.md)
 
 ### Yang Dikerjakan
 
@@ -359,7 +359,7 @@ Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](FRONTEND_AUDIT.md)
 
 Standardisasi error handling, loading states, dan confirmation dialogs di seluruh frontend.
 
-Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](FRONTEND_AUDIT.md)
+Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](./frontend/FRONTEND_AUDIT.md)
 
 ### Hasil
 
@@ -395,7 +395,7 @@ Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](FRONTEND_AUDIT.md)
 
 Perbaikan critical API client + pengurangan `any` ke minimum + dokumentasi semua exceptions.
 
-Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](FRONTEND_AUDIT.md) · [`docs/TYPE_SAFETY_EXCEPTIONS.md`](docs/TYPE_SAFETY_EXCEPTIONS.md)
+Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](./frontend/FRONTEND_AUDIT.md) · [`docs/TYPE_SAFETY_EXCEPTIONS.md`](docs/TYPE_SAFETY_EXCEPTIONS.md)
 
 ### Hasil
 
@@ -432,7 +432,7 @@ Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](FRONTEND_AUDIT.md) · [`docs/TYPE_SAF
 
 Pengurangan `any` secara signifikan tanpa memaksa `any = 0`. Membangun **safe type system** dengan explicit types, safe narrowing, dan response interfaces.
 
-Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](FRONTEND_AUDIT.md)
+Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](./frontend/FRONTEND_AUDIT.md)
 
 ### Hasil
 
@@ -469,7 +469,7 @@ Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](FRONTEND_AUDIT.md)
 Verifikasi bahwa Phase 5B API types benar-benar digunakan through complete data flow:
 `Backend API → API Response → apiAdmin() → Domain API module → Hook/Page → Component`
 
-Dokumentasi lengkap: [`docs/FRONTEND_API_CONTRACT.md`](docs/FRONTEND_API_CONTRACT.md) · [`FRONTEND_AUDIT.md`](FRONTEND_AUDIT.md)
+Dokumentasi lengkap: [`docs/FRONTEND_API_CONTRACT.md`](docs/FRONTEND_API_CONTRACT.md) · [`FRONTEND_AUDIT.md`](./frontend/FRONTEND_AUDIT.md)
 
 ### Hasil Audit
 
@@ -510,21 +510,21 @@ Dokumentasi lengkap: [`docs/FRONTEND_API_CONTRACT.md`](docs/FRONTEND_API_CONTRAC
 ---
 
 
-### IP Pool Management (`/api/v1/ippool`)
+### IP Pool Management (`/api/admin/ippool`)
 
 Dynamic IP allocation via FreeRADIUS `ippool` module — tidak perlu IP static per user.
 
 | Endpoint | Method | Fungsi |
 |----------|--------|--------|
-| `/api/v1/ippool` | GET | List semua pool dengan summary |
-| `/api/v1/ippool/stats` | GET | Statistik global (total, allocated, free, utilization) |
-| `/api/v1/ippool/:name` | GET | Detail pool + recent allocations |
-| `/api/v1/ippool` | POST | Create pool (pool_name, network, start, end) |
-| `/api/v1/ippool/expand` | PUT | Expand pool dengan IP tambahan |
-| `/api/v1/ippool` | DELETE | Hapus pool (hanya jika tidak ada allocation) |
-| `/api/v1/ippool/mappings/list` | GET | List Pool-Name → group mappings |
-| `/api/v1/ippool/mappings` | POST | Map pool ke RADIUS group |
-| `/api/v1/ippool/mappings/:id` | DELETE | Hapus mapping |
+| `/api/admin/ippool` | GET | List semua pool dengan summary |
+| `/api/admin/ippool/stats` | GET | Statistik global (total, allocated, free, utilization) |
+| `/api/admin/ippool/:name` | GET | Detail pool + recent allocations |
+| `/api/admin/ippool` | POST | Create pool (pool_name, network, start, end) |
+| `/api/admin/ippool/expand` | PUT | Expand pool dengan IP tambahan |
+| `/api/admin/ippool` | DELETE | Hapus pool (hanya jika tidak ada allocation) |
+| `/api/admin/ippool/mappings/list` | GET | List Pool-Name → group mappings |
+| `/api/admin/ippool/mappings` | POST | Map pool ke RADIUS group |
+| `/api/admin/ippool/mappings/:id` | DELETE | Hapus mapping |
 
 **Seed IP Pool per speed tier:**
 ```bash
@@ -656,6 +656,9 @@ salfanet-radius/                  # pnpm monorepo root
 │   └── package.json
 ├── packages/                     # Shared TypeScript types
 │   └── shared-types/
+├── mobile/                       # Native Flutter apps
+│   ├── customer_app/             # Customer portal app (payment, WiFi, tickets, FCM)
+│   └── admin_app/                # Staff app (customers, invoices, Kasir QRIS, map)
 ├── deploy/                       # Deployment configuration
 │   ├── ecosystem.config.js       # PM2 config (4 processes: frontend, backend, cron, wa)
 │   ├── nginx-salfanet.conf       # Nginx reverse proxy (2-app routing)
@@ -737,7 +740,7 @@ cd frontend && NODE_OPTIONS='--max-old-space-size=1536' npx next build && node s
 pm2 restart salfanet-frontend salfanet-backend salfanet-cron --update-env
 ```
 
-Lihat detail lengkap di [vps-install/README.md](vps-install/README.md).
+Lihat detail lengkap di [vps-install/README.md](./frontend/vps-install/README.md).
 
 ---
 
@@ -798,28 +801,39 @@ Config backup in `freeradius-config/` is auto-deployed by the installer.
 
 ---
 
-## ⏰ Cron Jobs (16 automated)
+## ⏰ Cron Jobs (27 automated)
+
+Dijalankan oleh `cron-runner.ts` (PM2 `salfanet-cron`). Jadwal bawaan bisa diubah, job bisa diaktif/nonaktifkan, dan semua job bisa dipicu manual dari **Settings → Cron** di panel admin. Detail lengkap: [docs/features/CRON-SYSTEM.md](docs/features/CRON-SYSTEM.md)
 
 | Job | Schedule | Function |
 |-----|----------|----------|
-| Voucher Sync | Every 5 min | Sync voucher status with RADIUS |
-| Disconnect Sessions | Every 5 min | CoA disconnect expired vouchers |
-| Auto Isolir (PPPoE) | Every hour | Suspend overdue customers |
+| Hotspot Sync | Every minute | Sync voucher hotspot aktif/kedaluwarsa |
+| External Task Processor | Every minute | Antrean tugas keluar (MikroTik, WhatsApp, email, CoA) |
+| Agent Sales | Every 5 min | Catat penjualan voucher agent |
+| Disconnect Sessions | Every 5 min | CoA disconnect pelanggan isolir/stop |
+| PPPoE Session Sync | Every 5 min | Sync sesi PPPoE MikroTik ke radacct |
+| RADIUS Sync Retry | Every 5 min | Ulangi sync FreeRADIUS yang gagal (backoff) |
 | FreeRADIUS Health | Every 5 min | Auto-restart if down |
-| PPPoE Session Sync | Every 10 min | Sync radacct sessions |
-| Agent Sales | Daily 1 AM | Update sales statistics |
-| Invoice Generate | Daily 2 AM | Generate monthly invoices |
-| Activity Log Cleanup | Daily 2 AM | Delete logs >30 days |
-| Invoice Reminder | Daily 8 AM | Send payment reminders |
-| Invoice Status | Daily 9 AM | Mark overdue invoices |
-| Notification Check | Every 10 min | Process notification queue |
-| Auto Renewal | Daily 8 AM | Prepaid auto-renew from balance |
-| Webhook Log Cleanup | Daily 3 AM | Delete webhook logs >30 days |
-| Session Monitor | Every 5 min | Security session monitoring |
-| Cron History Cleanup | Daily 4 AM | Keep last 50 per job type |
+| Hotspot Voucher Sync | Every 5 min | Status voucher dari router local-only |
+| OLT Poll | Every 5 min | Polling semua OLT (status, ONU, RX power, alert) |
+| Telegram Backup | Every 5 min | Backup DB ke Telegram sesuai jadwal pengaturan |
+| ACS Alert | Every 3 min | RX degradation & ONU offline via GenieACS |
+| Session Monitor | Every 15 min | Security session monitoring |
+| Auto Isolir (PPPoE) | Every hour | Isolir pelanggan prepaid kedaluwarsa |
+| Invoice Reminder | Every hour | Reminder invoice (kirim sesuai jam di pengaturan) |
+| Invoice Status | Every hour | PENDING → OVERDUE setelah jatuh tempo |
 | Suspend Check | Every hour | Activate/restore suspend requests |
-
-All jobs can be triggered manually from **Settings → Cron** in the admin panel.
+| Notification Check | Every 6 hours | Notifikasi admin (invoice telat, expired, pendaftaran) |
+| Activity Log Cleanup | Daily 2 AM | Log >30 hari + notifikasi kolektor lama |
+| Webhook Log Cleanup | Daily 3 AM | Delete webhook logs >7 days |
+| RADIUS Auth Log Cleanup | Daily 3:30 AM | Hapus radpostauth >30 hari (per batch) |
+| Cron History Cleanup | Daily 4 AM | Hapus cron history >30 hari |
+| Financial Reconciliation | Daily 5 AM | Kecocokan invoice–payment, deteksi anomali |
+| Auto Stop | Daily 5 AM | Stop pelanggan isolir >30 hari (**nonaktif bawaan**) |
+| Invoice Auto-Cancel | Daily 6 AM | Batalkan invoice basi (pelanggan sudah perpanjang) |
+| RADIUS Reconciliation | Daily 6 AM | Selisih data SalfaNet ↔ FreeRADIUS |
+| Invoice Generate | Daily 7 AM | Generate invoice bulanan (postpaid) |
+| Auto Renewal | Daily 8 AM | Prepaid auto-renew dari saldo |
 
 ---
 
@@ -972,7 +986,7 @@ Installer Nginx terbaru menambahkan self-check internal (`127.0.0.1:3000`, `127.
 
 ```bash
 cd /var/www/salfanet-radius
-bash vps-install/install-nginx.sh
+bash frontend/vps-install/install-nginx.sh
 ```
 
 Jika warning menunjukkan HTTP publik tidak reachable, fokus perbaikan di NAT/port-forward/security-group, bukan di Next.js.
@@ -1015,6 +1029,9 @@ Auto-triggered when: PPPoE profile speed is edited (syncs all active sessions).
 | GOWA | `http://IP:PORT` | `user:pass` |
 | MPWA | `http://IP:PORT` | API Key |
 | Wablas | `https://pati.wablas.com` | Token |
+| WABlast | `http://IP:PORT` | API Key |
+| Kirimi.id | `https://api.kirimi.id` | Token/Secret |
+| Baileys (native) | PM2 `salfanet-wa` (port 4000) | QR scan di admin panel |
 
 ---
 
@@ -1033,7 +1050,7 @@ For WITA (UTC+8) or WIT (UTC+9): change `TZ` in `.env`, `ecosystem.config.js`, a
 
 ## 📋 Admin Modules
 
-Dashboard · PPPoE · Hotspot · Agent · Invoice · Payment · Keuangan · Sessions · WhatsApp · Network (OLT/ODC/ODP) · GenieACS · Settings
+Dashboard · PPPoE (users, customers, profiles, areas, addons) · Hotspot (voucher, e-voucher, agent, template, rekap) · Invoice · Payment (gateway, proofs, bank accounts, manual) · Keuangan · Laporan (invoice, payment, customer, per-paket) · Sessions · Tickets · Network (OLT/ODC/ODP, fiber, map, routers) · GenieACS · Agent · Collector (kelola & setoran) · Technician · WhatsApp · Notifications & Push · IP Pool · Referral · Settings (cron, telegram, email, security, isolation, Cloudflare tunnel) · System (update, logs, APK)
 
 **Roles:** SUPER_ADMIN · FINANCE · CUSTOMER_SERVICE · TECHNICIAN · MARKETING · VIEWER
 
@@ -1404,11 +1421,14 @@ See full changelog: [CHANGELOG.md](CHANGELOG.md)
 
 | File | Description |
 |------|-------------|
-| [docs/INSTALLATION-GUIDE.md](docs/INSTALLATION-GUIDE.md) | Complete VPS installation |
-| [docs/GENIEACS-GUIDE.md](docs/GENIEACS-GUIDE.md) | GenieACS TR-069 setup & WiFi management |
-| [docs/AGENT_DEPOSIT_SYSTEM.md](docs/AGENT_DEPOSIT_SYSTEM.md) | Agent balance & deposit |
-| [docs/RADIUS-CONNECTIVITY.md](docs/RADIUS-CONNECTIVITY.md) | RADIUS architecture |
-| [docs/FREERADIUS-SETUP.md](docs/FREERADIUS-SETUP.md) | FreeRADIUS configuration guide |
+| [docs/DOCS_INDEX.md](./docs/DOCS_INDEX.md) | Index of all documentation |
+| [frontend/vps-install/README.md](./frontend/vps-install/README.md) | VPS installer: steps, environments, update, uninstall |
+| [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) | Architecture: apps, API, cron jobs, processes |
+| [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md) | Development guide |
+| [docs/features/CRON-SYSTEM.md](./docs/features/CRON-SYSTEM.md) | Cron jobs: runner, job list, history, manual runs |
+| [docs/setup/FREERADIUS-SETUP.md](./docs/setup/FREERADIUS-SETUP.md) | FreeRADIUS configuration guide |
+| [docs/features/GENIEACS-GUIDE.md](./docs/features/GENIEACS-GUIDE.md) | GenieACS TR-069 setup & WiFi management |
+| [docs/billing/AGENT_DEPOSIT_SYSTEM.md](./docs/billing/AGENT_DEPOSIT_SYSTEM.md) | Agent balance & deposit |
 
 ## 📝 License
 

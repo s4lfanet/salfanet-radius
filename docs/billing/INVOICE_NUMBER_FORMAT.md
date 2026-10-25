@@ -72,7 +72,7 @@ File **src/app/api/invoices/generate/route.ts** sudah menggunakan format yang be
 
 ### 3. Test Auto Generate Invoice
 ```
-1. Tunggu cron job atau test manual di /api/cron/test-reminder
+1. Tunggu job `invoice_generate` (07:00) atau jalankan manual dari Settings, Cron (`POST /api/cron` dengan `{"type":"invoice_generate"}`)
 2. Cek invoice yang di-generate
 3. Expected: Sequential per bulan (INV/2026/03/05/0001, 0002, dst.)
 ```
@@ -140,7 +140,7 @@ git pull origin main
 npm run build
 
 # 3. Restart PM2
-pm2 restart salfanet-radius
+pm2 restart salfanet-backend
 
 # 4. Test perpanjangan manual untuk verifikasi format baru
 ```
@@ -159,6 +159,6 @@ Jika ada gap dalam numbering (misal: 0001, 0003, 0005):
 
 ### Format Lama Masih Muncul
 - Clear cache: `npm run build`
-- Restart PM2: `pm2 restart salfanet-radius`
+- Restart PM2: `pm2 restart salfanet-backend`
 - Cek import statement di file API route
 

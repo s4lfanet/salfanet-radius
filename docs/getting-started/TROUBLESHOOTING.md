@@ -110,7 +110,7 @@ sudo mysql -e "GRANT ALL PRIVILEGES ON salfanet_radius.* TO 'salfanet_user'@'loc
 
 **Check PM2 Logs:**
 ```bash
-pm2 logs salfanet-radius --lines 50
+pm2 logs salfanet-backend --lines 50
 pm2 status
 ```
 
@@ -246,7 +246,7 @@ pm2 monit
 **Logs:**
 ```bash
 # Application logs
-pm2 logs salfanet-radius
+pm2 logs salfanet-backend
 
 # Nginx access log
 sudo tail -f /var/log/nginx/access.log
@@ -277,7 +277,7 @@ pm2 status
 If issues persist:
 
 1. **Check Logs First:**
-   - Application: `pm2 logs salfanet-radius`
+   - Application: `pm2 logs salfanet-backend`
    - System: `/var/log/syslog`
    - Nginx: `/var/log/nginx/error.log`
 

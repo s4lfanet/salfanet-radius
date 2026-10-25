@@ -511,7 +511,7 @@ Kemungkinan penyebab:
 Cek:
 - /ip firewall nat print (pastikan rule redirect ada)
 - /ip pool used print where pool=pool-isolir
-- pm2 logs salfanet-radius --lines 20 | grep PROXY
+- pm2 logs salfanet-backend --lines 20 | grep PROXY
 ```
 
 ### Info User Tidak Muncul di Halaman /isolated

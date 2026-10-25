@@ -299,7 +299,7 @@ export function generatePaymentLink(invoice: Invoice, baseUrl: string): string {
 4. User pilih payment method
 5. Redirect ke payment gateway
 6. User bayar
-7. Webhook dari payment gateway → /api/webhooks/[gateway]
+7. Webhook dari payment gateway → /api/payment/webhook (satu endpoint, gateway dikenali dari isi permintaan)
 8. Update invoice status → PAID
 9. Trigger auto-renewal cron
 10. User status → ACTIVE
@@ -312,7 +312,7 @@ export function generatePaymentLink(invoice: Invoice, baseUrl: string): string {
 1. **Invoice Table** has `paymentLink` column
 2. **Isolated Page** displays `invoice.paymentLink`
 3. **Payment Gateways** configured in `/admin/payment-gateway`
-4. **Webhooks** exist: `/api/webhooks/midtrans`, `/xendit`, `/duitku`
+4. **Webhook** ada di `/api/payment/webhook` (Midtrans, Xendit, Duitku, dan Tripay masuk ke endpoint yang sama)
 
 ### Payment Gateway IPs (untuk Firewall)
 
@@ -497,7 +497,7 @@ add action=deny \
                           ▼
 ┌─────────────────────────────────────────────────────────┐
 │  Payment Gateway sends Webhook                          │
-│  POST /api/webhooks/midtrans                           │
+│  POST /api/payment/webhook                              │
 │  {                                                       │
 │    "transaction_status": "settlement",                  │
 │    "order_id": "INV-2026-001",                         │

@@ -1,6 +1,6 @@
-# Laporan & Analitik — Panduan Fitur
+# Laporan & Export — Panduan Fitur
 
-> Versi: 2.10.25 | Menu: **Laporan → Data & Export** dan **Laporan → Analitik Advanced**
+> Menu: **Laporan → Data & Export**
 
 ---
 
@@ -17,7 +17,6 @@ Tambahkan di sidebar `/admin/` melalui menu group **Laporan**:
 | Menu | Path | Permission |
 |---|---|---|
 | Data & Export | `/admin/laporan` | `reports.view` |
-| Analitik Advanced | `/admin/laporan/analitik` | `reports.view` |
 
 ---
 
@@ -192,13 +191,11 @@ Response:
 
 | File | Fungsi |
 |---|---|
-| [src/app/admin/laporan/page.tsx](../../src/app/admin/laporan/page.tsx) | Halaman utama laporan (filter, preview, ekspor) |
-| [src/app/api/admin/laporan/route.ts](../../src/app/api/admin/laporan/route.ts) | API route — fetch & format data laporan |
-| [src/app/admin/laporan/analitik/page.tsx](../../src/app/admin/laporan/analitik/page.tsx) | Halaman analitik advanced |
-| [src/app/admin/layout.tsx](../../src/app/admin/layout.tsx) | Sidebar navigasi — menu group Laporan |
-| [src/locales/id.json](../../src/locales/id.json) | Terjemahan Indonesia (key: `nav.catReports`, `nav.laporanData`, dll) |
-| [src/locales/en.json](../../src/locales/en.json) | Terjemahan Inggris |
-| [prisma/schema.prisma](../../prisma/schema.prisma) | Model `invoice` dan `payment` (field `notes`) |
+| [src/app/admin/laporan/page.tsx](../../frontend/src/app/admin/laporan/page.tsx) | Halaman utama laporan (filter, preview, ekspor) |
+| [src/app/api/admin/laporan/route.ts](../../backend/src/app/api/admin/laporan/route.ts) | API route — fetch & format data laporan |
+| [src/app/admin/AdminClientLayout.tsx](../../frontend/src/app/admin/AdminClientLayout.tsx) | Sidebar navigasi, menu group Laporan |
+| [src/locales/id.json](../../frontend/src/locales/id.json) | Terjemahan Indonesia (key: `nav.catReports`, `nav.laporanData`, dll) |
+| [prisma/schema.prisma](../../backend/prisma/schema.prisma) | Model `invoice` dan `payment` (field `notes`) |
 
 ---
 
