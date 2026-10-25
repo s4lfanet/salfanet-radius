@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { verifyCollector } from '@/server/auth/collector-auth';
+import { startOfDayWIBtoUTC, endOfDayWIBtoUTC, refreshTimezoneFromDB, formatWIB } from '@/lib/timezone';
 
 export async function GET(req: NextRequest) {
   const collector = await verifyCollector(req);
@@ -17,8 +18,9 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const startDate = new Date(dateFrom + 'T00:00:00');
-    const endDate = new Date(dateTo + 'T23:59:59');
+    await refreshTimezoneFromDB();
+    const startDate = startOfDayWIBtoUTC(dateFrom);
+    const endDate = endOfDayWIBtoUTC(dateTo);
 
     const invoices = await prisma.invoice.findMany({
       where: {
@@ -38,7 +40,7 @@ export async function GET(req: NextRequest) {
     // Group by date
     const byDate: Record<string, { invoice_count: number; total_amount: number; cash_amount: number; transfer_amount: number }> = {};
     for (const inv of invoices) {
-      const d = inv.paidAt?.toISOString().slice(0, 10) || 'unknown';
+      const d = inv.paidAt ? formatWIB(inv.paidAt, 'yyyy-MM-dd') : 'unknown';
       if (!byDate[d]) byDate[d] = { invoice_count: 0, total_amount: 0, cash_amount: 0, transfer_amount: 0 };
       byDate[d].invoice_count++;
       byDate[d].total_amount += inv.amount;

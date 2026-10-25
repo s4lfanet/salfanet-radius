@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { verifyCollector } from '@/server/auth/collector-auth';
+import { startOfDayWIBtoUTC, endOfDayWIBtoUTC, refreshTimezoneFromDB, todayWIBStr } from '@/lib/timezone';
 
 export async function GET(req: NextRequest) {
   const collector = await verifyCollector(req);
@@ -9,11 +10,13 @@ export async function GET(req: NextRequest) {
   }
 
   const { searchParams } = new URL(req.url);
-  const date = searchParams.get('date') || new Date().toISOString().slice(0, 10);
+  const date = searchParams.get('date') || todayWIBStr();
 
   try {
-    const startDate = new Date(date + 'T00:00:00');
-    const endDate = new Date(date + 'T23:59:59');
+    await refreshTimezoneFromDB();
+    // Company-time day, the same boundaries the admin's Setoran Kolektor uses.
+    const startDate = startOfDayWIBtoUTC(date);
+    const endDate = endOfDayWIBtoUTC(date);
 
     const invoices = await prisma.invoice.findMany({
       where: {

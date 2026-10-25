@@ -130,6 +130,9 @@ export default function InvoicesPage() {
   const [activeTab, setActiveTab] = useState('unpaid');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [collectors, setCollectors] = useState<{ id: string; name: string; username: string }[]>([]);
+  const [payCollectorId, setPayCollectorId] = useState('');
+  const [payMethod, setPayMethod] = useState<'cash' | 'transfer'>('cash');
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -225,7 +228,14 @@ export default function InvoicesPage() {
 
   const handleMarkAsPaid = (invoice: Invoice) => {
     setSelectedInvoice(invoice);
+    setPayCollectorId('');
+    setPayMethod('cash');
     setIsPaymentDialogOpen(true);
+    if (collectors.length === 0) {
+      apiAdmin<{ collectors: { id: string; name: string; username: string }[] }>('/api/collector/setoran/collectors')
+        .then((d) => setCollectors(d.collectors || []))
+        .catch(() => { /* the form still works without the picker: the payment is just not attributed */ });
+    }
   };
 
   const confirmPayment = async (e: React.FormEvent) => {
@@ -233,7 +243,11 @@ export default function InvoicesPage() {
     if (!selectedInvoice) return;
 
     try {
-      await markAsPaidMutation.mutateAsync({ id: selectedInvoice.id, status: 'PAID' });
+      await markAsPaidMutation.mutateAsync({
+        id: selectedInvoice.id,
+        status: 'PAID',
+        ...(payCollectorId && { collectorId: payCollectorId, paymentMethod: payMethod }),
+      });
       setIsPaymentDialogOpen(false);
       showToast(t('invoices.markedAsPaid'), 'success');
     } catch (error: unknown) {
@@ -1326,6 +1340,38 @@ export default function InvoicesPage() {
                     <span className="text-sm font-bold text-success">{formatCurrency(Number(selectedInvoice?.amount || 0))}</span>
                   </div>
                 </div>
+
+                {collectors.length > 0 && (
+                  <div className="space-y-1.5">
+                    <label htmlFor="pay-collector" className="text-[11px] font-medium text-muted-foreground">{t('invoices.receivedBy')}</label>
+                    <select
+                      id="pay-collector"
+                      value={payCollectorId}
+                      onChange={(e) => setPayCollectorId(e.target.value)}
+                      className="w-full h-9 rounded-lg border border-input bg-background px-3 text-xs text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <option value="">{t('invoices.receivedByNone')}</option>
+                      {collectors.map((c) => <option key={c.id} value={c.id}>{c.name || c.username}</option>)}
+                    </select>
+                    {payCollectorId ? (
+                      <div className="flex gap-1.5" role="group" aria-label={t('invoices.paymentMethodLabel')}>
+                        {([['cash', 'invoices.methodCash'], ['transfer', 'invoices.methodTransfer']] as const).map(([key, label]) => (
+                          <button
+                            key={key}
+                            type="button"
+                            aria-pressed={payMethod === key}
+                            onClick={() => setPayMethod(key)}
+                            className={`flex-1 h-8 rounded-lg border text-xs font-medium transition-colors ${payMethod === key ? 'border-success bg-success/15 text-success' : 'border-border text-muted-foreground hover:bg-muted'}`}
+                          >
+                            {t(label)}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-muted-foreground leading-snug">{t('invoices.receivedByHint')}</p>
+                    )}
+                  </div>
+                )}
 
                 <div className="flex items-start gap-2 bg-info/10 border border-info/20 rounded-xl px-3 py-2.5">
                   <CheckCircle className="w-3.5 h-3.5 text-info flex-shrink-0 mt-0.5" />
