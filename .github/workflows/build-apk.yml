@@ -38,7 +38,7 @@ jobs:
         run: |
           if [ -n "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
             echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "${{ matrix.app_dir }}/android/release.keystore"
-            printf 'storeFile=release.keystore\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
+            printf 'storeFile=../release.keystore\nstorePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' \
               "${{ secrets.KEYSTORE_PASSWORD }}" "${{ secrets.KEY_ALIAS }}" "${{ secrets.KEY_PASSWORD }}" \
               > "${{ matrix.app_dir }}/android/key.properties"
             echo "Release signing enabled"
