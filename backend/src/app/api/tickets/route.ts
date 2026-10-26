@@ -196,7 +196,17 @@ export async function POST(req: NextRequest) {
       description,
       categoryId,
       priority,
+      attachments,
+      latitude,
+      longitude,
+      locationTag,
     } = body;
+
+    const attachmentList = Array.isArray(attachments)
+      ? attachments.filter((u: unknown): u is string => typeof u === 'string' && u.length > 0)
+      : [];
+    const lat = latitude != null && latitude !== '' ? parseFloat(latitude) : null;
+    const lng = longitude != null && longitude !== '' ? parseFloat(longitude) : null;
 
     // Validate required fields
     if (!customerName || !customerPhone || !subject || !description) {
@@ -231,6 +241,10 @@ export async function POST(req: NextRequest) {
         categoryId: categoryId || null,
         priority: priority || 'MEDIUM',
         status: 'OPEN',
+        attachments: attachmentList.length > 0 ? JSON.stringify(attachmentList) : null,
+        latitude: lat != null && !Number.isNaN(lat) ? lat : null,
+        longitude: lng != null && !Number.isNaN(lng) ? lng : null,
+        locationTag: locationTag || null,
       },
       include: {
         category: true,
