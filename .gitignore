@@ -138,7 +138,6 @@ AUTOCHANGELOG.md
 deploy/test-cwd.js
 deploy/test-wrapper.js
 scripts/check-baileys.js
-scripts/sync-readme-changelog.mjs
 backend/scripts/test-login.sh
 globals.css
 
@@ -171,7 +170,8 @@ GoogleService-Info.plist
 .devin/
 .cursor/
 .codeium/
-.github/
+.github/*
+!.github/workflows/
 CLAUDE.md
 AGENTS.md
 GEMINI.md
