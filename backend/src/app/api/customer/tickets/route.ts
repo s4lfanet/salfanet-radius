@@ -51,16 +51,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const where: Record<string, unknown> = {};
-
-    // Match by customerId if available, else fall back to phone
-    if (user.customerId) {
-      where.customerId = user.customerId;
-    } else if (user.phone) {
-      where.customerPhone = user.phone;
-    } else {
-      where.customerId = user.id;
-    }
+    // ticket.customerId is a FK to pppoeUser.id; phone covers older tickets
+    // created before the link was set.
+    const where = {
+      OR: [{ customerId: user.id }, ...(user.phone ? [{ customerId: null, customerPhone: user.phone }] : [])],
+    };
 
     const tickets = await prisma.ticket.findMany({
       where,
@@ -165,7 +160,7 @@ export async function POST(request: NextRequest) {
     const ticket = await prisma.ticket.create({
       data: {
         ticketNumber,
-        customerId: user.customerId || user.id,
+        customerId: user.id,
         customerName: user.name || 'Customer',
         customerEmail: user.email || '',
         customerPhone: user.phone || '',

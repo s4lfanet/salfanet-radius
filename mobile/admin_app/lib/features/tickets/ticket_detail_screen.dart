@@ -10,6 +10,7 @@ import '../../core/widgets/entity_tile.dart';
 import '../../models/ticket.dart';
 import '../auth/auth_provider.dart';
 import 'ticket_list_screen.dart' show ticketStatusOptions, priorityTone, priorityLabel;
+import 'ticket_attachments.dart';
 import 'ticket_provider.dart';
 import 'ticket_tools.dart';
 import '../../core/guides/guides.dart';
@@ -133,6 +134,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                         title: 'Keluhan',
                         rows: [InfoRow('Deskripsi', t.description), InfoRow('Kategori', t.categoryName), InfoRow('Estimasi', t.estimatedRepair)],
                       ),
+                      TicketAttachments(paths: t.attachments),
                       DetailSection(
                         title: 'Pelanggan',
                         rows: [

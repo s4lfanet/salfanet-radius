@@ -23,6 +23,7 @@ import { ArrowLeft, Send, User, Clock, Lock, Edit2, Save, X } from 'lucide-react
 import { formatWIB } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
+import TicketAttachments from '@/components/tickets/TicketAttachments';
 
 type TicketStatus = 'OPEN' | 'IN_PROGRESS' | 'WAITING_CUSTOMER' | 'RESOLVED' | 'CLOSED';
 type TicketPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
@@ -42,6 +43,7 @@ interface TicketDetail {
   ticketNumber: string;
   subject: string;
   description: string;
+  attachments?: string | null;
   status: TicketStatus;
   priority: TicketPriority;
   createdAt: string;
@@ -349,6 +351,9 @@ export default function AdminTicketDetailPage() {
             <p className="text-foreground/80 whitespace-pre-wrap mb-4">
               {renderWithLinks(ticket.description)}
             </p>
+            <div className="mb-4">
+              <TicketAttachments attachments={ticket.attachments} />
+            </div>
             <div className="border-t border-border pt-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>

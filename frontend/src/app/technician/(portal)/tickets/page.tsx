@@ -42,6 +42,7 @@ import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatWIB } from '@/lib/timezone';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api/client';
+import TicketAttachments from '@/components/tickets/TicketAttachments';
 
 interface TicketData {
   id: string;
@@ -50,6 +51,7 @@ interface TicketData {
   customerPhone: string;
   subject: string;
   description: string;
+  attachments: string | null;
   priority: string;
   status: string;
   assignedToId: string | null;
@@ -586,6 +588,9 @@ export default function TechnicianTicketsPage() {
                   <p className="text-xs text-foreground/80 whitespace-pre-wrap leading-relaxed bg-input/40 rounded-xl p-3 border border-slate-100 dark:border-slate-700/40">
                     {detailTicket.description ? renderWithLinks(detailTicket.description) : <span className="italic text-slate-400">Tidak ada deskripsi</span>}
                   </p>
+                  <div className="mt-3">
+                    <TicketAttachments attachments={detailTicket.attachments} />
+                  </div>
                 </div>
 
                 {/* Status actions */}

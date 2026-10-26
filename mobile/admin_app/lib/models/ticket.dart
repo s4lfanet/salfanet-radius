@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 /// Mirrors rows returned by GET /api/tickets.
 class Ticket {
   Ticket({
@@ -13,6 +15,7 @@ class Ticket {
     this.categoryName,
     this.messageCount = 0,
     this.estimatedRepair,
+    this.attachments = const [],
     this.raw = const {},
   });
 
@@ -31,6 +34,7 @@ class Ticket {
   final String? categoryName;
   final int messageCount;
   final String? estimatedRepair;
+  final List<String> attachments;
 
   factory Ticket.fromJson(Map<String, dynamic> json) {
     final category = (json['category'] as Map?)?.cast<String, dynamic>();
@@ -48,8 +52,22 @@ class Ticket {
       categoryName: category?['name']?.toString(),
       messageCount: count?['messages'] is num ? (count!['messages'] as num).toInt() : 0,
       estimatedRepair: json['estimatedRepair']?.toString(),
+      attachments: _parseAttachments(json['attachments']),
       raw: json,
     );
+  }
+
+  /// Stored as a JSON-encoded string array of upload paths.
+  static List<String> _parseAttachments(dynamic raw) {
+    dynamic value = raw;
+    if (value is String && value.isNotEmpty) {
+      try {
+        value = jsonDecode(value);
+      } catch (_) {
+        return const [];
+      }
+    }
+    return value is List ? value.whereType<String>().where((s) => s.isNotEmpty).toList() : const [];
   }
 }
 

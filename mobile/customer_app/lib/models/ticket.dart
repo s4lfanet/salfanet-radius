@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class TicketCategory {
   const TicketCategory({required this.id, required this.name, this.color});
   final String id;
@@ -22,6 +24,7 @@ class Ticket {
     required this.createdAt,
     this.category,
     this.resolvedAt,
+    this.attachments = const [],
   });
 
   final String id;
@@ -33,6 +36,7 @@ class Ticket {
   final DateTime createdAt;
   final TicketCategory? category;
   final DateTime? resolvedAt;
+  final List<String> attachments;
 
   bool get isOpen => status.toUpperCase() == 'OPEN' || status.toUpperCase() == 'IN_PROGRESS';
 
@@ -46,7 +50,21 @@ class Ticket {
         createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? DateTime.now(),
         category: json['category'] is Map<String, dynamic> ? TicketCategory.fromJson(json['category']) : null,
         resolvedAt: json['resolvedAt'] != null ? DateTime.tryParse(json['resolvedAt'].toString()) : null,
+        attachments: parseAttachmentList(json['attachments']),
       );
+}
+
+/// ticket.attachments is stored as a JSON-encoded string array of upload paths.
+List<String> parseAttachmentList(dynamic raw) {
+  dynamic value = raw;
+  if (value is String && value.isNotEmpty) {
+    try {
+      value = jsonDecode(value);
+    } catch (_) {
+      return const [];
+    }
+  }
+  return value is List ? value.whereType<String>().where((s) => s.isNotEmpty).toList() : const [];
 }
 
 class TicketMessage {

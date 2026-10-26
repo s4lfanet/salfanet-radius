@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../core/formatters.dart';
 import '../../models/ticket.dart';
 import '../auth/auth_provider.dart';
+import 'ticket_attachments.dart';
 import 'ticket_provider.dart';
 import 'tickets_screen.dart';
 
@@ -145,6 +146,7 @@ class _TicketHeader extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(ticket.description, style: TextStyle(color: scheme.onSurfaceVariant)),
+          TicketAttachments(paths: ticket.attachments),
           const SizedBox(height: 6),
           Text('Dibuat ${formatDateTime(ticket.createdAt)}', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)),
         ],
