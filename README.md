@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.24.0 - Portal Kolektor Baru + Setoran Per Pembayaran + Notifikasi dan Web Push Kolektor
+> **Version:** 5.25.0 - Foto Tiket + PPPoE Online Teknisi + Build APK Native di GitHub
 
 ---
 
@@ -33,9 +33,9 @@ Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with Free
 | **RADIUS Setup** | Auto-generated RouterOS script pakai **IP asli VPS** (bukan domain/Cloudflare proxy), VPN-specific address selection |
 | **Bahasa** | Bahasa Indonesia (full) |
 | **PWA** | Installable di semua portal (admin, customer, agent, technician), offline fallback, service worker cache |
-| **Web Push** | VAPID-based browser push notifications, subscribe/unsubscribe toggle per portal (admin, agent, technician, collector), admin broadcast with role targeting (customer/agent/technician/admin/all), cron-triggered push (invoice reminder, auto-isolir, auto-renewal), server-side read state for customer and collector notifications. Collector subscriptions have their own table, apart from the admin one |
+| **Web Push** | VAPID-based browser push notifications, one shared sidebar subscribe/unsubscribe toggle across all portals (admin, agent, technician, customer, collector), admin broadcast with role targeting (customer/agent/technician/admin/all), cron-triggered push (invoice reminder, auto-isolir, auto-renewal), server-side read state for customer and collector notifications. Collector subscriptions have their own table, apart from the admin one |
 | **Collector Portal** | Portal kolektor berbasis wilayah tugas (area dan/atau router/NAS): ringkasan per bulan, tagihan (tandai lunas tunai/transfer + bukti), pelanggan dengan status pembayaran, peta dan detail GPS, Telepon/WhatsApp, isolir, setoran, koleksi, bukti transfer, cabut ONT, lonceng notifikasi dengan status baca dan web push. Admin: Setoran Kolektor sebagai daftar pembayaran dengan konfirmasi per baris atau massal |
-| **Mobile App** | Native Flutter customer app (`mobile/customer_app/`) — WiFi control, invoice, payment, tickets, push via FCM. See [README](mobile/customer_app/README.md) |
+| **Mobile App** | Native Flutter customer app (`mobile/customer_app/`) — WiFi control, invoice, payment, tickets with photos, push via FCM — and staff app (`mobile/admin_app/`). Built per deployment, see [docs/BUILD-APK.md](docs/BUILD-APK.md) |
 | **WhatsApp Baileys** | Native WhatsApp gateway built-in VPS via `@whiskeysockets/baileys`, PM2 proses terpisah, scan QR langsung di admin panel, auto-reconnect |
 
 ---
@@ -51,7 +51,11 @@ A second native app for staff lives in `mobile/admin_app/` (customers, invoices,
 network map, in-app guides, quick actions; menus follow each account's role). Both apps can
 update themselves from the APK uploaded in the web panel (Build APK).
 
-- **Build / run it**: [`mobile/customer_app/README.md`](mobile/customer_app/README.md)
+- **Build a release APK for your own deployment**: [`docs/BUILD-APK.md`](docs/BUILD-APK.md) —
+  your own Firebase project, signing keystore, `flutter build apk --split-per-abi`, or the
+  manual GitHub Actions workflow **Build Native APKs** (signing and `google-services.json`
+  come from repository secrets; APKs are published to the `apk-latest` release)
+- **Run it in development**: [`mobile/customer_app/README.md`](mobile/customer_app/README.md)
 - **Enable push notifications (FCM)**: [`mobile/customer_app/FIREBASE_SETUP.md`](mobile/customer_app/FIREBASE_SETUP.md)
   — creating the Firebase project, `google-services.json`, the backend's service
   account key, and how to verify each side actually works. Neither credential is
@@ -841,6 +845,10 @@ Dijalankan oleh `cron-runner.ts` (PM2 `salfanet-cron`). Jadwal bawaan bisa diuba
 
 Buat APK Android (WebView wrapper) untuk 4 portal langsung di server VPS — tanpa GitHub Actions, tanpa Android Studio. Logo perusahaan yang diupload di halaman Download APK otomatis digunakan sebagai ikon APK (server build maupun ZIP project).
 
+APK **QRIS Listener** (standalone, untuk HP kasir) di-build dengan cara yang sama dari **Admin → Payment Gateway → tab QRIS Mandiri**; device key dan webhook server sudah terisi di APK.
+
+> Aplikasi **native** Flutter (admin dan pelanggan) tidak di-build di sini — butuh Flutter SDK dan RAM besar. Pakai GitHub Actions atau build lokal, lihat [docs/BUILD-APK.md](docs/BUILD-APK.md).
+
 ### 1) Setup Android SDK (satu kali via SSH)
 
 ```bash
@@ -871,7 +879,7 @@ Buka **Admin → Download Aplikasi Android** → klik **Build APK** pada role ya
 # Cek environment
 curl http://YOUR_VPS/api/admin/apk/trigger
 
-# Mulai build (role: admin | customer | technician | agent)
+# Mulai build (role: admin | customer | technician | agent | qris_listener)
 curl -X POST http://YOUR_VPS/api/admin/apk/trigger?role=customer \
   -H "Cookie: next-auth.session-token=..."
 
@@ -1099,6 +1107,46 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.25.0 — 2026-10-27 - Foto Tiket + PPPoE Online Teknisi + Build APK Native di GitHub
+
+### Summary
+Rilis setelah 5.24.0 (20 commit). Tiket pelanggan dengan foto kini tersimpan dan fotonya tampil di admin, teknisi, dan kedua aplikasi. PPPoE Online teknisi hanya menampilkan pelanggan PPPoE yang terhubung lewat RADIUS, dengan pemakaian download dan upload live dari MikroTik. Toggle web push di sidebar sama di semua portal. APK QRIS Listener bisa di-build lagi, dan aplikasi native admin dan pelanggan di-build lewat GitHub Actions.
+
+### Tiket
+- **[FIX]** Pelanggan yang punya ID pelanggan gagal membuat tiket di aplikasi ("failed create ticket"): tiket disimpan dengan kode pelanggan, padahal kolomnya merujuk ke akun pelanggan. Daftar tiket pelanggan memfilter dengan nilai yang sama, sehingga tiketnya juga tidak muncul
+- **[FIX]** Foto dari form tiket web pelanggan dan form tiket admin tidak pernah tersimpan: `POST /api/tickets` mengabaikan lampiran dan lokasi GPS. File sudah terunggah, tapi tidak terhubung ke tiket
+- **[FEATURE]** Foto lampiran tampil di detail tiket admin, teknisi, aplikasi admin, dan aplikasi pelanggan. Ketuk foto untuk melihat penuh; PDF dibuka di aplikasi luar
+- **[FIX]** Batas unggah lampiran tiket pelanggan naik dari 5 ke 20 file per menit, sehingga tiket dengan beberapa foto tidak tertolak
+
+### Portal Teknisi
+- **[FIX]** PPPoE Online ikut menampilkan sesi hotspot dan sesi lokal MikroTik. Kini hanya pelanggan PPPoE terdaftar yang sesinya tercatat di RADIUS, satu sesi per pelanggan
+- **[FIX]** Pemakaian download dan upload tidak bertambah selama sesi berjalan, karena hanya dibaca dari radacct yang menunggu interim update. Admin dan teknisi kini memakai counter live dari MikroTik. Router dicari dari NAS IP sesi, jadi pelanggan yang belum ditetapkan routernya tetap terbaca
+- **[FEATURE]** Menu Pelanggan Isolir di sidebar (halamannya sudah ada, tapi hanya bisa dibuka lewat URL)
+- **[FEATURE]** Status pembayaran Belum Lunas dan Terlambat di daftar pelanggan, sama seperti portal kolektor
+- **[UI]** Tambah pelanggan: tombol Selanjutnya dan Buat Pelanggan Baru nonaktif sampai data wajib terisi, dengan daftar field yang belum diisi. Tab Paket & Dokumen tidak bisa dibuka lebih dulu
+
+### Web Push
+- **[UI]** Toggle notifikasi push di sidebar sama di admin, agent, teknisi, pelanggan, dan kolektor: Notif Push: Aktif, Nonaktif, atau Diblokir, dengan alasan bila perangkat tidak mendukung
+- **[FIX]** Portal teknisi mengirim ulang langganan push ke server setiap kali halaman dirender
+
+### Keuangan
+- **[FIX]** Menghapus tagihan, lunas maupun belum, kini juga menghapus transaksinya di Keuangan
+
+### APK
+- **[FEATURE]** Build APK QRIS Listener standalone kembali tersedia di tab QRIS Mandiri (Payment Gateway), dengan device key dan webhook server yang sudah terisi
+- **[FEATURE]** Workflow GitHub Actions "Build Native APKs" untuk aplikasi admin dan pelanggan. Signing release dan `google-services.json` diambil dari repository secrets, APK dipecah per ABI (sekitar 20 MB, sebelumnya 61 MB), lalu diunggah ke release `apk-latest`
+- **[DOCS]** `docs/BUILD-APK.md`: panduan build APK native untuk instalasi lain (project Firebase sendiri, keystore, build, update di aplikasi)
+- **[CHORE]** Aplikasi admin naik ke 1.0.14 dan aplikasi pelanggan ke 1.1.9
+
+### Updater
+- **[FIX]** Backup sebelum update menyalin seluruh folder aplikasi, termasuk `node_modules` dan `.next` (sekitar 4 GB per backup), bila rsync tidak tersedia, sehingga disk VPS penuh. Kini memakai tar dengan pengecualian yang sama, atau dilewati bila keduanya tidak ada
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema database
+- Tiket yang dibuat sebelum rilis ini tidak punya foto, karena URL fotonya tidak pernah tersimpan
+- Aplikasi pelanggan versi lama masih gagal membuat tiket. Pasang APK terbaru dari release `apk-latest`, atau terbitkan lewat Download APK agar aplikasi menawarkan update
+- **[CHORE]** Bump versi root, frontend, dan backend ke 5.25.0
+
 ### v5.24.0 — 2026-10-25 - Portal Kolektor Baru + Setoran Per Pembayaran + Notifikasi dan Web Push Kolektor
 
 ### Summary
@@ -1167,8 +1215,6 @@ Rilis setelah 5.23.0 (63 commit). Portal kolektor dirancang ulang dan bekerja pe
 - Teknisi lama harus diisi username dan password di Kelola Teknisi sebelum bisa masuk
 - **[CHORE]** Bump versi root, frontend, dan backend ke 5.24.0
 
----
-
 ### v5.23.0 — 2026-10-20 - Bayar di Dalam Aplikasi + Update APK dari Aplikasi + Kasir QRIS di Aplikasi Admin + Peta Jaringan
 
 ### Summary
@@ -1232,8 +1278,6 @@ Rilis setelah 5.22.0 (27 commit). Pelanggan membayar tagihan, perpanjangan, top-
 
 ### Sistem
 - **[CHORE]** Bump versi root, frontend, dan backend ke 5.23.0
-
----
 
 ### v5.22.0 — 2026-10-15 - QRIS Mandiri untuk Semua Transaksi + Aplikasi Admin & Pelanggan Native + Biaya Operasional
 
@@ -1323,8 +1367,6 @@ Rilis besar setelah 5.21.0 (130 commit). QRIS Mandiri kini dipakai untuk semua j
 - **[CHORE]** Bump versi root, frontend, dan backend ke 5.22.0
 - **[FIX]** Semua error typecheck backend dan frontend diselesaikan; lint backend berfungsi kembali
 
----
-
 ### v5.21.0 — 2026-09-15 — Hotspot Session Sync Fixes + Dashboard Log Centralization + Invoice/PWA Fixes
 
 ### Summary
@@ -1372,46 +1414,6 @@ Perbaikan besar pada sinkronisasi sesi hotspot voucher dengan RADIUS (ghost sess
 ### Cleanup
 - **[CHORE]** Hapus konfigurasi AI agent, script debug, dan file non-production dari repo
 - **[CHORE]** Bump root & frontend package.json version ke 5.21.0
-
----
-
-### v5.20.0 — 2026-09-07 — Bulk Edit PPPoE + Migrasi Local→RADIUS + UI Icon Audit
-
-### Summary
-Tiga fitur besar: (1) Bulk edit pelanggan PPPoE untuk Router/Hari Tagihan/Auto Isolasi, (2) Migrasi satu-klik dari auth mode LOCAL ke RADIUS dengan sync otomatis semua data pelanggan, dan (3) Audit UI menambahkan ikon Lucide ke empty states, page headers, status badges, dan modal sections di semua role.
-
-### Bulk Edit Pelanggan PPPoE
-- **[FEATURE]** Tombol "Edit" di bulk action bar pada halaman Data Pelanggan — ubah Router, Hari Tagihan (1-28), dan Auto Isolasi untuk multiple pelanggan sekaligus
-- **[FEATURE]** Endpoint `PUT /api/pppoe/users/bulk-update` — update massal `routerId`, `billingDay`, `autoIsolationEnabled`
-- **[FEATURE]** Saat router berubah, backend otomatis: hapus RADIUS entries di NAS lama, buat di NAS baru, manage MikroTik PPP secret (disable di router lama, enable di router baru), CoA disconnect semua sesi aktif
-- **[UI]** Modal bulk edit dengan opsi "— Tidak berubah —" per field, konfirmasi sebelum apply, summary hasil
-
-### Migrasi Local → RADIUS Auth
-- **[FEATURE]** Tombol "Migrate to RADIUS" di halaman Router (hanya muncul saat `authMode = local`) — migrasi satu-klik
-- **[FEATURE]** Endpoint `POST /api/pppoe/users/bulk-migrate-radius` — migrasi router dari local ke RADIUS:
-  - Ubah `router.authMode` dari `local` → `radius`
-  - Re-sync SEMUA pelanggan ke RADIUS tables (`radcheck`, `radusergroup`, `radreply`)
-  - Disable PPP secrets di MikroTik (sebagai backup, RADIUS jadi primary)
-  - Reload FreeRADIUS
-  - CoA disconnect semua sesi aktif untuk re-auth via RADIUS
-- **[FEATURE]** Tombol "Re-sync RADIUS" di halaman Router — perbaiki data RADIUS yang tidak sinkron tanpa ubah authMode
-- **[FEATURE]** Endpoint `POST /api/pppoe/users/bulk-sync-radius` — re-sync semua user ke RADIUS tables untuk router tertentu atau semua router
-- **[DOCS]** Penjelasan arsitektur auth mode (local vs RADIUS) di README
-
-### UI Icon Audit (Lucide)
-- **[UI]** Tambah ikon Lucide ke 12 empty states yang sebelumnya text-only (radcheck, manual-payments, keuangan, stopped PPPoE, balance, bank-accounts, hotspot templates/profiles/vouchers/evouchers/agents, pay-manual)
-- **[UI]** Tambah ikon ke page headers admin (invoices, pppoe users, tickets, whatsapp send/providers/notifications, settings/security)
-- **[UI]** Tambah ikon ke customer invoice status badges (Lunas/Jatuh Tempo/Menunggu/Ditolak/Belum Bayar)
-- **[UI]** Tambah ikon ke UserDetailModal section headers (KTP, Foto Instalasi, Layanan Tambahan, Janji Bayar) + empty states + action buttons
-- **[UI]** Tambah AlertCircle ke error alerts di customer/technician/collector login pages
-- **[UI]** Tambah Wallet icon ke agent balance card label
-- **[UI]** Tambah ikon ke collector my-collections stat cards (Receipt/Wallet/Banknote/ArrowRightLeft)
-
-### Other
-- **[CHORE]** Bump service worker cache ke v28
-- **[CHORE]** Bump root & frontend package.json version ke 5.20.0
-
----
 
 <!-- AUTO-CHANGELOG:END -->
 

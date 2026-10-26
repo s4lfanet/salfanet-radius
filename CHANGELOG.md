@@ -6,6 +6,48 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.25.0] - 2026-10-27 - Foto Tiket + PPPoE Online Teknisi + Build APK Native di GitHub
+
+### Summary
+Rilis setelah 5.24.0 (20 commit). Tiket pelanggan dengan foto kini tersimpan dan fotonya tampil di admin, teknisi, dan kedua aplikasi. PPPoE Online teknisi hanya menampilkan pelanggan PPPoE yang terhubung lewat RADIUS, dengan pemakaian download dan upload live dari MikroTik. Toggle web push di sidebar sama di semua portal. APK QRIS Listener bisa di-build lagi, dan aplikasi native admin dan pelanggan di-build lewat GitHub Actions.
+
+### Tiket
+- **[FIX]** Pelanggan yang punya ID pelanggan gagal membuat tiket di aplikasi ("failed create ticket"): tiket disimpan dengan kode pelanggan, padahal kolomnya merujuk ke akun pelanggan. Daftar tiket pelanggan memfilter dengan nilai yang sama, sehingga tiketnya juga tidak muncul
+- **[FIX]** Foto dari form tiket web pelanggan dan form tiket admin tidak pernah tersimpan: `POST /api/tickets` mengabaikan lampiran dan lokasi GPS. File sudah terunggah, tapi tidak terhubung ke tiket
+- **[FEATURE]** Foto lampiran tampil di detail tiket admin, teknisi, aplikasi admin, dan aplikasi pelanggan. Ketuk foto untuk melihat penuh; PDF dibuka di aplikasi luar
+- **[FIX]** Batas unggah lampiran tiket pelanggan naik dari 5 ke 20 file per menit, sehingga tiket dengan beberapa foto tidak tertolak
+
+### Portal Teknisi
+- **[FIX]** PPPoE Online ikut menampilkan sesi hotspot dan sesi lokal MikroTik. Kini hanya pelanggan PPPoE terdaftar yang sesinya tercatat di RADIUS, satu sesi per pelanggan
+- **[FIX]** Pemakaian download dan upload tidak bertambah selama sesi berjalan, karena hanya dibaca dari radacct yang menunggu interim update. Admin dan teknisi kini memakai counter live dari MikroTik. Router dicari dari NAS IP sesi, jadi pelanggan yang belum ditetapkan routernya tetap terbaca
+- **[FEATURE]** Menu Pelanggan Isolir di sidebar (halamannya sudah ada, tapi hanya bisa dibuka lewat URL)
+- **[FEATURE]** Status pembayaran Belum Lunas dan Terlambat di daftar pelanggan, sama seperti portal kolektor
+- **[UI]** Tambah pelanggan: tombol Selanjutnya dan Buat Pelanggan Baru nonaktif sampai data wajib terisi, dengan daftar field yang belum diisi. Tab Paket & Dokumen tidak bisa dibuka lebih dulu
+
+### Web Push
+- **[UI]** Toggle notifikasi push di sidebar sama di admin, agent, teknisi, pelanggan, dan kolektor: Notif Push: Aktif, Nonaktif, atau Diblokir, dengan alasan bila perangkat tidak mendukung
+- **[FIX]** Portal teknisi mengirim ulang langganan push ke server setiap kali halaman dirender
+
+### Keuangan
+- **[FIX]** Menghapus tagihan, lunas maupun belum, kini juga menghapus transaksinya di Keuangan
+
+### APK
+- **[FEATURE]** Build APK QRIS Listener standalone kembali tersedia di tab QRIS Mandiri (Payment Gateway), dengan device key dan webhook server yang sudah terisi
+- **[FEATURE]** Workflow GitHub Actions "Build Native APKs" untuk aplikasi admin dan pelanggan. Signing release dan `google-services.json` diambil dari repository secrets, APK dipecah per ABI (sekitar 20 MB, sebelumnya 61 MB), lalu diunggah ke release `apk-latest`
+- **[DOCS]** `docs/BUILD-APK.md`: panduan build APK native untuk instalasi lain (project Firebase sendiri, keystore, build, update di aplikasi)
+- **[CHORE]** Aplikasi admin naik ke 1.0.14 dan aplikasi pelanggan ke 1.1.9
+
+### Updater
+- **[FIX]** Backup sebelum update menyalin seluruh folder aplikasi, termasuk `node_modules` dan `.next` (sekitar 4 GB per backup), bila rsync tidak tersedia, sehingga disk VPS penuh. Kini memakai tar dengan pengecualian yang sama, atau dilewati bila keduanya tidak ada
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema database
+- Tiket yang dibuat sebelum rilis ini tidak punya foto, karena URL fotonya tidak pernah tersimpan
+- Aplikasi pelanggan versi lama masih gagal membuat tiket. Pasang APK terbaru dari release `apk-latest`, atau terbitkan lewat Download APK agar aplikasi menawarkan update
+- **[CHORE]** Bump versi root, frontend, dan backend ke 5.25.0
+
+---
+
 ## [5.24.0] - 2026-10-25 - Portal Kolektor Baru + Setoran Per Pembayaran + Notifikasi dan Web Push Kolektor
 
 ### Summary
