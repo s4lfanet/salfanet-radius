@@ -6,7 +6,7 @@ import { showSuccess, showError, showToast } from '@/lib/sweetalert';
 import { formatWIB } from '@/lib/timezone';
 import { 
   Loader2, CreditCard, Wallet, Save, Eye, EyeOff, CheckCircle2, AlertCircle, 
-  Copy, Check, List, RefreshCw, Search, X, QrCode
+  Copy, Check, List, RefreshCw, Search, X, QrCode, Download, Smartphone
 } from 'lucide-react';
 import { Pagination } from '@/components/Pagination';
 import { Toggle } from '@/components/ui/toggle';
@@ -92,6 +92,7 @@ export default function PaymentGatewayPage() {
   const [tripayForm, setTripayForm] = useState({ merchantCode: '', apiKey: '', privateKey: '', environment: 'sandbox', isActive: false });
   const [qrisForm, setQrisForm] = useState({ staticCode: '', merchantName: '', enabled: false, deviceKey: '', deviceSecret: '', uniqueMin: 1, uniqueMax: 999 });
   const [qrisTest, setQrisTest] = useState({ orderId: '', loading: false, result: null as null | { success: boolean; message: string; invoiceId?: string; baseAmount?: number; uniqueAmount?: number } });
+  const [qrisApk, setQrisApk] = useState<{ status: string; apkAvailable?: boolean; apkSize?: number; appName?: string; error?: string } | null>(null);
 
   // ─── React Query: Payment gateway configs ────────────────────────────────────
   const { data: configsData, isLoading: loading } = useApiQuery<PaymentGateway[]>('/api/payment-gateway/config', { staleTime: 30000 });
@@ -166,6 +167,33 @@ export default function PaymentGatewayPage() {
     })();
     return () => { cancelled = true; };
   }, []);
+
+  // Standalone QRIS Listener APK — built on the server, usable by any cashier
+  // phone without an admin login (Kasir QRIS in the admin app does the same).
+  useEffect(() => { void refreshQrisApk(); }, []);
+
+  async function refreshQrisApk(): Promise<string> {
+    try {
+      const s = await apiAdmin<{ status: string; apkAvailable?: boolean; apkSize?: number; appName?: string; error?: string }>('/api/admin/apk/status?role=qris_listener');
+      setQrisApk(s);
+      return s.status;
+    } catch {
+      return 'idle';
+    }
+  }
+
+  async function buildQrisApk() {
+    try {
+      setQrisApk((p) => ({ ...(p ?? { status: 'idle' }), status: 'building', error: undefined }));
+      await apiAdmin('/api/admin/apk/trigger?role=qris_listener', { method: 'POST' });
+      const t = setInterval(async () => {
+        const st = await refreshQrisApk();
+        if (st === 'done' || st === 'failed' || st === 'idle') clearInterval(t);
+      }, 5000);
+    } catch (e) {
+      setQrisApk((p) => ({ ...(p ?? { status: 'idle' }), status: 'failed', error: e instanceof Error ? e.message : 'Gagal memulai build' }));
+    }
+  }
 
   // ─── React Query: Webhook logs (page + filter) ───────────────────────────────
   const logsParams: Record<string, unknown> = {
@@ -815,6 +843,42 @@ export default function PaymentGatewayPage() {
                   <p className="text-[10px] text-warning">Tanpa Device Key, pembayaran QRIS dikonfirmasi manual oleh admin. Simpan pengaturan ini, lalu nyalakan Kasir QRIS di aplikasi Admin untuk konfirmasi otomatis.</p>
                 </div>
               )}
+
+              {/* APK QRIS Listener Standalone */}
+              <div className="p-2.5 bg-muted rounded-lg space-y-2">
+                <p className="text-[11px] font-semibold flex items-center gap-1.5">
+                  <Smartphone className="h-3.5 w-3.5" /> APK QRIS Listener (Standalone)
+                </p>
+                <p className="text-[10px] text-muted-foreground">
+                  Aplikasi Android ringan untuk HP kasir siapa pun — memantau notifikasi pembayaran (DANA, GoPay, BRImo, dst) dan meneruskannya ke webhook server. Device Key &amp; URL server sudah terisi otomatis di dalam APK.
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={buildQrisApk}
+                    disabled={qrisApk?.status === 'building'}
+                    className="px-3 py-1.5 text-xs font-medium bg-primary hover:bg-primary/90 text-white rounded-lg disabled:opacity-50 inline-flex items-center gap-1.5"
+                  >
+                    {qrisApk?.status === 'building' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                    {qrisApk?.status === 'building' ? 'Membangun APK…' : qrisApk?.status === 'done' && qrisApk.apkAvailable ? 'Build Ulang APK' : 'Build APK QRIS Listener'}
+                  </button>
+                  {qrisApk?.status === 'done' && qrisApk.apkAvailable && (
+                    <a
+                      href="/api/admin/apk/file?role=qris_listener"
+                      className="px-3 py-1.5 text-xs font-medium bg-success hover:bg-success/90 text-white rounded-lg inline-flex items-center gap-1.5"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      Unduh APK{qrisApk.apkSize ? ` (${(qrisApk.apkSize / 1048576).toFixed(1)} MB)` : ''}
+                    </a>
+                  )}
+                </div>
+                {qrisApk?.status === 'building' && (
+                  <p className="text-[10px] text-info">Build berjalan di server — biasanya 2-5 menit. Halaman ini otomatis update saat selesai.</p>
+                )}
+                {qrisApk?.status === 'failed' && (
+                  <p className="text-[10px] text-danger">Build gagal: {qrisApk.error || 'cek environment Android SDK di server (menu Download APK)'}</p>
+                )}
+              </div>
 
               {/* Simulasi / Testing QRIS Mandiri */}
               <div className="p-2.5 bg-orange-500/10 border border-orange-500/20 rounded-lg space-y-2">
