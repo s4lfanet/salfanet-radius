@@ -270,10 +270,13 @@ if [ -n "$USE_BRANCH" ]; then
         print_step "Creating backup"
         BACKUP_DIR="$BACKUP_BASE/$(date +%Y%m%d-%H%M%S)-git"
         mkdir -p "$BACKUP_DIR"
-        # Exclude node_modules and .next — they can be rebuilt (each ~2GB)
+        # Exclude node_modules and .next — they can be rebuilt (each ~2GB).
+        # No `cp -r` fallback: without excludes it copies ~4GB per backup and
+        # filled the disk. tar handles the same excludes when rsync is absent.
         rsync -a --exclude='node_modules' --exclude='.next' --exclude='.git' \
             "$APP_DIR/" "$BACKUP_DIR/app/" 2>/dev/null || \
-            cp -r "$APP_DIR" "$BACKUP_DIR/app" 2>/dev/null || true
+            tar -C "$APP_DIR" --exclude='./node_modules' --exclude='./.next' --exclude='./.git' -cf - . | tar -C "$BACKUP_DIR/app" -xf - || \
+            print_info "Backup skipped (rsync and tar unavailable)"
         print_success "Backup saved to $BACKUP_DIR ($(du -sh "$BACKUP_DIR" 2>/dev/null | cut -f1))"
 
         # Prune old backups — keep only 2 most recent
