@@ -9,6 +9,10 @@ import { join } from 'path';
 import { spawn, exec } from 'child_process';
 import { promisify } from 'util';
 import { deflateSync } from 'zlib';
+import {
+  qrisListenerManifest, qrisListenerLayoutXml, qrisListenerActivity,
+  qrisNotificationListener, qrisWatchdogWorker, qrisBootReceiver,
+} from './qris-listener';
 
 const execAsync = promisify(exec);
 
@@ -20,6 +24,7 @@ const ROLES = {
   technician:    { label: 'Salfanet Teknisi',   pkg: 'net.salfanet.technician',    color: '#059669', pathSuffix: '/technician' },
   agent:         { label: 'Salfanet Agent',     pkg: 'net.salfanet.agent',         color: '#7c3aed', pathSuffix: '/agent' },
   collector:     { label: 'Salfanet Collector', pkg: 'net.salfanet.collector',     color: '#d97706', pathSuffix: '/collector' },
+  qris_listener: { label: 'Salfanet QRIS Listener', pkg: 'net.salfanet.qrislistener', color: '#e11d48', pathSuffix: '' },
 } as const;
 type RoleKey = keyof typeof ROLES;
 
@@ -725,14 +730,36 @@ async function writeProjectToDisk(
   writeFileSync(join(projectDir, 'app/build.gradle'), appBuildGradle(cfg.pkg));
   writeFileSync(join(projectDir, 'app/proguard-rules.pro'), '# ProGuard rules\n');
 
-  // Standard WebView app
-  writeFileSync(join(projectDir, 'app/src/main/AndroidManifest.xml'), androidManifest(cfg.pkg));
-  writeFileSync(join(projectDir, `app/src/main/java/${pkgPath}/MainActivity.kt`), mainActivity(cfg.pkg, startUrl, baseUrl));
-  writeFileSync(join(projectDir, `app/src/main/java/${pkgPath}/NotificationWorker.kt`), notificationWorker(cfg.pkg));
-  writeFileSync(join(projectDir, 'app/src/main/res/layout/activity_main.xml'), activityMainXml());
-  writeFileSync(join(projectDir, 'app/src/main/res/values/strings.xml'), stringsXml(appName));
-  writeFileSync(join(projectDir, 'app/src/main/res/values/colors.xml'), colorsXml(cfg.color));
-  writeFileSync(join(projectDir, 'app/src/main/res/values/themes.xml'), themesXml());
+  if (role === 'qris_listener') {
+    writeFileSync(join(projectDir, 'app/src/main/AndroidManifest.xml'), qrisListenerManifest(cfg.pkg));
+    writeFileSync(join(projectDir, `app/src/main/java/${pkgPath}/MainActivity.kt`), qrisListenerActivity(cfg.pkg));
+    writeFileSync(join(projectDir, `app/src/main/java/${pkgPath}/QrisNotificationListener.kt`), qrisNotificationListener(cfg.pkg));
+    writeFileSync(join(projectDir, `app/src/main/java/${pkgPath}/QrisWatchdogWorker.kt`), qrisWatchdogWorker(cfg.pkg));
+    writeFileSync(join(projectDir, `app/src/main/java/${pkgPath}/BootReceiver.kt`), qrisBootReceiver(cfg.pkg));
+    writeFileSync(join(projectDir, 'app/src/main/res/layout/activity_main.xml'), qrisListenerLayoutXml());
+    writeFileSync(join(projectDir, 'app/src/main/res/values/strings.xml'), stringsXml(appName));
+    writeFileSync(join(projectDir, 'app/src/main/res/values/colors.xml'), colorsXml(cfg.color));
+    writeFileSync(join(projectDir, 'app/src/main/res/values/themes.xml'), themesXml());
+
+    // Prefill the QRIS device key + webhook URL so the listener works out of
+    // the box for this deployment.
+    try {
+      const company = await prisma.company.findFirst({ select: { qrisDeviceKey: true } });
+      if (company?.qrisDeviceKey) {
+        writeFileSync(join(projectDir, 'app/src/main/res/values/strings.xml'),
+          `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <string name="app_name">${androidString(appName)}</string>\n    <string name="default_device_key">${androidString(company.qrisDeviceKey)}</string>\n    <string name="default_webhook_url">${androidString(`${baseUrl}/api/payment/qris-notify`)}</string>\n</resources>\n`);
+      }
+    } catch { /* company table optional — user can fill the key in the app */ }
+  } else {
+    // Standard WebView app
+    writeFileSync(join(projectDir, 'app/src/main/AndroidManifest.xml'), androidManifest(cfg.pkg));
+    writeFileSync(join(projectDir, `app/src/main/java/${pkgPath}/MainActivity.kt`), mainActivity(cfg.pkg, startUrl, baseUrl));
+    writeFileSync(join(projectDir, `app/src/main/java/${pkgPath}/NotificationWorker.kt`), notificationWorker(cfg.pkg));
+    writeFileSync(join(projectDir, 'app/src/main/res/layout/activity_main.xml'), activityMainXml());
+    writeFileSync(join(projectDir, 'app/src/main/res/values/strings.xml'), stringsXml(appName));
+    writeFileSync(join(projectDir, 'app/src/main/res/values/colors.xml'), colorsXml(cfg.color));
+    writeFileSync(join(projectDir, 'app/src/main/res/values/themes.xml'), themesXml());
+  }
 
   // Icons per density — use company logo if available, fallback to solid color
   const densitySizes: Record<string, number> = {
