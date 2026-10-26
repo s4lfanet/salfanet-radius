@@ -34,6 +34,12 @@ export async function DELETE(request: NextRequest) {
 
       if (idList.length === 0) return badRequest('No valid IDs provided');
 
+      // Keuangan transactions are linked by invoiceNumber (stored in either
+      // plain or INV- prefixed format), so collect them before deleting.
+      const invoiceNumbers = (
+        await prisma.invoice.findMany({ where: { id: { in: idList } }, select: { invoiceNumber: true } })
+      ).map((i) => i.invoiceNumber);
+
       // Delete related records first
       await prisma.payment.deleteMany({ where: { invoiceId: { in: idList } } });
       await prisma.manualPayment.deleteMany({ where: { invoiceId: { in: idList } } });
@@ -42,6 +48,11 @@ export async function DELETE(request: NextRequest) {
       await prisma.paymentAttempt.deleteMany({ where: { invoiceId: { in: idList } } });
       await prisma.registrationRequest.updateMany({ where: { invoiceId: { in: idList } }, data: { invoiceId: null } });
       await prisma.qrisPending.updateMany({ where: { invoiceId: { in: idList } }, data: { invoiceId: null } });
+      if (invoiceNumbers.length > 0) {
+        await prisma.transaction.deleteMany({
+          where: { reference: { in: invoiceNumbers.flatMap((n) => [n, `INV-${n}`]) } },
+        });
+      }
 
       const result = await prisma.invoice.deleteMany({ where: { id: { in: idList } } });
 
@@ -61,6 +72,9 @@ export async function DELETE(request: NextRequest) {
     await prisma.paymentAttempt.deleteMany({ where: { invoiceId: id } });
     await prisma.registrationRequest.updateMany({ where: { invoiceId: id }, data: { invoiceId: null } });
     await prisma.qrisPending.updateMany({ where: { invoiceId: id }, data: { invoiceId: null } });
+    await prisma.transaction.deleteMany({
+      where: { reference: { in: [existingInvoice.invoiceNumber, `INV-${existingInvoice.invoiceNumber}`] } },
+    });
     await prisma.invoice.delete({ where: { id } });
 
     return ok({ success: true, message: 'Invoice deleted successfully' });
