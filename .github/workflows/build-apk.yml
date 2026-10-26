@@ -60,15 +60,18 @@ jobs:
 
       - name: Build release APK
         working-directory: ${{ matrix.app_dir }}
-        run: flutter build apk --release --android-skip-build-dependency-validation --dart-define=API_BASE_URL=${{ inputs.server_url }}
+        run: flutter build apk --release --split-per-abi --android-skip-build-dependency-validation --dart-define=API_BASE_URL=${{ inputs.server_url }}
 
       - name: Rename APK
-        run: cp "${{ matrix.app_dir }}/build/app/outputs/flutter-apk/app-release.apk" "${{ matrix.artifact }}.apk"
+        run: |
+          for abi in armeabi-v7a arm64-v8a x86_64; do
+            cp "${{ matrix.app_dir }}/build/app/outputs/flutter-apk/app-$abi-release.apk" "${{ matrix.artifact }}-$abi.apk"
+          done
 
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: ${{ matrix.artifact }}.apk
+          path: ${{ matrix.artifact }}-*.apk
           retention-days: 90
 
       - name: Publish to apk-latest release
@@ -77,5 +80,5 @@ jobs:
         with:
           tag_name: apk-latest
           name: APK Builds
-          files: ${{ matrix.artifact }}.apk
+          files: ${{ matrix.artifact }}-*.apk
           prerelease: true
