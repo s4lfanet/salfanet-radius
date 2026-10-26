@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const limited = await rateLimit(request, RateLimitPresets.strict);
+    const limited = await rateLimit(request, { max: 20, windowMs: 60000 });
     if (limited) {
       return NextResponse.json(
         { success: false, error: 'Too many uploads. Try again later.' },
