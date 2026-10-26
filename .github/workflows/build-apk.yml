@@ -1,0 +1,78 @@
+name: Build Native APKs
+
+on:
+  workflow_dispatch:
+    inputs:
+      server_url:
+        description: 'API base URL baked into the APKs'
+        required: true
+        default: 'https://radius.salfa.my.id'
+      release:
+        description: 'Publish APKs to the "apk-latest" GitHub Release'
+        type: boolean
+        default: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app_dir: mobile/admin_app
+            artifact: salfanet-admin
+          - app_dir: mobile/customer_app
+            artifact: salfanet-customer
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # Release signing — only when the keystore secrets exist, otherwise the
+      # APK falls back to the debug key (fine for internal testing, but do
+      # not mix signatures on phones that already installed a build).
+      - name: Prepare release keystore
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "${{ matrix.app_dir }}/android/release.keystore"
+          cat > "${{ matrix.app_dir }}/android/key.properties" <<'PROPS'
+          storeFile=release.keystore
+          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.KEY_ALIAS }}
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          PROPS
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Pub get
+        working-directory: ${{ matrix.app_dir }}
+        run: flutter pub get
+
+      - name: Build release APK
+        working-directory: ${{ matrix.app_dir }}
+        run: flutter build apk --release --dart-define=API_BASE_URL=${{ inputs.server_url }}
+
+      - name: Rename APK
+        run: cp "${{ matrix.app_dir }}/build/app/outputs/flutter-apk/app-release.apk" "${{ matrix.artifact }}.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.artifact }}.apk
+          retention-days: 90
+
+      - name: Publish to apk-latest release
+        if: ${{ inputs.release }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-latest
+          name: APK Builds
+          files: ${{ matrix.artifact }}.apk
+          prerelease: true
