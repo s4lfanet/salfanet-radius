@@ -537,7 +537,7 @@ class MainActivity : AppCompatActivity() {
 
         // Info app dipantau
         root.addView(TextView(this).apply {
-            text = "Memantau: DANA | GoPay | ShopeePay | BRImo | BCA Mobile | Mandiri"
+            text = "Memantau: DANA | GoPay | ShopeePay | BRImo | BCA Mobile | Livin'"
             textSize = 11f
             setTextColor(cTextSec)
             gravity = android.view.Gravity.CENTER
@@ -1050,6 +1050,7 @@ class QrisNotificationListener : NotificationListenerService() {
             "com.mandiri.smartpay" to "Mandiri",
             "com.beatcom.network"  to "Mandiri",
             "id.bmri.livin"        to "Livin Mandiri",
+            "id.bmri.livinmerchant" to "Livin' Merchant",
             "ovo.id"               to "OVO",
             "com.telkom.mwallet"   to "LinkAja",
             "src.com.bni"          to "BNI Mobile",
@@ -1088,6 +1089,11 @@ class QrisNotificationListener : NotificationListenerService() {
             ),
             Pattern.compile(
                 """(?:menerima|diterima|masuk|received|transfer\\s+masuk|pembayaran\\s+masuk)[^Rp0-9]*[Rp\\s]*(\\d{1,3}(?:[.,]\\d{3})*)""",
+                Pattern.CASE_INSENSITIVE
+            ),
+            // Livin' Merchant: "Kamu telah menerima pembayaran Rp 469 dari SEABANK atas nama ...".
+            Pattern.compile(
+                """(?:menerima|diterima|terima)\\s+pembayaran\\b[^0-9]{0,30}?Rp\\.?\\s*(\\d{1,3}(?:[.,]\\d{3})*)""",
                 Pattern.CASE_INSENSITIVE
             ),
             Pattern.compile(
@@ -1422,7 +1428,7 @@ class QrisNotificationListener : NotificationListenerService() {
         return NotificationCompat.Builder(this, CHANNEL_FG_ID)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setContentTitle("QRIS Listener Aktif")
-            .setContentText("Memantau notifikasi DANA, GoPay, ShopeePay, BRImo, BCA, Mandiri")
+            .setContentText("Memantau notifikasi DANA, GoPay, ShopeePay, BRImo, BCA, Livin'")
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setOngoing(true)
