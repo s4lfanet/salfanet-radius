@@ -1139,7 +1139,9 @@ Rilis setelah 5.24.0 (20 commit). Tiket pelanggan dengan foto kini tersimpan dan
 ### APK
 - **[FEATURE]** Build APK QRIS Listener standalone kembali tersedia di tab QRIS Mandiri (Payment Gateway), dengan device key dan webhook server yang sudah terisi
 - **[FEATURE]** Workflow GitHub Actions "Build Native APKs" untuk aplikasi admin dan pelanggan. Signing release dan `google-services.json` diambil dari repository secrets, APK dipecah per ABI (sekitar 20 MB, sebelumnya 61 MB), lalu diunggah ke release `apk-latest`
-- **[DOCS]** `docs/BUILD-APK.md`: panduan build APK native untuk instalasi lain (project Firebase sendiri, keystore, build, update di aplikasi)
+- **[DOCS]** `docs/BUILD-APK.md`: panduan build semua APK untuk instalasi baru. APK WebView dan QRIS Listener butuh Java 17 + Android SDK di server; APK native butuh Firebase dan keystore sendiri, di-build di PC/laptop atau GitHub Actions
+- **[UI]** Kartu QRIS Listener memberi tahu bila Java atau Android SDK belum terpasang di server, dengan tautan ke perintah setup, dan tombol build nonaktif sampai server siap
+- **[FIX]** Ringkasan akhir installer menyuruh menjalankan `install-apk.sh`, yang sudah usang dan membangun dari folder yang tidak ada lagi. Kini menunjuk ke `docs/BUILD-APK.md`
 - **[CHORE]** Aplikasi admin naik ke 1.0.14 dan aplikasi pelanggan ke 1.1.9
 
 ### Updater
