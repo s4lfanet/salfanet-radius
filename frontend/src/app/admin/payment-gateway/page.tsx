@@ -170,7 +170,13 @@ export default function PaymentGatewayPage() {
 
   // Standalone QRIS Listener APK — built on the server, usable by any cashier
   // phone without an admin login (Kasir QRIS in the admin app does the same).
-  useEffect(() => { void refreshQrisApk(); }, []);
+  const [apkEnv, setApkEnv] = useState<{ ready: boolean; java: boolean; androidSdk: boolean } | null>(null);
+  useEffect(() => {
+    void refreshQrisApk();
+    apiAdmin<{ ready: boolean; java: boolean; androidSdk: boolean }>('/api/admin/apk/trigger')
+      .then(setApkEnv)
+      .catch(() => setApkEnv(null));
+  }, []);
 
   async function refreshQrisApk(): Promise<string> {
     try {
@@ -856,7 +862,7 @@ export default function PaymentGatewayPage() {
                   <button
                     type="button"
                     onClick={buildQrisApk}
-                    disabled={qrisApk?.status === 'building'}
+                    disabled={qrisApk?.status === 'building' || apkEnv?.ready === false}
                     className="px-3 py-1.5 text-xs font-medium bg-primary hover:bg-primary/90 text-white rounded-lg disabled:opacity-50 inline-flex items-center gap-1.5"
                   >
                     {qrisApk?.status === 'building' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
@@ -872,6 +878,15 @@ export default function PaymentGatewayPage() {
                     </a>
                   )}
                 </div>
+                {apkEnv?.ready === false && (
+                  <div className="p-2 bg-warning/10 border border-warning/20 rounded-lg">
+                    <p className="text-[10px] text-warning">
+                      Server belum bisa build APK: {[!apkEnv.java && 'Java 17', !apkEnv.androidSdk && 'Android SDK'].filter(Boolean).join(' dan ')} belum terpasang.
+                      Pasang sekali lewat SSH dengan perintah di halaman{' '}
+                      <a href="/admin/download-apk" className="underline font-medium">Download APK</a>, lalu buka lagi halaman ini.
+                    </p>
+                  </div>
+                )}
                 {qrisApk?.status === 'building' && (
                   <p className="text-[10px] text-info">Build berjalan di server — biasanya 2-5 menit. Halaman ini otomatis update saat selesai.</p>
                 )}

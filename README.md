@@ -770,6 +770,10 @@ Lihat detail lengkap di [vps-install/README.md](./frontend/vps-install/README.md
 
 ⚠️ **Ganti password segera setelah login pertama!**
 
+### APK Android di Instalasi Baru
+
+Instalasi baru belum bisa membuat APK. APK WebView portal dan **QRIS Listener** di-build di server setelah Java 17 + Android SDK dipasang sekali (perintahnya tampil di **Admin → Download APK**). Aplikasi **native** admin dan pelanggan di-build di PC/laptop atau GitHub Actions dengan Firebase dan keystore milik sendiri. Langkah lengkap: [docs/BUILD-APK.md](docs/BUILD-APK.md).
+
 ---
 
 ## 🔌 FreeRADIUS

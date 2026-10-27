@@ -376,13 +376,12 @@ Admin Panel     : $([ -n "${VPS_DOMAIN:-}" ] && echo "https://${VPS_DOMAIN}/admi
 Default Login   : Lihat database seeders
 Firewall (UFW)  : $([ "${SKIP_UFW}" = "true" ] && echo "DILEWATI - konfigurasi di Proxmox host" || echo "$(ufw status 2>/dev/null | head -1 | sed 's/^Status: //')")
 
-[>] CUSTOMER MOBILE APP
------------------------
-APK Status      : $([ "${APK_BUILT:-false}" = "true" ] && echo "Sudah dibuild" || echo "Belum dibuild")
-APK Download URL: $([ -n "${VPS_DOMAIN:-}" ] && echo "https://${VPS_DOMAIN}/downloads/salfanet-radius.apk" || echo "http://${VPS_IP}/downloads/salfanet-radius.apk")
-Build APK       : bash ${APP_DIR}/frontend/vps-install/install-apk.sh
-Rebuild APK     : bash ${APP_DIR}/frontend/vps-install/install-apk.sh --rebuild
-APK Status Cek  : bash ${APP_DIR}/frontend/vps-install/install-apk.sh --status
+[>] APK ANDROID (belum bisa dibuild di instalasi baru)
+-----------------------------------------------------
+APK WebView + QRIS Listener : pasang Java 17 + Android SDK sekali (perintah di Admin -> Download APK),
+                              lalu build dari Admin -> Download APK / Payment Gateway -> QRIS Mandiri
+APK native admin & customer : build di PC/laptop atau GitHub Actions, bukan di VPS
+Panduan lengkap             : ${APP_DIR}/docs/BUILD-APK.md
 
 [>] SSTP VPN CLIENT (koneksi ke MikroTik CHR)
 --------------------------------------------
@@ -450,7 +449,7 @@ tail -f /var/log/freeradius/radius.log  # Logs
 1. Akses aplikasi : $([ -n "${VPS_DOMAIN:-}" ] && echo "https://${VPS_DOMAIN}" || echo "http://${VPS_IP}")
 2. Login admin, ganti password
 3. Tambahkan NAS/router di pengaturan RADIUS
-4. Bagikan link APK ke customer: $([ -n "${VPS_DOMAIN:-}" ] && echo "https://${VPS_DOMAIN}/downloads/salfanet-radius.apk" || echo "http://${VPS_IP}/downloads/salfanet-radius.apk")
+4. [Opsional] Siapkan build APK Android: ${APP_DIR}/docs/BUILD-APK.md
 $([ "${REDIS_INSTALLED:-false}" = "false" ] && echo "5. [Opsional] Install Redis: bash ${APP_DIR}/frontend/vps-install/install-redis.sh" || echo "5. Redis: sudah terinstall dan aktif")
 $([ "${DEPLOY_ENV}" = "vps" ] && [ -z "${VPS_DOMAIN:-}" ] && echo "6. Setup SSL: certbot --nginx -d yourdomain.com" || \
   echo "6. [Opsional] Setup Cloudflare Tunnel untuk akses dari internet")
@@ -483,15 +482,7 @@ show_final_summary() {
     echo -e "  Web App : ${WHITE}http://${VPS_IP}${NC}"
     echo -e "  Admin   : ${WHITE}http://${VPS_IP}/admin${NC}"
     fi
-    if [ "${APK_BUILT:-false}" = "true" ]; then
-        if [ -n "${VPS_DOMAIN:-}" ]; then
-        echo -e "  APK DL  : ${WHITE}https://${VPS_DOMAIN}/downloads/salfanet-radius.apk${NC}"
-        else
-        echo -e "  APK DL  : ${WHITE}http://${VPS_IP}/downloads/salfanet-radius.apk${NC}"
-        fi
-    else
-        echo -e "  ${YELLOW}APK belum dibuild. Jalankan: bash ${APP_DIR}/frontend/vps-install/install-apk.sh${NC}"
-    fi
+    echo -e "  ${YELLOW}APK Android belum bisa dibuild. Panduan: ${APP_DIR}/docs/BUILD-APK.md${NC}"
     echo ""
     if [ "${REDIS_INSTALLED:-false}" = "true" ]; then
         echo -e "  Redis   : ${GREEN}Aktif (redis://127.0.0.1:6379)${NC}"

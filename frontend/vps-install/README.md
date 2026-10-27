@@ -146,7 +146,7 @@ Installer menjalankan 7 step wajib, Redis dan keamanan (gagal di dua step ini ti
 | 6 | `install-nginx.sh` | Nginx reverse proxy, termasuk `/uploads/` | 1 menit |
 | 7 | `install-pm2.sh` | PM2, `next build` backend dan frontend, ecosystem config (4 proses) | 5-10 menit |
 | 8 | `install-security.sh` | fail2ban, firewall UFW, pengamanan GenieACS NBI, pembersihan disk harian | 1-2 menit |
-| - | `install-apk.sh` | *(Opsional)* Build APK Android customer | 25-48 menit |
+| - | `install-apk.sh` | *(Usang, jangan dipakai)* Untuk APK lihat [docs/BUILD-APK.md](../../docs/BUILD-APK.md) | - |
 | - | `install-vpn-client.sh`, `install-wg-server.sh`, `install-l2tp-server.sh` | *(Opsional)* Klien SSTP, server WireGuard, server L2TP | 2 menit |
 
 ---
@@ -244,7 +244,7 @@ bash /var/www/salfanet-radius/frontend/vps-install/check-port.sh
 
 ## install-apk.sh — Build APK Android Customer (usang)
 
-> ⚠️ **Usang.** Script ini membangun dari folder `mobile-app/` (Expo/React Native), yang sudah tidak ada di repo. Aplikasi Android sekarang Flutter di `mobile/customer_app/` dan `mobile/admin_app/`, dibangun di mesin pengembang (lihat README masing-masing), lalu APK-nya diunggah di panel admin, **Build APK, Rilis APK**. Panel memeriksa nama paket, nomor build, dan tanda tangan sebelum menerimanya. Bagian di bawah dipertahankan sebagai arsip.
+> ⚠️ **Usang.** Script ini membangun dari folder `mobile-app/` (Expo/React Native), yang sudah tidak ada di repo. Aplikasi Android sekarang Flutter di `mobile/customer_app/` dan `mobile/admin_app/`, dibangun di mesin pengembang (lihat README masing-masing), lalu APK-nya diunggah di panel admin, **Build APK, Rilis APK**. Panel memeriksa nama paket, nomor build, dan tanda tangan sebelum menerimanya. Bagian di bawah dipertahankan sebagai arsip. Panduan yang berlaku untuk semua APK (WebView, QRIS Listener, native): [docs/BUILD-APK.md](../../docs/BUILD-APK.md).
 
 Script untuk membangun APK Android untuk customer self-service app.
 
