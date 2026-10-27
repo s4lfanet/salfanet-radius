@@ -380,6 +380,22 @@ export async function PUT(req: NextRequest) {
       },
     });
 
+    // Notify the customer on resolve/close — same push the technician
+    // portal sends. Goes through web push + FCM + the app-notices copy.
+    const resolvedNow = status === 'RESOLVED' && !existingTicket.resolvedAt;
+    const closedNow = status === 'CLOSED' && !existingTicket.closedAt;
+    if ((resolvedNow || closedNow) && ticket.customerId) {
+      try {
+        const { sendWebPushToUser } = await import('@/server/services/push-notification.service');
+        await sendWebPushToUser(ticket.customerId, {
+          title: resolvedNow ? '✅ Tiket Diselesaikan' : '🔒 Tiket Ditutup',
+          body: `Tiket #${ticket.ticketNumber} "${ticket.subject}" telah ${resolvedNow ? 'diselesaikan' : 'ditutup'}.`,
+          url: '/customer/tickets',
+          tag: 'ticket-resolved',
+        });
+      } catch { /* ignore */ }
+    }
+
     // A ticket handed to a collector shows up in their bell.
     if (assignedToId && assignedToId !== existingTicket.assignedToId) {
       const assignee = await prisma.adminUser.findFirst({ where: { id: String(assignedToId), role: 'COLLECTOR', isActive: true }, select: { id: true } });
