@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
@@ -16,6 +18,7 @@ import 'features/notifications/notifications_provider.dart';
 import 'features/referral/referral_provider.dart';
 import 'features/renewal/renewal_provider.dart';
 import 'features/shell/main_shell.dart';
+import 'features/splash/splash_screen.dart';
 import 'features/suspend/suspend_provider.dart';
 import 'features/tickets/ticket_provider.dart';
 import 'features/topup/topup_provider.dart';
@@ -79,24 +82,34 @@ class _AuthGate extends StatefulWidget {
 }
 
 class _AuthGateState extends State<_AuthGate> {
+  // Splash stays up this long even when auth resolves instantly, so the
+  // opening motion reads once instead of flickering by.
+  bool _splashHeld = false;
+
   @override
   void initState() {
     super.initState();
     ApiClient.instance.onUnauthorized = () {
       context.read<AuthProvider>().forceLogout();
     };
+    Timer(const Duration(milliseconds: 1700), () {
+      if (mounted) setState(() => _splashHeld = true);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-    switch (auth.status) {
-      case AuthStatus.unknown:
-        return const Scaffold(body: Center(child: CircularProgressIndicator()));
-      case AuthStatus.unauthenticated:
-        return auth.pendingPhone != null ? const OtpScreen() : const LoginScreen();
-      case AuthStatus.authenticated:
-        return const MainShell();
+    final Widget child;
+    if (!_splashHeld || auth.status == AuthStatus.unknown) {
+      child = const SplashScreen(key: ValueKey('splash'));
+    } else if (auth.status == AuthStatus.unauthenticated) {
+      child = auth.pendingPhone != null
+          ? const OtpScreen(key: ValueKey('otp'))
+          : const LoginScreen(key: ValueKey('login'));
+    } else {
+      child = const MainShell(key: ValueKey('shell'));
     }
+    return AnimatedSwitcher(duration: const Duration(milliseconds: 350), child: child);
   }
 }
