@@ -1,14 +1,14 @@
 # Build APK
 
 Instalasi baru Salfanet RADIUS belum bisa membuat APK apa pun: server belum
-punya Java dan Android SDK, dan aplikasi native butuh Firebase dan keystore
-milik Anda sendiri. Ada dua jenis APK dengan cara build yang berbeda:
+punya Java dan Android SDK, dan aplikasi native butuh keystore milik Anda
+sendiri. Ada dua jenis APK dengan cara build yang berbeda:
 
 | APK | Di-build di | Yang perlu disiapkan |
 |---|---|---|
 | WebView portal (admin, customer, technician, agent) | Server VPS, dari **Admin → Download APK** | Java 17 + Android SDK di VPS (bagian A) |
 | QRIS Listener (HP kasir) | Server VPS, dari **Admin → Payment Gateway → tab QRIS Mandiri** | Sama dengan di atas (bagian A) |
-| Native Flutter (`mobile/admin_app`, `mobile/customer_app`) | PC/laptop atau GitHub Actions, **bukan VPS** | Flutter, Firebase, keystore (bagian B) |
+| Native Flutter (`mobile/admin_app`, `mobile/customer_app`) | PC/laptop atau GitHub Actions, **bukan VPS** | Flutter, keystore (bagian B). Firebase opsional — diatur di server, bukan di APK |
 
 ---
 
@@ -46,27 +46,51 @@ Build berjalan 2–5 menit dan memakai RAM cukup besar. Di VPS dengan RAM kecil
 ## B. APK native (admin_app / customer_app)
 
 Kedua aplikasi native ada di `mobile/admin_app` dan `mobile/customer_app`
-(Flutter). File `google-services.json`, `key.properties`, dan keystore
-**tidak disertakan di repo** — setiap deployment membawa miliknya sendiri.
+(Flutter). File `key.properties` dan keystore **tidak disertakan di repo** —
+setiap deployment membawa miliknya sendiri. `google-services.json` juga tidak
+perlu ada saat build: konfigurasi Firebase diambil aplikasi dari server saat
+berjalan (langkah 1), jadi **satu APK bisa dipakai semua instalasi**.
 
 Jangan build di VPS produksi: Gradle dan Flutter memakai beberapa GB RAM dan
 disk, cukup untuk mengganggu layanan yang berjalan. Pakai PC/laptop atau
 GitHub Actions (langkah 4).
 
-## 1. Firebase / FCM (untuk push notifikasi)
+## 1. Push notifikasi: Firebase opsional, polling cadangan
+
+Aplikasi menanyakan ke server (`GET /api/public/push-config`) cara menerima
+notifikasi, tepat setelah URL server diisi:
+
+- **Server punya Firebase** → aplikasi menyalakan FCM dengan konfigurasi dari
+  server. Real-time, andal saat aplikasi ditutup.
+- **Server tanpa Firebase** → aplikasi mengecek notifikasi baru secara berkala
+  (±15 menit, dijadwalkan Android) dan menampilkannya lewat notifikasi lokal.
+  Tetap berfungsi, hanya tidak se-real-time FCM.
+
+### Mengaktifkan FCM di satu instalasi
 
 1. Buat project di <https://console.firebase.google.com>
 2. Tambahkan 2 aplikasi Android dengan package name:
    - `id.my.salfa.admin_app`
    - `id.my.salfa.customer_app`
-3. Unduh `google-services.json` masing-masing, letakkan di:
-   - `mobile/admin_app/android/app/google-services.json`
-   - `mobile/customer_app/android/app/google-services.json`
-4. Di backend `.env` set `FIREBASE_SERVICE_ACCOUNT_JSON='{"type":"service_account",...}'`
-   (Project Settings → Service Accounts → Generate new private key).
+3. Unduh `google-services.json` **salah satu** aplikasi (satu file berisi
+   kedua aplikasi bila keduanya ada di project yang sama).
+4. Unduh service account: Project Settings → Service Accounts → Generate new
+   private key.
+5. Buka **Admin → Download APK → Notifikasi Push Aplikasi** (Super Admin),
+   unggah kedua file itu di sana.
 
-Tanpa file ini build tetap jalan tapi FCM tidak aktif (web push via VAPID
-di portal tetap bekerja).
+File disimpan di folder data server (bukan di repo maupun build), service
+account tidak pernah keluar lewat API, dan aplikasi langsung memakai FCM
+begitu konfigurasi tersedia — tanpa rebuild APK. Mengganti atau menghapus
+konfigurasi cukup dari halaman yang sama.
+
+Alternatif tanpa panel: set `FIREBASE_SERVICE_ACCOUNT_JSON='{"type":"service_account",...}'`
+di `.env` backend. Cara lama ini tetap didukung dan **diutamakan** bila
+keduanya ada — tapi tanpa `google-services.json` yang diunggah, aplikasi
+tetap memakai polling karena tidak mendapat konfigurasi klien.
+
+Tanpa konfigurasi apa pun, aplikasi tetap aman: notifikasi jalan lewat
+polling dan web push via VAPID di portal tidak terpengaruh.
 
 ## 2. Signing key (wajib untuk release APK)
 
@@ -110,8 +134,9 @@ build, set repository secrets:
 | `KEYSTORE_PASSWORD` | password keystore |
 | `KEY_ALIAS` | alias key |
 | `KEY_PASSWORD` | password key |
-| `GOOGLE_SERVICES_JSON_ADMIN` | `base64 -w0 google-services.json` admin |
-| `GOOGLE_SERVICES_JSON_CUSTOMER` | `base64 -w0 google-services.json` customer |
+
+Secret `google-services.json` tidak dipakai lagi: Firebase diatur per
+instalasi lewat server (langkah 1), bukan dibakar ke APK saat build.
 
 ## 5. Update in-app
 
