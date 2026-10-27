@@ -315,7 +315,12 @@ async function runActivityLogCleanup() {
   const notices = await prisma.collectorNotification.deleteMany({
     where: { OR: [{ readAt: { not: null }, createdAt: { lt: thirtyDaysAgo } }, { createdAt: { lt: new Date(nowWIB().getTime() - 60 * 24 * 60 * 60 * 1000) } }] },
   })
-  return { deleted: result.count, collectorNotifications: notices.count }
+  // Copies the customer app polls when the server has no Firebase; the app
+  // only looks back 7 days.
+  const appNotices = await prisma.customerAppNotice.deleteMany({
+    where: { createdAt: { lt: new Date(nowWIB().getTime() - 7 * 24 * 60 * 60 * 1000) } },
+  })
+  return { deleted: result.count, collectorNotifications: notices.count, customerAppNotices: appNotices.count }
 }
 
 async function runWebhookLogCleanup() {

@@ -5,7 +5,7 @@ import {
   Smartphone, Download, Shield, Wifi, Users, UserCheck,
   CheckCircle2, XCircle, Clock, AlertTriangle, RefreshCw,
   Terminal, Copy, Check, HardDrive, ChevronDown,
-  Package, Globe, Upload, ImageIcon, Wallet,
+  Package, Globe, Upload, ImageIcon, Wallet, Bell, Trash2,
 } from 'lucide-react';
 import { apiAdmin, buildUrl } from '@/lib/api';
 import { showError } from '@/lib/sweetalert';
@@ -460,6 +460,168 @@ function ReleasePanel() {
   );
 }
 
+type FirebaseKind = 'google-services' | 'service-account';
+
+interface FirebaseStatus {
+  clientConfig: { projectId: string; apps: Array<'customer' | 'admin'> } | null;
+  serviceAccount: { projectId: string; clientEmail: string; source: 'env' | 'file' } | null;
+  projectMismatch: boolean;
+  ready: { customer: boolean; admin: boolean };
+}
+
+const FIREBASE_FILES: Array<{ kind: FirebaseKind; label: string; hint: string }> = [
+  {
+    kind: 'google-services',
+    label: 'google-services.json',
+    hint: 'Firebase console → Project settings → Your apps → aplikasi Android → unduh google-services.json',
+  },
+  {
+    kind: 'service-account',
+    label: 'Kunci service account',
+    hint: 'Firebase console → Project settings → Service accounts → Generate new private key',
+  },
+];
+
+function FirebasePanel() {
+  const query = useApiQuery<{ success: boolean } & FirebaseStatus>('/api/admin/push-config');
+  const [busy, setBusy] = useState<FirebaseKind | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const status = query.data;
+
+  const upload = async (kind: FirebaseKind, file: File) => {
+    setBusy(kind);
+    setError(null);
+    try {
+      const form = new FormData();
+      form.append('kind', kind);
+      form.append('file', file);
+      await apiAdmin('/api/admin/push-config', { method: 'POST', body: form });
+      await query.refetch();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Gagal mengunggah file.');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const remove = async (kind: FirebaseKind) => {
+    setBusy(kind);
+    setError(null);
+    try {
+      await apiAdmin(`/api/admin/push-config?kind=${kind}`, { method: 'DELETE' });
+      await query.refetch();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Gagal menghapus file.');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const describe = (kind: FirebaseKind) => {
+    if (!status) return null;
+    if (kind === 'google-services') {
+      return status.clientConfig
+        ? `Project ${status.clientConfig.projectId} · aplikasi: ${status.clientConfig.apps.map((a) => (a === 'admin' ? 'admin' : 'pelanggan')).join(', ')}`
+        : null;
+    }
+    return status.serviceAccount
+      ? `Project ${status.serviceAccount.projectId} · ${status.serviceAccount.clientEmail}${status.serviceAccount.source === 'env' ? ' (dari .env)' : ''}`
+      : null;
+  };
+
+  return (
+    <div className="rounded-xl border border-slate-700/50 bg-slate-900/60 p-4">
+      <div className="flex items-center gap-2 text-slate-300 text-xs font-semibold mb-1">
+        <Bell className="w-3.5 h-3.5 text-cyan-400" /> Notifikasi Push Aplikasi (opsional)
+      </div>
+      <p className="text-[11px] text-slate-400 mb-3">
+        Aplikasi native mengambil pengaturan ini dari server, jadi satu APK bisa dipakai di instalasi mana pun. Tanpa
+        Firebase, aplikasi tetap menerima notifikasi dengan mengecek server sekitar tiap 15 menit, dan langsung saat
+        aplikasi dibuka. Dengan Firebase, notifikasi masuk seketika. Unggah dua file dari project Firebase yang sama.
+      </p>
+      {query.isLoading && (
+        <div className="flex items-center gap-2 text-slate-400 text-xs"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Memuat…</div>
+      )}
+      {query.error && <p className="text-xs text-red-400">Gagal memuat pengaturan Firebase. Bagian ini khusus Super Admin.</p>}
+      {status && (
+        <>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {(['customer', 'admin'] as const).map((app) => (
+              <span
+                key={app}
+                className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] border ${status.ready[app] ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-slate-600 bg-slate-800/60 text-slate-300'}`}
+              >
+                {status.ready[app] ? <CheckCircle2 className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+                Aplikasi {app === 'admin' ? 'admin' : 'pelanggan'}: {status.ready[app] ? 'Firebase (seketika)' : 'cek berkala'}
+              </span>
+            ))}
+          </div>
+          {status.projectMismatch && (
+            <p className="text-[11px] text-amber-300 mb-3">
+              Kedua file berasal dari project Firebase yang berbeda ({status.clientConfig?.projectId} dan{' '}
+              {status.serviceAccount?.projectId}). Aplikasi tetap memakai cek berkala sampai keduanya dari project yang sama.
+            </p>
+          )}
+          <div className="space-y-2">
+            {FIREBASE_FILES.map(({ kind, label, hint }) => {
+              const info = describe(kind);
+              const fromEnv = kind === 'service-account' && status.serviceAccount?.source === 'env';
+              return (
+                <div key={kind} className="rounded-lg border border-slate-700/60 bg-slate-800/40 p-3 flex flex-col sm:flex-row sm:items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-white">{label}</p>
+                    <p className={`text-[11px] mt-0.5 break-words ${info ? 'text-slate-300' : 'text-slate-500'}`}>{info ?? 'Belum diunggah.'}</p>
+                    <p className="text-[10px] text-slate-500 mt-0.5">{hint}</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {info && !fromEnv && (
+                      <button
+                        type="button"
+                        onClick={() => remove(kind)}
+                        disabled={busy !== null}
+                        aria-label={`Hapus ${label}`}
+                        className="inline-flex items-center justify-center min-h-[40px] min-w-[40px] rounded-lg border border-slate-600 text-slate-300 hover:text-red-300 hover:border-red-500/40 disabled:opacity-50"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                    {!fromEnv && (
+                      <label>
+                        <span className={`inline-flex items-center justify-center gap-1.5 min-h-[40px] py-2 px-4 rounded-lg text-xs font-bold text-white ${busy ? 'bg-slate-700 cursor-not-allowed' : 'bg-cyan-600 hover:bg-cyan-500 cursor-pointer'}`}>
+                          {busy === kind ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                          {info ? 'Ganti' : 'Unggah'}
+                        </span>
+                        <input
+                          type="file"
+                          accept=".json,application/json"
+                          className="sr-only"
+                          disabled={busy !== null}
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            e.target.value = '';
+                            if (f) void upload(kind, f);
+                          }}
+                        />
+                      </label>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {status.serviceAccount?.source === 'env' && (
+            <p className="text-[10px] text-slate-500 mt-2">
+              Kunci service account diambil dari FIREBASE_SERVICE_ACCOUNT_JSON di .env backend. Hapus variabel itu bila ingin
+              mengaturnya dari sini.
+            </p>
+          )}
+          {error && <p className="text-[11px] text-red-400 mt-2">{error}</p>}
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function DownloadApkPage() {
   const [statuses, setStatuses] = useState<Partial<Record<RoleKey, BuildStatus>>>({});
   const [building, setBuilding] = useState<Set<RoleKey>>(new Set());
@@ -564,6 +726,8 @@ export default function DownloadApkPage() {
 
       {/* Published releases for the login pages */}
       <ReleasePanel />
+
+      <FirebasePanel />
 
       {/* URL Config */}
       <div className="rounded-xl border border-slate-700/50 bg-slate-900/60 p-4">

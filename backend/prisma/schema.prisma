@@ -627,6 +627,7 @@ model pppoeUser {
   referralRewardsReceived referralReward[]       @relation("ReferredRewards")
   pushSubscriptions       pushSubscription[]
   customerPushTokens      customerPushToken[]
+  appNotices              customerAppNotice[]
   oltOnuStatuses          oltOnuStatus[]
   registeredByTechnician  technician?            @relation(fields: [registeredByTechnicianId], references: [id], onDelete: SetNull)
   customerAddons          customerAddon[]
@@ -959,6 +960,21 @@ model customerPushToken {
 
   @@index([userId])
   @@map("customer_push_tokens")
+}
+
+/// Copy of every push sent to a customer, so the native app can fetch what
+/// it missed when the server has no Firebase (FCM) configured.
+model customerAppNotice {
+  id        String    @id @default(cuid())
+  userId    String
+  user      pppoeUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String    @db.VarChar(255)
+  body      String    @db.Text
+  url       String?   @db.VarChar(500)
+  createdAt DateTime  @default(now())
+
+  @@index([userId, createdAt])
+  @@map("customer_app_notices")
 }
 
 model agentPushSubscription {

@@ -71,11 +71,7 @@ flutter {
     source = "../.."
 }
 
-// Push notifications need a real Firebase project: drop android/app/google-services.json
-// in from the Firebase console (package name id.my.salfa.customer_app) to enable it.
-// Until then this plugin is skipped so the app still builds and runs — PushService
-// catches the resulting Firebase.initializeApp() failure and no-ops, matching the
-// backend's fcm-push.service.ts graceful no-op when unconfigured.
-if (file("google-services.json").exists()) {
-    apply(plugin = "com.google.gms.google-services")
-}
+// No google-services plugin: Firebase is configured at runtime from the
+// server the app connects to (GET /api/public/push-config), so one APK works
+// with any installation. A baked-in google-services.json would start Firebase
+// natively with a fixed project and clash with that.

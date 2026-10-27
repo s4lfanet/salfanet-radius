@@ -24,10 +24,8 @@ jobs:
         include:
           - app_dir: mobile/admin_app
             artifact: salfanet-admin
-            gs_secret: GOOGLE_SERVICES_JSON_ADMIN
           - app_dir: mobile/customer_app
             artifact: salfanet-customer
-            gs_secret: GOOGLE_SERVICES_JSON_CUSTOMER
 
     steps:
       - uses: actions/checkout@v4
@@ -47,17 +45,6 @@ jobs:
             echo "Release signing enabled"
           else
             echo "No keystore secrets — debug signing fallback"
-          fi
-
-      - name: Write google-services.json
-        env:
-          GS_JSON: ${{ secrets[matrix.gs_secret] }}
-        run: |
-          if [ -n "$GS_JSON" ]; then
-            echo "$GS_JSON" | base64 -d > "${{ matrix.app_dir }}/android/app/google-services.json"
-            echo "google-services.json written from secret"
-          else
-            echo "No firebase secret — FCM disabled in this build"
           fi
 
       - uses: subosito/flutter-action@v2

@@ -10,12 +10,15 @@ import 'server-only'
  * ticket replies, auto-renewal, isolation notices) reaches the Flutter app
  * automatically without touching those call sites.
  *
- * No-ops safely (returns 0 sent/0 failed) if FIREBASE_SERVICE_ACCOUNT_JSON
- * isn't configured, so the existing web-push flow is unaffected until a
- * Firebase project is set up.
+ * No-ops safely (returns 0 sent/0 failed) when no service account is set up
+ * (admin panel upload or FIREBASE_SERVICE_ACCOUNT_JSON), so the existing
+ * web-push flow is unaffected until a Firebase project is set up. Customer
+ * pushes are also stored as customerAppNotice rows either way, which is how
+ * the app still gets them on a server without Firebase.
  */
 import * as admin from 'firebase-admin';
 import { prisma } from '@/server/db/client';
+import { readServiceAccount } from './firebase-config.service';
 
 // Deliberately NOT importing types/helpers from push-notification.service.ts
 // here (it imports back from this file) — kept minimal and self-contained to
@@ -28,29 +31,51 @@ export interface FcmPushPayload {
   data?: Record<string, string | number | boolean | null | undefined>;
 }
 
+const FCM_APP_NAME = 'fcm-customer';
 let fcmApp: admin.app.App | null = null;
-let initAttempted = false;
+// The service account can be uploaded or removed in the admin panel while
+// the server runs; re-initialize whenever its source changes.
+let loadedSignature: string | undefined;
+let warnedMissing = false;
 
 function getFcmApp(): admin.app.App | null {
-  if (fcmApp) return fcmApp;
-  if (initAttempted) return null;
-  initAttempted = true;
+  const sa = readServiceAccount();
+  const signature = sa?.signature ?? 'none';
+  if (signature === loadedSignature) return fcmApp;
 
-  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-  if (!raw) {
-    console.warn('[FCM] FIREBASE_SERVICE_ACCOUNT_JSON not configured — customer app push disabled (web push is unaffected).');
+  loadedSignature = signature;
+  const previous = fcmApp ?? admin.apps.find((a) => a?.name === FCM_APP_NAME) ?? null;
+  fcmApp = null;
+  if (previous) void previous.delete().catch(() => {});
+
+  if (!sa) {
+    if (!warnedMissing) console.warn('[FCM] No Firebase service account — native app push goes through polling (web push is unaffected).');
+    warnedMissing = true;
     return null;
   }
-
   try {
-    const serviceAccount = JSON.parse(raw);
-    fcmApp = admin.apps.length
-      ? (admin.apps.find((a) => a?.name === 'fcm-customer') ?? admin.initializeApp({ credential: admin.credential.cert(serviceAccount) }, 'fcm-customer'))
-      : admin.initializeApp({ credential: admin.credential.cert(serviceAccount) }, 'fcm-customer');
+    fcmApp = admin.initializeApp({ credential: admin.credential.cert(sa.account as admin.ServiceAccount) }, `${FCM_APP_NAME}-${Date.now()}`);
     return fcmApp;
   } catch (error) {
     console.error('[FCM] Failed to initialize firebase-admin:', error);
     return null;
+  }
+}
+
+/** Keeps a copy the customer app can poll for (see /api/customer/app-notices). */
+async function storeCustomerNotices(userIds: string[], payload: FcmPushPayload) {
+  if (userIds.length === 0) return;
+  try {
+    await prisma.customerAppNotice.createMany({
+      data: userIds.map((userId) => ({
+        userId,
+        title: payload.title.slice(0, 255),
+        body: payload.body,
+        url: payload.url?.slice(0, 500) || null,
+      })),
+    });
+  } catch (error) {
+    console.error('[FCM] Storing customer app notices failed:', error);
   }
 }
 
@@ -139,13 +164,16 @@ async function sendToTokenRows(
 }
 
 export async function sendFcmToUser(userId: string, payload: FcmPushPayload): Promise<{ sent: number; failed: number }> {
+  await storeCustomerNotices([userId], payload);
   if (!getFcmApp()) return { sent: 0, failed: 0 };
   const tokenRows = await prisma.customerPushToken.findMany({ where: { userId }, select: { id: true, token: true } });
   return sendToTokenRows(tokenRows, payload);
 }
 
 export async function sendFcmToUsers(userIds: string[], payload: FcmPushPayload): Promise<{ sent: number; failed: number }> {
-  if (!getFcmApp() || userIds.length === 0) return { sent: 0, failed: 0 };
+  if (userIds.length === 0) return { sent: 0, failed: 0 };
+  await storeCustomerNotices(userIds, payload);
+  if (!getFcmApp()) return { sent: 0, failed: 0 };
   const tokenRows = await prisma.customerPushToken.findMany({ where: { userId: { in: userIds } }, select: { id: true, token: true } });
   return sendToTokenRows(tokenRows, payload);
 }

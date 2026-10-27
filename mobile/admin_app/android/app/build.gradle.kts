@@ -74,9 +74,7 @@ flutter {
     source = "../.."
 }
 
-// Push needs android/app/google-services.json from the Firebase console
-// (package id.my.salfa.admin_app, same project as the customer app). Without
-// it the plugin is skipped, the app still builds, and PushService no-ops.
-if (file("google-services.json").exists()) {
-    apply(plugin = "com.google.gms.google-services")
-}
+// No google-services plugin: Firebase is configured at runtime from the
+// server the app connects to (GET /api/public/push-config), so one APK works
+// with any installation. A baked-in google-services.json would start Firebase
+// natively with a fixed project and clash with that.
