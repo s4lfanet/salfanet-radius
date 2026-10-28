@@ -10,6 +10,7 @@ import '../speedtest/speedtest_screen.dart';
 import '../suspend/suspend_screen.dart';
 import '../topup/topup_screen.dart';
 import '../upgrade/upgrade_screen.dart';
+import 'guide_screen.dart';
 import 'profile_screen.dart';
 
 class MoreScreen extends StatelessWidget {
@@ -134,6 +135,13 @@ class MoreScreen extends StatelessWidget {
                 title: 'Speed Test',
                 subtitle: 'Ukur kecepatan internet saat ini',
                 onTap: () => _push(context, const SpeedtestScreen()),
+              ),
+              _MenuTile(
+                icon: Icons.menu_book_rounded,
+                accent: FeatureColors.ticket,
+                title: 'Panduan',
+                subtitle: 'Cara memakai tiap fitur aplikasi',
+                onTap: () => _push(context, const GuideScreen()),
               ),
               _MenuTile(
                 icon: Icons.system_update_rounded,

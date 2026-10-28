@@ -1,0 +1,142 @@
+{
+  "guides": [
+    {
+      "title": "Beranda",
+      "icon": "home",
+      "summary": "Ringkasan akun Anda: status langganan, sisa masa aktif, tagihan yang belum dibayar, dan pengumuman dari operator.",
+      "steps": [
+        "Kartu atas menampilkan status akun dan tanggal jatuh tempo berikutnya.",
+        "Tagihan yang belum dibayar tampil di bagian tagihan — ketuk untuk langsung membayar.",
+        "Tarik layar ke bawah untuk memuat ulang data terbaru."
+      ],
+      "notes": [
+        "Bila status menunjukkan terisolir, selesaikan tagihan yang tertunggak atau hubungi operator."
+      ]
+    },
+    {
+      "title": "Tagihan & Pembayaran",
+      "icon": "invoice",
+      "summary": "Daftar tagihan bulanan dan riwayat pembayaran Anda. Bayar langsung dari aplikasi lewat QRIS atau gateway lain, atau unggah bukti transfer manual.",
+      "steps": [
+        "Buka tab Tagihan untuk melihat invoice yang belum dan sudah lunas.",
+        "Ketuk invoice, lalu pilih cara bayar — QRIS cukup dipindai dari aplikasi bank atau e-wallet mana pun.",
+        "Untuk transfer bank manual, unggah foto bukti transfer; admin akan mengonfirmasinya.",
+        "Setelah pembayaran terkonfirmasi, status invoice berubah menjadi Lunas secara otomatis."
+      ],
+      "notes": [
+        "Nominal QRIS sudah termasuk kode unik — bayar sesuai nominal yang tampil agar terverifikasi otomatis.",
+        "Bila sudah membayar tetapi status belum lunas, tunggu beberapa menit lalu muat ulang, atau hubungi operator."
+      ]
+    },
+    {
+      "title": "WiFi Saya",
+      "icon": "wifi",
+      "summary": "Informasi jaringan WiFi Anda: nama jaringan (SSID) dan kata sandi saat ini.",
+      "steps": [
+        "Buka tab WiFi untuk melihat nama dan kata sandi jaringan Anda.",
+        "Bagikan kata sandi ke keluarga dengan tombol salin.",
+        "Bila tersedia, Anda bisa mengganti kata sandi WiFi dari halaman ini."
+      ],
+      "notes": [
+        "Perubahan kata sandi butuh beberapa menit sampai aktif di router — sambungkan ulang perangkat setelahnya."
+      ]
+    },
+    {
+      "title": "Tiket Bantuan",
+      "icon": "ticket",
+      "summary": "Laporkan gangguan atau keluhan ke operator: internet lambat, mati total, atau pertanyaan lain.",
+      "steps": [
+        "Buka tab Tiket, lalu buat tiket baru dan jelaskan keluhannya.",
+        "Lampirkan foto bila perlu, misalnya lampu indikator modem/ONT.",
+        "Balasan dari admin atau teknisi masuk sebagai pesan di tiket yang sama — Anda mendapat notifikasi.",
+        "Tiket ditutup setelah masalah selesai; Anda akan diberi tahu."
+      ],
+      "notes": [
+        "Sertakan detail seperti sejak kapan gangguan terjadi agar teknisi lebih cepat menangani."
+      ]
+    },
+    {
+      "title": "Perpanjang Langganan",
+      "icon": "renewal",
+      "summary": "Perpanjang masa aktif paket sebelum jatuh tempo, langsung dari menu Lainnya.",
+      "steps": [
+        "Buka Lainnya, lalu pilih Perpanjang.",
+        "Pilih durasi perpanjangan dan cara bayar.",
+        "Masa aktif bertambah otomatis setelah pembayaran terkonfirmasi."
+      ],
+      "notes": [
+        "Perpanjang sebelum jatuh tempo agar layanan tidak terisolir otomatis."
+      ]
+    },
+    {
+      "title": "Upgrade Paket",
+      "icon": "upgrade",
+      "summary": "Naikkan kecepatan atau ubah paket internet Anda tanpa perlu datang ke kantor.",
+      "steps": [
+        "Buka Lainnya, lalu pilih Upgrade Paket.",
+        "Pilih paket baru — biayanya dihitung dari sisa masa aktif.",
+        "Bayar tagihan perubahan paket; kecepatan baru aktif setelah lunas."
+      ],
+      "notes": []
+    },
+    {
+      "title": "Top Up & Referral",
+      "icon": "topup",
+      "summary": "Isi saldo akun dan bagikan kode referral untuk mendapatkan reward.",
+      "steps": [
+        "Top Up menambah saldo yang bisa dipakai untuk membayar tagihan.",
+        "Bagikan kode referral Anda; reward masuk saat pelanggan baru memakai kode itu.",
+        "Riwayat reward dan saldo tampil di halaman masing-masing."
+      ],
+      "notes": []
+    },
+    {
+      "title": "Suspend Sementara",
+      "icon": "suspend",
+      "summary": "Hentikan sementara langganan bila Anda tidak memakai internet dalam waktu lama, misalnya mudik.",
+      "steps": [
+        "Buka Lainnya, lalu pilih Suspend dan kirim permintaan.",
+        "Operator meninjau permintaan — statusnya terlihat di halaman yang sama.",
+        "Selama suspend aktif, tagihan berhenti berjalan sesuai kebijakan operator."
+      ],
+      "notes": [
+        "Aktifkan kembali lewat halaman yang sama atau hubungi operator."
+      ]
+    },
+    {
+      "title": "Speed Test & Panduan",
+      "icon": "speedtest",
+      "summary": "Ukur kecepatan internet saat ini dari menu Lainnya, dan buka panduan ini kapan pun dibutuhkan.",
+      "steps": [
+        "Speed Test mengukur unduh, unggah, dan ping ke server terdekat.",
+        "Hasil yang jauh di bawah paket bisa dilaporkan lewat tiket disertai tangkapan layar."
+      ],
+      "notes": []
+    },
+    {
+      "title": "Notifikasi",
+      "icon": "bell",
+      "summary": "Pemberitahuan tagihan baru, konfirmasi pembayaran, balasan tiket, dan perubahan status langganan.",
+      "steps": [
+        "Ketuk lonceng untuk melihat daftar notifikasi terbaru.",
+        "Ketuk satu notifikasi untuk menandainya sudah dibaca."
+      ],
+      "notes": [
+        "Izinkan notifikasi saat aplikasi memintanya agar pemberitahuan penting tetap muncul di layar HP."
+      ]
+    },
+    {
+      "title": "Profil & Server",
+      "icon": "profile",
+      "summary": "Data akun, pengaturan alamat server, dan pembaruan aplikasi.",
+      "steps": [
+        "Kartu nama di atas membuka halaman profil Anda.",
+        "Pembaruan Aplikasi memeriksa versi terbaru — pasang bila ditawarkan.",
+        "Pengaturan server hanya perlu diubah bila Anda memakai server instalasi sendiri, bukan bawaan."
+      ],
+      "notes": [
+        "Bila aplikasi tidak bisa tersambung, periksa alamat server di Pengaturan Server pada halaman masuk."
+      ]
+    }
+  ]
+}
