@@ -1114,7 +1114,7 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### v5.26.0 — 2026-10-28 - Push Tanpa Firebase Wajib + QRIS Livin' + Splash & Panduan App
 
 ### Summary
-Rilis setelah 5.26.0 (14 commit). Satu APK native kini dipakai semua instalasi: konfigurasi Firebase diatur per server lewat panel, dan instalasi tanpa Firebase tetap menerima notifikasi lewat polling berkala. QRIS Listener membaca notifikasi Livin' Merchant, dashboard tidak lagi bisa disandera router MikroTik yang mati, dan kedua aplikasi punya layar pembuka animasi serta panduan penggunaan.
+Rilis setelah 5.25.0 (14 commit). Satu APK native kini dipakai semua instalasi: konfigurasi Firebase diatur per server lewat panel, dan instalasi tanpa Firebase tetap menerima notifikasi lewat polling berkala. QRIS Listener membaca notifikasi Livin' Merchant, dashboard tidak lagi bisa disandera router MikroTik yang mati, dan kedua aplikasi punya layar pembuka animasi serta panduan penggunaan.
 
 ### Push Notifikasi Aplikasi
 - **[FEATURE]** Firebase diatur per instalasi dari panel (Admin → Download APK → Notifikasi Push Aplikasi): unggah `google-services.json` + service account satu project. Aplikasi mengambil konfigurasinya dari server saat berjalan — `google-services.json` tidak lagi dibakar ke APK, jadi satu APK publik dipakai semua instalasi
@@ -1139,7 +1139,7 @@ Rilis setelah 5.26.0 (14 commit). Satu APK native kini dipakai semua instalasi: 
 - Aplikasi admin naik ke **1.0.17** dan aplikasi pelanggan ke **1.1.12** — publish APK baru dari release `apk-latest` agar pengguna ditawari update
 - QRIS Listener standalone: rebuild lewat Payment Gateway → QRIS Mandiri setelah update
 
-### v5.26.0 — 2026-10-27 - Foto Tiket + PPPoE Online Teknisi + Build APK Native di GitHub
+### v5.25.0 — 2026-10-27 - Foto Tiket + PPPoE Online Teknisi + Build APK Native di GitHub
 
 ### Summary
 Rilis setelah 5.24.0 (20 commit). Tiket pelanggan dengan foto kini tersimpan dan fotonya tampil di admin, teknisi, dan kedua aplikasi. PPPoE Online teknisi hanya menampilkan pelanggan PPPoE yang terhubung lewat RADIUS, dengan pemakaian download dan upload live dari MikroTik. Toggle web push di sidebar sama di semua portal. APK QRIS Listener bisa di-build lagi, dan aplikasi native admin dan pelanggan di-build lewat GitHub Actions.
@@ -1179,7 +1179,7 @@ Rilis setelah 5.24.0 (20 commit). Tiket pelanggan dengan foto kini tersimpan dan
 - Tidak ada perubahan skema database
 - Tiket yang dibuat sebelum rilis ini tidak punya foto, karena URL fotonya tidak pernah tersimpan
 - Aplikasi pelanggan versi lama masih gagal membuat tiket. Pasang APK terbaru dari release `apk-latest`, atau terbitkan lewat Download APK agar aplikasi menawarkan update
-- **[CHORE]** Bump versi root, frontend, dan backend ke 5.26.0
+- **[CHORE]** Bump versi root, frontend, dan backend ke 5.25.0
 
 ### v5.24.0 — 2026-10-25 - Portal Kolektor Baru + Setoran Per Pembayaran + Notifikasi dan Web Push Kolektor
 
