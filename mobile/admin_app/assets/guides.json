@@ -1448,7 +1448,8 @@
         "Pilih target dan jenis pesan atau template.",
         "Tulis judul dan isi, lalu kirim.",
         "Agar notif sampai real-time ke aplikasi native, atur Firebase di kartu Notifikasi Push Aplikasi pada halaman Download APK. Tanpa itu aplikasi tetap menerima notif lewat pengecekan berkala (sekitar 15 menit)."
-      ]
+      ],
+      "notes": "Kunci VAPID web push di backend/.env adalah identitas push server — jangan dihapus atau diganti, dan ikutkan dalam backup; kehilangannya membuat semua subscription push harus diaktifkan ulang di tiap perangkat."
     },
     {
       "path": "/admin/notifications",

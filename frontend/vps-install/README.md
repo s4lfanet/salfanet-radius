@@ -205,7 +205,7 @@ http://IP_LXC_CONTAINER
 | Path | Keterangan |
 |------|------------|
 | `/var/www/salfanet-radius/` | Root direktori aplikasi |
-| `/var/www/salfanet-radius/backend/.env` | Environment variables backend (database, secrets, `CRON_SECRET`, kunci VAPID). Salinannya di `backend/.next/standalone/backend/.env` yang dibaca proses PM2 |
+| `/var/www/salfanet-radius/backend/.env` | Environment variables backend (database, secrets, `CRON_SECRET`, kunci VAPID). Salinannya di `backend/.next/standalone/backend/.env` yang dibaca proses PM2. **Ikutkan ke backup** — kunci VAPID adalah identitas push server; bila hilang lalu ter-generate ulang, semua subscription web push pelanggan/staf rusak dan setiap perangkat harus mengaktifkan ulang notifikasinya |
 | `/var/data/salfanet/uploads/` | **File upload pengguna: bukti transfer, KTP, foto instalasi, logo. Di luar folder aplikasi supaya aman dari update dan build. Jangan hapus, dan masukkan ke backup!** |
 | `/var/data/salfanet/baileys_auth/` | Sesi WhatsApp Baileys (tanpa ini harus scan QR ulang) |
 | `/var/data/salfanet/backups/freeradius/` | Arsip backup konfigurasi FreeRADIUS |
