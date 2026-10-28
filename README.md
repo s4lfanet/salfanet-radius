@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.25.0 - Foto Tiket + PPPoE Online Teknisi + Build APK Native di GitHub
+> **Version:** 5.26.0 - Foto Tiket + PPPoE Online Teknisi + Build APK Native di GitHub
 
 ---
 
@@ -1111,7 +1111,35 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
-### v5.25.0 — 2026-10-27 - Foto Tiket + PPPoE Online Teknisi + Build APK Native di GitHub
+### v5.26.0 — 2026-10-28 - Push Tanpa Firebase Wajib + QRIS Livin' + Splash & Panduan App
+
+### Summary
+Rilis setelah 5.26.0 (14 commit). Satu APK native kini dipakai semua instalasi: konfigurasi Firebase diatur per server lewat panel, dan instalasi tanpa Firebase tetap menerima notifikasi lewat polling berkala. QRIS Listener membaca notifikasi Livin' Merchant, dashboard tidak lagi bisa disandera router MikroTik yang mati, dan kedua aplikasi punya layar pembuka animasi serta panduan penggunaan.
+
+### Push Notifikasi Aplikasi
+- **[FEATURE]** Firebase diatur per instalasi dari panel (Admin → Download APK → Notifikasi Push Aplikasi): unggah `google-services.json` + service account satu project. Aplikasi mengambil konfigurasinya dari server saat berjalan — `google-services.json` tidak lagi dibakar ke APK, jadi satu APK publik dipakai semua instalasi
+- **[FEATURE]** Instalasi tanpa Firebase tetap dapat notifikasi: aplikasi mengecek notifikasi baru secara berkala (sekitar 15 menit via WorkManager, tiap menit saat aplikasi dibuka) dari endpoint `app-notices`
+- **[FIX]** Admin menyelesaikan/menutup tiket tidak memberi notifikasi apa pun ke pelanggan (route teknisi sudah). Kini push dikirim lewat jalur yang sama: web push + FCM + salinan polling
+- **[FIX]** Private key service account tidak pernah keluar lewat API; konfigurasi disimpan di folder data server, dan `FIREBASE_SERVICE_ACCOUNT_JSON` di `.env` tetap didukung serta diutamakan
+- **[DOCS]** Kunci VAPID web push dicatat wajib ikut backup — menghilangkannya merusak semua subscription push
+
+### QRIS
+- **[FEATURE]** Listener membaca notifikasi pembayaran dari **Livin' Merchant** (`id.bmri.livinmerchant`), termasuk pola "menerima pembayaran Rp X" — selain DANA, GoPay, BRImo, BCA Mobile, OVO, LinkAja yang sudah ada. Berlaku di Kasir QRIS dalam aplikasi admin dan APK QRIS Listener standalone (v1.0.1)
+
+### Aplikasi Mobile
+- **[FEATURE]** Layar pembuka animasi sebelum login di aplikasi admin dan pelanggan: logo membesar, teks masuk bertahap, lalu crossfade — menggantikan spinner polos
+- **[FEATURE]** Menu **Panduan** di aplikasi pelanggan (Lainnya → Alat Bantu): 11 panduan penggunaan aplikasi berbahasa Indonesia
+- **[DOCS]** Panduan dalam aplikasi admin disinkronkan: QRIS Listener, Livin' Merchant, dan pengaturan Firebase runtime
+
+### Perbaikan
+- **[FIX]** Dashboard bisa kena Cloudflare 524: `api.write` MikroTik menggantung selamanya di socket setengah-terbuka. Kini dibatasi 12 detik per print dan seluruh batch dibatasi 12 detik — router mati tidak lagi menahan halaman dashboard
+
+### Catatan Pembaruan
+- Skema database berubah: tabel `customer_app_notices` dibuat otomatis oleh `prisma db push` saat update
+- Aplikasi admin naik ke **1.0.17** dan aplikasi pelanggan ke **1.1.12** — publish APK baru dari release `apk-latest` agar pengguna ditawari update
+- QRIS Listener standalone: rebuild lewat Payment Gateway → QRIS Mandiri setelah update
+
+### v5.26.0 — 2026-10-27 - Foto Tiket + PPPoE Online Teknisi + Build APK Native di GitHub
 
 ### Summary
 Rilis setelah 5.24.0 (20 commit). Tiket pelanggan dengan foto kini tersimpan dan fotonya tampil di admin, teknisi, dan kedua aplikasi. PPPoE Online teknisi hanya menampilkan pelanggan PPPoE yang terhubung lewat RADIUS, dengan pemakaian download dan upload live dari MikroTik. Toggle web push di sidebar sama di semua portal. APK QRIS Listener bisa di-build lagi, dan aplikasi native admin dan pelanggan di-build lewat GitHub Actions.
@@ -1151,7 +1179,7 @@ Rilis setelah 5.24.0 (20 commit). Tiket pelanggan dengan foto kini tersimpan dan
 - Tidak ada perubahan skema database
 - Tiket yang dibuat sebelum rilis ini tidak punya foto, karena URL fotonya tidak pernah tersimpan
 - Aplikasi pelanggan versi lama masih gagal membuat tiket. Pasang APK terbaru dari release `apk-latest`, atau terbitkan lewat Download APK agar aplikasi menawarkan update
-- **[CHORE]** Bump versi root, frontend, dan backend ke 5.25.0
+- **[CHORE]** Bump versi root, frontend, dan backend ke 5.26.0
 
 ### v5.24.0 — 2026-10-25 - Portal Kolektor Baru + Setoran Per Pembayaran + Notifikasi dan Web Push Kolektor
 
@@ -1372,54 +1400,6 @@ Rilis besar setelah 5.21.0 (130 commit). QRIS Mandiri kini dipakai untuk semua j
 - **[FIX]** Versi aplikasi di web tidak lagi tertahan: file `VERSION` lama dari instalasi ZIP tidak menimpa versi yang lebih baru, folder aplikasi dicari dari lokasi server yang berjalan, dan endpoint health melaporkan versi yang sama
 - **[CHORE]** Bump versi root, frontend, dan backend ke 5.22.0
 - **[FIX]** Semua error typecheck backend dan frontend diselesaikan; lint backend berfungsi kembali
-
-### v5.21.0 — 2026-09-15 — Hotspot Session Sync Fixes + Dashboard Log Centralization + Invoice/PWA Fixes
-
-### Summary
-Perbaikan besar pada sinkronisasi sesi hotspot voucher dengan RADIUS (ghost session, timeleft, expired voucher), sentralisasi log aktivitas/RADIUS/system status ke halaman terpisah, fix generate tagihan PREPAID per bulan, dan PWA icon otomatis dari company logo.
-
-### Hotspot Voucher Session Sync
-- **[CRITICAL]** Voucher EXPIRED masih terbaca online di monitoring — synthetic radacct tidak pernah ditutup
-- **[FIX]** Cron menutup radacct voucher EXPIRED — voucher kadaluarsa hilang dari active session dan ditolak RADIUS
-- **[FIX]** `pppoe_session_sync` salah menutup radacct voucher hotspot sebagai "stale"
-- **[FIX]** Synthetic radacct hanya dibuat untuk voucher yang benar-benar terhubung di MikroTik active list
-- **[FIX]** `timeleft` voucher dipertahankan saat migrasi RADIUS dan re-authentication — tidak reset ke validity penuh
-- **[FIX]** Waiting voucher mendapat full profile validity sebagai `Session-Timeout`; active voucher memakai sisa waktu dari DB
-
-### RADIUS & Session Monitoring
-- **[FIX]** Bulk migrate/sync RADIUS sekarang benar-benar disable PPP secrets + sync profile attributes (radreply)
-- **[FIX]** PPPoE active sessions tidak tampil di dashboard untuk router mode RADIUS
-- **[FIX]** Uptime & start time FreeRADIUS salah parsing timezone WIB
-- **[FIX]** Audit API role agent/technician/customer setelah migrasi RADIUS
-- **[FEATURE]** RADIUS server memilih IP private/local VPS, bukan IP publik — NAS MikroTik dikenali FreeRADIUS
-
-### Dashboard & Navigasi
-- **[FEATURE]** Activity Log, RADIUS Auth Log, dan System Status dipindah dari dashboard ke halaman terpusat
-- **[FEATURE]** Halaman baru `/admin/freeradius/auth-log` — log autentikasi RADIUS dari tabel `radpostauth` (stats accept/reject, filter, search, pagination)
-- **[UI]** Kategori menu sidebar default expanded
-- **[UI]** Menu Laporan dipindah ke kategori Keuangan, label diubah jadi "Export Data"
-- **[CHORE]** Halaman analitik laporan dihapus — tidak relevan untuk perusahaan kecil
-
-### Billing
-- **[CRITICAL]** Generate tagihan PREPAID mengabaikan bulan target — `dueDate = user.expiredAt` mentah, sehingga generate Oktober membuat invoice due November dan generate November di-skip sebagai duplikat
-- **[FIX]** PREPAID `dueDate` = tanggal expired di bulan target (manual generate + cron `invoice_generate`)
-- **[FIX]** Filter bulan list invoice untuk tagihan belum bayar memakai `dueDate` (periode tagihan), bukan `createdAt`
-- **[UI]** Setelah generate sukses, filter bulan otomatis pindah ke bulan target
-
-### PWA
-- **[FEATURE]** Icon PWA otomatis dari company logo — endpoint `/api/pwa/icon` resize logo via `sharp`
-- **[FIX]** Logo tersimpan sebagai `/api/uploads/...` tidak dikenali resolver — selalu jatuh ke icon statis
-- **[FEATURE]** Icon maskable (padding zona aman + background opak) dan apple-touch-icon 180px dinamis
-- **[CHORE]** Bump service worker cache ke v30
-
-### UI & Laporan
-- **[UI]** Redesign modal Detail/Edit Pelanggan — seksi berkelompok (Akun & Koneksi, Data Pelanggan, Langganan & Tagihan, Dokumen, Pendaftaran), pill status, tab underline, footer sticky; hapus 60 override warna hardcoded yang rusak di dark mode
-- **[FIX]** Background logo login semua role + sidebar jadi `bg-white/90` — logo gelap terlihat di kedua tema
-- **[FIX]** Data laporan/export diterjemahkan ke Bahasa Indonesia (status invoice/pelanggan, tipe langganan, metode pembayaran)
-
-### Cleanup
-- **[CHORE]** Hapus konfigurasi AI agent, script debug, dan file non-production dari repo
-- **[CHORE]** Bump root & frontend package.json version ke 5.21.0
 
 <!-- AUTO-CHANGELOG:END -->
 

@@ -6,6 +6,36 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.26.0] - 2026-10-28 - Push Tanpa Firebase Wajib + QRIS Livin' + Splash & Panduan App
+
+### Summary
+Rilis setelah 5.25.0 (14 commit). Satu APK native kini dipakai semua instalasi: konfigurasi Firebase diatur per server lewat panel, dan instalasi tanpa Firebase tetap menerima notifikasi lewat polling berkala. QRIS Listener membaca notifikasi Livin' Merchant, dashboard tidak lagi bisa disandera router MikroTik yang mati, dan kedua aplikasi punya layar pembuka animasi serta panduan penggunaan.
+
+### Push Notifikasi Aplikasi
+- **[FEATURE]** Firebase diatur per instalasi dari panel (Admin → Download APK → Notifikasi Push Aplikasi): unggah `google-services.json` + service account satu project. Aplikasi mengambil konfigurasinya dari server saat berjalan — `google-services.json` tidak lagi dibakar ke APK, jadi satu APK publik dipakai semua instalasi
+- **[FEATURE]** Instalasi tanpa Firebase tetap dapat notifikasi: aplikasi mengecek notifikasi baru secara berkala (sekitar 15 menit via WorkManager, tiap menit saat aplikasi dibuka) dari endpoint `app-notices`
+- **[FIX]** Admin menyelesaikan/menutup tiket tidak memberi notifikasi apa pun ke pelanggan (route teknisi sudah). Kini push dikirim lewat jalur yang sama: web push + FCM + salinan polling
+- **[FIX]** Private key service account tidak pernah keluar lewat API; konfigurasi disimpan di folder data server, dan `FIREBASE_SERVICE_ACCOUNT_JSON` di `.env` tetap didukung serta diutamakan
+- **[DOCS]** Kunci VAPID web push dicatat wajib ikut backup — menghilangkannya merusak semua subscription push
+
+### QRIS
+- **[FEATURE]** Listener membaca notifikasi pembayaran dari **Livin' Merchant** (`id.bmri.livinmerchant`), termasuk pola "menerima pembayaran Rp X" — selain DANA, GoPay, BRImo, BCA Mobile, OVO, LinkAja yang sudah ada. Berlaku di Kasir QRIS dalam aplikasi admin dan APK QRIS Listener standalone (v1.0.1)
+
+### Aplikasi Mobile
+- **[FEATURE]** Layar pembuka animasi sebelum login di aplikasi admin dan pelanggan: logo membesar, teks masuk bertahap, lalu crossfade — menggantikan spinner polos
+- **[FEATURE]** Menu **Panduan** di aplikasi pelanggan (Lainnya → Alat Bantu): 11 panduan penggunaan aplikasi berbahasa Indonesia
+- **[DOCS]** Panduan dalam aplikasi admin disinkronkan: QRIS Listener, Livin' Merchant, dan pengaturan Firebase runtime
+
+### Perbaikan
+- **[FIX]** Dashboard bisa kena Cloudflare 524: `api.write` MikroTik menggantung selamanya di socket setengah-terbuka. Kini dibatasi 12 detik per print dan seluruh batch dibatasi 12 detik — router mati tidak lagi menahan halaman dashboard
+
+### Catatan Pembaruan
+- Skema database berubah: tabel `customer_app_notices` dibuat otomatis oleh `prisma db push` saat update
+- Aplikasi admin naik ke **1.0.17** dan aplikasi pelanggan ke **1.1.12** — publish APK baru dari release `apk-latest` agar pengguna ditawari update
+- QRIS Listener standalone: rebuild lewat Payment Gateway → QRIS Mandiri setelah update
+
+---
+
 ## [5.25.0] - 2026-10-27 - Foto Tiket + PPPoE Online Teknisi + Build APK Native di GitHub
 
 ### Summary
