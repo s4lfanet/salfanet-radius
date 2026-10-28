@@ -36,12 +36,21 @@ async function getRouterConfig(routerId: string) {
   return router
 }
 
+// api.write can wait forever on a half-open socket (or when a !empty reply
+// confuses the stream parser); every caller is bounded by this.
+const PRINT_TIMEOUT_MS = 12_000
+
 /**
  * Safe wrapper for api.write print queries — handles node-routeros !empty bug.
  */
 async function safePrint(api: any, path: string, args?: any[]): Promise<any[]> {
   try {
-    return await api.write(path, args || [])
+    return await Promise.race([
+      api.write(path, args || []),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(`print timeout for ${path} after ${PRINT_TIMEOUT_MS / 1000}s`)), PRINT_TIMEOUT_MS)
+      ),
+    ])
   } catch (err: any) {
     if (err?.errno === 'UNKNOWNREPLY' || String(err?.message || '').includes('!empty')) {
       return []

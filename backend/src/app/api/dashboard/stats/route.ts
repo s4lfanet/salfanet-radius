@@ -127,7 +127,19 @@ export async function GET(request: NextRequest) {
       // are actually connected before counting them.
       let mtSessions: any[] = [];
       if (allRouters.length > 0) {
-        mtSessions = await batchFetchMikrotikActiveSessions(allRouters, null);
+        // MikroTik data is a supplement — radacct already produced counts
+        // above. A dead router must not hold the whole dashboard hostage
+        // (origin >100s → Cloudflare 524), so the batch gets a hard budget.
+        const MIKROTIK_BUDGET_MS = 12_000;
+        mtSessions = await Promise.race([
+          batchFetchMikrotikActiveSessions(allRouters, null),
+          new Promise<any[]>((resolve) =>
+            setTimeout(() => {
+              console.warn(`[Dashboard] MikroTik session fetch exceeded ${MIKROTIK_BUDGET_MS / 1000}s budget — radacct-only counts`);
+              resolve([]);
+            }, MIKROTIK_BUDGET_MS)
+          ),
+        ]);
       }
       const mtActiveUsernames = new Set(mtSessions.map((s: any) => s.username));
 
