@@ -765,7 +765,7 @@ export default function WhatsAppProvidersPage() {
                 <ModalButton variant="primary" onClick={() => showQrCode(qrProvider!)}>{t('whatsapp.refreshQr')}</ModalButton>
               </>
             ) : (
-              <p className="text-xs text-[#ff6b8a] py-4">{t('whatsapp.failedLoadQr')}</p>
+              <p className="text-xs text-cyber-pink py-4">{t('whatsapp.failedLoadQr')}</p>
             )}
           </ModalBody>
           <ModalFooter className="justify-center">

@@ -84,7 +84,7 @@ export default function PaymentPage() {
     const styles: Record<string, string> = {
       PAID: 'bg-green-500/20 text-green-500 border border-green-500/40',
       PENDING: 'bg-pink-500/20 text-pink-500 border border-pink-500/40',
-      OVERDUE: 'bg-red-500/20 text-[#ff6b8a] border border-red-500/40'
+      OVERDUE: 'bg-red-500/20 text-cyber-pink border border-red-500/40'
     };
     const icons: Record<string, React.ReactNode> = { PAID: <CheckCircle className="w-3 h-3" />, PENDING: <Clock className="w-3 h-3" />, OVERDUE: <AlertCircle className="w-3 h-3" /> };
     return <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold rounded-lg ${styles[status] || 'bg-gray-100'}`}>{icons[status]} {status}</span>;
@@ -123,7 +123,7 @@ export default function PaymentPage() {
         <div className="absolute top-1/4 left-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-red-500/20 rounded-full blur-3xl"></div>
       </div>
       <div className="relative z-10 bg-muted/80 rounded-2xl border-2 border-red-500/50 p-6 max-w-sm w-full text-center ">
-        <AlertCircle className="w-12 h-12 text-[#ff6b8a] mx-auto mb-3 drop-" />
+        <AlertCircle className="w-12 h-12 text-cyber-pink mx-auto mb-3 drop-" />
         <h2 className="text-base font-bold text-white mb-1">Tagihan Tidak Ditemukan</h2>
         <p className="text-xs text-muted-foreground/70">{error || 'Link pembayaran tidak valid atau sudah kadaluarsa.'}</p>
       </div>
@@ -297,10 +297,10 @@ export default function PaymentPage() {
             {invoice.status === 'OVERDUE' && (
               <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3">
                 <div className="flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 text-[#ff6b8a] mt-0.5 flex-shrink-0" />
+                  <AlertCircle className="w-4 h-4 text-cyber-pink mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="text-xs font-bold text-[#ff6b8a]">Pembayaran Terlambat</p>
-                    <p className="text-[10px] text-[#ff6b8a]/80 mt-0.5">Segera lakukan pembayaran.</p>
+                    <p className="text-xs font-bold text-cyber-pink">Pembayaran Terlambat</p>
+                    <p className="text-[10px] text-cyber-pink/80 mt-0.5">Segera lakukan pembayaran.</p>
                   </div>
                 </div>
               </div>

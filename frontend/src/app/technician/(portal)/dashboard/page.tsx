@@ -223,7 +223,7 @@ export default function TechnicianDashboardPage() {
                   <button
                     onClick={() => handleAction(ticket.id, 'claim')}
                     disabled={actionLoading === ticket.id}
-                    className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black text-xs font-bold rounded-xl hover:brightness-110 transition disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-brand-500 to-cyber-teal text-black text-xs font-bold rounded-xl hover:brightness-110 transition disabled:opacity-50"
                   >
                     {actionLoading === ticket.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                     {t('technician.takeTask')}

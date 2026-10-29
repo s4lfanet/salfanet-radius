@@ -179,50 +179,50 @@ export default function AgentNotificationDropdown({ agentId, enableToasts = true
     const iconClass = 'w-5 h-5';
     switch (type) {
       case 'voucher_generated':
-        return <Bell className={`${iconClass} text-[#00f7ff] drop-`} />;
+        return <Bell className={`${iconClass} text-cyber-cyan drop-`} />;
       case 'deposit_success':
-        return <Check className={`${iconClass} text-[#00ff88] drop-`} />;
+        return <Check className={`${iconClass} text-cyber-green drop-`} />;
       case 'deposit_request_submitted':
-        return <Bell className={`${iconClass} text-[#00f7ff] drop-`} />;
+        return <Bell className={`${iconClass} text-cyber-cyan drop-`} />;
       case 'deposit_rejected':
-        return <X className={`${iconClass} text-[#ff6b8a] drop-`} />;
+        return <X className={`${iconClass} text-cyber-pink drop-`} />;
       case 'low_balance':
-        return <AlertTriangle className={`${iconClass} text-[#ff6b8a] drop-`} />;
+        return <AlertTriangle className={`${iconClass} text-cyber-pink drop-`} />;
       case 'voucher_sold':
-        return <CheckCheck className={`${iconClass} text-[#00ff88] drop-`} />;
+        return <CheckCheck className={`${iconClass} text-cyber-green drop-`} />;
       case 'voucher_deleted':
-        return <Trash2 className={`${iconClass} text-[#ff6b8a] drop-`} />;
+        return <Trash2 className={`${iconClass} text-cyber-pink drop-`} />;
       case 'balance_added':
-        return <TrendingUp className={`${iconClass} text-[#00ff88] drop-`} />;
+        return <TrendingUp className={`${iconClass} text-cyber-green drop-`} />;
       case 'balance_deducted':
-        return <TrendingDown className={`${iconClass} text-[#ff6b8a] drop-`} />;
+        return <TrendingDown className={`${iconClass} text-cyber-pink drop-`} />;
       default:
-        return <Bell className={`${iconClass} text-[#bc13fe] drop-`} />;
+        return <Bell className={`${iconClass} text-cyber-purple drop-`} />;
     }
   };
 
   const getNotificationBg = (type: string) => {
     switch (type) {
       case 'voucher_generated':
-        return 'bg-[#00f7ff]/30 border-[#00f7ff]/70';
+        return 'bg-cyber-cyan/30 border-cyber-cyan/70';
       case 'deposit_success':
-        return 'bg-[#00ff88]/30 border-[#00ff88]/70';
+        return 'bg-cyber-green/30 border-cyber-green/70';
       case 'deposit_request_submitted':
-        return 'bg-[#00f7ff]/30 border-[#00f7ff]/70';
+        return 'bg-cyber-cyan/30 border-cyber-cyan/70';
       case 'deposit_rejected':
-        return 'bg-[#ff4466]/30 border-[#ff4466]/70';
+        return 'bg-cyber-red/30 border-cyber-red/70';
       case 'low_balance':
-        return 'bg-[#ff4466]/30 border-[#ff4466]/70';
+        return 'bg-cyber-red/30 border-cyber-red/70';
       case 'voucher_sold':
-        return 'bg-[#00ff88]/30 border-[#00ff88]/70';
+        return 'bg-cyber-green/30 border-cyber-green/70';
       case 'voucher_deleted':
-        return 'bg-[#ff4466]/30 border-[#ff4466]/70';
+        return 'bg-cyber-red/30 border-cyber-red/70';
       case 'balance_added':
-        return 'bg-[#00ff88]/30 border-[#00ff88]/70';
+        return 'bg-cyber-green/30 border-cyber-green/70';
       case 'balance_deducted':
-        return 'bg-[#ff4466]/30 border-[#ff4466]/70';
+        return 'bg-cyber-red/30 border-cyber-red/70';
       default:
-        return 'bg-[#bc13fe]/30 border-[#bc13fe]/70';
+        return 'bg-cyber-purple/30 border-cyber-purple/70';
     }
   };
 
@@ -230,24 +230,24 @@ export default function AgentNotificationDropdown({ agentId, enableToasts = true
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-xl hover:bg-primary/10 dark:hover:bg-[#bc13fe]/10 transition"
+        className="relative p-2 rounded-xl hover:bg-primary/10 dark:hover:bg-cyber-purple/10 transition"
       >
-        <Bell className="h-5 w-5 text-foreground dark:text-[#e0d0ff]" />
+        <Bell className="h-5 w-5 text-foreground dark:text-cyber-lavender" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-gradient-to-r from-[#ff4466] to-[#ff44cc] text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center ">
+          <span className="absolute -top-1 -right-1 bg-gradient-to-r from-cyber-red to-[#ff44cc] text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center ">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-80 md:w-96 bg-card border-2 border-purple-200 dark:border-[#00f7ff]/50 rounded-2xl  z-[9999] overflow-hidden">
-          <div className="px-4 py-3 bg-gradient-to-r from-purple-50 to-cyan-50 dark:from-[#bc13fe]/20 dark:to-[#00f7ff]/20 border-b border-purple-200 dark:border-[#00f7ff]/30 flex items-center justify-between">
+        <div className="absolute right-0 top-full mt-2 w-80 md:w-96 bg-card border-2 border-purple-200 dark:border-cyber-cyan/50 rounded-2xl  z-[9999] overflow-hidden">
+          <div className="px-4 py-3 bg-gradient-to-r from-purple-50 to-cyan-50 dark:from-cyber-purple/20 dark:to-cyber-cyan/20 border-b border-purple-200 dark:border-cyber-cyan/30 flex items-center justify-between">
             <h3 className="text-base font-bold text-foreground">Notifikasi</h3>
             {notifications.length > 0 && (
               <button
                 onClick={markAllAsRead}
-                className="text-xs text-[#00ff88] hover:text-[#00f7ff] transition font-bold"
+                className="text-xs text-cyber-green hover:text-cyber-cyan transition font-bold"
               >
                 Tandai semua dibaca
               </button>
@@ -257,17 +257,17 @@ export default function AgentNotificationDropdown({ agentId, enableToasts = true
           <div className="max-h-[400px] overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="p-4 sm:p-8 text-center">
-                <Bell className="h-12 w-12 text-purple-300 dark:text-[#00f7ff]/40 mx-auto mb-3" />
+                <Bell className="h-12 w-12 text-purple-300 dark:text-cyber-cyan/40 mx-auto mb-3" />
                 <p className="text-sm font-medium text-foreground">Belum ada notifikasi</p>
-                <p className="text-xs text-slate-500 dark:text-[#e0d0ff]/60 mt-1">Notifikasi akan muncul di sini</p>
+                <p className="text-xs text-slate-500 dark:text-cyber-lavender/60 mt-1">Notifikasi akan muncul di sini</p>
               </div>
             ) : (
-              <div className="divide-y divide-slate-200 dark:divide-[#bc13fe]/20">
+              <div className="divide-y divide-slate-200 dark:divide-cyber-purple/20">
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className={`p-4 hover:bg-purple-50 dark:hover:bg-[#bc13fe]/10 transition ${
-                      !notification.isRead ? 'bg-gradient-to-r from-purple-50 to-cyan-50 dark:from-[#bc13fe]/15 dark:to-[#00f7ff]/15 border-l-4 border-purple-400 dark:border-[#00f7ff]' : 'bg-card'
+                    className={`p-4 hover:bg-purple-50 dark:hover:bg-cyber-purple/10 transition ${
+                      !notification.isRead ? 'bg-gradient-to-r from-purple-50 to-cyan-50 dark:from-cyber-purple/15 dark:to-cyber-cyan/15 border-l-4 border-purple-400 dark:border-cyber-cyan' : 'bg-card'
                     }`}
                   >
                     <div className="flex gap-3">
@@ -281,22 +281,22 @@ export default function AgentNotificationDropdown({ agentId, enableToasts = true
                           </h4>
                           <button
                             onClick={() => deleteNotification(notification.id)}
-                            className="p-1.5 hover:bg-[#ff4466]/30 rounded-lg transition flex-shrink-0 border border-[#ff4466]/30"
+                            className="p-1.5 hover:bg-cyber-red/30 rounded-lg transition flex-shrink-0 border border-cyber-red/30"
                           >
-                            <Trash2 className="h-3.5 w-3.5 text-[#ff6b8a]" />
+                            <Trash2 className="h-3.5 w-3.5 text-cyber-pink" />
                           </button>
                         </div>
-                        <p className="text-xs text-slate-800 dark:text-[#e0d0ff]/90 mb-2 line-clamp-2 leading-relaxed">
+                        <p className="text-xs text-slate-800 dark:text-cyber-lavender/90 mb-2 line-clamp-2 leading-relaxed">
                           {notification.message}
                         </p>
                         <div className="flex items-center justify-between">
-                          <span className="text-xs text-slate-600 dark:text-[#00f7ff]/80 font-medium">
+                          <span className="text-xs text-slate-600 dark:text-cyber-cyan/80 font-medium">
                             {formatWIB(new Date(notification.createdAt), 'dd MMM HH:mm')}
                           </span>
                           {!notification.isRead && (
                             <button
                               onClick={() => markAsRead([notification.id])}
-                              className="text-xs text-[#00ff88] hover:text-[#00f7ff] transition font-bold px-2 py-1 rounded-lg bg-[#00ff88]/10 hover:bg-[#00ff88]/20 border border-[#00ff88]/30"
+                              className="text-xs text-cyber-green hover:text-cyber-cyan transition font-bold px-2 py-1 rounded-lg bg-cyber-green/10 hover:bg-cyber-green/20 border border-cyber-green/30"
                             >
                               Tandai dibaca
                             </button>

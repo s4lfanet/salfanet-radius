@@ -516,7 +516,7 @@ export default function RouterPage() {
               </div>
               <button
                 onClick={() => { setEditingRouter(null); resetForm(); setShowModal(true) }}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition duration-300 transform hover:scale-105"
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-500 to-cyber-teal text-black font-bold rounded-xl hover: transition duration-300 transform hover:scale-105"
               >
                 <Plus className="w-5 h-5" />
                 {t('network.addRouter')}
@@ -648,7 +648,7 @@ export default function RouterPage() {
               </p>
               <button
                 onClick={() => { setEditingRouter(null); resetForm(); setShowModal(true) }}
-                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition duration-300 transform hover:scale-105"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-brand-500 to-cyber-teal text-black font-bold rounded-xl hover: transition duration-300 transform hover:scale-105"
               >
                 <Plus className="w-5 h-5" />
                 {t('network.addFirstRouter')}
@@ -1005,7 +1005,7 @@ export default function RouterPage() {
                         type="button"
                         onClick={handleTestConnection}
                         disabled={testing}
-                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-lg hover: transition disabled:opacity-50 text-sm"
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-500 to-cyber-teal text-black font-bold rounded-lg hover: transition disabled:opacity-50 text-sm"
                       >
                         {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
                         {testing ? t('network.testing') : t('common.test')}
@@ -1039,7 +1039,7 @@ export default function RouterPage() {
                   <button
                     type="submit"
                     disabled={creating}
-                    className="flex-1 px-4 py-3 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition disabled:opacity-50"
+                    className="flex-1 px-4 py-3 bg-gradient-to-r from-brand-500 to-cyber-teal text-black font-bold rounded-xl hover: transition disabled:opacity-50"
                   >
                     {creating ? t('common.saving') : (editingRouter ? t('network.updateRouter') : t('network.addRouter'))}
                   </button>

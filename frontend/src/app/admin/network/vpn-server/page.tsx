@@ -901,7 +901,7 @@ export default function VpnServerPage() {
               </div>
               <button
                 onClick={handleAdd}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition duration-300 transform hover:scale-105"
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-500 to-cyber-teal text-black font-bold rounded-xl hover: transition duration-300 transform hover:scale-105"
               >
                 <Plus className="w-5 h-5" />
                 {t('network.addVpnServer')}
@@ -928,10 +928,10 @@ export default function VpnServerPage() {
                 <div className="px-6 pb-6 border-t border-brand-500/10">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-5">
                     {[
-                      { step: 1, icon: '', color: 'border-border bg-primary/10', title: 'Install di VPS', desc: 'Jalankan installer SALFANET di VPS: bash vps-install.sh. FreeRADIUS, Node.js, dan PM2 akan terinstall otomatis.', link: null, linkLabel: null },
-                      { step: 2, icon: '🖥️', color: 'border-brand-500/40 bg-brand-500/5', title: 'Tambah VPN Server', desc: 'Isi IP MikroTik CHR, username admin, dan subnet VPN (contoh: 10.20.30.0/24). Klik "Test Koneksi" lalu Simpan.', link: null, linkLabel: null },
-                      { step: 3, icon: '', color: 'border-green-500/40 bg-green-500/5', title: 'Setup Protokol', desc: 'Klik tombol "Setup" pada kartu server untuk konfigurasi L2TP/SSTP/PPTP di MikroTik CHR secara otomatis. Untuk WireGuard (RouterOS 7+) klik tombol WireGuard.', link: null, linkLabel: null },
-                      { step: 4, icon: '', color: 'border-amber-500/40 bg-amber-500/5', title: 'Tambah VPN Client', desc: 'Setelah server siap, pergi ke menu VPN Client untuk tambahkan setiap NAS sebagai client. Sistem generate script RouterOS otomatis.', link: '/admin/network/vpn-client', linkLabel: '→ Menu VPN Client' },
+                      { step: 1, icon: <Terminal className='w-5 h-5' />, color: 'border-border bg-primary/10', title: 'Install di VPS', desc: 'Jalankan installer SALFANET di VPS: bash vps-install.sh. FreeRADIUS, Node.js, dan PM2 akan terinstall otomatis.', link: null, linkLabel: null },
+                      { step: 2, icon: <Server className='w-5 h-5' />, color: 'border-brand-500/40 bg-brand-500/5', title: 'Tambah VPN Server', desc: 'Isi IP MikroTik CHR, username admin, dan subnet VPN (contoh: 10.20.30.0/24). Klik "Test Koneksi" lalu Simpan.', link: null, linkLabel: null },
+                      { step: 3, icon: <Settings className='w-5 h-5' />, color: 'border-green-500/40 bg-green-500/5', title: 'Setup Protokol', desc: 'Klik tombol "Setup" pada kartu server untuk konfigurasi L2TP/SSTP/PPTP di MikroTik CHR secara otomatis. Untuk WireGuard (RouterOS 7+) klik tombol WireGuard.', link: null, linkLabel: null },
+                      { step: 4, icon: <Plus className='w-5 h-5' />, color: 'border-amber-500/40 bg-amber-500/5', title: 'Tambah VPN Client', desc: 'Setelah server siap, pergi ke menu VPN Client untuk tambahkan setiap NAS sebagai client. Sistem generate script RouterOS otomatis.', link: '/admin/network/vpn-client', linkLabel: '→ Menu VPN Client' },
                     ].map(item => (
                       <div key={item.step} className={`rounded-xl border ${item.color} p-4`}>
                         <div className="flex items-center gap-2 mb-2">
@@ -1019,7 +1019,7 @@ export default function VpnServerPage() {
               </p>
               <button
                 onClick={handleAdd}
-                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition duration-300 transform hover:scale-105"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-brand-500 to-cyber-teal text-black font-bold rounded-xl hover: transition duration-300 transform hover:scale-105"
               >
                 <Plus className="w-5 h-5" />
                 {t('network.addFirstVpnServer')}
@@ -1123,7 +1123,7 @@ export default function VpnServerPage() {
                       <button
                         onClick={() => handleSetup(server)}
                         disabled={settingUpId === server.id}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition disabled:opacity-50"
+                        className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-brand-500 to-cyber-teal text-black font-bold rounded-xl hover: transition disabled:opacity-50"
                       >
                         {settingUpId === server.id ? (
                           <RefreshCw className="w-4 h-4 animate-spin" />
@@ -1390,7 +1390,7 @@ export default function VpnServerPage() {
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 px-4 py-3 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition"
+                      className="flex-1 px-4 py-3 bg-gradient-to-r from-brand-500 to-cyber-teal text-black font-bold rounded-xl hover: transition"
                     >
                       {editingServer ? t('common.update') : t('common.save')}
                     </button>
@@ -1590,7 +1590,7 @@ export default function VpnServerPage() {
                       <input className="px-3 py-2 bg-input border border-border rounded-lg text-foreground text-sm" placeholder="L2TP Password" type="password" value={l2tpSshForm.l2tpPassword} onChange={(e) => setL2tpSshForm(p => ({...p, l2tpPassword: e.target.value}))} />
                     </div>
                   </div>
-                  <button onClick={handleConnectL2tp} disabled={l2tpLoading} className="w-full px-4 py-2.5 text-sm font-bold bg-brand-500 text-muted rounded-lg hover:bg-[#00d4e6] transition-colors disabled:opacity-50">
+                  <button onClick={handleConnectL2tp} disabled={l2tpLoading} className="w-full px-4 py-2.5 text-sm font-bold bg-brand-500 text-muted rounded-lg hover:bg-cyber-teal transition-colors disabled:opacity-50">
                     {l2tpLoading ? 'Menghubungkan...' : '🔌 Connect & Cek Status'}
                   </button>
                 </div>

@@ -129,7 +129,7 @@ export function CameraViewfinder({ onCapture, onClose }: CameraViewfinderProps) 
   // --- Native capture fallback (HTTP) ---
   if (useNativeCapture) {
     return (
-      <div className="relative rounded-lg overflow-hidden border-2 border-[#00f7ff]/60 bg-black">
+      <div className="relative rounded-lg overflow-hidden border-2 border-cyber-cyan/60 bg-black">
         {/* Hidden native camera input - auto-clicked on mount */}
         <input
           ref={nativeCaptureRef}
@@ -140,13 +140,13 @@ export function CameraViewfinder({ onCapture, onClose }: CameraViewfinderProps) 
           onChange={handleNativeFile}
         />
         <div className="flex flex-col items-center justify-center gap-3 h-32 text-white/80 text-sm">
-          <Camera className="w-8 h-8 text-[#00f7ff]" />
+          <Camera className="w-8 h-8 text-cyber-cyan" />
           <p className="text-xs text-center px-4">Menunggu kamera terbuka...</p>
           <div className="flex gap-2">
             <button
               type="button"
               onClick={() => nativeCaptureRef.current?.click()}
-              className="px-4 py-1.5 text-xs rounded-full bg-[#00f7ff]/20 border border-[#00f7ff]/50 text-[#00f7ff] hover:bg-[#00f7ff]/30 transition-colors"
+              className="px-4 py-1.5 text-xs rounded-full bg-cyber-cyan/20 border border-cyber-cyan/50 text-cyber-cyan hover:bg-cyber-cyan/30 transition-colors"
             >
               Buka Kamera
             </button>
@@ -179,22 +179,22 @@ export function CameraViewfinder({ onCapture, onClose }: CameraViewfinderProps) 
 
   // --- Live viewfinder (HTTPS / localhost) ---
   return (
-    <div className="relative rounded-lg overflow-hidden border-2 border-[#00f7ff]/60 bg-black">
+    <div className="relative rounded-lg overflow-hidden border-2 border-cyber-cyan/60 bg-black">
       <video ref={videoRef} autoPlay playsInline muted className="w-full aspect-[4/3] object-cover" />
       <canvas ref={canvasRef} className="hidden" />
       {/* Corner guides */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-2 left-2 w-6 h-6 border-t-2 border-l-2 border-[#00f7ff]/80 rounded-tl" />
-        <div className="absolute top-2 right-2 w-6 h-6 border-t-2 border-r-2 border-[#00f7ff]/80 rounded-tr" />
-        <div className="absolute bottom-14 left-2 w-6 h-6 border-b-2 border-l-2 border-[#00f7ff]/80 rounded-bl" />
-        <div className="absolute bottom-14 right-2 w-6 h-6 border-b-2 border-r-2 border-[#00f7ff]/80 rounded-br" />
+        <div className="absolute top-2 left-2 w-6 h-6 border-t-2 border-l-2 border-cyber-cyan/80 rounded-tl" />
+        <div className="absolute top-2 right-2 w-6 h-6 border-t-2 border-r-2 border-cyber-cyan/80 rounded-tr" />
+        <div className="absolute bottom-14 left-2 w-6 h-6 border-b-2 border-l-2 border-cyber-cyan/80 rounded-bl" />
+        <div className="absolute bottom-14 right-2 w-6 h-6 border-b-2 border-r-2 border-cyber-cyan/80 rounded-br" />
       </div>
       <div className="absolute bottom-0 inset-x-0 flex items-center justify-center gap-6 py-3 bg-gradient-to-t from-black/80 to-transparent">
         <button type="button" onClick={handleClose} className="w-10 h-10 flex items-center justify-center rounded-full bg-red-500/80 text-white hover:bg-red-600 transition-colors" title="Tutup">
           <X className="w-5 h-5" />
         </button>
-        <button type="button" onClick={takePhoto} className="w-14 h-14 flex items-center justify-center rounded-full bg-white border-4 border-[#00f7ff] hover:bg-[#00f7ff]/20 transition-colors" title="Ambil Foto">
-          <Circle className="w-7 h-7 text-[#00f7ff] fill-[#00f7ff]" />
+        <button type="button" onClick={takePhoto} className="w-14 h-14 flex items-center justify-center rounded-full bg-white border-4 border-cyber-cyan hover:bg-cyber-cyan/20 transition-colors" title="Ambil Foto">
+          <Circle className="w-7 h-7 text-cyber-cyan fill-cyber-cyan" />
         </button>
         <button type="button" onClick={flipCamera} className="w-10 h-10 flex items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/30 transition-colors" title="Ganti Kamera">
           <SwitchCamera className="w-5 h-5" />

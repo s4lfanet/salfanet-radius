@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Shield, Plus, Trash2, Eye, Loader2, Users, Copy, CheckCircle, XCircle, Wifi, Radio, Terminal, ChevronDown, ChevronUp, Route, Zap, Info, Key, Settings } from 'lucide-react';
+import { Shield, Server, Plus, Trash2, Eye, Loader2, Users, Copy, CheckCircle, XCircle, Wifi, Radio, Terminal, ChevronDown, ChevronUp, Route, Zap, Info, Key, Settings } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import { NumberInput } from '@/components/ui/number-input';
@@ -928,7 +928,7 @@ ${vpnCmd}
                   setFormData({ name: '', description: '', vpnServerId: '', vpnType: 'l2tp', customVpnIp: '', localNetworks: '' })
                   setShowModal(true)
                 }}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition duration-300 transform hover:scale-105"
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-500 to-cyber-teal text-black font-bold rounded-xl hover: transition duration-300 transform hover:scale-105"
               >
                 <Plus className="w-5 h-5" />
                 {t('network.addVpnClient')}
@@ -994,10 +994,10 @@ ${vpnCmd}
                 <div className="px-6 pb-6 border-t border-brand-500/10">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-5">
                     {[
-                      { step: 1, icon: '🖥️', color: 'border-border bg-primary/10', title: 'VPN Server Dulu', desc: 'Pastikan VPN Server sudah dikonfigurasi di menu VPN Server (MikroTik CHR atau WireGuard VPS).', link: '/admin/network/vpn-server', linkLabel: '→ Menu VPN Server' },
-                      { step: 2, icon: '➕', color: 'border-brand-500/40 bg-brand-500/5', title: 'Buat VPN Client', desc: 'Klik "+ Tambah VPN Client", pilih protokol (WireGuard/L2TP/SSTP/PPTP), dan nama NAS. Sistem otomatis generate user & konfigurasi di CHR.', link: null, linkLabel: null },
-                      { step: 3, icon: '', color: 'border-green-500/40 bg-green-500/5', title: 'Apply Script ke NAS', desc: 'Copy script RouterOS yang dihasilkan → paste di terminal MikroTik/WinBox pada router/NAS pelanggan. VPN akan tersambung otomatis.', link: null, linkLabel: null },
-                      { step: 4, icon: '', color: 'border-amber-500/40 bg-amber-500/5', title: 'Tandai RADIUS Server', desc: 'Centang "Jadikan RADIUS Server" pada client yang jalan di VPS/Raspberry Pi. Lalu daftarkan NAS di menu NAS/Router.', link: '/admin/network/routers', linkLabel: '→ Menu NAS/Router' },
+                      { step: 1, icon: <Server className='w-5 h-5' />, color: 'border-border bg-primary/10', title: 'VPN Server Dulu', desc: 'Pastikan VPN Server sudah dikonfigurasi di menu VPN Server (MikroTik CHR atau WireGuard VPS).', link: '/admin/network/vpn-server', linkLabel: '→ Menu VPN Server' },
+                      { step: 2, icon: <Plus className='w-5 h-5' />, color: 'border-brand-500/40 bg-brand-500/5', title: 'Buat VPN Client', desc: 'Klik "+ Tambah VPN Client", pilih protokol (WireGuard/L2TP/SSTP/PPTP), dan nama NAS. Sistem otomatis generate user & konfigurasi di CHR.', link: null, linkLabel: null },
+                      { step: 3, icon: <Terminal className='w-5 h-5' />, color: 'border-green-500/40 bg-green-500/5', title: 'Apply Script ke NAS', desc: 'Copy script RouterOS yang dihasilkan → paste di terminal MikroTik/WinBox pada router/NAS pelanggan. VPN akan tersambung otomatis.', link: null, linkLabel: null },
+                      { step: 4, icon: <Radio className='w-5 h-5' />, color: 'border-amber-500/40 bg-amber-500/5', title: 'Tandai RADIUS Server', desc: 'Centang "Jadikan RADIUS Server" pada client yang jalan di VPS/Raspberry Pi. Lalu daftarkan NAS di menu NAS/Router.', link: '/admin/network/routers', linkLabel: '→ Menu NAS/Router' },
                     ].map(item => (
                       <div key={item.step} className={`rounded-xl border ${item.color} p-4`}>
                         <div className="flex items-center gap-2 mb-2">
@@ -1235,7 +1235,7 @@ ${vpnCmd}
                   setFormData({ name: '', description: '', vpnServerId: '', vpnType: 'l2tp', customVpnIp: '', localNetworks: '' })
                   setShowModal(true)
                 }}
-                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition duration-300 transform hover:scale-105"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-brand-500 to-cyber-teal text-black font-bold rounded-xl hover: transition duration-300 transform hover:scale-105"
               >
                 <Plus className="w-5 h-5" />
                 {t('network.addFirstVpnClient')}
@@ -1522,7 +1522,7 @@ ${vpnCmd}
                         type="button"
                         onClick={() => { setFormData({ ...formData, vpnType: type, vpnServerId: '' }); if (type === 'wireguard') queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vps-wg-peer') }); if (type === 'l2tp') queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vps-l2tp-info') }); }}
                         className={`px-3 py-2.5 rounded-xl text-sm font-bold transition ${formData.vpnType === type
-                          ? 'bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black '
+                          ? 'bg-gradient-to-r from-brand-500 to-cyber-teal text-black '
                           : 'bg-muted/60 dark:bg-slate-800/60 border border-border text-foreground hover:bg-primary/10'
                         }`}
                       >
@@ -1618,7 +1618,7 @@ ${vpnCmd}
                   <button
                     type="submit"
                     disabled={creating}
-                    className="flex-1 px-4 py-3 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition disabled:opacity-50"
+                    className="flex-1 px-4 py-3 bg-gradient-to-r from-brand-500 to-cyber-teal text-black font-bold rounded-xl hover: transition disabled:opacity-50"
                   >
                     {creating ? t('common.creating') : t('network.createClient')}
                   </button>
@@ -1704,7 +1704,7 @@ ${vpnCmd}
                         key={type}
                         onClick={() => setSelectedVpnType(type)}
                         className={`flex-1 min-w-[80px] px-4 py-2.5 rounded-xl text-sm font-bold transition ${selectedVpnType === type
-                          ? 'bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black '
+                          ? 'bg-gradient-to-r from-brand-500 to-cyber-teal text-black '
                           : 'bg-muted/60 dark:bg-slate-800/60 border border-border text-foreground hover:bg-primary/10'
                           }`}
                       >
@@ -1864,7 +1864,7 @@ ${vpnCmd}
                 <button
                   onClick={executeApplyRouting}
                   disabled={applyRoutingRunning}
-                  className="flex-1 px-4 py-2.5 text-sm font-bold bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black rounded-xl hover: transition disabled:opacity-50"
+                  className="flex-1 px-4 py-2.5 text-sm font-bold bg-gradient-to-r from-brand-500 to-cyber-teal text-black rounded-xl hover: transition disabled:opacity-50"
                 >
                   {applyRoutingRunning ? 'Menjalankan...' : 'Apply Routing'}
                 </button>

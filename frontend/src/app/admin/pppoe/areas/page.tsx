@@ -375,7 +375,7 @@ export default function AreasPage() {
         <SimpleModal isOpen={!!deleteAreaId} onClose={() => setDeleteAreaId(null)} size="sm">
           <ModalBody className="text-center py-6">
             <div className="w-14 h-14 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-red-500/50">
-              <Trash2 className="w-7 h-7 text-[#ff6b8a]" />
+              <Trash2 className="w-7 h-7 text-cyber-pink" />
             </div>
             <h2 className="text-base font-bold text-foreground mb-2">{t('pppoe.deleteArea')}</h2>
             <p className="text-xs text-muted-foreground">{t('pppoe.deleteAreaConfirm')}</p>

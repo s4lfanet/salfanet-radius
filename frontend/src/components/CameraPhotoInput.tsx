@@ -168,8 +168,8 @@ export function CameraPhotoInput({
   const isDark = theme === 'dark';
 
   const gpsBadgeClass = isDark
-    ? 'text-[#00ff88] bg-[#00ff88]/10 border border-[#00ff88]/30'
-    : 'text-green-600 dark:text-[#00ff88] bg-green-50 dark:bg-[#00ff88]/10 border border-green-100 dark:border-[#00ff88]/30';
+    ? 'text-cyber-green bg-cyber-green/10 border border-cyber-green/30'
+    : 'text-green-600 dark:text-cyber-green bg-green-50 dark:bg-cyber-green/10 border border-green-100 dark:border-cyber-green/30';
 
   const galleryInput = (
     <input
@@ -202,7 +202,7 @@ export function CameraPhotoInput({
   if (cameraOpen) {
     return (
       <div className="space-y-1.5">
-        <div className="relative rounded-xl overflow-hidden border-2 border-[#00f7ff]/60 bg-black">
+        <div className="relative rounded-xl overflow-hidden border-2 border-cyber-cyan/60 bg-black">
           <video
             ref={videoRef}
             autoPlay
@@ -212,10 +212,10 @@ export function CameraPhotoInput({
           />
           {/* Shooting guide overlay */}
           <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-2 left-2 w-6 h-6 border-t-2 border-l-2 border-[#00f7ff]/80 rounded-tl" />
-            <div className="absolute top-2 right-2 w-6 h-6 border-t-2 border-r-2 border-[#00f7ff]/80 rounded-tr" />
-            <div className="absolute bottom-14 left-2 w-6 h-6 border-b-2 border-l-2 border-[#00f7ff]/80 rounded-bl" />
-            <div className="absolute bottom-14 right-2 w-6 h-6 border-b-2 border-r-2 border-[#00f7ff]/80 rounded-br" />
+            <div className="absolute top-2 left-2 w-6 h-6 border-t-2 border-l-2 border-cyber-cyan/80 rounded-tl" />
+            <div className="absolute top-2 right-2 w-6 h-6 border-t-2 border-r-2 border-cyber-cyan/80 rounded-tr" />
+            <div className="absolute bottom-14 left-2 w-6 h-6 border-b-2 border-l-2 border-cyber-cyan/80 rounded-bl" />
+            <div className="absolute bottom-14 right-2 w-6 h-6 border-b-2 border-r-2 border-cyber-cyan/80 rounded-br" />
           </div>
           {/* Controls */}
           <div className="absolute bottom-0 inset-x-0 flex items-center justify-center gap-6 py-3 bg-gradient-to-t from-black/80 to-transparent">
@@ -230,10 +230,10 @@ export function CameraPhotoInput({
             <button
               type="button"
               onClick={takePhoto}
-              className="w-14 h-14 flex items-center justify-center rounded-full bg-white border-4 border-[#00f7ff] hover:bg-[#00f7ff]/20 transition-colors"
+              className="w-14 h-14 flex items-center justify-center rounded-full bg-white border-4 border-cyber-cyan hover:bg-cyber-cyan/20 transition-colors"
               title="Ambil Foto"
             >
-              <Circle className="w-7 h-7 text-[#00f7ff] fill-[#00f7ff]" />
+              <Circle className="w-7 h-7 text-cyber-cyan fill-cyber-cyan" />
             </button>
             <button
               type="button"
@@ -260,7 +260,7 @@ export function CameraPhotoInput({
             src={photoUrl}
             alt="Preview"
             className={`w-full ${previewClassName} object-cover rounded-xl border-2 ${
-              isDark ? 'border-[#00ff88]/60' : 'border-green-400/60 dark:border-[#00ff88]/60'
+              isDark ? 'border-cyber-green/60' : 'border-green-400/60 dark:border-cyber-green/60'
             }`}
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
             loading="lazy"
@@ -325,9 +325,9 @@ export function CameraPhotoInput({
     <div className="space-y-1.5">
       {uploading ? (
         <div className={`flex items-center justify-center w-full h-20 rounded-xl border-2 border-dashed ${
-          isDark ? 'border-[#00f7ff]/40 bg-[#0a0520]' : 'border-border dark:border-[#bc13fe]/30 bg-muted/30 dark:bg-[#0a0520]/30'
+          isDark ? 'border-cyber-cyan/40 bg-[#0a0520]' : 'border-border dark:border-cyber-purple/30 bg-muted/30 dark:bg-[#0a0520]/30'
         }`}>
-          <Loader2 className={`w-6 h-6 animate-spin ${isDark ? 'text-[#00f7ff]' : 'text-primary dark:text-[#00f7ff]'}`} />
+          <Loader2 className={`w-6 h-6 animate-spin ${isDark ? 'text-cyber-cyan' : 'text-primary dark:text-cyber-cyan'}`} />
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -336,8 +336,8 @@ export function CameraPhotoInput({
             htmlFor={galleryId}
             className={`flex flex-col items-center justify-center gap-1 w-full py-3 rounded-xl border-2 border-dashed transition text-[11px] cursor-pointer ${
               isDark
-                ? 'border-[#bc13fe]/40 text-[#e0d0ff]/60 bg-[#0a0520] hover:border-[#bc13fe]/70 hover:text-[#e0d0ff]/90'
-                : 'border-border dark:border-[#bc13fe]/40 text-muted-foreground dark:text-[#e0d0ff]/60 hover:bg-muted dark:hover:bg-[#bc13fe]/10'
+                ? 'border-cyber-purple/40 text-cyber-lavender/60 bg-[#0a0520] hover:border-cyber-purple/70 hover:text-cyber-lavender/90'
+                : 'border-border dark:border-cyber-purple/40 text-muted-foreground dark:text-cyber-lavender/60 hover:bg-muted dark:hover:bg-cyber-purple/10'
             }`}
           >
             <ImageIcon className="w-5 h-5" />
@@ -349,8 +349,8 @@ export function CameraPhotoInput({
             onClick={() => startCamera()}
             className={`flex flex-col items-center justify-center gap-1 w-full py-3 rounded-xl border-2 border-dashed transition text-[11px] cursor-pointer ${
               isDark
-                ? 'border-[#00f7ff]/40 text-[#00f7ff]/70 bg-[#0a0520] hover:border-[#00f7ff]/70 hover:text-[#00f7ff]'
-                : 'border-primary/40 dark:border-[#00f7ff]/40 text-primary/70 dark:text-[#00f7ff]/70 hover:bg-primary/5 dark:hover:bg-[#00f7ff]/10'
+                ? 'border-cyber-cyan/40 text-cyber-cyan/70 bg-[#0a0520] hover:border-cyber-cyan/70 hover:text-cyber-cyan'
+                : 'border-primary/40 dark:border-cyber-cyan/40 text-primary/70 dark:text-cyber-cyan/70 hover:bg-primary/5 dark:hover:bg-cyber-cyan/10'
             }`}
           >
             <Camera className="w-5 h-5" />
@@ -359,7 +359,7 @@ export function CameraPhotoInput({
         </div>
       )}
       {hint && (
-        <p className={`text-[9px] ${isDark ? 'text-[#e0d0ff]/40' : 'text-muted-foreground'}`}>{hint}</p>
+        <p className={`text-[9px] ${isDark ? 'text-cyber-lavender/40' : 'text-muted-foreground'}`}>{hint}</p>
       )}
       {galleryInput}
       {captureInput}

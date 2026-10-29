@@ -40,7 +40,7 @@ function PaymentFailedContent() {
         <div className="absolute top-1/4 left-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-red-500/20 rounded-full blur-3xl animate-pulse"></div>
       </div>
       <div className="text-center relative z-10">
-        <Loader2 className="w-10 h-10 animate-spin mx-auto text-[#ff6b8a] drop- mb-3" />
+        <Loader2 className="w-10 h-10 animate-spin mx-auto text-cyber-pink drop- mb-3" />
         <p className="text-xs text-muted-foreground/70">{t('payment.loadingInfo')}</p>
       </div>
     </div>
@@ -62,7 +62,7 @@ function PaymentFailedContent() {
               <XCircle className="w-10 h-10 text-white " />
             </div>
           </div>
-          <h1 className="text-xl font-bold text-[#ff6b8a] mb-1">{t('payment.paymentFailed')}</h1>
+          <h1 className="text-xl font-bold text-cyber-pink mb-1">{t('payment.paymentFailed')}</h1>
           <p className="text-xs text-muted-foreground/70">{t('payment.transactionNotCompleted')}</p>
         </div>
 
@@ -83,7 +83,7 @@ function PaymentFailedContent() {
 
             {reason && (
               <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3">
-                <p className="text-xs font-medium text-[#ff6b8a] text-center">{decodeURIComponent(reason)}</p>
+                <p className="text-xs font-medium text-cyber-pink text-center">{decodeURIComponent(reason)}</p>
               </div>
             )}
 
@@ -107,7 +107,7 @@ function PaymentFailedContent() {
 
         <div className="flex gap-3">
           <button onClick={() => router.push('/')} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-xs font-medium bg-card text-white rounded-xl border border-border hover:border-red-500">
-            <Home className="w-4 h-4 text-[#ff6b8a]" />{t('common.back')}
+            <Home className="w-4 h-4 text-cyber-pink" />{t('common.back')}
           </button>
           {token && (
             <button onClick={() => router.push(`/pay/${token}`)} className="flex-1 flex items-center justify-center gap-2 px-4 py-3 text-xs font-bold text-white bg-gradient-to-r from-red-500 to-pink-500 rounded-xl ">
@@ -132,7 +132,7 @@ export default function PaymentFailedPage() {
   return (
     <Suspense fallback={
       <div className="min-h-dvh bg-muted flex items-center justify-center">
-        <Loader2 className="w-10 h-10 animate-spin text-[#ff6b8a] drop-" />
+        <Loader2 className="w-10 h-10 animate-spin text-cyber-pink drop-" />
       </div>
     }>
       <PaymentFailedContent />

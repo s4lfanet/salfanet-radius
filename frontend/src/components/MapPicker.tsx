@@ -196,38 +196,38 @@ export default function MapPicker({
 
   return createPortal(
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-0 sm:p-2 md:p-4" style={{ zIndex: 10001 }}>
-      <div className="bg-gradient-to-br from-slate-900 to-[#1a0f35] rounded-none sm:rounded-xl md:rounded-2xl  border-0 sm:border-2 border-[#bc13fe]/30 w-full max-w-5xl h-dvh sm:h-auto sm:max-h-[95vh] md:max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-gradient-to-br from-slate-900 to-[#1a0f35] rounded-none sm:rounded-xl md:rounded-2xl  border-0 sm:border-2 border-cyber-purple/30 w-full max-w-5xl h-dvh sm:h-auto sm:max-h-[95vh] md:max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b border-[#bc13fe]/20 bg-gradient-to-r from-[#bc13fe]/10 to-[#00f7ff]/10 flex-shrink-0">
+        <div className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b border-cyber-purple/20 bg-gradient-to-r from-cyber-purple/10 to-cyber-cyan/10 flex-shrink-0">
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="p-1.5 sm:p-2 bg-[#00f7ff]/20 rounded-lg border border-[#00f7ff]/30">
-              <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-[#00f7ff]" />
+            <div className="p-1.5 sm:p-2 bg-cyber-cyan/20 rounded-lg border border-cyber-cyan/30">
+              <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-cyber-cyan" />
             </div>
             <div>
               <h3 className="text-base sm:text-lg font-bold text-white drop-">Pilih Lokasi di Peta</h3>
-              <p className="text-[10px] sm:text-xs text-[#e0d0ff]/70 hidden sm:block">Klik pada peta untuk menentukan lokasi</p>
+              <p className="text-[10px] sm:text-xs text-cyber-lavender/70 hidden sm:block">Klik pada peta untuk menentukan lokasi</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 sm:p-2 hover:bg-[#bc13fe]/20 rounded-lg transition group flex-shrink-0"
+            className="p-1.5 sm:p-2 hover:bg-cyber-purple/20 rounded-lg transition group flex-shrink-0"
           >
-            <X className="h-4 w-4 sm:h-5 sm:w-5 text-[#e0d0ff] group-hover:text-[#ff44cc]" />
+            <X className="h-4 w-4 sm:h-5 sm:w-5 text-cyber-lavender group-hover:text-[#ff44cc]" />
           </button>
         </div>
 
         {/* Map Container */}
         <div className="p-3 sm:p-6 flex-1 overflow-auto">
-          <div className="relative h-[50vh] sm:h-[400px] md:h-[500px] rounded-lg sm:rounded-xl overflow-hidden border-2 border-[#bc13fe]/30 ">
+          <div className="relative h-[50vh] sm:h-[400px] md:h-[500px] rounded-lg sm:rounded-xl overflow-hidden border-2 border-cyber-purple/30 ">
             {/* Controls Overlay */}
             <div className="absolute top-2 sm:top-4 right-2 sm:right-4 z-[1000] flex flex-col gap-2 sm:gap-3">
               {/* Basemap Toggle */}
-              <div className="bg-slate-900/90 rounded-lg sm:rounded-xl  overflow-hidden border border-[#bc13fe]/30">
+              <div className="bg-slate-900/90 rounded-lg sm:rounded-xl  overflow-hidden border border-cyber-purple/30">
                 <button
                   onClick={() => setBasemap('street')}
                   className={`px-2.5 sm:px-4 py-1.5 sm:py-2.5 text-[10px] sm:text-xs font-semibold transition flex items-center gap-1.5 sm:gap-2 w-full ${basemap === 'street'
-                      ? 'bg-gradient-to-r from-[#00f7ff] to-[#00d4e6] text-black '
-                      : 'text-[#e0d0ff] hover:bg-[#bc13fe]/20'
+                      ? 'bg-gradient-to-r from-cyber-cyan to-cyber-teal text-black '
+                      : 'text-cyber-lavender hover:bg-cyber-purple/20'
                     }`}
                 >
                   <Layers className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -236,9 +236,9 @@ export default function MapPicker({
                 </button>
                 <button
                   onClick={() => setBasemap('satellite')}
-                  className={`px-2.5 sm:px-4 py-1.5 sm:py-2.5 text-[10px] sm:text-xs font-semibold transition flex items-center gap-1.5 sm:gap-2 w-full border-t border-[#bc13fe]/20 ${basemap === 'satellite'
-                      ? 'bg-gradient-to-r from-[#00f7ff] to-[#00d4e6] text-black '
-                      : 'text-[#e0d0ff] hover:bg-[#bc13fe]/20'
+                  className={`px-2.5 sm:px-4 py-1.5 sm:py-2.5 text-[10px] sm:text-xs font-semibold transition flex items-center gap-1.5 sm:gap-2 w-full border-t border-cyber-purple/20 ${basemap === 'satellite'
+                      ? 'bg-gradient-to-r from-cyber-cyan to-cyber-teal text-black '
+                      : 'text-cyber-lavender hover:bg-cyber-purple/20'
                     }`}
                 >
                   <Layers className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -250,10 +250,10 @@ export default function MapPicker({
               {/* GPS Button */}
               <button
                 onClick={handleGetCurrentLocation}
-                className="bg-slate-900/90 rounded-lg sm:rounded-xl  border border-[#bc13fe]/30 p-2 sm:p-3 hover:bg-[#bc13fe]/20 hover: transition group"
+                className="bg-slate-900/90 rounded-lg sm:rounded-xl  border border-cyber-purple/30 p-2 sm:p-3 hover:bg-cyber-purple/20 hover: transition group"
                 title="Gunakan lokasi saya"
               >
-                <Navigation className="h-4 w-4 sm:h-5 sm:w-5 text-[#00f7ff] group-hover:text-[#ff44cc]" />
+                <Navigation className="h-4 w-4 sm:h-5 sm:w-5 text-cyber-cyan group-hover:text-[#ff44cc]" />
               </button>
             </div>
 
@@ -269,9 +269,9 @@ export default function MapPicker({
               <div className="absolute inset-0 bg-gradient-to-br from-slate-900 to-[#1a0f35] flex items-center justify-center">
                 <div className="text-center">
                   <div className="relative mx-auto mb-4">
-                    <div className="animate-spin h-10 w-10 sm:h-12 sm:w-12 border-4 border-[#bc13fe]/30 border-t-[#00f7ff] rounded-full "></div>
+                    <div className="animate-spin h-10 w-10 sm:h-12 sm:w-12 border-4 border-cyber-purple/30 border-t-cyber-cyan rounded-full "></div>
                   </div>
-                  <p className="text-xs sm:text-sm text-[#e0d0ff]">Memuat peta...</p>
+                  <p className="text-xs sm:text-sm text-cyber-lavender">Memuat peta...</p>
                 </div>
               </div>
             )}
@@ -280,18 +280,18 @@ export default function MapPicker({
           {/* Coordinates Display */}
           <div className="mt-3 sm:mt-4 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
             {position ? (
-              <div className="flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-[#bc13fe]/20 to-[#00f7ff]/20 border border-[#00f7ff]/30 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg flex-1 min-w-0">
-                <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-[#00f7ff] flex-shrink-0" />
+              <div className="flex items-center gap-1.5 sm:gap-2 bg-gradient-to-r from-cyber-purple/20 to-cyber-cyan/20 border border-cyber-cyan/30 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg flex-1 min-w-0">
+                <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-cyber-cyan flex-shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <span className="text-[10px] sm:text-xs text-[#e0d0ff]/70">Koordinat: </span>
-                  <span className="font-mono font-semibold text-[10px] sm:text-xs text-[#00f7ff] drop- break-all">
+                  <span className="text-[10px] sm:text-xs text-cyber-lavender/70">Koordinat: </span>
+                  <span className="font-mono font-semibold text-[10px] sm:text-xs text-cyber-cyan drop- break-all">
                     {position[0].toFixed(6)}, {position[1].toFixed(6)}
                   </span>
                 </div>
               </div>
             ) : (
-              <div className="text-xs sm:text-sm text-[#e0d0ff]/60 flex items-center gap-1.5 sm:gap-2">
-                <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-[#bc13fe]" />
+              <div className="text-xs sm:text-sm text-cyber-lavender/60 flex items-center gap-1.5 sm:gap-2">
+                <MapPin className="h-3 w-3 sm:h-4 sm:w-4 text-cyber-purple" />
                 <span className="text-[10px] sm:text-sm">Klik pada peta untuk memilih lokasi</span>
               </div>
             )}
@@ -299,17 +299,17 @@ export default function MapPicker({
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-2 sm:gap-3 px-3 sm:px-6 py-3 sm:py-4 border-t border-[#bc13fe]/20 bg-gradient-to-r from-[#bc13fe]/5 to-[#00f7ff]/5 flex-shrink-0">
+        <div className="flex justify-end gap-2 sm:gap-3 px-3 sm:px-6 py-3 sm:py-4 border-t border-cyber-purple/20 bg-gradient-to-r from-cyber-purple/5 to-cyber-cyan/5 flex-shrink-0">
           <button
             onClick={onClose}
-            className="px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold border-2 border-[#bc13fe]/40 text-[#e0d0ff] rounded-lg sm:rounded-xl hover:bg-[#bc13fe]/10 hover:border-[#bc13fe]/60 transition"
+            className="px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold border-2 border-cyber-purple/40 text-cyber-lavender rounded-lg sm:rounded-xl hover:bg-cyber-purple/10 hover:border-cyber-purple/60 transition"
           >
             Batal
           </button>
           <button
             onClick={handleConfirm}
             disabled={!position}
-            className="px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold bg-gradient-to-r from-[#00f7ff] to-[#00d4e6] text-black rounded-lg sm:rounded-xl hover: disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none transition"
+            className="px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold bg-gradient-to-r from-cyber-cyan to-cyber-teal text-black rounded-lg sm:rounded-xl hover: disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none transition"
           >
             Pilih Lokasi Ini
           </button>

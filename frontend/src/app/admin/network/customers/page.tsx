@@ -560,7 +560,7 @@ export default function CustomerAssignmentPage() {
                         <MapPin className="h-2.5 w-2.5" /> GPS: {selectedCustomer.latitude.toFixed(6)}, {selectedCustomer.longitude.toFixed(6)}
                       </div>
                     ) : (
-                      <div className="mt-1 text-[10px] text-[#ff8c00]">⚠ {t('network.noGpsCoordinates')}</div>
+                      <div className="mt-1 text-[10px] text-warn-orange">⚠ {t('network.noGpsCoordinates')}</div>
                     )}
                   </div>
                 ) : (

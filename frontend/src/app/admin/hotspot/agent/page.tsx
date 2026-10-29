@@ -656,7 +656,7 @@ export default function AgentPage() {
         <SimpleModal isOpen={!!deleteAgentId} onClose={() => setDeleteAgentId(null)} size="sm">
           <ModalBody className="text-center py-6">
             <div className="w-14 h-14 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-red-500/50">
-              <Trash2 className="w-7 h-7 text-[#ff6b8a]" />
+              <Trash2 className="w-7 h-7 text-cyber-pink" />
             </div>
             <h2 className="text-base font-bold text-foreground mb-2">{t('agent.deleteAgent')}</h2>
             <p className="text-xs text-muted-foreground">{t('agent.deleteConfirm')}</p>
@@ -682,7 +682,7 @@ export default function AgentPage() {
               <button type="button" onClick={() => setBalanceType('add')} className={`px-3 py-2 rounded-lg border-2 text-xs font-medium transition ${balanceType === 'add' ? 'border-green-500 bg-green-500/10 text-green-500 ' : 'border-border hover:border-green-500/50'}`}>
                 <DollarSign className="w-3.5 h-3.5 mx-auto mb-0.5" /> {t('agent.addBalance')}
               </button>
-              <button type="button" onClick={() => setBalanceType('subtract')} className={`px-3 py-2 rounded-lg border-2 text-xs font-medium transition ${balanceType === 'subtract' ? 'border-red-500 bg-red-500/10 text-[#ff6b8a] ' : 'border-border hover:border-red-500/50'}`}>
+              <button type="button" onClick={() => setBalanceType('subtract')} className={`px-3 py-2 rounded-lg border-2 text-xs font-medium transition ${balanceType === 'subtract' ? 'border-red-500 bg-red-500/10 text-cyber-pink ' : 'border-border hover:border-red-500/50'}`}>
                 <DollarSign className="w-3.5 h-3.5 mx-auto mb-0.5" /> {t('agent.subtractBalance')}
               </button>
             </div>
@@ -791,7 +791,7 @@ export default function AgentPage() {
         <SimpleModal isOpen={bulkDeleteOpen} onClose={() => setBulkDeleteOpen(false)} size="sm">
           <ModalBody className="text-center py-6">
             <div className="w-14 h-14 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-red-500/50">
-              <Trash2 className="w-7 h-7 text-[#ff6b8a]" />
+              <Trash2 className="w-7 h-7 text-cyber-pink" />
             </div>
             <h2 className="text-base font-bold text-foreground mb-2">{t('hotspot.deleteMultipleAgents')}</h2>
             <p className="text-xs text-muted-foreground">{t('hotspot.deleteAgentsBtn', { count: selectedAgents.length })}</p>
@@ -813,7 +813,7 @@ export default function AgentPage() {
               <button type="button" onClick={() => setBulkStatusValue(true)} className={`px-3 py-3 rounded-lg border-2 text-xs font-medium transition ${bulkStatusValue ? 'border-green-500 bg-green-500/10 text-green-500 ' : 'border-border hover:border-green-500/50 text-foreground'}`}>
                 ✓ {t('common.active')}
               </button>
-              <button type="button" onClick={() => setBulkStatusValue(false)} className={`px-3 py-3 rounded-lg border-2 text-xs font-medium transition ${!bulkStatusValue ? 'border-red-500 bg-red-500/10 text-[#ff6b8a] ' : 'border-border hover:border-red-500/50 text-foreground'}`}>
+              <button type="button" onClick={() => setBulkStatusValue(false)} className={`px-3 py-3 rounded-lg border-2 text-xs font-medium transition ${!bulkStatusValue ? 'border-red-500 bg-red-500/10 text-cyber-pink ' : 'border-border hover:border-red-500/50 text-foreground'}`}>
                 ✗ {t('common.inactive')}
               </button>
             </div>

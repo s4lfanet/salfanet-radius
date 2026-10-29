@@ -132,7 +132,7 @@ export default function TechnicianProfilePage() {
           </div>
         </div>
 
-        <button onClick={handleSaveProfile} disabled={saving} className="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-brand-500 to-[#00d4e6] hover:brightness-110 disabled:opacity-50 text-black text-sm font-bold rounded-xl transition">
+        <button onClick={handleSaveProfile} disabled={saving} className="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-brand-500 to-cyber-teal hover:brightness-110 disabled:opacity-50 text-black text-sm font-bold rounded-xl transition">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           {t('techPortal.save')}
         </button>

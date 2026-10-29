@@ -576,7 +576,7 @@ export default function ODPsPage() {
               <div>
                 <ModalLabel required>{t('network.connectTo')}</ModalLabel>
                 <div className="flex gap-2 mb-2">
-                  <button type="button" onClick={() => setConnectionType('odc')} className={`flex-1 px-2 py-1.5 text-xs rounded-lg border transition ${connectionType === 'odc' ? 'bg-[#ff8c00]/20 border-[#ff8c00] text-[#ff8c00] ' : 'border-border hover:border-border'}`}>
+                  <button type="button" onClick={() => setConnectionType('odc')} className={`flex-1 px-2 py-1.5 text-xs rounded-lg border transition ${connectionType === 'odc' ? 'bg-warn-orange/20 border-warn-orange text-warn-orange ' : 'border-border hover:border-border'}`}>
                     <HardDrive className="h-3 w-3 inline mr-1" /> {t('network.odcCabinet')}
                   </button>
                   <button type="button" onClick={() => setConnectionType('odp')} className={`flex-1 px-2 py-1.5 text-xs rounded-lg border transition ${connectionType === 'odp' ? 'bg-brand-500/20 border-brand-500 text-brand-500 ' : 'border-border hover:border-border'}`}>

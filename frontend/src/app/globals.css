@@ -35,6 +35,17 @@
  --text-theme-xs: 12px;
  --text-theme-xs--line-height: 18px;
 
+ /* Neon/cyberpunk accent palette (used in camera viewfinder,
+    agent UI, and neon-styled components) */
+ --color-cyber-cyan: #00f7ff;
+ --color-cyber-green: #00ff88;
+ --color-cyber-purple: #bc13fe;
+ --color-cyber-red: #ff4466;
+ --color-cyber-pink: #ff6b8a;
+ --color-cyber-lavender: #e0d0ff;
+ --color-cyber-teal: #00d4e6;
+ --color-warn-orange: #ff8c00;
+
  /* Brand palette (#465fff = brand-500, main primary) */
  --color-brand-25: #f2f7ff;
  --color-brand-50: #ecf3ff;

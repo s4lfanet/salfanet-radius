@@ -684,9 +684,9 @@ export default function RegistrationsPage() {
                   </div>
                 )}
                 {subscriptionType === 'POSTPAID' && (
-                  <div className="bg-[#ff8c00]/10 border border-[#ff8c00]/30 rounded-lg p-3">
-                    <div className="text-xs font-medium text-[#ff8c00] mb-1">ℹ️ Informasi Postpaid:</div>
-                    <div className="text-[10px] text-[#ff8c00]">
+                  <div className="bg-warn-orange/10 border border-warn-orange/30 rounded-lg p-3">
+                    <div className="text-xs font-medium text-warn-orange mb-1">ℹ️ Informasi Postpaid:</div>
+                    <div className="text-[10px] text-warn-orange">
                       • Tagihan <strong>Rp {selectedRegistration.profile.price.toLocaleString('id-ID')}</strong> setiap bulan<br/>
                       • Jatuh tempo setiap <strong>tanggal {billingDay}</strong> bulan berikutnya<br/>
                       • expiredAt otomatis diperpanjang setiap bulan<br/>

@@ -406,7 +406,7 @@ ${firewallNatScript}
         {!settings.isolationServerIp && (
         <div className="bg-gradient-to-r from-red-500/10 to-pink-500/10 border-2 border-red-500/50 rounded-lg p-4 mb-4">
           <div className="flex items-start gap-3">
-            <AlertCircle className="w-6 h-6 text-[#ff6b8a] flex-shrink-0 mt-0.5 drop-" />
+            <AlertCircle className="w-6 h-6 text-cyber-pink flex-shrink-0 mt-0.5 drop-" />
             <div className="flex-1">
               <h3 className="font-bold text-foreground mb-2 flex items-center gap-2">
                 Server IP belum dikonfigurasi!
@@ -419,7 +419,7 @@ ${firewallNatScript}
                   Script ini menggunakan: <code className="bg-black/30 px-2 py-0.5 rounded text-red-500">{getServerIp()}</code> (dari Base URL, mungkin adalah hostname bukan IP)
                 </p>
                 <p>
-                  <strong className="text-[#ff6b8a]">Atur "IP Server (untuk MikroTik NAT)" di halaman Pengaturan Isolasi agar script benar!</strong>
+                  <strong className="text-cyber-pink">Atur "IP Server (untuk MikroTik NAT)" di halaman Pengaturan Isolasi agar script benar!</strong>
                 </p>
                 <ul className="list-disc list-inside space-y-1 ml-4">
                   <li>Contoh benar: <code className="bg-black/30 px-2 py-0.5 rounded text-green-500">103.50.100.150</code></li>

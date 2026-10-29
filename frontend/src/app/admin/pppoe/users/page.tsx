@@ -2258,7 +2258,7 @@ export default function PppoeUsersPage() {
         <SimpleModal isOpen={!!deleteUserId} onClose={() => { setDeleteUserId(null); setDeletePassword(''); }} size="sm">
           <ModalBody className="text-center py-6">
             <div className="w-14 h-14 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-red-500/50">
-              <Trash2 className="w-7 h-7 text-[#ff6b8a]" />
+              <Trash2 className="w-7 h-7 text-cyber-pink" />
             </div>
             <h2 className="text-base font-bold text-foreground mb-2">{t('pppoe.deleteUser')}</h2>
             <p className="text-xs text-muted-foreground mb-4">{t('pppoe.deleteConfirm')}</p>
@@ -2292,7 +2292,7 @@ export default function PppoeUsersPage() {
         <SimpleModal isOpen={bulkDeleteModalOpen} onClose={() => { setBulkDeleteModalOpen(false); setBulkDeletePassword(''); }} size="sm">
           <ModalBody className="text-center py-6">
             <div className="w-14 h-14 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-red-500/50">
-              <Trash2 className="w-7 h-7 text-[#ff6b8a]" />
+              <Trash2 className="w-7 h-7 text-cyber-pink" />
             </div>
             <h2 className="text-base font-bold text-foreground mb-2">{t('pppoe.deleteUser')}</h2>
             <p className="text-xs text-muted-foreground mb-4">{selectedUsers.size} pelanggan akan dihapus permanen.</p>
@@ -2576,7 +2576,7 @@ export default function PppoeUsersPage() {
                 <div className="px-3 py-2 bg-muted/50 dark:bg-primary/10 border-b border-border dark:border-border flex items-center justify-between">
                   <div className="text-xs">
                     <span className="font-medium text-foreground">{syncPreview.router?.name}</span>
-                    <span className="text-muted-foreground ml-2">Total: {syncPreview.data?.total} | Baru: <span className="text-green-600 dark:text-green-500 font-medium">{syncPreview.data?.new}</span> | Sudah ada: <span className="text-orange-500 dark:text-[#ff8c00]">{syncPreview.data?.existing}</span></span>
+                    <span className="text-muted-foreground ml-2">Total: {syncPreview.data?.total} | Baru: <span className="text-green-600 dark:text-green-500 font-medium">{syncPreview.data?.new}</span> | Sudah ada: <span className="text-orange-500 dark:text-warn-orange">{syncPreview.data?.existing}</span></span>
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => toggleSyncSelectAll(true)} className="text-[10px] text-primary dark:text-brand-500 hover:underline">{t('pppoe.selectAllNew')}</button>
@@ -2596,7 +2596,7 @@ export default function PppoeUsersPage() {
                           <td className="px-2 py-1.5 text-muted-foreground">{secret.profile}</td>
                           <td className="px-2 py-1.5 text-muted-foreground">{secret.remoteAddress || '-'}</td>
                           <td className="px-2 py-1.5">
-                            {secret.disabled ? (<span className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded text-[9px]">{t('pppoe.disabledLabel')}</span>) : secret.isNew ? (<span className="px-1.5 py-0.5 bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-500 rounded text-[9px]">{t('pppoe.new')}</span>) : (<span className="px-1.5 py-0.5 bg-orange-100 text-orange-600 dark:bg-[#ff8c00]/20 dark:text-[#ff8c00] rounded text-[9px]">{t('pppoe.existing')}</span>)}
+                            {secret.disabled ? (<span className="px-1.5 py-0.5 bg-muted text-muted-foreground rounded text-[9px]">{t('pppoe.disabledLabel')}</span>) : secret.isNew ? (<span className="px-1.5 py-0.5 bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-500 rounded text-[9px]">{t('pppoe.new')}</span>) : (<span className="px-1.5 py-0.5 bg-orange-100 text-orange-600 dark:bg-warn-orange/20 dark:text-warn-orange rounded text-[9px]">{t('pppoe.existing')}</span>)}
                           </td>
                         </tr>
                       ))}
@@ -2607,12 +2607,12 @@ export default function PppoeUsersPage() {
               </div>
             )}
             {syncResult && (
-              <div className={`p-3 rounded-lg border ${syncResult.stats?.failed > 0 ? 'bg-orange-50 dark:bg-[#ff8c00]/10 border-orange-300 dark:border-[#ff8c00]/30' : 'bg-green-50 dark:bg-green-500/10 border-green-300 dark:border-green-500/30'}`}>
+              <div className={`p-3 rounded-lg border ${syncResult.stats?.failed > 0 ? 'bg-orange-50 dark:bg-warn-orange/10 border-orange-300 dark:border-warn-orange/30' : 'bg-green-50 dark:bg-green-500/10 border-green-300 dark:border-green-500/30'}`}>
                 <div className="text-xs space-y-1">
                   <div className="font-medium text-foreground">{syncResult.message}</div>
                   <div className="flex gap-4 text-[10px]">
                     <span className="text-green-600 dark:text-green-500">✓ Imported: {syncResult.stats?.imported}</span>
-                    <span className="text-orange-500 dark:text-[#ff8c00]">⊘ Skipped: {syncResult.stats?.skipped}</span>
+                    <span className="text-orange-500 dark:text-warn-orange">⊘ Skipped: {syncResult.stats?.skipped}</span>
                     <span className="text-red-500 dark:text-red-500">✗ Failed: {syncResult.stats?.failed}</span>
                   </div>
                   {syncResult.errors && syncResult.errors.length > 0 && (<div className="mt-2 text-[10px] text-red-500 dark:text-red-500">Errors: {syncResult.errors.map((e: { username: string; error: string }) => `${e.username}: ${e.error}`).join(', ')}</div>)}
@@ -2701,7 +2701,7 @@ export default function PppoeUsersPage() {
             )}
             {notificationType === 'invoice' && (
               <>
-                <div className="bg-[#ff8c00]/10 border border-[#ff8c00]/30 rounded-lg p-3"><p className="text-xs text-[#ff8c00]">{t('pppoe.invoiceInfo').replace('{count}', String(selectedUsers.size))}</p></div>
+                <div className="bg-warn-orange/10 border border-warn-orange/30 rounded-lg p-3"><p className="text-xs text-warn-orange">{t('pppoe.invoiceInfo').replace('{count}', String(selectedUsers.size))}</p></div>
                 <div><ModalLabel>{t('pppoe.additionalMessage')}</ModalLabel><ModalTextarea value={broadcastData.description} onChange={(e) => setBroadcastData({ ...broadcastData, description: e.target.value })} placeholder={t('pppoe.additionalInvoicePlaceholder')} rows={3} /></div>
               </>
             )}

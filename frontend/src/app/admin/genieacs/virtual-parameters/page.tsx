@@ -493,9 +493,9 @@ return user || "N/A";`}</pre>
                   </label>
 
                   {/* Tips Section */}
-                  <div className="bg-[#ff8c00]/10 border border-[#ff8c00]/30 rounded-lg p-3">
-                    <p className="text-xs font-semibold text-[#ff8c00] mb-2"><Lightbulb className="w-3.5 h-3.5 inline mr-1" />{t('genieacs.tips')}</p>
-                    <ul className="text-[11px] text-[#ff8c00]/80 space-y-1 list-disc list-inside">
+                  <div className="bg-warn-orange/10 border border-warn-orange/30 rounded-lg p-3">
+                    <p className="text-xs font-semibold text-warn-orange mb-2"><Lightbulb className="w-3.5 h-3.5 inline mr-1" />{t('genieacs.tips')}</p>
+                    <ul className="text-[11px] text-warn-orange/80 space-y-1 list-disc list-inside">
                       <li>{t('genieacs.tipDeclare')}</li>
                       <li>{t('genieacs.tipDefault')}</li>
                       <li>{t('genieacs.tipTest')}</li>
