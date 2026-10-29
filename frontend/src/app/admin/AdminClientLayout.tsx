@@ -481,12 +481,12 @@ function NavItem({ item, pendingCount, manualPaymentsCount, unreadNotifications,
             'w-full flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition duration-200 group',
             isActive
               ? 'text-brand-500 bg-brand-50 dark:text-brand-400 dark:bg-brand-500/[0.12]'
-              : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-gray-100 dark:hover:bg-white/5',
+              : 'text-gray-800 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-gray-100 dark:hover:bg-white/5',
           )}
         >
           <span className={cn(
             'flex-shrink-0 p-0.5 rounded-md transition duration-200 flex items-center justify-center',
-            isActive ? 'text-brand-500 dark:text-brand-400' : 'text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300'
+            isActive ? 'text-brand-500 dark:text-brand-400' : 'text-gray-600 group-hover:text-gray-800 dark:text-gray-400 dark:group-hover:text-gray-300'
           )}>
             {item.icon}
           </span>
@@ -556,7 +556,7 @@ function NavItem({ item, pendingCount, manualPaymentsCount, unreadNotifications,
     >
       <span className={cn(
         'flex-shrink-0 p-0.5 rounded-md transition duration-200 flex items-center justify-center',
-        pathname === item.href ? 'text-brand-500 dark:text-brand-400' : 'text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300'
+        pathname === item.href ? 'text-brand-500 dark:text-brand-400' : 'text-gray-600 group-hover:text-gray-800 dark:text-gray-400 dark:group-hover:text-gray-300'
       )}>
         {item.icon}
       </span>

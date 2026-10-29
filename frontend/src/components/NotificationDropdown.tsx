@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Bell, Check, CheckCheck, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Banknote, Bell, Check, CheckCheck, CreditCard, FileText, Megaphone, Trash2, User, UserX, Wallet, X } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
 import Link from 'next/link';
 import { apiAdmin } from '@/lib/api';
@@ -94,28 +94,29 @@ export default function NotificationDropdown() {
   };
 
   const getNotificationIcon = (type: string) => {
-    const iconClass = 'w-4 h-4';
+    const iconClass = 'w-6 h-6 flex items-center justify-center rounded-full';
+    const glyph = 'w-3.5 h-3.5';
     switch (type) {
       case 'invoice_overdue':
-        return <div className={`${iconClass} bg-red-100 text-red-600 rounded-full p-1`}>💸</div>;
+        return <div className={`${iconClass} bg-red-100 text-red-600`}><Banknote className={glyph} /></div>;
       case 'invoice_generated':
-        return <div className={`${iconClass} bg-blue-100 text-blue-600 rounded-full p-1`}></div>;
+        return <div className={`${iconClass} bg-blue-100 text-blue-600`}><FileText className={glyph} /></div>;
       case 'new_registration':
-        return <div className={`${iconClass} bg-blue-100 text-blue-600 rounded-full p-1`}>👤</div>;
+        return <div className={`${iconClass} bg-blue-100 text-blue-600`}><User className={glyph} /></div>;
       case 'payment_received':
-        return <div className={`${iconClass} bg-green-100 text-green-600 rounded-full p-1`}></div>;
+        return <div className={`${iconClass} bg-green-100 text-green-600`}><Wallet className={glyph} /></div>;
       case 'manual_payment_submitted':
-        return <div className={`${iconClass} bg-cyan-100 text-cyan-600 rounded-full p-1`}>💳</div>;
+        return <div className={`${iconClass} bg-cyan-100 text-cyan-600`}><CreditCard className={glyph} /></div>;
       case 'manual_payment_approved':
-        return <div className={`${iconClass} bg-green-100 text-green-600 rounded-full p-1`}>✔️</div>;
+        return <div className={`${iconClass} bg-green-100 text-green-600`}><Check className={glyph} /></div>;
       case 'manual_payment_rejected':
-        return <div className={`${iconClass} bg-red-100 text-red-600 rounded-full p-1`}></div>;
+        return <div className={`${iconClass} bg-red-100 text-red-600`}><X className={glyph} /></div>;
       case 'user_expired':
-        return <div className={`${iconClass} bg-yellow-100 text-yellow-600 rounded-full p-1`}></div>;
+        return <div className={`${iconClass} bg-yellow-100 text-yellow-600`}><UserX className={glyph} /></div>;
       case 'system_alert':
-        return <div className={`${iconClass} bg-purple-100 text-purple-600 rounded-full p-1`}></div>;
+        return <div className={`${iconClass} bg-purple-100 text-purple-600`}><AlertTriangle className={glyph} /></div>;
       default:
-        return <div className={`${iconClass} bg-muted text-muted-foreground rounded-full p-1`}>📢</div>;
+        return <div className={`${iconClass} bg-muted text-muted-foreground`}><Megaphone className={glyph} /></div>;
     }
   };
 

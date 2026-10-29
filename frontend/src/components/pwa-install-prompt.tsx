@@ -66,7 +66,7 @@ export function PwaInstallPrompt() {
   return (
     <div
       role="banner"
-      className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[99998] w-[calc(100vw-32px)] max-w-sm
+      className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-[99998] w-[calc(100vw-32px)] max-w-sm
         flex items-center gap-3 px-4 py-3
         bg-gray-950/95 border border-cyan-500/40 rounded-2xl
          backdrop-blur-sm
@@ -86,7 +86,7 @@ export function PwaInstallPrompt() {
       {/* Install button */}
       <button
         onClick={handleInstall}
-        className="flex-shrink-0 px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 active:bg-cyan-700
+        className="flex-shrink-0 px-3 py-1.5 bg-cyan-700 hover:bg-cyan-600 active:bg-cyan-800
           text-white rounded-lg font-medium text-xs transition-colors"
       >
         Install
