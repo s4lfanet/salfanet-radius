@@ -77,7 +77,7 @@ export default function PromoBannerSlider() {
               key={banner.id}
               onClick={() => goTo(index)}
               aria-label={`Slide ${index + 1}`}
-              className={`h-1.5 rounded-full transition-all ${index === active ? 'w-4 bg-white' : 'w-1.5 bg-white/60'}`}
+              className={`h-1.5 rounded-full transition ${index === active ? 'w-4 bg-white' : 'w-1.5 bg-white/60'}`}
             />
           ))}
         </div>

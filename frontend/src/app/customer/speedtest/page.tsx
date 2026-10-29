@@ -27,7 +27,7 @@ export default function CustomerSpeedTestPage() {
         </div>
         <button
           onClick={handleReload}
-          className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 rounded-xl hover:bg-cyan-500/20 transition-all active:scale-95"
+          className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 rounded-xl hover:bg-cyan-500/20 transition active:scale-95"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           Muat Ulang

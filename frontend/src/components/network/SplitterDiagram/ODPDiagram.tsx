@@ -185,7 +185,7 @@ export function ODPDiagram({
                 fill={getPortColor(port)}
                 stroke={hoveredPort?.id === port.id ? '#1f2937' : '#059669'}
                 strokeWidth="2.5"
-                className={interactive ? 'cursor-pointer transition-all' : ''}
+                className={interactive ? 'cursor-pointer transition' : ''}
                 onClick={() => handlePortClick(port)}
                 onMouseEnter={() => handlePortMouseEnter(port)}
                 onMouseLeave={handlePortMouseLeave}
@@ -280,7 +280,7 @@ export function ODPDiagram({
                 fill={getPortColor(port)}
                 stroke={hoveredPort?.id === port.id ? '#1f2937' : '#94a3b8'}
                 strokeWidth="2.5"
-                className={interactive ? 'cursor-pointer transition-all hover:scale-125' : ''}
+                className={interactive ? 'cursor-pointer transition hover:scale-125' : ''}
                 onClick={() => handlePortClick(port)}
                 onMouseEnter={() => handlePortMouseEnter(port)}
                 onMouseLeave={handlePortMouseLeave}

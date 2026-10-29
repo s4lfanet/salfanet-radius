@@ -185,7 +185,7 @@ export default function TechnicianRegisterPage() {
             </p>
             <button
               onClick={handleReset}
-              className="w-full py-3 px-4 bg-gradient-to-r from-primary to-brand-500 text-white font-bold text-sm rounded-xl hover:opacity-90 transition-all"
+              className="w-full py-3 px-4 bg-gradient-to-r from-primary to-brand-500 text-white font-bold text-sm rounded-xl hover:opacity-90 transition"
             >
               Daftar Pelanggan Baru
             </button>
@@ -229,7 +229,7 @@ export default function TechnicianRegisterPage() {
           <button
             type="button"
             onClick={() => setActiveTab('basic')}
-            className={`flex-1 py-2 px-3 text-sm font-semibold rounded-lg transition-all ${
+            className={`flex-1 py-2 px-3 text-sm font-semibold rounded-lg transition ${
               activeTab === 'basic'
                 ? 'bg-card text-foreground shadow-sm border border-border'
                 : 'text-muted-foreground hover:text-foreground'
@@ -244,7 +244,7 @@ export default function TechnicianRegisterPage() {
             type="button"
             onClick={() => setActiveTab('network')}
             disabled={!basicValid}
-            className={`flex-1 py-2 px-3 text-sm font-semibold rounded-lg transition-all ${
+            className={`flex-1 py-2 px-3 text-sm font-semibold rounded-lg transition ${
               activeTab === 'network'
                 ? 'bg-card text-foreground shadow-sm border border-border'
                 : !basicValid
@@ -359,7 +359,7 @@ export default function TechnicianRegisterPage() {
                           { enableHighAccuracy: true, timeout: 10000 }
                         );
                       }}
-                      className="w-full flex items-center justify-center gap-2 py-2 px-4 text-xs font-semibold bg-primary/10 hover:bg-primary/10 text-primary border border-border rounded-xl transition-all disabled:opacity-60"
+                      className="w-full flex items-center justify-center gap-2 py-2 px-4 text-xs font-semibold bg-primary/10 hover:bg-primary/10 text-primary border border-border rounded-xl transition disabled:opacity-60"
                     >
                       {gpsLoading ? <><span className="w-3.5 h-3.5 border border-border border-t-violet-500 rounded-full animate-spin" /></> : <MapPin className="w-3.5 h-3.5" />}
                       {gpsLoading ? 'Mendapatkan lokasi...' : 'Ambil Lokasi GPS Saya'}
@@ -395,7 +395,7 @@ export default function TechnicianRegisterPage() {
                 type="button"
                 onClick={() => setActiveTab('network')}
                 disabled={!basicValid}
-                className="w-full py-3 px-4 bg-muted/50 border border-border text-foreground font-semibold text-sm rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3 px-4 bg-muted/50 border border-border text-foreground font-semibold text-sm rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Selanjutnya: Paket &amp; Dokumen
                 <ChevronDown className="w-4 h-4 -rotate-90" />
@@ -646,7 +646,7 @@ export default function TechnicianRegisterPage() {
                     <button
                       type="submit"
                       disabled={submitting || !canSubmit}
-                      className="w-full py-3.5 px-4 bg-gradient-to-r from-primary to-brand-500 text-white font-bold text-sm rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                      className="w-full py-3.5 px-4 bg-gradient-to-r from-primary to-brand-500 text-white font-bold text-sm rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
                     >
                       {submitting ? (
                         <>

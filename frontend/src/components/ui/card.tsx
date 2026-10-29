@@ -10,7 +10,7 @@ function Card({ className, ...props }: React.ComponentProps<"div">) {
         "bg-card text-card-foreground flex flex-col gap-4 sm:gap-6 rounded-xl sm:rounded-2xl",
         "border-2 border-cyan-500/20 backdrop-blur-sm",
         "hover:border-cyan-500/40",
-        "transition-all duration-300",
+        "transition duration-300",
         className
       )}
       {...props}

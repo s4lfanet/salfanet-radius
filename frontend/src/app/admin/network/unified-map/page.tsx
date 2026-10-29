@@ -321,7 +321,7 @@ export default function UnifiedMapPage() {
               onClick={detectUserLocation}
               disabled={locatingUser}
               title="My Location"
-              className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium shadow-lg transition-all border bg-card text-muted-foreground border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-60"
+              className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium shadow-lg transition border bg-card text-muted-foreground border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-60"
             >
               {locatingUser ? <Loader2 className="w-4 h-4 animate-spin" /> : <Navigation className="w-4 h-4" />}
             </button>
@@ -330,7 +330,7 @@ export default function UnifiedMapPage() {
               onClick={() => setShowConnections(v => !v)}
               title={showConnections ? 'Sembunyikan garis koneksi' : 'Tampilkan garis koneksi'}
               className={cn(
-                'flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium shadow-lg transition-all border',
+                'flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium shadow-lg transition border',
                 showConnections
                   ? 'bg-card text-muted-foreground border-gray-200 dark:border-gray-600'
                   : 'bg-gray-200 dark:bg-gray-700 text-muted-foreground/70 border-gray-300 dark:border-gray-600',
@@ -343,7 +343,7 @@ export default function UnifiedMapPage() {
             <button
               onClick={() => connectMode ? exitConnectMode() : enterConnectMode()}
               className={cn(
-                'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium shadow-lg transition-all',
+                'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium shadow-lg transition',
                 connectMode
                   ? 'bg-amber-500 hover:bg-amber-600 text-white ring-2 ring-white ring-offset-1 ring-offset-amber-500'
                   : 'bg-emerald-600 hover:bg-emerald-700 text-white',
@@ -362,7 +362,7 @@ export default function UnifiedMapPage() {
                 setSelectedEntity(null);
               }}
               className={cn(
-                'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium shadow-lg transition-all',
+                'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium shadow-lg transition',
                 addMode
                   ? 'bg-orange-500 hover:bg-orange-600 text-white ring-2 ring-white ring-offset-1 ring-offset-orange-500'
                   : 'bg-blue-600 hover:bg-blue-700 text-white',
@@ -487,7 +487,7 @@ export default function UnifiedMapPage() {
               )} />
             </button>
             <div className={cn(
-              'overflow-hidden transition-all duration-200',
+              'overflow-hidden transition duration-200',
               showLegend ? 'max-h-60' : 'max-h-0 lg:max-h-60',
             )}>
               <div className="px-3 pb-2.5 space-y-1 border-t border-gray-200/60 dark:border-gray-700/60 pt-1.5">

@@ -928,7 +928,7 @@ ${vpnCmd}
                   setFormData({ name: '', description: '', vpnServerId: '', vpnType: 'l2tp', customVpnIp: '', localNetworks: '' })
                   setShowModal(true)
                 }}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition-all duration-300 transform hover:scale-105"
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition duration-300 transform hover:scale-105"
               >
                 <Plus className="w-5 h-5" />
                 {t('network.addVpnClient')}
@@ -938,7 +938,7 @@ ${vpnCmd}
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-border p-5 hover:border-border transition-all group">
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-border p-5 hover:border-border transition group">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-muted-foreground text-sm mb-1">{t('common.totalClients')}</p>
@@ -950,7 +950,7 @@ ${vpnCmd}
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-brand-500/30 p-5 hover:border-brand-500/50 transition-all group">
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-brand-500/30 p-5 hover:border-brand-500/50 transition group">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-muted-foreground text-sm mb-1">{t('network.radiusServer')}</p>
@@ -962,7 +962,7 @@ ${vpnCmd}
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-green-500/30 p-5 hover:border-green-500/50 transition-all group">
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-green-500/30 p-5 hover:border-green-500/50 transition group">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-muted-foreground text-sm mb-1">{t('common.activeClients')}</p>
@@ -1235,7 +1235,7 @@ ${vpnCmd}
                   setFormData({ name: '', description: '', vpnServerId: '', vpnType: 'l2tp', customVpnIp: '', localNetworks: '' })
                   setShowModal(true)
                 }}
-                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition-all duration-300 transform hover:scale-105"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition duration-300 transform hover:scale-105"
               >
                 <Plus className="w-5 h-5" />
                 {t('network.addFirstVpnClient')}
@@ -1246,7 +1246,7 @@ ${vpnCmd}
               {clients.map((client) => (
                 <div
                   key={client.id}
-                  className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 border border-border rounded-2xl overflow-hidden hover:border-brand-500/50 hover: transition-all duration-300 group"
+                  className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 border border-border rounded-2xl overflow-hidden hover:border-brand-500/50 hover: transition duration-300 group"
                 >
                   <div className="p-6">
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
@@ -1286,14 +1286,14 @@ ${vpnCmd}
                                 <button
                                   onClick={() => handleEditIpSave(client.id)}
                                   disabled={editingIpLoading}
-                                  className="p-1 bg-green-500/20 border border-green-500/40 text-green-400 rounded-lg hover:bg-green-500/30 transition-all"
+                                  className="p-1 bg-green-500/20 border border-green-500/40 text-green-400 rounded-lg hover:bg-green-500/30 transition"
                                   title="Simpan"
                                 >
                                   {editingIpLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
                                 </button>
                                 <button
                                   onClick={() => setEditingIpClientId(null)}
-                                  className="p-1 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg hover:bg-red-500/20 transition-all"
+                                  className="p-1 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg hover:bg-red-500/20 transition"
                                   title="Batal"
                                 >
                                   <XCircle className="w-3 h-3" />
@@ -1304,7 +1304,7 @@ ${vpnCmd}
                                 <p className="font-mono text-foreground text-sm">{client.vpnIp}</p>
                                 <button
                                   onClick={() => { setEditingIpClientId(client.id); setEditingIpValue(client.vpnIp); }}
-                                  className="p-1 bg-brand-500/10 border border-brand-500/30 text-brand-500 rounded-lg hover:bg-brand-500/20 transition-all opacity-60 hover:opacity-100"
+                                  className="p-1 bg-brand-500/10 border border-brand-500/30 text-brand-500 rounded-lg hover:bg-brand-500/20 transition opacity-60 hover:opacity-100"
                                   title="Edit IP"
                                 >
                                   <Key className="w-3 h-3" />
@@ -1375,14 +1375,14 @@ ${vpnCmd}
                                   </div>
                                   <button
                                     onClick={() => copyToClipboard(generateVpsRoutingScript(client))}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-500/20 border border-brand-500/30 text-brand-500 rounded-lg hover:bg-brand-500/30 transition-all text-xs font-medium flex-shrink-0"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-500/20 border border-brand-500/30 text-brand-500 rounded-lg hover:bg-brand-500/30 transition text-xs font-medium flex-shrink-0"
                                   >
                                     <Copy className="w-3.5 h-3.5" />
                                     {t('network.copyVpsScript')}
                                   </button>
                                   <button
                                     onClick={() => handleApplyRouting(client)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 border border-border text-primary rounded-lg hover:bg-primary/10 transition-all text-xs font-medium flex-shrink-0"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 border border-border text-primary rounded-lg hover:bg-primary/10 transition text-xs font-medium flex-shrink-0"
                                   >
                                     <Zap className="w-3.5 h-3.5" />
                                     Apply Frontend
@@ -1408,7 +1408,7 @@ ${vpnCmd}
                       <div className="flex items-center gap-2 flex-shrink-0 lg:pt-1">
                         <button
                           onClick={() => viewCredentials(client)}
-                          className="flex items-center gap-2 px-4 py-2.5 bg-brand-500/20 border border-brand-500/40 text-brand-500 rounded-xl hover:bg-brand-500/30 transition-all"
+                          className="flex items-center gap-2 px-4 py-2.5 bg-brand-500/20 border border-brand-500/40 text-brand-500 rounded-xl hover:bg-brand-500/30 transition"
                           title="Lihat Kredensial"
                         >
                           <Eye className="w-4 h-4" />
@@ -1416,7 +1416,7 @@ ${vpnCmd}
                         </button>
                         <button
                           onClick={() => handleDelete(client.id, client.name)}
-                          className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl hover:bg-red-500/20 transition-all"
+                          className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl hover:bg-red-500/20 transition"
                           title="Hapus"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -1450,7 +1450,7 @@ ${vpnCmd}
                   <select
                     value={formData.vpnServerId}
                     onChange={(e) => setFormData({ ...formData, vpnServerId: e.target.value })}
-                    className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all"
+                    className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition"
                     required
                   >
                     <option value="" className="bg-slate-800">{t('network.selectVpnClient')}</option>
@@ -1521,7 +1521,7 @@ ${vpnCmd}
                         key={type}
                         type="button"
                         onClick={() => { setFormData({ ...formData, vpnType: type, vpnServerId: '' }); if (type === 'wireguard') queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vps-wg-peer') }); if (type === 'l2tp') queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vps-l2tp-info') }); }}
-                        className={`px-3 py-2.5 rounded-xl text-sm font-bold transition-all ${formData.vpnType === type
+                        className={`px-3 py-2.5 rounded-xl text-sm font-bold transition ${formData.vpnType === type
                           ? 'bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black '
                           : 'bg-muted/60 dark:bg-slate-800/60 border border-border text-foreground hover:bg-primary/10'
                         }`}
@@ -1546,7 +1546,7 @@ ${vpnCmd}
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all"
+                    className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition"
                     placeholder="e.g., Branch Office A"
                     required
                   />
@@ -1559,7 +1559,7 @@ ${vpnCmd}
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all resize-none"
+                    className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition resize-none"
                     placeholder={t('network.additionalNotes')}
                     rows={3}
                   />
@@ -1575,7 +1575,7 @@ ${vpnCmd}
                       type="text"
                       value={formData.localNetworks}
                       onChange={(e) => setFormData({ ...formData, localNetworks: e.target.value })}
-                      className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 font-mono focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all"
+                      className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 font-mono focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition"
                       placeholder="cth: 192.168.75.0/24,136.1.1.100/32"
                     />
                     <p className="text-xs text-muted-foreground mt-1">
@@ -1594,7 +1594,7 @@ ${vpnCmd}
                       type="text"
                       value={formData.customVpnIp}
                       onChange={(e) => setFormData({ ...formData, customVpnIp: e.target.value })}
-                      className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 font-mono focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all"
+                      className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 font-mono focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition"
                       placeholder="cth: 10.20.30.15 (kosong = auto-assign)"
                     />
                     {(() => {
@@ -1611,14 +1611,14 @@ ${vpnCmd}
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
-                    className="flex-1 px-4 py-3 bg-muted border border-border text-foreground rounded-xl hover:bg-accent transition-all font-medium"
+                    className="flex-1 px-4 py-3 bg-muted border border-border text-foreground rounded-xl hover:bg-accent transition font-medium"
                   >
                     {t('common.cancel')}
                   </button>
                   <button
                     type="submit"
                     disabled={creating}
-                    className="flex-1 px-4 py-3 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition-all disabled:opacity-50"
+                    className="flex-1 px-4 py-3 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition disabled:opacity-50"
                   >
                     {creating ? t('common.creating') : t('network.createClient')}
                   </button>
@@ -1703,7 +1703,7 @@ ${vpnCmd}
                       <button
                         key={type}
                         onClick={() => setSelectedVpnType(type)}
-                        className={`flex-1 min-w-[80px] px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${selectedVpnType === type
+                        className={`flex-1 min-w-[80px] px-4 py-2.5 rounded-xl text-sm font-bold transition ${selectedVpnType === type
                           ? 'bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black '
                           : 'bg-muted/60 dark:bg-slate-800/60 border border-border text-foreground hover:bg-primary/10'
                           }`}
@@ -1749,7 +1749,7 @@ ${vpnCmd}
                     </p>
                     <button
                       onClick={() => copyToClipboard(generateMikroTikScript())}
-                      className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary to-pink-500 text-white font-bold rounded-lg hover: transition-all text-sm"
+                      className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-primary to-pink-500 text-white font-bold rounded-lg hover: transition text-sm"
                     >
                       <Copy className="w-4 h-4" />
                       {t('network.copyScript')}
@@ -1788,7 +1788,7 @@ ${vpnCmd}
 
               <button
                 onClick={() => { setShowCredentials(false); queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vpn-client') }); }}
-                className="w-full mt-6 px-4 py-4 bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 rounded-xl transition-all font-bold text-white "
+                className="w-full mt-6 px-4 py-4 bg-gradient-to-r from-primary to-pink-500 hover:from-primary/90 hover:to-pink-500/90 rounded-xl transition font-bold text-white "
               >
                 {t('common.close')}
               </button>
@@ -1864,7 +1864,7 @@ ${vpnCmd}
                 <button
                   onClick={executeApplyRouting}
                   disabled={applyRoutingRunning}
-                  className="flex-1 px-4 py-2.5 text-sm font-bold bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black rounded-xl hover: transition-all disabled:opacity-50"
+                  className="flex-1 px-4 py-2.5 text-sm font-bold bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black rounded-xl hover: transition disabled:opacity-50"
                 >
                   {applyRoutingRunning ? 'Menjalankan...' : 'Apply Routing'}
                 </button>

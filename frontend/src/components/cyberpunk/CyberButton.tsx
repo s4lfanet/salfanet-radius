@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 
 const cyberButtonVariants = cva(
   // Base styles - clean, modern
-  'relative inline-flex items-center justify-center gap-2 whitespace-nowrap font-semibold tracking-wide transition-all duration-200 disabled:pointer-events-none disabled:opacity-50 overflow-hidden',
+  'relative inline-flex items-center justify-center gap-2 whitespace-nowrap font-semibold tracking-wide transition duration-200 disabled:pointer-events-none disabled:opacity-50 overflow-hidden',
   {
     variants: {
       variant: {

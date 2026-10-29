@@ -452,7 +452,7 @@ export default function CronSettingsPage() {
               <button
                 onClick={restartCron}
                 disabled={restartingCron}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-all disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition disabled:opacity-50"
               >
                 {restartingCron ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
                 Restart Cron Runner

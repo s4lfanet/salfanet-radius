@@ -901,7 +901,7 @@ export default function VpnServerPage() {
               </div>
               <button
                 onClick={handleAdd}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition-all duration-300 transform hover:scale-105"
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition duration-300 transform hover:scale-105"
               >
                 <Plus className="w-5 h-5" />
                 {t('network.addVpnServer')}
@@ -966,7 +966,7 @@ export default function VpnServerPage() {
           {/* Stats Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {/* Total Servers */}
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-border p-5 hover:border-border transition-all group">
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-border p-5 hover:border-border transition group">
               <div className="flex items-center justify-between mb-3 min-w-0">
                 <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/10 transition-colors flex items-center justify-center">
                   <Server className="w-5 h-5 text-primary" />
@@ -976,7 +976,7 @@ export default function VpnServerPage() {
               <p className="text-xs text-muted-foreground mt-1">Total Server</p>
             </div>
             {/* Active Servers */}
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-green-500/30 p-5 hover:border-green-500/50 transition-all group">
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-green-500/30 p-5 hover:border-green-500/50 transition group">
               <div className="flex items-center justify-between mb-3 min-w-0">
                 <div className="p-2 bg-green-500/20 rounded-lg group-hover:bg-green-500/30 transition-colors flex items-center justify-center">
                   <Activity className="w-5 h-5 text-green-400" />
@@ -986,7 +986,7 @@ export default function VpnServerPage() {
               <p className="text-xs text-muted-foreground mt-1">Server Aktif</p>
             </div>
             {/* L2TP Servers */}
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-green-500/30 p-5 hover:border-green-500/50 transition-all group">
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-green-500/30 p-5 hover:border-green-500/50 transition group">
               <div className="flex items-center justify-between mb-3 min-w-0">
                 <div className="p-2 bg-green-500/20 rounded-lg group-hover:bg-green-500/30 transition-colors flex items-center justify-center">
                   <Shield className="w-5 h-5 text-green-400" />
@@ -996,7 +996,7 @@ export default function VpnServerPage() {
               <p className="text-xs text-muted-foreground mt-1">L2TP Aktif</p>
             </div>
             {/* SSTP Servers */}
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-cyan-500/30 p-5 hover:border-cyan-500/50 transition-all group">
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-cyan-500/30 p-5 hover:border-cyan-500/50 transition group">
               <div className="flex items-center justify-between mb-3 min-w-0">
                 <div className="p-2 bg-cyan-500/20 rounded-lg group-hover:bg-cyan-500/30 transition-colors flex items-center justify-center">
                   <Shield className="w-5 h-5 text-cyan-400" />
@@ -1019,7 +1019,7 @@ export default function VpnServerPage() {
               </p>
               <button
                 onClick={handleAdd}
-                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition-all duration-300 transform hover:scale-105"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition duration-300 transform hover:scale-105"
               >
                 <Plus className="w-5 h-5" />
                 {t('network.addFirstVpnServer')}
@@ -1030,7 +1030,7 @@ export default function VpnServerPage() {
               {servers.map((server) => (
                 <div
                   key={server.id}
-                  className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-border overflow-hidden hover:border-brand-500/50 hover: transition-all duration-300 group"
+                  className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-border overflow-hidden hover:border-brand-500/50 hover: transition duration-300 group"
                 >
                   {/* Server Header */}
                   <div className="p-6 border-b border-border">
@@ -1110,7 +1110,7 @@ export default function VpnServerPage() {
                       <button
                         onClick={() => handleTest(server)}
                         disabled={testingId === server.id}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-muted border border-border text-foreground rounded-xl hover:bg-accent hover:border-brand-500/50 transition-all disabled:opacity-50"
+                        className="flex items-center gap-2 px-4 py-2.5 bg-muted border border-border text-foreground rounded-xl hover:bg-accent hover:border-brand-500/50 transition disabled:opacity-50"
                       >
                         {testingId === server.id ? (
                           <RefreshCw className="w-4 h-4 animate-spin text-brand-500" />
@@ -1123,7 +1123,7 @@ export default function VpnServerPage() {
                       <button
                         onClick={() => handleSetup(server)}
                         disabled={settingUpId === server.id}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition-all disabled:opacity-50"
+                        className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition disabled:opacity-50"
                       >
                         {settingUpId === server.id ? (
                           <RefreshCw className="w-4 h-4 animate-spin" />
@@ -1135,7 +1135,7 @@ export default function VpnServerPage() {
 
                       <button
                         onClick={() => handleManualScript(server)}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-amber-500/20 border border-amber-500/50 text-amber-300 rounded-xl hover:bg-amber-500/30 transition-all"
+                        className="flex items-center gap-2 px-4 py-2.5 bg-amber-500/20 border border-amber-500/50 text-amber-300 rounded-xl hover:bg-amber-500/30 transition"
                       >
                         <FileText className="w-4 h-4" />
                         <span className="text-sm font-medium">Script Manual</span>
@@ -1160,7 +1160,7 @@ export default function VpnServerPage() {
                               setTimeout(() => executeL2tpAction('status', server, savedSshCredentials), 150);
                             }
                           }}
-                          className="flex items-center gap-2 px-4 py-2.5 bg-primary/10 border border-border text-primary rounded-xl hover:bg-primary/10 transition-all"
+                          className="flex items-center gap-2 px-4 py-2.5 bg-primary/10 border border-border text-primary rounded-xl hover:bg-primary/10 transition"
                         >
                           <Terminal className="w-4 h-4" />
                           <span className="text-sm font-medium">L2TP Control</span>
@@ -1169,7 +1169,7 @@ export default function VpnServerPage() {
 
                       <button
                         onClick={() => openWgPanel(server)}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-teal-500/20 border border-teal-500/50 text-teal-300 rounded-xl hover:bg-teal-500/30 transition-all"
+                        className="flex items-center gap-2 px-4 py-2.5 bg-teal-500/20 border border-teal-500/50 text-teal-300 rounded-xl hover:bg-teal-500/30 transition"
                         title="WireGuard VPN Server (VPS as server)"
                       >
                         <Wifi className="w-4 h-4" />
@@ -1178,7 +1178,7 @@ export default function VpnServerPage() {
 
                       <button
                         onClick={() => handleEdit(server)}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-muted border border-border text-foreground rounded-xl hover:bg-accent hover:border-amber-500/50 transition-all"
+                        className="flex items-center gap-2 px-4 py-2.5 bg-muted border border-border text-foreground rounded-xl hover:bg-accent hover:border-amber-500/50 transition"
                       >
                         <Pencil className="w-4 h-4" />
                         <span className="text-sm font-medium">{t('common.edit')}</span>
@@ -1186,7 +1186,7 @@ export default function VpnServerPage() {
 
                       <button
                         onClick={() => handleDelete(server.id, server.name)}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl hover:bg-red-500/20 hover:border-red-500/50 transition-all ml-auto"
+                        className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl hover:bg-red-500/20 hover:border-red-500/50 transition ml-auto"
                       >
                         <Trash2 className="w-4 h-4" />
                         <span className="text-sm font-medium">{t('common.delete')}</span>
@@ -1221,7 +1221,7 @@ export default function VpnServerPage() {
                       type="text"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all"
+                      className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition"
                       placeholder={t('network.mainVpnServerPlaceholder')}
                       required
                     />
@@ -1234,7 +1234,7 @@ export default function VpnServerPage() {
                         type="text"
                         value={formData.host}
                         onChange={(e) => setFormData({ ...formData, host: e.target.value })}
-                        className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all"
+                        className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition"
                         placeholder={t('network.ipAddressPlaceholder')}
                         required
                       />
@@ -1245,7 +1245,7 @@ export default function VpnServerPage() {
                         type="number"
                         value={formData.apiPort}
                         onChange={(e) => setFormData({ ...formData, apiPort: e.target.value })}
-                        className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all"
+                        className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition"
                         placeholder={t('network.apiPortPlaceholder')}
                       />
                     </div>
@@ -1258,7 +1258,7 @@ export default function VpnServerPage() {
                         type="text"
                         value={formData.username}
                         onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                        className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all"
+                        className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition"
                         placeholder={t('network.adminPlaceholder')}
                         required
                       />
@@ -1269,7 +1269,7 @@ export default function VpnServerPage() {
                         type="password"
                         value={formData.password}
                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all"
+                        className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition"
                         placeholder={t('network.passwordPlaceholder')}
                         required={!editingServer}
                       />
@@ -1282,7 +1282,7 @@ export default function VpnServerPage() {
                       type="text"
                       value={formData.subnet}
                       onChange={(e) => setFormData({ ...formData, subnet: e.target.value })}
-                      className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all font-mono"
+                      className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition font-mono"
                       placeholder={t('network.vpnSubnetPlaceholder')}
                       required
                     />
@@ -1302,7 +1302,7 @@ export default function VpnServerPage() {
                             max={253}
                             value={formData.poolStart}
                             onChange={(e) => setFormData({ ...formData, poolStart: e.target.value })}
-                            className="flex-1 px-3 py-2 bg-input border border-border rounded-lg text-foreground font-mono focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition-all"
+                            className="flex-1 px-3 py-2 bg-input border border-border rounded-lg text-foreground font-mono focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition"
                             placeholder="10"
                           />
                         </div>
@@ -1317,7 +1317,7 @@ export default function VpnServerPage() {
                             max={254}
                             value={formData.poolEnd}
                             onChange={(e) => setFormData({ ...formData, poolEnd: e.target.value })}
-                            className="flex-1 px-3 py-2 bg-input border border-border rounded-lg text-foreground font-mono focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition-all"
+                            className="flex-1 px-3 py-2 bg-input border border-border rounded-lg text-foreground font-mono focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition"
                             placeholder="254"
                           />
                         </div>
@@ -1329,7 +1329,7 @@ export default function VpnServerPage() {
                         type="text"
                         value={formData.gateway}
                         onChange={(e) => setFormData({ ...formData, gateway: e.target.value })}
-                        className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground font-mono placeholder-gray-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition-all"
+                        className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground font-mono placeholder-gray-500 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition"
                         placeholder="mis. 10.20.30.1 (opsional)"
                       />
                     </div>
@@ -1343,7 +1343,7 @@ export default function VpnServerPage() {
                         { key: 'sstpEnabled' as const, label: 'SSTP (port 992)', color: 'cyan' },
                         { key: 'pptpEnabled' as const, label: 'PPTP', color: 'purple' },
                       ]).map(({ key, label, color }) => (
-                        <label key={key} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${formData[key] ? `bg-${color}-500/20 border-${color}-500/40` : 'bg-muted/50 dark:bg-slate-900/50 border-border/50 dark:border-slate-700/50 hover:border-slate-600'}`}>
+                        <label key={key} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition ${formData[key] ? `bg-${color}-500/20 border-${color}-500/40` : 'bg-muted/50 dark:bg-slate-900/50 border-border/50 dark:border-slate-700/50 hover:border-slate-600'}`}>
                           <input
                             type="checkbox"
                             checked={formData[key]}
@@ -1377,20 +1377,20 @@ export default function VpnServerPage() {
                       type="button"
                       onClick={handleTestInModal}
                       disabled={testingId === 'modal'}
-                      className="flex-1 px-4 py-3 bg-muted border border-border text-foreground rounded-xl hover:bg-accent transition-all font-medium disabled:opacity-50"
+                      className="flex-1 px-4 py-3 bg-muted border border-border text-foreground rounded-xl hover:bg-accent transition font-medium disabled:opacity-50"
                     >
                       {testingId === 'modal' ? t('network.testing') : t('network.testConnection')}
                     </button>
                     <button
                       type="button"
                       onClick={() => setShowModal(false)}
-                      className="flex-1 px-4 py-3 bg-muted border border-border text-foreground rounded-xl hover:bg-accent transition-all font-medium"
+                      className="flex-1 px-4 py-3 bg-muted border border-border text-foreground rounded-xl hover:bg-accent transition font-medium"
                     >
                       {t('common.cancel')}
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 px-4 py-3 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition-all"
+                      className="flex-1 px-4 py-3 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition"
                     >
                       {editingServer ? t('common.update') : t('common.save')}
                     </button>
@@ -1638,22 +1638,22 @@ export default function VpnServerPage() {
 
               {/* Control Buttons */}
               <div className="flex flex-wrap gap-3 mb-6">
-                <button onClick={() => handleL2tpAction('status', editingServer)} disabled={l2tpLoading} className="px-4 py-2 bg-muted border border-border text-foreground rounded-xl hover:bg-accent transition-all disabled:opacity-50">
+                <button onClick={() => handleL2tpAction('status', editingServer)} disabled={l2tpLoading} className="px-4 py-2 bg-muted border border-border text-foreground rounded-xl hover:bg-accent transition disabled:opacity-50">
                   {l2tpLoading ? 'Loading...' : 'Refresh Status'}
                 </button>
-                <button onClick={() => handleL2tpAction('start', editingServer)} disabled={l2tpLoading} className="px-4 py-2 bg-green-500/20 border border-green-500/40 text-green-400 rounded-xl hover:bg-green-500/30 transition-all disabled:opacity-50">
+                <button onClick={() => handleL2tpAction('start', editingServer)} disabled={l2tpLoading} className="px-4 py-2 bg-green-500/20 border border-green-500/40 text-green-400 rounded-xl hover:bg-green-500/30 transition disabled:opacity-50">
                   Start Services
                 </button>
-                <button onClick={() => handleL2tpAction('stop', editingServer)} disabled={l2tpLoading} className="px-4 py-2 bg-red-500/20 border border-red-500/40 text-red-400 rounded-xl hover:bg-red-500/30 transition-all disabled:opacity-50">
+                <button onClick={() => handleL2tpAction('stop', editingServer)} disabled={l2tpLoading} className="px-4 py-2 bg-red-500/20 border border-red-500/40 text-red-400 rounded-xl hover:bg-red-500/30 transition disabled:opacity-50">
                   Stop Services
                 </button>
-                <button onClick={() => handleL2tpAction('restart', editingServer)} disabled={l2tpLoading} className="px-4 py-2 bg-amber-500/20 border border-amber-500/40 text-amber-400 rounded-xl hover:bg-amber-500/30 transition-all disabled:opacity-50">
+                <button onClick={() => handleL2tpAction('restart', editingServer)} disabled={l2tpLoading} className="px-4 py-2 bg-amber-500/20 border border-amber-500/40 text-amber-400 rounded-xl hover:bg-amber-500/30 transition disabled:opacity-50">
                   Restart
                 </button>
-                <button onClick={() => handleL2tpAction('configure', editingServer)} disabled={l2tpLoading} className="px-4 py-2 bg-primary/10 border border-border text-primary rounded-xl hover:bg-primary/10 transition-all disabled:opacity-50">
+                <button onClick={() => handleL2tpAction('configure', editingServer)} disabled={l2tpLoading} className="px-4 py-2 bg-primary/10 border border-border text-primary rounded-xl hover:bg-primary/10 transition disabled:opacity-50">
                   Configure
                 </button>
-                <button onClick={() => handleL2tpAction('logs', editingServer)} disabled={l2tpLoading} className="px-4 py-2 bg-muted border border-border text-foreground rounded-xl hover:bg-accent transition-all disabled:opacity-50">
+                <button onClick={() => handleL2tpAction('logs', editingServer)} disabled={l2tpLoading} className="px-4 py-2 bg-muted border border-border text-foreground rounded-xl hover:bg-accent transition disabled:opacity-50">
                   Logs
                 </button>
               </div>

@@ -593,7 +593,7 @@ export default function RegistrationsPage() {
                   <ModalLabel required>Tipe Koneksi</ModalLabel>
                   <div className="grid grid-cols-3 gap-2">
                     {(['PPPOE', 'STATIC_IP', 'HOTSPOT'] as const).map(ct => (
-                      <label key={ct} className={`flex items-center justify-center p-2 border rounded-lg cursor-pointer transition-all text-xs ${connectionType === ct ? 'border-brand-500 bg-brand-500/10 ' : 'border-border hover:border-border'}`}>
+                      <label key={ct} className={`flex items-center justify-center p-2 border rounded-lg cursor-pointer transition text-xs ${connectionType === ct ? 'border-brand-500 bg-brand-500/10 ' : 'border-border hover:border-border'}`}>
                         <input type="radio" name="connectionType" value={ct} checked={connectionType === ct} onChange={(e) => setConnectionType(e.target.value as 'PPPOE' | 'STATIC_IP' | 'HOTSPOT')} className="sr-only" />
                         {ct === 'PPPOE' ? 'PPPoE' : ct === 'STATIC_IP' ? 'Static IP' : 'Hotspot'}
                       </label>
@@ -634,11 +634,11 @@ export default function RegistrationsPage() {
                 <div>
                   <ModalLabel required>{t('pppoe.subscriptionType')}</ModalLabel>
                   <div className="space-y-2">
-                    <label className={`flex items-center p-2.5 border rounded-lg cursor-pointer transition-all ${subscriptionType === 'POSTPAID' ? 'border-brand-500 bg-brand-500/10 ' : 'border-border hover:border-border'}`}>
+                    <label className={`flex items-center p-2.5 border rounded-lg cursor-pointer transition ${subscriptionType === 'POSTPAID' ? 'border-brand-500 bg-brand-500/10 ' : 'border-border hover:border-border'}`}>
                       <input type="radio" name="subscriptionType" value="POSTPAID" checked={subscriptionType === 'POSTPAID'} onChange={(e) => setSubscriptionType(e.target.value as 'POSTPAID')} className="w-4 h-4 text-brand-500 border-border bg-card focus:ring-brand-500" />
                       <div className="ml-3 flex-1"><div className="text-xs font-medium text-foreground">{t('pppoe.postpaid')}</div><div className="text-[10px] text-muted-foreground">{t('pppoe.monthlyBillingDesc')}</div></div>
                     </label>
-                    <label className={`flex items-center p-2.5 border rounded-lg cursor-pointer transition-all ${subscriptionType === 'PREPAID' ? 'border-brand-500 bg-brand-500/10 ' : 'border-border hover:border-border'}`}>
+                    <label className={`flex items-center p-2.5 border rounded-lg cursor-pointer transition ${subscriptionType === 'PREPAID' ? 'border-brand-500 bg-brand-500/10 ' : 'border-border hover:border-border'}`}>
                       <input type="radio" name="subscriptionType" value="PREPAID" checked={subscriptionType === 'PREPAID'} onChange={(e) => setSubscriptionType(e.target.value as 'PREPAID')} className="w-4 h-4 text-brand-500 border-border bg-card focus:ring-brand-500" />
                       <div className="ml-3 flex-1"><div className="text-xs font-medium text-foreground">{t('pppoe.prepaid')}</div><div className="text-[10px] text-muted-foreground">{t('pppoe.prepaidValidityDesc')}</div></div>
                     </label>

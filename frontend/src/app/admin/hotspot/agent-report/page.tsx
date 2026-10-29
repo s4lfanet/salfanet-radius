@@ -144,7 +144,7 @@ export default function AgentReportPage() {
           </div>
           <button
             onClick={() => refetch()}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-card border-2 border-primary/30 rounded-lg hover:bg-primary/10 hover:border-primary/50 transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-card border-2 border-primary/30 rounded-lg hover:bg-primary/10 hover:border-primary/50 transition"
             title="Perbarui Data"
           >
             <RefreshCw className="w-3.5 h-3.5 text-primary" />

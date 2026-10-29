@@ -186,7 +186,7 @@ export function JointClosureDiagram({
                 fill={getPortColor(port)}
                 stroke={hoveredPort?.id === port.id ? '#1f2937' : '#9ca3af'}
                 strokeWidth="2"
-                className={interactive ? 'cursor-pointer transition-all' : ''}
+                className={interactive ? 'cursor-pointer transition' : ''}
                 onClick={() => handlePortClick(port)}
                 onMouseEnter={() => handlePortMouseEnter(port)}
                 onMouseLeave={handlePortMouseLeave}
@@ -285,7 +285,7 @@ export function JointClosureDiagram({
                 fill={getPortColor(port)}
                 stroke={hoveredPort?.id === port.id ? '#1f2937' : '#9ca3af'}
                 strokeWidth="2"
-                className={interactive ? 'cursor-pointer transition-all' : ''}
+                className={interactive ? 'cursor-pointer transition' : ''}
                 onClick={() => handlePortClick(port)}
                 onMouseEnter={() => handlePortMouseEnter(port)}
                 onMouseLeave={handlePortMouseLeave}

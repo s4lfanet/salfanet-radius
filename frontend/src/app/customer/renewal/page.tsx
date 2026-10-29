@@ -351,7 +351,7 @@ export default function RenewalPage() {
                   <button
                     key={pkg.id}
                     onClick={() => setSelectedPackageId(pkg.id)}
-                    className={`w-full flex items-center justify-between p-3 rounded-xl border-2 transition-all text-left ${
+                    className={`w-full flex items-center justify-between p-3 rounded-xl border-2 transition text-left ${
                       selectedPackageId === pkg.id
                         ? 'border-cyan-400 bg-cyan-500/10'
                         : 'border-border/40 bg-muted/10 hover:border-cyan-500/40'
@@ -463,7 +463,7 @@ export default function RenewalPage() {
             <p className="text-xs font-bold text-foreground">Pilih Metode Pembayaran</p>
             <button
               onClick={() => paymentGateways.length > 0 ? setStep('online-pay') : (createdInvoice.paymentLink ? window.open(createdInvoice.paymentLink, '_blank') : toast('warning', 'Tidak tersedia', 'Payment gateway tidak dikonfigurasi'))}
-              className="w-full flex items-center gap-3 p-4 bg-cyan-500/10 hover:bg-cyan-500/20 border-2 border-cyan-500/40 rounded-xl transition-all text-left"
+              className="w-full flex items-center gap-3 p-4 bg-cyan-500/10 hover:bg-cyan-500/20 border-2 border-cyan-500/40 rounded-xl transition text-left"
             >
               <div className="p-2 bg-cyan-500/20 rounded-lg border border-cyan-500/30 flex items-center justify-center"><CreditCard className="w-5 h-5 text-cyan-400" /></div>
               <div className="flex-1">
@@ -474,7 +474,7 @@ export default function RenewalPage() {
             </button>
             <button
               onClick={() => setStep('offline-pay')}
-              className="w-full flex items-center gap-3 p-4 bg-primary/10 hover:bg-primary/10 border border-border rounded-xl transition-all text-left"
+              className="w-full flex items-center gap-3 p-4 bg-primary/10 hover:bg-primary/10 border border-border rounded-xl transition text-left"
             >
               <div className="p-2 bg-primary/10 rounded-lg border border-border flex items-center justify-center"><Building2 className="w-5 h-5 text-primary" /></div>
               <div className="flex-1">
@@ -501,7 +501,7 @@ export default function RenewalPage() {
               <button
                 key={gw.id}
                 onClick={() => setSelectedGateway(gw.provider)}
-                className={`w-full flex items-center justify-between p-3.5 rounded-xl border-2 transition-all ${
+                className={`w-full flex items-center justify-between p-3.5 rounded-xl border-2 transition ${
                   selectedGateway === gw.provider ? 'border-cyan-400 bg-cyan-500/10' : 'border-border/40 bg-muted/10 hover:border-cyan-500/40'
                 }`}
               >
@@ -549,7 +549,7 @@ export default function RenewalPage() {
                     key={i}
                     type="button"
                     onClick={() => setSelectedAdminBank(acc === selectedAdminBank ? null : acc)}
-                    className={`w-full flex items-center justify-between p-3 rounded-xl border-2 transition-all text-left ${
+                    className={`w-full flex items-center justify-between p-3 rounded-xl border-2 transition text-left ${
                       selectedAdminBank === acc
                         ? 'border-cyan-400 bg-cyan-500/10'
                         : 'border-border/40 bg-muted/10 hover:border-cyan-500/30'

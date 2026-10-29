@@ -228,7 +228,7 @@ export function ODPDiagramV2({
               <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div 
                   className={cn(
-                    'h-full rounded-full transition-all',
+                    'h-full rounded-full transition',
                     utilizationPercent >= 90 ? 'bg-red-500' :
                     utilizationPercent >= 70 ? 'bg-amber-500' : 'bg-green-500'
                   )}
@@ -266,7 +266,7 @@ export function ODPDiagramV2({
               <div
                 key={child.id}
                 className={cn(
-                  'p-3 rounded-lg border-2 cursor-pointer transition-all',
+                  'p-3 rounded-lg border-2 cursor-pointer transition',
                   hoveredChild === child.id
                     ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
                     : 'border-border hover:border-gray-300 dark:hover:border-gray-600'

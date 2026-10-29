@@ -128,7 +128,7 @@ function TwoFactorForm() {
                   value={code}
                   onChange={e => handleCodeChange(e.target.value)}
                   placeholder="000 000"
-                  className="w-full bg-background dark:bg-slate-900/80 border-2 border-border dark:border-border rounded-xl px-4 py-3.5 pl-12 text-foreground dark:text-white placeholder-muted-foreground dark:placeholder-slate-500 focus:border-primary dark:focus:border-brand-500 focus:outline-none dark:focus: transition-all text-2xl font-mono tracking-[0.5em] text-center"
+                  className="w-full bg-background dark:bg-slate-900/80 border-2 border-border dark:border-border rounded-xl px-4 py-3.5 pl-12 text-foreground dark:text-white placeholder-muted-foreground dark:placeholder-slate-500 focus:border-primary dark:focus:border-brand-500 focus:outline-none dark:focus: transition text-2xl font-mono tracking-[0.5em] text-center"
                 />
               </div>
               <p className="text-xs text-muted-foreground mt-2 text-center">Code is valid for 30 seconds</p>
@@ -137,7 +137,7 @@ function TwoFactorForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold py-3.5 rounded-xl transition-all duration-300 shadow-md dark:bg-gradient-to-r dark:from-primary dark:to-brand-500 dark:hover:from-[#d020ff] dark:hover:to-[#00d4dc] dark:text-white dark: dark:hover: disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold py-3.5 rounded-xl transition duration-300 shadow-md dark:bg-gradient-to-r dark:from-primary dark:to-brand-500 dark:hover:from-[#d020ff] dark:hover:to-[#00d4dc] dark:text-white dark: dark:hover: disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
                 <><Loader2 className="w-5 h-5 animate-spin" /> Verifying…</>

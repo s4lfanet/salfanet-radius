@@ -264,14 +264,14 @@ export default function AgentTicketsPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => loadTickets()}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-muted/50 hover:bg-slate-200 dark:hover:bg-slate-700 text-muted-foreground border border-border transition-all"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-muted/50 hover:bg-slate-200 dark:hover:bg-slate-700 text-muted-foreground border border-border transition"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             Refresh
           </button>
           <button
             onClick={() => setShowForm(true)}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-primary to-cyan-600 text-white shadow-sm hover:shadow-md transition-all"
+            className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-gradient-to-r from-primary to-cyan-600 text-white shadow-sm hover:shadow-md transition"
           >
             <Plus className="w-3.5 h-3.5" />
             Buat Tiket
@@ -410,7 +410,7 @@ export default function AgentTicketsPage() {
           <button
             key={val}
             onClick={() => handleFilterChange(val)}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all ${
+            className={`px-3 py-1.5 text-xs font-semibold rounded-xl border transition ${
               filterStatus === val
                 ? 'bg-violet-100 text-violet-700 border-violet-300 dark:bg-primary/10 dark:text-primary dark:border-border'
                 : 'bg-muted/50 text-muted-foreground border-border hover:bg-slate-200 dark:hover:bg-slate-700'
@@ -439,7 +439,7 @@ export default function AgentTicketsPage() {
           {tickets.map(ticket => (
             <div
               key={ticket.id}
-              className="rounded-2xl bg-card border border-border shadow-sm overflow-hidden transition-all"
+              className="rounded-2xl bg-card border border-border shadow-sm overflow-hidden transition"
             >
               {/* Ticket Header */}
               <button

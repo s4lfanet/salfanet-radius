@@ -202,7 +202,7 @@ export default function EditAssignmentDialog({
                         }
                       }}
                       disabled={availablePorts.length === 0}
-                      className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+                      className={`w-full text-left p-4 rounded-lg border-2 transition ${
                         selectedODP?.id === odp.id
                           ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
                           : availablePorts.length === 0
@@ -265,7 +265,7 @@ export default function EditAssignmentDialog({
                       <button
                         key={port}
                         onClick={() => setSelectedPort(port)}
-                        className={`p-2 rounded-lg border-2 font-medium transition-all ${
+                        className={`p-2 rounded-lg border-2 font-medium transition ${
                           selectedPort === port
                             ? 'border-green-500 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
                             : 'border-gray-300 dark:border-gray-600 hover:border-green-300'

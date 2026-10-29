@@ -387,23 +387,23 @@ export default function SessionsPage() {
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition">
             <div className="text-xs text-brand-500 uppercase tracking-wide">{t('sessions.active')}</div>
             <div className="text-lg sm:text-2xl font-bold text-foreground mt-1">{stats.total}</div>
           </div>
-          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition">
             <div className="text-xs text-brand-500 uppercase tracking-wide flex items-center gap-1">
               <Wifi className="w-4 h-4" /> PPPoE
             </div>
             <div className="text-lg sm:text-2xl font-bold text-foreground mt-1">{stats.pppoe}</div>
           </div>
-          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition">
             <div className="text-xs text-brand-500 uppercase tracking-wide flex items-center gap-1">
               <WifiOff className="w-4 h-4" /> Hotspot
             </div>
             <div className="text-lg sm:text-2xl font-bold text-foreground mt-1">{stats.hotspot}</div>
           </div>
-          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition">
             <div className="text-xs text-brand-500 uppercase tracking-wide">{t('dashboard.bandwidth')}</div>
             <div className="text-lg sm:text-2xl font-bold text-foreground mt-1">{stats.totalBandwidthFormatted}</div>
           </div>

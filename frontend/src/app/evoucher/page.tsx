@@ -140,7 +140,7 @@ export default function EVoucherPage() {
                   <div
                     key={profile.id}
                     onClick={() => setSelectedProfile(profile)}
-                    className={`bg-card rounded-lg p-4 cursor-pointer transition-all ${
+                    className={`bg-card rounded-lg p-4 cursor-pointer transition ${
                       selectedProfile?.id === profile.id 
                         ? 'border-2 border-brand-500 ' 
                         : 'border border-border hover:border-brand-500/50 hover:'
@@ -167,7 +167,7 @@ export default function EVoucherPage() {
                         <p className="text-[11px] text-muted-foreground/60 font-medium uppercase tracking-wider">Harga</p>
                         <p className="text-base font-bold text-brand-500 drop-">{formatCurrency(profile.sellingPrice)}</p>
                       </div>
-                      <button className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${
+                      <button className={`px-3 py-1.5 text-xs font-bold rounded-md transition ${
                         selectedProfile?.id === profile.id 
                           ? 'bg-brand-500 text-black ' 
                           : 'border-2 border-brand-500/50 text-brand-500 hover:border-brand-500 hover:bg-brand-500/10 hover:'
@@ -298,7 +298,7 @@ export default function EVoucherPage() {
                   <button
                     type="submit"
                     disabled={!selectedProfile || purchasing}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-brand-500 hover:bg-brand-500/90 disabled:bg-primary/10 disabled:cursor-not-allowed disabled:shadow-none disabled:text-muted-foreground/40 text-black font-bold rounded-lg transition-all  hover: text-sm"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-brand-500 hover:bg-brand-500/90 disabled:bg-primary/10 disabled:cursor-not-allowed disabled:shadow-none disabled:text-muted-foreground/40 text-black font-bold rounded-lg transition  hover: text-sm"
                   >
                     {purchasing ? (
                       <><Loader2 className="w-5 h-5 animate-spin" />Memproses...</>

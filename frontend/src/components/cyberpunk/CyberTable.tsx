@@ -103,7 +103,7 @@ const CyberTableRow = React.forwardRef<HTMLTableRowElement, CyberTableRowProps>(
     <tr
       ref={ref}
       className={cn(
-        'border-b border-white/5 transition-all duration-300',
+        'border-b border-white/5 transition duration-300',
         'hover:bg-gradient-to-r hover:from-brand-500/5 hover:via-transparent hover:to-pink-500/5',
         'hover:shadow-sm',
         selected && [

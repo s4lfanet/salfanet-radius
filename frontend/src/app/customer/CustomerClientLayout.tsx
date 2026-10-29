@@ -301,7 +301,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
       {/* â”€â”€ DESKTOP SIDEBAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <aside
         className={cn(
-          'fixed top-0 left-0 h-dvh z-50 transition-all duration-300 ease-in-out',
+          'fixed top-0 left-0 h-dvh z-50 transition duration-300 ease-in-out',
           'w-64 bg-sidebar border-r border-sidebar-border',
           'shadow-lg flex flex-col safe-area-inset-left',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full',
@@ -351,7 +351,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
                   if (typeof window !== 'undefined' && window.innerWidth < 1024) setSidebarOpen(false);
                 }}
                 className={cn(
-                  'w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold rounded-xl transition-all duration-300 group',
+                  'w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold rounded-xl transition duration-300 group',
                   active
                       ? 'text-brand-500 bg-brand-50 dark:text-brand-400 dark:bg-brand-500/[0.12] border border-brand-200 dark:border-brand-500/30'
                       : 'text-gray-700 hover:bg-gray-100 hover:text-brand-500 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-brand-400 border border-transparent hover:border-gray-200 dark:hover:border-white/10'
@@ -359,7 +359,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
               >
                 <span
                   className={cn(
-                    'p-1.5 rounded-lg transition-all duration-300',
+                    'p-1.5 rounded-lg transition duration-300',
                     active
                     ? 'text-brand-500 dark:text-brand-400 bg-brand-100 dark:bg-brand-500/20'
                     : 'text-gray-500 group-hover:text-brand-500 dark:text-gray-400 dark:group-hover:text-brand-400'
@@ -378,7 +378,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
           {apk && (
             <a
               href={apk.url}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 mb-2 text-xs font-bold text-brand-500 dark:text-brand-400 hover:text-white bg-brand-500/10 hover:bg-brand-500 border border-brand-500/30 rounded-xl transition-all duration-300"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 mb-2 text-xs font-bold text-brand-500 dark:text-brand-400 hover:text-white bg-brand-500/10 hover:bg-brand-500 border border-brand-500/30 rounded-xl transition duration-300"
             >
               <Download className="w-4 h-4" />
               <span>Unduh Aplikasi Android</span>
@@ -387,7 +387,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
           <SidebarPushToggle role="customer" />
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-red-400 hover:text-white bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-xl transition-all duration-300"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-red-400 hover:text-white bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-xl transition duration-300"
           >
             <LogOut className="w-4 h-4" />
             <span>Keluar</span>
@@ -414,7 +414,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
             <div className="relative">
               <button
                 onClick={() => { setBellOpen(v => !v); setUnreadCount(0); void markAllAsRead(); }}
-                className="relative p-2 flex items-center justify-center rounded-xl hover:bg-primary/10 border border-transparent hover:border-border transition-all"
+                className="relative p-2 flex items-center justify-center rounded-xl hover:bg-primary/10 border border-transparent hover:border-border transition"
               >
                 <Bell className="w-4 h-4 text-primary" />
                 {unreadCount > 0 && (
@@ -465,7 +465,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
                               </div>
                               <button
                                 onClick={(e) => { e.stopPropagation(); handleDeleteNotification(n.id); }}
-                                className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded-lg transition-all flex-shrink-0"
+                                className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded-lg transition flex-shrink-0"
                                 aria-label="Delete notification"
                               >
                                 <X className="w-3 h-3 text-red-400" />
@@ -481,7 +481,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
             {/* Theme Toggle â€” Desktop */}
             <button
               onClick={toggleTheme}
-              className="p-2 flex items-center justify-center rounded-xl hover:bg-primary/10 border border-transparent hover:border-border transition-all"
+              className="p-2 flex items-center justify-center rounded-xl hover:bg-primary/10 border border-transparent hover:border-border transition"
               title={isDark ? 'Mode Terang' : 'Mode Gelap'}
             >
               {isDark
@@ -500,7 +500,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
               {/* Menu button (left side) */}
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="p-2.5 flex items-center justify-center hover:bg-primary/10 rounded-xl transition-all border border-border"
+                className="p-2.5 flex items-center justify-center hover:bg-primary/10 rounded-xl transition border border-border"
                 aria-label="Open menu"
               >
                 <Menu className="w-5 h-5 text-primary" />
@@ -526,7 +526,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
               <div className="relative">
                 <button
                   onClick={() => { setBellOpen(v => !v); setUnreadCount(0); void markAllAsRead(); }}
-                  className="relative p-2 flex items-center justify-center hover:bg-primary/10 rounded-xl transition-all border border-border"
+                  className="relative p-2 flex items-center justify-center hover:bg-primary/10 rounded-xl transition border border-border"
                 >
                   <Bell className="w-4 h-4 text-primary" />
                   {unreadCount > 0 && (
@@ -577,7 +577,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
                               </div>
                               <button
                                 onClick={(e) => { e.stopPropagation(); handleDeleteNotification(n.id); }}
-                                className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded-lg transition-all flex-shrink-0"
+                                className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded-lg transition flex-shrink-0"
                                 aria-label="Delete notification"
                               >
                                 <X className="w-3 h-3 text-red-400" />
@@ -593,7 +593,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
               {/* Theme Toggle â€” Mobile */}
               <button
                 onClick={toggleTheme}
-                className="p-2 flex items-center justify-center hover:bg-primary/10 rounded-xl transition-all border border-border"
+                className="p-2 flex items-center justify-center hover:bg-primary/10 rounded-xl transition border border-border"
                 title={isDark ? 'Mode Terang' : 'Mode Gelap'}
               >
                 {isDark
@@ -627,12 +627,12 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
                   key={href}
                   onClick={() => router.push(href)}
                   className={cn(
-                    'flex flex-col items-center justify-center gap-1 py-1.5 px-2 min-w-[56px] min-h-[52px] rounded-xl transition-all',
+                    'flex flex-col items-center justify-center gap-1 py-1.5 px-2 min-w-[56px] min-h-[52px] rounded-xl transition',
                     active ? 'text-primary' : 'text-muted-foreground/60'
                   )}
                 >
                   <span className={cn(
-                    'flex items-center justify-center p-1.5 rounded-xl transition-all',
+                    'flex items-center justify-center p-1.5 rounded-xl transition',
                     active ? 'bg-primary/10' : ''
                   )}>
                     <Icon className="w-5 h-5" />

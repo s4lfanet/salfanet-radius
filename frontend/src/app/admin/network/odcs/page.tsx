@@ -195,7 +195,7 @@ export default function ODCsPage() {
           </div>
           <button
             onClick={() => { resetForm(); setEditingOdc(null); setIsDialogOpen(true); }}
-            className="inline-flex items-center px-4 py-2.5 text-sm font-bold bg-brand-500 text-black rounded-lg hover:bg-brand-500/90 transition-all  uppercase tracking-wide"
+            className="inline-flex items-center px-4 py-2.5 text-sm font-bold bg-brand-500 text-black rounded-lg hover:bg-brand-500/90 transition  uppercase tracking-wide"
           >
             <Plus className="h-4 w-4 mr-2" />
             Add ODC

@@ -242,7 +242,7 @@ export default function AssignCustomerDialog({
                     <button
                       key={customer.id}
                       onClick={() => handleCustomerSelect(customer)}
-                      className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+                      className={`w-full text-left p-4 rounded-lg border-2 transition ${
                         selectedCustomer?.id === customer.id
                           ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                           : 'border-border hover:border-blue-300 hover:bg-gray-50 dark:hover:bg-gray-700'
@@ -320,7 +320,7 @@ export default function AssignCustomerDialog({
                         setSelectedPort(null);
                       }}
                       disabled={odp.availablePorts.length === 0}
-                      className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
+                      className={`w-full text-left p-4 rounded-lg border-2 transition ${
                         selectedODP?.id === odp.id
                           ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
                           : odp.availablePorts.length === 0
@@ -367,7 +367,7 @@ export default function AssignCustomerDialog({
                       <button
                         key={port}
                         onClick={() => setSelectedPort(port)}
-                        className={`p-2 rounded-lg border-2 font-medium transition-all ${
+                        className={`p-2 rounded-lg border-2 font-medium transition ${
                           selectedPort === port
                             ? 'border-green-500 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
                             : 'border-gray-300 dark:border-gray-600 hover:border-green-300'

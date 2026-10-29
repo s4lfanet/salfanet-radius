@@ -146,7 +146,7 @@ export default function FooterSettingsPage() {
               type="text"
               value={settings[portal.key]}
               onChange={(e) => setSettings(prev => ({ ...prev, [portal.key]: e.target.value }))}
-              className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:ring-1 focus:ring-ring focus:border-primary outline-none transition-all"
+              className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:ring-1 focus:ring-ring focus:border-primary outline-none transition"
               placeholder={portal.placeholder}
             />
           </div>

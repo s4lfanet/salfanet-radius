@@ -261,7 +261,7 @@ function RoleCard({
           {hasApk && (
             <button
               onClick={() => onDownload(role.key)}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-all"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition"
             >
               <Download className="w-3.5 h-3.5" />
               Download APK
@@ -270,7 +270,7 @@ function RoleCard({
           <button
             onClick={() => onBuild(role.key)}
             disabled={isBuilding || !envReady}
-            className={`${hasApk ? '' : 'flex-1'} flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition-all text-white bg-gradient-to-r ${role.btn} disabled:opacity-40 disabled:cursor-not-allowed`}
+            className={`${hasApk ? '' : 'flex-1'} flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-bold transition text-white bg-gradient-to-r ${role.btn} disabled:opacity-40 disabled:cursor-not-allowed`}
           >
             {isBuilding ? (
               <><div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Building…</>
@@ -404,7 +404,7 @@ function ReleasePanel() {
                   )}
                 </div>
                 <label className="shrink-0">
-                  <span className={`inline-flex items-center justify-center gap-1.5 min-h-[40px] py-2 px-4 rounded-lg text-xs font-bold text-white transition-all ${busy ? 'bg-slate-700 cursor-not-allowed' : 'bg-cyan-600 hover:bg-cyan-500 cursor-pointer'}`}>
+                  <span className={`inline-flex items-center justify-center gap-1.5 min-h-[40px] py-2 px-4 rounded-lg text-xs font-bold text-white transition ${busy ? 'bg-slate-700 cursor-not-allowed' : 'bg-cyan-600 hover:bg-cyan-500 cursor-pointer'}`}>
                     {busy ? <><RefreshCw className="w-3 h-3 animate-spin" /> {progress[r.target]}%</> : <><Upload className="w-3 h-3" /> {r.available ? 'Ganti APK' : 'Unggah APK'}</>}
                   </span>
                   <input
@@ -448,7 +448,7 @@ function ReleasePanel() {
               </p>
               {busy && (
                 <div className="mt-2 h-1.5 rounded-full bg-slate-700 overflow-hidden">
-                  <div className="h-full bg-cyan-500 transition-all" style={{ width: `${progress[r.target]}%` }} />
+                  <div className="h-full bg-cyan-500 transition" style={{ width: `${progress[r.target]}%` }} />
                 </div>
               )}
               {errors[r.target] && <p className="text-[11px] text-red-400 mt-2">{errors[r.target]}</p>}
@@ -769,7 +769,7 @@ export default function DownloadApkPage() {
         {/* Upload */}
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-2 cursor-pointer">
-            <span className={`inline-flex items-center gap-1.5 py-2 px-4 rounded-lg text-xs font-bold transition-all text-white ${
+            <span className={`inline-flex items-center gap-1.5 py-2 px-4 rounded-lg text-xs font-bold transition text-white ${
               uploadingLogo ? 'bg-slate-700 cursor-not-allowed' : 'bg-cyan-600 hover:bg-cyan-500'
             }`}>
               {uploadingLogo ? (
@@ -852,7 +852,7 @@ export default function DownloadApkPage() {
             <a
               key={r.key}
               href={`/api/admin/download-apk?role=${r.key}`}
-              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-medium text-slate-400 hover:text-white border border-slate-700/50 hover:border-slate-600 bg-slate-800/50 hover:bg-slate-800 transition-all"
+              className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-lg text-xs font-medium text-slate-400 hover:text-white border border-slate-700/50 hover:border-slate-600 bg-slate-800/50 hover:bg-slate-800 transition"
             >
               <Download className="w-3 h-3" />{r.label.split(' ').pop()}
             </a>

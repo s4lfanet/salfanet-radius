@@ -602,7 +602,7 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
                   <button key={iface}
                     onClick={() => setSelectedUplinkPort(iface)}
                     title={uplinkTooltip(slot, port, index + 1)}
-                    className="flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded border transition-all hover:brightness-125 hover:scale-105 cursor-pointer"
+                    className="flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 rounded border transition hover:brightness-125 hover:scale-105 cursor-pointer"
                     style={{ background: visual.bg, borderColor: visual.border, minWidth: 48, minHeight: 40 }}>
                     <div className="w-1.5 h-1.5 rounded-full" style={{ background: visual.dot }} />
                     <span className="text-[8px] font-mono leading-none whitespace-nowrap" style={{ color: visual.text }}>{shortLabel}</span>
@@ -622,7 +622,7 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
                   <button key={iface}
                     onClick={() => setSelectedUplinkPort(iface)}
                     title={uplinkTooltip(slot, port, index + 1)}
-                    className="w-10 h-10 rounded-sm border flex flex-col items-center justify-center transition-all hover:brightness-125 hover:scale-105"
+                    className="w-10 h-10 rounded-sm border flex flex-col items-center justify-center transition hover:brightness-125 hover:scale-105"
                     style={{ background: visual.bg, borderColor: visual.border }}>
                     <div className="w-1.5 h-1.5 rounded-full mb-1" style={{ background: visual.dot }} />
                     <span className="text-[7px] font-mono" style={{ color: visual.text }}>{visual.state}</span>
@@ -643,7 +643,7 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
                 return (
                   <div key={i} className="flex flex-col items-center gap-0.5 shrink-0">
                     <div
-                      className="w-[26px] h-[26px] rounded-[5px] border flex items-center justify-center cursor-default transition-all hover:brightness-150 hover:scale-110 hover:z-10 relative"
+                      className="w-[26px] h-[26px] rounded-[5px] border flex items-center justify-center cursor-default transition hover:brightness-150 hover:scale-110 hover:z-10 relative"
                       style={{ background: c.bg, borderColor: c.border }}
                       title={portTooltip(slot.index, i)}>
                       <div className="w-3.5 h-3.5 rounded-full" style={{ background: c.dot }} />
@@ -2400,7 +2400,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
               </div>
               <div className="w-full bg-blue-200 rounded-full h-2">
                 <div
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  className="bg-blue-600 h-2 rounded-full transition duration-300"
                   style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
                 />
               </div>

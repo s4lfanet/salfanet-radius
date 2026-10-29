@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 
 const cyberBadgeVariants = cva(
   // Base styles
-  'inline-flex items-center justify-center font-bold uppercase tracking-wider whitespace-nowrap transition-all duration-300',
+  'inline-flex items-center justify-center font-bold uppercase tracking-wider whitespace-nowrap transition duration-300',
   {
     variants: {
       variant: {

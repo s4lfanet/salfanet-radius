@@ -210,7 +210,7 @@ export default function MapPicker({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 sm:p-2 hover:bg-[#bc13fe]/20 rounded-lg transition-all group flex-shrink-0"
+            className="p-1.5 sm:p-2 hover:bg-[#bc13fe]/20 rounded-lg transition group flex-shrink-0"
           >
             <X className="h-4 w-4 sm:h-5 sm:w-5 text-[#e0d0ff] group-hover:text-[#ff44cc]" />
           </button>
@@ -225,7 +225,7 @@ export default function MapPicker({
               <div className="bg-slate-900/90 rounded-lg sm:rounded-xl  overflow-hidden border border-[#bc13fe]/30">
                 <button
                   onClick={() => setBasemap('street')}
-                  className={`px-2.5 sm:px-4 py-1.5 sm:py-2.5 text-[10px] sm:text-xs font-semibold transition-all flex items-center gap-1.5 sm:gap-2 w-full ${basemap === 'street'
+                  className={`px-2.5 sm:px-4 py-1.5 sm:py-2.5 text-[10px] sm:text-xs font-semibold transition flex items-center gap-1.5 sm:gap-2 w-full ${basemap === 'street'
                       ? 'bg-gradient-to-r from-[#00f7ff] to-[#00d4e6] text-black '
                       : 'text-[#e0d0ff] hover:bg-[#bc13fe]/20'
                     }`}
@@ -236,7 +236,7 @@ export default function MapPicker({
                 </button>
                 <button
                   onClick={() => setBasemap('satellite')}
-                  className={`px-2.5 sm:px-4 py-1.5 sm:py-2.5 text-[10px] sm:text-xs font-semibold transition-all flex items-center gap-1.5 sm:gap-2 w-full border-t border-[#bc13fe]/20 ${basemap === 'satellite'
+                  className={`px-2.5 sm:px-4 py-1.5 sm:py-2.5 text-[10px] sm:text-xs font-semibold transition flex items-center gap-1.5 sm:gap-2 w-full border-t border-[#bc13fe]/20 ${basemap === 'satellite'
                       ? 'bg-gradient-to-r from-[#00f7ff] to-[#00d4e6] text-black '
                       : 'text-[#e0d0ff] hover:bg-[#bc13fe]/20'
                     }`}
@@ -250,7 +250,7 @@ export default function MapPicker({
               {/* GPS Button */}
               <button
                 onClick={handleGetCurrentLocation}
-                className="bg-slate-900/90 rounded-lg sm:rounded-xl  border border-[#bc13fe]/30 p-2 sm:p-3 hover:bg-[#bc13fe]/20 hover: transition-all group"
+                className="bg-slate-900/90 rounded-lg sm:rounded-xl  border border-[#bc13fe]/30 p-2 sm:p-3 hover:bg-[#bc13fe]/20 hover: transition group"
                 title="Gunakan lokasi saya"
               >
                 <Navigation className="h-4 w-4 sm:h-5 sm:w-5 text-[#00f7ff] group-hover:text-[#ff44cc]" />
@@ -302,14 +302,14 @@ export default function MapPicker({
         <div className="flex justify-end gap-2 sm:gap-3 px-3 sm:px-6 py-3 sm:py-4 border-t border-[#bc13fe]/20 bg-gradient-to-r from-[#bc13fe]/5 to-[#00f7ff]/5 flex-shrink-0">
           <button
             onClick={onClose}
-            className="px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold border-2 border-[#bc13fe]/40 text-[#e0d0ff] rounded-lg sm:rounded-xl hover:bg-[#bc13fe]/10 hover:border-[#bc13fe]/60 transition-all"
+            className="px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold border-2 border-[#bc13fe]/40 text-[#e0d0ff] rounded-lg sm:rounded-xl hover:bg-[#bc13fe]/10 hover:border-[#bc13fe]/60 transition"
           >
             Batal
           </button>
           <button
             onClick={handleConfirm}
             disabled={!position}
-            className="px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold bg-gradient-to-r from-[#00f7ff] to-[#00d4e6] text-black rounded-lg sm:rounded-xl hover: disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none transition-all"
+            className="px-3 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-bold bg-gradient-to-r from-[#00f7ff] to-[#00d4e6] text-black rounded-lg sm:rounded-xl hover: disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none transition"
           >
             Pilih Lokasi Ini
           </button>

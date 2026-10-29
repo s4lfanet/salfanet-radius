@@ -133,7 +133,7 @@ export default function IsolatedUsersMonitorPage() {
         <button
           onClick={() => refetch()}
           disabled={refreshing && !loading}
-          className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/30 rounded-lg hover:bg-primary/20 transition-all text-sm text-primary"
+          className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/30 rounded-lg hover:bg-primary/20 transition text-sm text-primary"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
           {refreshing ? t('isolatedUsers.refreshing') : t('common.refresh')}
@@ -201,7 +201,7 @@ export default function IsolatedUsersMonitorPage() {
             <button
               key={s}
               onClick={() => setFilterStatus(s)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition border ${
                 filterStatus === s
                   ? s === 'online'
                     ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
@@ -217,7 +217,7 @@ export default function IsolatedUsersMonitorPage() {
         </div>
         <button
           onClick={exportToCSV}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 border border-primary/30 rounded-lg hover:bg-primary/20 transition-all text-xs text-primary"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 border border-primary/30 rounded-lg hover:bg-primary/20 transition text-xs text-primary"
         >
           <Download className="w-3.5 h-3.5" />
           {t('isolatedUsers.exportCsv')}
@@ -277,7 +277,7 @@ export default function IsolatedUsersMonitorPage() {
                         <div className="flex items-center gap-1 shrink-0">
                           <a
                             href={`/admin/pppoe/users/${user.id}`}
-                            className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium bg-primary/10 border border-primary/30 rounded text-primary hover:bg-primary/20 transition-all"
+                            className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium bg-primary/10 border border-primary/30 rounded text-primary hover:bg-primary/20 transition"
                           >
                             <Eye className="w-3 h-3" />
                             View
@@ -286,7 +286,7 @@ export default function IsolatedUsersMonitorPage() {
                             href={`/isolated?username=${user.username}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium bg-muted border border-border rounded text-muted-foreground hover:border-primary/30 hover:text-foreground transition-all"
+                            className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium bg-muted border border-border rounded text-muted-foreground hover:border-primary/30 hover:text-foreground transition"
                           >
                             Preview
                           </a>
@@ -362,7 +362,7 @@ export default function IsolatedUsersMonitorPage() {
                         <>
                           <button
                             onClick={() => copyLink(firstPayLink, `quick-${user.id}`)}
-                            className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium bg-muted border border-border rounded hover:border-primary/40 text-muted-foreground hover:text-foreground transition-all"
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium bg-muted border border-border rounded hover:border-primary/40 text-muted-foreground hover:text-foreground transition"
                           >
                             {copiedId === `quick-${user.id}`
                               ? <Check className="w-3 h-3 text-success" />
@@ -373,7 +373,7 @@ export default function IsolatedUsersMonitorPage() {
                             href={firstPayLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium bg-primary/10 border border-primary/30 rounded text-primary hover:bg-primary/20 transition-all"
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium bg-primary/10 border border-primary/30 rounded text-primary hover:bg-primary/20 transition"
                           >
                             <CreditCard className="w-3 h-3" />
                             {t('isolatedUsers.openPayLink')}
@@ -383,7 +383,7 @@ export default function IsolatedUsersMonitorPage() {
                               href={`https://wa.me/${user.phone.replace(/^0/, '62').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Halo ${user.name}, silakan lakukan pembayaran melalui link berikut: ${firstPayLink}`)}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium bg-green-500/10 border border-green-500/30 rounded text-green-600 dark:text-green-400 hover:bg-green-500/20 transition-all"
+                              className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium bg-green-500/10 border border-green-500/30 rounded text-green-600 dark:text-green-400 hover:bg-green-500/20 transition"
                             >
                               <Phone className="w-3 h-3" />
                               {t('isolatedUsers.sendWa')}

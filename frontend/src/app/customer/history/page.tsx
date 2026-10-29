@@ -787,7 +787,7 @@ export default function PaymentHistoryPage() {
                   <div className="space-y-3">
                     <button
                       onClick={handleChooseOnline}
-                      className="w-full flex items-center gap-3 p-4 bg-cyan-500/10 hover:bg-cyan-500/20 border-2 border-cyan-500/40 rounded-xl transition-all text-left"
+                      className="w-full flex items-center gap-3 p-4 bg-cyan-500/10 hover:bg-cyan-500/20 border-2 border-cyan-500/40 rounded-xl transition text-left"
                     >
                       <div className="p-2 bg-cyan-500/20 rounded-lg border border-cyan-500/30 flex items-center justify-center"><CreditCard className="w-5 h-5 text-cyan-400" /></div>
                       <div className="flex-1">
@@ -798,7 +798,7 @@ export default function PaymentHistoryPage() {
                     </button>
                     <button
                       onClick={handleChooseOffline}
-                      className="w-full flex items-center gap-3 p-4 bg-primary/10 hover:bg-primary/10 border border-border rounded-xl transition-all text-left"
+                      className="w-full flex items-center gap-3 p-4 bg-primary/10 hover:bg-primary/10 border border-border rounded-xl transition text-left"
                     >
                       <div className="p-2 bg-primary/10 rounded-lg border border-border flex items-center justify-center"><Building2 className="w-5 h-5 text-primary" /></div>
                       <div className="flex-1">
@@ -834,7 +834,7 @@ export default function PaymentHistoryPage() {
                       <button
                         key={gw.id}
                         onClick={() => setSelectedGateway(gw.provider)}
-                        className={`w-full flex items-center justify-between p-3.5 rounded-xl border-2 transition-all ${
+                        className={`w-full flex items-center justify-between p-3.5 rounded-xl border-2 transition ${
                           selectedGateway === gw.provider
                             ? 'border-cyan-400 bg-cyan-500/10'
                             : 'border-border/40 bg-muted/10 hover:border-cyan-500/40'
@@ -889,7 +889,7 @@ export default function PaymentHistoryPage() {
                         <button
                           key={bank}
                           onClick={() => { setBankName(bank); setCustomBank(''); }}
-                          className={`px-3 py-1.5 text-[11px] font-semibold rounded-lg border transition-all ${
+                          className={`px-3 py-1.5 text-[11px] font-semibold rounded-lg border transition ${
                             bankName === bank && !customBank
                               ? 'bg-cyan-500/30 border-cyan-400 text-cyan-300'
                               : 'bg-muted/20 border-border/40 text-muted-foreground hover:border-cyan-500/40'
@@ -962,7 +962,7 @@ export default function PaymentHistoryPage() {
                     ) : (
                       <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-full flex flex-col items-center gap-2 py-6 border-2 border-dashed border-border/50 rounded-xl hover:border-cyan-500/50 hover:bg-cyan-500/5 transition-all"
+                        className="w-full flex flex-col items-center gap-2 py-6 border-2 border-dashed border-border/50 rounded-xl hover:border-cyan-500/50 hover:bg-cyan-500/5 transition"
                       >
                         <Upload className="w-6 h-6 text-muted-foreground" />
                         <span className="text-xs text-muted-foreground">Klik untuk upload foto bukti transfer</span>

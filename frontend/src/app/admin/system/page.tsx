@@ -119,7 +119,7 @@ function CmdBlock({ children }: { children: string }) {
       </pre>
       <button
         onClick={() => { navigator.clipboard.writeText(children); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
-        className="absolute top-2 right-2 px-2 py-0.5 rounded text-[10px] font-bold bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-all opacity-0 group-hover:opacity-100"
+        className="absolute top-2 right-2 px-2 py-0.5 rounded text-[10px] font-bold bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition opacity-0 group-hover:opacity-100"
       >
         {copied ? '✔ copied' : 'copy'}
       </button>
@@ -245,7 +245,7 @@ export default function SystemPage() {
           )}
           <button
             onClick={() => refetchInfo()}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border hover:border-primary/30 text-muted-foreground text-xs transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border hover:border-primary/30 text-muted-foreground text-xs transition"
           >
             <RefreshCw className="w-3 h-3" />
             {t('system.refresh')}
@@ -292,7 +292,7 @@ export default function SystemPage() {
             <button
               onClick={fetchChangelog}
               disabled={changelogLoading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 text-xs font-bold transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-400 text-xs font-bold transition"
             >
               {changelogLoading ? <RefreshCw className="w-3 h-3 animate-spin" /> : <GitCommit className="w-3 h-3" />}
               Lihat Changelog
@@ -300,7 +300,7 @@ export default function SystemPage() {
             <button
               onClick={runUpdate}
               disabled={updating}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition-all disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition disabled:opacity-50"
             >
               {updating ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
               Update Sekarang
@@ -322,7 +322,7 @@ export default function SystemPage() {
             <button
               onClick={fetchChangelog}
               disabled={changelogLoading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-400 text-xs font-bold transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-400 text-xs font-bold transition"
             >
               {changelogLoading ? <RefreshCw className="w-3 h-3 animate-spin" /> : <GitCommit className="w-3 h-3" />}
               Lihat Changelog

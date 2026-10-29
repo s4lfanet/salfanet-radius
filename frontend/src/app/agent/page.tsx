@@ -167,7 +167,7 @@ export default function AgentLoginPage() {
 
           {step === 'phone' ? (
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-slate-600 focus-within:border-indigo-500 dark:focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-200 dark:focus-within:ring-indigo-800/50 transition-all">
+            <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-slate-600 focus-within:border-indigo-500 dark:focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-200 dark:focus-within:ring-indigo-800/50 transition">
               <div className="bg-indigo-600 px-4 flex items-center justify-center flex-shrink-0">
                 <Phone className="w-5 h-5 text-white" />
               </div>
@@ -184,7 +184,7 @@ export default function AgentLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-all shadow-sm flex items-center justify-center gap-2"
+              className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition shadow-sm flex items-center justify-center gap-2"
             >
               {loading ? (
                 <><Loader2 className="w-4 h-4 animate-spin" />{t('agent.portal.loggingIn')}...</>
@@ -195,7 +195,7 @@ export default function AgentLoginPage() {
           </form>
           ) : (
           <form onSubmit={handleVerifyOTP} className="space-y-4">
-            <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-slate-600 focus-within:border-indigo-500 dark:focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-200 dark:focus-within:ring-indigo-800/50 transition-all">
+            <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-slate-600 focus-within:border-indigo-500 dark:focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-200 dark:focus-within:ring-indigo-800/50 transition">
               <div className="bg-indigo-600 px-4 flex items-center justify-center flex-shrink-0">
                 <Lock className="w-5 h-5 text-white" />
               </div>
@@ -221,14 +221,14 @@ export default function AgentLoginPage() {
                 type="button"
                 onClick={handleBack}
                 disabled={loading}
-                className="flex-1 py-3 bg-muted hover:bg-muted/80 disabled:opacity-50 text-foreground text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2"
+                className="flex-1 py-3 bg-muted hover:bg-muted/80 disabled:opacity-50 text-foreground text-sm font-semibold rounded-lg transition flex items-center justify-center gap-2"
               >
                 <ChevronLeft className="w-4 h-4" />Kembali
               </button>
               <button
                 type="submit"
                 disabled={loading || otp.length !== 6}
-                className="flex-[2] py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2"
+                className="flex-[2] py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition flex items-center justify-center gap-2"
               >
                 {loading ? <><Loader2 className="w-4 h-4 animate-spin" />Memverifikasi...</> : <>Verifikasi<ArrowRight className="w-4 h-4" /></>}
               </button>

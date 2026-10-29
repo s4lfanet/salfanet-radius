@@ -635,7 +635,7 @@ export default function HotspotVoucherPage() {
                 </div>
                 <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
                   <div
-                    className="h-3 rounded-full transition-all duration-500 bg-gradient-to-r from-primary via-pink-500 to-brand-500"
+                    className="h-3 rounded-full transition duration-500 bg-gradient-to-r from-primary via-pink-500 to-brand-500"
                     style={{ width: `${genOverlay.total > 0 ? Math.round((genOverlay.current / genOverlay.total) * 100) : 0}%` }}
                   />
                 </div>
@@ -896,20 +896,20 @@ export default function HotspotVoucherPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition-all relative">
+        <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition relative">
           <div className="flex items-center justify-between"><div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('common.total')}</p><p className="text-lg sm:text-2xl font-bold text-foreground drop-shadow-none mt-1">{stats.total}</p></div><Ticket className="h-6 w-6 text-brand-500 drop-" /></div>
           {isSSEConnected && <div className="absolute top-2 right-2" title="Real-time updates active"><Wifi className="h-3 w-3 text-green-400 animate-pulse" /></div>}
         </div>
-        <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition-all">
+        <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition">
           <div className="flex items-center justify-between"><div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('hotspot.waiting')}</p><p className="text-lg sm:text-2xl font-bold text-foreground drop-shadow-none mt-1">{stats.waiting}</p></div><Ticket className="h-6 w-6 text-amber-400 drop-" /></div>
         </div>
-        <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition-all">
+        <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition">
           <div className="flex items-center justify-between"><div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('hotspot.active')}</p><p className="text-lg sm:text-2xl font-bold text-foreground drop-shadow-none mt-1">{stats.active}</p></div><Ticket className="h-6 w-6 text-green-400 drop-" /></div>
         </div>
-        <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition-all">
+        <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition">
           <div className="flex items-center justify-between"><div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('hotspot.expired')}</p><p className="text-lg sm:text-2xl font-bold text-foreground drop-shadow-none mt-1">{stats.expired}</p></div><Ticket className="h-6 w-6 text-red-400 drop-shadow-md shadow-red-500/40" /></div>
         </div>
-        <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition-all col-span-2 sm:col-span-1">
+        <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition col-span-2 sm:col-span-1">
           <div className="flex items-center justify-between"><div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('common.total')} {t('common.price')}</p><p className="text-xl font-bold text-foreground drop-shadow-none mt-1">{formatCurrency(stats.totalValue)}</p></div><Ticket className="h-6 w-6 text-pink-500 drop-" /></div>
         </div>
       </div>

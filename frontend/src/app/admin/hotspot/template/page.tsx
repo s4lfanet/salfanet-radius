@@ -473,7 +473,7 @@ export default function VoucherTemplatesPage() {
               </div>
             </ModalBody>
             <ModalFooter className="justify-between">
-              <button type="button" onClick={() => setShowPreview(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-brand-500 border border-brand-500/50 rounded-lg hover:bg-brand-500/10 transition-all">
+              <button type="button" onClick={() => setShowPreview(true)} className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-brand-500 border border-brand-500/50 rounded-lg hover:bg-brand-500/10 transition">
                 <Eye className="w-3.5 h-3.5" /> {t('hotspot.previewTemplate')}
               </button>
               <div className="flex gap-2">

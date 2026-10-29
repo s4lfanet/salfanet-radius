@@ -437,14 +437,14 @@ function CategoryItem({ titleKey, items, pendingCount, manualPaymentsCount, unre
         <div className="flex-1 h-px bg-gradient-to-r from-gray-300 via-gray-200 to-transparent dark:from-brand-400/35 dark:via-brand-400/20" />
         <ChevronDown
           className={cn(
-            'w-3 h-3 text-gray-500 group-hover:text-gray-600 dark:text-brand-400/60 dark:group-hover:text-brand-400 transition-all duration-200 flex-shrink-0',
+            'w-3 h-3 text-gray-500 group-hover:text-gray-600 dark:text-brand-400/60 dark:group-hover:text-brand-400 transition duration-200 flex-shrink-0',
             isOpen ? 'rotate-180' : ''
           )}
         />
       </button>
       <div
         className={cn(
-          'overflow-hidden transition-all duration-300 ease-in-out space-y-0',
+          'overflow-hidden transition duration-300 ease-in-out space-y-0',
           isOpen ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
         )}
       >
@@ -478,14 +478,14 @@ function NavItem({ item, pendingCount, manualPaymentsCount, unreadNotifications,
           onClick={() => setIsOpen(!isOpen)}
           aria-expanded={isOpen}
           className={cn(
-            'w-full flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 group',
+            'w-full flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition duration-200 group',
             isActive
               ? 'text-brand-500 bg-brand-50 dark:text-brand-400 dark:bg-brand-500/[0.12]'
               : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-gray-100 dark:hover:bg-white/5',
           )}
         >
           <span className={cn(
-            'flex-shrink-0 p-0.5 rounded-md transition-all duration-200 flex items-center justify-center',
+            'flex-shrink-0 p-0.5 rounded-md transition duration-200 flex items-center justify-center',
             isActive ? 'text-brand-500 dark:text-brand-400' : 'text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300'
           )}>
             {item.icon}
@@ -499,7 +499,7 @@ function NavItem({ item, pendingCount, manualPaymentsCount, unreadNotifications,
         </button>
         {!collapsed && (
           <div className={cn(
-            'overflow-hidden transition-all duration-300 ease-in-out',
+            'overflow-hidden transition duration-300 ease-in-out',
             isOpen ? 'max-h-[500px] opacity-100 mt-0.5' : 'max-h-0 opacity-0'
           )}>
             <div className="ml-3.5 pl-2 border-l-2 border-gray-200 dark:border-primary/20 space-y-0.5">
@@ -509,7 +509,7 @@ function NavItem({ item, pendingCount, manualPaymentsCount, unreadNotifications,
                   href={child.href}
                   onClick={onNavigate}
                   className={cn(
-                    'flex items-center justify-between px-2.5 py-1.5 text-xs rounded-md transition-all duration-200 group/item',
+                    'flex items-center justify-between px-2.5 py-1.5 text-xs rounded-md transition duration-200 group/item',
                     (pathname === child.href || fullPath === child.href)
                       ? 'text-brand-500 bg-brand-50 dark:text-brand-400 dark:bg-brand-500/[0.12]'
                       : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-gray-100 dark:hover:bg-white/5'
@@ -548,14 +548,14 @@ function NavItem({ item, pendingCount, manualPaymentsCount, unreadNotifications,
       href={item.href!}
       onClick={onNavigate}
       className={cn(
-        'flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 group',
+        'flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition duration-200 group',
         pathname === item.href
           ? 'text-brand-500 bg-brand-50 dark:text-brand-400 dark:bg-brand-500/[0.12]'
           : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-gray-100 dark:hover:bg-white/5',
       )}
     >
       <span className={cn(
-        'flex-shrink-0 p-0.5 rounded-md transition-all duration-200 flex items-center justify-center',
+        'flex-shrink-0 p-0.5 rounded-md transition duration-200 flex items-center justify-center',
         pathname === item.href ? 'text-brand-500 dark:text-brand-400' : 'text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300'
       )}>
         {item.icon}
@@ -1052,7 +1052,7 @@ function AdminLayoutContent({
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="w-full flex items-center gap-2.5 p-2 rounded-lg hover:bg-primary/20 transition-all duration-300 border border-transparent hover:border-primary/30 group"
+                className="w-full flex items-center gap-2.5 p-2 rounded-lg hover:bg-primary/20 transition duration-300 border border-transparent hover:border-primary/30 group"
               >
                 <div className="w-9 h-9 bg-gradient-to-br from-brand-500 to-brand-700 rounded-lg flex items-center justify-center text-white text-sm font-black">
                   {session?.user?.name?.charAt(0).toUpperCase() || 'A'}
@@ -1065,7 +1065,7 @@ function AdminLayoutContent({
                     {session?.user?.role || 'admin'}
                   </p>
                 </div>
-                <ChevronDown className={cn('w-3.5 h-3.5 text-muted-foreground group-hover:text-brand-400 transition-all duration-300', showUserMenu && 'rotate-180')} />
+                <ChevronDown className={cn('w-3.5 h-3.5 text-muted-foreground group-hover:text-brand-400 transition duration-300', showUserMenu && 'rotate-180')} />
               </button>
 
               {showUserMenu && (
@@ -1095,7 +1095,7 @@ function AdminLayoutContent({
       </aside>
 
       {/* Main */}
-      <div className="lg:pl-64 min-h-dvh flex flex-col relative z-10 transition-all duration-300">
+      <div className="lg:pl-64 min-h-dvh flex flex-col relative z-10 transition duration-300">
         {/* Header - optimized for mobile */}
         <header className="sticky top-0 z-30 bg-background/80 border-b border-gray-200 dark:border-primary/15 shadow-theme-sm safe-area-inset-top">
           {/* Top neon line - dark mode only */}
@@ -1190,13 +1190,13 @@ function AdminLayoutContent({
             <div className="flex gap-3">
               <button
                 onClick={handleLogout}
-                className="flex-1 px-4 py-3 text-sm font-bold text-muted-foreground hover:text-destructive bg-card/50 hover:bg-destructive/10 border-2 border-border hover:border-destructive/30 rounded-xl transition-all duration-300 uppercase tracking-wider"
+                className="flex-1 px-4 py-3 text-sm font-bold text-muted-foreground hover:text-destructive bg-card/50 hover:bg-destructive/10 border-2 border-border hover:border-destructive/30 rounded-xl transition duration-300 uppercase tracking-wider"
               >
                 {t('auth.logout')}
               </button>
               <button
                 onClick={handleStayLoggedIn}
-                className="flex-1 px-4 py-3 text-sm font-black text-white bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-400 hover:to-brand-500 border-2 border-brand-400 rounded-xl transition-all duration-300 uppercase tracking-wider"
+                className="flex-1 px-4 py-3 text-sm font-black text-white bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-400 hover:to-brand-500 border-2 border-brand-400 rounded-xl transition duration-300 uppercase tracking-wider"
               >
                 {t('common.stayActive')}
               </button>
@@ -1241,7 +1241,7 @@ function AppVersionBadge({ systemAccess }: { systemAccess: boolean }) {
   return (
     <Link
       href="/admin/system"
-      className="flex items-center justify-between w-full px-2.5 py-1.5 rounded-lg bg-sidebar-accent/50 hover:bg-sidebar-accent border border-sidebar-border/50 hover:border-sidebar-border group transition-all duration-200"
+      className="flex items-center justify-between w-full px-2.5 py-1.5 rounded-lg bg-sidebar-accent/50 hover:bg-sidebar-accent border border-sidebar-border/50 hover:border-sidebar-border group transition duration-200"
     >
       <div className="flex items-center gap-1.5">
         <GitBranch className="w-3 h-3 text-sidebar-foreground/60 group-hover:text-sidebar-primary transition-colors" />

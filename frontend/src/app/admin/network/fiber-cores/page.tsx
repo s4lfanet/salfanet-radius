@@ -470,7 +470,7 @@ export default function FiberCoresPage() {
                     <button
                       key={core.id}
                       onClick={() => handleSelectCore(core.id)}
-                      className={`relative px-2 py-1.5 rounded border flex items-center gap-1.5 transition-all ${
+                      className={`relative px-2 py-1.5 rounded border flex items-center gap-1.5 transition ${
                         selectedCores.has(core.id)
                           ? 'ring-2 ring-blue-500 ring-offset-1'
                           : ''

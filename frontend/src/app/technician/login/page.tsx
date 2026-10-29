@@ -107,7 +107,7 @@ export default function TechnicianLoginPage() {
           )}
 
           <form onSubmit={handleLogin} className="space-y-4">
-            <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-slate-600 focus-within:border-blue-500 dark:focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-200 dark:focus-within:ring-blue-800/50 transition-all">
+            <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-slate-600 focus-within:border-blue-500 dark:focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-200 dark:focus-within:ring-blue-800/50 transition">
               <div className="bg-blue-600 px-4 flex items-center justify-center flex-shrink-0">
                 <User className="w-5 h-5 text-white" />
               </div>
@@ -122,7 +122,7 @@ export default function TechnicianLoginPage() {
               />
             </div>
 
-            <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-slate-600 focus-within:border-blue-500 dark:focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-200 dark:focus-within:ring-blue-800/50 transition-all">
+            <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-slate-600 focus-within:border-blue-500 dark:focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-200 dark:focus-within:ring-blue-800/50 transition">
               <div className="bg-blue-600 px-4 flex items-center justify-center flex-shrink-0">
                 <Lock className="w-5 h-5 text-white" />
               </div>
@@ -140,7 +140,7 @@ export default function TechnicianLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-all shadow-sm flex items-center justify-center gap-2"
+              className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition shadow-sm flex items-center justify-center gap-2"
             >
               {loading ? (
                 <><Loader2 className="w-4 h-4 animate-spin" />Memproses...</>

@@ -308,7 +308,7 @@ export default function AdminTicketsPage() {
         </div>
         <button
           onClick={openDispatch}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-brand-500 hover:bg-brand-600 text-white rounded-xl shadow-sm hover:shadow-md transition-all"
+          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-brand-500 hover:bg-brand-600 text-white rounded-xl shadow-sm hover:shadow-md transition"
         >
           <Send className="w-4 h-4" />
           Kirim ke Teknisi
@@ -318,7 +318,7 @@ export default function AdminTicketsPage() {
       {/* Stats Cards */}
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-3 mb-4">
-          <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition-all">
+          <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition">
             <div className="flex items-center justify-between gap-2 min-w-0">
               <div className="min-w-0">
                 <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('ticket.totalTickets')}</p>
@@ -328,7 +328,7 @@ export default function AdminTicketsPage() {
             </div>
           </div>
 
-          <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition-all">
+          <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition">
             <div className="flex items-center justify-between gap-2 min-w-0">
               <div className="min-w-0">
                 <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('ticket.openTickets')}</p>
@@ -338,7 +338,7 @@ export default function AdminTicketsPage() {
             </div>
           </div>
 
-          <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition-all">
+          <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition">
             <div className="flex items-center justify-between gap-2 min-w-0">
               <div className="min-w-0">
                 <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('ticket.urgentTickets')}</p>
@@ -348,7 +348,7 @@ export default function AdminTicketsPage() {
             </div>
           </div>
 
-          <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition-all">
+          <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition">
             <div className="flex items-center justify-between gap-2 min-w-0">
               <div className="min-w-0">
                 <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('ticket.unassigned')}</p>
@@ -358,7 +358,7 @@ export default function AdminTicketsPage() {
             </div>
           </div>
 
-          <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition-all">
+          <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition">
             <div className="flex items-center justify-between gap-2 min-w-0">
               <div className="min-w-0">
                 <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('ticket.inProgress')}</p>
@@ -368,7 +368,7 @@ export default function AdminTicketsPage() {
             </div>
           </div>
 
-          <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition-all">
+          <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition">
             <div className="flex items-center justify-between gap-2 min-w-0">
               <div className="min-w-0">
                 <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('ticket.resolved')}</p>
@@ -378,7 +378,7 @@ export default function AdminTicketsPage() {
             </div>
           </div>
 
-          <div className="col-span-2 sm:col-span-1 bg-card rounded-xl border border-border p-3  hover:border-border transition-all">
+          <div className="col-span-2 sm:col-span-1 bg-card rounded-xl border border-border p-3  hover:border-border transition">
             <div className="flex items-center justify-between gap-2 min-w-0">
               <div className="min-w-0">
                 <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('ticket.avgResponseTime')}</p>
@@ -706,7 +706,7 @@ export default function AdminTicketsPage() {
                         type="button"
                         onClick={handleGetGPS}
                         disabled={gpsLoading}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] rounded-lg border border-brand-500/40 text-brand-500 bg-brand-500/10 hover:bg-brand-500/20 transition-all disabled:opacity-50"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] rounded-lg border border-brand-500/40 text-brand-500 bg-brand-500/10 hover:bg-brand-500/20 transition disabled:opacity-50"
                       >
                         {gpsLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Navigation className="w-3 h-3" />}
                         Ambil GPS
@@ -731,7 +731,7 @@ export default function AdminTicketsPage() {
                     <Upload className="w-3 h-3" /> Lampiran (Foto / Dokumen)
                   </p>
                   <label
-                    className={`flex flex-col items-center justify-center w-full border-2 border-dashed rounded-lg px-4 py-5 cursor-pointer transition-all ${
+                    className={`flex flex-col items-center justify-center w-full border-2 border-dashed rounded-lg px-4 py-5 cursor-pointer transition ${
                       uploading
                         ? 'border-border bg-primary/10 opacity-70'
                         : 'border-border hover:border-border hover:bg-primary/10'

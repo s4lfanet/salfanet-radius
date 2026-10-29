@@ -1393,7 +1393,7 @@ export default function NetworkMapPage() {
                           {/* Progress bar */}
                           <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
                             <div
-                              className={`h-2 rounded-full transition-all ${portUsagePercent > 80 ? 'bg-destructive/100' :
+                              className={`h-2 rounded-full transition ${portUsagePercent > 80 ? 'bg-destructive/100' :
                                 portUsagePercent > 50 ? 'bg-warning/100' : 'bg-success/100'
                                 }`}
                               style={{ width: `${portUsagePercent}%` }}
@@ -1599,7 +1599,7 @@ export default function NetworkMapPage() {
                         {/* Edit Button */}
                         <button
                           onClick={() => handleEditCustomer(customer)}
-                          className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 text-sm font-medium shadow-sm transition-all"
+                          className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 text-sm font-medium shadow-sm transition"
                         >
                           <Edit className="w-4 h-4" />
                           Edit Pelanggan

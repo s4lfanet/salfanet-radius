@@ -394,7 +394,7 @@ export default function OLTMonitoringPage() {
                   </div>
                   <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                     <div
-                      className={`h-full rounded-full transition-all duration-500 ${
+                      className={`h-full rounded-full transition duration-500 ${
                         onlinePct >= 90 ? 'bg-emerald-500' : onlinePct >= 70 ? 'bg-amber-400' : 'bg-red-500'
                       }`}
                       style={{ width: `${onlinePct}%` }}

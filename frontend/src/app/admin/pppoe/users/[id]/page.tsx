@@ -404,7 +404,7 @@ export default function PppoeUserDetailPage({ params }: { params: Promise<{ id: 
               key={s}
               onClick={() => handleStatusChange(s)}
               disabled={changingStatus || user.status === s}
-              className={`px-2.5 py-1 text-[11px] font-medium rounded border transition-all disabled:opacity-40 disabled:cursor-not-allowed
+              className={`px-2.5 py-1 text-[11px] font-medium rounded border transition disabled:opacity-40 disabled:cursor-not-allowed
                 ${user.status === s ? getStatusStyle(s) + ' cursor-default' : 'bg-muted border-border text-muted-foreground hover:border-primary/50 hover:text-foreground'}`}
             >
               {s}
@@ -412,7 +412,7 @@ export default function PppoeUserDetailPage({ params }: { params: Promise<{ id: 
           ))}
           <a
             href={`/admin/pppoe/users?edit=${user.id}`}
-            className="ml-auto px-3 py-1 text-[11px] font-medium rounded border border-primary/30 text-primary bg-primary/10 hover:bg-primary/20 transition-all"
+            className="ml-auto px-3 py-1 text-[11px] font-medium rounded border border-primary/30 text-primary bg-primary/10 hover:bg-primary/20 transition"
           >
             Edit Lengkap →
           </a>
@@ -425,7 +425,7 @@ export default function PppoeUserDetailPage({ params }: { params: Promise<{ id: 
             <button
               onClick={sendWANotification}
               disabled={sendingWA}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium bg-green-500/10 border border-green-500/30 rounded text-green-600 dark:text-green-400 hover:bg-green-500/20 transition-all disabled:opacity-50"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium bg-green-500/10 border border-green-500/30 rounded text-green-600 dark:text-green-400 hover:bg-green-500/20 transition disabled:opacity-50"
             >
               {sendingWA ? <RefreshCw className="w-3 h-3 animate-spin" /> : <SendHorizonal className="w-3 h-3" />}
               Kirim Notif WA
@@ -436,7 +436,7 @@ export default function PppoeUserDetailPage({ params }: { params: Promise<{ id: 
               href={`https://wa.me/${user.phone.replace(/^0/, '62').replace(/\D/g, '')}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium bg-green-50/10 border border-green-500/20 rounded text-green-500/80 hover:bg-green-500/10 hover:text-green-500 transition-all"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium bg-green-50/10 border border-green-500/20 rounded text-green-500/80 hover:bg-green-500/10 hover:text-green-500 transition"
             >
               <Phone className="w-3 h-3" />
               Buka WA
@@ -444,7 +444,7 @@ export default function PppoeUserDetailPage({ params }: { params: Promise<{ id: 
           )}
           <a
             href={`/admin/invoices/create?userId=${user.id}`}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium bg-primary/10 border border-primary/30 rounded text-primary hover:bg-primary/20 transition-all"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium bg-primary/10 border border-primary/30 rounded text-primary hover:bg-primary/20 transition"
           >
             <Plus className="w-3 h-3" />
             Buat Invoice
@@ -453,7 +453,7 @@ export default function PppoeUserDetailPage({ params }: { params: Promise<{ id: 
             href={`/isolated?username=${user.username}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium bg-muted border border-border rounded text-muted-foreground hover:border-primary/30 hover:text-foreground transition-all"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium bg-muted border border-border rounded text-muted-foreground hover:border-primary/30 hover:text-foreground transition"
           >
             <ExternalLink className="w-3 h-3" />
             Portal Bayar

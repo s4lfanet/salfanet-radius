@@ -142,7 +142,7 @@ export function TraceResultDisplay({ path, summary, onNodeClick }: TraceResultDi
             <div key={node.id}>
               {/* Node Card */}
               <div
-                className={`flex items-center justify-between p-3 rounded-lg border transition-all ${
+                className={`flex items-center justify-between p-3 rounded-lg border transition ${
                   onNodeClick ? 'cursor-pointer hover:shadow-md' : ''
                 } ${getNodeTypeColor(node.type)}`}
                 onClick={() => onNodeClick?.(node.id)}

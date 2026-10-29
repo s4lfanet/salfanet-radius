@@ -679,10 +679,10 @@ export default function AgentPage() {
               <p className="text-lg font-bold text-brand-500 drop-">{selectedAgentForBalance && formatCurrency(selectedAgentForBalance.balance)}</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <button type="button" onClick={() => setBalanceType('add')} className={`px-3 py-2 rounded-lg border-2 text-xs font-medium transition-all ${balanceType === 'add' ? 'border-green-500 bg-green-500/10 text-green-500 ' : 'border-border hover:border-green-500/50'}`}>
+              <button type="button" onClick={() => setBalanceType('add')} className={`px-3 py-2 rounded-lg border-2 text-xs font-medium transition ${balanceType === 'add' ? 'border-green-500 bg-green-500/10 text-green-500 ' : 'border-border hover:border-green-500/50'}`}>
                 <DollarSign className="w-3.5 h-3.5 mx-auto mb-0.5" /> {t('agent.addBalance')}
               </button>
-              <button type="button" onClick={() => setBalanceType('subtract')} className={`px-3 py-2 rounded-lg border-2 text-xs font-medium transition-all ${balanceType === 'subtract' ? 'border-red-500 bg-red-500/10 text-[#ff6b8a] ' : 'border-border hover:border-red-500/50'}`}>
+              <button type="button" onClick={() => setBalanceType('subtract')} className={`px-3 py-2 rounded-lg border-2 text-xs font-medium transition ${balanceType === 'subtract' ? 'border-red-500 bg-red-500/10 text-[#ff6b8a] ' : 'border-border hover:border-red-500/50'}`}>
                 <DollarSign className="w-3.5 h-3.5 mx-auto mb-0.5" /> {t('agent.subtractBalance')}
               </button>
             </div>
@@ -810,10 +810,10 @@ export default function AgentPage() {
           </ModalHeader>
           <ModalBody>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <button type="button" onClick={() => setBulkStatusValue(true)} className={`px-3 py-3 rounded-lg border-2 text-xs font-medium transition-all ${bulkStatusValue ? 'border-green-500 bg-green-500/10 text-green-500 ' : 'border-border hover:border-green-500/50 text-foreground'}`}>
+              <button type="button" onClick={() => setBulkStatusValue(true)} className={`px-3 py-3 rounded-lg border-2 text-xs font-medium transition ${bulkStatusValue ? 'border-green-500 bg-green-500/10 text-green-500 ' : 'border-border hover:border-green-500/50 text-foreground'}`}>
                 ✓ {t('common.active')}
               </button>
-              <button type="button" onClick={() => setBulkStatusValue(false)} className={`px-3 py-3 rounded-lg border-2 text-xs font-medium transition-all ${!bulkStatusValue ? 'border-red-500 bg-red-500/10 text-[#ff6b8a] ' : 'border-border hover:border-red-500/50 text-foreground'}`}>
+              <button type="button" onClick={() => setBulkStatusValue(false)} className={`px-3 py-3 rounded-lg border-2 text-xs font-medium transition ${!bulkStatusValue ? 'border-red-500 bg-red-500/10 text-[#ff6b8a] ' : 'border-border hover:border-red-500/50 text-foreground'}`}>
                 ✗ {t('common.inactive')}
               </button>
             </div>

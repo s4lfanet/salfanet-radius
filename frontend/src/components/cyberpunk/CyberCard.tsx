@@ -82,7 +82,7 @@ const CyberCard = React.forwardRef<HTMLDivElement, CyberCardProps>(
       <div
         ref={ref}
         className={cn(
-          'transition-all duration-300',
+          'transition duration-300',
           variantStyles[variant],
           className
         )}

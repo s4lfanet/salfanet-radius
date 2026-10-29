@@ -115,7 +115,7 @@ export default function RadiusLogsPage() {
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder={t('radius.searchLogs')}
-                            className="w-full pl-9 pr-4 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                            className="w-full pl-9 pr-4 py-2 bg-background border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition"
                         />
                     </div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground px-2">

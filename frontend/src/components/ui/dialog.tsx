@@ -94,7 +94,7 @@ function DialogContent({
               "text-muted-foreground hover:text-primary",
               "bg-muted/50 hover:bg-muted dark:hover:bg-cyan-500/20",
               "border border-border hover:border-primary/50 dark:hover:border-cyan-400/50",
-              "ring-offset-background transition-all duration-200",
+              "ring-offset-background transition duration-200",
               "focus:ring-2 focus:ring-primary/50 dark:focus:ring-cyan-400/50 focus:outline-hidden",
               "disabled:pointer-events-none",
               "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"

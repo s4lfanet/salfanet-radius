@@ -322,7 +322,7 @@ export default function PaymentPage() {
               <button
                                onClick={() => handlePayment('qris_own')}
                 disabled={processing}
-                className="w-full flex items-center justify-between p-4 bg-card/50 border border-border rounded-xl hover:border-brand-500/50 hover:bg-card hover: transition-all disabled:opacity-50 mb-2"
+                className="w-full flex items-center justify-between p-4 bg-card/50 border border-border rounded-xl hover:border-brand-500/50 hover:bg-card hover: transition disabled:opacity-50 mb-2"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-brand-500 to-primary rounded-xl flex items-center justify-center ">
@@ -367,7 +367,7 @@ export default function PaymentPage() {
                               key={method.code}
                               onClick={() => handlePayment('duitku', method.code)}
                               disabled={processing}
-                              className="w-full flex items-center justify-between p-4 bg-card/50 border border-border rounded-xl hover:border-brand-500/50 hover:bg-card hover: transition-all disabled:opacity-50"
+                              className="w-full flex items-center justify-between p-4 bg-card/50 border border-border rounded-xl hover:border-brand-500/50 hover:bg-card hover: transition disabled:opacity-50"
                             >
                               <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 bg-gradient-to-br from-primary to-brand-500 rounded-xl flex items-center justify-center">
@@ -396,7 +396,7 @@ export default function PaymentPage() {
                       key={gateway.id}
                       onClick={() => handlePayment(gateway.provider)}
                       disabled={processing}
-                      className="w-full flex items-center justify-between p-4 bg-card/50 border border-border rounded-xl hover:border-brand-500/50 hover:bg-card hover: transition-all disabled:opacity-50"
+                      className="w-full flex items-center justify-between p-4 bg-card/50 border border-border rounded-xl hover:border-brand-500/50 hover:bg-card hover: transition disabled:opacity-50"
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-gradient-to-br from-primary to-brand-500 rounded-xl flex items-center justify-center">

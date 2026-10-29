@@ -875,7 +875,7 @@ export default function InvoicesPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
-          <div className="bg-card rounded-xl border border-border p-3 sm:p-4  hover:border-border transition-all">
+          <div className="bg-card rounded-xl border border-border p-3 sm:p-4  hover:border-border transition">
             <div className="flex items-center justify-between gap-2 min-w-0">
               <div className="min-w-0">
                 <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('common.total')}</p>
@@ -886,7 +886,7 @@ export default function InvoicesPage() {
               </div>
             </div>
           </div>
-          <div className="bg-card rounded-xl border border-border p-3 sm:p-4  hover:border-border transition-all">
+          <div className="bg-card rounded-xl border border-border p-3 sm:p-4  hover:border-border transition">
             <div className="flex items-center justify-between gap-2 min-w-0">
               <div className="min-w-0">
                 <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('invoices.pending')}</p>
@@ -898,7 +898,7 @@ export default function InvoicesPage() {
               </div>
             </div>
           </div>
-          <div className="bg-card rounded-xl border border-border p-3 sm:p-4  hover:border-border transition-all">
+          <div className="bg-card rounded-xl border border-border p-3 sm:p-4  hover:border-border transition">
             <div className="flex items-center justify-between gap-2 min-w-0">
               <div className="min-w-0">
                 <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('invoices.paid')}</p>
@@ -910,7 +910,7 @@ export default function InvoicesPage() {
               </div>
             </div>
           </div>
-          <div className="bg-card rounded-xl border border-border p-3 sm:p-4  hover:border-border transition-all">
+          <div className="bg-card rounded-xl border border-border p-3 sm:p-4  hover:border-border transition">
             <div className="flex items-center justify-between gap-2 min-w-0">
               <div className="min-w-0">
                 <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('invoices.overdue')}</p>
@@ -1458,14 +1458,14 @@ export default function InvoicesPage() {
                       <button
                         type="button"
                         onClick={() => { setGenScope('all'); setGenUserId(''); setGenUserSearch(''); setGenUsers([]); }}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs transition-all ${genScope === 'all' ? 'border-blue-500 bg-blue-500/10 text-blue-400 font-medium' : 'border-border text-muted-foreground hover:border-border/80'}`}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs transition ${genScope === 'all' ? 'border-blue-500 bg-blue-500/10 text-blue-400 font-medium' : 'border-border text-muted-foreground hover:border-border/80'}`}
                       >
                         <Users className="w-3.5 h-3.5 flex-shrink-0" />Semua Pelanggan
                       </button>
                       <button
                         type="button"
                         onClick={() => setGenScope('single')}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs transition-all ${genScope === 'single' ? 'border-blue-500 bg-blue-500/10 text-blue-400 font-medium' : 'border-border text-muted-foreground hover:border-border/80'}`}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs transition ${genScope === 'single' ? 'border-blue-500 bg-blue-500/10 text-blue-400 font-medium' : 'border-border text-muted-foreground hover:border-border/80'}`}
                       >
                         <UserIcon className="w-3.5 h-3.5 flex-shrink-0" />Satu Pelanggan
                       </button>

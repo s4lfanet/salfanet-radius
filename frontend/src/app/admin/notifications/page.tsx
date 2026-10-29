@@ -297,7 +297,7 @@ export default function NotificationsPage() {
               <button
                 key={category.type}
                 onClick={() => setCategoryFilter(category.type)}
-                className={`p-2.5 rounded-lg border-2 transition-all ${
+                className={`p-2.5 rounded-lg border-2 transition ${
                   isActive 
                     ? 'bg-gradient-to-br from-primary/20 to-pink-500/20 border-violet-500 ' 
                     : 'bg-card border-border hover:border-border hover:bg-card'
@@ -324,7 +324,7 @@ export default function NotificationsPage() {
           <div className="mt-4 pt-4 border-t border-border">
             <button
               onClick={markAllAsRead}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-500 to-brand-500 hover:from-green-500/90 hover:to-brand-500/90 text-[#0a0118] text-sm font-bold rounded-lg transition-all "
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-500 to-brand-500 hover:from-green-500/90 hover:to-brand-500/90 text-[#0a0118] text-sm font-bold rounded-lg transition "
             >
               <CheckCheck className="w-5 h-5" />
               {t('notifications.markAllRead')} ({unreadCount})

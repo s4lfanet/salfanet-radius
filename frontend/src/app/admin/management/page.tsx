@@ -322,7 +322,7 @@ export default function ManagementPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-3  hover:border-border transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-3  hover:border-border transition">
             <div className="flex items-center gap-2">
               <div className="p-1.5 bg-primary/10 rounded">
                 <svg className="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -335,7 +335,7 @@ export default function ManagementPage() {
               </div>
             </div>
           </div>
-          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-3  hover:border-border transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-3  hover:border-border transition">
             <div className="flex items-center gap-2">
               <div className="p-1.5 bg-destructive/10 rounded">
                 <svg className="w-3.5 h-3.5 text-destructive" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -350,7 +350,7 @@ export default function ManagementPage() {
               </div>
             </div>
           </div>
-          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-3  hover:border-border transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-3  hover:border-border transition">
             <div className="flex items-center gap-2">
               <div className="p-1.5 bg-info/10 rounded">
                 <svg className="w-3.5 h-3.5 text-info" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -365,7 +365,7 @@ export default function ManagementPage() {
               </div>
             </div>
           </div>
-          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-3  hover:border-border transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-3  hover:border-border transition">
             <div className="flex items-center gap-2">
               <div className="p-1.5 bg-primary/10 rounded">
                 <svg className="w-3.5 h-3.5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">

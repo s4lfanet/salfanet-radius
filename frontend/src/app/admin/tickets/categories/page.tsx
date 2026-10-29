@@ -214,7 +214,7 @@ export default function TicketCategoriesPage() {
             {categories.map((category) => (
               <div
                 key={category.id}
-                className="bg-card dark:bg-[#1a1525]/80 backdrop-blur-sm border border-border dark:border-border rounded-lg p-2.5 sm:p-4 hover:border-primary/30 dark:hover:border-brand-500/50 transition-all dark:hover:"
+                className="bg-card dark:bg-[#1a1525]/80 backdrop-blur-sm border border-border dark:border-border rounded-lg p-2.5 sm:p-4 hover:border-primary/30 dark:hover:border-brand-500/50 transition dark:hover:"
               >
                 <div className="flex items-start justify-between mb-3 min-w-0">
                   <div className="flex items-center gap-2">
@@ -269,19 +269,19 @@ export default function TicketCategoriesPage() {
 
         {/* Stats Footer */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-          <div className="bg-card dark:bg-[#1a1525]/80 backdrop-blur-sm border border-border dark:border-border rounded-lg p-2.5 sm:p-4 hover:border-primary/30 dark:hover:border-brand-500/50 transition-all">
+          <div className="bg-card dark:bg-[#1a1525]/80 backdrop-blur-sm border border-border dark:border-border rounded-lg p-2.5 sm:p-4 hover:border-primary/30 dark:hover:border-brand-500/50 transition">
             <p className="text-xs text-muted-foreground mb-1">{t('ticket.categoriesPage.totalCategories')}</p>
             <p className="text-lg sm:text-2xl font-bold text-foreground">{stats.total}</p>
           </div>
-          <div className="bg-card dark:bg-[#1a1525]/80 backdrop-blur-sm border border-border dark:border-border rounded-lg p-2.5 sm:p-4 hover:border-red-400/50 transition-all">
+          <div className="bg-card dark:bg-[#1a1525]/80 backdrop-blur-sm border border-border dark:border-border rounded-lg p-2.5 sm:p-4 hover:border-red-400/50 transition">
             <p className="text-xs text-muted-foreground mb-1">{t('ticket.categoriesPage.networkConnection')}</p>
             <p className="text-lg sm:text-2xl font-bold text-red-500 dark:text-red-400 dark:drop-shadow-md shadow-red-500/40">{stats.network}</p>
           </div>
-          <div className="bg-card dark:bg-[#1a1525]/80 backdrop-blur-sm border border-border dark:border-border rounded-lg p-2.5 sm:p-4 hover:border-green-500/50 transition-all">
+          <div className="bg-card dark:bg-[#1a1525]/80 backdrop-blur-sm border border-border dark:border-border rounded-lg p-2.5 sm:p-4 hover:border-green-500/50 transition">
             <p className="text-xs text-muted-foreground mb-1">{t('ticket.categoriesPage.installationTechnical')}</p>
             <p className="text-lg sm:text-2xl font-bold text-green-600 dark:text-green-400 dark:drop-">{stats.technical}</p>
           </div>
-          <div className="bg-card dark:bg-[#1a1525]/80 backdrop-blur-sm border border-border dark:border-border rounded-lg p-2.5 sm:p-4 hover:border-cyan-500/50 transition-all">
+          <div className="bg-card dark:bg-[#1a1525]/80 backdrop-blur-sm border border-border dark:border-border rounded-lg p-2.5 sm:p-4 hover:border-cyan-500/50 transition">
             <p className="text-xs text-muted-foreground mb-1">{t('ticket.categoriesPage.billingSupport')}</p>
             <p className="text-lg sm:text-2xl font-bold text-brand-500 dark:text-cyan-400 dark:drop-">{stats.billing}</p>
           </div>
@@ -306,7 +306,7 @@ export default function TicketCategoriesPage() {
                 <ModalLabel>{t('ticket.color')}</ModalLabel>
                 <div className="grid grid-cols-4 gap-2 mt-2">
                   {colorOptions.map((color) => (
-                    <button key={color.value} type="button" onClick={() => setFormData({ ...formData, color: color.value })} className={`w-full h-10 rounded-lg border-2 transition-all ${formData.color === color.value ? 'border-white  scale-110' : 'border-border hover:border-brand-500/50'}`} style={{ backgroundColor: color.value }}>
+                    <button key={color.value} type="button" onClick={() => setFormData({ ...formData, color: color.value })} className={`w-full h-10 rounded-lg border-2 transition ${formData.color === color.value ? 'border-white  scale-110' : 'border-border hover:border-brand-500/50'}`} style={{ backgroundColor: color.value }}>
                       {formData.color === color.value && <Check className="mx-auto text-white " size={20} />}
                     </button>
                   ))}

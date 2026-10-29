@@ -112,7 +112,7 @@ export default function TechnicianMonitorPage() {
         <button
           onClick={loadData}
           disabled={loading}
-          className="flex items-center gap-2 px-3 py-2 text-xs font-semibold bg-muted hover:bg-accent text-slate-700 dark:text-brand-500 border border-slate-200 dark:border-brand-500/30 rounded-xl transition-all"
+          className="flex items-center gap-2 px-3 py-2 text-xs font-semibold bg-muted hover:bg-accent text-slate-700 dark:text-brand-500 border border-slate-200 dark:border-brand-500/30 rounded-xl transition"
         >
           <RefreshCcw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           Refresh
@@ -175,7 +175,7 @@ export default function TechnicianMonitorPage() {
       <div className="flex gap-2 bg-muted rounded-2xl p-1.5 w-fit">
         <button
           onClick={() => setTab('online')}
-          className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition ${
             tab === 'online'
               ? 'bg-card text-green-600 dark:text-brand-500 shadow-sm border border-green-200 dark:border-brand-500/30'
               : 'text-muted-foreground hover:text-foreground'
@@ -186,7 +186,7 @@ export default function TechnicianMonitorPage() {
         </button>
         <button
           onClick={() => setTab('isolated')}
-          className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition ${
             tab === 'isolated'
               ? 'bg-card text-red-600 dark:text-red-400 shadow-sm border border-red-200 dark:border-red-500/30'
               : 'text-muted-foreground hover:text-foreground'

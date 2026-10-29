@@ -245,7 +245,7 @@ export default function SplitterSection({
                       key={type.value}
                       type="button"
                       onClick={() => handleTypeChange(type.value as 'PLC' | 'FBT')}
-                      className={`w-full p-2 rounded-lg border-2 text-left transition-all ${
+                      className={`w-full p-2 rounded-lg border-2 text-left transition ${
                         config.splitterType === type.value
                           ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
                           : 'border-border hover:border-gray-300'
@@ -265,7 +265,7 @@ export default function SplitterSection({
                       key={ratio.value}
                       type="button"
                       onClick={() => handleRatioChange(ratio.value)}
-                      className={`p-2 rounded-lg border-2 text-center transition-all ${
+                      className={`p-2 rounded-lg border-2 text-center transition ${
                         config.ratio === ratio.value
                           ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
                           : 'border-border hover:border-gray-300'
@@ -317,7 +317,7 @@ export default function SplitterSection({
               {config.ports.map((port) => (
                 <div
                   key={port.portNumber}
-                  className={`p-2 rounded-lg border-2 text-center transition-all cursor-default ${getPortStatusStyle(port.status)}`}
+                  className={`p-2 rounded-lg border-2 text-center transition cursor-default ${getPortStatusStyle(port.status)}`}
                   title={`Port ${port.portNumber}: ${port.status}${port.assignedToId ? ` - ${port.assignedToType} ${port.assignedToId}` : ''}`}
                 >
                   <span className="text-xs font-bold">{port.portNumber}</span>

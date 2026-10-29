@@ -136,7 +136,7 @@ export default function TopUpRequestPage() {
                   type="number"
                   value={formData.amount}
                   onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-                  className="w-full pl-12 pr-4 py-3 bg-slate-900/80 border border-border rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 focus: transition-all"
+                  className="w-full pl-12 pr-4 py-3 bg-slate-900/80 border border-border rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 focus: transition"
                   placeholder="10000"
                   required
                   min="10000"
@@ -157,7 +157,7 @@ export default function TopUpRequestPage() {
                 <button
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'TRANSFER' }))}
-                  className={`p-4 rounded-xl border-2 transition-all ${formData.paymentMethod === 'TRANSFER'
+                  className={`p-4 rounded-xl border-2 transition ${formData.paymentMethod === 'TRANSFER'
                       ? 'border-brand-500 bg-brand-500/10 '
                       : 'border-border bg-slate-900/50 hover:border-brand-500/50'
                     }`}
@@ -173,7 +173,7 @@ export default function TopUpRequestPage() {
                 <button
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'EWALLET' }))}
-                  className={`p-4 rounded-xl border-2 transition-all ${formData.paymentMethod === 'EWALLET'
+                  className={`p-4 rounded-xl border-2 transition ${formData.paymentMethod === 'EWALLET'
                       ? 'border-brand-500 bg-brand-500/10 '
                       : 'border-border bg-slate-900/50 hover:border-brand-500/50'
                     }`}
@@ -189,7 +189,7 @@ export default function TopUpRequestPage() {
                 <button
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'CASH' }))}
-                  className={`p-4 rounded-xl border-2 transition-all ${formData.paymentMethod === 'CASH'
+                  className={`p-4 rounded-xl border-2 transition ${formData.paymentMethod === 'CASH'
                       ? 'border-brand-500 bg-brand-500/10 '
                       : 'border-border bg-slate-900/50 hover:border-brand-500/50'
                     }`}
@@ -239,7 +239,7 @@ export default function TopUpRequestPage() {
               <textarea
                 value={formData.note}
                 onChange={(e) => setFormData(prev => ({ ...prev, note: e.target.value }))}
-                className="w-full px-4 py-3 bg-slate-900/80 border border-border rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 focus: transition-all min-h-[100px]"
+                className="w-full px-4 py-3 bg-slate-900/80 border border-border rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 focus: transition min-h-[100px]"
                 placeholder={t('customer.notePlaceholder')}
               />
             </div>
@@ -249,7 +249,7 @@ export default function TopUpRequestPage() {
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="flex-1 px-4 py-3 bg-slate-700/50 border border-slate-600/50 text-white font-medium rounded-xl hover:bg-slate-700 transition-all"
+                className="flex-1 px-4 py-3 bg-slate-700/50 border border-slate-600/50 text-white font-medium rounded-xl hover:bg-slate-700 transition"
                 disabled={submitting}
               >
                 {t('common.cancel')}

@@ -203,7 +203,7 @@ export default function PromoBannerPage() {
             {banners.map((banner) => (
               <div
                 key={banner.id}
-                className="bg-card dark:bg-[#1a1525]/80 backdrop-blur-sm border border-border rounded-lg overflow-hidden hover:border-primary/30 dark:hover:border-brand-500/50 transition-all"
+                className="bg-card dark:bg-[#1a1525]/80 backdrop-blur-sm border border-border rounded-lg overflow-hidden hover:border-primary/30 dark:hover:border-brand-500/50 transition"
               >
                 <div className="relative aspect-[21/9] bg-black/30">
                   <BannerPreviewImage src={banner.imageUrl} alt={banner.title || 'Banner'} />

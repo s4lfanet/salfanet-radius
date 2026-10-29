@@ -266,7 +266,7 @@ export default function NewPppoeUserPage() {
         {STEPS.map((step, i) => (
           <div key={step.id} className="flex items-center">
             <div className={`flex flex-col items-center ${wizardStep >= i + 1 ? '' : 'opacity-40'}`}>
-              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${wizardStep > i + 1 ? 'bg-emerald-500 text-white' : wizardStep === i + 1 ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'}`}>
+              <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition ${wizardStep > i + 1 ? 'bg-emerald-500 text-white' : wizardStep === i + 1 ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'}`}>
                 {wizardStep > i + 1 ? <CheckCircle className="h-4 w-4" /> : i + 1}
               </div>
               <span className="text-[9px] mt-1 text-muted-foreground hidden sm:block">{step.label}</span>
@@ -428,11 +428,11 @@ export default function NewPppoeUserPage() {
                   })()}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <label className={`flex items-center gap-2 p-2.5 border-2 rounded-lg cursor-pointer transition-all ${formData.subscriptionType === 'POSTPAID' ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/40'}`}>
+                  <label className={`flex items-center gap-2 p-2.5 border-2 rounded-lg cursor-pointer transition ${formData.subscriptionType === 'POSTPAID' ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/40'}`}>
                     <input type="radio" name="subscriptionType" value="POSTPAID" checked={formData.subscriptionType === 'POSTPAID'} onChange={() => field('subscriptionType', 'POSTPAID')} className="w-3 h-3 accent-primary" />
                     <div><p className="text-[10px] font-semibold">Postpaid</p><p className="text-[9px] text-muted-foreground">Pakai dulu, bayar nanti</p></div>
                   </label>
-                  <label className={`flex items-center gap-2 p-2.5 border-2 rounded-lg cursor-pointer transition-all ${formData.subscriptionType === 'PREPAID' ? 'border-purple-500 bg-primary/10' : 'border-border hover:border-border'}`}>
+                  <label className={`flex items-center gap-2 p-2.5 border-2 rounded-lg cursor-pointer transition ${formData.subscriptionType === 'PREPAID' ? 'border-purple-500 bg-primary/10' : 'border-border hover:border-border'}`}>
                     <input type="radio" name="subscriptionType" value="PREPAID" checked={formData.subscriptionType === 'PREPAID'} onChange={() => field('subscriptionType', 'PREPAID')} className="w-3 h-3 accent-purple-500" />
                     <div><p className="text-[10px] font-semibold">🎫 Prepaid</p><p className="text-[9px] text-muted-foreground">Bayar dulu, langsung aktif</p></div>
                   </label>
@@ -477,13 +477,13 @@ export default function NewPppoeUserPage() {
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">💳 Tagihan Pertama</p>
                 <div className="grid grid-cols-2 gap-1.5">
                   <button type="button" onClick={() => { if (firstInvoice === 'none') setFirstInvoice('prorate'); }}
-                    className={`flex flex-col items-center gap-0.5 p-2.5 border-2 rounded-xl cursor-pointer transition-all text-center ${firstInvoice !== 'none' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30' : 'border-border bg-muted/40 hover:border-emerald-400'}`}>
+                    className={`flex flex-col items-center gap-0.5 p-2.5 border-2 rounded-xl cursor-pointer transition text-center ${firstInvoice !== 'none' ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30' : 'border-border bg-muted/40 hover:border-emerald-400'}`}>
                     <span className="text-base">🏠</span>
                     <span className={`text-[9px] font-bold ${firstInvoice !== 'none' ? 'text-emerald-700 dark:text-emerald-300' : ''}`}>Bayar di Awal</span>
                     <span className="text-[8px] text-muted-foreground">Invoice dibuat saat pemasangan</span>
                   </button>
                   <button type="button" onClick={() => setFirstInvoice('none')}
-                    className={`flex flex-col items-center gap-0.5 p-2.5 border-2 rounded-xl cursor-pointer transition-all text-center ${firstInvoice === 'none' ? 'border-border bg-muted' : 'border-border/40 bg-muted/30 hover:border-border'}`}>
+                    className={`flex flex-col items-center gap-0.5 p-2.5 border-2 rounded-xl cursor-pointer transition text-center ${firstInvoice === 'none' ? 'border-border bg-muted' : 'border-border/40 bg-muted/30 hover:border-border'}`}>
                     <span className="text-base"></span>
                     <span className="text-[9px] font-bold">Bayar Setelah Pemakaian</span>
                     <span className="text-[8px] text-muted-foreground">Dibuat otomatis oleh sistem</span>
@@ -491,7 +491,7 @@ export default function NewPppoeUserPage() {
                 </div>
                 {firstInvoice !== 'none' && formData.subscriptionType === 'POSTPAID' && (
                   <div className="grid grid-cols-2 gap-1.5">
-                    <label className={`flex flex-col items-center p-2 border-2 rounded-lg cursor-pointer transition-all text-center ${firstInvoice === 'prorate' ? 'border-emerald-500 bg-emerald-100 dark:bg-emerald-900/40' : 'border-border bg-background hover:border-emerald-400'}`}>
+                    <label className={`flex flex-col items-center p-2 border-2 rounded-lg cursor-pointer transition text-center ${firstInvoice === 'prorate' ? 'border-emerald-500 bg-emerald-100 dark:bg-emerald-900/40' : 'border-border bg-background hover:border-emerald-400'}`}>
                       <input type="radio" name="firstInvoice" value="prorate" checked={firstInvoice === 'prorate'} onChange={() => setFirstInvoice('prorate')} className="sr-only" />
                       <span className="text-sm"></span>
                       <span className={`text-[9px] font-bold ${firstInvoice === 'prorate' ? 'text-emerald-700 dark:text-emerald-300' : ''}`}>Prorate</span>
@@ -502,7 +502,7 @@ export default function NewPppoeUserPage() {
                         </>
                       ) : <span className="text-[8px] text-muted-foreground">Pilih paket dulu</span>}
                     </label>
-                    <label className={`flex flex-col items-center p-2 border-2 rounded-lg cursor-pointer transition-all text-center ${firstInvoice === 'full' ? 'border-primary bg-primary/10' : 'border-border bg-background hover:border-primary/50'}`}>
+                    <label className={`flex flex-col items-center p-2 border-2 rounded-lg cursor-pointer transition text-center ${firstInvoice === 'full' ? 'border-primary bg-primary/10' : 'border-border bg-background hover:border-primary/50'}`}>
                       <input type="radio" name="firstInvoice" value="full" checked={firstInvoice === 'full'} onChange={() => setFirstInvoice('full')} className="sr-only" />
                       <span className="text-sm">💰</span>
                       <span className={`text-[9px] font-bold ${firstInvoice === 'full' ? 'text-primary' : ''}`}>Sebulan Penuh</span>
@@ -520,7 +520,7 @@ export default function NewPppoeUserPage() {
               {/* Tipe Koneksi */}
               <div className="bg-card border border-border rounded-xl p-4 space-y-3">
                 <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Tipe Koneksi</p>
-                <div className={`rounded-xl border p-3 flex items-start gap-3 cursor-pointer transition-all select-none ${hasPppoeAccount ? 'border-primary/50 bg-primary/5' : 'border-amber-400/50 bg-amber-50 dark:bg-amber-950/20'}`}
+                <div className={`rounded-xl border p-3 flex items-start gap-3 cursor-pointer transition select-none ${hasPppoeAccount ? 'border-primary/50 bg-primary/5' : 'border-amber-400/50 bg-amber-50 dark:bg-amber-950/20'}`}
                   onClick={() => setHasPppoeAccount(!hasPppoeAccount)}>
                   <Toggle checked={hasPppoeAccount} onChange={setHasPppoeAccount} className="mt-0.5" />
                   <div>
@@ -674,7 +674,7 @@ export default function NewPppoeUserPage() {
         <div className="flex-1 flex justify-center gap-1.5">
           {STEPS.map((_, i) => (
             <button key={i} type="button" onClick={() => setWizardStep(i + 1)}
-              className={`h-2 rounded-full transition-all ${wizardStep === i + 1 ? 'bg-primary w-4' : i + 1 < wizardStep ? 'bg-emerald-500 w-2' : 'bg-border w-2'}`} />
+              className={`h-2 rounded-full transition ${wizardStep === i + 1 ? 'bg-primary w-4' : i + 1 < wizardStep ? 'bg-emerald-500 w-2' : 'bg-border w-2'}`} />
           ))}
         </div>
         {wizardStep < STEPS.length ? (

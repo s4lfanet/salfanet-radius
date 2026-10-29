@@ -234,7 +234,7 @@ export default function ODPsPage() {
           </div>
           <button
             onClick={() => { resetForm(); setEditingOdp(null); setIsDialogOpen(true); }}
-            className="inline-flex items-center px-4 py-2.5 text-sm font-bold bg-brand-500 text-black rounded-lg hover:bg-brand-500/90 transition-all  uppercase tracking-wide"
+            className="inline-flex items-center px-4 py-2.5 text-sm font-bold bg-brand-500 text-black rounded-lg hover:bg-brand-500/90 transition  uppercase tracking-wide"
           >
             <Plus className="h-4 w-4 mr-2" />
             {t('network.addOdp')}
@@ -576,10 +576,10 @@ export default function ODPsPage() {
               <div>
                 <ModalLabel required>{t('network.connectTo')}</ModalLabel>
                 <div className="flex gap-2 mb-2">
-                  <button type="button" onClick={() => setConnectionType('odc')} className={`flex-1 px-2 py-1.5 text-xs rounded-lg border transition-all ${connectionType === 'odc' ? 'bg-[#ff8c00]/20 border-[#ff8c00] text-[#ff8c00] ' : 'border-border hover:border-border'}`}>
+                  <button type="button" onClick={() => setConnectionType('odc')} className={`flex-1 px-2 py-1.5 text-xs rounded-lg border transition ${connectionType === 'odc' ? 'bg-[#ff8c00]/20 border-[#ff8c00] text-[#ff8c00] ' : 'border-border hover:border-border'}`}>
                     <HardDrive className="h-3 w-3 inline mr-1" /> {t('network.odcCabinet')}
                   </button>
-                  <button type="button" onClick={() => setConnectionType('odp')} className={`flex-1 px-2 py-1.5 text-xs rounded-lg border transition-all ${connectionType === 'odp' ? 'bg-brand-500/20 border-brand-500 text-brand-500 ' : 'border-border hover:border-border'}`}>
+                  <button type="button" onClick={() => setConnectionType('odp')} className={`flex-1 px-2 py-1.5 text-xs rounded-lg border transition ${connectionType === 'odp' ? 'bg-brand-500/20 border-brand-500 text-brand-500 ' : 'border-border hover:border-border'}`}>
                     <Box className="h-3 w-3 inline mr-1" /> {t('network.parentOdp')}
                   </button>
                 </div>

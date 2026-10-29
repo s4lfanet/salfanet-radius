@@ -446,7 +446,7 @@ export default function PushNotificationsPage() {
             {!loading && stats && stats.totalUsers > 0 && (
               <div className="mt-2.5">
                 <div className="w-full bg-purple-100 dark:bg-purple-900/30 rounded-full h-1.5">
-                  <div className="bg-purple-500 h-1.5 rounded-full transition-all" style={{ width: `${coveragePct}%` }} />
+                  <div className="bg-purple-500 h-1.5 rounded-full transition" style={{ width: `${coveragePct}%` }} />
                 </div>
               </div>
             )}
@@ -493,7 +493,7 @@ export default function PushNotificationsPage() {
                     <button
                       key={role.value}
                       onClick={() => handleRoleChange(role.value)}
-                      className={`flex flex-col items-center gap-2 p-3.5 rounded-xl border-2 transition-all duration-200
+                      className={`flex flex-col items-center gap-2 p-3.5 rounded-xl border-2 transition duration-200
                         ${active ? role.activeColor : `${role.color} hover:scale-[1.02]`}`}
                     >
                       <RoleIcon className="w-5 h-5" />
@@ -528,7 +528,7 @@ export default function PushNotificationsPage() {
                           onClick={() => {
                             setNotifType(nt.value);
                           }}
-                          className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200
+                          className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition duration-200
                             ${active ? nt.activeColor : `${nt.color} hover:scale-[1.02]`}`}
                         >
                           <Icon className="w-6 h-6" />
@@ -557,7 +557,7 @@ export default function PushNotificationsPage() {
                         <button
                           key={tpl.key}
                           onClick={() => applyTemplate(tpl.key)}
-                          className={`flex items-center gap-2 px-3 py-2.5 text-xs font-medium rounded-lg border transition-all duration-150 ${tpl.color}`}
+                          className={`flex items-center gap-2 px-3 py-2.5 text-xs font-medium rounded-lg border transition duration-150 ${tpl.color}`}
                         >
                           <Icon className="w-3.5 h-3.5 flex-shrink-0" />
                           {tpl.label}
@@ -694,7 +694,7 @@ export default function PushNotificationsPage() {
                           <div className="pt-1.5">
                             <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                               <div
-                                className="bg-gradient-to-r from-emerald-400 to-emerald-500 h-2 rounded-full transition-all"
+                                className="bg-gradient-to-r from-emerald-400 to-emerald-500 h-2 rounded-full transition"
                                 style={{ width: `${coveragePct}%` }}
                               />
                             </div>

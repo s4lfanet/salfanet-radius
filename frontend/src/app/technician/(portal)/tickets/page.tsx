@@ -316,7 +316,7 @@ export default function TechnicianTicketsPage() {
         <button
           onClick={loadTickets}
           disabled={loading}
-          className="flex items-center gap-2 px-3 py-2 text-xs font-semibold bg-slate-100 dark:bg-primary/10 hover:bg-slate-200 dark:hover:bg-primary/10 text-foreground border border-border rounded-xl transition-all"
+          className="flex items-center gap-2 px-3 py-2 text-xs font-semibold bg-slate-100 dark:bg-primary/10 hover:bg-slate-200 dark:hover:bg-primary/10 text-foreground border border-border rounded-xl transition"
         >
           <RefreshCcw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           {t('techPortal.refresh')}
@@ -443,7 +443,7 @@ export default function TechnicianTicketsPage() {
                     {/* Lihat Detail button */}
                     <button
                       onClick={() => openDetail(ticket)}
-                      className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold bg-brand-500/10 hover:bg-brand-500/20 text-[#00aabb] dark:text-brand-500 border border-brand-500/30 rounded-xl transition-all"
+                      className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold bg-brand-500/10 hover:bg-brand-500/20 text-[#00aabb] dark:text-brand-500 border border-brand-500/30 rounded-xl transition"
                     >
                       <Eye className="w-3.5 h-3.5" />
                       <span className="hidden sm:inline">Lihat Detail</span>
@@ -456,7 +456,7 @@ export default function TechnicianTicketsPage() {
                       <button
                         onClick={() => doAction(ticket.id, 'claim')}
                         disabled={!!isLoading}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-primary/10 hover:bg-primary/10 text-primary border border-border rounded-xl transition-all disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-primary/10 hover:bg-primary/10 text-primary border border-border rounded-xl transition disabled:opacity-50"
                       >
                         {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
                         {t('techPortal.claimTicket')}
@@ -467,14 +467,14 @@ export default function TechnicianTicketsPage() {
                         <button
                           onClick={() => doAction(ticket.id, 'update_status', { status: 'WAITING_CUSTOMER' })}
                           disabled={!!isLoading}
-                          className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-purple-50 dark:bg-primary/10 hover:bg-purple-100 dark:hover:bg-primary/10 text-purple-600 dark:text-primary border border-purple-200 dark:border-border rounded-xl transition-all disabled:opacity-50"
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-purple-50 dark:bg-primary/10 hover:bg-purple-100 dark:hover:bg-primary/10 text-purple-600 dark:text-primary border border-purple-200 dark:border-border rounded-xl transition disabled:opacity-50"
                         >
                           <Clock className="w-3 h-3" />{t('techPortal.waitingCustomer')}
                         </button>
                         <button
                           onClick={() => doAction(ticket.id, 'update_status', { status: 'RESOLVED' })}
                           disabled={!!isLoading}
-                          className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-green-50 dark:bg-green-500/10 hover:bg-green-100 dark:hover:bg-green-500/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-500/30 rounded-xl transition-all disabled:opacity-50"
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-green-50 dark:bg-green-500/10 hover:bg-green-100 dark:hover:bg-green-500/20 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-500/30 rounded-xl transition disabled:opacity-50"
                         >
                           <CheckCircle2 className="w-3 h-3" />{t('techPortal.markDone')}
                         </button>
@@ -484,7 +484,7 @@ export default function TechnicianTicketsPage() {
                       <button
                         onClick={() => doAction(ticket.id, 'update_status', { status: 'IN_PROGRESS' })}
                         disabled={!!isLoading}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-brand-500 border border-cyan-200 dark:border-brand-500/30 rounded-xl transition-all disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-brand-500 border border-cyan-200 dark:border-brand-500/30 rounded-xl transition disabled:opacity-50"
                       >
                         <Play className="w-3 h-3" />Lanjutkan
                       </button>
@@ -492,7 +492,7 @@ export default function TechnicianTicketsPage() {
                     {ticket.status !== 'CLOSED' && (
                       <button
                         onClick={() => openDetail(ticket)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-muted/50 hover:bg-slate-200 dark:hover:bg-slate-700 text-muted-foreground border border-border rounded-xl transition-all"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-muted/50 hover:bg-slate-200 dark:hover:bg-slate-700 text-muted-foreground border border-border rounded-xl transition"
                       >
                         <MessageSquare className="w-3 h-3" />{t('techPortal.replyTicket')}
                       </button>
@@ -602,7 +602,7 @@ export default function TechnicianTicketsPage() {
                         <button
                           onClick={() => doAction(detailTicket.id, 'claim')}
                           disabled={!!actionLoading}
-                          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold bg-primary/10 hover:bg-primary/10 text-primary border border-border rounded-xl transition-all disabled:opacity-50"
+                          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold bg-primary/10 hover:bg-primary/10 text-primary border border-border rounded-xl transition disabled:opacity-50"
                         >
                           {actionLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
                           Ambil Tiket (Klaim)
@@ -613,14 +613,14 @@ export default function TechnicianTicketsPage() {
                           <button
                             onClick={() => doAction(detailTicket.id, 'update_status', { status: 'WAITING_CUSTOMER' })}
                             disabled={!!actionLoading}
-                            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold bg-purple-50 dark:bg-primary/10 text-purple-600 dark:text-primary border border-purple-200 dark:border-border rounded-xl transition-all disabled:opacity-50"
+                            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold bg-purple-50 dark:bg-primary/10 text-purple-600 dark:text-primary border border-purple-200 dark:border-border rounded-xl transition disabled:opacity-50"
                           >
                             <Clock className="w-3 h-3" />Menunggu Pelanggan
                           </button>
                           <button
                             onClick={() => doAction(detailTicket.id, 'update_status', { status: 'RESOLVED' })}
                             disabled={!!actionLoading}
-                            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-500/30 rounded-xl transition-all disabled:opacity-50"
+                            className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 border border-green-200 dark:border-green-500/30 rounded-xl transition disabled:opacity-50"
                           >
                             <CheckCircle2 className="w-3 h-3" />Tandai Selesai
                           </button>
@@ -630,7 +630,7 @@ export default function TechnicianTicketsPage() {
                         <button
                           onClick={() => doAction(detailTicket.id, 'update_status', { status: 'IN_PROGRESS' })}
                           disabled={!!actionLoading}
-                          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-brand-500 border border-cyan-200 dark:border-brand-500/30 rounded-xl transition-all disabled:opacity-50"
+                          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold bg-cyan-50 dark:bg-cyan-500/10 text-cyan-600 dark:text-brand-500 border border-cyan-200 dark:border-brand-500/30 rounded-xl transition disabled:opacity-50"
                         >
                           <Play className="w-3 h-3" />Lanjutkan Pengerjaan
                         </button>
@@ -639,7 +639,7 @@ export default function TechnicianTicketsPage() {
                         <button
                           onClick={() => doAction(detailTicket.id, 'update_status', { status: 'CLOSED' })}
                           disabled={!!actionLoading}
-                          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold bg-muted/50 text-muted-foreground border border-border rounded-xl transition-all disabled:opacity-50"
+                          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold bg-muted/50 text-muted-foreground border border-border rounded-xl transition disabled:opacity-50"
                         >
                           <X className="w-3 h-3" />Tutup Tiket
                         </button>

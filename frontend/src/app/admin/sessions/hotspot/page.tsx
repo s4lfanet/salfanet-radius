@@ -250,11 +250,11 @@ export default function HotspotSessionsPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition">
             <p className="text-xs text-brand-500 uppercase tracking-wide">{t('sessions.activeSessions')}</p>
             <p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{stats?.hotspot || 0}</p>
           </div>
-          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition">
             <p className="text-xs text-brand-500 uppercase tracking-wide">{t('sessions.router')}</p>
             <p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{routers.length || '-'}</p>
           </div>

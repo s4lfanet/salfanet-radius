@@ -229,7 +229,7 @@ export default function StoppedSubscriptionsPage() {
       <div className="flex flex-wrap gap-2">
         <button 
           onClick={handleExport} 
-          className="px-3 py-1.5 text-xs bg-accent hover:bg-accent/90 text-black font-bold rounded-lg flex items-center gap-1.5  hover: transition-all border border-accent/50"
+          className="px-3 py-1.5 text-xs bg-accent hover:bg-accent/90 text-black font-bold rounded-lg flex items-center gap-1.5  hover: transition border border-accent/50"
         >
           <FileText className="h-3 w-3" />
           {t('pppoe.export')}
@@ -237,7 +237,7 @@ export default function StoppedSubscriptionsPage() {
         <button 
           onClick={handleBulkDelete} 
           disabled={selectedUsers.size === 0} 
-          className="px-3 py-1.5 text-xs bg-destructive hover:bg-destructive/90 text-white font-bold rounded-lg flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed  hover: transition-all border border-destructive/50 disabled:shadow-none"
+          className="px-3 py-1.5 text-xs bg-destructive hover:bg-destructive/90 text-white font-bold rounded-lg flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed  hover: transition border border-destructive/50 disabled:shadow-none"
         >
           <Trash2 className="h-3 w-3" />
           {t('pppoe.delete')}
@@ -326,14 +326,14 @@ export default function StoppedSubscriptionsPage() {
                 <div className="flex items-center gap-2 pt-2 border-t border-border">
                   <button
                     onClick={() => handleReactivate(user.id)}
-                    className="p-2 text-success hover:bg-success/20 rounded border border-transparent hover:border-success/40 transition-all"
+                    className="p-2 text-success hover:bg-success/20 rounded border border-transparent hover:border-success/40 transition"
                     title={t('pppoe.reactivate')}
                   >
                     <Shield className="h-4 w-4 drop-" />
                   </button>
                   <button
                     onClick={() => handleDeleteClick(user.id)}
-                    className="p-2 text-destructive hover:bg-destructive/20 rounded border border-transparent hover:border-destructive/40 transition-all"
+                    className="p-2 text-destructive hover:bg-destructive/20 rounded border border-transparent hover:border-destructive/40 transition"
                     title={t('pppoe.permanentDelete')}
                   >
                     <Trash2 className="h-4 w-4 drop-" />
@@ -426,14 +426,14 @@ export default function StoppedSubscriptionsPage() {
                       <div className="flex justify-end gap-1">
                         <button 
                           onClick={() => handleReactivate(user.id)} 
-                          className="p-1 text-success hover:bg-success/20 rounded border border-transparent hover:border-success/40 transition-all"
+                          className="p-1 text-success hover:bg-success/20 rounded border border-transparent hover:border-success/40 transition"
                           title={t('pppoe.reactivate')}
                         >
                           <Shield className="h-3 w-3 drop-" />
                         </button>
                         <button 
                           onClick={() => handleDeleteClick(user.id)} 
-                          className="p-1 text-destructive hover:bg-destructive/20 rounded border border-transparent hover:border-destructive/40 transition-all"
+                          className="p-1 text-destructive hover:bg-destructive/20 rounded border border-transparent hover:border-destructive/40 transition"
                           title={t('pppoe.permanentDelete')}
                         >
                           <Trash2 className="h-3 w-3 drop-" />

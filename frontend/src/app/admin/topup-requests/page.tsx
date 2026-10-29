@@ -129,7 +129,7 @@ export default function TopUpRequestsPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <button
           onClick={() => setFilter('PENDING')}
-          className={`bg-card border-2 rounded-lg p-4 transition-all ${
+          className={`bg-card border-2 rounded-lg p-4 transition ${
             filter === 'PENDING' ? 'border-warning' : 'border-border hover:border-warning/50'
           }`}
         >
@@ -142,7 +142,7 @@ export default function TopUpRequestsPage() {
 
         <button
           onClick={() => setFilter('SUCCESS')}
-          className={`bg-card border-2 rounded-lg p-4 transition-all ${
+          className={`bg-card border-2 rounded-lg p-4 transition ${
             filter === 'SUCCESS' ? 'border-success' : 'border-border hover:border-success/50'
           }`}
         >
@@ -155,7 +155,7 @@ export default function TopUpRequestsPage() {
 
         <button
           onClick={() => setFilter('FAILED')}
-          className={`bg-card border-2 rounded-lg p-4 transition-all ${
+          className={`bg-card border-2 rounded-lg p-4 transition ${
             filter === 'FAILED' ? 'border-destructive' : 'border-border hover:border-destructive/50'
           }`}
         >
@@ -168,7 +168,7 @@ export default function TopUpRequestsPage() {
 
         <button
           onClick={() => setFilter('ALL')}
-          className={`bg-card border-2 rounded-lg p-4 transition-all ${
+          className={`bg-card border-2 rounded-lg p-4 transition ${
             filter === 'ALL' ? 'border-primary' : 'border-border hover:border-primary/50'
           }`}
         >

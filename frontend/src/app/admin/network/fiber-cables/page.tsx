@@ -495,7 +495,7 @@ export default function FiberCablesPage() {
                         key={preset.label}
                         type="button"
                         onClick={() => handlePresetChange(preset)}
-                        className={`p-2 rounded-lg border-2 text-center transition-all ${
+                        className={`p-2 rounded-lg border-2 text-center transition ${
                           isActive 
                             ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                             : 'border-border hover:border-gray-300'

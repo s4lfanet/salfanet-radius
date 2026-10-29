@@ -194,7 +194,7 @@ export function OTBDiagramV2({
               <div
                 key={tube.id}
                 className={cn(
-                  'p-2 rounded-lg border-2 cursor-pointer transition-all',
+                  'p-2 rounded-lg border-2 cursor-pointer transition',
                   selectedTube === tube.tubeNumber 
                     ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20' 
                     : 'hover:border-gray-300 dark:hover:border-gray-600'
@@ -227,7 +227,7 @@ export function OTBDiagramV2({
                     <div
                       key={core.id}
                       className={cn(
-                        'w-3 h-3 rounded-sm cursor-pointer transition-all',
+                        'w-3 h-3 rounded-sm cursor-pointer transition',
                         highlightPath.includes(core.id) && 'ring-2 ring-yellow-400 animate-pulse',
                         selectedCore === core.id && 'ring-2 ring-primary'
                       )}

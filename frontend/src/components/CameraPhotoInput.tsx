@@ -334,7 +334,7 @@ export function CameraPhotoInput({
           {/* Gallery - opens file picker */}
           <label
             htmlFor={galleryId}
-            className={`flex flex-col items-center justify-center gap-1 w-full py-3 rounded-xl border-2 border-dashed transition-all text-[11px] cursor-pointer ${
+            className={`flex flex-col items-center justify-center gap-1 w-full py-3 rounded-xl border-2 border-dashed transition text-[11px] cursor-pointer ${
               isDark
                 ? 'border-[#bc13fe]/40 text-[#e0d0ff]/60 bg-[#0a0520] hover:border-[#bc13fe]/70 hover:text-[#e0d0ff]/90'
                 : 'border-border dark:border-[#bc13fe]/40 text-muted-foreground dark:text-[#e0d0ff]/60 hover:bg-muted dark:hover:bg-[#bc13fe]/10'
@@ -347,7 +347,7 @@ export function CameraPhotoInput({
           <button
             type="button"
             onClick={() => startCamera()}
-            className={`flex flex-col items-center justify-center gap-1 w-full py-3 rounded-xl border-2 border-dashed transition-all text-[11px] cursor-pointer ${
+            className={`flex flex-col items-center justify-center gap-1 w-full py-3 rounded-xl border-2 border-dashed transition text-[11px] cursor-pointer ${
               isDark
                 ? 'border-[#00f7ff]/40 text-[#00f7ff]/70 bg-[#0a0520] hover:border-[#00f7ff]/70 hover:text-[#00f7ff]'
                 : 'border-primary/40 dark:border-[#00f7ff]/40 text-primary/70 dark:text-[#00f7ff]/70 hover:bg-primary/5 dark:hover:bg-[#00f7ff]/10'

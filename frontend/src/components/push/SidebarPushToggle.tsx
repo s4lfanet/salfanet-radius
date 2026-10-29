@@ -73,7 +73,7 @@ export function PushToggleRow({ on, denied, reason, loading, error, onToggle }: 
             : 'Klik untuk aktifkan notifikasi push'
         }
         className={cn(
-          'w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold rounded-xl transition-all duration-300 border',
+          'w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold rounded-xl transition duration-300 border',
           on
             ? 'text-brand-500 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/[0.12] border-brand-200 dark:border-brand-500/30 shadow-sm'
             : denied
@@ -83,7 +83,7 @@ export function PushToggleRow({ on, denied, reason, loading, error, onToggle }: 
       >
         <span
           className={cn(
-            'p-1.5 rounded-lg flex-shrink-0 flex items-center justify-center transition-all duration-300',
+            'p-1.5 rounded-lg flex-shrink-0 flex items-center justify-center transition duration-300',
             on ? 'text-brand-500 dark:text-brand-400 bg-brand-100 dark:bg-brand-500/20' : 'text-gray-400 dark:text-gray-500',
           )}
         >
@@ -100,7 +100,7 @@ export function PushToggleRow({ on, denied, reason, loading, error, onToggle }: 
         </span>
         <span
           className={cn(
-            'relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 transition-all duration-300',
+            'relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 transition duration-300',
             on
               ? 'border-sidebar-primary bg-sidebar-primary'
               : 'border-sidebar-foreground/20 bg-sidebar-foreground/10',

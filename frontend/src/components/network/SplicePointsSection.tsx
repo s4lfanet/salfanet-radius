@@ -495,7 +495,7 @@ export default function SplicePointsSection({
                           key={type.value}
                           type="button"
                           onClick={() => setFormData(prev => ({ ...prev, spliceType: type.value }))}
-                          className={`flex-1 p-2 rounded-lg border-2 transition-all text-center ${
+                          className={`flex-1 p-2 rounded-lg border-2 transition text-center ${
                             isActive 
                               ? `border-${type.color}-500 bg-${type.color}-50 dark:bg-${type.color}-900/20`
                               : 'border-border hover:border-gray-300'

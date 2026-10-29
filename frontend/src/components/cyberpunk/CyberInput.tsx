@@ -102,7 +102,7 @@ const CyberInput = React.forwardRef<HTMLInputElement, CyberInputProps>(
               'w-full h-11 px-4 rounded-lg text-sm text-foreground',
               'placeholder:text-muted-foreground/50',
               'border-2 outline-none',
-              'transition-all duration-300',
+              'transition duration-300',
               // Disabled state
               'disabled:opacity-50 disabled:cursor-not-allowed',
               // Error state
@@ -126,7 +126,7 @@ const CyberInput = React.forwardRef<HTMLInputElement, CyberInputProps>(
           )}
           {/* Animated focus line */}
           <div className={cn(
-            'absolute bottom-0 left-1/2 h-0.5 bg-gradient-to-r transition-all duration-300',
+            'absolute bottom-0 left-1/2 h-0.5 bg-gradient-to-r transition duration-300',
             isFocused ? 'w-full -translate-x-1/2' : 'w-0 -translate-x-1/2',
             neonColor === 'cyan' && 'from-brand-400 via-brand-500 to-cyan-400',
             neonColor === 'magenta' && 'from-pink-400 via-pink-500 to-pink-400',
@@ -198,7 +198,7 @@ const CyberTextarea = React.forwardRef<HTMLTextAreaElement, CyberTextareaProps>(
             'placeholder:text-muted-foreground/50',
             'border-2 outline-none',
             'bg-background/50 backdrop-blur-sm',
-            'transition-all duration-300',
+            'transition duration-300',
             'disabled:opacity-50 disabled:cursor-not-allowed',
             'resize-none',
             colorMap[neonColor].border,
@@ -268,7 +268,7 @@ const CyberSelect = React.forwardRef<HTMLSelectElement, CyberSelectProps>(
             'w-full h-11 px-4 rounded-lg text-sm text-foreground',
             'border-2 outline-none',
             'bg-background/50 backdrop-blur-sm',
-            'transition-all duration-300',
+            'transition duration-300',
             'cursor-pointer appearance-none',
             'disabled:opacity-50 disabled:cursor-not-allowed',
             colorMap[neonColor].border,

@@ -516,7 +516,7 @@ export default function RouterPage() {
               </div>
               <button
                 onClick={() => { setEditingRouter(null); resetForm(); setShowModal(true) }}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition-all duration-300 transform hover:scale-105"
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition duration-300 transform hover:scale-105"
               >
                 <Plus className="w-5 h-5" />
                 {t('network.addRouter')}
@@ -587,7 +587,7 @@ export default function RouterPage() {
 
           {/* Stats Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-border p-5 hover:border-border transition-all group">
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-border p-5 hover:border-border transition group">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-muted-foreground text-sm mb-1">{t('common.totalRouters')}</p>
@@ -599,7 +599,7 @@ export default function RouterPage() {
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-green-500/30 p-5 hover:border-green-500/50 transition-all group">
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-green-500/30 p-5 hover:border-green-500/50 transition group">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-muted-foreground text-sm mb-1">{t('network.online')}</p>
@@ -611,7 +611,7 @@ export default function RouterPage() {
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-brand-500/30 p-5 hover:border-brand-500/50 transition-all group">
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-brand-500/30 p-5 hover:border-brand-500/50 transition group">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-muted-foreground text-sm mb-1">MikroTik</p>
@@ -623,7 +623,7 @@ export default function RouterPage() {
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-border p-5 hover:border-border transition-all group">
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-border p-5 hover:border-border transition group">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-muted-foreground text-sm mb-1">{t('common.viaVpn')}</p>
@@ -648,7 +648,7 @@ export default function RouterPage() {
               </p>
               <button
                 onClick={() => { setEditingRouter(null); resetForm(); setShowModal(true) }}
-                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition-all duration-300 transform hover:scale-105"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition duration-300 transform hover:scale-105"
               >
                 <Plus className="w-5 h-5" />
                 {t('network.addFirstRouter')}
@@ -661,7 +661,7 @@ export default function RouterPage() {
                 return (
                   <div
                     key={routerData.id}
-                    className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 border border-border rounded-2xl overflow-hidden hover:border-brand-500/50 hover: transition-all duration-300 group"
+                    className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 border border-border rounded-2xl overflow-hidden hover:border-brand-500/50 hover: transition duration-300 group"
                   >
                     {/* Router Header */}
                     <div className="p-6 border-b border-border">
@@ -697,7 +697,7 @@ export default function RouterPage() {
                           <button
                             onClick={() => handleSetupRadius(routerData.id)}
                             disabled={settingUpRadius === routerData.id}
-                            className="p-2.5 bg-brand-500/10 border border-brand-500/30 text-brand-500 rounded-xl hover:bg-brand-500/20 transition-all disabled:opacity-50"
+                            className="p-2.5 bg-brand-500/10 border border-brand-500/30 text-brand-500 rounded-xl hover:bg-brand-500/20 transition disabled:opacity-50"
                             title="Setup RADIUS Client"
                           >
                             <Radio className="w-5 h-5" />
@@ -706,7 +706,7 @@ export default function RouterPage() {
                             <button
                               onClick={() => handleMigrateToRadius(routerData.id, routerData.name)}
                               disabled={migratingRouter === routerData.id}
-                              className="p-2.5 bg-amber-500/10 border border-amber-500/30 text-amber-500 rounded-xl hover:bg-amber-500/20 transition-all disabled:opacity-50"
+                              className="p-2.5 bg-amber-500/10 border border-amber-500/30 text-amber-500 rounded-xl hover:bg-amber-500/20 transition disabled:opacity-50"
                               title="Migrasi dari Local ke RADIUS Auth"
                             >
                               {migratingRouter === routerData.id ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRightCircle className="w-5 h-5" />}
@@ -715,21 +715,21 @@ export default function RouterPage() {
                           <button
                             onClick={() => handleBulkSyncRadius(routerData.id, routerData.name)}
                             disabled={syncingRadius === routerData.id}
-                            className="p-2.5 bg-cyan-500/10 border border-cyan-500/30 text-cyan-500 rounded-xl hover:bg-cyan-500/20 transition-all disabled:opacity-50"
+                            className="p-2.5 bg-cyan-500/10 border border-cyan-500/30 text-cyan-500 rounded-xl hover:bg-cyan-500/20 transition disabled:opacity-50"
                             title="Re-sync semua pelanggan ke RADIUS"
                           >
                             {syncingRadius === routerData.id ? <Loader2 className="w-5 h-5 animate-spin" /> : <RefreshCcw className="w-5 h-5" />}
                           </button>
                           <button
                             onClick={() => handleEdit(routerData)}
-                            className="p-2.5 bg-muted border border-border text-foreground rounded-xl hover:bg-accent transition-all"
+                            className="p-2.5 bg-muted border border-border text-foreground rounded-xl hover:bg-accent transition"
                             title="Edit Router"
                           >
                             <Edit className="w-5 h-5" />
                           </button>
                           <button
                             onClick={() => handleDelete(routerData.id, routerData.name)}
-                            className="p-2.5 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl hover:bg-red-500/20 transition-all"
+                            className="p-2.5 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl hover:bg-red-500/20 transition"
                             title="Hapus Router"
                           >
                             <Trash2 className="w-5 h-5" />
@@ -837,7 +837,7 @@ export default function RouterPage() {
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all"
+                    className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition"
                     placeholder={t('network.mainRouterPlaceholder')}
                     required
                   />
@@ -849,7 +849,7 @@ export default function RouterPage() {
                   <select
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                    className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all"
+                    className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition"
                     required
                   >
                     <option value="mikrotik" className="bg-background dark:bg-slate-800">{t('network.mikrotikRouter')}</option>
@@ -865,7 +865,7 @@ export default function RouterPage() {
                   <select
                     value={formData.authMode}
                     onChange={(e) => setFormData({ ...formData, authMode: e.target.value })}
-                    className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all"
+                    className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition"
                     required
                   >
                     <option value="radius" className="bg-background dark:bg-slate-800">RADIUS Only - Semua auth via FreeRADIUS</option>
@@ -904,7 +904,7 @@ export default function RouterPage() {
                     <select
                       value={formData.vpnClientId}
                       onChange={(e) => handleVpnClientChange(e.target.value)}
-                      className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all"
+                      className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition"
                       required={useVpnClient}
                     >
                       <option value="" className="bg-background dark:bg-slate-800">{t('network.selectVpnClient')}</option>
@@ -924,7 +924,7 @@ export default function RouterPage() {
                     type="text"
                     value={formData.ipAddress}
                     onChange={(e) => setFormData({ ...formData, ipAddress: e.target.value, nasname: e.target.value })}
-                    className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all disabled:opacity-50"
+                    className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition disabled:opacity-50"
                     placeholder="192.168.88.1"
                     required
                     disabled={useVpnClient && !!formData.vpnClientId}
@@ -939,7 +939,7 @@ export default function RouterPage() {
                     type="number"
                     value={formData.port}
                     onChange={(e) => setFormData({ ...formData, port: e.target.value })}
-                    className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all"
+                    className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition"
                     placeholder="8728"
                   />
                 </div>
@@ -954,7 +954,7 @@ export default function RouterPage() {
                         type="text"
                         value={formData.username}
                         onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                        className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all"
+                        className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition"
                         placeholder="admin"
                         required
                       />
@@ -965,7 +965,7 @@ export default function RouterPage() {
                         type="password"
                         value={formData.password}
                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all"
+                        className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition"
                         placeholder="********"
                         required={!editingRouter}
                       />
@@ -981,13 +981,13 @@ export default function RouterPage() {
                       type="text"
                       value={formData.secret}
                       readOnly
-                      className="flex-1 px-4 py-3 bg-input border border-border rounded-xl text-foreground font-mono text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all cursor-not-allowed opacity-80"
+                      className="flex-1 px-4 py-3 bg-input border border-border rounded-xl text-foreground font-mono text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition cursor-not-allowed opacity-80"
                       placeholder="Auto-generated"
                     />
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, secret: generateSecret() })}
-                      className="px-4 py-3 bg-primary/10 border border-border text-primary rounded-xl hover:bg-primary/10 transition-all font-medium whitespace-nowrap truncate overflow-hidden"
+                      className="px-4 py-3 bg-primary/10 border border-border text-primary rounded-xl hover:bg-primary/10 transition font-medium whitespace-nowrap truncate overflow-hidden"
                       title="Generate new secret"
                     >
                       <RefreshCw className="w-4 h-4" />
@@ -1005,7 +1005,7 @@ export default function RouterPage() {
                         type="button"
                         onClick={handleTestConnection}
                         disabled={testing}
-                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-lg hover: transition-all disabled:opacity-50 text-sm"
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-lg hover: transition disabled:opacity-50 text-sm"
                       >
                         {testing ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
                         {testing ? t('network.testing') : t('common.test')}
@@ -1032,14 +1032,14 @@ export default function RouterPage() {
                   <button
                     type="button"
                     onClick={() => { setShowModal(false); setEditingRouter(null); resetForm() }}
-                    className="flex-1 px-4 py-3 bg-muted border border-border text-foreground rounded-xl hover:bg-accent transition-all font-medium"
+                    className="flex-1 px-4 py-3 bg-muted border border-border text-foreground rounded-xl hover:bg-accent transition font-medium"
                   >
                     {t('common.cancel')}
                   </button>
                   <button
                     type="submit"
                     disabled={creating}
-                    className="flex-1 px-4 py-3 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition-all disabled:opacity-50"
+                    className="flex-1 px-4 py-3 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover: transition disabled:opacity-50"
                   >
                     {creating ? t('common.saving') : (editingRouter ? t('network.updateRouter') : t('network.addRouter'))}
                   </button>

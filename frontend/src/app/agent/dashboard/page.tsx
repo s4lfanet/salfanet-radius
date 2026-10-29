@@ -813,7 +813,7 @@ export default function AgentDashboardPage() {
           <button
             onClick={handleGenerate}
             disabled={generating || !selectedProfile}
-            className="mt-4 w-full flex items-center justify-center px-4 py-3 bg-gradient-to-r from-primary to-cyan-600 hover:from-violet-700 hover:to-cyan-700 text-white text-sm font-bold rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+            className="mt-4 w-full flex items-center justify-center px-4 py-3 bg-gradient-to-r from-primary to-cyan-600 hover:from-violet-700 hover:to-cyan-700 text-white text-sm font-bold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
           >
             {generating ? (
               <>
@@ -1008,7 +1008,7 @@ export default function AgentDashboardPage() {
                           {paymentMethods.map((method) => (
                             <label
                               key={method.code}
-                              className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                              className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition ${
                                 depositPaymentMethod === method.code
                                   ? 'border-cyan-500 dark:border-cyan-400 bg-cyan-50 dark:bg-cyan-500/10'
                                   : 'border-border bg-card hover:bg-accent'

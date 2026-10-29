@@ -172,7 +172,7 @@ export default function CustomerLoginPage() {
         {/* Theme Toggle */}
         <button
           onClick={toggleTheme}
-          className="absolute top-4 right-4 p-2 rounded-xl border border-border bg-muted hover:bg-muted/80 text-muted-foreground transition-all shadow-sm"
+          className="absolute top-4 right-4 p-2 rounded-xl border border-border bg-muted hover:bg-muted/80 text-muted-foreground transition shadow-sm"
           title={isDark ? 'Mode Terang' : 'Mode Gelap'}
         >
           {isDark ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-slate-500" />}
@@ -197,7 +197,7 @@ export default function CustomerLoginPage() {
 
           {step === 'phone' ? (
             <form onSubmit={handleSendOTP} className="space-y-4">
-              <div className="flex rounded-lg overflow-hidden border border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+              <div className="flex rounded-lg overflow-hidden border border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition">
                 <div className="bg-primary px-4 flex items-center justify-center flex-shrink-0">
                   <Smartphone className="w-5 h-5 text-white" />
                 </div>
@@ -218,7 +218,7 @@ export default function CustomerLoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground text-sm font-semibold rounded-lg transition-all shadow-sm flex items-center justify-center gap-2"
+                className="w-full py-3 bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground text-sm font-semibold rounded-lg transition shadow-sm flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <><Loader2 className="w-4 h-4 animate-spin" />Memproses...</>
@@ -253,7 +253,7 @@ export default function CustomerLoginPage() {
                     }
                   }}
                   disabled={loading}
-                  className="w-full py-3 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition flex items-center justify-center gap-2"
                 >
                   Emergency Bypass (Tanpa OTP)
                 </button>
@@ -261,7 +261,7 @@ export default function CustomerLoginPage() {
             </form>
           ) : (
             <form onSubmit={handleVerifyOTP} className="space-y-4">
-              <div className="flex rounded-lg overflow-hidden border border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+              <div className="flex rounded-lg overflow-hidden border border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition">
                 <div className="bg-primary px-4 flex items-center justify-center flex-shrink-0">
                   <Lock className="w-5 h-5 text-white" />
                 </div>
@@ -287,14 +287,14 @@ export default function CustomerLoginPage() {
                   type="button"
                   onClick={handleBack}
                   disabled={loading}
-                  className="flex-1 py-3 bg-muted hover:bg-muted/80 disabled:opacity-50 text-foreground text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2"
+                  className="flex-1 py-3 bg-muted hover:bg-muted/80 disabled:opacity-50 text-foreground text-sm font-semibold rounded-lg transition flex items-center justify-center gap-2"
                 >
                   <ChevronLeft className="w-4 h-4" />Kembali
                 </button>
                 <button
                   type="submit"
                   disabled={loading || otp.length !== 6}
-                  className="flex-[2] py-3 bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2"
+                  className="flex-[2] py-3 bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground text-sm font-semibold rounded-lg transition flex items-center justify-center gap-2"
                 >
                   {loading ? <><Loader2 className="w-4 h-4 animate-spin" />Memverifikasi...</> : 'Verifikasi'}
                 </button>
@@ -319,14 +319,14 @@ export default function CustomerLoginPage() {
                 <button
                   type="button"
                   onClick={() => router.push('/daftar')}
-                  className="py-2.5 px-3 bg-muted hover:bg-primary/5 border border-border text-foreground text-xs font-medium rounded-lg transition-all"
+                  className="py-2.5 px-3 bg-muted hover:bg-primary/5 border border-border text-foreground text-xs font-medium rounded-lg transition"
                 >
                   Daftar Pelanggan
                 </button>
                 <button
                   type="button"
                   onClick={() => router.push('/agent')}
-                  className="py-2.5 px-3 bg-muted hover:bg-primary/5 border border-border text-foreground text-xs font-medium rounded-lg transition-all"
+                  className="py-2.5 px-3 bg-muted hover:bg-primary/5 border border-border text-foreground text-xs font-medium rounded-lg transition"
                 >
                   Daftar Agen
                 </button>
@@ -334,7 +334,7 @@ export default function CustomerLoginPage() {
               <button
                 type="button"
                 onClick={() => router.push('/evoucher')}
-                className="w-full mt-3 py-2.5 bg-muted hover:bg-primary/5 border border-border text-muted-foreground text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-2"
+                className="w-full mt-3 py-2.5 bg-muted hover:bg-primary/5 border border-border text-muted-foreground text-xs font-medium rounded-lg transition flex items-center justify-center gap-2"
               >
                 <Wifi className="w-4 h-4" />
                 Beli Voucher WiFi
@@ -346,7 +346,7 @@ export default function CustomerLoginPage() {
           {apk && (
             <a
               href={apk.url}
-              className="mt-5 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-semibold transition-all"
+              className="mt-5 flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg border border-primary/30 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-semibold transition"
             >
               <Download className="w-4 h-4" />
               Unduh Aplikasi Android

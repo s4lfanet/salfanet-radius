@@ -214,7 +214,7 @@ export default function LaporanPage() {
                 <button
                   key={t}
                   onClick={() => { setReportType(t); setStatus('all'); setLoaded(false); }}
-                  className={`px-3 py-2 rounded-lg text-xs font-bold transition-all border ${
+                  className={`px-3 py-2 rounded-lg text-xs font-bold transition border ${
                     reportType === t
                       ? 'bg-violet-500 border-violet-500 text-white '
                       : 'bg-muted/80 dark:bg-slate-900/80 border-border dark:border-slate-600 text-muted-foreground dark:text-slate-400 hover:border-border'
@@ -239,7 +239,7 @@ export default function LaporanPage() {
               type="date"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
-              className="w-full px-3 py-2.5 bg-input border border-border text-foreground rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all"
+              className="w-full px-3 py-2.5 bg-input border border-border text-foreground rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary/30 transition"
             />
           </div>
 
@@ -252,7 +252,7 @@ export default function LaporanPage() {
               type="date"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
-              className="w-full px-3 py-2.5 bg-input border border-border text-foreground rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all"
+              className="w-full px-3 py-2.5 bg-input border border-border text-foreground rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary/30 transition"
             />
           </div>
 
@@ -263,7 +263,7 @@ export default function LaporanPage() {
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className="w-full px-3 py-2.5 bg-input border border-border text-foreground rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all"
+                className="w-full px-3 py-2.5 bg-input border border-border text-foreground rounded-lg text-sm focus:border-primary focus:ring-1 focus:ring-primary/30 transition"
               >
                 {statusOptions.map(s => (
                   <option key={s.value} value={s.value}>{s.label}</option>
@@ -278,7 +278,7 @@ export default function LaporanPage() {
           <button
             onClick={fetchData}
             disabled={loading}
-            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-primary to-[#9b10d4] text-white text-sm font-bold rounded-xl hover: disabled:opacity-50 transition-all"
+            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-primary to-[#9b10d4] text-white text-sm font-bold rounded-xl hover: disabled:opacity-50 transition"
           >
             {loading
               ? <><Loader2 className="w-4 h-4 animate-spin" />{t('laporan.loading')}</>
@@ -291,7 +291,7 @@ export default function LaporanPage() {
               <button
                 onClick={exportExcel}
                 disabled={exporting !== null}
-                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white text-sm font-bold rounded-xl hover: disabled:opacity-50 transition-all"
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white text-sm font-bold rounded-xl hover: disabled:opacity-50 transition"
               >
                 {exporting === 'excel'
                   ? <><Loader2 className="w-4 h-4 animate-spin" />{t('laporan.exporting')}</>
@@ -302,7 +302,7 @@ export default function LaporanPage() {
               <button
                 onClick={exportPdf}
                 disabled={exporting !== null}
-                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 text-white text-sm font-bold rounded-xl hover: disabled:opacity-50 transition-all"
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 text-white text-sm font-bold rounded-xl hover: disabled:opacity-50 transition"
               >
                 {exporting === 'pdf'
                   ? <><Loader2 className="w-4 h-4 animate-spin" />{t('laporan.exporting')}</>

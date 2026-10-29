@@ -387,7 +387,7 @@ export default function AdminDashboard() {
             <button
               onClick={() => { dashboardQuery.refetch(); analyticsQuery.refetch(); newCustomersQuery.refetch(); paymentActivityQuery.refetch(); }}
               disabled={loading || analyticsLoading}
-              className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium bg-brand-500/10 border-2 border-brand-500/30 text-brand-500 rounded-lg hover:bg-brand-500/20 disabled:opacity-50 transition-all "
+              className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium bg-brand-500/10 border-2 border-brand-500/30 text-brand-500 rounded-lg hover:bg-brand-500/20 disabled:opacity-50 transition "
             >
               <RefreshCw className={`w-3.5 h-3.5 ${(loading || analyticsLoading) ? 'animate-spin' : ''}`} />
               {t('common.refresh')}
@@ -428,7 +428,7 @@ export default function AdminDashboard() {
                   </div>
                 </>
               );
-              const cls = 'relative bg-card/60 rounded-xl border border-white/10 p-3 hover:border-white/20 transition-all group overflow-hidden';
+              const cls = 'relative bg-card/60 rounded-xl border border-white/10 p-3 hover:border-white/20 transition group overflow-hidden';
               return card.href ? (
                 <a key={card.title} href={card.href} className={cls}>{inner}</a>
               ) : (

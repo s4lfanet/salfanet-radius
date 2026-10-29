@@ -287,11 +287,11 @@ function AddPppoeUserModal({ isOpen, onClose, onSuccess, profiles, routers, area
             <div>
               <ModalLabel required>{t('pppoe.subscriptionType')}</ModalLabel>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <label className={`flex items-center p-2 border-2 rounded-lg cursor-pointer transition-all ${formData.subscriptionType === 'POSTPAID' ? 'border-primary bg-primary/10 dark:border-brand-500 dark:bg-brand-500/10 dark:' : 'border-border hover:border-primary/50 dark:border-border dark:hover:border-brand-500/50'}`}>
+                <label className={`flex items-center p-2 border-2 rounded-lg cursor-pointer transition ${formData.subscriptionType === 'POSTPAID' ? 'border-primary bg-primary/10 dark:border-brand-500 dark:bg-brand-500/10 dark:' : 'border-border hover:border-primary/50 dark:border-border dark:hover:border-brand-500/50'}`}>
                   <input type="radio" name="subscriptionType" value="POSTPAID" checked={formData.subscriptionType === 'POSTPAID'} onChange={(e) => setFormData(prev => ({ ...prev, subscriptionType: e.target.value as 'POSTPAID' }))} className="w-3 h-3 accent-primary dark:text-brand-500 border-border dark:border-border focus:ring-primary dark:focus:ring-brand-500" />
                   <div className="ml-2 flex-1"><div className="text-[10px] font-medium text-foreground"><Calendar className="w-3 h-3 inline mr-0.5" />{t('pppoe.postpaid')}</div><div className="text-[9px] text-muted-foreground">{t('pppoe.fixedDueDate')}</div></div>
                 </label>
-                <label className={`flex items-center p-2 border-2 rounded-lg cursor-pointer transition-all ${formData.subscriptionType === 'PREPAID' ? 'border-primary bg-primary/10 dark:border-violet-500 dark:bg-primary/10 dark:' : 'border-border hover:border-primary/50 dark:border-border dark:hover:border-border'}`}>
+                <label className={`flex items-center p-2 border-2 rounded-lg cursor-pointer transition ${formData.subscriptionType === 'PREPAID' ? 'border-primary bg-primary/10 dark:border-violet-500 dark:bg-primary/10 dark:' : 'border-border hover:border-primary/50 dark:border-border dark:hover:border-border'}`}>
                   <input type="radio" name="subscriptionType" value="PREPAID" checked={formData.subscriptionType === 'PREPAID'} onChange={(e) => setFormData(prev => ({ ...prev, subscriptionType: e.target.value as 'PREPAID' }))} className="w-3 h-3 accent-primary dark:text-primary border-border dark:border-border focus:ring-primary dark:focus:ring-primary" />
                   <div className="ml-2 flex-1"><div className="text-[10px] font-medium text-foreground">{t('pppoe.prepaid')}</div><div className="text-[9px] text-muted-foreground">{t('pppoe.followsPayment')}</div></div>
                 </label>
@@ -1553,25 +1553,25 @@ export default function PppoeUsersPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
-          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition">
             <div className="flex items-center justify-between">
               <div className="min-w-0"><p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide">{t('pppoe.registrationsThisMonth')}</p><p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{registrationsThisMonth}</p></div>
               <UserPlus className="h-5 w-5 sm:h-8 sm:w-8 text-brand-500 drop- flex-shrink-0" />
             </div>
           </div>
-          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition">
             <div className="flex items-center justify-between">
               <div className="min-w-0"><p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide">{t('pppoe.renewalsThisMonth')}</p><p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{renewalsThisMonth}</p></div>
               <RefreshCw className="h-5 w-5 sm:h-8 sm:w-8 text-green-400 drop- flex-shrink-0" />
             </div>
           </div>
-          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition">
             <div className="flex items-center justify-between">
               <div className="min-w-0"><p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide">{t('pppoe.isolatedExpired')}</p><p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{isolatedExpired}</p></div>
               <Clock className="h-5 w-5 sm:h-8 sm:w-8 text-amber-400 drop- flex-shrink-0" />
             </div>
           </div>
-          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition">
             <div className="flex items-center justify-between">
               <div className="min-w-0"><p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide">{t('pppoe.blockedUsers')}</p><p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{blockedUsers}</p></div>
               <Ban className="h-5 w-5 sm:h-8 sm:w-8 text-red-400 drop-shadow-md shadow-red-500/40 flex-shrink-0" />
@@ -2126,7 +2126,7 @@ export default function PppoeUsersPage() {
             {/* File input */}
             <div>
               <ModalLabel required>{t('pppoe.selectFile')}</ModalLabel>
-              <input type="file" accept=".csv,.xlsx,.xls" onChange={handleImportFileChange} className="w-full px-3 py-2 text-xs bg-background dark:bg-card border border-border dark:border-border rounded-lg text-foreground file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-primary/20 dark:file:bg-primary/10 file:text-foreground hover:file:bg-primary/30 dark:hover:file:bg-primary/10 focus:border-primary dark:focus:border-brand-500 focus:ring-1 focus:ring-primary/30 dark:focus:ring-brand-500/30 transition-all" />
+              <input type="file" accept=".csv,.xlsx,.xls" onChange={handleImportFileChange} className="w-full px-3 py-2 text-xs bg-background dark:bg-card border border-border dark:border-border rounded-lg text-foreground file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-primary/20 dark:file:bg-primary/10 file:text-foreground hover:file:bg-primary/30 dark:hover:file:bg-primary/10 focus:border-primary dark:focus:border-brand-500 focus:ring-1 focus:ring-primary/30 dark:focus:ring-brand-500/30 transition" />
               <p className="text-[11px] text-muted-foreground mt-1">{t('pppoe.csvExcelFormat')}</p>
             </div>
 
@@ -2404,7 +2404,7 @@ export default function PppoeUsersPage() {
                 </ModalSelect>
               </div>
               <div className="flex items-end">
-                <button onClick={handleSyncAudit} disabled={!auditRouterId || auditLoading} className="w-full px-3 py-2 text-xs bg-blue-600 text-white hover:bg-blue-700 rounded-lg shadow-md disabled:opacity-50 flex items-center justify-center gap-2 transition-all">
+                <button onClick={handleSyncAudit} disabled={!auditRouterId || auditLoading} className="w-full px-3 py-2 text-xs bg-blue-600 text-white hover:bg-blue-700 rounded-lg shadow-md disabled:opacity-50 flex items-center justify-center gap-2 transition">
                   {auditLoading ? (<><RefreshCcw className="h-3 w-3 animate-spin" />Memeriksa...</>) : (<><Search className="h-3 w-3" />Mulai Audit</>)}
                 </button>
               </div>
@@ -2475,7 +2475,7 @@ export default function PppoeUsersPage() {
                       status_mismatch: <AlertTriangle className="h-3.5 w-3.5 text-primary" />,
                     };
                     return (
-                      <label key={fixKey} className={`flex items-start gap-2 p-2.5 border-l-4 rounded-r-lg cursor-pointer transition-all ${typeColors[diff.type] || 'border-l-gray-500'} ${isSelected ? 'ring-1 ring-primary' : ''}`}>
+                      <label key={fixKey} className={`flex items-start gap-2 p-2.5 border-l-4 rounded-r-lg cursor-pointer transition ${typeColors[diff.type] || 'border-l-gray-500'} ${isSelected ? 'ring-1 ring-primary' : ''}`}>
                         <input
                           type="checkbox"
                           checked={isSelected}
@@ -2568,7 +2568,7 @@ export default function PppoeUsersPage() {
                 </ModalSelect>
               </div>
             </div>
-            <button onClick={handleSyncPreview} disabled={!syncRouterId || syncLoading} className="w-full px-3 py-2 text-xs bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg shadow-md disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2 transition-all dark:bg-gradient-to-r dark:from-brand-500 dark:to-primary dark:hover:from-brand-500/80 dark:hover:to-primary/80 dark:text-white dark:">
+            <button onClick={handleSyncPreview} disabled={!syncRouterId || syncLoading} className="w-full px-3 py-2 text-xs bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg shadow-md disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2 transition dark:bg-gradient-to-r dark:from-brand-500 dark:to-primary dark:hover:from-brand-500/80 dark:hover:to-primary/80 dark:text-white dark:">
               {syncLoading ? (<><RefreshCcw className="h-3 w-3 animate-spin" />{t('pppoe.fetchingFromMikrotik')}</>) : (<><Search className="h-3 w-3" />{t('pppoe.previewSecrets')}</>)}
             </button>
             {syncPreview && (
@@ -2714,15 +2714,15 @@ export default function PppoeUsersPage() {
             <div>
               <ModalLabel className="flex items-center gap-1"><Bell className="h-3 w-3" />{t('pppoe.sendVia')}</ModalLabel>
               <div className="space-y-2 mt-2">
-                <label className={`flex items-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition-all ${broadcastData.notificationMethod === 'whatsapp' ? 'border-[#25D366] bg-[#25D366]/10 ' : 'border-border hover:border-[#25D366]/50'}`}>
+                <label className={`flex items-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition ${broadcastData.notificationMethod === 'whatsapp' ? 'border-[#25D366] bg-[#25D366]/10 ' : 'border-border hover:border-[#25D366]/50'}`}>
                   <input type="radio" value="whatsapp" checked={broadcastData.notificationMethod === 'whatsapp'} onChange={(e) => setBroadcastData({ ...broadcastData, notificationMethod: e.target.value })} className="w-3.5 h-3.5 accent-[#25D366]" />
                   <span className="text-xs text-foreground">{t('pppoe.whatsappOnly')}</span>
                 </label>
-                <label className={`flex items-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition-all ${broadcastData.notificationMethod === 'email' ? 'border-brand-500 bg-brand-500/10 ' : 'border-border hover:border-brand-500/50'}`}>
+                <label className={`flex items-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition ${broadcastData.notificationMethod === 'email' ? 'border-brand-500 bg-brand-500/10 ' : 'border-border hover:border-brand-500/50'}`}>
                   <input type="radio" value="email" checked={broadcastData.notificationMethod === 'email'} onChange={(e) => setBroadcastData({ ...broadcastData, notificationMethod: e.target.value })} className="w-3.5 h-3.5 accent-brand-500" />
                   <span className="text-xs text-foreground">{t('pppoe.emailOnly')}</span>
                 </label>
-                <label className={`flex items-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition-all ${broadcastData.notificationMethod === 'both' ? 'border-violet-500 bg-primary/10 ' : 'border-border hover:border-border'}`}>
+                <label className={`flex items-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition ${broadcastData.notificationMethod === 'both' ? 'border-violet-500 bg-primary/10 ' : 'border-border hover:border-border'}`}>
                   <input type="radio" value="both" checked={broadcastData.notificationMethod === 'both'} onChange={(e) => setBroadcastData({ ...broadcastData, notificationMethod: e.target.value })} className="w-3.5 h-3.5 accent-violet-500" />
                   <span className="text-xs text-foreground">{t('pppoe.whatsappAndEmail')}</span>
                 </label>

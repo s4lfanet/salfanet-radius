@@ -299,7 +299,7 @@ export default function UpgradePackagePage() {
                     key={pkg.id}
                     onClick={() => !isCurrentPackage && setSelectedPackage(pkg.id)}
                     disabled={isCurrentPackage}
-                    className={`relative text-left p-4 rounded-xl border-2 transition-all duration-200 overflow-hidden ${
+                    className={`relative text-left p-4 rounded-xl border-2 transition duration-200 overflow-hidden ${
                       isCurrentPackage
                       ? 'border-slate-600/30 bg-muted/30 dark:bg-slate-800/30 opacity-50 cursor-not-allowed'
                           : isSelected
@@ -365,7 +365,7 @@ export default function UpgradePackagePage() {
                   <button
                     key={gateway.id}
                     onClick={() => setSelectedGateway(gateway.provider)}
-                    className={`w-full text-left p-3.5 rounded-xl border-2 transition-all ${
+                    className={`w-full text-left p-3.5 rounded-xl border-2 transition ${
                       selectedGateway === gateway.provider
                         ? 'border-brand-500 bg-brand-500/10 '
                         : 'border-border bg-background/50 dark:bg-slate-900/50 hover:border-brand-500/40'

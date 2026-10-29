@@ -260,7 +260,7 @@ export default function CustomerInvoicesPage() {
         <button
           onClick={() => { setRefreshing(true); fetchInvoices(currentPage.current, statusFilter); }}
           disabled={refreshing || loading}
-          className="p-2 rounded-xl border border-cyan-500/30 hover:bg-cyan-500/10 transition-all disabled:opacity-50"
+          className="p-2 rounded-xl border border-cyan-500/30 hover:bg-cyan-500/10 transition disabled:opacity-50"
         >
           <RefreshCw className={`w-4 h-4 text-cyan-400 ${refreshing ? 'animate-spin' : ''}`} />
         </button>
@@ -275,7 +275,7 @@ export default function CustomerInvoicesPage() {
             <button
               key={tab.key}
               onClick={() => setStatusFilter(tab.key)}
-              className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
+              className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition border ${
                 active
                   ? 'bg-cyan-500/15 text-cyan-400 border-cyan-500/40 '
                   : 'text-slate-400 border-slate-700/50 hover:border-slate-600 hover:text-slate-300'
@@ -401,7 +401,7 @@ export default function CustomerInvoicesPage() {
                     {inv.status === 'PAID' && (
                       <button
                         onClick={() => setPrintDialogInvoice(inv)}
-                        className="flex items-center justify-center gap-1 px-2.5 py-1 rounded-lg border border-slate-700/50 hover:border-slate-600 text-slate-400 hover:text-slate-300 transition-all text-xs"
+                        className="flex items-center justify-center gap-1 px-2.5 py-1 rounded-lg border border-slate-700/50 hover:border-slate-600 text-slate-400 hover:text-slate-300 transition text-xs"
                         title="Pilih Jenis Print"
                       >
                         <Printer className="w-3.5 h-3.5" />
@@ -512,7 +512,7 @@ export default function CustomerInvoicesPage() {
                           setSelectedAdminBank(acc === selectedAdminBank ? null : acc);
                           setManualForm(f => ({ ...f, bankName: acc === selectedAdminBank ? '' : acc.bankName }));
                         }}
-                        className={`w-full flex items-center justify-between p-3 rounded-xl border-2 transition-all text-left ${
+                        className={`w-full flex items-center justify-between p-3 rounded-xl border-2 transition text-left ${
                           selectedAdminBank === acc
                             ? 'border-purple-400 bg-primary/10'
                             : 'border-border/40 bg-muted/10 hover:border-border'

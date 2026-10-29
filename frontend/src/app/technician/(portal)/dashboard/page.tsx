@@ -127,7 +127,7 @@ export default function TechnicianDashboardPage() {
           { label: t('technician.activeTasks'), value: stats.active, icon: AlertTriangle, color: 'text-[#00bcd4] dark:text-brand-500', bg: 'bg-cyan-500/10 dark:bg-brand-500/10', border: 'border-cyan-200 dark:border-brand-500/20' },
           { label: t('technician.completedTasks'), value: stats.completed, icon: CheckCircle2, color: 'text-green-500', bg: 'bg-green-500/10', border: 'border-green-200 dark:border-green-500/20' },
         ].map(({ label, value, icon: Icon, color, bg, border }) => (
-          <div key={label} className={`bg-card ${border} border rounded-2xl p-4 transition-all`}>
+          <div key={label} className={`bg-card ${border} border rounded-2xl p-4 transition`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground mb-1">{label}</p>
@@ -191,7 +191,7 @@ export default function TechnicianDashboardPage() {
       ) : (
         <div className="space-y-3">
           {tickets.map((ticket) => (
-            <div key={ticket.id} className="bg-card border border-border rounded-2xl p-4 hover:border-accent transition-all">
+            <div key={ticket.id} className="bg-card border border-border rounded-2xl p-4 hover:border-accent transition">
               <div className="flex flex-wrap gap-2 justify-between items-start mb-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-0.5">

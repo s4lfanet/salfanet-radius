@@ -594,7 +594,7 @@ export default function SplicePointsPage() {
                         key={type.value}
                         type="button"
                         onClick={() => setFormData(prev => ({ ...prev, spliceType: type.value }))}
-                        className={`p-3 rounded-lg border-2 transition-all ${
+                        className={`p-3 rounded-lg border-2 transition ${
                           isActive 
                             ? `border-${type.color}-500 bg-${type.color}-50 dark:bg-${type.color}-900/20`
                             : 'border-border hover:border-gray-300'

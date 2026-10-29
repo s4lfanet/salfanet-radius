@@ -120,7 +120,7 @@ export default function AdminPaymentProofsPage() {
           <button
             key={s}
             onClick={() => { setFilter(s); setSearch(''); setVisibleCount(STEP); }}
-            className={`px-4 py-1.5 text-xs font-medium rounded-lg transition-all ${
+            className={`px-4 py-1.5 text-xs font-medium rounded-lg transition ${
               filter === s
                 ? 'bg-emerald-600 text-white'
                 : 'border border-border bg-card text-muted-foreground hover:bg-muted'
@@ -209,7 +209,7 @@ export default function AdminPaymentProofsPage() {
                         <div className="flex gap-1.5 justify-center">
                           <button
                             onClick={() => setViewImage(proof.proof_image)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs border border-border rounded-lg hover:bg-muted transition-all"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs border border-border rounded-lg hover:bg-muted transition"
                           >
                             <Eye className="w-3.5 h-3.5" /> Lihat
                           </button>
@@ -218,14 +218,14 @@ export default function AdminPaymentProofsPage() {
                               <button
                                 onClick={() => handleApprove(proof)}
                                 disabled={actionLoading === proof.id}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-all"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition"
                               >
                                 {actionLoading === proof.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                               </button>
                               <button
                                 onClick={() => { setRejectModal(proof); setRejectReason(''); }}
                                 disabled={actionLoading === proof.id}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 transition-all"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 transition"
                               >
                                 <X className="w-3.5 h-3.5" />
                               </button>
@@ -243,7 +243,7 @@ export default function AdminPaymentProofsPage() {
             <div className="text-center">
               <button
                 onClick={() => setVisibleCount(c => c + STEP)}
-                className="inline-flex items-center gap-2 px-5 py-2 text-sm border border-border rounded-lg hover:bg-muted transition-all"
+                className="inline-flex items-center gap-2 px-5 py-2 text-sm border border-border rounded-lg hover:bg-muted transition"
               >
                 <ChevronDown className="w-4 h-4" /> Muat {Math.min(STEP, filtered.length - visibleCount)} lagi
                 <span className="text-muted-foreground text-xs">({visibleCount}/{filtered.length})</span>

@@ -10,7 +10,7 @@ function Table({ className, ...props }: React.ComponentProps<"table">) {
         "relative w-full overflow-x-auto rounded-xl",
         "border-2 border-cyan-500/20",
         "hover:border-cyan-500/30",
-        "transition-all duration-300 backdrop-blur-sm"
+        "transition duration-300 backdrop-blur-sm"
       )}
     >
       <table
@@ -64,7 +64,7 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
     <tr
       data-slot="table-row"
       className={cn(
-        "border-b border-white/5 transition-all duration-300",
+        "border-b border-white/5 transition duration-300",
         "hover:bg-cyan-500/5",
         "data-[state=selected]:bg-cyan-500/10 data-[state=selected]:border-cyan-500/30",
         className

@@ -284,7 +284,7 @@ export default function CustomerAssignmentPage() {
           </div>
           <button
             onClick={() => { resetForm(); setEditingAssignment(null); setIsDialogOpen(true); }}
-            className="inline-flex items-center px-4 py-2.5 text-sm font-bold bg-brand-500 text-black rounded-lg hover:bg-brand-500/90 transition-all  uppercase tracking-wide"
+            className="inline-flex items-center px-4 py-2.5 text-sm font-bold bg-brand-500 text-black rounded-lg hover:bg-brand-500/90 transition  uppercase tracking-wide"
           >
             <Plus className="h-4 w-4 mr-2" />
             {t('network.newAssignment')}
@@ -565,7 +565,7 @@ export default function CustomerAssignmentPage() {
                   </div>
                 ) : (
                   <div className="relative">
-                    <input type="text" value={customerSearch} onChange={(e) => { setCustomerSearch(e.target.value); searchCustomers(e.target.value); }} placeholder={t('network.searchCustomerPlaceholder')} className="w-full px-3 py-2 text-xs bg-background dark:bg-card border border-border rounded-lg text-foreground placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition-all" />
+                    <input type="text" value={customerSearch} onChange={(e) => { setCustomerSearch(e.target.value); searchCustomers(e.target.value); }} placeholder={t('network.searchCustomerPlaceholder')} className="w-full px-3 py-2 text-xs bg-background dark:bg-card border border-border rounded-lg text-foreground placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 transition" />
                     {isSearching && (<RefreshCcw className="absolute right-2 top-1/2 -translate-y-1/2 h-3 w-3 animate-spin text-brand-500" />)}
                     {searchResults.length > 0 && (
                       <div className="absolute z-10 w-full mt-1 bg-popover dark:bg-card border border-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
@@ -592,7 +592,7 @@ export default function CustomerAssignmentPage() {
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto">
                       {nearestOdps.map(odp => (
-                        <button key={odp.id} type="button" onClick={() => handleOdpSelect(odp)} disabled={(odp.availablePorts?.length || 0) === 0} className={`p-2 text-left rounded-lg border transition-all ${selectedOdpId === odp.id ? 'bg-brand-500/20 border-brand-500 ' : (odp.availablePorts?.length || 0) === 0 ? 'bg-muted/50 dark:bg-card/50 border-border opacity-50 cursor-not-allowed' : 'border-border hover:border-brand-500/50'}`}>
+                        <button key={odp.id} type="button" onClick={() => handleOdpSelect(odp)} disabled={(odp.availablePorts?.length || 0) === 0} className={`p-2 text-left rounded-lg border transition ${selectedOdpId === odp.id ? 'bg-brand-500/20 border-brand-500 ' : (odp.availablePorts?.length || 0) === 0 ? 'bg-muted/50 dark:bg-card/50 border-border opacity-50 cursor-not-allowed' : 'border-border hover:border-brand-500/50'}`}>
                           <div className="flex items-center gap-1">
                             <Box className="h-3 w-3 text-brand-500" />
                             <span className="text-xs font-medium text-foreground">{odp.name}</span>

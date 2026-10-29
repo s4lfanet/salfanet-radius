@@ -197,7 +197,7 @@ export function JointClosureDiagramV2({
                   <div
                     key={cable.id}
                     className={cn(
-                      'p-3 rounded-lg border-2 cursor-pointer transition-all',
+                      'p-3 rounded-lg border-2 cursor-pointer transition',
                       selectedCable === cable.id
                         ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                         : 'border-border hover:border-gray-300 dark:hover:border-gray-600'
@@ -245,7 +245,7 @@ export function JointClosureDiagramV2({
                   <div
                     key={cable.id}
                     className={cn(
-                      'p-3 rounded-lg border-2 cursor-pointer transition-all',
+                      'p-3 rounded-lg border-2 cursor-pointer transition',
                       selectedCable === cable.id
                         ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
                         : 'border-border hover:border-gray-300 dark:hover:border-gray-600'
@@ -403,7 +403,7 @@ export function JointClosureDiagramV2({
                   height={60}
                   rx="6"
                   className={cn(
-                    'transition-all cursor-pointer',
+                    'transition cursor-pointer',
                     isHighlighted
                       ? 'fill-blue-100 dark:fill-blue-900/30 stroke-blue-500'
                       : 'fill-blue-50 dark:fill-blue-900/20 stroke-blue-300 dark:stroke-blue-700'
@@ -451,7 +451,7 @@ export function JointClosureDiagramV2({
                   height={60}
                   rx="6"
                   className={cn(
-                    'transition-all cursor-pointer',
+                    'transition cursor-pointer',
                     isHighlighted
                       ? 'fill-green-100 dark:fill-green-900/30 stroke-green-500'
                       : 'fill-green-50 dark:fill-green-900/20 stroke-green-300 dark:stroke-green-700'

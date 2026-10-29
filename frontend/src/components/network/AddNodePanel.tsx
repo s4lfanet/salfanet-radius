@@ -849,7 +849,7 @@ export default function AddNodePanel({ lat, lng, onClose, onCreated, initialNode
             <div className="space-y-2">
               {NODE_TYPES.map(nt => (
                 <button key={nt.type} onClick={() => { setSelectedType(nt.type); setStep('form'); onTypeChange?.(nt.type); }}
-                  className={`w-full text-left p-3 border-2 rounded-lg transition-all group ${nt.color}`}>
+                  className={`w-full text-left p-3 border-2 rounded-lg transition group ${nt.color}`}>
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${nt.iconBg} group-hover:scale-105 transition-transform`}>
                       <NodeTypeIcon type={nt.type} className={`w-5 h-5 ${nt.iconColor}`} />

@@ -464,14 +464,14 @@ export default function CustomerDashboard() {
           <div className="flex gap-2">
             <button
               onClick={() => router.push('/customer/renewal')}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-bold rounded-xl transition-all active:scale-95"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-bold rounded-xl transition active:scale-95"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               Perpanjang
             </button>
             <button
               onClick={() => router.push('/customer/invoices')}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-foreground/10 hover:bg-foreground/15 text-foreground text-xs font-bold rounded-xl transition-all border border-foreground/20 active:scale-95"
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-foreground/10 hover:bg-foreground/15 text-foreground text-xs font-bold rounded-xl transition border border-foreground/20 active:scale-95"
             >
               <FileText className="w-3.5 h-3.5" />
               Tagihan
@@ -499,7 +499,7 @@ export default function CustomerDashboard() {
             <button
               key={href}
               onClick={() => router.push(href)}
-              className={`flex flex-col items-center justify-center gap-2 py-3 px-2 min-h-[80px] rounded-xl border transition-all active:scale-95 ${bg}`}
+              className={`flex flex-col items-center justify-center gap-2 py-3 px-2 min-h-[80px] rounded-xl border transition active:scale-95 ${bg}`}
             >
               <Icon className={`w-5 h-5 shrink-0 ${color}`} />
               <span className={`text-[10px] font-bold text-center leading-tight break-words ${color}`}>{name}</span>
@@ -741,7 +741,7 @@ export default function CustomerDashboard() {
                             setSelectedAdminBank(acc === selectedAdminBank ? null : acc);
                             setManualForm(f => ({ ...f, bankName: acc === selectedAdminBank ? '' : acc.bankName }));
                           }}
-                          className={`w-full flex items-center justify-between p-3 rounded-xl border-2 transition-all text-left ${
+                          className={`w-full flex items-center justify-between p-3 rounded-xl border-2 transition text-left ${
                             selectedAdminBank === acc
                               ? 'border-cyan-400 bg-cyan-500/10'
                               : 'border-border/40 bg-muted/10 hover:border-cyan-500/40'

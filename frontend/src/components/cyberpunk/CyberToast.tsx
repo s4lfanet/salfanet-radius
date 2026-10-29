@@ -294,14 +294,14 @@ function CyberConfirmModal({ options, onClose }: CyberConfirmModalProps) {
         <div className="flex gap-3 justify-end">
           <button
             onClick={() => onClose(false)}
-            className="px-4 py-2 text-sm font-semibold rounded-xl border border-border dark:border-white/20 text-muted-foreground dark:text-muted-foreground/80 hover:border-foreground/40 dark:hover:border-border hover:text-foreground dark:hover:text-white hover:bg-muted dark:hover:bg-card/40 transition-all"
+            className="px-4 py-2 text-sm font-semibold rounded-xl border border-border dark:border-white/20 text-muted-foreground dark:text-muted-foreground/80 hover:border-foreground/40 dark:hover:border-border hover:text-foreground dark:hover:text-white hover:bg-muted dark:hover:bg-card/40 transition"
           >
             {cancelText}
           </button>
           <button
             onClick={() => onClose(true)}
             className={cn(
-              'px-4 py-2 text-sm font-semibold rounded-xl text-white transition-all',
+              'px-4 py-2 text-sm font-semibold rounded-xl text-white transition',
               confirmBg
             )}
           >

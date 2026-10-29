@@ -494,13 +494,13 @@ export default function PPPoEProfilesPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
-          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition">
             <div className="flex items-center justify-between">
               <div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('common.total')}</p><p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{profiles.length}</p></div>
               <FileText className="h-7 w-7 text-brand-500 drop-" />
             </div>
           </div>
-          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition">
             <div className="flex items-center justify-between">
               <div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('pppoe.active')}</p><p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{profiles.filter(p => p.isActive).length}</p></div>
               <CheckCircle2 className="h-7 w-7 text-green-400 drop-" />
@@ -774,7 +774,7 @@ export default function PPPoEProfilesPage() {
                 <select
                   value={formData.radiusPoolName}
                   onChange={(e) => setFormData({ ...formData, radiusPoolName: e.target.value })}
-                  className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all"
+                  className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition"
                 >
                   <option value="">Auto - dari speed tier ({formData.downloadSpeed}Mbps-Pool)</option>
                   {radiusPools.map(p => (
@@ -1218,7 +1218,7 @@ export default function PPPoEProfilesPage() {
                       setSyncPoolRanges(`${selected.start_ip}-${selected.end_ip}`);
                     }
                   }}
-                  className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all"
+                  className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition"
                 >
                   <option value="">-- Pilih pool (opsional, atau isi manual di bawah) --</option>
                   {radiusPools.map(p => (

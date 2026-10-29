@@ -223,7 +223,7 @@ export default function TechnicianCustomersPage() {
             onClick={view === 'map' ? loadMap : loadCustomers}
             disabled={loading || mapLoading}
             aria-label={t('techPortal.refresh')}
-            className="flex items-center gap-1.5 px-3 h-9 pointer-coarse:h-11 text-xs font-semibold bg-card hover:bg-muted text-muted-foreground border border-border rounded-xl transition-all"
+            className="flex items-center gap-1.5 px-3 h-9 pointer-coarse:h-11 text-xs font-semibold bg-card hover:bg-muted text-muted-foreground border border-border rounded-xl transition"
           >
             <RefreshCcw className={`w-3.5 h-3.5 ${loading || mapLoading ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">{t('techPortal.refresh')}</span>

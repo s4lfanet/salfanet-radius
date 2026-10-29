@@ -14,7 +14,7 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
         "file:text-foreground placeholder:text-muted-foreground/50 selection:bg-cyan-400/20 selection:text-foreground",
         "h-10 sm:h-11 w-full min-w-0 rounded-xl border-2 border-cyan-500/30 bg-background/50 px-3.5 sm:px-4 py-2 text-base sm:text-sm",
         "backdrop-blur-sm",
-        "transition-all duration-300 outline-none",
+        "transition duration-300 outline-none",
         "hover:border-cyan-500/50",
         "focus-visible:border-cyan-400 focus-visible:ring-2 focus-visible:ring-cyan-400/30",
         "dark:focus-visible:neon-glow",

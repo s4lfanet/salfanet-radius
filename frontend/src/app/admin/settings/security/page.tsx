@@ -246,7 +246,7 @@ export default function SecuritySettingsPage() {
 
           <button
             onClick={() => { setPhase('setup-verify'); setError(''); }}
-            className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl transition-all shadow-md hover:bg-primary/90 dark:bg-gradient-to-r dark:from-primary dark:to-brand-500 dark:text-white dark: dark:hover:opacity-90"
+            className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl transition shadow-md hover:bg-primary/90 dark:bg-gradient-to-r dark:from-primary dark:to-brand-500 dark:text-white dark: dark:hover:opacity-90"
           >
             I&apos;ve Scanned the Code →
           </button>
@@ -287,7 +287,7 @@ export default function SecuritySettingsPage() {
                 setSetupCode(f);
               }}
               placeholder="000 000"
-              className="w-full bg-background dark:bg-slate-900 border-2 border-border dark:border-border rounded-xl px-4 py-3.5 text-foreground dark:text-white text-2xl font-mono tracking-[0.5em] text-center placeholder-muted-foreground dark:placeholder-slate-600 focus:border-primary dark:focus:border-brand-500 focus:outline-none transition-all"
+              className="w-full bg-background dark:bg-slate-900 border-2 border-border dark:border-border rounded-xl px-4 py-3.5 text-foreground dark:text-white text-2xl font-mono tracking-[0.5em] text-center placeholder-muted-foreground dark:placeholder-slate-600 focus:border-primary dark:focus:border-brand-500 focus:outline-none transition"
             />
           </div>
 
@@ -342,7 +342,7 @@ export default function SecuritySettingsPage() {
                   onChange={e => setDisablePassword(e.target.value)}
                   placeholder="Enter your password"
                   autoFocus
-                  className="w-full bg-background dark:bg-slate-900 border-2 border-border dark:border-border rounded-xl px-4 py-3 pr-12 text-foreground dark:text-white placeholder-muted-foreground dark:placeholder-slate-600 focus:border-primary dark:focus:border-brand-500 focus:outline-none transition-all"
+                  className="w-full bg-background dark:bg-slate-900 border-2 border-border dark:border-border rounded-xl px-4 py-3 pr-12 text-foreground dark:text-white placeholder-muted-foreground dark:placeholder-slate-600 focus:border-primary dark:focus:border-brand-500 focus:outline-none transition"
                 />
                 <button onClick={() => setShowDisablePassword(s => !s)} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground dark:text-slate-400 dark:hover:text-white">
                   {showDisablePassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -365,7 +365,7 @@ export default function SecuritySettingsPage() {
                   setDisableCode(f);
                 }}
                 placeholder="000 000"
-                className="w-full bg-background dark:bg-slate-900 border-2 border-border dark:border-border rounded-xl px-4 py-3.5 text-foreground dark:text-white text-xl font-mono tracking-[0.5em] text-center placeholder-muted-foreground dark:placeholder-slate-600 focus:border-primary dark:focus:border-brand-500 focus:outline-none transition-all"
+                className="w-full bg-background dark:bg-slate-900 border-2 border-border dark:border-border rounded-xl px-4 py-3.5 text-foreground dark:text-white text-xl font-mono tracking-[0.5em] text-center placeholder-muted-foreground dark:placeholder-slate-600 focus:border-primary dark:focus:border-brand-500 focus:outline-none transition"
               />
             </div>
           </div>

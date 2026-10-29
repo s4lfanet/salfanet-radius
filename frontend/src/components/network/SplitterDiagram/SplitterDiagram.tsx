@@ -132,7 +132,7 @@ export function SplitterDiagram({
                 fill={getPortColor(port)}
                 stroke={getPortStroke(port)}
                 strokeWidth="2"
-                className={interactive ? 'cursor-pointer transition-all hover:r-10' : ''}
+                className={interactive ? 'cursor-pointer transition hover:r-10' : ''}
                 onClick={() => handlePortClick(port)}
                 onMouseEnter={() => handlePortMouseEnter(port)}
                 onMouseLeave={handlePortMouseLeave}
@@ -214,7 +214,7 @@ export function SplitterDiagram({
                 fill={getPortColor(port)}
                 stroke={getPortStroke(port)}
                 strokeWidth="2"
-                className={interactive ? 'cursor-pointer transition-all hover:r-10' : ''}
+                className={interactive ? 'cursor-pointer transition hover:r-10' : ''}
                 onClick={() => handlePortClick(port)}
                 onMouseEnter={() => handlePortMouseEnter(port)}
                 onMouseLeave={handlePortMouseLeave}

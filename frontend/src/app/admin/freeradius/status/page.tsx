@@ -244,7 +244,7 @@ export default function FreeRADIUSStatusPage() {
                                 <p className="text-lg font-bold text-foreground">{status.cpu?.toFixed(1) || '0'}%</p>
                                 <div className="mt-2 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                                     <div
-                                        className={`h-full transition-all duration-300 ${status.cpu > 80 ? 'bg-red-500' : status.cpu > 50 ? 'bg-amber-500' : 'bg-blue-500'}`}
+                                        className={`h-full transition duration-300 ${status.cpu > 80 ? 'bg-red-500' : status.cpu > 50 ? 'bg-amber-500' : 'bg-blue-500'}`}
                                         style={{ width: `${Math.min(status.cpu || 0, 100)}%` }}
                                     />
                                 </div>

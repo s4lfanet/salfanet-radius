@@ -163,7 +163,7 @@ function NotificationBell() {
     <div className="relative">
       <button
         onClick={handleOpen}
-        className="relative p-2 rounded-xl bg-muted hover:bg-accent border border-border transition-all"
+        className="relative p-2 rounded-xl bg-muted hover:bg-accent border border-border transition"
         aria-label="Notifications"
       >
         <Bell className="w-4 h-4 text-muted-foreground" />
@@ -240,7 +240,7 @@ function TechSidebar({
 
       <aside
         className={cn(
-          'fixed top-0 left-0 h-dvh z-50 transition-all duration-300 ease-in-out',
+          'fixed top-0 left-0 h-dvh z-50 transition duration-300 ease-in-out',
           'w-64 bg-sidebar border-r border-sidebar-border',
           'shadow-[5px_0_20px_rgba(0,0,0,0.25)]',
           'overflow-y-auto flex flex-col safe-area-inset-left',
@@ -315,7 +315,7 @@ function TechSidebar({
                 href={item.href}
                 onClick={() => setSidebarOpen(false)}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 text-xs font-bold rounded-xl transition-all duration-300 group',
+                  'flex items-center gap-3 px-3 py-2.5 text-xs font-bold rounded-xl transition duration-300 group',
                   isActive
                     ? 'text-brand-500 bg-brand-50 dark:text-brand-400 dark:bg-brand-500/[0.12] border border-brand-200 dark:border-brand-500/30 shadow-sm'
                     : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-gray-300 border border-transparent hover:border-gray-200 dark:hover:border-white/10',
@@ -323,7 +323,7 @@ function TechSidebar({
               >
                 <span
                   className={cn(
-                    'p-1.5 rounded-lg transition-all duration-300 flex-shrink-0 flex items-center justify-center',
+                    'p-1.5 rounded-lg transition duration-300 flex-shrink-0 flex items-center justify-center',
                     isActive
                       ? 'text-brand-500 dark:text-brand-400 bg-brand-100 dark:bg-brand-500/20'
                       : 'text-gray-500 group-hover:text-gray-700 dark:text-gray-400 dark:group-hover:text-gray-300',
@@ -342,7 +342,7 @@ function TechSidebar({
         <div className="p-3 border-t border-sidebar-border flex-shrink-0 space-y-2">
           <Link
             href="/technician/profile"
-            className="flex items-center gap-3 px-3 py-2.5 text-xs font-bold rounded-xl transition-all duration-300 text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-gray-300 border border-transparent hover:border-gray-200 dark:hover:border-white/10"
+            className="flex items-center gap-3 px-3 py-2.5 text-xs font-bold rounded-xl transition duration-300 text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-gray-300 border border-transparent hover:border-gray-200 dark:hover:border-white/10"
           >
             <span className="p-1.5 rounded-lg text-gray-500 dark:text-gray-400">
               <User className="w-4 h-4" />
@@ -352,7 +352,7 @@ function TechSidebar({
           {tech && <SidebarPushToggle role="technician" extraBody={{ technicianId: tech.id }} />}
           <button
             onClick={onLogout}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-red-400 hover:text-white bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-xl transition-all duration-300"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-red-400 hover:text-white bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 rounded-xl transition duration-300"
           >
             <LogOut className="w-4 h-4" />
             <span>{t('techPortal.logout')}</span>
@@ -498,7 +498,7 @@ function TechnicianPortalInner({ children }: { children: React.ReactNode }) {
               )}
               <button
                 onClick={toggleTheme}
-                className="flex items-center justify-center w-8 h-8 rounded-lg bg-card/50 hover:bg-card border border-border transition-all"
+                className="flex items-center justify-center w-8 h-8 rounded-lg bg-card/50 hover:bg-card border border-border transition"
                 title={isDark ? 'Mode Terang' : 'Mode Gelap'}
               >
                 {isDark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-muted-foreground" />}

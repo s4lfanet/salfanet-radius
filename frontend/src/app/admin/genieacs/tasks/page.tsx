@@ -187,7 +187,7 @@ export default function GenieACSTasksPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         <button
           onClick={() => setStatusFilter(statusFilter === 'pending' ? 'all' : 'pending')}
-          className={`bg-card rounded-lg border p-2 transition-all ${
+          className={`bg-card rounded-lg border p-2 transition ${
             statusFilter === 'pending' ? 'border-yellow-500 ring-1 ring-yellow-500' : 'border-border'
           }`}
         >
@@ -203,7 +203,7 @@ export default function GenieACSTasksPage() {
         </button>
         <button
           onClick={() => setStatusFilter(statusFilter === 'fault' ? 'all' : 'fault')}
-          className={`bg-card rounded-lg border p-2 transition-all ${
+          className={`bg-card rounded-lg border p-2 transition ${
             statusFilter === 'fault' ? 'border-destructive ring-1 ring-red-500' : 'border-border'
           }`}
         >
@@ -219,7 +219,7 @@ export default function GenieACSTasksPage() {
         </button>
         <button
           onClick={() => setStatusFilter(statusFilter === 'done' ? 'all' : 'done')}
-          className={`bg-card rounded-lg border p-2 transition-all ${
+          className={`bg-card rounded-lg border p-2 transition ${
             statusFilter === 'done' ? 'border-success ring-1 ring-green-500' : 'border-border'
           }`}
         >

@@ -289,7 +289,7 @@ export default function TicketDetailPage() {
                           href={url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="flex items-center gap-2 p-2 rounded-lg bg-background dark:bg-slate-900/50 border border-cyan-500/20 hover:border-cyan-500/40 transition-all"
+                          className="flex items-center gap-2 p-2 rounded-lg bg-background dark:bg-slate-900/50 border border-cyan-500/20 hover:border-cyan-500/40 transition"
                         >
                           {isPdf ? (
                             <FileText size={20} className="text-red-400 flex-shrink-0" />
@@ -358,7 +358,7 @@ export default function TicketDetailPage() {
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
               rows={4}
-              className="w-full bg-background dark:bg-slate-900/50 border border-cyan-500/30 text-foreground placeholder:text-muted-foreground/50 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all mb-3"
+              className="w-full bg-background dark:bg-slate-900/50 border border-cyan-500/30 text-foreground placeholder:text-muted-foreground/50 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition mb-3"
               placeholder={t('ticket.replyPlaceholder')}
               disabled={sending}
             />

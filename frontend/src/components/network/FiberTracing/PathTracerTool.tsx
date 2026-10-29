@@ -157,7 +157,7 @@ export function PathTracerTool({ nodes, onTrace, isLoading = false, onClear }: P
         <button
           onClick={handleTrace}
           disabled={!canTrace}
-          className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all ${
+          className={`flex-1 px-6 py-3 rounded-lg font-medium transition ${
             canTrace
               ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'

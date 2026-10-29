@@ -150,7 +150,7 @@ function PaymentPendingContent() {
             </div>
 
             {invoice.paymentLink && (
-              <a href={invoice.paymentLink} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full px-4 py-3 text-sm font-bold text-white bg-gradient-to-r from-primary to-brand-500 rounded-xl  hover: transition-all">
+              <a href={invoice.paymentLink} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full px-4 py-3 text-sm font-bold text-white bg-gradient-to-r from-primary to-brand-500 rounded-xl  hover: transition">
                 <ExternalLink className="w-4 h-4" />Buka Halaman Pembayaran
               </a>
             )}

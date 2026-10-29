@@ -178,7 +178,7 @@ function DaftarPageInner() {
               setFormData({ name: '', phone: '', email: '', address: '', areaId: '', profileId: '', notes: '', referralCode: '', idCardNumber: '', latitude: null, longitude: null });
               setIdCardPhoto('');
             }}
-            className="w-full px-4 py-3 bg-gradient-to-r from-primary to-brand-500 hover:from-primary hover:to-brand-600 text-white text-sm font-bold rounded-xl transition-all duration-300  hover:"
+            className="w-full px-4 py-3 bg-gradient-to-r from-primary to-brand-500 hover:from-primary hover:to-brand-600 text-white text-sm font-bold rounded-xl transition duration-300  hover:"
           >
             Daftar Lagi
           </button>
@@ -237,7 +237,7 @@ function DaftarPageInner() {
                   placeholder="Nama lengkap Anda"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus: transition-all outline-none"
+                  className="w-full px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus: transition outline-none"
                   required
                 />
               </div>
@@ -253,7 +253,7 @@ function DaftarPageInner() {
                   placeholder="08xxxxxxxxxx"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus: transition-all outline-none"
+                  className="w-full px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus: transition outline-none"
                   required
                 />
                 <p className="text-[10px] text-muted-foreground/60 mt-1">Untuk komunikasi</p>
@@ -270,7 +270,7 @@ function DaftarPageInner() {
                   placeholder="email@example.com (opsional)"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus: transition-all outline-none"
+                  className="w-full px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus: transition outline-none"
                 />
               </div>
 
@@ -284,7 +284,7 @@ function DaftarPageInner() {
                   placeholder="Jalan, RT/RW, Kelurahan, Kecamatan"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus: transition-all outline-none resize-none"
+                  className="w-full px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus: transition outline-none resize-none"
                   rows={2}
                   required
                 />
@@ -300,7 +300,7 @@ function DaftarPageInner() {
                   <select
                     value={formData.areaId}
                     onChange={(e) => setFormData({ ...formData, areaId: e.target.value })}
-                    className="w-full px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus: transition-all outline-none appearance-none cursor-pointer"
+                    className="w-full px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus: transition outline-none appearance-none cursor-pointer"
                   >
                     <option value="" className="bg-card">-- Pilih area layanan (opsional) --</option>
                     {areas.map((area) => (
@@ -355,7 +355,7 @@ function DaftarPageInner() {
                         );
                       }}
                       disabled={submitting}
-                      className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-bold bg-gradient-to-r from-primary to-brand-500 hover:from-primary hover:to-brand-600 disabled:from-gray-600 disabled:to-gray-600 text-white rounded-xl transition-all "
+                      className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-bold bg-gradient-to-r from-primary to-brand-500 hover:from-primary hover:to-brand-600 disabled:from-gray-600 disabled:to-gray-600 text-white rounded-xl transition "
                     >
                       {submitting ? (
                         <><Loader2 className="w-3.5 h-3.5 animate-spin" />Mengambil...</>
@@ -368,7 +368,7 @@ function DaftarPageInner() {
                     <button
                       type="button"
                       onClick={() => setMapPickerOpen(true)}
-                      className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-bold border-2 border-brand-500 text-brand-500 hover:bg-brand-500/10 rounded-xl transition-all"
+                      className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-bold border-2 border-brand-500 text-brand-500 hover:bg-brand-500/10 rounded-xl transition"
                     >
                       <MapPin className="w-3.5 h-3.5" />
                       Manual
@@ -408,7 +408,7 @@ function DaftarPageInner() {
                 <select
                   value={formData.profileId}
                   onChange={(e) => setFormData({ ...formData, profileId: e.target.value })}
-                  className="w-full px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus: transition-all outline-none appearance-none cursor-pointer"
+                  className="w-full px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus: transition outline-none appearance-none cursor-pointer"
                   required
                 >
                   <option value="" className="bg-card">Pilih paket internet</option>
@@ -460,7 +460,7 @@ function DaftarPageInner() {
                   onChange={(e) => setFormData({ ...formData, idCardNumber: e.target.value.replace(/\D/g, '').slice(0, 16) })}
                   maxLength={16}
                   required
-                  className="w-full px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus: transition-all outline-none font-mono tracking-widest"
+                  className="w-full px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus: transition outline-none font-mono tracking-widest"
                 />
               </div>
 
@@ -512,7 +512,7 @@ function DaftarPageInner() {
                 placeholder="Catatan atau permintaan khusus"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                className="w-full px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus: transition-all outline-none resize-none"
+                className="w-full px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus: transition outline-none resize-none"
                 rows={2}
               />
             </div>
@@ -529,7 +529,7 @@ function DaftarPageInner() {
                 value={formData.referralCode}
                 onChange={(e) => setFormData({ ...formData, referralCode: e.target.value.toUpperCase() })}
                 maxLength={10}
-                className="w-full px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus: transition-all outline-none font-mono tracking-widest uppercase"
+                className="w-full px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus: transition outline-none font-mono tracking-widest uppercase"
               />
               {formData.referralCode && (
                 <p className="text-[10px] text-green-500 mt-1 flex items-center gap-1">
@@ -542,7 +542,7 @@ function DaftarPageInner() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-primary to-brand-500 hover:from-primary hover:to-brand-600 disabled:from-gray-600 disabled:to-gray-600 text-white text-sm font-bold rounded-xl transition-all duration-300  hover: disabled:shadow-none"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-primary to-brand-500 hover:from-primary hover:to-brand-600 disabled:from-gray-600 disabled:to-gray-600 text-white text-sm font-bold rounded-xl transition duration-300  hover: disabled:shadow-none"
             >
               {submitting ? (
                 <><Loader2 className="w-4 h-4 animate-spin" />Mengirim...</>

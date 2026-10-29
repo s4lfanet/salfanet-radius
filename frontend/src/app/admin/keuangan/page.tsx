@@ -532,7 +532,7 @@ export default function KeuanganPage() {
 
       {/* Stats - Cyberpunk Style */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
-        <div className="bg-card rounded-xl border border-border p-3 sm:p-4 hover:border-border hover: transition-all">
+        <div className="bg-card rounded-xl border border-border p-3 sm:p-4 hover:border-border hover: transition">
           <div className="flex items-center justify-between">
             <div className="min-w-0">
               <p className="text-[10px] sm:text-xs font-medium text-brand-500 uppercase tracking-wide">{t('keuangan.income')}</p>
@@ -559,7 +559,7 @@ export default function KeuanganPage() {
           </div>
         </div>
 
-        <div className="bg-card rounded-xl border border-border p-3 sm:p-4 hover:border-border hover: transition-all">
+        <div className="bg-card rounded-xl border border-border p-3 sm:p-4 hover:border-border hover: transition">
           <div className="flex items-center justify-between">
             <div className="min-w-0">
               <p className="text-[10px] sm:text-xs font-medium text-brand-500 uppercase tracking-wide">{t('keuangan.expense')}</p>
@@ -572,7 +572,7 @@ export default function KeuanganPage() {
           </div>
         </div>
 
-        <div className="bg-card rounded-xl border border-border p-3 sm:p-4 hover:border-border hover: transition-all">
+        <div className="bg-card rounded-xl border border-border p-3 sm:p-4 hover:border-border hover: transition">
           <div className="flex items-center justify-between">
             <div className="min-w-0">
               <p className="text-[10px] sm:text-xs font-medium text-brand-500 uppercase tracking-wide">{t('keuangan.balance')}</p>

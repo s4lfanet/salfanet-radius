@@ -302,7 +302,7 @@ export default function CreateTicketPage() {
               type="text"
               value={formData.customerName}
               onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-              className={`w-full bg-background dark:bg-slate-900/50 border rounded-lg px-4 py-2.5 text-foreground placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all ${
+              className={`w-full bg-background dark:bg-slate-900/50 border rounded-lg px-4 py-2.5 text-foreground placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition ${
                 errors.customerName ? 'border-red-500/50 focus:ring-red-500/50' : 'border-cyan-500/30'
               }`}
               placeholder={t('ticket.enterYourName')}
@@ -321,7 +321,7 @@ export default function CreateTicketPage() {
               type="text"
               value={formData.customerPhone}
               onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
-              className={`w-full bg-background dark:bg-slate-900/50 border rounded-lg px-4 py-2.5 text-foreground placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all ${
+              className={`w-full bg-background dark:bg-slate-900/50 border rounded-lg px-4 py-2.5 text-foreground placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition ${
                 errors.customerPhone ? 'border-red-500/50 focus:ring-red-500/50' : 'border-cyan-500/30'
               }`}
               placeholder="08xxxxxxxxxx"
@@ -340,7 +340,7 @@ export default function CreateTicketPage() {
               type="email"
               value={formData.customerEmail}
               onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
-              className="w-full bg-background dark:bg-slate-900/50 border border-cyan-500/30 rounded-lg px-4 py-2.5 text-foreground placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
+              className="w-full bg-background dark:bg-slate-900/50 border border-cyan-500/30 rounded-lg px-4 py-2.5 text-foreground placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition"
               placeholder="email@example.com"
             />
           </div>
@@ -354,7 +354,7 @@ export default function CreateTicketPage() {
               type="text"
               value={formData.subject}
               onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-              className={`w-full bg-background dark:bg-slate-900/50 border rounded-lg px-4 py-2.5 text-foreground placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all ${
+              className={`w-full bg-background dark:bg-slate-900/50 border rounded-lg px-4 py-2.5 text-foreground placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition ${
                 errors.subject ? 'border-red-500/50 focus:ring-red-500/50' : 'border-cyan-500/30'
               }`}
               placeholder={t('ticket.subjectPlaceholder')}
@@ -372,7 +372,7 @@ export default function CreateTicketPage() {
             <select
               value={formData.categoryId}
               onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-              className="[color-scheme:light] dark:[color-scheme:dark] w-full bg-background dark:bg-slate-900/50 border border-cyan-500/30 rounded-lg px-4 py-2.5 text-foreground focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all dark:[&>option]:bg-slate-900 dark:[&>option]:text-cyan-100"
+              className="[color-scheme:light] dark:[color-scheme:dark] w-full bg-background dark:bg-slate-900/50 border border-cyan-500/30 rounded-lg px-4 py-2.5 text-foreground focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition dark:[&>option]:bg-slate-900 dark:[&>option]:text-cyan-100"
             >
               <option value="" className="dark:bg-slate-900 text-muted-foreground">{t('ticket.selectCategory')}</option>
               {categories.map((cat) => (
@@ -392,7 +392,7 @@ export default function CreateTicketPage() {
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               rows={6}
-              className={`w-full bg-background dark:bg-slate-900/50 border rounded-lg px-4 py-2.5 text-foreground placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all resize-none ${
+              className={`w-full bg-background dark:bg-slate-900/50 border rounded-lg px-4 py-2.5 text-foreground placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition resize-none ${
                 errors.description ? 'border-red-500/50 focus:ring-red-500/50' : 'border-cyan-500/30'
               }`}
               placeholder={t('ticket.descriptionPlaceholder')}
@@ -415,7 +415,7 @@ export default function CreateTicketPage() {
               type="text"
               value={formData.locationTag}
               onChange={(e) => setFormData({ ...formData, locationTag: e.target.value })}
-              className="w-full bg-background dark:bg-slate-900/50 border border-cyan-500/30 rounded-lg px-4 py-2.5 text-foreground placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
+              className="w-full bg-background dark:bg-slate-900/50 border border-cyan-500/30 rounded-lg px-4 py-2.5 text-foreground placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition"
               placeholder="Contoh: Jl. Merdeka No. 10, dekat warung Pak Budi"
             />
 
@@ -428,7 +428,7 @@ export default function CreateTicketPage() {
                   inputMode="decimal"
                   value={formData.latitude}
                   onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
-                  className="w-full bg-background dark:bg-slate-900/50 border border-cyan-500/30 rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
+                  className="w-full bg-background dark:bg-slate-900/50 border border-cyan-500/30 rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition"
                   placeholder="-5.147660"
                 />
               </div>
@@ -439,7 +439,7 @@ export default function CreateTicketPage() {
                   inputMode="decimal"
                   value={formData.longitude}
                   onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
-                  className="w-full bg-background dark:bg-slate-900/50 border border-cyan-500/30 rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
+                  className="w-full bg-background dark:bg-slate-900/50 border border-cyan-500/30 rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition"
                   placeholder="119.434700"
                 />
               </div>
@@ -450,7 +450,7 @@ export default function CreateTicketPage() {
                 type="button"
                 onClick={handleGetGPS}
                 disabled={gpsLoading}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-cyan-500/40 text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-cyan-500/40 text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {gpsLoading ? (
                   <><div className="w-3 h-3 border border-cyan-400 border-t-transparent rounded-full animate-spin" /> Mendapatkan lokasi�</>
@@ -462,7 +462,7 @@ export default function CreateTicketPage() {
                 <button
                   type="button"
                   onClick={handleUseCustomerCoords}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-emerald-500/40 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-emerald-500/40 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 transition"
                 >
                   <MapPinned size={12} /> Dari Data Pelanggan
                 </button>
@@ -490,7 +490,7 @@ export default function CreateTicketPage() {
               Lampiran (Foto / Dokumen)
             </label>
             <label
-              className={`flex flex-col items-center justify-center w-full border-2 border-dashed rounded-lg px-4 py-6 cursor-pointer transition-all ${
+              className={`flex flex-col items-center justify-center w-full border-2 border-dashed rounded-lg px-4 py-6 cursor-pointer transition ${
                 uploading
                   ? 'border-cyan-400/60 bg-cyan-500/5 opacity-70'
                   : 'border-cyan-500/30 hover:border-cyan-500/50 hover:bg-cyan-500/5'

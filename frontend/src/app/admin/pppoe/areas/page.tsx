@@ -168,7 +168,7 @@ export default function AreasPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
-          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition-all">
+          <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs text-brand-500 uppercase tracking-wide">{t('pppoe.totalArea')}</p>

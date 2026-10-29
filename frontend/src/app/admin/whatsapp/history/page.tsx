@@ -102,7 +102,7 @@ export default function WhatsAppHistoryPage() {
             <div className="mt-4"><div className="font-semibold text-gray-400 mb-2">{t('whatsapp.responseLabel')}:</div><pre className="text-xs bg-gray-800 border border-gray-700 p-3 rounded max-h-40 overflow-auto text-gray-300 font-mono">{JSON.stringify(responseData, null, 2)}</pre></div>
           </div>
           <div className="p-4 border-t border-border flex justify-end">
-            <button onClick={() => setViewingItem(null)} className="px-6 py-2 text-sm font-bold text-white bg-brand-500 dark:text-muted dark:bg-brand-500 rounded-lg dark: hover:opacity-90 transition-all">{t('common.close')}</button>
+            <button onClick={() => setViewingItem(null)} className="px-6 py-2 text-sm font-bold text-white bg-brand-500 dark:text-muted dark:bg-brand-500 rounded-lg dark: hover:opacity-90 transition">{t('common.close')}</button>
           </div>
         </div>
       </div>,
