@@ -294,8 +294,8 @@ export default function TechnicianCustomersPage() {
             <>
               <CustomerMap points={mapPoints} onSelect={(id) => setDetail(mapCustomers.find((c) => c.id === id) ?? null)} selectedId={detail?.id} className="h-[62dvh] min-h-[360px]" />
               <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#059669]" aria-hidden /> Aktif</span>
-                <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#DC2626]" aria-hidden /> Isolir</span>
+                <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-emerald-600" aria-hidden /> Aktif</span>
+                <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-red-600" aria-hidden /> Isolir</span>
                 <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-[#D97706]" aria-hidden /> Kedaluwarsa / diblokir</span>
                 <span>{mapPoints.length} pelanggan berkoordinat. Ketuk titik untuk detail.</span>
               </div>
