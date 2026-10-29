@@ -174,7 +174,6 @@ export default function HotspotVoucherPage() {
     changes?: { activated: number; expired: number };
   }) => {
     if (event === 'voucher-stats') {
-      console.log('[SSE] Stats update received:', data.stats)
       setStats(data.stats ?? { total: 0, waiting: 0, active: 0, expired: 0, totalValue: 0 })
 
       // Show notification for changes
@@ -182,10 +181,8 @@ export default function HotspotVoucherPage() {
         const message = []
         if ((data.changes?.activated ?? 0) > 0) message.push(`${data.changes?.activated} activated`)
         if ((data.changes?.expired ?? 0) > 0) message.push(`${data.changes?.expired} expired`)
-        console.log(`[SSE] Voucher changes: ${message.join(', ')}`)
       }
     } else if (event === 'voucher-changed') {
-      console.log('[SSE] Voucher list changed, refreshing...')
       queryClient.invalidateQueries({ queryKey: ['/api/hotspot/voucher'] })
     }
   }, [queryClient])
@@ -193,14 +190,12 @@ export default function HotspotVoucherPage() {
   // Setup SSE connection
   useSSE('/api/sse/voucher-updates', handleSSEMessage, {
     onConnected: () => {
-      console.log('[SSE] Connected to real-time updates')
       setIsSSEConnected(true)
     },
     onError: () => {
       setIsSSEConnected(false)
     },
     onReconnecting: () => {
-      console.log('[SSE] Reconnecting...')
       setIsSSEConnected(false)
     },
   })

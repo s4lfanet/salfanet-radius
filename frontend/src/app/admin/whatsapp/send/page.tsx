@@ -147,8 +147,6 @@ export default function SendMessagePage() {
       return;
     }
 
-    console.log('[Frontend] Broadcast message template:', broadcastMessage.substring(0, 200));
-    console.log('[Frontend] Selected users:', Array.from(selectedUsers));
 
     if (!await confirm({
       title: t('whatsapp.confirmBroadcast'),
@@ -168,14 +166,12 @@ export default function SendMessagePage() {
         delay: 2000,
       };
 
-      console.log('[Frontend] Sending payload:', payload);
 
       const data = await apiAdmin<BroadcastResponse>('/api/whatsapp/broadcast', {
         method: 'POST',
         body: JSON.stringify(payload),
       });
 
-      console.log('[Frontend] Broadcast response:', data);
 
       if (data.success) {
         addToast({ type: 'success', title: t('whatsapp.broadcastComplete'), description: `${t('whatsapp.success')}: ${data.successCount || 0} | ${t('whatsapp.failed')}: ${data.failCount || 0}` });

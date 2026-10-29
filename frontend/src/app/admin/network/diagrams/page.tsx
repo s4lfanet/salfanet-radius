@@ -404,7 +404,6 @@ export default function NetworkDiagramsPage() {
 
   const handlePortClick = (port: Port) => {
     setSelectedPort(port);
-    console.log('Port clicked:', port);
   };
 
   if (loading) {

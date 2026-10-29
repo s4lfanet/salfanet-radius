@@ -53,9 +53,7 @@ export default function TemplatesPage() {
 
   useEffect(() => {
     if (templatesData) {
-      console.log('Templates API response:', templatesData);
       if (templatesData.success) {
-        console.log('Templates data:', templatesData.data);
         setTemplates(templatesData.data);
       } else {
         console.error('API returned error:', templatesData.message);

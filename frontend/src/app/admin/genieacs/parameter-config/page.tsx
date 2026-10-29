@@ -65,12 +65,10 @@ export default function ParameterConfigPage() {
   // Toggle enabled/disabled
   const toggleEnabled = async (config: ParameterConfig) => {
     try {
-      console.log('Toggling config:', config.id);
       const data = await apiAdmin<ConfigMutationResponse>(`/api/settings/genieacs/parameter-display/${config.id}`, {
         method: 'PUT',
         body: JSON.stringify({ enabled: !config.enabled })
       });
-      console.log('Toggle response:', data);
 
       if (data.success) {
         setConfigs(configs.map(c =>
@@ -89,7 +87,6 @@ export default function ParameterConfigPage() {
   // Save reordering
   const saveOrder = async () => {
     try {
-      console.log('Saving order for', configs.length, 'configs');
       const updates = configs.map((config, index) => ({
         id: config.id,
         displayOrder: index + 1
@@ -99,7 +96,6 @@ export default function ParameterConfigPage() {
         method: 'PUT',
         body: JSON.stringify({ configs: updates })
       });
-      console.log('Save order response:', data);
 
       if (data.success) {
         await showSuccess(t('genieacs.orderSaved'));
@@ -119,11 +115,9 @@ export default function ParameterConfigPage() {
     if (!confirmed) return;
 
     try {
-      console.log('Deleting config:', id);
       const data = await apiAdmin<ConfigMutationResponse>(`/api/settings/genieacs/parameter-display/${id}`, {
         method: 'DELETE'
       });
-      console.log('Delete response:', data);
 
       if (data.success) {
         setConfigs(configs.filter(c => c.id !== id));
@@ -167,10 +161,8 @@ export default function ParameterConfigPage() {
 
   // Open edit modal
   const openEditModal = (config: ParameterConfig) => {
-    console.log('[ParameterConfig] Opening edit modal for:', config);
     setEditingConfig({ ...config });
     setIsModalOpen(true);
-    console.log('[ParameterConfig] Modal state set to open');
   };
 
   // Save edited or new configuration
@@ -193,7 +185,6 @@ export default function ParameterConfigPage() {
 
     setSaving(true);
     try {
-      console.log('Saving config:', editingConfig);
       
       const isNewConfig = editingConfig.id === 0;
       const endpoint = isNewConfig
@@ -204,7 +195,6 @@ export default function ParameterConfigPage() {
         method: isNewConfig ? 'POST' : 'PUT',
         body: JSON.stringify(editingConfig)
       });
-      console.log('Save config response:', data);
 
       if (data.success) {
         // Close modal first
@@ -276,7 +266,6 @@ export default function ParameterConfigPage() {
           <div className="flex gap-2">
             <button
               onClick={() => {
-                console.log('Save Order button clicked');
                 saveOrder();
               }}
               className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary/90 shadow"
@@ -286,7 +275,6 @@ export default function ParameterConfigPage() {
             </button>
             <button
               onClick={() => {
-                console.log('Reset Defaults button clicked');
                 resetToDefaults();
               }}
               className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-600 dark:bg-input text-white text-sm font-medium hover:bg-gray-700 dark:hover:bg-gray-600 shadow"
@@ -529,7 +517,6 @@ export default function ParameterConfigPage() {
         )}
 
         {/* Edit Modal */}
-      {/* Debug log removed: console.log('[ParameterConfig] Modal render check - isModalOpen:', isModalOpen, 'editingConfig:', editingConfig) */}
       {editingConfig && (
         <SimpleModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} size="2xl">
           <ModalHeader>

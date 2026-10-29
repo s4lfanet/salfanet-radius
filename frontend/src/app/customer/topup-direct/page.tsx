@@ -62,32 +62,25 @@ export default function TopUpDirectPage() {
     if (!token) return;
 
     try {
-      console.log('[Top-Up Direct] Loading data...');
 
       // Load user info
       const userData = await apiCustomer<{ success: boolean; user: User }>('/api/customer/me');
-      console.log('[Top-Up Direct] User data:', userData);
 
       if (userData.success && userData.user) {
         setUser(userData.user);
       }
 
       // Load payment gateways
-      console.log('[Top-Up Direct] Fetching payment gateways from /api/public/payment-gateways');
       const gatewaysRes = await fetch('/api/public/payment-gateways');
-      console.log('[Top-Up Direct] Gateway response status:', gatewaysRes.status);
 
       const gatewaysData = await gatewaysRes.json();
-      console.log('[Top-Up Direct] Payment gateways response:', gatewaysData);
 
       if (gatewaysData.success) {
         const gateways = gatewaysData.gateways || [];
-        console.log('[Top-Up Direct] Gateways found:', gateways.length, gateways);
         setPaymentGateways(gateways);
 
         // Auto select first gateway
         if (gateways.length > 0) {
-          console.log('[Top-Up Direct] Auto-selecting gateway:', gateways[0].provider);
           setSelectedGateway(gateways[0].provider);
         } else {
           console.warn('[Top-Up Direct] No payment gateways available!');
@@ -164,7 +157,6 @@ export default function TopUpDirectPage() {
         })
       });
 
-      console.log('[Top-Up Direct Frontend] Response data:', data);
 
       if (data.error || !data.success) {
         // Show error with details
@@ -181,7 +173,6 @@ export default function TopUpDirectPage() {
 
       if (data.success && data.paymentUrl) {
         // Success - redirect to payment
-        console.log('[Top-Up Direct Frontend] Redirecting to:', data.paymentUrl);
 
         showSuccess(
           `${t('customer.invoiceNo')}: ${data.invoiceNumber} - ${t('customer.total')}: ${formatCurrency(data.amount || 0)}. ${t('customer.redirectingToPayment')}`,

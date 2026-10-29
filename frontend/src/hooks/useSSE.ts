@@ -44,7 +44,6 @@ export function useSSE<T = any>(
 
       // Handle connection established
       eventSource.addEventListener('connected', () => {
-        console.log('[SSE] Connected to', url)
         onConnectedRef.current?.()
       })
 
@@ -86,7 +85,6 @@ export function useSSE<T = any>(
         if (autoReconnectRef.current && eventSource.readyState === EventSource.CLOSED) {
           onReconnectingRef.current?.()
           reconnectTimeoutRef.current = setTimeout(() => {
-            console.log('[SSE] Reconnecting...')
             connect()
           }, reconnectIntervalRef.current)
         }

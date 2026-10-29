@@ -118,7 +118,6 @@ export default function VirtualParametersPage() {
         : "/api/settings/genieacs/virtual-parameters";
       const method = editing ? "PUT" : "POST";
 
-      console.log('Submitting virtual parameter:', payload);
 
       const data = await apiAdmin<{ success: boolean; error?: string; details?: string }>(endpoint, {
         method,

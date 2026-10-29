@@ -57,11 +57,9 @@ export default function UpgradePackagePage() {
 
   // Debug logging
   useEffect(() => {
-    console.log('[Upgrade Page] selectedPackage:', selectedPackage);
   }, [selectedPackage]);
 
   useEffect(() => {
-    console.log('[Upgrade Page] selectedGateway:', selectedGateway);
   }, [selectedGateway]);
 
   const loadData = async () => {
@@ -93,11 +91,9 @@ export default function UpgradePackagePage() {
       const gatewaysData = await gatewaysRes.json();
       if (gatewaysData.success) {
         const gateways = gatewaysData.gateways || [];
-        console.log('[Upgrade Page] Loaded gateways:', gateways);
         setPaymentGateways(gateways);
         // Auto select first gateway
         if (gateways.length > 0) {
-          console.log('[Upgrade Page] Auto-selecting gateway:', gateways[0].provider);
           setSelectedGateway(gateways[0].provider);
         }
       }
@@ -197,13 +193,6 @@ export default function UpgradePackagePage() {
     }).format(amount);
 
   // Debug render
-  console.log('[Upgrade Page] Rendering with:', {
-    selectedPackage,
-    selectedGateway,
-    packagesCount: packages.length,
-    gatewaysCount: paymentGateways.length,
-    shouldShowButton: !!selectedPackage
-  });
 
   if (loading) {
     return (

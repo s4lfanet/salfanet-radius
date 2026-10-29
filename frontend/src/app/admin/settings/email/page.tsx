@@ -1208,12 +1208,9 @@ function HistoryTab() {
         ...(statusFilter !== 'all' && { status: statusFilter }),
       });
 
-      console.log('[EmailHistory] Fetching with params:', params.toString());
       const data = await apiAdmin<EmailHistoryResponse>(`/api/email/history?${params}`);
-      console.log('[EmailHistory] Response:', data);
 
       if (data.success) {
-        console.log('[EmailHistory] Setting history:', data.history.length, 'items');
         setHistory(data.history);
         setTotalPages(data.pagination.totalPages);
       } else {
