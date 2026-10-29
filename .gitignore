@@ -182,3 +182,8 @@ docs/AI_PROJECT_MEMORY.md
 skills/
 skill-lock.json
 skills-lock.json
+
+# Project skills for the Devin agent
+!.devin/
+.devin/*
+!.devin/skills/
