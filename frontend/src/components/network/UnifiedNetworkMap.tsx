@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
@@ -271,6 +272,8 @@ export default function UnifiedNetworkMap({
   const [mapCenter, setMapCenter] = useState<[number, number]>([-8.6705, 115.2126]);
   const [mapZoom, setMapZoom] = useState(13);
   const [mapLayer, setMapLayer] = useState<BasemapKey>('street');
+  const [moveMode, setMoveMode] = useState(false);
+  const [reloadTick, setReloadTick] = useState(0);
 
   // Fetch map settings (center + zoom) from admin settings
   useEffect(() => {
@@ -370,7 +373,7 @@ export default function UnifiedNetworkMap({
     };
 
     loadAllEntities();
-  }, [refreshSignal]);
+  }, [refreshSignal, reloadTick]);
 
   /**
    * Filter entities based on active filters
@@ -400,6 +403,54 @@ export default function UnifiedNetworkMap({
   /**
    * Render entity popup content
    */
+  /** Per-type REST path for correcting a misplaced device on the map. */
+  const nodeTypePath = (t: MapEntity['type']): string | null => {
+    switch (t) {
+      case 'OLT': return 'olts';
+      case 'ODC': return 'odcs';
+      case 'ODP': return 'odps';
+      case 'OTB': return 'otbs';
+      case 'JOINT_CLOSURE': return 'joint-closures';
+      default: return null; // customers keep their own location flow
+    }
+  };
+
+  const handleMarkerMove = async (entity: MapEntity, lat: number, lng: number) => {
+    const p = nodeTypePath(entity.type);
+    if (!p) return;
+    try {
+      const res = await fetch(`/api/network/${p}/${entity.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ latitude: lat, longitude: lng }),
+      });
+      const data = await res.json().catch(() => ({} as Record<string, unknown>));
+      if (!res.ok) throw new Error((data.error as string) || 'Gagal memindahkan titik');
+      showSuccess(`${entity.name} dipindah`);
+    } catch (e) {
+      showError(e instanceof Error ? e.message : 'Gagal memindahkan titik');
+    } finally {
+      setReloadTick((t) => t + 1);
+    }
+  };
+
+  const handleDeleteNode = async (entity: MapEntity) => {
+    const p = nodeTypePath(entity.type);
+    if (!p) return;
+    const ok = await showConfirm(`Hapus ${entity.name} dari jaringan?`, 'Hapus Titik', 'Hapus');
+    if (!ok) return;
+    try {
+      const res = await fetch(`/api/network/${p}/${entity.id}`, { method: 'DELETE' });
+      const data = await res.json().catch(() => ({} as Record<string, unknown>));
+      if (!res.ok) throw new Error((data.error as string) || 'Gagal menghapus titik');
+      showSuccess(`${entity.name} dihapus`);
+    } catch (e) {
+      showError(e instanceof Error ? e.message : 'Gagal menghapus titik');
+    } finally {
+      setReloadTick((t) => t + 1);
+    }
+  };
+
   const renderEntityPopup = (entity: MapEntity) => {
     if (entity.type === 'CUSTOMER') {
       return (
@@ -502,7 +553,19 @@ export default function UnifiedNetworkMap({
 
       {/* Basemap switcher — street/satellite/topo/dark, same set as the
           network map page so operators get one consistent control. */}
-      <div className="leaflet-top leaflet-right" style={{ top: 10, right: 10, zIndex: 1000 }}>
+      <div className="leaflet-top leaflet-right" style={{ top: 10, right: 10, zIndex: 1000, display: 'flex', gap: 6, alignItems: 'center' }}>
+        <button
+          type="button"
+          onClick={() => setMoveMode((v) => !v)}
+          className={`rounded-md border px-2 py-1 text-xs font-semibold shadow-sm ${
+            moveMode
+              ? 'border-blue-500 bg-blue-600 text-white'
+              : 'border-gray-300 bg-white/95 text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800/95 dark:text-gray-100'
+          }`}
+          title="Mode geser: seret marker perangkat untuk koreksi titik"
+        >
+          {moveMode ? 'Selesai Geser' : 'Geser Titik'}
+        </button>
         <select
           value={mapLayer}
           onChange={(e) => setMapLayer(e.target.value as BasemapKey)}
@@ -629,16 +692,46 @@ export default function UnifiedNetworkMap({
             key={entity.id}
             position={[entity.latitude, entity.longitude]}
             icon={createCustomIcon(entity.type, entity.status)}
-            eventHandlers={connectMode ? {
-              click: (e) => {
-                L.DomEvent.stopPropagation(e.originalEvent);
-                onConnectNodeClick?.(entity);
-              },
-            } : undefined}
+            draggable={moveMode && nodeTypePath(entity.type) !== null}
+            eventHandlers={{
+              ...(connectMode ? {
+                click: (e) => {
+                  L.DomEvent.stopPropagation(e.originalEvent);
+                  onConnectNodeClick?.(entity);
+                },
+              } : {}),
+              ...(moveMode && nodeTypePath(entity.type) !== null ? {
+                dragend: (e) => {
+                  const m = e.target as L.Marker;
+                  const pos = m.getLatLng();
+                  handleMarkerMove(entity, pos.lat, pos.lng);
+                },
+              } : {}),
+            }}
           >
             {!connectMode && (
               <Popup>
                 {renderEntityPopup(entity)}
+                {nodeTypePath(entity.type) && (
+                  <div className="mt-2 flex flex-col gap-1">
+                    {!moveMode && (
+                      <button
+                        type="button"
+                        onClick={() => setMoveMode(true)}
+                        className="rounded bg-blue-600 text-white text-xs font-semibold px-2 py-1.5 hover:bg-blue-700"
+                      >
+                        Geser Titik Ini
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteNode(entity)}
+                      className="rounded bg-red-600 text-white text-xs font-semibold px-2 py-1.5 hover:bg-red-700"
+                    >
+                      Hapus Titik Ini
+                    </button>
+                  </div>
+                )}
               </Popup>
             )}
           </Marker>
