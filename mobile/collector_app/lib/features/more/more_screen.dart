@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../core/api/api_client.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/theme_controller.dart';
+import '../../core/update/app_updater.dart';
 import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../auth/auth_provider.dart';
@@ -63,6 +64,7 @@ class MoreScreen extends StatelessWidget {
                 Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ServerSettingsScreen()));
               }),
               _menu(context, Icons.dark_mode_outlined, Tone.neutral, 'Tema', 'Ikuti sistem / terang / gelap', null, onTap: () => _themeSheet(context)),
+              _menu(context, Icons.system_update_rounded, Tone.primary, 'Pembaruan Aplikasi', 'Versi terpasang & update APK', const AppUpdateScreen()),
             ],
           ),
           const SizedBox(height: Gap.lg),

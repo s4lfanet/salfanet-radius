@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/detail.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
+import '../customers/customers_screen.dart';
 
 /// Permintaan pencabutan ONT — mirrors the web portal's ont page: which
 /// devices the field team has been asked to pull, this month vs last.
@@ -54,6 +55,11 @@ class _OntScreenState extends State<OntScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Cabut ONT')),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _pickIsolatedCustomer(context),
+        icon: const Icon(Icons.add_rounded),
+        label: const Text('Ajukan'),
+      ),
       body: DataStateView(
         loading: _loading,
         error: _error,
@@ -121,6 +127,76 @@ class _OntScreenState extends State<OntScreen> {
             Text(value, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: context.tone(tone))),
           ],
         ),
+      ),
+    );
+  }
+
+  /// The backend only accepts isolated/suspended customers, so the picker
+  /// lists exactly those — same flow as the web portal's isolir page.
+  Future<void> _pickIsolatedCustomer(BuildContext context) async {
+    List<Map<String, dynamic>> users = [];
+    try {
+      final res = await ApiClient.instance.get('/api/collector/isolir');
+      final list = res is Map ? res['users'] : null;
+      users = [for (final u in list is List ? list : const []) Map<String, dynamic>.from(u as Map)];
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      }
+      return;
+    }
+    if (!mounted) return;
+    if (users.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tidak ada pelanggan isolir untuk diajukan.')));
+      return;
+    }
+    String query = '';
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          final visible = query.isEmpty
+              ? users
+              : users.where((u) => '${u['name']}'.toLowerCase().contains(query.toLowerCase()) || '${u['username']}'.toLowerCase().contains(query.toLowerCase())).toList();
+          return DraggableScrollableSheet(
+            expand: false,
+            initialChildSize: 0.7,
+            minChildSize: 0.4,
+            maxChildSize: 0.95,
+            builder: (_, controller) => Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(Gap.page, Gap.md, Gap.page, Gap.sm),
+                  child: Row(
+                    children: [
+                      const Expanded(child: Text('Pilih pelanggan isolir', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700))),
+                      IconButton(onPressed: () => Navigator.pop(sheetContext), icon: const Icon(Icons.close_rounded)),
+                    ],
+                  ),
+                ),
+                SearchField(hint: 'Cari nama / username…', onChanged: (v) => setSheetState(() => query = v)),
+                Expanded(
+                  child: RefreshableList(
+                    itemCount: visible.length,
+                    onRefresh: () async {},
+                    itemBuilder: (_, i) => EntityTile(
+                      icon: Icons.wifi_off_rounded,
+                      tone: Tone.danger,
+                      title: (visible[i]['name'] ?? visible[i]['username'] ?? '-').toString(),
+                      subtitle: '${visible[i]['username']}',
+                      onTap: () {
+                        Navigator.pop(sheetContext);
+                        requestOntRemoval(context, visible[i], _load);
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

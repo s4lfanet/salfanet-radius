@@ -225,6 +225,13 @@ List<ActionSpec> _customerActions(BuildContext sheetContext, Map<String, dynamic
         () => launchUrl(Uri.parse('https://www.google.com/maps?q=${user['latitude']},${user['longitude']}'), mode: LaunchMode.externalApplication),
         kind: ActionKind.neutral,
       ),
+    if (const ['isolated', 'suspended'].contains('${user['status']}'))
+      ActionSpec(
+        'Ajukan Cabut ONT',
+        Icons.router_outlined,
+        () => requestOntRemoval(sheetContext, user, onChanged),
+        kind: ActionKind.warning,
+      ),
   ];
 }
 
@@ -315,4 +322,46 @@ Future<void> _sendInvoice(BuildContext context, Map<String, dynamic> inv) async 
   await runAction(context, () async {
     await ApiClient.instance.post('/api/collector/send-invoice', data: {'invoiceId': inv['id']});
   }, success: 'Link pembayaran dikirim.');
+}
+
+/// Ajukan pencabutan ONT — backend only accepts isolated/suspended
+/// customers, which is why this action appears only on their sheets.
+Future<void> requestOntRemoval(BuildContext context, Map<String, dynamic> user, VoidCallback onChanged) async {
+  final notes = await _askNotes(context, user);
+  if (notes == null || !context.mounted) return;
+  final done = await runAction(context, () async {
+    await ApiClient.instance.post('/api/collector/ont-removals', data: {'username': user['username'], 'notes': notes});
+  }, success: 'Pengajuan cabut ONT tercatat.');
+  if (done && context.mounted) {
+    Navigator.of(context).maybePop();
+    onChanged();
+  }
+}
+
+/// Notes are optional; null means cancelled. Empty string is allowed.
+Future<String?> _askNotes(BuildContext context, Map<String, dynamic> user) {
+  final controller = TextEditingController();
+  return showDialog<String>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Ajukan Cabut ONT'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('${user['name'] ?? user['username']}', style: const TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(height: Gap.sm),
+          TextField(
+            controller: controller,
+            maxLines: 3,
+            decoration: const InputDecoration(hintText: 'Catatan (opsional): kondisi ONT, alasan, dsb.'),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+        FilledButton(onPressed: () => Navigator.pop(ctx, controller.text), child: const Text('Ajukan')),
+      ],
+    ),
+  );
 }
