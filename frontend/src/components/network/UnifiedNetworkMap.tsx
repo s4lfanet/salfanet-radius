@@ -234,6 +234,27 @@ const createCustomIcon = (type: string, status: string) => {
   });
 };
 
+type BasemapKey = 'street' | 'satellite' | 'topo' | 'dark';
+
+const BASEMAPS: Record<BasemapKey, { url: string; attribution: string }> = {
+  street: {
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  },
+  satellite: {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: '&copy; <a href="https://www.esri.com/">Esri</a> World Imagery',
+  },
+  topo: {
+    url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+    attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a>',
+  },
+  dark: {
+    url: 'https://tiles.stadiamaps.com/tiles/alidade_smooth_dark/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://stadiamaps.com/">Stadia Maps</a>',
+  },
+};
+
 export default function UnifiedNetworkMap({
   filters, onEntityClick, onMapClick, addMode, pendingPin, onPinMoved, refreshSignal,
   connectMode, connectSource, onConnectNodeClick, connections, showConnections,
@@ -249,6 +270,7 @@ export default function UnifiedNetworkMap({
   // Default center - will be overridden by map settings from API
   const [mapCenter, setMapCenter] = useState<[number, number]>([-8.6705, 115.2126]);
   const [mapZoom, setMapZoom] = useState(13);
+  const [mapLayer, setMapLayer] = useState<BasemapKey>('street');
 
   // Fetch map settings (center + zoom) from admin settings
   useEffect(() => {
@@ -465,6 +487,7 @@ export default function UnifiedNetworkMap({
   }
 
   return (
+    <div className="relative w-full h-full">
     <MapContainer
       center={mapCenter}
       zoom={mapZoom}
@@ -472,9 +495,26 @@ export default function UnifiedNetworkMap({
       style={{ background: '#1f2937' }}
     >
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        key={mapLayer}
+        attribution={BASEMAPS[mapLayer].attribution}
+        url={BASEMAPS[mapLayer].url}
       />
+
+      {/* Basemap switcher — street/satellite/topo/dark, same set as the
+          network map page so operators get one consistent control. */}
+      <div className="leaflet-top leaflet-right" style={{ top: 10, right: 10, zIndex: 1000 }}>
+        <select
+          value={mapLayer}
+          onChange={(e) => setMapLayer(e.target.value as BasemapKey)}
+          className="rounded-md border border-gray-300 bg-white/95 text-xs font-medium text-gray-800 px-2 py-1 shadow-sm dark:border-gray-600 dark:bg-gray-800/95 dark:text-gray-100"
+          aria-label="Ganti tampilan peta"
+        >
+          <option value="street">Street</option>
+          <option value="satellite">Satellite</option>
+          <option value="topo">Topo</option>
+          <option value="dark">Dark</option>
+        </select>
+      </div>
 
       {addMode && onMapClick && <MapClickHandler onMapClick={onMapClick} />}
       <FlyToController location={flyToLocation} />
@@ -605,5 +645,6 @@ export default function UnifiedNetworkMap({
         ))}
       </MarkerClusterGroup>
     </MapContainer>
+    </div>
   );
 }
