@@ -718,7 +718,7 @@ export default function AddNodePanel({ lat, lng, onClose, onCreated, initialNode
   const [jcs, setJcs] = useState<EntityOption[]>([]);
 
   useEffect(() => {
-    apiAdmin<{ data?: OltOption[] }>('/api/network/olts').then(d => setOlts(d.data || [])).catch(() => {});
+    apiAdmin<{ data?: OltOption[]; olts?: OltOption[] }>('/api/network/olts').then(d => setOlts(d.olts || d.data || [])).catch(() => {});
     apiAdmin<{ odcs?: EntityOption[] }>('/api/network/odcs').then(d => setOdcs(d.odcs || [])).catch(() => {});
     apiAdmin<{ cables?: CableOption[] }>('/api/network/cables?limit=100').then(d => setCables(d.cables || [])).catch(() => {});
     apiAdmin<{ otbs?: EntityOption[] }>('/api/network/otbs?limit=100').then(d => setOtbs(d.otbs || [])).catch(() => {});
