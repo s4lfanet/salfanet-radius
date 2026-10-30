@@ -53,12 +53,12 @@ export async function GET(request: NextRequest) {
               },
             },
           },
-          cable_segments: true,
+          segments: true,
         } : {
           _count: {
             select: {
               tubes: true,
-              cable_segments: true,
+              segments: true,
             },
           },
         }) as any,

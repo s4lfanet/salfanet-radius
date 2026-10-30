@@ -26,7 +26,7 @@ export async function GET(
             },
           },
         },
-        cable_segments: {
+        segments: {
           orderBy: { createdAt: 'asc' },
         },
       } : undefined) as any,
