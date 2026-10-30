@@ -26,6 +26,8 @@ jobs:
             artifact: salfanet-admin
           - app_dir: mobile/customer_app
             artifact: salfanet-customer
+          - app_dir: mobile/collector_app
+            artifact: salfanet-collector
 
     steps:
       - uses: actions/checkout@v4

@@ -5,7 +5,7 @@ import {
   Smartphone, Download, Shield, Wifi, Users, UserCheck,
   CheckCircle2, XCircle, Clock, AlertTriangle, RefreshCw,
   Terminal, Copy, Check, HardDrive, ChevronDown,
-  Package, Globe, Upload, ImageIcon, Wallet, Bell, Trash2,
+  Package, Globe, Upload, ImageIcon, Wallet, Bell, Trash2, HandCoins,
 } from 'lucide-react';
 import { apiAdmin, buildUrl } from '@/lib/api';
 import { showError } from '@/lib/sweetalert';
@@ -57,6 +57,17 @@ const ROLES = [
     iconBg: 'bg-cyan-500/20 text-cyan-400',
     btn: 'from-cyan-600 to-cyan-700 hover:from-cyan-500 hover:to-cyan-600',
     pathSuffix: '/customer',
+  },
+  {
+    key: 'collector',
+    label: 'Kolektor Lapangan',
+    description: 'Penagih menandai lunas, catat janji bayar, dan cek setoran dari HP.',
+    icon: <HandCoins className="w-5 h-5" />,
+    gradient: 'from-emerald-600 to-emerald-800',
+    border: 'border-emerald-500/30',
+    iconBg: 'bg-emerald-500/20 text-emerald-400',
+    btn: 'from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600',
+    pathSuffix: '/collector',
   },
   {
     key: 'technician',
@@ -289,7 +300,7 @@ function RoleCard({
 // ─── published releases ──────────────────────────────────────────────────────
 
 interface ApkRelease {
-  target: 'customer' | 'admin';
+  target: 'customer' | 'admin' | 'collector';
   label: string;
   available: boolean;
   size?: number;

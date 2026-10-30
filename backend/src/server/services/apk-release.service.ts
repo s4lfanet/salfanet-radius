@@ -12,6 +12,7 @@ import { readApkMeta, type ApkMeta } from '@/server/services/apk-meta';
 export const APK_RELEASES = {
   customer: { file: 'salfanet-customer.apk', label: 'Aplikasi Pelanggan' },
   admin: { file: 'salfanet-admin.apk', label: 'Aplikasi Admin' },
+  collector: { file: 'salfanet-collector.apk', label: 'Aplikasi Kolektor' },
 } as const;
 export type ApkTarget = keyof typeof APK_RELEASES;
 
