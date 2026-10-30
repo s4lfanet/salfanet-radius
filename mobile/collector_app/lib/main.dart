@@ -35,8 +35,8 @@ class CollectorApp extends StatelessWidget {
         builder: (context, theme, _) => MaterialApp(
           title: 'Salfanet Kolektor',
           debugShowCheckedModeBanner: false,
-          theme: AppTheme.light(),
-          darkTheme: AppTheme.dark(),
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
           themeMode: theme.mode,
           home: const _AuthGate(),
         ),

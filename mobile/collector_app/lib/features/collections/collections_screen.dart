@@ -97,7 +97,7 @@ class _CollectionsScreenState extends State<CollectionsScreen> {
             }
             final ri = i - monthly.length - (monthly.isNotEmpty ? 1 : 0);
             if (monthly.isNotEmpty && i == monthly.length) {
-              return const SectionHeader(title: 'Terbaru');
+              return const SectionHeader('Terbaru');
             }
             final r = recent[ri];
             return EntityTile(

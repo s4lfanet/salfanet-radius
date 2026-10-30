@@ -162,12 +162,12 @@ List<Widget> _customerSections(BuildContext context, Map<String, dynamic> user) 
     DetailSection(
       title: 'Info',
       rows: [
-        InfoRow(label: 'Telepon', value: str(user, 'phone')),
-        InfoRow(label: 'Alamat', value: str(user, 'address')),
-        InfoRow(label: 'Paket', value: profile['name'] != null ? '${profile['name']} · ${formatCurrency(num.tryParse('${profile['price']}') ?? 0)}' : null),
-        InfoRow(label: 'Area', value: user['area'] is Map ? str(user['area'], 'name') : null),
-        InfoRow(label: 'Router', value: user['router'] is Map ? str(user['router'], 'name') : null),
-        InfoRow(label: 'Jatuh tempo', value: str(user, 'expiredAt')?.split('T').first),
+        InfoRow('Telepon', str(user, 'phone')),
+        InfoRow('Alamat', str(user, 'address')),
+        InfoRow('Paket', profile['name'] != null ? '${profile['name']} · ${formatCurrency(num.tryParse('${profile['price']}') ?? 0)}' : null),
+        InfoRow('Area', user['area'] is Map ? str(user['area'], 'name') : null),
+        InfoRow('Router', user['router'] is Map ? str(user['router'], 'name') : null),
+        InfoRow('Jatuh tempo', str(user, 'expiredAt')?.split('T').first),
       ],
     ),
     if (unpaid.isNotEmpty)

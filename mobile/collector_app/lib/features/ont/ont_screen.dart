@@ -93,12 +93,12 @@ class _OntScreenState extends State<OntScreen> {
                 ),
                 sections: [
                   DetailSection(title: 'Detail', rows: [
-                    InfoRow(label: 'Alamat', value: str(r, 'address')),
-                    InfoRow(label: 'Telepon', value: str(r, 'phone')),
-                    InfoRow(label: 'Alasan', value: str(r, 'reason')),
-                    InfoRow(label: 'ONT', value: str(r, 'ontSerial') ?? str(r, 'serialNumber')),
-                    InfoRow(label: 'Catatan', value: str(r, 'notes') ?? str(r, 'note')),
-                    InfoRow(label: 'Diminta', value: str(r, 'createdAt')?.split('T').first),
+                    InfoRow('Alamat', str(r, 'address')),
+                    InfoRow('Telepon', str(r, 'phone')),
+                    InfoRow('Alasan', str(r, 'reason')),
+                    InfoRow('ONT', str(r, 'ontSerial') ?? str(r, 'serialNumber')),
+                    InfoRow('Catatan', str(r, 'notes') ?? str(r, 'note')),
+                    InfoRow('Diminta', str(r, 'createdAt')?.split('T').first),
                   ]),
                 ],
               ),

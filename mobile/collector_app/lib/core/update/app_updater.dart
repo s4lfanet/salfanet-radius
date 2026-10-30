@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../api/api_client.dart';
-import '../guides/guides.dart';
 
 /// In-app update for the APK installed outside the Play Store.
 ///
@@ -406,7 +405,7 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Pembaruan Aplikasi'), actions: const [GuideAction()]),
+      appBar: AppBar(title: const Text('Pembaruan Aplikasi')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(

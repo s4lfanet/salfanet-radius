@@ -33,7 +33,7 @@ class _MainShellState extends State<MainShell> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      AppUpdater.checkInBackground(context);
+      AppUpdater.checkOnLaunch(context);
     });
   }
 
