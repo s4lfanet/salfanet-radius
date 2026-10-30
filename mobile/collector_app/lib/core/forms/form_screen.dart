@@ -10,7 +10,6 @@ import '../widgets/dialogs.dart';
 import '../widgets/entity_tile.dart';
 import '../widgets/state_views.dart';
 import 'field_spec.dart';
-import '../guides/guides.dart';
 
 /// Opens a [FormScreen] and resolves to true when it was saved.
 Future<bool> openForm(
@@ -102,7 +101,7 @@ class _SettingsFormScreenState extends State<SettingsFormScreen> {
     final current = _current;
     if (current == null) {
       return Scaffold(
-        appBar: AppBar(title: Text(widget.title), actions: const [GuideAction()]),
+        appBar: AppBar(title: Text(widget.title)),
         body: _error != null ? ErrorView(message: _error!, onRetry: _load) : const LoadingView(),
       );
     }
@@ -338,7 +337,7 @@ class _FormScreenState extends State<FormScreen> {
   Widget build(BuildContext context) {
     final visible = widget.fields.where((f) => f.isVisible(_values)).toList();
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title), actions: const [GuideAction()]),
+      appBar: AppBar(title: Text(widget.title)),
       bottomNavigationBar: ActionBar(
         actions: [
           ActionSpec(widget.submitLabel, Icons.check_rounded, _submit, busy: _saving),

@@ -12,7 +12,6 @@ import '../widgets/entity_tile.dart';
 import '../widgets/result_screen.dart';
 import '../widgets/state_views.dart';
 import 'paging.dart';
-import '../guides/guides.dart';
 
 typedef Json = Map<String, dynamic>;
 
@@ -236,7 +235,7 @@ class _CrudListScreenState extends State<CrudListScreen> {
       leading: IconButton(icon: const Icon(Icons.close_rounded), onPressed: () => setState(_selected.clear)),
       title: Text('${_selected.length} dipilih'),
       actions: [
-        const GuideAction(),
+
         IconButton(tooltip: 'Pilih semua', icon: const Icon(Icons.select_all_rounded), onPressed: () => setState(() => _selected.addAll(_visible.map(_id)))),
         if (c.bulkActions.length <= 2)
           for (final a in c.bulkActions) IconButton(tooltip: a.label, icon: Icon(a.icon), onPressed: () => _runBulk(a))
@@ -482,7 +481,6 @@ class _CrudListScreenState extends State<CrudListScreen> {
             : AppBar(
                 title: Text(c.title),
                 actions: [
-                  const GuideAction(),
                   if (c.toolbar.length == 1)
                     IconButton(tooltip: c.toolbar.first.label, icon: Icon(c.toolbar.first.icon), onPressed: () => _runToolbar(c.toolbar.first)),
                   if (c.toolbar.length > 1) PopupMenuButton<CrudAction>(onSelected: _runToolbar, itemBuilder: (_) => [for (final a in c.toolbar) _menuItem(a)]),
