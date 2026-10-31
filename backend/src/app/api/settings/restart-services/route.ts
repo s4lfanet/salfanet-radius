@@ -55,19 +55,25 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Schedule restart after delay (so response can be sent first)
+    // Schedule restart after delay (so response can be sent first).
+    // NOTE: this code runs inside salfanet-backend — restarting 'all' at
+    // once kills this process mid-loop (later commands never run) and has
+    // caused EADDRINUSE crash-loops. Restart everything else first and the
+    // backend LAST, one service per command.
     const commands: string[] = [];
-    
-    if (services === 'pm2' || services === 'all') {
-      commands.push('pm2 restart all --update-env');
-    }
-    
-    if (services === 'cron') {
-      commands.push('pm2 restart salfanet-cron --update-env');
-    }
-    
+
     if (services === 'freeradius' || services === 'all') {
       commands.push('sudo systemctl restart freeradius');
+    }
+
+    if (services === 'cron' || services === 'all' || services === 'pm2') {
+      commands.push('pm2 restart salfanet-cron --update-env');
+    }
+
+    if (services === 'pm2' || services === 'all') {
+      commands.push('pm2 restart salfanet-wa --update-env');
+      commands.push('pm2 restart salfanet-frontend --update-env');
+      commands.push('sleep 2 && pm2 restart salfanet-backend --update-env');
     }
 
     // Execute restart in background after delay

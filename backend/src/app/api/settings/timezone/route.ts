@@ -109,16 +109,20 @@ export async function POST(req: NextRequest) {
       const tzRegex = /^TZ=.*$/m;
       const nextPublicTzRegex = /^NEXT_PUBLIC_TIMEZONE=.*$/m;
       
+      // Ensure the file ends with a newline before appending — otherwise the
+      // new key would be glued onto the last existing line and corrupt it.
+      if (!envContent.endsWith('\n')) envContent += '\n';
+
       if (tzRegex.test(envContent)) {
         envContent = envContent.replace(tzRegex, `TZ="${timezone}"`);
       } else {
-        envContent += `\nTZ="${timezone}"`;
+        envContent += `TZ="${timezone}"\n`;
       }
-      
+
       if (nextPublicTzRegex.test(envContent)) {
         envContent = envContent.replace(nextPublicTzRegex, `NEXT_PUBLIC_TIMEZONE="${timezone}"`);
       } else {
-        envContent += `\nNEXT_PUBLIC_TIMEZONE="${timezone}"`;
+        envContent += `NEXT_PUBLIC_TIMEZONE="${timezone}"\n`;
       }
       
       await fs.writeFile(envPath, envContent, 'utf-8');
