@@ -72,10 +72,10 @@ export async function POST(req: NextRequest) {
 
     if (services === 'pm2' || services === 'all') {
       commands.push('pm2 restart salfanet-wa --update-env');
-      // Frontend runs in cluster mode — `pm2 reload` is graceful (the
-      // cluster primary keeps the :3000 socket bound while workers swap),
-      // `pm2 restart` hits the same EADDRINUSE fd bug as the backend did.
-      commands.push('pm2 reload salfanet-frontend --update-env');
+      // pm2 restart AND reload both hit the EADDRINUSE fd bug on PM2 v7
+      // for processes that bind ports. SIGINT -> graceful exit -> PM2
+      // auto-restart works reliably (same mechanism as the backend below).
+      commands.push('pm2 sendSignal SIGINT salfanet-frontend');
       // Backend can't `pm2 restart` itself from inside the process being
       // killed: PM2's God daemon retains the :3001 socket fd of the dead
       // child -> every new instance gets EADDRINUSE -> crash-loop -> 502.
