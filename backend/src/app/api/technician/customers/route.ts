@@ -105,7 +105,7 @@ export async function GET(req: NextRequest) {
   const userIds = users.map((u) => u.id);
   const openInvoices = userIds.length
     ? await prisma.invoice.findMany({
-        where: { userId: { in: userIds }, status: { in: ['pending', 'unpaid', 'overdue'] } },
+        where: { userId: { in: userIds }, status: { in: ['PENDING', 'OVERDUE'] } },
         select: { userId: true, status: true, dueDate: true },
         orderBy: { dueDate: 'desc' },
       })
@@ -114,7 +114,7 @@ export async function GET(req: NextRequest) {
   const paymentMap = new Map<string, 'overdue' | 'unpaid'>();
   for (const inv of openInvoices) {
     if (!inv.userId || paymentMap.get(inv.userId) === 'overdue') continue;
-    const overdue = inv.status === 'overdue' || (inv.dueDate !== null && new Date(inv.dueDate) < now);
+    const overdue = inv.status === 'OVERDUE' || (inv.dueDate !== null && new Date(inv.dueDate) < now);
     paymentMap.set(inv.userId, overdue ? 'overdue' : 'unpaid');
   }
   const enriched = users.map((u) => ({

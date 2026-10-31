@@ -95,6 +95,89 @@ function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number
   return null;
 }
 
+/** Live ONT section for PPPoE customers — resolves the GenieACS device
+    by PPPoE username. Mounts when the popup opens (lazy fetch). */
+function GenieAcsInfo({ username }: { username: string }) {
+  const [state, setState] = useState<'loading' | 'ready' | 'none' | 'error'>('loading');
+  const [dev, setDev] = useState<Record<string, unknown> | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    apiAdmin<{ success: boolean; device?: Record<string, unknown> | null }>(
+      `/api/genieacs/device-by-username?username=${encodeURIComponent(username)}`
+    )
+      .then((d) => {
+        if (!alive) return;
+        if (d?.device) {
+          setDev(d.device);
+          setState('ready');
+        } else {
+          setState('none');
+        }
+      })
+      .catch(() => { if (alive) setState('error'); });
+    return () => { alive = false; };
+  }, [username]);
+
+  if (state === 'none' || state === 'error') return null;
+
+  const row = (label: string, value?: string | number | null) => {
+    if (value === undefined || value === null || String(value).trim() === '' || String(value) === '-') return null;
+    return (
+      <div className="flex text-xs" key={label}>
+        <span className="w-24 shrink-0 text-gray-500 font-medium">{label}</span>
+        <span className="text-gray-800">{value}</span>
+      </div>
+    );
+  };
+
+  return (
+    <div className="mt-2 pt-2 border-t border-gray-100">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">
+        Perangkat ONT (GenieACS)
+      </p>
+      {state === 'loading' && (
+        <div className="animate-pulse space-y-1">
+          <div className="h-2.5 bg-gray-200 rounded w-3/4" />
+          <div className="h-2.5 bg-gray-200 rounded w-1/2" />
+        </div>
+      )}
+      {state === 'ready' && dev && (
+        <div className="space-y-0.5">
+          <div className="flex items-center text-xs">
+            <span className="w-24 shrink-0 text-gray-500 font-medium">Status ONT</span>
+            <span className={`inline-flex items-center gap-1 font-semibold ${dev.online ? 'text-green-700' : 'text-red-600'}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${dev.online ? 'bg-green-500' : 'bg-red-500'}`} />
+              {dev.online ? 'Online' : 'Offline'}
+            </span>
+          </div>
+          {row('ONT', [dev.manufacturer, dev.model].filter(Boolean).join(' '))}
+          {row('Serial', String(dev.serialNumber ?? ''))}
+          {row('PPPoE IP', String(dev.ipAddress ?? ''))}
+          {dev.rxDbm !== null && dev.rxDbm !== undefined ? (
+            <div className="flex text-xs">
+              <span className="w-24 shrink-0 text-gray-500 font-medium">RX Power</span>
+              <span className={`font-semibold ${
+                Number(dev.rxDbm) >= -25 ? 'text-green-700' :
+                Number(dev.rxDbm) >= -28 ? 'text-amber-600' : 'text-red-600'
+              }`}>
+                {String(dev.rxPower)}
+              </span>
+            </div>
+          ) : row('RX Power', String(dev.rxPower ?? ''))}
+          {row('TX Power', dev.txPower ? `${dev.txPower} dBm` : null)}
+          {row('Suhu', dev.temperature ? `${dev.temperature}°C` : null)}
+          {row('Uptime', String(dev.uptime ?? ''))}
+          {row('PON', String(dev.ponMode ?? ''))}
+          {row('SSID', String(dev.ssid ?? ''))}
+          {row('WiFi Client', dev.wifiClients !== null && dev.wifiClients !== undefined ? String(dev.wifiClients) : null)}
+          {dev.lastInform ? row('Inform', new Date(String(dev.lastInform)).toLocaleString('id-ID')) : null}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function FlyToController({ location }: { location: { lat: number; lng: number } | null | undefined }) {
   const map = useMap();
   useEffect(() => {
@@ -524,6 +607,7 @@ export default function UnifiedNetworkMap({
             {popupRow('ODP', entity.odpName)}
             {popupRow('Alamat', entity.address)}
             {popupRow('Koordinat', coords)}
+            {entity.username ? <GenieAcsInfo username={entity.username} /> : null}
             <button
               onClick={() => onEntityClick?.(entity)}
               className="mt-2 w-full rounded bg-sky-600 text-white px-3 py-1.5 text-sm font-medium hover:bg-sky-700"
