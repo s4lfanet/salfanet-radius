@@ -320,14 +320,28 @@ log "Frontend build OK"
 write_status '{"phase":"running","step":"PM2 restart"}'
 log "Step 5: PM2 restart (reload mode)"
 cd "${appDir}"
+# Apply from ecosystem.config.js when it is there, so each app gets its own env
+# block back (PORT, HOSTNAME, ...). A plain "reload <name> --update-env" keeps
+# whatever env PM2 stored, including a wrong PORT left by an earlier restart
+# that ran with the backend's environment. This script's own environment is
+# clean (EXEC_ENV), so nothing of the caller leaks in.
+pm2_apply() {
+  if [ -f ecosystem.config.js ]; then
+    pm2 reload ecosystem.config.js --only "$1" --update-env >> "$LOG_FILE" 2>&1 \\
+      || pm2 restart ecosystem.config.js --only "$1" --update-env >> "$LOG_FILE" 2>&1
+  else
+    pm2 reload "$1" --update-env >> "$LOG_FILE" 2>&1 \\
+      || pm2 restart "$1" --update-env >> "$LOG_FILE" 2>&1
+  fi
+}
 # Reload frontend first (it doesn't kill this script's parent)
-pm2 reload salfanet-frontend --update-env >> "$LOG_FILE" 2>&1 || pm2 restart salfanet-frontend --update-env >> "$LOG_FILE" 2>&1 || true
+pm2_apply salfanet-frontend || true
 log "Frontend reloaded"
 # Reload backend last — this will restart the backend process.
 # The script survives because it's fully detached via setsid.
-pm2 reload salfanet-backend --update-env >> "$LOG_FILE" 2>&1 || pm2 restart salfanet-backend --update-env >> "$LOG_FILE" 2>&1 || true
+pm2_apply salfanet-backend || true
 log "Backend reloaded"
-pm2 restart salfanet-cron --update-env >> "$LOG_FILE" 2>&1 || true
+pm2_apply salfanet-cron || true
 pm2 save >> "$LOG_FILE" 2>&1
 log "PM2 restart OK"
 

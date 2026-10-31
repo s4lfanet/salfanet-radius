@@ -12,6 +12,7 @@ import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import { AdminBackgroundGlow } from '@/components/AdminBackgroundGlow';
 import type { Company } from '@/types/api';
 import { NumberInput } from '@/components/ui/number-input';
+import { waitForServicesBack } from '@/lib/wait-for-services';
 
 interface BankAccount {
   bankName: string;
@@ -146,13 +147,21 @@ export default function CompanySettingsPage() {
     try {
       const restartResult = await apiAdmin<RestartServicesResponse>('/api/settings/restart-services', {
         method: 'POST',
-        body: JSON.stringify({ services: 'all', delay: 2000 })
+        // 'app': cron, frontend and backend, the processes that load the timezone.
+        body: JSON.stringify({ services: 'app', delay: 2000 })
       });
 
       if (restartResult.success) {
         if (restartResult.autoRestarted) {
-          addToast({ type: 'success', title: t('settings.servicesRestarting') || 'Services Restarting', description: t('settings.pageWillReload') || 'Page will reload in 5 seconds...', duration: 5000 });
-          setTimeout(() => { window.location.reload(); }, 5000);
+          addToast({ type: 'success', title: t('settings.servicesRestarting') || 'Services Restarting', description: t('settings.waitingServices') || 'Waiting for the services to come back...', duration: 6000 });
+          // Reload only once both apps answer again; a fixed timer hit nginx's 502 mid-restart.
+          const outcome = await waitForServicesBack();
+          if (outcome === 'ready') {
+            addToast({ type: 'success', title: t('settings.servicesBack') || 'Services are back', description: t('settings.pageReloading') || 'Reloading the page...', duration: 2000 });
+            setTimeout(() => { window.location.reload(); }, 800);
+          } else {
+            addToast({ type: 'error', title: t('settings.restartTimeoutTitle') || 'Services not back yet', description: t('settings.restartTimeout') || 'They did not answer within 2 minutes. Check "pm2 status" on the server, then reload this page.', duration: 12000 });
+          }
         } else {
           addToast({ type: 'success', title: 'Timezone Updated! ', description: t('settings.timezoneApplied') || 'Timezone applied. Page will reload.', duration: 4000 });
           setTimeout(() => { window.location.reload(); }, 4000);
