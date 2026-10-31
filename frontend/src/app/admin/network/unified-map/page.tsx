@@ -4,11 +4,11 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { Plus, X, SlidersHorizontal, ChevronDown, Link2, Loader2, Eye, EyeOff, Navigation } from 'lucide-react';
+import { Plus, X, SlidersHorizontal, ChevronDown, Link2, Loader2, Eye, EyeOff, Navigation, Move } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import FilterPanel from '@/components/network/FilterPanel';
 import NetworkNodePanel, { type MapEntity } from '@/components/network/NetworkNodePanel';
-import type { ConnectionLine } from '@/components/network/UnifiedNetworkMap';
+import type { ConnectionLine, BasemapKey } from '@/components/network/UnifiedNetworkMap';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';
 
@@ -62,6 +62,10 @@ export default function UnifiedMapPage() {
   // ── Connection lines state ─────────────────────────────────────────────
   const [connections, setConnections] = useState<ConnectionLine[]>([]);
   const [showConnections, setShowConnections] = useState(true);
+
+  // ── Basemap + move-marker mode (rendered in the shared top toolbar) ────
+  const [mapLayer, setMapLayer] = useState<BasemapKey>('street');
+  const [moveMode, setMoveMode] = useState(false);
 
   // Mobile UI state
   const [showPanel, setShowPanel] = useState(false);
@@ -296,6 +300,9 @@ export default function UnifiedMapPage() {
             showConnections={showConnections}
             flyToLocation={userLocation}
             userLocation={userLocation}
+            mapLayer={mapLayer}
+            moveMode={moveMode}
+            onMoveModeChange={setMoveMode}
           />
 
           {/* Mobile: Filter panel toggle */}
@@ -316,6 +323,19 @@ export default function UnifiedMapPage() {
 
           {/* ── Top-right toolbar ───────────────────────────────────────── */}
           <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-[600] flex items-center gap-2">
+            {/* Basemap selector */}
+            <select
+              value={mapLayer}
+              onChange={(e) => setMapLayer(e.target.value as BasemapKey)}
+              title="Ganti tampilan peta"
+              aria-label="Ganti tampilan peta"
+              className="px-2.5 py-2 rounded-lg text-sm font-medium shadow-lg border bg-card text-muted-foreground border-gray-200 dark:border-gray-600"
+            >
+              <option value="street">Street</option>
+              <option value="satellite">Satellite</option>
+              <option value="topo">Topo</option>
+              <option value="dark">Dark</option>
+            </select>
             {/* My Location */}
             <button
               onClick={detectUserLocation}
@@ -339,9 +359,32 @@ export default function UnifiedMapPage() {
               {showConnections ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
             </button>
 
+            {/* Move-marker mode: drag infrastructure markers to fix positions */}
+            <button
+              onClick={() => setMoveMode(v => {
+                const next = !v;
+                if (next) {
+                  if (connectMode) exitConnectMode();
+                  setAddMode(false);
+                  setAddCoords(null);
+                }
+                return next;
+              })}
+              title="Mode geser: seret marker perangkat untuk koreksi titik"
+              className={cn(
+                'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium shadow-lg transition border',
+                moveMode
+                  ? 'bg-sky-600 hover:bg-sky-700 text-white border-sky-700 ring-2 ring-white ring-offset-1 ring-offset-sky-500'
+                  : 'bg-card text-muted-foreground border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700',
+              )}
+            >
+              <Move className="w-4 h-4" />
+              <span className="hidden sm:inline">{moveMode ? 'Selesai' : 'Geser'}</span>
+            </button>
+
             {/* Connect Mode Button */}
             <button
-              onClick={() => connectMode ? exitConnectMode() : enterConnectMode()}
+              onClick={() => { setMoveMode(false); connectMode ? exitConnectMode() : enterConnectMode(); }}
               className={cn(
                 'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium shadow-lg transition',
                 connectMode
@@ -357,6 +400,7 @@ export default function UnifiedMapPage() {
             <button
               onClick={() => {
                 if (connectMode) exitConnectMode();
+                setMoveMode(false);
                 setAddMode(v => !v);
                 setAddCoords(null);
                 setSelectedEntity(null);

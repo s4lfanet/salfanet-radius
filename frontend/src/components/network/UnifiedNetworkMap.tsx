@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, ZoomControl, useMapEvents, useMap } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -82,6 +82,12 @@ interface UnifiedNetworkMapProps {
   flyToLocation?: { lat: number; lng: number } | null;
   /** If set, show a pulsing dot for the user's GPS location */
   userLocation?: { lat: number; lng: number } | null;
+  /** Active basemap layer (controlled by the page toolbar) */
+  mapLayer?: BasemapKey;
+  /** Move mode: infrastructure markers become draggable */
+  moveMode?: boolean;
+  /** Called when a marker popup asks to enter move mode */
+  onMoveModeChange?: (v: boolean) => void;
 }
 
 function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
@@ -235,7 +241,7 @@ const createCustomIcon = (type: string, status: string) => {
   });
 };
 
-type BasemapKey = 'street' | 'satellite' | 'topo' | 'dark';
+export type BasemapKey = 'street' | 'satellite' | 'topo' | 'dark';
 
 const BASEMAPS: Record<BasemapKey, { url: string; attribution: string }> = {
   street: {
@@ -260,6 +266,7 @@ export default function UnifiedNetworkMap({
   filters, onEntityClick, onMapClick, addMode, pendingPin, onPinMoved, refreshSignal,
   connectMode, connectSource, onConnectNodeClick, connections, showConnections,
   flyToLocation, userLocation,
+  mapLayer = 'street', moveMode = false, onMoveModeChange,
 }: UnifiedNetworkMapProps) {
   const { t: _t } = useTranslation();
   const [entities, setEntities] = useState<MapEntity[]>([]);
@@ -271,8 +278,6 @@ export default function UnifiedNetworkMap({
   // Default center - will be overridden by map settings from API
   const [mapCenter, setMapCenter] = useState<[number, number]>([-8.6705, 115.2126]);
   const [mapZoom, setMapZoom] = useState(13);
-  const [mapLayer, setMapLayer] = useState<BasemapKey>('street');
-  const [moveMode, setMoveMode] = useState(false);
   const [reloadTick, setReloadTick] = useState(0);
 
   // Fetch map settings (center + zoom) from admin settings
@@ -542,42 +547,18 @@ export default function UnifiedNetworkMap({
     <MapContainer
       center={mapCenter}
       zoom={mapZoom}
+      zoomControl={false}
       className="w-full h-full"
       style={{ background: '#1f2937' }}
     >
+      {/* Bottom-right keeps it clear of the Filter button (top-left, mobile)
+          and the top toolbar shared by all map actions. */}
+      <ZoomControl position="bottomright" />
       <TileLayer
         key={mapLayer}
         attribution={BASEMAPS[mapLayer].attribution}
         url={BASEMAPS[mapLayer].url}
       />
-
-      {/* Basemap switcher — street/satellite/topo/dark, same set as the
-          network map page so operators get one consistent control. */}
-      <div className="leaflet-top leaflet-right" style={{ top: 10, right: 10, zIndex: 1000, display: 'flex', gap: 6, alignItems: 'center' }}>
-        <button
-          type="button"
-          onClick={() => setMoveMode((v) => !v)}
-          className={`rounded-md border px-2 py-1 text-xs font-semibold shadow-sm ${
-            moveMode
-              ? 'border-blue-500 bg-blue-600 text-white'
-              : 'border-gray-300 bg-white/95 text-gray-800 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800/95 dark:text-gray-100'
-          }`}
-          title="Mode geser: seret marker perangkat untuk koreksi titik"
-        >
-          {moveMode ? 'Selesai Geser' : 'Geser Titik'}
-        </button>
-        <select
-          value={mapLayer}
-          onChange={(e) => setMapLayer(e.target.value as BasemapKey)}
-          className="rounded-md border border-gray-300 bg-white/95 text-xs font-medium text-gray-800 px-2 py-1 shadow-sm dark:border-gray-600 dark:bg-gray-800/95 dark:text-gray-100"
-          aria-label="Ganti tampilan peta"
-        >
-          <option value="street">Street</option>
-          <option value="satellite">Satellite</option>
-          <option value="topo">Topo</option>
-          <option value="dark">Dark</option>
-        </select>
-      </div>
 
       {addMode && onMapClick && <MapClickHandler onMapClick={onMapClick} />}
       <FlyToController location={flyToLocation} />
@@ -717,7 +698,7 @@ export default function UnifiedNetworkMap({
                     {!moveMode && (
                       <button
                         type="button"
-                        onClick={() => setMoveMode(true)}
+                        onClick={() => onMoveModeChange?.(true)}
                         className="rounded bg-blue-600 text-white text-xs font-semibold px-2 py-1.5 hover:bg-blue-700"
                       >
                         Geser Titik Ini
