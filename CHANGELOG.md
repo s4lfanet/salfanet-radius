@@ -38,8 +38,16 @@ Rilis besar setelah 5.26.0. Peta Terpadu yang sebelumnya hanya menampilkan pelan
 - **[FIX]** Bug enum `invoices_status` di teknisi/customers (uppercase `PENDING`/`OVERDUE` vs lowercase di kode — query ikut gagal di runtime)
 - **[CHORE]** Bersih-bersih audit: 46 `console.log` dihapus, 496 `transition-all` diganti, warna neon jadi token `@theme`, emoji dekoratif diganti ikon Lucide, kontras sidebar/tombol ke WCAG AA, toast PWA menghormati safe-area
 
+### Restart Layanan dari Settings
+- **[FIX]** Menyimpan timezone di Settings, Company lalu Simpan & Restart membuat panel 502 terus-menerus: skrip restart dijalankan oleh backend dan mewarisi seluruh lingkungannya, termasuk `PORT=3001`. `pm2 restart --update-env` menyalin lingkungan itu ke proses yang di-restart, sehingga frontend hidup kembali di port 3001 (bukan 3000): port 3000 kosong (nginx menjawab 502 selamanya) dan dua aplikasi berebut 3001 (API menjawab 200 dan 404 bergantian). Updater web aman karena skripnya memakai lingkungan bersih; route restart kini sama, dan merestart lewat `ecosystem.config.js` sehingga tiap aplikasi mendapat blok env-nya sendiri kembali, termasuk memperbaiki PM2 yang lingkungannya sudah tercemar
+- **[FIX]** Halaman Company memuat ulang setelah 5 detik tetap, tepat saat layanan masih restart. Kini halaman menunggu sampai backend (`/api/health`) dan frontend sama-sama mati lalu hidup lagi, baru dimuat ulang; bila belum kembali dalam 2 menit, ada pesan yang jelas
+- **[FIX]** Ubah timezone hanya me-restart cron, frontend, dan backend (pilihan baru `app`). WhatsApp dan FreeRADIUS tidak lagi ikut di-restart, karena keduanya tidak memakai timezone perusahaan
+- **[FIX]** Update Sekarang menerapkan frontend, backend, dan cron dari `ecosystem.config.js` juga, jadi ikut memulihkan PM2 yang `PORT`-nya sudah terlanjur salah
+- **[CHORE]** Hasil restart dicatat di `logs/restart-services.log`
+
 ### Catatan Pembaruan
 - Tidak ada perubahan skema database
+- Bila panel sempat 502 karena masalah di atas dan tidak bisa dibuka: di server jalankan `cd /var/www/salfanet-radius && pm2 restart ecosystem.config.js --only salfanet-frontend,salfanet-backend --update-env` (dari shell login biasa, bukan dari proses PM2), lalu `pm2 save`
 - Aplikasi admin naik ke **1.0.21** — publish APK baru dari release `apk-latest` agar pengguna ditawari update
 - APK Kolektor: unduh `salfanet-collector-*` dari `apk-latest`, lalu unggah di Admin → Download APK (kartu "Kolektor Lapangan") agar update in-app berfungsi
 
