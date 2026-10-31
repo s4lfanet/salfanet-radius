@@ -50,13 +50,16 @@ const _kindTone = {
 };
 
 class _Point {
-  _Point({required this.id, required this.kind, required this.name, required this.pos, required this.status, required this.rows, this.subtype});
+  _Point({required this.id, required this.kind, required this.name, required this.pos, required this.status, required this.rows, this.subtype, this.typePath});
   final String id;
   final _Kind kind;
   final String name;
   final LatLng pos;
   final String status;
   final String? subtype;
+  /// Backend resource path for move/delete (olts/odcs/odps/otbs/joint-closures).
+  /// Null for customers — their location is managed from the customer menu.
+  final String? typePath;
   final List<(String, String)> rows;
 }
 
@@ -87,6 +90,10 @@ class _NetworkMapScreenState extends State<NetworkMapScreen> {
   bool _satellite = false;
   LatLng? _me;
   bool _locating = false;
+  // Move mode: tap the map to drop the selected point at a new position.
+  _Point? _moving;
+  LatLng? _movingPos;
+  bool _savingMove = false;
 
   @override
   void initState() {
@@ -135,6 +142,7 @@ class _NetworkMapScreenState extends State<NetworkMapScreen> {
         name: _s(o['name']),
         pos: pos,
         status: _s(o['status']),
+        typePath: 'olts',
         rows: [
           ('IP', _s(o['ipAddress'])),
           if (o['vendor'] != null) ('Vendor', '${_s(o['vendor'])} ${_s(o['model'])}'.trim()),
@@ -153,6 +161,7 @@ class _NetworkMapScreenState extends State<NetworkMapScreen> {
         name: _s(o['name']),
         pos: pos,
         status: _s(o['status']),
+        typePath: 'odcs',
         rows: [
           if (o['olt'] is Map) ('OLT', _s((o['olt'] as Map)['name'])),
           ('PON port', _s(o['ponPort'])),
@@ -170,6 +179,7 @@ class _NetworkMapScreenState extends State<NetworkMapScreen> {
         name: _s(o['name']),
         pos: pos,
         status: _s(o['status']),
+        typePath: 'odps',
         rows: [
           if (o['odc'] is Map) ('ODC', _s((o['odc'] as Map)['name'])),
           if (o['parentOdp'] is Map) ('ODP induk', _s((o['parentOdp'] as Map)['name'])),
@@ -192,6 +202,10 @@ class _NetworkMapScreenState extends State<NetworkMapScreen> {
         id: _s(n['id']),
         kind: switch (type) { 'OLT' => _Kind.olt, 'ODC' => _Kind.odc, 'ODP' => _Kind.odp, _ => _Kind.node },
         subtype: type == 'JOINT_CLOSURE' ? 'Joint Closure' : type,
+        typePath: switch (type) {
+          'OTB' => 'otbs', 'JOINT_CLOSURE' => 'joint-closures', 'OLT' => 'olts',
+          'ODC' => 'odcs', 'ODP' => 'odps', _ => null,
+        },
         name: name.isEmpty ? _s(n['code']) : name,
         pos: pos,
         status: _s(n['status']),
@@ -290,6 +304,71 @@ class _NetworkMapScreenState extends State<NetworkMapScreen> {
     }
   }
 
+  void _startMove(_Point p) => setState(() {
+        _moving = p;
+        _movingPos = null;
+      });
+
+  Future<void> _saveMove() async {
+    final p = _moving;
+    final pos = _movingPos;
+    if (p == null || pos == null || p.typePath == null) return;
+    setState(() => _savingMove = true);
+    try {
+      await ApiClient.instance.put(
+        '/api/network/${p.typePath}/${p.id}',
+        data: {'latitude': pos.latitude, 'longitude': pos.longitude},
+      );
+      if (!mounted) return;
+      setState(() {
+        _moving = null;
+        _movingPos = null;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Posisi titik diperbarui')));
+      await _load();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e is ApiException ? e.message : 'Gagal memindahkan titik')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _savingMove = false);
+    }
+  }
+
+  Future<void> _confirmDelete(_Point p) async {
+    if (p.typePath == null) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Hapus titik ini?'),
+        content: Text('"${p.name}" akan dihapus permanen dari jaringan.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Batal')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Theme.of(ctx).colorScheme.error),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    try {
+      await ApiClient.instance.delete('/api/network/${p.typePath}/${p.id}');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Titik dihapus')));
+      await _load();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e is ApiException ? e.message : 'Gagal menghapus titik')),
+        );
+      }
+    }
+  }
+
   Color _statusColor(BuildContext context, _Point p) {
     switch (p.status.toLowerCase()) {
       case 'active':
@@ -367,6 +446,37 @@ class _NetworkMapScreenState extends State<NetworkMapScreen> {
                     label: const Text('Petunjuk arah'),
                   ),
                 ),
+                if (p.typePath != null) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            _startMove(p);
+                          },
+                          icon: const Icon(Icons.open_with_rounded),
+                          label: const Text('Pindahkan'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            Navigator.pop(ctx);
+                            _confirmDelete(p);
+                          },
+                          icon: Icon(Icons.delete_outline_rounded, color: Theme.of(ctx).colorScheme.error),
+                          label: Text('Hapus', style: TextStyle(color: Theme.of(ctx).colorScheme.error)),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(color: Theme.of(ctx).colorScheme.error.withValues(alpha: 0.4)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -433,10 +543,12 @@ class _NetworkMapScreenState extends State<NetworkMapScreen> {
         children: [
           FlutterMap(
             mapController: _map,
-            options: const MapOptions(
-              initialCenter: LatLng(-2.5, 118),
+            options: MapOptions(
+              initialCenter: const LatLng(-2.5, 118),
               initialZoom: 5,
-              interactionOptions: InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
+              interactionOptions: const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
+              // While a point is being moved, a map tap sets its new position.
+              onTap: _moving == null ? null : (_, latlng) => setState(() => _movingPos = latlng),
             ),
             children: [
               // Same tile sources as the web map.
@@ -470,6 +582,21 @@ class _NetworkMapScreenState extends State<NetworkMapScreen> {
                     Marker(point: p.pos, width: 16, height: 16, child: _marker(context, p)),
                   for (final p in visible.where((p) => p.kind != _Kind.customer))
                     Marker(point: p.pos, width: 34, height: 34, child: _marker(context, p)),
+                  if (_moving != null && _movingPos != null)
+                    Marker(
+                      point: _movingPos!,
+                      width: 40,
+                      height: 40,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: scheme.primary.withValues(alpha: 0.85),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                          boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 6)],
+                        ),
+                        child: Icon(_kindIcon[_moving!.kind], color: Colors.white, size: 18),
+                      ),
+                    ),
                   if (_me != null)
                     Marker(
                       point: _me!,
@@ -531,7 +658,52 @@ class _NetworkMapScreenState extends State<NetworkMapScreen> {
                       ),
               ),
             ),
-          if (!_loading && _points.isNotEmpty && _errors.isNotEmpty)
+          // Move-mode bar: instruction + cancel/save for the tapped position.
+          if (_moving != null)
+            Positioned(
+              left: 12,
+              right: 12,
+              bottom: 12,
+              child: Material(
+                color: scheme.surface,
+                elevation: 6,
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  child: Row(
+                    children: [
+                      Icon(Icons.open_with_rounded, color: scheme.primary, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          _movingPos == null
+                              ? 'Ketuk peta untuk posisi baru "${_moving!.name}"'
+                              : 'Simpan posisi baru "${_moving!.name}"?',
+                          style: const TextStyle(fontSize: 13),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => setState(() {
+                          _moving = null;
+                          _movingPos = null;
+                        }),
+                        child: const Text('Batal'),
+                      ),
+                      const SizedBox(width: 4),
+                      FilledButton(
+                        onPressed: (_movingPos == null || _savingMove) ? null : _saveMove,
+                        child: _savingMove
+                            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                            : const Text('Simpan'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          if (!_loading && _points.isNotEmpty && _errors.isNotEmpty && _moving == null)
             Positioned(
               left: 12,
               right: 12,
