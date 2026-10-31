@@ -262,10 +262,10 @@ if [ "$FREE_MB" -lt 3072 ]; then
   exit 1
 fi
 
-# Step 1: Git pull
+# Step 1: Git pull (fetch + hard reset so rewritten upstream history still works)
 write_status '{"phase":"running","step":"Git pull","startedAt":'$(date +%s)'}'
-log "Step 1: Git pull"
-git pull origin master >> "$LOG_FILE" 2>&1
+log "Step 1: Git pull (fetch + reset)"
+git fetch origin master >> "$LOG_FILE" 2>&1 && git reset --hard origin/master >> "$LOG_FILE" 2>&1
 if [ $? -ne 0 ]; then
   write_status '{"phase":"error","step":"Git pull","error":"git pull failed","finishedAt":'$(date +%s)'}'
   log "ERROR: Git pull failed"

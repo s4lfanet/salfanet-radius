@@ -5,7 +5,7 @@ export HOME=/root
 cd /var/www/salfanet-radius
 
 echo '=== Git pull ==='
-git pull origin master 2>&1
+git fetch origin master 2>&1 && git reset --hard origin/master 2>&1
 
 echo '=== Backend build ==='
 cd backend
