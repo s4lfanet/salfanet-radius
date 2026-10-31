@@ -7,5 +7,7 @@ export async function GET() {
     version: getAppVersion(),
     status: 'ok',
     timestamp: new Date().toISOString(),
+    // Lets a client tell that the backend restarted (the company page waits for it).
+    uptimeSeconds: Math.round(process.uptime()),
   })
 }
