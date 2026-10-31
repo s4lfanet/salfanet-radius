@@ -73,7 +73,12 @@ export async function POST(req: NextRequest) {
     if (services === 'pm2' || services === 'all') {
       commands.push('pm2 restart salfanet-wa --update-env');
       commands.push('pm2 restart salfanet-frontend --update-env');
-      commands.push('sleep 2 && pm2 restart salfanet-backend --update-env');
+      // Backend can't `pm2 restart` itself from inside the process being
+      // killed: PM2's God daemon retains the :3001 socket fd of the dead
+      // child -> every new instance gets EADDRINUSE -> crash-loop -> 502.
+      // Detached shell + SIGINT instead: process exits gracefully, PM2
+      // auto-restarts only after the port is fully released.
+      commands.push("setsid bash -c 'sleep 8 && pm2 sendSignal SIGINT salfanet-backend' </dev/null >/dev/null 2>&1 &");
     }
 
     // Execute restart in background after delay
