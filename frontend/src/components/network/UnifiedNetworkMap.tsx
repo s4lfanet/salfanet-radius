@@ -96,8 +96,10 @@ function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number
 }
 
 /** Live ONT section for PPPoE customers — resolves the GenieACS device
-    by PPPoE username. Mounts when the popup opens (lazy fetch). */
-function GenieAcsInfo({ username }: { username: string }) {
+    by PPPoE username. Mounts when the popup/panel renders it (lazy fetch).
+    `panel` switches text colors to theme tokens for use inside the dark
+    side panel (popup variant stays on fixed grays for the white card). */
+export function GenieAcsInfo({ username, panel = false }: { username: string; panel?: boolean }) {
   const [state, setState] = useState<'loading' | 'ready' | 'none' | 'error'>('loading');
   const [dev, setDev] = useState<Record<string, unknown> | null>(null);
 
@@ -121,31 +123,34 @@ function GenieAcsInfo({ username }: { username: string }) {
 
   if (state === 'none' || state === 'error') return null;
 
+  const labelCls = `w-24 shrink-0 font-medium ${panel ? 'text-muted-foreground' : 'text-gray-500'}`;
+  const valueCls = panel ? 'text-foreground' : 'text-gray-800';
+
   const row = (label: string, value?: string | number | null) => {
     if (value === undefined || value === null || String(value).trim() === '' || String(value) === '-') return null;
     return (
       <div className="flex text-xs" key={label}>
-        <span className="w-24 shrink-0 text-gray-500 font-medium">{label}</span>
-        <span className="text-gray-800">{value}</span>
+        <span className={labelCls}>{label}</span>
+        <span className={valueCls}>{value}</span>
       </div>
     );
   };
 
   return (
-    <div className="mt-2 pt-2 border-t border-gray-100">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 mb-1">
+    <div className={`mt-2 pt-2 border-t ${panel ? 'border-border' : 'border-gray-100'}`}>
+      <p className={`text-[10px] font-semibold uppercase tracking-wider mb-1 ${panel ? 'text-muted-foreground' : 'text-gray-400'}`}>
         Perangkat ONT (GenieACS)
       </p>
       {state === 'loading' && (
         <div className="animate-pulse space-y-1">
-          <div className="h-2.5 bg-gray-200 rounded w-3/4" />
-          <div className="h-2.5 bg-gray-200 rounded w-1/2" />
+          <div className={`h-2.5 rounded w-3/4 ${panel ? 'bg-muted' : 'bg-gray-200'}`} />
+          <div className={`h-2.5 rounded w-1/2 ${panel ? 'bg-muted' : 'bg-gray-200'}`} />
         </div>
       )}
       {state === 'ready' && dev && (
         <div className="space-y-0.5">
           <div className="flex items-center text-xs">
-            <span className="w-24 shrink-0 text-gray-500 font-medium">Status ONT</span>
+            <span className={labelCls}>Status ONT</span>
             <span className={`inline-flex items-center gap-1 font-semibold ${dev.online ? 'text-green-700' : 'text-red-600'}`}>
               <span className={`w-1.5 h-1.5 rounded-full ${dev.online ? 'bg-green-500' : 'bg-red-500'}`} />
               {dev.online ? 'Online' : 'Offline'}
@@ -156,7 +161,7 @@ function GenieAcsInfo({ username }: { username: string }) {
           {row('PPPoE IP', String(dev.ipAddress ?? ''))}
           {dev.rxDbm !== null && dev.rxDbm !== undefined ? (
             <div className="flex text-xs">
-              <span className="w-24 shrink-0 text-gray-500 font-medium">RX Power</span>
+              <span className={labelCls}>RX Power</span>
               <span className={`font-semibold ${
                 Number(dev.rxDbm) >= -25 ? 'text-green-700' :
                 Number(dev.rxDbm) >= -28 ? 'text-amber-600' : 'text-red-600'

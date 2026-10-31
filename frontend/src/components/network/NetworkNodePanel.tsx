@@ -5,6 +5,7 @@ import { X, Edit2, Trash2, Save, XCircle, Loader2, MapPin, Server, Box, GitBranc
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { NumberInput } from '@/components/ui/number-input';
 import { apiAdmin } from '@/lib/api';
+import { GenieAcsInfo } from '@/components/network/UnifiedNetworkMap';
 
 export interface MapEntity {
   id: string;
@@ -137,9 +138,19 @@ interface EntityFormData {
   odcId?: string;
   ponPort?: number | string;
   splitterRatio?: string;
+  splitterType?: string;
+  vendor?: string;
+  firmwareVersion?: string;
+  isOnline?: boolean;
+  onlineOnu?: number;
+  offlineOnu?: number;
+  totalOnu?: number;
+  totalSpliceCapacity?: number;
   network_olts?: { name?: string } | null;
   network_odcs?: { name?: string; length?: number } | null;
-  _count?: { network_odps?: number; odp_customer_assignments?: number } | null;
+  network_otbs?: { name?: string } | null;
+  parent_odp?: { name?: string } | null;
+  _count?: { network_odps?: number; network_odcs?: number; odp_customer_assignments?: number; child_odps?: number } | null;
   metadata?: { username?: string; package?: string; address?: string } | null;
   [key: string]: unknown;
 }
@@ -242,8 +253,15 @@ function NodeDetails({ detail, type }: { detail: EntityFormData; type: MapEntity
   if (!detail) return null;
   if (type === 'OLT') return (<>
     <DetailRow label="IP Address" value={detail.ipAddress} mono />
-    <DetailRow label="Brand" value={detail.brand} />
+    <DetailRow label="Brand" value={detail.brand ?? detail.vendor} />
     <DetailRow label="Model" value={detail.model} />
+    <DetailRow label="Firmware" value={detail.firmwareVersion} />
+    <DetailRow label="Online" value={detail.isOnline === true ? 'Yes' : detail.isOnline === false ? 'No' : null} />
+    <DetailRow label="ONU Online" value={detail.onlineOnu} />
+    <DetailRow label="ONU Offline" value={detail.offlineOnu} />
+    <DetailRow label="Total ONU" value={detail.totalOnu} />
+    <DetailRow label="ODC Count" value={detail._count?.network_odcs} />
+    <DetailRow label="ODP Count" value={detail._count?.network_odps} />
     <DetailRow label="Status" value={detail.status} />
     <DetailRow label="Location" value={detail.latitude && `${detail.latitude}, ${detail.longitude}`} />
   </>);
@@ -264,28 +282,50 @@ function NodeDetails({ detail, type }: { detail: EntityFormData; type: MapEntity
   </>);
   if (type === 'ODC') return (<>
     <DetailRow label="OLT" value={detail.network_olts?.name} />
+    <DetailRow label="OTB" value={detail.network_otbs?.name} />
     <DetailRow label="PON Port" value={detail.ponPort} />
     <DetailRow label="Port Count" value={detail.portCount} />
-    <DetailRow label="ODP Count" value={detail._count?.network_odps} />
+    <DetailRow label="ODP Count" value={detail._count?.network_odps ?? detail.network_odcs?.length} />
+    <DetailRow label="Splice Capacity" value={detail.totalSpliceCapacity} />
     <DetailRow label="Status" value={detail.status} />
     <DetailRow label="Location" value={detail.latitude && `${detail.latitude}, ${detail.longitude}`} />
   </>);
   if (type === 'ODP') return (<>
     <DetailRow label="ODC" value={detail.network_odcs?.name} />
     <DetailRow label="OLT" value={detail.network_olts?.name} />
+    <DetailRow label="Parent ODP" value={detail.parent_odp?.name} />
     <DetailRow label="Port Count" value={detail.portCount} />
     <DetailRow label="Splitter Ratio" value={detail.splitterRatio} />
+    <DetailRow label="Splitter Type" value={detail.splitterType} />
     <DetailRow label="Subscribers" value={detail._count?.odp_customer_assignments} />
+    <DetailRow label="Child ODPs" value={detail._count?.child_odps} />
     <DetailRow label="Status" value={detail.status} />
     <DetailRow label="Location" value={detail.latitude && `${detail.latitude}, ${detail.longitude}`} />
   </>);
-  if (type === 'CUSTOMER') return (<>
-    <DetailRow label="Username" value={detail.metadata?.username} mono />
-    <DetailRow label="Package" value={detail.metadata?.package} />
-    <DetailRow label="Status" value={detail.status} />
-    <DetailRow label="Address" value={detail.metadata?.address} />
-    <DetailRow label="Location" value={detail.latitude && `${detail.latitude}, ${detail.longitude}`} />
-  </>);
+  if (type === 'CUSTOMER') {
+    // detail is the map entity itself for customers; its metadata carries the
+    // raw with-location record (username/pppoe_profiles/odpName/address).
+    const meta = (detail.metadata ?? {}) as Record<string, unknown>;
+    const raw = detail as unknown as Record<string, unknown>;
+    const pick = (...keys: string[]) => {
+      for (const k of keys) {
+        const v = meta[k] ?? raw[k];
+        if (v !== undefined && v !== null && String(v).trim() !== '') return String(v);
+      }
+      return undefined;
+    };
+    const uname = pick('username');
+    return (<>
+      <DetailRow label="Username" value={uname} mono />
+      <DetailRow label="Package" value={pick('package', 'pppoe_profiles', 'package_name')} />
+      <DetailRow label="Speed" value={pick('speed')} />
+      <DetailRow label="ODP" value={pick('odpName')} />
+      <DetailRow label="Status" value={detail.status} />
+      <DetailRow label="Address" value={pick('address')} />
+      <DetailRow label="Location" value={detail.latitude && `${detail.latitude}, ${detail.longitude}`} />
+      {uname ? <div className="pt-1"><GenieAcsInfo username={uname} panel /></div> : null}
+    </>);
+  }
   return null;
 }
 
