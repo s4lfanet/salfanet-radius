@@ -6,6 +6,45 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.27.0] - 2026-10-31 - Peta Terpadu Hidup + Geser/Hapus Titik + Info ONT GenieACS + APK Kolektor
+
+### Summary
+Rilis besar setelah 5.26.0. Peta Terpadu yang sebelumnya hanya menampilkan pelanggan kini menampilkan seluruh infrastruktur (OLT/ODC/ODP/OTB/Joint Closure), dengan pilihan basemap, mode geser dan hapus titik langsung di peta, popup informatif termasuk data ONT live dari GenieACS, dan panel detail yang lengkap. Tiga halaman manajemen fiber yang mati diperbaiki, aplikasi kolektor native baru dirilis, dan aplikasi admin mendapat paritas peta.
+
+### Peta Jaringan & Topologi
+- **[FIX]** Peta Terpadu kosong selain pelanggan: `/api/network/nodes` membaca tabel `network_nodes` yang memang kosong — kini agregasi gabungan dari tabel asli `networkOLT`, `networkODC`, `networkODP`, `network_otbs`, dan `network_joint_closures`
+- **[FEATURE]** Pilihan basemap Street/Satellite/Topo/Dark di Peta Terpadu (sama seperti Peta Jaringan)
+- **[FEATURE]** Mode "Geser Titik": marker infrastruktur bisa diseret untuk koreksi koordinat (PUT per-tipe), tombol "Hapus Titik Ini" dengan konfirmasi — pelanggan sengaja tidak bisa digeser/dihapus dari peta
+- **[FIX]** Edit/hapus ODP, ODC, OLT selalu 404: frontend memanggil rute path-style `/api/network/{tipe}/{id}` sementara handler hanya menerima query/body id — kini ada forwarder `[id]` untuk PUT, DELETE, dan GET
+- **[FIX]** Dropdown OLT kosong di form Tambah Node: panel membaca `d.data` padahal endpoint mengembalikan `{olts}` — semua shape dropdown (olt/odc/otb/cables/joint-closures) diaudit
+- **[FIX]** Tombol toolbar Peta Terpadu tertumpuk kontrol peta (basemap/z-index 1000 menutupi Tambah Node): kontrol digabung ke satu toolbar, zoom control pindah ke kanan-bawah agar tidak bertabrakan tombol Filter di mobile
+- **[FIX]** Teks popup tidak terbaca: kartu popup selalu putih tetapi token tema resolve ke warna terang di tema dark — variabel tema kini di-pin ke nilai light di dalam `.popup-card` (memperbaiki semua popup di kedua peta)
+- **[FEATURE]** Popup marker diperkaya: pelanggan (username, paket, speed, ODP, alamat) + seksi "Perangkat ONT (GenieACS)" — serial, model, PPPoE IP, RX/TX power berwarna per ambang, suhu, uptime, mode PON, SSID, jumlah klien WiFi, last inform; infrastruktur menampilkan upstream ter-resolve
+- **[FEATURE]** Panel "Lihat Detail" lengkap: endpoint GET `[id]` baru untuk OLT/ODC/ODP dengan relasi; pelanggan juga menampilkan info ONT GenieACS
+- **[FEATURE]** Endpoint baru `GET /api/genieacs/device-by-username?username=` — resolusi perangkat GenieACS dari username PPPoE; daftar path TR-069 diekstrak ke `lib/genieacs/param-paths.ts`
+
+### Manajemen Fiber
+- **[FIX]** `GET /api/network/cables` error 500 mematikan tiga halaman (Kabel Fiber, Core Fiber, Titik Splice): relasi dipanggil `cable_segments` padahal di schema bernama `segments`
+
+### Aplikasi Mobile
+- **[FEATURE]** **APK Kolektor native baru** (`mobile/collector_app`, "Salfanet Kolektor") — paritas portal web kolektor: beranda per periode, pelanggan (tandai lunas, janji bayar ber-GPS, kirim link invoice), tagihan, setoran harian + rekap, isolir, penagihan saya, cabut ONT (form pengajuan + riwayat), bukti pembayaran, notifikasi, pengaturan server, update dari dalam aplikasi (target rilis `collector`)
+- **[FEATURE]** APK admin: geser + hapus titik infrastruktur di Peta Jaringan, seksi ONT GenieACS di detail pelanggan — naik ke **1.0.21**
+- **[FEATURE]** Animasi splash yang lebih matang di APK admin dan pelanggan
+
+### Menu & Navigasi
+- **[FEATURE]** Submenu GenieACS menampilkan **Perangkat** + **Settings** (item lain tetap ada via URL)
+
+### Kualitas Frontend
+- **[FIX]** Bug enum `invoices_status` di teknisi/customers (uppercase `PENDING`/`OVERDUE` vs lowercase di kode — query ikut gagal di runtime)
+- **[CHORE]** Bersih-bersih audit: 46 `console.log` dihapus, 496 `transition-all` diganti, warna neon jadi token `@theme`, emoji dekoratif diganti ikon Lucide, kontras sidebar/tombol ke WCAG AA, toast PWA menghormati safe-area
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema database
+- Aplikasi admin naik ke **1.0.21** — publish APK baru dari release `apk-latest` agar pengguna ditawari update
+- APK Kolektor: unduh `salfanet-collector-*` dari `apk-latest`, lalu unggah di Admin → Download APK (kartu "Kolektor Lapangan") agar update in-app berfungsi
+
+---
+
 ## [5.26.0] - 2026-10-28 - Push Tanpa Firebase Wajib + QRIS Livin' + Splash & Panduan App
 
 ### Summary

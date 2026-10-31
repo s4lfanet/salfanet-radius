@@ -60,6 +60,8 @@ class _Point {
   /// Backend resource path for move/delete (olts/odcs/odps/otbs/joint-closures).
   /// Null for customers — their location is managed from the customer menu.
   final String? typePath;
+  /// PPPoE username for customers — used to resolve the ONT in GenieACS.
+  final String? username;
   final List<(String, String)> rows;
 }
 
@@ -226,9 +228,11 @@ class _NetworkMapScreenState extends State<NetworkMapScreen> {
         name: _s(c['name']).isEmpty ? _s(c['username']) : _s(c['name']),
         pos: pos,
         status: _s(c['status']),
+        username: _s(c['username']).isEmpty ? null : _s(c['username']),
         rows: [
           ('Username', _s(c['username'])),
           ('Paket', _s(c['pppoe_profiles'])),
+          ('Speed', _s(c['speed'])),
           if (_s(c['odpName']).isNotEmpty) ('ODP', _s(c['odpName'])),
           if (_s(c['address']).isNotEmpty) ('Alamat', _s(c['address'])),
         ],
@@ -434,6 +438,7 @@ class _NetworkMapScreenState extends State<NetworkMapScreen> {
                     ],
                   ),
                 ),
+                if (p.username != null) _OntSection(username: p.username!),
                 const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
@@ -739,6 +744,115 @@ class _NetworkMapScreenState extends State<NetworkMapScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Live ONT section for PPPoE customers — resolves the GenieACS device by
+/// PPPoE username (same endpoint the web unified map popup uses).
+class _OntSection extends StatefulWidget {
+  const _OntSection({required this.username});
+  final String username;
+
+  @override
+  State<_OntSection> createState() => _OntSectionState();
+}
+
+class _OntSectionState extends State<_OntSection> {
+  Map<String, dynamic>? _dev;
+  bool _loading = true;
+  bool _none = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetch();
+  }
+
+  Future<void> _fetch() async {
+    try {
+      final res = await ApiClient.instance.get(
+        '/api/genieacs/device-by-username?username=${Uri.encodeComponent(widget.username)}',
+      );
+      if (!mounted) return;
+      final dev = res is Map && res['device'] is Map ? Map<String, dynamic>.from(res['device'] as Map) : null;
+      setState(() {
+        _dev = dev;
+        _none = dev == null;
+        _loading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_none) return const SizedBox.shrink();
+    final text = Theme.of(context).textTheme;
+    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
+    final scheme = Theme.of(context).colorScheme;
+
+    Widget row(String k, String? v, {Color? valueColor}) {
+      if (v == null || v.trim().isEmpty || v == '-') return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(width: 110, child: Text(k, style: text.bodySmall?.copyWith(color: muted))),
+            Expanded(child: Text(v, style: text.bodyMedium?.copyWith(color: valueColor))),
+          ],
+        ),
+      );
+    }
+
+    final online = _dev?['online'] == true;
+    final rx = _dev?['rxDbm'] is num ? (_dev!['rxDbm'] as num).toDouble() : null;
+    final rxColor = rx == null
+        ? null
+        : rx >= -25
+            ? Colors.green.shade700
+            : rx >= -28
+                ? Colors.amber.shade800
+                : Colors.red.shade600;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 10),
+        Divider(color: scheme.outlineVariant, height: 1),
+        const SizedBox(height: 8),
+        Text('Perangkat ONT (GenieACS)', style: text.labelSmall?.copyWith(color: muted, letterSpacing: 0.6, fontWeight: FontWeight.w600)),
+        if (_loading) ...[
+          const SizedBox(height: 8),
+          const SizedBox(height: 14, width: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+        ],
+        if (_dev != null) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 3),
+            child: Row(
+              children: [
+                SizedBox(width: 110, child: Text('Status ONT', style: text.bodySmall?.copyWith(color: muted))),
+                Icon(Icons.circle, size: 8, color: online ? Colors.green : Colors.red),
+                const SizedBox(width: 6),
+                Text(online ? 'Online' : 'Offline', style: text.bodyMedium?.copyWith(color: online ? Colors.green.shade700 : Colors.red.shade600, fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ),
+          row('ONT', [_s(_dev!['manufacturer']), _s(_dev!['model'])].where((s) => s.isNotEmpty).join(' ')),
+          row('Serial', _s(_dev!['serialNumber'])),
+          row('PPPoE IP', _s(_dev!['ipAddress'])),
+          row('RX Power', _s(_dev!['rxPower']), valueColor: rxColor),
+          row('TX Power', _s(_dev!['txPower']).isEmpty ? null : '${_s(_dev!['txPower'])} dBm'),
+          row('Suhu', _s(_dev!['temperature']).isEmpty ? null : '${_s(_dev!['temperature'])}°C'),
+          row('Uptime', _s(_dev!['uptime'])),
+          row('PON', _s(_dev!['ponMode'])),
+          row('SSID', _s(_dev!['ssid'])),
+          row('WiFi Client', _s(_dev!['wifiClients'])),
+          row('Inform', _dev!['lastInform'] != null ? _s(_dev!['lastInform']).replaceAll('T', ' ').split('.').first : null),
+        ],
+      ],
     );
   }
 }
