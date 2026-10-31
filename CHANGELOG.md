@@ -50,6 +50,7 @@ Rilis besar setelah 5.26.0. Peta Terpadu yang sebelumnya hanya menampilkan pelan
 - Bila panel sempat 502 karena masalah di atas dan tidak bisa dibuka: di server jalankan `cd /var/www/salfanet-radius && pm2 restart ecosystem.config.js --only salfanet-frontend,salfanet-backend --update-env` (dari shell login biasa, bukan dari proses PM2), lalu `pm2 save`
 - Aplikasi admin naik ke **1.0.21** — publish APK baru dari release `apk-latest` agar pengguna ditawari update
 - APK Kolektor: unduh `salfanet-collector-*` dari `apk-latest`, lalu unggah di Admin → Download APK (kartu "Kolektor Lapangan") agar update in-app berfungsi
+- **[CHORE]** Bump versi root, frontend, dan backend ke 5.27.0 (sebelumnya masih 5.26.0, sehingga panel dan `/api/health` menampilkan versi lama)
 
 ---
 
