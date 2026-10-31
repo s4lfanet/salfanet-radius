@@ -55,11 +55,13 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Schedule restart after delay (so response can be sent first).
-    // NOTE: this code runs inside salfanet-backend — restarting 'all' at
-    // once kills this process mid-loop (later commands never run) and has
-    // caused EADDRINUSE crash-loops. Restart everything else first and the
-    // backend LAST, one service per command.
+    // NOTE: this code runs inside salfanet-backend. Any pm2 command spawned
+    // as a direct child of this process breaks the restart: the child dies
+    // with the backend mid-operation, and PM2's God daemon ends up holding
+    // the stale listen fd -> EADDRINUSE crash-loop -> 502. The web updater
+    // works because it runs `pm2 restart` inside a DETACHED script (see
+    // run-update.sh) that survives the backend's death — replicate that:
+    // build the whole sequence into ONE detached setsid script, backend last.
     const commands: string[] = [];
 
     if (services === 'freeradius' || services === 'all') {
@@ -72,30 +74,14 @@ export async function POST(req: NextRequest) {
 
     if (services === 'pm2' || services === 'all') {
       commands.push('pm2 restart salfanet-wa --update-env');
-      // pm2 restart AND reload both hit the EADDRINUSE fd bug on PM2 v7
-      // for processes that bind ports. SIGINT -> graceful exit -> PM2
-      // auto-restart works reliably (same mechanism as the backend below).
-      commands.push('pm2 sendSignal SIGINT salfanet-frontend');
-      // Backend can't `pm2 restart` itself from inside the process being
-      // killed: PM2's God daemon retains the :3001 socket fd of the dead
-      // child -> every new instance gets EADDRINUSE -> crash-loop -> 502.
-      // Detached shell + SIGINT instead: process exits gracefully, PM2
-      // auto-restarts only after the port is fully released.
-      commands.push("setsid bash -c 'sleep 8 && pm2 sendSignal SIGINT salfanet-backend' </dev/null >/dev/null 2>&1 &");
+      commands.push('pm2 restart salfanet-frontend --update-env');
+      commands.push('pm2 restart salfanet-backend --update-env');
     }
 
-    // Execute restart in background after delay
-    setTimeout(async () => {
-      for (const cmd of commands) {
-        try {
-          console.log(`Executing: ${cmd}`);
-          await execAsync(cmd);
-          console.log(`Success: ${cmd}`);
-        } catch (error: any) {
-          console.error(`Error executing ${cmd}:`, error.message);
-        }
-      }
-    }, delay);
+    const script = `sleep ${Math.max(1, Math.round(delay / 1000))}; ${commands.join('; ')}`;
+    execAsync(`setsid bash -c ${JSON.stringify(script)} </dev/null >/dev/null 2>&1 &`).catch(
+      (error: any) => console.error('Restart dispatch error:', error.message)
+    );
 
     return NextResponse.json({
       success: true,
