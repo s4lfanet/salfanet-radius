@@ -2278,6 +2278,34 @@ div[style*="z-index: 9999"].fixed.inset-0 {
  .popup-card {
   min-width: 280px;
   background: white;
+  color: #0f172a;
+  /* The card is always white; pin the theme tokens inside it to their
+     light values so dark-mode tokens do not wash the text out. */
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #465fff;
+  --primary-foreground: #ffffff;
+  --secondary: #ecf3ff;
+  --secondary-foreground: #2a31d8;
+  --muted: #f2f4f7;
+  --muted-foreground: #475467;
+  --accent: #7a5af8;
+  --accent-foreground: #ffffff;
+  --destructive: #f04438;
+  --destructive-foreground: #ffffff;
+  --success: #039855;
+  --success-foreground: #ffffff;
+  --warning: #dc6803;
+  --warning-foreground: #ffffff;
+  --info: #0086c9;
+  --info-foreground: #ffffff;
+  --border: #e4e7ec;
+  --input: #ffffff;
+  --ring: #465fff;
  }
  
  .popup-header {

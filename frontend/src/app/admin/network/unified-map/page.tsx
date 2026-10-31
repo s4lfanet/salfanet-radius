@@ -100,12 +100,19 @@ export default function UnifiedMapPage() {
         ...(nodesData.data || []).map((n) => ({
           id: String(n.id), type: String(n.type) as MapEntity['type'], code: String(n.code ?? ''), name: String(n.name ?? ''),
           latitude: parseFloat(String(n.latitude ?? 0)), longitude: parseFloat(String(n.longitude ?? 0)),
-          status: String(n.status ?? ''), metadata: (n.metadata ?? {}) as Record<string, unknown>,
+          status: String(n.status ?? ''), address: n.address ? String(n.address) : null,
+          metadata: { ...((n.metadata ?? {}) as Record<string, unknown>), upstreamId: n.upstreamId ?? null },
         })),
         ...(customersData.data || []).map((c) => ({
           id: String(c.id), type: 'CUSTOMER' as const, code: String(c.username ?? ''), name: String(c.name ?? ''),
           latitude: parseFloat(String(c.latitude)), longitude: parseFloat(String(c.longitude)),
-          status: String(c.status), metadata: c,
+          status: String(c.status),
+          username: c.username ? String(c.username) : undefined,
+          package: (c.package_name ?? c.pppoe_profiles) ? String(c.package_name ?? c.pppoe_profiles) : undefined,
+          speed: c.speed ? String(c.speed) : undefined,
+          odpName: c.odpName ? String(c.odpName) : undefined,
+          address: c.address ? String(c.address) : null,
+          metadata: c,
         })),
       ]);
     } catch (e: unknown) { console.error('Error loading entities:', e); }

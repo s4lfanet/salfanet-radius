@@ -456,68 +456,110 @@ export default function UnifiedNetworkMap({
     }
   };
 
+  const entityById = useMemo(
+    () => new Map(entities.map((e) => [e.id, e])),
+    [entities],
+  );
+
+  const statusPill = (status: string) => {
+    const s = (status || '').toLowerCase();
+    const cls =
+      s === 'active' || s === 'online' ? 'bg-green-100 text-green-800' :
+      s === 'maintenance' ? 'bg-amber-100 text-amber-800' :
+      s === 'isolated' || s === 'damaged' || s === 'offline' ? 'bg-red-100 text-red-800' :
+      'bg-gray-100 text-gray-700';
+    return (
+      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${cls}`}>
+        {(status || 'unknown').toUpperCase()}
+      </span>
+    );
+  };
+
+  const popupRow = (label: string, value?: string | number | null) => {
+    if (value === undefined || value === null || String(value).trim() === '') return null;
+    return (
+      <div className="flex text-sm" key={label}>
+        <span className="w-24 shrink-0 text-gray-500 font-medium">{label}</span>
+        <span className="text-gray-800">{value}</span>
+      </div>
+    );
+  };
+
+  const TYPE_GRADIENT: Record<string, string> = {
+    OLT: 'from-violet-500 to-violet-600',
+    OTB: 'from-blue-500 to-blue-600',
+    JOINT_CLOSURE: 'from-purple-500 to-purple-600',
+    ODC: 'from-cyan-500 to-cyan-600',
+    ODP: 'from-emerald-500 to-emerald-600',
+    CUSTOMER: 'from-sky-500 to-sky-600',
+  };
+
   const renderEntityPopup = (entity: MapEntity) => {
+    const meta = (entity.metadata ?? {}) as Record<string, unknown>;
+    const upstream = meta.upstreamId ? entityById.get(String(meta.upstreamId)) : undefined;
+    const typeLabel =
+      entity.type === 'JOINT_CLOSURE' ? 'Joint Closure' :
+      entity.type === 'OTB' ? 'OTB (Distribution)' :
+      entity.type === 'CUSTOMER' ? 'Pelanggan' : entity.type;
+    const gradient = TYPE_GRADIENT[entity.type] ?? 'from-slate-500 to-slate-600';
+    const coords = `${entity.latitude.toFixed(5)}, ${entity.longitude.toFixed(5)}`;
+
     if (entity.type === 'CUSTOMER') {
       return (
-        <div className="p-2 min-w-[200px]">
-          <h3 className="font-bold text-lg mb-1">👤 {entity.name}</h3>
-          <div className="text-sm space-y-1">
-            <div><span className="font-semibold">Username:</span> {entity.username}</div>
-            <div><span className="font-semibold">Status:</span> 
-              <span className={`ml-1 px-2 py-0.5 rounded text-xs ${
-                entity.status === 'active' ? 'bg-green-100 text-green-800' :
-                entity.status === 'isolated' ? 'bg-red-100 text-red-800' :
-                'bg-gray-100 text-gray-800'
-              }`}>
-                {entity.status.toUpperCase()}
-              </span>
-            </div>
-            {entity.package && <div><span className="font-semibold">Package:</span> {entity.package}</div>}
-            {entity.speed && <div><span className="font-semibold">Speed:</span> {entity.speed}</div>}
-            {entity.odpName && <div><span className="font-semibold">ODP:</span> {entity.odpName}</div>}
-            {entity.address && <div><span className="font-semibold">Address:</span> {entity.address}</div>}
+        <div className="popup-card">
+          <div className={`popup-header bg-gradient-to-r ${gradient}`}>
+            <span className="font-bold text-base">{entity.name || entity.username || 'Pelanggan'}</span>
+            <p className="text-white/80 text-sm mt-0.5">
+              Pelanggan{entity.username ? ` · ${entity.username}` : ''}
+            </p>
           </div>
-          <button
-            onClick={() => onEntityClick?.(entity)}
-            className="mt-2 w-full bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600"
-          >
-            View Details
-          </button>
-        </div>
-      );
-    } else {
-      // Infrastructure node
-      const typeLabel = entity.type === 'JOINT_CLOSURE' ? 'Joint Closure' : 
-                        entity.type === 'OTB' ? 'OTB (Distribution)' : 
-                        entity.type;
-      return (
-        <div className="p-2 min-w-[200px]">
-          <h3 className="font-bold text-lg mb-1">{typeLabel}</h3>
-          <div className="text-sm space-y-1">
-            <div><span className="font-semibold">Code:</span> {entity.code}</div>
-            <div><span className="font-semibold">Name:</span> {entity.name}</div>
-            <div><span className="font-semibold">Status:</span> 
-              <span className={`ml-1 px-2 py-0.5 rounded text-xs ${
-                entity.status === 'active' ? 'bg-green-100 text-green-800' :
-                'bg-gray-100 text-gray-800'
-              }`}>
-                {entity.status.toUpperCase()}
-              </span>
+          <div className="popup-content space-y-1">
+            {popupRow('Username', entity.username)}
+            <div className="flex items-center text-sm">
+              <span className="w-24 shrink-0 text-gray-500 font-medium">Status</span>
+              {statusPill(entity.status)}
             </div>
-            {entity.address && <div><span className="font-semibold">Location:</span> {entity.address}</div>}
-            <div className="text-xs text-gray-500">
-              {entity.latitude.toFixed(6)}, {entity.longitude.toFixed(6)}
-            </div>
+            {popupRow('Paket', entity.package)}
+            {popupRow('Speed', entity.speed)}
+            {popupRow('ODP', entity.odpName)}
+            {popupRow('Alamat', entity.address)}
+            {popupRow('Koordinat', coords)}
+            <button
+              onClick={() => onEntityClick?.(entity)}
+              className="mt-2 w-full rounded bg-sky-600 text-white px-3 py-1.5 text-sm font-medium hover:bg-sky-700"
+            >
+              Lihat Detail
+            </button>
           </div>
-          <button
-            onClick={() => onEntityClick?.(entity)}
-            className="mt-2 w-full bg-indigo-500 text-white px-3 py-1 rounded text-sm hover:bg-indigo-600"
-          >
-            View Diagram
-          </button>
         </div>
       );
     }
+
+    return (
+      <div className="popup-card">
+        <div className={`popup-header bg-gradient-to-r ${gradient}`}>
+          <span className="font-bold text-base">{typeLabel}</span>
+          <p className="text-white/80 text-sm mt-0.5 truncate">{entity.name}</p>
+        </div>
+        <div className="popup-content space-y-1">
+          {entity.code && entity.code !== entity.name ? popupRow('Kode', entity.code) : null}
+          <div className="flex items-center text-sm">
+            <span className="w-24 shrink-0 text-gray-500 font-medium">Status</span>
+            {statusPill(entity.status)}
+          </div>
+          {upstream ? popupRow('Upstream', `${upstream.name} (${upstream.type})`) : null}
+          {entity.type === 'OLT' ? popupRow('IP', String(meta.ipAddress ?? '')) : null}
+          {popupRow('Lokasi', entity.address)}
+          {popupRow('Koordinat', coords)}
+          <button
+            onClick={() => onEntityClick?.(entity)}
+            className="mt-2 w-full rounded bg-indigo-600 text-white px-3 py-1.5 text-sm font-medium hover:bg-indigo-700"
+          >
+            Lihat Detail
+          </button>
+        </div>
+      </div>
+    );
   };
 
   if (loading) {
@@ -694,7 +736,7 @@ export default function UnifiedNetworkMap({
               <Popup>
                 {renderEntityPopup(entity)}
                 {nodeTypePath(entity.type) && (
-                  <div className="mt-2 flex flex-col gap-1">
+                  <div className="mt-2 px-3 pb-3 flex flex-col gap-1">
                     {!moveMode && (
                       <button
                         type="button"
