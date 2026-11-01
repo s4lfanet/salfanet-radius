@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { jwtVerify } from 'jose';
 import { TECH_JWT_SECRET } from '@/server/auth/technician-secret';
+import { reconcileOntTasks } from '@/server/services/ont-removal-task.service';
 
 async function verifyTechnician(req: NextRequest) {
   const token = req.cookies.get('technician-token')?.value;
@@ -36,6 +37,9 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const rawStatus = searchParams.get('status') || 'PENDING';
     const status = ['PENDING', 'COMPLETED', 'CANCELLED'].includes(rawStatus) ? rawStatus : 'PENDING';
+
+    // Cancel tasks whose customer is subscribed again before listing them.
+    await reconcileOntTasks();
 
     const tasks = await prisma.ontRemovalTask.findMany({
       where: { assignedTechnicianId: tech.id, status },

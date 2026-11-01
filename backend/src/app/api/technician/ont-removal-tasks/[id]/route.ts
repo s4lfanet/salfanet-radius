@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { jwtVerify } from 'jose';
 import { TECH_JWT_SECRET } from '@/server/auth/technician-secret';
+import { reconcileOntTasks } from '@/server/services/ont-removal-task.service';
 
 async function verifyTechnician(req: NextRequest) {
   const token = req.cookies.get('technician-token')?.value;
@@ -52,14 +53,17 @@ export async function PATCH(
     if (task.assignedTechnicianId !== tech.id) {
       return NextResponse.json({ error: 'Anda tidak ditugaskan pada task ini' }, { status: 403 });
     }
-    if (task.status !== 'PENDING') {
-      return NextResponse.json({ error: 'Task sudah tidak pending' }, { status: 400 });
+    // The customer may have paid or been re-activated since the task was made.
+    await reconcileOntTasks([task.username]);
+    const current = await prisma.ontRemovalTask.findUnique({ where: { id } });
+    if (!current || current.status !== 'PENDING') {
+      return NextResponse.json({ error: 'Task sudah tidak pending (dibatalkan, selesai, atau pelanggan berlangganan kembali)' }, { status: 400 });
     }
 
     const updated = await prisma.ontRemovalTask.update({
       where: { id },
       data: action === 'complete'
-        ? { status: 'COMPLETED', completedAt: new Date(), completedNotes: notes || null }
+        ? { status: 'COMPLETED', completedAt: new Date(), completedNotes: notes || null, completedById: tech.id, completedByRole: 'technician' }
         : { status: 'CANCELLED', cancelledBy: tech.id, cancelledAt: new Date(), cancelReason: notes || null },
     });
 

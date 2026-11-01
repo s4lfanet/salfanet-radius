@@ -1915,7 +1915,8 @@ model ontRemoval {
 }
 
 // Cabut ONT work-order lifecycle: admin/NOC creates a task assigned to a
-// technician for a specific customer; the technician completes or cancels
+// technician and/or collector for a specific customer (collectors cannot start
+// one themselves); the assignee completes or cancels
 // it; a task is also auto-cancelled if the customer pays their bill before
 // the technician gets there. Separate from `ontRemoval` above, which is the
 // collector's own field log of a physical removal — the two are
@@ -1928,7 +1929,10 @@ model ontRemovalTask {
   // `technician` row or an `adminUser` with role=TECHNICIAN (same dual-id
   // space `ticket.assignedToId` already deals with elsewhere), so this is
   // a plain id string resolved against whichever table it belongs to.
-  assignedTechnicianId String     @map("assigned_technician_id")
+  assignedTechnicianId String?    @map("assigned_technician_id")
+  // adminUser.id of a collector. A task goes to a technician, a collector,
+  // or both; whoever finishes it first completes it for the other.
+  assignedCollectorId  String?    @map("assigned_collector_id")
   status               String     @default("PENDING") // PENDING, COMPLETED, CANCELLED
   reason               String?    @db.Text // why the task was created
   createdById          String     @map("created_by_id") // adminUser.id
@@ -1939,8 +1943,11 @@ model ontRemovalTask {
   cancelReason         String?    @db.Text
   cancelledBy          String?    @map("cancelled_by") // adminUser.id, technician.id, or 'system'
   cancelledAt          DateTime?
+  completedById        String?    @map("completed_by_id")
+  completedByRole      String?    @map("completed_by_role") @db.VarChar(20) // technician | collector
 
   @@index([assignedTechnicianId])
+  @@index([assignedCollectorId])
   @@index([status])
   @@index([username])
   @@map("ont_removal_tasks")

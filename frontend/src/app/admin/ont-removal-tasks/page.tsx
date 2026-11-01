@@ -13,7 +13,9 @@ interface OntTask {
   customerId: string | null;
   address: string | null;
   areaName: string | null;
-  technicianName: string;
+  technicianName: string | null;
+  collectorName: string | null;
+  customerStatus: string | null;
   reason: string | null;
   status: string;
   createdAt: string;
@@ -21,11 +23,10 @@ interface OntTask {
   cancelReason: string | null;
 }
 
-interface Technician {
+interface Assignee {
   id: string;
   name: string;
-  phoneNumber: string;
-  _source: string;
+  phone: string;
 }
 
 interface IsolatedCustomer {
@@ -38,13 +39,14 @@ interface IsolatedCustomer {
 
 export default function AdminOntRemovalTasksPage() {
   const [tasks, setTasks] = useState<OntTask[]>([]);
-  const [technicians, setTechnicians] = useState<Technician[]>([]);
+  const [technicians, setTechnicians] = useState<Assignee[]>([]);
+  const [collectors, setCollectors] = useState<Assignee[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<'PENDING' | 'COMPLETED' | 'CANCELLED' | ''>('PENDING');
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState({ username: '', assignedTechnicianId: '', reason: '' });
+  const [form, setForm] = useState({ username: '', assignedTechnicianId: '', assignedCollectorId: '', reason: '' });
   const [isolatedCustomers, setIsolatedCustomers] = useState<IsolatedCustomer[]>([]);
   const [customerSearch, setCustomerSearch] = useState('');
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
@@ -62,10 +64,11 @@ export default function AdminOntRemovalTasksPage() {
     }
   }, [status]);
 
-  const fetchTechnicians = useCallback(async () => {
+  const fetchAssignees = useCallback(async () => {
     try {
-      const data = await apiAdmin<{ technicians?: Technician[] }>('/api/tickets/dispatch-data');
+      const data = await apiAdmin<{ technicians?: Assignee[]; collectors?: Assignee[] }>('/api/admin/ont-removal-tasks/assignees');
       setTechnicians(data.technicians || []);
+      setCollectors(data.collectors || []);
     } catch {
       // best-effort
     }
@@ -87,9 +90,9 @@ export default function AdminOntRemovalTasksPage() {
   }, [fetchTasks]);
 
   useEffect(() => {
-    fetchTechnicians();
+    fetchAssignees();
     fetchIsolatedCustomers();
-  }, [fetchTechnicians, fetchIsolatedCustomers]);
+  }, [fetchAssignees, fetchIsolatedCustomers]);
 
   const matchingCustomers = customerSearch.trim()
     ? isolatedCustomers.filter((c) =>
@@ -110,8 +113,8 @@ export default function AdminOntRemovalTasksPage() {
   );
 
   const createTask = async () => {
-    if (!form.username.trim() || !form.assignedTechnicianId) {
-      showError('Username pelanggan dan teknisi wajib diisi');
+    if (!form.username.trim() || (!form.assignedTechnicianId && !form.assignedCollectorId)) {
+      showError('Pilih pelanggan dan minimal satu penerima tugas (teknisi atau kolektor)');
       return;
     }
     setCreating(true);
@@ -121,13 +124,14 @@ export default function AdminOntRemovalTasksPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username: form.username.trim(),
-          assignedTechnicianId: form.assignedTechnicianId,
+          assignedTechnicianId: form.assignedTechnicianId || undefined,
+          assignedCollectorId: form.assignedCollectorId || undefined,
           reason: form.reason.trim() || undefined,
         }),
       });
       showSuccess('Tugas cabut ONT berhasil dibuat');
       setShowCreate(false);
-      setForm({ username: '', assignedTechnicianId: '', reason: '' });
+      setForm({ username: '', assignedTechnicianId: '', assignedCollectorId: '', reason: '' });
       setCustomerSearch('');
       fetchTasks();
       fetchIsolatedCustomers();
@@ -172,7 +176,7 @@ export default function AdminOntRemovalTasksPage() {
           </button>
           <button
             onClick={() => {
-              setForm({ username: '', assignedTechnicianId: '', reason: '' });
+              setForm({ username: '', assignedTechnicianId: '', assignedCollectorId: '', reason: '' });
               setCustomerSearch('');
               setShowCreate(true);
             }}
@@ -218,7 +222,7 @@ export default function AdminOntRemovalTasksPage() {
               <tr className="border-b border-border text-left">
                 <th className="px-4 py-3 font-semibold text-muted-foreground">Pelanggan</th>
                 <th className="px-4 py-3 font-semibold text-muted-foreground">Area</th>
-                <th className="px-4 py-3 font-semibold text-muted-foreground">Teknisi</th>
+                <th className="px-4 py-3 font-semibold text-muted-foreground">Ditugaskan ke</th>
                 <th className="px-4 py-3 font-semibold text-muted-foreground">Alasan</th>
                 <th className="px-4 py-3 font-semibold text-muted-foreground">Status</th>
                 <th className="px-4 py-3 font-semibold text-muted-foreground">Dibuat</th>
@@ -235,7 +239,10 @@ export default function AdminOntRemovalTasksPage() {
                   <td className="px-4 py-3 text-muted-foreground">
                     {t.areaName ? (<span className="flex items-center gap-1 text-xs"><MapPin className="w-3 h-3" />{t.areaName}</span>) : '-'}
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">{t.technicianName}</td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs">
+                    {t.technicianName && <p>Teknisi: <span className="text-foreground">{t.technicianName}</span></p>}
+                    {t.collectorName && <p>Kolektor: <span className="text-foreground">{t.collectorName}</span></p>}
+                  </td>
                   <td className="px-4 py-3 text-muted-foreground text-xs max-w-xs truncate" title={t.reason || t.completedNotes || t.cancelReason || ''}>
                     {t.reason || t.completedNotes || t.cancelReason || '-'}
                   </td>
@@ -317,11 +324,25 @@ export default function AdminOntRemovalTasksPage() {
                   onChange={(e) => setForm((f) => ({ ...f, assignedTechnicianId: e.target.value }))}
                   className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm text-foreground"
                 >
-                  <option value="">-- Pilih Teknisi --</option>
+                  <option value="">-- Tidak ada --</option>
                   {technicians.map((t) => (
-                    <option key={t.id} value={t.id}>{t.name} ({t.phoneNumber})</option>
+                    <option key={t.id} value={t.id}>{t.name}{t.phone ? ` (${t.phone})` : ''}</option>
                   ))}
                 </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground mb-1 block">Tugaskan ke Kolektor</label>
+                <select
+                  value={form.assignedCollectorId}
+                  onChange={(e) => setForm((f) => ({ ...f, assignedCollectorId: e.target.value }))}
+                  className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm text-foreground"
+                >
+                  <option value="">-- Tidak ada --</option>
+                  {collectors.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}{c.phone ? ` (${c.phone})` : ''}</option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-muted-foreground mt-1">Pilih teknisi, kolektor, atau keduanya. Siapa pun yang menyelesaikan lebih dulu menutup tugas.</p>
               </div>
               <div>
                 <label className="text-xs font-semibold text-muted-foreground mb-1 block">Alasan (opsional)</label>

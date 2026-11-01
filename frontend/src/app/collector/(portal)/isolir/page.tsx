@@ -7,7 +7,7 @@ import { apiAdmin, ApiError } from '@/lib/api/client';
 import { formatWIB } from '@/lib/timezone';
 import { showError, showSuccess, showWarning } from '@/lib/sweetalert';
 import { cn } from '@/lib/utils';
-import { Search, Unplug, ChevronDown, X, Loader2, Wallet, Upload, Phone, CheckCircle } from 'lucide-react';
+import { Search, ChevronDown, X, Loader2, Wallet, Upload, Phone, CheckCircle } from 'lucide-react';
 
 const PAGE_SIZE = 50;
 const fmtDate = (d: string | null) => d ? formatWIB(d, 'dd MMM yyyy') : '-';
@@ -20,11 +20,6 @@ export default function CollectorIsolirPage() {
   const [scope, setScope] = useState<ScopeValue>({ areaId: '', routerId: '' });
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
-
-  // Cabut ONT dialog
-  const [cabutTarget, setCabutTarget] = useState<any>(null);
-  const [cabutNotes, setCabutNotes] = useState('');
-  const [cabutLoading, setCabutLoading] = useState(false);
 
   // Payment dialog
   const [payModal, setPayModal] = useState<{ invoiceId: string; invoiceNumber: string; amount: number; customerName: string } | null>(null);
@@ -50,15 +45,14 @@ export default function CollectorIsolirPage() {
 
   // Escape closes whichever dialog is open.
   useEffect(() => {
-    if (!payModal && !cabutTarget) return;
+    if (!payModal) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       setPayModal(null);
-      setCabutTarget(null);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [payModal, cabutTarget]);
+  }, [payModal]);
 
   const filtered = users.filter(u => {
     if (!search.trim()) return true;
@@ -70,7 +64,7 @@ export default function CollectorIsolirPage() {
   });
   const visible = filtered.slice(0, visibleCount);
 
-  // Open invoices plus Cabut ONT for one customer; shared by phone cards and the desktop table.
+  // Open invoices for one customer; shared by phone cards and the desktop table.
   const renderInvoices = (u: any) => (
     <>
       {u.invoices && u.invoices.length > 0 ? (
@@ -98,35 +92,8 @@ export default function CollectorIsolirPage() {
       ) : (
         <p className="text-sm text-muted-foreground py-2">Tidak ada tagihan terbuka.</p>
       )}
-      <div className="mt-3 flex md:justify-end">
-        <button
-          type="button"
-          onClick={() => { setCabutTarget(u); setCabutNotes(''); }}
-          className={cn(ui.btnSecondary, 'w-full md:w-auto text-red-700 dark:text-red-400')}
-        >
-          <Unplug className="w-4 h-4" /> Catat cabut ONT
-        </button>
-      </div>
     </>
   );
-
-  const submitCabut = async () => {
-    if (!cabutTarget) return;
-    setCabutLoading(true);
-    try {
-      await apiAdmin('/api/collector/ont-removals', {
-        method: 'POST',
-        body: JSON.stringify({ username: cabutTarget.username, notes: cabutNotes }),
-      });
-      showSuccess(`Cabut ONT untuk ${cabutTarget.name} tercatat`);
-      setCabutTarget(null);
-      setCabutNotes('');
-    } catch (err) {
-      showError(err instanceof ApiError ? err.message : 'Cabut ONT gagal dicatat');
-    } finally {
-      setCabutLoading(false);
-    }
-  };
 
   const handleProofSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -234,7 +201,7 @@ export default function CollectorIsolirPage() {
         <>
           <p className="text-xs text-muted-foreground mb-2">{filtered.length} pelanggan isolir</p>
 
-          {/* Table: tablets and up. A row opens to its open invoices and Cabut ONT. */}
+          {/* Table: tablets and up. A row opens to its open invoices. */}
           <div className={cn(ui.card, 'hidden md:block overflow-x-auto')}>
             <table className="w-full text-[13px]">
               <thead className="border-b border-border bg-muted/50 text-[13px] text-muted-foreground">
@@ -359,37 +326,6 @@ export default function CollectorIsolirPage() {
             </button>
           )}
         </>
-      )}
-
-      {/* Cabut ONT dialog */}
-      {cabutTarget && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="cabut-title">
-          <button type="button" aria-label="Tutup" className="absolute inset-0 bg-black/50" onClick={() => setCabutTarget(null)} />
-          <div className="relative w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl border border-border bg-card p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
-            <h3 id="cabut-title" className="text-base font-bold text-foreground">Catat cabut ONT</h3>
-            <p className="text-sm text-muted-foreground">{cabutTarget.name} · {cabutTarget.username}</p>
-            <label htmlFor="cabut-notes" className="block text-sm font-medium text-foreground mt-4 mb-1">Catatan <span className="font-normal text-muted-foreground">(opsional)</span></label>
-            <textarea
-              id="cabut-notes"
-              value={cabutNotes}
-              onChange={e => setCabutNotes(e.target.value)}
-              rows={3}
-              className={cn(ui.input, 'h-auto py-2 resize-none')}
-              placeholder="Contoh: ONT diambil, adaptor tertinggal"
-            />
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => setCabutTarget(null)} className={ui.btnSecondary}>Batal</button>
-              <button
-                type="button"
-                onClick={submitCabut}
-                disabled={cabutLoading}
-                className="inline-flex items-center justify-center gap-2 h-[40px] pointer-coarse:h-[44px] px-4 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-              >
-                {cabutLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Unplug className="w-4 h-4" />} Catat cabut
-              </button>
-            </div>
-          </div>
-        </div>
       )}
 
       {/* Payment dialog */}

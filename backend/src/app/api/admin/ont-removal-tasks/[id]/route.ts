@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { logActivity } from '@/server/services/activity-log.service';
+import { notifyOntTaskAssignees } from '@/server/services/ont-removal-task.service';
 
 // PATCH - admin cancels a pending ONT removal task
 export async function PATCH(
@@ -33,15 +34,11 @@ export async function PATCH(
       },
     });
 
-    try {
-      const { sendWebPushToTechnician } = await import('@/server/services/push-notification.service');
-      await sendWebPushToTechnician(task.assignedTechnicianId, {
-        title: '❌ Tugas Cabut ONT Dibatalkan',
-        body: `Task cabut ONT untuk ${task.username} dibatalkan oleh admin.`,
-        url: '/technician/ont-removal-tasks',
-        tag: 'ont-task-cancelled',
-      });
-    } catch { /* best-effort */ }
+    await notifyOntTaskAssignees(task, {
+      type: 'ont-task-cancelled',
+      title: 'Tugas Cabut ONT Dibatalkan',
+      body: `Task cabut ONT untuk ${task.username} dibatalkan oleh admin.`,
+    });
 
     await logActivity({
       userId: authCheck.userId,

@@ -48,7 +48,7 @@ class _MoreScreenState extends State<MoreScreen> {
             const _Item(Icons.account_balance_wallet_outlined, Tone.warning, 'Setoran Saya', 'Uang tagihan yang harus disetor ke admin', page: SettlementsScreen()),
             const _Item(Icons.history_rounded, Tone.success, 'Koleksi Saya', 'Riwayat 6 bulan dan transaksi terbaru', page: CollectionsScreen()),
             const _Item(Icons.receipt_outlined, Tone.primary, 'Bukti Transfer', 'Foto bukti transfer dari pelanggan', page: ProofsScreen()),
-            const _Item(Icons.router_outlined, Tone.danger, 'Cabut ONT', 'Ajukan pencabutan perangkat pelanggan isolir', page: OntScreen()),
+            const _Item(Icons.router_outlined, Tone.danger, 'Cabut ONT', 'Tugas pencabutan perangkat dari admin', page: OntScreen()),
           ],
         ),
         (

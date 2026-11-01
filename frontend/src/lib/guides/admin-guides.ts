@@ -348,8 +348,9 @@ export const GUIDES: PageGuide[] = [
     path: '/admin/ont-removal-tasks',
     title: 'Tugas Cabut ONT',
     section: S.customers,
-    summary: 'Tugas untuk teknisi mengambil perangkat dari pelanggan terisolir yang berhenti berlangganan.',
-    steps: ['Klik Buat Tugas, pilih pelanggan terisolir dan teknisinya.', 'Teknisi melihat tugas di portal atau aplikasinya dan menandai Selesai setelah perangkat diambil.'],
+    summary: 'Perintah mengambil perangkat dari pelanggan terisolir yang berhenti berlangganan. Hanya admin yang bisa memerintahkannya.',
+    steps: ['Klik Buat Tugas, pilih pelanggan terisolir, lalu pilih teknisi, kolektor, atau keduanya.', 'Penerima melihat tugas di portal atau aplikasinya dan menandai Selesai setelah perangkat diambil. Bila dua-duanya ditugaskan, yang selesai lebih dulu menutup tugas.'],
+    notes: ['Tugas dibatalkan otomatis bila pelanggan melunasi tagihan atau aktif kembali.', 'Kolektor tidak bisa membuat tugas cabut ONT sendiri.'],
   },
   {
     path: '/admin/settings/isolation',

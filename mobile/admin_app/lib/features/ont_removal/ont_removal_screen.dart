@@ -9,8 +9,9 @@ import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
 import '../../core/guides/guides.dart';
 
-/// Dispatch queue for retrieving ONTs from stopped customers. Admin reviews
-/// and assigns; the technician marks the job done from their own portal.
+/// Dispatch queue for retrieving ONTs from stopped customers. Only the admin
+/// orders a removal: it goes to a technician, a collector, or both, and
+/// whoever finishes first closes it. Same as the web Tugas Cabut ONT page.
 class OntRemovalScreen extends StatefulWidget {
   const OntRemovalScreen({super.key});
 
@@ -69,10 +70,13 @@ class _OntRemovalScreenState extends State<OntRemovalScreen> {
           title: 'Tugas',
           rows: [
             InfoRow('Teknisi', str(t, 'technicianName')),
+            InfoRow('Kolektor', str(t, 'collectorName')),
+            InfoRow('Status pelanggan', (str(t, 'customerStatus') == null ? null : statusLabel(str(t, 'customerStatus')!))),
             InfoRow('Alasan', str(t, 'reason')),
             InfoRow('Dibuat', formatDateTimeOrNull(dateOf(t, 'createdAt'))),
             InfoRow('Selesai', formatDateTimeOrNull(dateOf(t, 'completedAt'))),
-            InfoRow('Catatan Teknisi', str(t, 'completedNotes')),
+            InfoRow('Catatan Penyelesaian', str(t, 'completedNotes')),
+            InfoRow('Diselesaikan oleh', switch (str(t, 'completedByRole')) { 'technician' => 'Teknisi', 'collector' => 'Kolektor', _ => null }),
             InfoRow('Dibatalkan', formatDateTimeOrNull(dateOf(t, 'cancelledAt'))),
             InfoRow('Alasan Batal', str(t, 'cancelReason')),
           ],
@@ -127,7 +131,7 @@ class _OntRemovalScreenState extends State<OntRemovalScreen> {
               isEmpty: _tasks.isEmpty,
               emptyIcon: Icons.assignment_return_outlined,
               emptyMessage: _status == 'PENDING' ? 'Tidak ada penarikan ONT yang tertunda' : 'Tidak ada tugas di status ini',
-              emptyHint: 'Ketuk "Tugaskan" untuk mengirim teknisi mengambil perangkat dari pelanggan yang berhenti.',
+              emptyHint: 'Ketuk "Tugaskan" untuk memerintahkan teknisi atau kolektor mengambil perangkat dari pelanggan terisolir.',
               child: RefreshableList(
                 hasFab: true,
                 onRefresh: _load,
@@ -141,7 +145,11 @@ class _OntRemovalScreenState extends State<OntRemovalScreen> {
                     tone: statusTone(status),
                     title: str(t, 'customerName') ?? str(t, 'username') ?? '-',
                     subtitle: str(t, 'address') ?? str(t, 'areaName') ?? '-',
-                    meta: 'Teknisi: ${str(t, 'technicianName') ?? '-'}${created != null ? ' · ${formatRelativeTime(created)}' : ''}',
+                    meta: [
+                      if (str(t, 'technicianName') != null) 'Teknisi: ${str(t, 'technicianName')}',
+                      if (str(t, 'collectorName') != null) 'Kolektor: ${str(t, 'collectorName')}',
+                      if (created != null) formatRelativeTime(created),
+                    ].join(' · '),
                     trailing: StatusPill.status(status),
                     onTap: () => _open(t),
                   );
@@ -163,43 +171,50 @@ class _CreateSheet extends StatefulWidget {
 }
 
 class _CreateSheetState extends State<_CreateSheet> {
-  final _username = TextEditingController();
   final _reason = TextEditingController();
+  List<Map<String, dynamic>> _customers = [];
   List<Map<String, dynamic>> _technicians = [];
+  List<Map<String, dynamic>> _collectors = [];
+  String? _username;
   String? _technicianId;
+  String? _collectorId;
   bool _loadingOptions = true;
   bool _submitting = false;
 
   @override
   void initState() {
     super.initState();
-    _loadTechnicians();
+    _loadOptions();
   }
 
   @override
   void dispose() {
-    _username.dispose();
     _reason.dispose();
     super.dispose();
   }
 
-  Future<void> _loadTechnicians() async {
+  List<Map<String, dynamic>> _list(dynamic v) => [for (final e in v is List ? v : const []) (e as Map).cast<String, dynamic>()];
+
+  Future<void> _loadOptions() async {
     try {
-      final res = await ApiClient.instance.get('/api/admin/technicians');
-      _technicians = (((res as Map?)?['technicians'] as List?) ?? [])
-          .map((e) => (e as Map).cast<String, dynamic>())
-          .where((t) => t['isActive'] == true)
-          .toList();
+      final res = await Future.wait([
+        ApiClient.instance.get('/api/admin/ont-removal-tasks/assignees'),
+        ApiClient.instance.get('/api/admin/isolated-users'),
+      ]);
+      final assignees = res[0] as Map?;
+      _technicians = _list(assignees?['technicians']);
+      _collectors = _list(assignees?['collectors']);
+      _customers = _list((res[1] as Map?)?['data']);
     } on ApiException catch (_) {
+      // Shown below as an empty list.
     } finally {
       if (mounted) setState(() => _loadingOptions = false);
     }
   }
 
   Future<void> _submit() async {
-    final username = _username.text.trim();
-    if (username.isEmpty || _technicianId == null) {
-      showToast(context, 'Isi username pelanggan dan pilih teknisi.');
+    if (_username == null || (_technicianId == null && _collectorId == null)) {
+      showToast(context, 'Pilih pelanggan terisolir dan minimal satu penerima tugas.');
       return;
     }
     setState(() => _submitting = true);
@@ -207,57 +222,86 @@ class _CreateSheetState extends State<_CreateSheet> {
       context,
       () => ApiClient.instance.post(
         '/api/admin/ont-removal-tasks',
-        data: {'username': username, 'assignedTechnicianId': _technicianId, if (_reason.text.trim().isNotEmpty) 'reason': _reason.text.trim()},
+        data: {
+          'username': _username,
+          if (_technicianId != null) 'assignedTechnicianId': _technicianId,
+          if (_collectorId != null) 'assignedCollectorId': _collectorId,
+          if (_reason.text.trim().isNotEmpty) 'reason': _reason.text.trim(),
+        },
       ),
-      success: 'Tugas penarikan ONT dibuat.',
+      success: 'Tugas cabut ONT dibuat.',
     );
     if (!mounted) return;
     setState(() => _submitting = false);
     if (done) Navigator.pop(context, true);
   }
 
+  DropdownButtonFormField<String?> _assigneeField(String label, List<Map<String, dynamic>> options, String? value, ValueChanged<String?> onChanged) {
+    return DropdownButtonFormField<String?>(
+      initialValue: value,
+      isExpanded: true,
+      decoration: InputDecoration(labelText: label),
+      items: [
+        const DropdownMenuItem<String?>(value: null, child: Text('Tidak ada')),
+        for (final o in options)
+          DropdownMenuItem<String?>(value: o['id']?.toString(), child: Text([o['name'], o['phone']].where((s) => s != null && '$s'.isNotEmpty).join(' · '), overflow: TextOverflow.ellipsis)),
+      ],
+      onChanged: onChanged,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
+    return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(Gap.page, 0, Gap.page, MediaQuery.viewInsetsOf(context).bottom + Gap.lg),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Text('Tugaskan Cabut ONT', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 4),
+          Text(
+            'Pilih teknisi, kolektor, atau keduanya. Yang menyelesaikan lebih dulu menutup tugas.',
+            style: TextStyle(fontSize: 12.5, color: context.colors.onSurfaceVariant),
+          ),
           const SizedBox(height: Gap.lg),
-          TextField(
-            controller: _username,
-            autocorrect: false,
-            decoration: const InputDecoration(labelText: 'Username PPPoE pelanggan'),
-          ),
-          const SizedBox(height: Gap.md),
           if (_loadingOptions)
-            const Padding(
-              padding: EdgeInsets.all(Gap.md),
-              child: Center(child: CircularProgressIndicator()),
-            )
-          else if (_technicians.isEmpty)
-            Text('Belum ada teknisi aktif. Tambahkan teknisi dari panel web.', style: TextStyle(color: context.tone(Tone.danger)))
-          else
-            DropdownButtonFormField<String>(
-              value: _technicianId,
-              isExpanded: true,
-              decoration: const InputDecoration(labelText: 'Teknisi'),
-              items: _technicians.map((t) => DropdownMenuItem(value: t['id']?.toString(), child: Text('${t['name']} · ${t['phoneNumber'] ?? ''}'))).toList(),
-              onChanged: (v) => setState(() => _technicianId = v),
+            const Padding(padding: EdgeInsets.all(Gap.md), child: Center(child: CircularProgressIndicator()))
+          else ...[
+            if (_customers.isEmpty)
+              Text('Tidak ada pelanggan terisolir. Cabut ONT hanya untuk pelanggan terisolir atau ditangguhkan.', style: TextStyle(color: context.tone(Tone.warning)))
+            else
+              Autocomplete<Map<String, dynamic>>(
+                displayStringForOption: (c) => '${c['name']} (${c['username']})',
+                optionsBuilder: (v) {
+                  final q = v.text.trim().toLowerCase();
+                  final hits = q.isEmpty ? _customers : _customers.where((c) => '${c['name']} ${c['username']}'.toLowerCase().contains(q));
+                  return hits.take(20);
+                },
+                onSelected: (c) => setState(() => _username = c['username']?.toString()),
+                fieldViewBuilder: (context, controller, focus, onSubmit) => TextField(
+                  controller: controller,
+                  focusNode: focus,
+                  onChanged: (_) => setState(() => _username = null),
+                  decoration: InputDecoration(
+                    labelText: 'Pelanggan terisolir',
+                    hintText: 'Cari nama atau username',
+                    suffixIcon: _username == null ? null : Icon(Icons.check_circle_rounded, color: context.tone(Tone.success)),
+                  ),
+                ),
+              ),
+            const SizedBox(height: Gap.md),
+            _assigneeField('Teknisi', _technicians, _technicianId, (v) => setState(() => _technicianId = v)),
+            const SizedBox(height: Gap.md),
+            _assigneeField('Kolektor', _collectors, _collectorId, (v) => setState(() => _collectorId = v)),
+            const SizedBox(height: Gap.md),
+            TextField(controller: _reason, maxLines: 2, decoration: const InputDecoration(labelText: 'Alasan (opsional)')),
+            const SizedBox(height: Gap.xl),
+            FilledButton(
+              onPressed: _submitting || _customers.isEmpty ? null : _submit,
+              child: _submitting ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Buat Tugas'),
             ),
-          const SizedBox(height: Gap.md),
-          TextField(
-            controller: _reason,
-            maxLines: 2,
-            decoration: const InputDecoration(labelText: 'Alasan (opsional)'),
-          ),
-          const SizedBox(height: Gap.xl),
-          FilledButton(
-            onPressed: _submitting || _technicians.isEmpty ? null : _submit,
-            child: _submitting ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Buat Tugas'),
-          ),
+          ],
         ],
       ),
     );
