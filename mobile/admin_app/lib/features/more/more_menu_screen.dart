@@ -42,162 +42,176 @@ import '../tickets/ticket_list_screen.dart';
 import '../topup_requests/topup_request_list_screen.dart';
 
 class _Entry {
-  const _Entry(this.icon, this.label, this.hint, this.tone, this.builder);
+  const _Entry(this.icon, this.label, this.hint, this.tone, this.builder, {this.group = ''});
   final IconData icon;
   final String label;
   final String hint;
   final Tone tone;
   final WidgetBuilder builder;
+
+  /// Sub-heading inside its category, same as the web sidebar's sub-menus.
+  final String group;
 }
 
-/// "Lainnya" tab: every module beyond the three primary tabs, grouped the
-/// same way the web sidebar groups them so staff find things where they
-/// already expect them.
-class MoreMenuScreen extends StatelessWidget {
+class _Category {
+  const _Category(this.title, this.icon, this.tone, this.entries);
+  final String title;
+  final IconData icon;
+  final Tone tone;
+  final List<_Entry> entries;
+}
+
+/// "Lainnya" tab: every module beyond the primary tabs. Categories and
+/// sub-groups follow the web sidebar, and the search box finds any entry by
+/// name, description, or group.
+class MoreMenuScreen extends StatefulWidget {
   const MoreMenuScreen({super.key});
+
+  @override
+  State<MoreMenuScreen> createState() => _MoreMenuScreenState();
+}
+
+class _MoreMenuScreenState extends State<MoreMenuScreen> {
+  String _query = '';
+  final _search = TextEditingController();
+  final _open = <String>{};
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
 
   static WidgetBuilder _crud(CrudConfig Function() c) =>
       (_) => CrudListScreen(config: c());
   static WidgetBuilder _settings(SettingsFormScreen Function() s) =>
       (_) => s();
 
-  static final _sections = <(String, List<_Entry>)>[
-    (
-      'Bantuan',
+  static final _guide = _Entry(Icons.menu_book_rounded, 'Pusat Panduan', 'Urutan setup dan cara pakai setiap menu', Tone.primary, (_) => const GuideHubScreen());
+
+  static final _sections = <_Category>[
+    _Category(
+      'Pelanggan & Layanan',
+      Icons.people_alt_rounded,
+      Tone.primary,
       [
-        _Entry(Icons.menu_book_rounded, 'Pusat Panduan', 'Urutan setup dan cara pakai setiap menu', Tone.primary, (_) => const GuideHubScreen()),
+        _Entry(Icons.person_add_alt_1_rounded, 'Registrasi', 'Pendaftaran baru dari halaman daftar', Tone.accent, (_) => const RegistrationListScreen(), group: 'PPPoE'),
+        _Entry(Icons.how_to_reg_rounded, 'Persetujuan', 'Akun dari teknisi/ajak teman yang perlu dicek', Tone.primary, (_) => const ApprovalListScreen(), group: 'PPPoE'),
+        _Entry(Icons.pause_circle_outline_rounded, 'Permintaan Suspend', 'Cuti langganan sementara', Tone.warning, (_) => const SuspendRequestListScreen(), group: 'PPPoE'),
+        _Entry(Icons.speed_rounded, 'Paket PPPoE', 'Harga, kecepatan, sinkron RADIUS/MikroTik', Tone.primary, _crud(pppoeProfilesConfig), group: 'PPPoE'),
+        _Entry(Icons.map_rounded, 'Area', 'Wilayah layanan', Tone.accent, _crud(pppoeAreasConfig), group: 'PPPoE'),
+        _Entry(Icons.extension_rounded, 'Add-on Layanan', 'Tambahan tagihan (IP publik, dll.)', Tone.violet, _crud(addonTypesConfig), group: 'PPPoE'),
+        _Entry(Icons.confirmation_number_rounded, 'Voucher Hotspot', 'Buat, ubah, hapus, kirim voucher', Tone.primary, _crud(vouchersConfig), group: 'Hotspot'),
+        _Entry(Icons.wifi_rounded, 'Profil Hotspot', 'Harga, kecepatan, kuota', Tone.accent, _crud(hotspotProfilesConfig), group: 'Hotspot'),
+        _Entry(Icons.print_rounded, 'Template Voucher', 'Desain cetak voucher', Tone.violet, _crud(voucherTemplatesConfig), group: 'Hotspot'),
+        _Entry(Icons.shopping_bag_rounded, 'Pesanan E-Voucher', 'Pembelian voucher online', Tone.violet, _crud(evoucherOrdersConfig), group: 'Hotspot'),
+        _Entry(Icons.storefront_rounded, 'Agent', 'Reseller, saldo, penjualan', Tone.accent, _crud(agentsConfig), group: 'Agen'),
+        _Entry(Icons.leaderboard_rounded, 'Laporan Agent', 'Penjualan, komisi, stok per agent', Tone.accent, (_) => const AgentReportScreen(), group: 'Agen'),
+        _Entry(Icons.block_rounded, 'Pelanggan Terisolir', 'Diisolir karena tunggakan, kirim link bayar', Tone.warning, _crud(isolatedUsersConfig), group: 'Isolasi'),
+        _Entry(Icons.assignment_return_rounded, 'Tugas Cabut ONT', 'Tugas ambil perangkat pelanggan berhenti', Tone.warning, (_) => const OntRemovalScreen(), group: 'Isolasi'),
+        _Entry(Icons.block_rounded, 'Isolir', 'Aturan & jaringan isolir', Tone.warning, _settings(isolationSettings), group: 'Isolasi'),
+        _Entry(Icons.text_snippet_rounded, 'Template Isolir', 'Pesan & halaman isolir', Tone.warning, _crud(isolationTemplatesConfig), group: 'Isolasi'),
+        _Entry(Icons.card_giftcard_rounded, 'Ajak Teman', 'Bonus pelanggan yang mengajak', Tone.accent, (_) => const ReferralListScreen(), group: 'Referral'),
+        _Entry(Icons.card_giftcard_rounded, 'Program Ajak Teman', 'Besaran & syarat bonus', Tone.accent, _settings(referralSettings), group: 'Referral'),
       ],
     ),
-    (
-      'Pelanggan',
+    _Category(
+      'Keuangan',
+      Icons.account_balance_wallet_rounded,
+      Tone.success,
       [
-        _Entry(Icons.person_add_alt_1_rounded, 'Registrasi', 'Pendaftaran baru dari halaman daftar', Tone.accent, (_) => const RegistrationListScreen()),
-        _Entry(Icons.how_to_reg_rounded, 'Persetujuan', 'Akun dari teknisi/ajak teman yang perlu dicek', Tone.primary, (_) => const ApprovalListScreen()),
-        _Entry(Icons.block_rounded, 'Pelanggan Terisolir', 'Diisolir karena tunggakan, kirim link bayar', Tone.warning, _crud(isolatedUsersConfig)),
-        _Entry(Icons.pause_circle_outline_rounded, 'Permintaan Suspend', 'Cuti langganan sementara', Tone.warning, (_) => const SuspendRequestListScreen()),
-        _Entry(Icons.support_agent_rounded, 'Tiket Bantuan', 'Keluhan dan gangguan pelanggan', Tone.violet, (_) => const TicketListScreen()),
-        _Entry(Icons.label_rounded, 'Kategori Tiket', 'Jenis keluhan untuk tiket', Tone.violet, _crud(ticketCategoriesConfig)),
+        _Entry(Icons.receipt_rounded, 'Pembayaran Manual', 'Bukti transfer dari pelanggan', Tone.success, (_) => const ManualPaymentListScreen(), group: 'Pembayaran'),
+        _Entry(Icons.credit_card_rounded, 'Payment Gateway', 'Midtrans, Xendit, Duitku, Tripay, QRIS', Tone.success, (_) => const PaymentGatewayScreen(), group: 'Pembayaran'),
+        _Entry(Icons.account_balance_rounded, 'Rekening Bank', 'Tujuan transfer manual', Tone.success, _crud(bankAccountsConfig), group: 'Pembayaran'),
+        _Entry(Icons.qr_code_2_rounded, 'Kasir QRIS', 'Tangkap pembayaran QRIS di HP penerima DANA/bank', Tone.success, (_) => const QrisCashierScreen(), group: 'Pembayaran'),
+        _Entry(Icons.account_balance_rounded, 'Keuangan', 'Pemasukan, pengeluaran, saldo', Tone.primary, (_) => const KeuanganScreen(), group: 'Kas & Setoran'),
+        _Entry(Icons.north_east_rounded, 'Biaya Operasional', 'Bandwidth, gaji, alat, sewa vs pendapatan', Tone.danger, (_) => const BiayaScreen(), group: 'Kas & Setoran'),
+        _Entry(Icons.category_rounded, 'Kategori Keuangan', 'Jenis pemasukan & pengeluaran', Tone.primary, _crud(keuanganCategoriesConfig), group: 'Kas & Setoran'),
+        _Entry(Icons.savings_rounded, 'Top Up Saldo', 'Isi saldo prabayar pelanggan', Tone.success, (_) => const TopupRequestListScreen(), group: 'Kas & Setoran'),
+        _Entry(Icons.account_balance_wallet_rounded, 'Deposit Agent', 'Isi saldo agent via transfer', Tone.success, (_) => const AgentDepositListScreen(), group: 'Kas & Setoran'),
+        _Entry(Icons.badge_rounded, 'Setoran Kolektor', 'Rekap tagihan tertagih per kolektor', Tone.warning, (_) => const CollectorSettlementScreen(), group: 'Kas & Setoran'),
+        _Entry(Icons.image_search_rounded, 'Bukti Pembayaran Kolektor', 'Foto bukti bayar dari lapangan', Tone.success, (_) => const PaymentProofListScreen(), group: 'Kas & Setoran'),
+        _Entry(Icons.summarize_rounded, 'Laporan', 'Tagihan, pembayaran, pelanggan, per paket', Tone.primary, (_) => const LaporanScreen(), group: 'Laporan'),
+        _Entry(Icons.receipt_long_rounded, 'Rekap Voucher', 'Penjualan voucher per batch', Tone.violet, (_) => const RekapVoucherScreen(), group: 'Laporan'),
       ],
     ),
-    (
-      'Layanan PPPoE',
-      [
-        _Entry(Icons.speed_rounded, 'Paket PPPoE', 'Harga, kecepatan, sinkron RADIUS/MikroTik', Tone.primary, _crud(pppoeProfilesConfig)),
-        _Entry(Icons.map_rounded, 'Area', 'Wilayah layanan', Tone.accent, _crud(pppoeAreasConfig)),
-        _Entry(Icons.extension_rounded, 'Add-on Layanan', 'Tambahan tagihan (IP publik, dll.)', Tone.violet, _crud(addonTypesConfig)),
-        _Entry(Icons.lan_rounded, 'IP Pool RADIUS', 'Pool alamat dan mapping ke group', Tone.accent, _crud(ipPoolsConfig)),
-      ],
-    ),
-    (
-      'Pembayaran',
-      [
-        _Entry(Icons.receipt_rounded, 'Pembayaran Manual', 'Bukti transfer dari pelanggan', Tone.success, (_) => const ManualPaymentListScreen()),
-        _Entry(Icons.image_search_rounded, 'Bukti Pembayaran Kolektor', 'Foto bukti bayar dari lapangan', Tone.success, (_) => const PaymentProofListScreen()),
-        _Entry(Icons.badge_rounded, 'Setoran Kolektor', 'Rekap tagihan tertagih per kolektor', Tone.warning, (_) => const CollectorSettlementScreen()),
-        _Entry(Icons.savings_rounded, 'Top Up Saldo', 'Isi saldo prabayar pelanggan', Tone.success, (_) => const TopupRequestListScreen()),
-        _Entry(Icons.account_balance_rounded, 'Keuangan', 'Pemasukan, pengeluaran, saldo', Tone.primary, (_) => const KeuanganScreen()),
-        _Entry(Icons.north_east_rounded, 'Biaya Operasional', 'Bandwidth, gaji, alat, sewa vs pendapatan', Tone.danger, (_) => const BiayaScreen()),
-        _Entry(Icons.category_rounded, 'Kategori Keuangan', 'Jenis pemasukan & pengeluaran', Tone.primary, _crud(keuanganCategoriesConfig)),
-        _Entry(Icons.card_giftcard_rounded, 'Ajak Teman', 'Bonus pelanggan yang mengajak', Tone.accent, (_) => const ReferralListScreen()),
-        _Entry(Icons.credit_card_rounded, 'Payment Gateway', 'Midtrans, Xendit, Duitku, Tripay, QRIS', Tone.success, (_) => const PaymentGatewayScreen()),
-        _Entry(Icons.qr_code_2_rounded, 'Kasir QRIS', 'Tangkap pembayaran QRIS di HP penerima DANA/bank', Tone.success, (_) => const QrisCashierScreen()),
-        _Entry(Icons.account_balance_rounded, 'Rekening Bank', 'Tujuan transfer manual', Tone.success, _crud(bankAccountsConfig)),
-      ],
-    ),
-    (
-      'Laporan',
-      [
-        _Entry(Icons.summarize_rounded, 'Laporan', 'Tagihan, pembayaran, pelanggan, per paket', Tone.primary, (_) => const LaporanScreen()),
-        _Entry(Icons.receipt_long_rounded, 'Rekap Voucher', 'Penjualan voucher per batch', Tone.violet, (_) => const RekapVoucherScreen()),
-        _Entry(Icons.leaderboard_rounded, 'Laporan Agent', 'Penjualan, komisi, stok per agent', Tone.accent, (_) => const AgentReportScreen()),
-      ],
-    ),
-    (
-      'Hotspot & Agent',
-      [
-        _Entry(Icons.confirmation_number_rounded, 'Voucher Hotspot', 'Buat, ubah, hapus, kirim voucher', Tone.primary, _crud(vouchersConfig)),
-        _Entry(Icons.wifi_rounded, 'Profil Hotspot', 'Harga, kecepatan, kuota', Tone.accent, _crud(hotspotProfilesConfig)),
-        _Entry(Icons.print_rounded, 'Template Voucher', 'Desain cetak voucher', Tone.violet, _crud(voucherTemplatesConfig)),
-        _Entry(Icons.shopping_bag_rounded, 'Pesanan E-Voucher', 'Pembelian voucher online', Tone.violet, _crud(evoucherOrdersConfig)),
-        _Entry(Icons.storefront_rounded, 'Agent', 'Reseller, saldo, penjualan', Tone.accent, _crud(agentsConfig)),
-        _Entry(Icons.account_balance_wallet_rounded, 'Deposit Agent', 'Isi saldo agent via transfer', Tone.success, (_) => const AgentDepositListScreen()),
-      ],
-    ),
-    (
+    _Category(
       'Jaringan',
+      Icons.lan_rounded,
+      Tone.accent,
       [
-        _Entry(Icons.map_rounded, 'Peta Jaringan', 'OLT, ODC, ODP & pelanggan di peta', Tone.primary, (_) => const NetworkMapScreen()),
-        _Entry(Icons.wifi_tethering_rounded, 'Sesi Online', 'PPPoE dan hotspot yang terhubung', Tone.success, (_) => const SessionListScreen()),
-        _Entry(Icons.router_rounded, 'Router / NAS', 'MikroTik, script RADIUS & isolir', Tone.primary, _crud(routersConfig)),
-        _Entry(Icons.dns_rounded, 'Status OLT', 'Kondisi OLT & kelola ONU', Tone.accent, (_) => const OltStatusScreen()),
-        _Entry(Icons.dns_outlined, 'Data OLT', 'Tambah, ubah, hapus OLT', Tone.accent, _crud(oltsConfig)),
-        _Entry(Icons.warning_amber_rounded, 'Alert OLT', 'ONU offline, sinyal lemah, dll', Tone.danger, (_) => const OltAlertScreen()),
-        _Entry(Icons.hub_rounded, 'ODC', 'Optical distribution cabinet', Tone.violet, _crud(odcsConfig)),
-        _Entry(Icons.device_hub_rounded, 'ODP', 'Optical distribution point', Tone.accent, _crud(odpsConfig)),
-        _Entry(Icons.person_pin_circle_rounded, 'Pelanggan per ODP', 'Penempatan port ODP', Tone.success, _crud(customerAssignmentsConfig)),
-        _Entry(Icons.merge_type_rounded, 'Joint Closure', 'JC dan sambungannya', Tone.warning, _crud(jointClosuresConfig)),
-        _Entry(Icons.inventory_2_rounded, 'OTB', 'Optical terminal box & segmen', Tone.primary, _crud(otbsConfig)),
-        _Entry(Icons.cable_rounded, 'Kabel Fiber', 'Kabel, tube, core', Tone.accent, _crud(cablesConfig)),
-        _Entry(Icons.grain_rounded, 'Core Fiber', 'Pesan, lepas, tandai rusak', Tone.neutral, _crud(coresConfig)),
-        _Entry(Icons.linear_scale_rounded, 'Titik Sambung', 'Splice antar core', Tone.violet, _crud(splicesConfig)),
-        _Entry(Icons.route_rounded, 'Trace Fiber', 'Jalur core, splice, dan redaman', Tone.accent, (_) => const FiberTraceScreen()),
-        _Entry(Icons.storage_rounded, 'Server', 'Server billing / VPS di peta', Tone.neutral, _crud(serversConfig)),
-        _Entry(Icons.vpn_lock_rounded, 'VPN Server', 'MikroTik CHR / VPS, L2TP/PPTP/SSTP', Tone.violet, _crud(vpnServersConfig)),
-        _Entry(Icons.vpn_key_rounded, 'VPN Client', 'NAS lewat VPN, WireGuard/L2TP', Tone.violet, _crud(vpnClientsConfig)),
-        _Entry(Icons.assignment_return_rounded, 'Penarikan ONT', 'Tugas ambil perangkat pelanggan berhenti', Tone.warning, (_) => const OntRemovalScreen()),
+        _Entry(Icons.wifi_tethering_rounded, 'Sesi Online', 'PPPoE dan hotspot yang terhubung', Tone.success, (_) => const SessionListScreen(), group: 'Monitoring'),
+        _Entry(Icons.router_rounded, 'Router / NAS', 'MikroTik, script RADIUS & isolir', Tone.primary, _crud(routersConfig), group: 'Router'),
+        _Entry(Icons.vpn_lock_rounded, 'VPN Server', 'MikroTik CHR / VPS, L2TP/PPTP/SSTP', Tone.violet, _crud(vpnServersConfig), group: 'Router'),
+        _Entry(Icons.vpn_key_rounded, 'VPN Client', 'NAS lewat VPN, WireGuard/L2TP', Tone.violet, _crud(vpnClientsConfig), group: 'Router'),
+        _Entry(Icons.dns_rounded, 'Status OLT', 'Kondisi OLT & kelola ONU', Tone.accent, (_) => const OltStatusScreen(), group: 'OLT & ONU'),
+        _Entry(Icons.dns_outlined, 'Data OLT', 'Tambah, ubah, hapus OLT', Tone.accent, _crud(oltsConfig), group: 'OLT & ONU'),
+        _Entry(Icons.warning_amber_rounded, 'Alert OLT', 'ONU offline, sinyal lemah, dll', Tone.danger, (_) => const OltAlertScreen(), group: 'OLT & ONU'),
+        _Entry(Icons.settings_remote_rounded, 'GenieACS', 'ONT/CPE: WiFi, WAN, preset, provision', Tone.accent, (_) => const GenieacsScreen(), group: 'GenieACS'),
+        _Entry(Icons.security_rounded, 'FreeRADIUS', 'Status, restart, konfigurasi, radcheck, log', Tone.accent, (_) => const FreeradiusScreen(), group: 'FreeRADIUS'),
+        _Entry(Icons.lan_rounded, 'IP Pool RADIUS', 'Pool alamat dan mapping ke group', Tone.accent, _crud(ipPoolsConfig), group: 'FreeRADIUS'),
       ],
     ),
-    (
-      'Teknis',
+    _Category(
+      'Infrastruktur',
+      Icons.device_hub_rounded,
+      Tone.violet,
       [
-        _Entry(Icons.security_rounded, 'FreeRADIUS', 'Status, restart, konfigurasi, radcheck, log', Tone.accent, (_) => const FreeradiusScreen()),
-        _Entry(Icons.settings_remote_rounded, 'GenieACS', 'ONT/CPE: WiFi, WAN, preset, provision', Tone.accent, (_) => const GenieacsScreen()),
-        _Entry(Icons.schedule_rounded, 'Jadwal Otomatis', 'Cron job & riwayat eksekusi', Tone.accent, _crud(cronConfig)),
-        _Entry(Icons.backup_rounded, 'Backup Database', 'Buat, unduh, pulihkan', Tone.accent, _crud(databaseBackupsConfig)),
-        _Entry(Icons.cloud_rounded, 'Cloudflare Tunnel', 'Akses publik tanpa IP publik', Tone.accent, (_) => const CloudflareTunnelScreen()),
-        _Entry(Icons.system_update_rounded, 'Sistem & Pembaruan', 'Versi dan update aplikasi server', Tone.accent, (_) => const SystemUpdateScreen()),
-        _Entry(Icons.android_rounded, 'Build APK', 'APK admin, pelanggan, teknisi, agent', Tone.accent, (_) => const ApkBuilderScreen()),
+        _Entry(Icons.map_rounded, 'Peta Jaringan', 'OLT, ODC, ODP & pelanggan di peta', Tone.primary, (_) => const NetworkMapScreen(), group: 'Topologi'),
+        _Entry(Icons.hub_rounded, 'ODC', 'Optical distribution cabinet', Tone.violet, _crud(odcsConfig), group: 'Topologi'),
+        _Entry(Icons.device_hub_rounded, 'ODP', 'Optical distribution point', Tone.accent, _crud(odpsConfig), group: 'Topologi'),
+        _Entry(Icons.inventory_2_rounded, 'OTB', 'Optical terminal box & segmen', Tone.primary, _crud(otbsConfig), group: 'Topologi'),
+        _Entry(Icons.merge_type_rounded, 'Joint Closure', 'JC dan sambungannya', Tone.warning, _crud(jointClosuresConfig), group: 'Topologi'),
+        _Entry(Icons.person_pin_circle_rounded, 'Pelanggan per ODP', 'Penempatan port ODP', Tone.success, _crud(customerAssignmentsConfig), group: 'Topologi'),
+        _Entry(Icons.storage_rounded, 'Server', 'Server billing / VPS di peta', Tone.neutral, _crud(serversConfig), group: 'Topologi'),
+        _Entry(Icons.cable_rounded, 'Kabel Fiber', 'Kabel, tube, core', Tone.accent, _crud(cablesConfig), group: 'Fiber'),
+        _Entry(Icons.grain_rounded, 'Core Fiber', 'Pesan, lepas, tandai rusak', Tone.neutral, _crud(coresConfig), group: 'Fiber'),
+        _Entry(Icons.linear_scale_rounded, 'Titik Sambung', 'Splice antar core', Tone.violet, _crud(splicesConfig), group: 'Fiber'),
+        _Entry(Icons.route_rounded, 'Trace Fiber', 'Jalur core, splice, dan redaman', Tone.accent, (_) => const FiberTraceScreen(), group: 'Fiber'),
       ],
     ),
-    (
-      'Komunikasi',
+    _Category(
+      'Manajemen',
+      Icons.admin_panel_settings_rounded,
+      Tone.warning,
       [
-        _Entry(Icons.campaign_rounded, 'Broadcast Notifikasi', 'Push ke aplikasi pelanggan', Tone.primary, (_) => const PushBroadcastScreen()),
-        _Entry(Icons.chat_rounded, 'Kirim WhatsApp', 'Pesan tunggal atau broadcast', Tone.success, (_) => const WhatsappSendScreen()),
-        _Entry(Icons.hub_rounded, 'Provider WhatsApp', 'Gateway, QR, tes kirim', Tone.success, _crud(whatsappProvidersConfig)),
-        _Entry(Icons.text_snippet_rounded, 'Template WhatsApp', 'Isi pesan otomatis', Tone.success, _crud(whatsappTemplatesConfig)),
-        _Entry(Icons.alarm_rounded, 'Pengingat & OTP', 'Jadwal pengingat tagihan WhatsApp', Tone.success, _settings(whatsappReminderSettings)),
-        _Entry(Icons.history_rounded, 'Riwayat WhatsApp', 'Pesan terkirim & gagal', Tone.success, _crud(whatsappHistoryConfig)),
-        _Entry(Icons.mail_rounded, 'Email SMTP', 'Server email & notifikasi', Tone.primary, _settings(emailSettings)),
-        _Entry(Icons.drafts_rounded, 'Template Email', 'Isi email otomatis', Tone.primary, _crud(emailTemplatesConfig)),
-        _Entry(Icons.outbox_rounded, 'Riwayat Email', 'Email terkirim & gagal', Tone.primary, _crud(emailHistoryConfig)),
-        _Entry(Icons.send_rounded, 'Telegram Backup', 'Backup & laporan ke grup Telegram', Tone.accent, _settings(telegramSettings)),
-        _Entry(Icons.smart_toy_rounded, 'Bot Telegram', 'Perintah cek pelanggan & redaman', Tone.accent, _settings(telegramBotSettings)),
-        _Entry(Icons.notifications_rounded, 'Notifikasi', 'Pemberitahuan sistem untuk admin', Tone.warning, (_) => const NotificationsScreen()),
+        _Entry(Icons.support_agent_rounded, 'Tiket Bantuan', 'Keluhan dan gangguan pelanggan', Tone.violet, (_) => const TicketListScreen(), group: 'Tiket'),
+        _Entry(Icons.label_rounded, 'Kategori Tiket', 'Jenis keluhan untuk tiket', Tone.violet, _crud(ticketCategoriesConfig), group: 'Tiket'),
+        _Entry(Icons.groups_rounded, 'Staf & Tim', 'Akun admin dan hak aksesnya', Tone.primary, _crud(staffConfig), group: 'Tim'),
+        _Entry(Icons.badge_rounded, 'Kolektor', 'Penagih lapangan per area', Tone.warning, _crud(collectorsConfig), group: 'Tim'),
+        _Entry(Icons.engineering_rounded, 'Teknisi Lapangan', 'Akun aplikasi teknisi', Tone.accent, _crud(techniciansConfig), group: 'Tim'),
+        _Entry(Icons.history_rounded, 'Log Aktivitas', 'Siapa melakukan apa', Tone.neutral, (_) => const ActivityLogScreen(), group: 'Tim'),
+        _Entry(Icons.business_rounded, 'Profil Perusahaan', 'Nama, logo, URL, zona waktu', Tone.neutral, _settings(companySettings), group: 'Pengaturan'),
+        _Entry(Icons.short_text_rounded, 'Footer Portal', 'Teks footer tiap aplikasi', Tone.neutral, _settings(footerSettings), group: 'Pengaturan'),
+        _Entry(Icons.photo_rounded, 'Banner Promo', 'Banner di portal pelanggan', Tone.violet, _crud(promoBannersConfig), group: 'Pengaturan'),
+        _Entry(Icons.map_outlined, 'Peta', 'Pusat peta & routing kabel', Tone.neutral, _settings(mapSettings), group: 'Pengaturan'),
+        _Entry(Icons.verified_user_rounded, 'Keamanan Akun (2FA)', 'Verifikasi dua langkah', Tone.success, (_) => const TwoFactorSettingsScreen(), group: 'Pengaturan'),
+        _Entry(Icons.schedule_rounded, 'Jadwal Otomatis', 'Cron job & riwayat eksekusi', Tone.accent, _crud(cronConfig), group: 'Pengaturan'),
+        _Entry(Icons.backup_rounded, 'Backup Database', 'Buat, unduh, pulihkan', Tone.accent, _crud(databaseBackupsConfig), group: 'Pengaturan'),
+        _Entry(Icons.system_update_rounded, 'Sistem & Pembaruan', 'Versi dan update aplikasi server', Tone.accent, (_) => const SystemUpdateScreen(), group: 'Pengaturan'),
+        _Entry(Icons.cloud_rounded, 'Cloudflare Tunnel', 'Akses publik tanpa IP publik', Tone.accent, (_) => const CloudflareTunnelScreen(), group: 'Pengaturan'),
+        _Entry(Icons.android_rounded, 'Build APK', 'APK admin, pelanggan, teknisi, agent', Tone.accent, (_) => const ApkBuilderScreen(), group: 'Pengaturan'),
+        _Entry(Icons.settings_rounded, 'Profil & Tampilan', 'Tema, server, keluar', Tone.neutral, (_) => const ProfileScreen(), group: 'Pengaturan'),
+        _Entry(Icons.system_update_rounded, 'Pembaruan Aplikasi', 'Versi terpasang & update APK', Tone.primary, (_) => const AppUpdateScreen(), group: 'Pengaturan'),
       ],
     ),
-    (
-      'Tim',
+    _Category(
+      'Notifikasi',
+      Icons.notifications_active_rounded,
+      Tone.danger,
       [
-        _Entry(Icons.groups_rounded, 'Staf & Tim', 'Akun admin dan hak aksesnya', Tone.primary, _crud(staffConfig)),
-        _Entry(Icons.badge_rounded, 'Kolektor', 'Penagih lapangan per area', Tone.warning, _crud(collectorsConfig)),
-        _Entry(Icons.engineering_rounded, 'Teknisi Lapangan', 'Akun aplikasi teknisi', Tone.accent, _crud(techniciansConfig)),
-        _Entry(Icons.history_rounded, 'Log Aktivitas', 'Siapa melakukan apa', Tone.neutral, (_) => const ActivityLogScreen()),
-      ],
-    ),
-    (
-      'Pengaturan',
-      [
-        _Entry(Icons.business_rounded, 'Profil Perusahaan', 'Nama, logo, URL, zona waktu', Tone.neutral, _settings(companySettings)),
-        _Entry(Icons.short_text_rounded, 'Footer Portal', 'Teks footer tiap aplikasi', Tone.neutral, _settings(footerSettings)),
-        _Entry(Icons.block_rounded, 'Isolir', 'Aturan & jaringan isolir', Tone.warning, _settings(isolationSettings)),
-        _Entry(Icons.text_snippet_rounded, 'Template Isolir', 'Pesan & halaman isolir', Tone.warning, _crud(isolationTemplatesConfig)),
-        _Entry(Icons.photo_rounded, 'Banner Promo', 'Banner di portal pelanggan', Tone.violet, _crud(promoBannersConfig)),
-        _Entry(Icons.card_giftcard_rounded, 'Program Ajak Teman', 'Besaran & syarat bonus', Tone.accent, _settings(referralSettings)),
-        _Entry(Icons.map_outlined, 'Peta', 'Pusat peta & routing kabel', Tone.neutral, _settings(mapSettings)),
-        _Entry(Icons.verified_user_rounded, 'Keamanan Akun (2FA)', 'Verifikasi dua langkah', Tone.success, (_) => const TwoFactorSettingsScreen()),
-        _Entry(Icons.settings_rounded, 'Profil & Tampilan', 'Tema, server, keluar', Tone.neutral, (_) => const ProfileScreen()),
-        _Entry(Icons.system_update_rounded, 'Pembaruan Aplikasi', 'Versi terpasang & update APK', Tone.primary, (_) => const AppUpdateScreen()),
+        _Entry(Icons.notifications_rounded, 'Notifikasi', 'Pemberitahuan sistem untuk admin', Tone.warning, (_) => const NotificationsScreen(), group: 'Notifikasi'),
+        _Entry(Icons.campaign_rounded, 'Broadcast Notifikasi', 'Push ke aplikasi pelanggan', Tone.primary, (_) => const PushBroadcastScreen(), group: 'Notifikasi'),
+        _Entry(Icons.chat_rounded, 'Kirim WhatsApp', 'Pesan tunggal atau broadcast', Tone.success, (_) => const WhatsappSendScreen(), group: 'WhatsApp'),
+        _Entry(Icons.hub_rounded, 'Provider WhatsApp', 'Gateway, QR, tes kirim', Tone.success, _crud(whatsappProvidersConfig), group: 'WhatsApp'),
+        _Entry(Icons.text_snippet_rounded, 'Template WhatsApp', 'Isi pesan otomatis', Tone.success, _crud(whatsappTemplatesConfig), group: 'WhatsApp'),
+        _Entry(Icons.alarm_rounded, 'Pengingat & OTP', 'Jadwal pengingat tagihan WhatsApp', Tone.success, _settings(whatsappReminderSettings), group: 'WhatsApp'),
+        _Entry(Icons.history_rounded, 'Riwayat WhatsApp', 'Pesan terkirim & gagal', Tone.success, _crud(whatsappHistoryConfig), group: 'WhatsApp'),
+        _Entry(Icons.mail_rounded, 'Email SMTP', 'Server email & notifikasi', Tone.primary, _settings(emailSettings), group: 'Email'),
+        _Entry(Icons.drafts_rounded, 'Template Email', 'Isi email otomatis', Tone.primary, _crud(emailTemplatesConfig), group: 'Email'),
+        _Entry(Icons.outbox_rounded, 'Riwayat Email', 'Email terkirim & gagal', Tone.primary, _crud(emailHistoryConfig), group: 'Email'),
+        _Entry(Icons.send_rounded, 'Telegram Backup', 'Backup & laporan ke grup Telegram', Tone.accent, _settings(telegramSettings), group: 'Telegram'),
+        _Entry(Icons.smart_toy_rounded, 'Bot Telegram', 'Perintah cek pelanggan & redaman', Tone.accent, _settings(telegramBotSettings), group: 'Telegram'),
       ],
     ),
   ];
@@ -205,34 +219,170 @@ class MoreMenuScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().user;
-    final sections = [
-      for (final (title, entries) in _sections)
-        (title, [for (final e in entries) if (user?.can(_permissions[e.label]) ?? true) e]),
-    ].where((s) => s.$2.isNotEmpty);
+    // Only what this account's role can open (same keys as the web sidebar).
+    final categories = [
+      for (final c in _sections) (c, [for (final e in c.entries) if (user?.can(_permissions[e.label]) ?? true) e]),
+    ].where((c) => c.$2.isNotEmpty).toList();
+
+    final q = _query.trim().toLowerCase();
+    final searching = q.isNotEmpty;
+    final results = <(_Category, _Entry)>[
+      if (searching)
+        for (final (c, entries) in categories)
+          for (final e in entries)
+            if ('${e.label} ${e.hint} ${e.group} ${c.title}'.toLowerCase().contains(q)) (c, e),
+    ];
+
     return Scaffold(
       appBar: AppBar(title: const Text('Lainnya')),
-      body: ListView(
-        padding: EdgeInsets.fromLTRB(Gap.page, Gap.xs, Gap.page, listBottomPadding(context)),
+      body: Column(
         children: [
-          for (final (title, entries) in sections) ...[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(2, Gap.lg, 0, Gap.sm),
-              child: Text(
-                title,
-                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: context.colors.onSurfaceVariant),
-              ),
-            ),
-            Card(
-              clipBehavior: Clip.antiAlias,
-              child: Column(
+          SearchField(
+            hint: 'Cari menu, mis. cabut ONT, OLT, WhatsApp',
+            controller: _search,
+            onChanged: (v) => setState(() => _query = v),
+          ),
+          Expanded(
+            child: searching
+                ? _SearchResults(
+                    results: results,
+                    query: _query.trim(),
+                    onClear: () => setState(() {
+                      _query = '';
+                      _search.clear();
+                    }),
+                  )
+                : ListView(
+                    padding: EdgeInsets.fromLTRB(Gap.page, Gap.md, Gap.page, listBottomPadding(context)),
+                    children: [
+                      Card(clipBehavior: Clip.antiAlias, child: _Row(entry: _guide)),
+                      const SizedBox(height: Gap.md),
+                      for (final (c, entries) in categories) ...[
+                        _CategoryCard(
+                          category: c,
+                          entries: entries,
+                          open: _open.contains(c.title),
+                          onToggle: () => setState(() => _open.contains(c.title) ? _open.remove(c.title) : _open.add(c.title)),
+                        ),
+                        const SizedBox(height: Gap.sm),
+                      ],
+                    ],
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// One web-sidebar category: a header with its icon and entry count that
+/// expands to the entries, grouped under their sub-headings.
+class _CategoryCard extends StatelessWidget {
+  const _CategoryCard({required this.category, required this.entries, required this.open, required this.onToggle});
+  final _Category category;
+  final List<_Entry> entries;
+  final bool open;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final children = <Widget>[];
+    String? lastGroup;
+    for (final e in entries) {
+      if (e.group != lastGroup && e.group.isNotEmpty) {
+        children.add(Padding(
+          padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.md, Gap.lg, Gap.xs),
+          child: Text(
+            e.group.toUpperCase(),
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.6, color: context.colors.onSurfaceVariant),
+          ),
+        ));
+      } else if (lastGroup != null) {
+        children.add(const Divider(indent: 68, height: 1));
+      }
+      lastGroup = e.group;
+      children.add(_Row(entry: e));
+    }
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          InkWell(
+            onTap: onToggle,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.md, Gap.md, Gap.md),
+              child: Row(
                 children: [
-                  for (var i = 0; i < entries.length; i++) ...[if (i > 0) const Divider(indent: 68), _Row(entry: entries[i])],
+                  RoleIconTile(icon: category.icon, color: context.tone(category.tone), size: 40),
+                  const SizedBox(width: Gap.md),
+                  Expanded(child: Text(category.title, style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w800))),
+                  Text('${entries.length}', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: context.colors.onSurfaceVariant)),
+                  const SizedBox(width: Gap.xs),
+                  Icon(open ? Icons.expand_less_rounded : Icons.expand_more_rounded, color: context.colors.onSurfaceVariant),
                 ],
               ),
             ),
-          ],
+          ),
+          if (open) ...[const Divider(height: 1), ...children, const SizedBox(height: Gap.sm)],
         ],
       ),
+    );
+  }
+}
+
+class _SearchResults extends StatelessWidget {
+  const _SearchResults({required this.results, required this.query, required this.onClear});
+  final List<(_Category, _Entry)> results;
+  final String query;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    if (results.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(Gap.page),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.search_off_rounded, size: 40, color: context.colors.outline),
+              const SizedBox(height: Gap.sm),
+              Text('Menu "$query" tidak ditemukan', style: const TextStyle(fontWeight: FontWeight.w700)),
+              const SizedBox(height: Gap.xs),
+              Text(
+                'Coba nama lain, atau hapus pencarian untuk melihat semua kategori.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: context.colors.onSurfaceVariant),
+              ),
+              const SizedBox(height: Gap.md),
+              OutlinedButton(onPressed: onClear, child: const Text('Hapus pencarian')),
+            ],
+          ),
+        ),
+      );
+    }
+    return ListView(
+      padding: EdgeInsets.fromLTRB(Gap.page, Gap.md, Gap.page, listBottomPadding(context)),
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 2, bottom: Gap.sm),
+          child: Text(
+            '${results.length} menu ditemukan',
+            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: context.colors.onSurfaceVariant),
+          ),
+        ),
+        Card(
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              for (var i = 0; i < results.length; i++) ...[
+                if (i > 0) const Divider(indent: 68, height: 1),
+                _Row(entry: results[i].$2, trail: [results[i].$1.title, results[i].$2.group].where((s) => s.isNotEmpty).join(' > ')),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -289,7 +439,7 @@ const _permissions = <String, String>{
   'Server': 'network.view',
   'VPN Server': 'routers.view',
   'VPN Client': 'routers.view',
-  'Penarikan ONT': 'customers.isolate',
+  'Tugas Cabut ONT': 'customers.isolate',
   'FreeRADIUS': 'settings.view',
   'GenieACS': 'settings.genieacs',
   'Jadwal Otomatis': 'settings.cron',
@@ -370,7 +520,7 @@ const _guidePaths = <String, String>{
   'Trace Fiber': '/admin/network/trace',
   'VPN Server': '/admin/network/vpn-server',
   'VPN Client': '/admin/network/vpn-client',
-  'Penarikan ONT': '/admin/ont-removal-tasks',
+  'Tugas Cabut ONT': '/admin/ont-removal-tasks',
   'FreeRADIUS': '/admin/freeradius/status',
   'GenieACS': '/admin/genieacs/devices',
   'Jadwal Otomatis': '/admin/settings/cron',
@@ -404,8 +554,11 @@ const _guidePaths = <String, String>{
 };
 
 class _Row extends StatelessWidget {
-  const _Row({required this.entry});
+  const _Row({required this.entry, this.trail});
   final _Entry entry;
+
+  /// Where this entry lives (category > group); shown in search results.
+  final String? trail;
 
   @override
   Widget build(BuildContext context) {
@@ -429,8 +582,8 @@ class _Row extends StatelessWidget {
                   Text(entry.label, style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w700)),
                   const SizedBox(height: 1),
                   Text(
-                    entry.hint,
-                    maxLines: 1,
+                    trail == null ? entry.hint : '${entry.hint}\n$trail',
+                    maxLines: trail == null ? 1 : 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(fontSize: 12, color: context.colors.onSurfaceVariant),
                   ),

@@ -6,6 +6,27 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.30.0] - 2026-11-01 - Menu dan Daftar Pelanggan APK Kolektor dan Admin
+
+### Summary
+Data pelanggan di APK kolektor disamakan dengan portal kolektor web, dan menu kedua APK ditata ulang mengikuti kategori di web serta diberi kolom pencarian.
+
+### Aplikasi Kolektor 1.2.0
+- **[FEATURE]** Daftar pelanggan sama dengan web: filter Semua, Aktif, Isolir, Belum lunas, dan Lunas dengan jumlahnya, filter Area dan Router/NAS dari wilayah tugas, ringkasan jumlah dan total tunggakan, serta pencarian nama, ID, username, nomor HP, dan alamat
+- **[FEATURE]** Kartu pelanggan memuat paket dan harga, router dan area, tanggal aktif, alamat, telepon, status pelanggan, status pembayaran beserta jumlah tagihan atau tanggal terakhir dibayar, dan tombol berlabel Tagih, Telepon, WhatsApp (pesan pengingat sama dengan web), dan Rute
+- **[UI]** Tab bawah sama dengan web: Ringkasan, Tagihan, Pelanggan, Isolir, dan Menu. Setoran Saya, Koleksi Saya, Bukti Transfer, dan Cabut ONT ada di Menu dengan nama yang sama seperti di web
+- **[FEATURE]** Menu punya kolom pencarian yang mencari nama dan keterangan menu
+
+### Aplikasi Admin 1.0.23
+- **[UI]** Menu Lainnya ditata ulang mengikuti sidebar web: Pelanggan dan Layanan, Keuangan, Jaringan, Infrastruktur, Manajemen, dan Notifikasi. Tiap kategori bisa dibuka dan ditutup dan punya sub-judul (PPPoE, Hotspot, Isolasi, OLT dan ONU, Topologi, Fiber, dan seterusnya)
+- **[FEATURE]** Kolom pencarian menu: mencari nama, keterangan, kategori, dan sub-judul, dan menampilkan letak menu di hasilnya
+- **[FIX]** Menu Penarikan ONT tersembunyi di urutan paling bawah kategori Jaringan. Kini bernama **Tugas Cabut ONT** (sama dengan web) dan ada di Pelanggan dan Layanan, Isolasi
+
+### Catatan Pembaruan
+- Naikkan versi: root, backend, frontend ke 5.30.0; aplikasi admin 1.0.23+24, kolektor 1.2.0+5
+
+---
+
 ## [5.29.1] - 2026-11-01 - Perbaikan Daftar Pelanggan APK Kolektor
 
 ### Aplikasi Kolektor 1.1.1

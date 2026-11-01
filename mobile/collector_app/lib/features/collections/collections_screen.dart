@@ -48,7 +48,7 @@ class _CollectionsScreenState extends State<CollectionsScreen> {
     final total = num.tryParse('${_data['total_amount']}') ?? 0;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Penagihan Saya')),
+      appBar: AppBar(title: const Text('Koleksi Saya')),
       body: DataStateView(
         loading: _loading,
         error: _error,

@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.29.1 - Perbaikan Daftar Pelanggan APK Kolektor
+> **Version:** 5.30.0 - Menu dan Daftar Pelanggan APK Kolektor dan Admin
 
 ---
 
@@ -1111,6 +1111,25 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.30.0 — 2026-11-01 - Menu dan Daftar Pelanggan APK Kolektor dan Admin
+
+### Summary
+Data pelanggan di APK kolektor disamakan dengan portal kolektor web, dan menu kedua APK ditata ulang mengikuti kategori di web serta diberi kolom pencarian.
+
+### Aplikasi Kolektor 1.2.0
+- **[FEATURE]** Daftar pelanggan sama dengan web: filter Semua, Aktif, Isolir, Belum lunas, dan Lunas dengan jumlahnya, filter Area dan Router/NAS dari wilayah tugas, ringkasan jumlah dan total tunggakan, serta pencarian nama, ID, username, nomor HP, dan alamat
+- **[FEATURE]** Kartu pelanggan memuat paket dan harga, router dan area, tanggal aktif, alamat, telepon, status pelanggan, status pembayaran beserta jumlah tagihan atau tanggal terakhir dibayar, dan tombol berlabel Tagih, Telepon, WhatsApp (pesan pengingat sama dengan web), dan Rute
+- **[UI]** Tab bawah sama dengan web: Ringkasan, Tagihan, Pelanggan, Isolir, dan Menu. Setoran Saya, Koleksi Saya, Bukti Transfer, dan Cabut ONT ada di Menu dengan nama yang sama seperti di web
+- **[FEATURE]** Menu punya kolom pencarian yang mencari nama dan keterangan menu
+
+### Aplikasi Admin 1.0.23
+- **[UI]** Menu Lainnya ditata ulang mengikuti sidebar web: Pelanggan dan Layanan, Keuangan, Jaringan, Infrastruktur, Manajemen, dan Notifikasi. Tiap kategori bisa dibuka dan ditutup dan punya sub-judul (PPPoE, Hotspot, Isolasi, OLT dan ONU, Topologi, Fiber, dan seterusnya)
+- **[FEATURE]** Kolom pencarian menu: mencari nama, keterangan, kategori, dan sub-judul, dan menampilkan letak menu di hasilnya
+- **[FIX]** Menu Penarikan ONT tersembunyi di urutan paling bawah kategori Jaringan. Kini bernama **Tugas Cabut ONT** (sama dengan web) dan ada di Pelanggan dan Layanan, Isolasi
+
+### Catatan Pembaruan
+- Naikkan versi: root, backend, frontend ke 5.30.0; aplikasi admin 1.0.23+24, kolektor 1.2.0+5
+
 ### v5.29.1 — 2026-11-01 - Perbaikan Daftar Pelanggan APK Kolektor
 
 ### Aplikasi Kolektor 1.1.1
@@ -1196,52 +1215,6 @@ Rilis setelah 5.27.0 (9 commit, 35 berkas). Peta Terpadu dan peta lama digabung 
 - Tidak ada perubahan skema database
 - Aplikasi mobile tidak berubah (admin 1.0.21, pelanggan 1.1.13, kolektor 1.0.1)
 - **[CHORE]** Bump versi root, frontend, dan backend ke 5.28.0
-
-### v5.27.0 — 2026-10-31 - Peta Terpadu Hidup + Geser/Hapus Titik + Info ONT GenieACS + APK Kolektor
-
-### Summary
-Rilis besar setelah 5.26.0. Peta Terpadu yang sebelumnya hanya menampilkan pelanggan kini menampilkan seluruh infrastruktur (OLT/ODC/ODP/OTB/Joint Closure), dengan pilihan basemap, mode geser dan hapus titik langsung di peta, popup informatif termasuk data ONT live dari GenieACS, dan panel detail yang lengkap. Tiga halaman manajemen fiber yang mati diperbaiki, aplikasi kolektor native baru dirilis, dan aplikasi admin mendapat paritas peta.
-
-### Peta Jaringan & Topologi
-- **[FIX]** Peta Terpadu kosong selain pelanggan: `/api/network/nodes` membaca tabel `network_nodes` yang memang kosong — kini agregasi gabungan dari tabel asli `networkOLT`, `networkODC`, `networkODP`, `network_otbs`, dan `network_joint_closures`
-- **[FEATURE]** Pilihan basemap Street/Satellite/Topo/Dark di Peta Terpadu (sama seperti Peta Jaringan)
-- **[FEATURE]** Mode "Geser Titik": marker infrastruktur bisa diseret untuk koreksi koordinat (PUT per-tipe), tombol "Hapus Titik Ini" dengan konfirmasi — pelanggan sengaja tidak bisa digeser/dihapus dari peta
-- **[FIX]** Edit/hapus ODP, ODC, OLT selalu 404: frontend memanggil rute path-style `/api/network/{tipe}/{id}` sementara handler hanya menerima query/body id — kini ada forwarder `[id]` untuk PUT, DELETE, dan GET
-- **[FIX]** Dropdown OLT kosong di form Tambah Node: panel membaca `d.data` padahal endpoint mengembalikan `{olts}` — semua shape dropdown (olt/odc/otb/cables/joint-closures) diaudit
-- **[FIX]** Tombol toolbar Peta Terpadu tertumpuk kontrol peta (basemap/z-index 1000 menutupi Tambah Node): kontrol digabung ke satu toolbar, zoom control pindah ke kanan-bawah agar tidak bertabrakan tombol Filter di mobile
-- **[FIX]** Teks popup tidak terbaca: kartu popup selalu putih tetapi token tema resolve ke warna terang di tema dark — variabel tema kini di-pin ke nilai light di dalam `.popup-card` (memperbaiki semua popup di kedua peta)
-- **[FEATURE]** Popup marker diperkaya: pelanggan (username, paket, speed, ODP, alamat) + seksi "Perangkat ONT (GenieACS)" — serial, model, PPPoE IP, RX/TX power berwarna per ambang, suhu, uptime, mode PON, SSID, jumlah klien WiFi, last inform; infrastruktur menampilkan upstream ter-resolve
-- **[FEATURE]** Panel "Lihat Detail" lengkap: endpoint GET `[id]` baru untuk OLT/ODC/ODP dengan relasi; pelanggan juga menampilkan info ONT GenieACS
-- **[FEATURE]** Endpoint baru `GET /api/genieacs/device-by-username?username=` — resolusi perangkat GenieACS dari username PPPoE; daftar path TR-069 diekstrak ke `lib/genieacs/param-paths.ts`
-
-### Manajemen Fiber
-- **[FIX]** `GET /api/network/cables` error 500 mematikan tiga halaman (Kabel Fiber, Core Fiber, Titik Splice): relasi dipanggil `cable_segments` padahal di schema bernama `segments`
-
-### Aplikasi Mobile
-- **[FEATURE]** **APK Kolektor native baru** (`mobile/collector_app`, "Salfanet Kolektor") — paritas portal web kolektor: beranda per periode, pelanggan (tandai lunas, janji bayar ber-GPS, kirim link invoice), tagihan, setoran harian + rekap, isolir, penagihan saya, cabut ONT (form pengajuan + riwayat), bukti pembayaran, notifikasi, pengaturan server, update dari dalam aplikasi (target rilis `collector`)
-- **[FEATURE]** APK admin: geser + hapus titik infrastruktur di Peta Jaringan, seksi ONT GenieACS di detail pelanggan — naik ke **1.0.21**
-- **[FEATURE]** Animasi splash yang lebih matang di APK admin dan pelanggan
-
-### Menu & Navigasi
-- **[FEATURE]** Submenu GenieACS menampilkan **Perangkat** + **Settings** (item lain tetap ada via URL)
-
-### Kualitas Frontend
-- **[FIX]** Bug enum `invoices_status` di teknisi/customers (uppercase `PENDING`/`OVERDUE` vs lowercase di kode — query ikut gagal di runtime)
-- **[CHORE]** Bersih-bersih audit: 46 `console.log` dihapus, 496 `transition-all` diganti, warna neon jadi token `@theme`, emoji dekoratif diganti ikon Lucide, kontras sidebar/tombol ke WCAG AA, toast PWA menghormati safe-area
-
-### Restart Layanan dari Settings
-- **[FIX]** Menyimpan timezone di Settings, Company lalu Simpan & Restart membuat panel 502 terus-menerus: skrip restart dijalankan oleh backend dan mewarisi seluruh lingkungannya, termasuk `PORT=3001`. `pm2 restart --update-env` menyalin lingkungan itu ke proses yang di-restart, sehingga frontend hidup kembali di port 3001 (bukan 3000): port 3000 kosong (nginx menjawab 502 selamanya) dan dua aplikasi berebut 3001 (API menjawab 200 dan 404 bergantian). Updater web aman karena skripnya memakai lingkungan bersih; route restart kini sama, dan merestart lewat `ecosystem.config.js` sehingga tiap aplikasi mendapat blok env-nya sendiri kembali, termasuk memperbaiki PM2 yang lingkungannya sudah tercemar
-- **[FIX]** Halaman Company memuat ulang setelah 5 detik tetap, tepat saat layanan masih restart. Kini halaman menunggu diam selama 8 detik (restart berlangsung sekitar 3 detik setelah jeda 2 detik), lalu memeriksa backend (`/api/health`) dan frontend tiap 1,5 detik, dan baru dimuat ulang setelah keduanya sehat dua kali berturut-turut dan backend terbukti baru mulai (`uptimeSeconds` di `/api/health`). Karena menunggu diam, konsol browser tidak lagi penuh baris "Failed to load resource ... 502" selama restart; bila belum kembali dalam 2 menit, ada pesan yang jelas
-- **[FIX]** Ubah timezone hanya me-restart cron, frontend, dan backend (pilihan baru `app`). WhatsApp dan FreeRADIUS tidak lagi ikut di-restart, karena keduanya tidak memakai timezone perusahaan
-- **[FIX]** Update Sekarang menerapkan frontend, backend, dan cron dari `ecosystem.config.js` juga, jadi ikut memulihkan PM2 yang `PORT`-nya sudah terlanjur salah
-- **[CHORE]** Hasil restart dicatat di `logs/restart-services.log`
-
-### Catatan Pembaruan
-- Tidak ada perubahan skema database
-- Bila panel sempat 502 karena masalah di atas dan tidak bisa dibuka: di server jalankan `cd /var/www/salfanet-radius && pm2 restart ecosystem.config.js --only salfanet-frontend,salfanet-backend --update-env` (dari shell login biasa, bukan dari proses PM2), lalu `pm2 save`
-- Aplikasi admin naik ke **1.0.21** — publish APK baru dari release `apk-latest` agar pengguna ditawari update
-- APK Kolektor: unduh `salfanet-collector-*` dari `apk-latest`, lalu unggah di Admin → Download APK (kartu "Kolektor Lapangan") agar update in-app berfungsi
-- **[CHORE]** Bump versi root, frontend, dan backend ke 5.27.0 (sebelumnya masih 5.26.0, sehingga panel dan `/api/health` menampilkan versi lama)
 
 <!-- AUTO-CHANGELOG:END -->
 

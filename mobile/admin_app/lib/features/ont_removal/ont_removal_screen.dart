@@ -104,7 +104,7 @@ class _OntRemovalScreenState extends State<OntRemovalScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Penarikan ONT'), actions: const [GuideAction()]),
+      appBar: AppBar(title: const Text('Tugas Cabut ONT'), actions: const [GuideAction()]),
       floatingActionButton: FloatingActionButton.extended(onPressed: _create, icon: const Icon(Icons.add_rounded), label: const Text('Tugaskan')),
       body: Column(
         children: [
@@ -224,7 +224,7 @@ class _CreateSheetState extends State<_CreateSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Tugaskan Penarikan ONT', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+          const Text('Tugaskan Cabut ONT', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
           const SizedBox(height: Gap.lg),
           TextField(
             controller: _username,

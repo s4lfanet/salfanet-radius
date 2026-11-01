@@ -54,7 +54,7 @@ class _ProofsScreenState extends State<ProofsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Bukti Pembayaran')),
+      appBar: AppBar(title: const Text('Bukti Transfer')),
       body: Column(
         children: [
           const SizedBox(height: Gap.sm),

@@ -11,86 +11,170 @@ import '../../core/widgets/entity_tile.dart';
 import '../auth/auth_provider.dart';
 import '../auth/server_settings_screen.dart';
 import '../collections/collections_screen.dart';
-import '../isolir/isolir_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../ont/ont_screen.dart';
 import '../proofs/proofs_screen.dart';
+import '../settlements/settlements_screen.dart';
 
-/// Lainnya — tools kerja sekunder (isolir, riwayat penagihan, ONT, bukti
-/// transfer, notifikasi), akun, server, tema, dan keluar. Tab utama tetap
-/// untuk alur harian; halaman-halaman ini dijangkau lewat sini, sama
-/// seperti sidebar "lainnya" di portal web.
-class MoreScreen extends StatelessWidget {
+class _Item {
+  const _Item(this.icon, this.tone, this.title, this.hint, {this.page, this.action});
+  final IconData icon;
+  final Tone tone;
+  final String title;
+  final String hint;
+  final Widget? page;
+
+  /// For rows that open a sheet or dialog instead of a page.
+  final void Function(BuildContext context)? action;
+}
+
+/// Menu — the same pages the web portal keeps under its Menu (Setoran Saya,
+/// Koleksi Saya, Bukti Transfer, Cabut ONT), with the account, app settings,
+/// and a search box that finds any of them by name.
+class MoreScreen extends StatefulWidget {
   const MoreScreen({super.key});
 
   @override
+  State<MoreScreen> createState() => _MoreScreenState();
+}
+
+class _MoreScreenState extends State<MoreScreen> {
+  String _query = '';
+
+  List<(String, List<_Item>)> _sections() => [
+        (
+          'Pekerjaan',
+          [
+            const _Item(Icons.account_balance_wallet_outlined, Tone.warning, 'Setoran Saya', 'Uang tagihan yang harus disetor ke admin', page: SettlementsScreen()),
+            const _Item(Icons.history_rounded, Tone.success, 'Koleksi Saya', 'Riwayat 6 bulan dan transaksi terbaru', page: CollectionsScreen()),
+            const _Item(Icons.receipt_outlined, Tone.primary, 'Bukti Transfer', 'Foto bukti transfer dari pelanggan', page: ProofsScreen()),
+            const _Item(Icons.router_outlined, Tone.danger, 'Cabut ONT', 'Ajukan pencabutan perangkat pelanggan isolir', page: OntScreen()),
+          ],
+        ),
+        (
+          'Akun',
+          [
+            const _Item(Icons.notifications_outlined, Tone.neutral, 'Notifikasi', 'Info yang masuk ke akun Anda', page: NotificationsScreen()),
+            _Item(Icons.system_update_rounded, Tone.primary, 'Pembaruan Aplikasi', 'Versi terpasang dan update APK', page: const AppUpdateScreen()),
+          ],
+        ),
+        (
+          'Pengaturan',
+          [
+            _Item(Icons.dns_outlined, Tone.neutral, 'Server', ApiClient.instance.baseUrl, page: const ServerSettingsScreen()),
+            _Item(Icons.dark_mode_outlined, Tone.neutral, 'Tema', 'Ikuti sistem, terang, atau gelap', action: _themeSheet),
+          ],
+        ),
+      ];
+
+  void _open(BuildContext context, _Item item) {
+    if (item.action != null) {
+      item.action!(context);
+    } else if (item.page != null) {
+      Navigator.of(context).push(MaterialPageRoute(builder: (_) => item.page!));
+    }
+  }
+
+  Widget _row(BuildContext context, _Item item, {String? trail}) {
+    return EntityTile(
+      icon: item.icon,
+      tone: item.tone,
+      title: item.title,
+      subtitle: item.hint,
+      meta: trail,
+      trailing: Icon(Icons.chevron_right_rounded, color: context.colors.outline, size: 20),
+      onTap: () => _open(context, item),
+    );
+  }
+
+  Widget _heading(BuildContext context, String text) => Padding(
+        padding: const EdgeInsets.only(left: 2, top: Gap.lg, bottom: Gap.sm),
+        child: Text(text, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: context.colors.onSurfaceVariant)),
+      );
+
+  @override
   Widget build(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
-    final user = auth.user;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Lainnya')),
-      body: ListView(
-        padding: const EdgeInsets.all(Gap.page),
-        children: [
-          Card(
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: context.colors.primaryContainer,
-                child: Text(
-                  (user?.name.isNotEmpty == true ? user!.name[0] : '?').toUpperCase(),
-                  style: TextStyle(fontWeight: FontWeight.w800, color: context.colors.onPrimaryContainer),
-                ),
-              ),
-              title: Text(user?.name ?? '-', style: const TextStyle(fontWeight: FontWeight.w700)),
-              subtitle: Text([user?.username, user?.scopeLabel].whereType<String>().where((s) => s.isNotEmpty).join(' · ')),
+    final user = context.watch<AuthProvider>().user;
+    final sections = _sections();
+    final q = _query.trim().toLowerCase();
+
+    final children = <Widget>[];
+    if (q.isNotEmpty) {
+      final hits = [
+        for (final (section, items) in sections)
+          for (final it in items)
+            if ('${it.title} ${it.hint} $section'.toLowerCase().contains(q)) (section, it),
+      ];
+      if (hits.isEmpty) {
+        children.add(Padding(
+          padding: const EdgeInsets.only(top: Gap.xl),
+          child: Column(
+            children: [
+              Icon(Icons.search_off_rounded, size: 40, color: context.colors.outline),
+              const SizedBox(height: Gap.sm),
+              Text('Menu "${_query.trim()}" tidak ditemukan', style: const TextStyle(fontWeight: FontWeight.w700)),
+              const SizedBox(height: Gap.xs),
+              Text('Coba nama lain, mis. setoran, bukti, ONT.', style: TextStyle(color: context.colors.onSurfaceVariant)),
+            ],
+          ),
+        ));
+      } else {
+        children.add(_heading(context, '${hits.length} menu ditemukan'));
+        for (final (section, it) in hits) {
+          children.add(_row(context, it, trail: section));
+        }
+      }
+    } else {
+      children.add(Card(
+        child: ListTile(
+          leading: CircleAvatar(
+            backgroundColor: context.colors.primaryContainer,
+            child: Text(
+              (user?.name.isNotEmpty == true ? user!.name[0] : '?').toUpperCase(),
+              style: TextStyle(fontWeight: FontWeight.w800, color: context.colors.onPrimaryContainer),
             ),
           ),
-          const SizedBox(height: Gap.lg),
-          _Section(
-            title: 'Kerja Lapangan',
-            tiles: [
-              _menu(context, Icons.wifi_off_rounded, Tone.danger, 'Pelanggan Isolir', 'Yang putus karena belum bayar', const IsolirScreen()),
-              _menu(context, Icons.account_balance_wallet_outlined, Tone.success, 'Penagihan Saya', 'Riwayat 6 bulan + transaksi terbaru', const CollectionsScreen()),
-              _menu(context, Icons.router_outlined, Tone.warning, 'Cabut ONT', 'Permintaan pencabutan perangkat', const OntScreen()),
-              _menu(context, Icons.receipt_outlined, Tone.primary, 'Bukti Pembayaran', 'Foto bukti transfer pelanggan', const ProofsScreen()),
-              _menu(context, Icons.notifications_outlined, Tone.neutral, 'Notifikasi', 'Info masuk ke akun Anda', const NotificationsScreen()),
-            ],
+          title: Text(user?.name ?? '-', style: const TextStyle(fontWeight: FontWeight.w700)),
+          subtitle: Text([user?.username, user?.scopeLabel].whereType<String>().where((s) => s.isNotEmpty).join(' · ')),
+        ),
+      ));
+      for (final (section, items) in sections) {
+        children.add(_heading(context, section));
+        children.addAll(items.map((it) => _row(context, it)));
+      }
+      children
+        ..add(_heading(context, 'Sesi'))
+        ..add(EntityTile(
+          icon: Icons.logout_rounded,
+          tone: Tone.danger,
+          title: 'Keluar',
+          subtitle: 'Akhiri sesi di perangkat ini',
+          onTap: () async {
+            final ok = await confirmAction(context, title: 'Keluar?', message: 'Anda harus masuk kembali untuk menagih.', confirmLabel: 'Keluar', destructive: true);
+            if (ok && context.mounted) context.read<AuthProvider>().logout();
+          },
+        ))
+        ..add(const SizedBox(height: Gap.lg))
+        ..add(FutureBuilder<PackageInfo>(
+          future: PackageInfo.fromPlatform(),
+          builder: (_, s) => Center(
+            child: Text(
+              'Salfanet Kolektor v${s.data?.version ?? '-'} (${s.data?.buildNumber ?? '-'})',
+              style: TextStyle(fontSize: 11.5, color: context.colors.outline),
+            ),
           ),
-          const SizedBox(height: Gap.lg),
-          _Section(
-            title: 'Pengaturan',
-            tiles: [
-              _menu(context, Icons.dns_outlined, Tone.neutral, 'Server', ApiClient.instance.baseUrl, null, onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ServerSettingsScreen()));
-              }),
-              _menu(context, Icons.dark_mode_outlined, Tone.neutral, 'Tema', 'Ikuti sistem / terang / gelap', null, onTap: () => _themeSheet(context)),
-              _menu(context, Icons.system_update_rounded, Tone.primary, 'Pembaruan Aplikasi', 'Versi terpasang & update APK', const AppUpdateScreen()),
-            ],
-          ),
-          const SizedBox(height: Gap.lg),
-          _Section(
-            title: 'Akun',
-            tiles: [
-              EntityTile(
-                icon: Icons.logout_rounded,
-                tone: Tone.danger,
-                title: 'Keluar',
-                subtitle: 'Akhiri sesi di perangkat ini',
-                onTap: () async {
-                  final ok = await confirmAction(context, title: 'Keluar?', message: 'Anda harus masuk kembali untuk menagih.', confirmLabel: 'Keluar', destructive: true);
-                  if (ok && context.mounted) context.read<AuthProvider>().logout();
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: Gap.lg),
-          FutureBuilder<PackageInfo>(
-            future: PackageInfo.fromPlatform(),
-            builder: (_, s) => Center(
-              child: Text(
-                'Salfanet Kolektor v${s.data?.version ?? '-'} (${s.data?.buildNumber ?? '-'})',
-                style: TextStyle(fontSize: 11.5, color: context.colors.outline),
-              ),
+        ));
+    }
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Menu')),
+      body: Column(
+        children: [
+          SearchField(hint: 'Cari menu, mis. setoran, bukti, ONT', onChanged: (v) => setState(() => _query = v)),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(Gap.page, 0, Gap.page, Gap.page),
+              children: children,
             ),
           ),
         ],
@@ -98,18 +182,7 @@ class MoreScreen extends StatelessWidget {
     );
   }
 
-  Widget _menu(BuildContext context, IconData icon, Tone tone, String title, String subtitle, Widget? page, {VoidCallback? onTap}) {
-    return EntityTile(
-      icon: icon,
-      tone: tone,
-      title: title,
-      subtitle: subtitle,
-      trailing: Icon(Icons.chevron_right_rounded, color: context.colors.outline, size: 20),
-      onTap: onTap ?? (page != null ? () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => page)) : null),
-    );
-  }
-
-  void _themeSheet(BuildContext context) {
+  static void _themeSheet(BuildContext context) {
     final theme = context.read<ThemeController>();
     showModalBottomSheet(
       context: context,
@@ -129,26 +202,6 @@ class MoreScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _Section extends StatelessWidget {
-  const _Section({required this.title, required this.tiles});
-  final String title;
-  final List<Widget> tiles;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 2, bottom: Gap.sm),
-          child: Text(title, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: context.colors.onSurfaceVariant)),
-        ),
-        ...tiles,
-      ],
     );
   }
 }

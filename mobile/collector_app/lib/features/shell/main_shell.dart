@@ -6,8 +6,8 @@ import '../auth/auth_provider.dart';
 import '../billing/billing_screen.dart';
 import '../customers/customers_screen.dart';
 import '../dashboard/dashboard_screen.dart';
+import '../isolir/isolir_screen.dart';
 import '../more/more_screen.dart';
-import '../settlements/settlements_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -19,13 +19,13 @@ class MainShell extends StatefulWidget {
 class _MainShellState extends State<MainShell> {
   int _index = 0;
 
-  // Tabs mirror the web portal's daily flow: dashboard answers "berapa yang
-  // belum tertagih", then the two working lists, then setoran.
+  // Same four tabs as the web portal's bottom bar (Ringkasan, Tagihan,
+  // Pelanggan, Isolir); the rest sits under Menu, as on the web.
   static const _tabs = <Widget>[
     DashboardScreen(),
-    CustomersScreen(),
     BillingScreen(),
-    SettlementsScreen(),
+    CustomersScreen(),
+    IsolirScreen(),
     MoreScreen(),
   ];
 
@@ -46,11 +46,11 @@ class _MainShellState extends State<MainShell> {
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard_rounded), label: 'Beranda'),
-          NavigationDestination(icon: Icon(Icons.people_alt_outlined), selectedIcon: Icon(Icons.people_alt_rounded), label: 'Pelanggan'),
+          NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard_rounded), label: 'Ringkasan'),
           NavigationDestination(icon: Icon(Icons.receipt_long_outlined), selectedIcon: Icon(Icons.receipt_long_rounded), label: 'Tagihan'),
-          NavigationDestination(icon: Icon(Icons.account_balance_wallet_outlined), selectedIcon: Icon(Icons.account_balance_wallet_rounded), label: 'Setoran'),
-          NavigationDestination(icon: Icon(Icons.grid_view_outlined), selectedIcon: Icon(Icons.grid_view_rounded), label: 'Lainnya'),
+          NavigationDestination(icon: Icon(Icons.people_alt_outlined), selectedIcon: Icon(Icons.people_alt_rounded), label: 'Pelanggan'),
+          NavigationDestination(icon: Icon(Icons.person_off_outlined), selectedIcon: Icon(Icons.person_off_rounded), label: 'Isolir'),
+          NavigationDestination(icon: Icon(Icons.grid_view_outlined), selectedIcon: Icon(Icons.grid_view_rounded), label: 'Menu'),
         ],
       ),
     );
