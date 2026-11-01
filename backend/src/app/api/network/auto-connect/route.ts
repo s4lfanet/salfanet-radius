@@ -28,7 +28,15 @@ function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number)
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// Device type → table name mapping
+// Device type → Prisma model mapping (native per-type tables)
+const DEVICE_MODELS: Record<string, string> = {
+  OLT: 'networkOLT',
+  OTB: 'network_otbs',
+  JOINT_CLOSURE: 'network_joint_closures',
+  ODC: 'networkODC',
+  ODP: 'networkODP',
+};
+
 const _DEVICE_TABLES: Record<string, string> = {
   OLT: 'network_olts',
   OTB: 'network_otbs',
@@ -53,14 +61,26 @@ export async function POST(request: NextRequest) {
     }
 
     // ── 1. Resolve source and target devices (get coordinates + names) ──────
-    const sourceNode = await (prisma as any).network_nodes.findUnique({
-      where: { id: sourceId },
-      select: { id: true, type: true, code: true, name: true, latitude: true, longitude: true },
-    });
-    const targetNode = await (prisma as any).network_nodes.findUnique({
-      where: { id: targetId },
-      select: { id: true, type: true, code: true, name: true, latitude: true, longitude: true },
-    });
+    // The unified map passes IDs from the per-type tables (network_odps,
+    // network_odcs, ...). The legacy `network_nodes` graph table stays empty
+    // because every input form writes to the per-type tables — resolving
+    // there always failed with "device not found" and broke line drawing.
+    const resolveDevice = async (type: string, id: string) => {
+      const model = DEVICE_MODELS[type];
+      if (!model) return null;
+      const node = await (prisma as any)[model].findUnique({
+        where: { id },
+        select: {
+          id: true, name: true, latitude: true, longitude: true,
+          ...(type === 'OTB' || type === 'JOINT_CLOSURE' ? { code: true } : {}),
+        },
+      });
+      if (!node) return null;
+      return { ...node, code: node.code ?? node.name };
+    };
+
+    const sourceNode = await resolveDevice(sourceType, sourceId);
+    const targetNode = await resolveDevice(targetType, targetId);
 
     if (!sourceNode) return NextResponse.json({ error: `Source device not found: ${sourceId}` }, { status: 404 });
     if (!targetNode) return NextResponse.json({ error: `Target device not found: ${targetId}` }, { status: 404 });

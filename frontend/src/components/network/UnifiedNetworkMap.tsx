@@ -476,8 +476,15 @@ export default function UnifiedNetworkMap({
       // Filter by type
       if (!filters.types.includes(entity.type)) return false;
 
-      // Filter by status
-      if (!filters.status.includes(entity.status)) return false;
+      // Filter by status — only hide statuses the panel actually offers.
+      // Devices with other status values (e.g. 'planned') must not silently
+      // disappear from the unified map while still showing on the network map.
+      const statusLower = (entity.status || '').toLowerCase();
+      const KNOWN_FILTER_STATUSES = ['active', 'inactive', 'maintenance', 'damaged', 'isolated', 'offline'];
+      if (
+        KNOWN_FILTER_STATUSES.includes(statusLower) &&
+        !filters.status.some(s => s.toLowerCase() === statusLower)
+      ) return false;
 
       // Filter by search text
       if (filters.search) {
