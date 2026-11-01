@@ -6,6 +6,47 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.28.0] - 2026-11-01 - Satu Peta Jaringan + Relasi Otomatis + Audit Topologi dan Fiber
+
+### Summary
+Rilis setelah 5.27.0 (9 commit, 35 berkas). Peta Terpadu dan peta lama digabung menjadi satu **Peta Jaringan** yang menggambar relasi antarperangkat otomatis dari data infrastruktur, router NAS bisa diberi koordinat GPS, dan seluruh halaman topologi, fiber, ODP, ODC, Joint Closure, dan OLT diaudit: banyak tombol dan angka yang tidak pernah bekerja (simpan splitter, buat splice, tugaskan core, trace fisik, hitungan OLT) kini berfungsi. Tidak ada perubahan skema database dan tidak ada perubahan di aplikasi mobile.
+
+### Peta Jaringan
+- **[REFACTOR]** Satu peta: Peta Terpadu digabung ke Peta Jaringan lama dan namanya menjadi **Peta Jaringan**. Layer Router (GPS) ditambahkan (marker, filter, statistik, popup), dan `/admin/network/map` diarahkan ke peta yang sama
+- **[FEATURE]** Relasi digambar otomatis dari kolom induk di data infrastruktur (garis putus-putus): OTB ke OLT, ODC ke OTB atau OLT, ODP ke ODP induk, ODC, atau OLT. Pasangan yang sudah punya kabel tetap memakai garis kabel. Tidak perlu segmen kabel atau tarik garis manual
+- **[UI]** Tombol Hubungkan dan Tambah Node di toolbar peta dihapus. OLT baru diinput di OLT Management (peta hanya menempatkan OLT yang sudah ada ke koordinat); Tambah di Infrastruktur membuka halaman ODC, ODP, atau Joint Closure (input induk dan koordinat); OTB tetap ditempatkan lewat peta
+- **[FEATURE]** Router NAS: form tambah dan ubah punya latitude dan longitude (opsional) dengan **Pilih di Peta** dan **Auto GPS**. Backend sudah menyimpan koordinat tetapi form tidak mengirimnya, sehingga router tidak pernah muncul di peta
+- **[FIX]** Tarik garis selalu gagal ("gagal menghubungkan"): pencarian perangkat memakai tabel `network_nodes` (lama, selalu kosong), kini memakai tabel per tipe (ODP, ODC, OTB, Joint Closure)
+- **[FIX]** Garis kabel tidak tergambar karena koordinat dibaca dari `network_nodes`; kini dari tabel native
+- **[FIX]** Perangkat dengan status di luar enam nilai bawaan (misalnya `planned`) atau beda huruf besar disembunyikan di peta; kini tetap tampil
+- **[UI]** Menu Topologi: Peta Jaringan, Infrastruktur, Diagram Splitter, dan Trace Jaringan. Entri ODC, ODP, dan Joint Closure yang duplikat dengan tab Infrastruktur dihapus dari menu (halaman tetap bisa dibuka lewat URL). Panduan admin disesuaikan
+
+### Infrastruktur, Diagram, dan Trace
+- **[FIX]** Kolom OLT, ODC, dan ODP terhubung di Infrastruktur selalu kosong karena membaca nama field yang tidak dikirim API
+- **[FIX]** Diagram: upstream OLT pada OTB memakai field yang salah
+- **[FIX]** Trace logis: graf kini tidak berarah dan dibangun dari kolom induk plus segmen kabel, OTB ikut dihitung, jarak dan estimasi level dari koordinat (bukan placeholder), daftar OLT tidak lagi kosong, dan jumlah pelanggan terdampak dari data nyata (sebelumnya acak)
+- **[FIX]** Trace fisik selalu menjawab "No fiber path found" karena bentuk respons API tidak cocok dengan halaman; kini dinormalisasi. Perangkat dipilih dari daftar (bukan mengetik UUID), dan tipe yang tidak didukung API (OLT, pelanggan) dihapus dari pilihan
+
+### Manajemen Fiber (Kabel, Core, Splice)
+- **[FIX]** Kabel: detail kabel tidak pernah terbuka, status Aktif selalu salah, warna status core salah, dan daftar terpotong 20 kabel (kini 500). Mengubah jumlah tube atau core saat edit membuat total core tidak sinkron dengan yang sudah dibuat; kini ditolak dan kolomnya dikunci di UI
+- **[FIX]** Core: kartu statistik hanya menghitung 50 baris halaman aktif (kini dari hitungan per status di API); menugaskan beberapa core sekaligus selalu 400 (kini dikirim satu per core); tujuan penugasan memakai dropdown (ditambah Joint Closure) bukan mengetik ID; dropdown kabel tidak lagi terpotong 20
+- **[FIX]** Splice: membuat splice selalu gagal karena form tidak mengirim `deviceType` dan `deviceId` (kini ada pilihan perangkat dan tray); redaman sisip bertipe Decimal membuat rata-rata dan detail error; status dan tanggal splice dibaca dari field yang tidak ada; daftar core per kabel dibatasi 50 (kini 1000)
+
+### ODP, ODC, Joint Closure, dan OLT
+- **[FIX]** Menghapus ODP yang punya pelanggan terpasang gagal 500 karena relasi; kini ditolak dengan pesan jelas, begitu juga ODP anak. Teks konfirmasi hapus ODP, ODC, dan OLT disesuaikan dengan perilaku sebenarnya (ODP dan OTB dilepas, bukan ikut terhapus)
+- **[FEATURE]** Kartu ODP menampilkan jumlah pelanggan. Dialog penempatan pelanggan yang sudah jadi tetapi tidak dipakai halaman mana pun kini dipasang di halaman ODP: Tempatkan Pelanggan, daftar pelanggan per ODP, ubah port, dan lepas penempatan
+- **[FIX]** Tombol Simpan di bagian Splitter diam-diam tidak menyimpan: `splitterConfig`, `splitterRatio`, dan `splitterType` kini disimpan di ODC dan ODP (ODP menyimpan peta port di kolom `splitterDiagram`) dan dimuat ulang saat dibuka
+- **[FEATURE]** Modal detail splice dan splitter dipasang di halaman ODP, ODC, dan Joint Closure (bagian ini sudah ada tetapi tidak dipakai)
+- **[FIX]** Bagian titik splice: nilai Decimal (redaman sisip, refleksi) diubah ke angka agar `toFixed` tidak crash, dan kelas Tailwind dinamis yang tidak pernah dibuat diganti
+- **[FIX]** OLT: hitungan LOS, Dying Gasp, dan Unconfig di daftar kini nyata (sebelumnya nol tetap); OLT hasil impor ikut diaktifkan monitoringnya (tanpa itu poller melewatinya selamanya, sama seperti perbaikan pada input manual); uji koneksi memakai isian form, bukan kredensial tersimpan, saat mengubah OLT
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema database
+- Aplikasi mobile tidak berubah (admin 1.0.21, pelanggan 1.1.13, kolektor 1.0.1)
+- **[CHORE]** Bump versi root, frontend, dan backend ke 5.28.0
+
+---
+
 ## [5.27.0] - 2026-10-31 - Peta Terpadu Hidup + Geser/Hapus Titik + Info ONT GenieACS + APK Kolektor
 
 ### Summary

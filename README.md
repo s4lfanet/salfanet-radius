@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.27.0 - Peta Terpadu Hidup + Geser/Hapus Titik + Info ONT GenieACS + APK Kolektor
+> **Version:** 5.28.0 - Satu Peta Jaringan + Relasi Otomatis + Audit Topologi dan Fiber
 
 ---
 
@@ -1111,6 +1111,45 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.28.0 — 2026-11-01 - Satu Peta Jaringan + Relasi Otomatis + Audit Topologi dan Fiber
+
+### Summary
+Rilis setelah 5.27.0 (9 commit, 35 berkas). Peta Terpadu dan peta lama digabung menjadi satu **Peta Jaringan** yang menggambar relasi antarperangkat otomatis dari data infrastruktur, router NAS bisa diberi koordinat GPS, dan seluruh halaman topologi, fiber, ODP, ODC, Joint Closure, dan OLT diaudit: banyak tombol dan angka yang tidak pernah bekerja (simpan splitter, buat splice, tugaskan core, trace fisik, hitungan OLT) kini berfungsi. Tidak ada perubahan skema database dan tidak ada perubahan di aplikasi mobile.
+
+### Peta Jaringan
+- **[REFACTOR]** Satu peta: Peta Terpadu digabung ke Peta Jaringan lama dan namanya menjadi **Peta Jaringan**. Layer Router (GPS) ditambahkan (marker, filter, statistik, popup), dan `/admin/network/map` diarahkan ke peta yang sama
+- **[FEATURE]** Relasi digambar otomatis dari kolom induk di data infrastruktur (garis putus-putus): OTB ke OLT, ODC ke OTB atau OLT, ODP ke ODP induk, ODC, atau OLT. Pasangan yang sudah punya kabel tetap memakai garis kabel. Tidak perlu segmen kabel atau tarik garis manual
+- **[UI]** Tombol Hubungkan dan Tambah Node di toolbar peta dihapus. OLT baru diinput di OLT Management (peta hanya menempatkan OLT yang sudah ada ke koordinat); Tambah di Infrastruktur membuka halaman ODC, ODP, atau Joint Closure (input induk dan koordinat); OTB tetap ditempatkan lewat peta
+- **[FEATURE]** Router NAS: form tambah dan ubah punya latitude dan longitude (opsional) dengan **Pilih di Peta** dan **Auto GPS**. Backend sudah menyimpan koordinat tetapi form tidak mengirimnya, sehingga router tidak pernah muncul di peta
+- **[FIX]** Tarik garis selalu gagal ("gagal menghubungkan"): pencarian perangkat memakai tabel `network_nodes` (lama, selalu kosong), kini memakai tabel per tipe (ODP, ODC, OTB, Joint Closure)
+- **[FIX]** Garis kabel tidak tergambar karena koordinat dibaca dari `network_nodes`; kini dari tabel native
+- **[FIX]** Perangkat dengan status di luar enam nilai bawaan (misalnya `planned`) atau beda huruf besar disembunyikan di peta; kini tetap tampil
+- **[UI]** Menu Topologi: Peta Jaringan, Infrastruktur, Diagram Splitter, dan Trace Jaringan. Entri ODC, ODP, dan Joint Closure yang duplikat dengan tab Infrastruktur dihapus dari menu (halaman tetap bisa dibuka lewat URL). Panduan admin disesuaikan
+
+### Infrastruktur, Diagram, dan Trace
+- **[FIX]** Kolom OLT, ODC, dan ODP terhubung di Infrastruktur selalu kosong karena membaca nama field yang tidak dikirim API
+- **[FIX]** Diagram: upstream OLT pada OTB memakai field yang salah
+- **[FIX]** Trace logis: graf kini tidak berarah dan dibangun dari kolom induk plus segmen kabel, OTB ikut dihitung, jarak dan estimasi level dari koordinat (bukan placeholder), daftar OLT tidak lagi kosong, dan jumlah pelanggan terdampak dari data nyata (sebelumnya acak)
+- **[FIX]** Trace fisik selalu menjawab "No fiber path found" karena bentuk respons API tidak cocok dengan halaman; kini dinormalisasi. Perangkat dipilih dari daftar (bukan mengetik UUID), dan tipe yang tidak didukung API (OLT, pelanggan) dihapus dari pilihan
+
+### Manajemen Fiber (Kabel, Core, Splice)
+- **[FIX]** Kabel: detail kabel tidak pernah terbuka, status Aktif selalu salah, warna status core salah, dan daftar terpotong 20 kabel (kini 500). Mengubah jumlah tube atau core saat edit membuat total core tidak sinkron dengan yang sudah dibuat; kini ditolak dan kolomnya dikunci di UI
+- **[FIX]** Core: kartu statistik hanya menghitung 50 baris halaman aktif (kini dari hitungan per status di API); menugaskan beberapa core sekaligus selalu 400 (kini dikirim satu per core); tujuan penugasan memakai dropdown (ditambah Joint Closure) bukan mengetik ID; dropdown kabel tidak lagi terpotong 20
+- **[FIX]** Splice: membuat splice selalu gagal karena form tidak mengirim `deviceType` dan `deviceId` (kini ada pilihan perangkat dan tray); redaman sisip bertipe Decimal membuat rata-rata dan detail error; status dan tanggal splice dibaca dari field yang tidak ada; daftar core per kabel dibatasi 50 (kini 1000)
+
+### ODP, ODC, Joint Closure, dan OLT
+- **[FIX]** Menghapus ODP yang punya pelanggan terpasang gagal 500 karena relasi; kini ditolak dengan pesan jelas, begitu juga ODP anak. Teks konfirmasi hapus ODP, ODC, dan OLT disesuaikan dengan perilaku sebenarnya (ODP dan OTB dilepas, bukan ikut terhapus)
+- **[FEATURE]** Kartu ODP menampilkan jumlah pelanggan. Dialog penempatan pelanggan yang sudah jadi tetapi tidak dipakai halaman mana pun kini dipasang di halaman ODP: Tempatkan Pelanggan, daftar pelanggan per ODP, ubah port, dan lepas penempatan
+- **[FIX]** Tombol Simpan di bagian Splitter diam-diam tidak menyimpan: `splitterConfig`, `splitterRatio`, dan `splitterType` kini disimpan di ODC dan ODP (ODP menyimpan peta port di kolom `splitterDiagram`) dan dimuat ulang saat dibuka
+- **[FEATURE]** Modal detail splice dan splitter dipasang di halaman ODP, ODC, dan Joint Closure (bagian ini sudah ada tetapi tidak dipakai)
+- **[FIX]** Bagian titik splice: nilai Decimal (redaman sisip, refleksi) diubah ke angka agar `toFixed` tidak crash, dan kelas Tailwind dinamis yang tidak pernah dibuat diganti
+- **[FIX]** OLT: hitungan LOS, Dying Gasp, dan Unconfig di daftar kini nyata (sebelumnya nol tetap); OLT hasil impor ikut diaktifkan monitoringnya (tanpa itu poller melewatinya selamanya, sama seperti perbaikan pada input manual); uji koneksi memakai isian form, bukan kredensial tersimpan, saat mengubah OLT
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema database
+- Aplikasi mobile tidak berubah (admin 1.0.21, pelanggan 1.1.13, kolektor 1.0.1)
+- **[CHORE]** Bump versi root, frontend, dan backend ke 5.28.0
+
 ### v5.27.0 — 2026-10-31 - Peta Terpadu Hidup + Geser/Hapus Titik + Info ONT GenieACS + APK Kolektor
 
 ### Summary
@@ -1294,70 +1333,6 @@ Rilis setelah 5.23.0 (63 commit). Portal kolektor dirancang ulang dan bekerja pe
 - Web push butuh `VAPID_PUBLIC_KEY` dan `VAPID_PRIVATE_KEY` di `.env` backend (buat dengan `npx web-push generate-vapid-keys`), dan portal dibuka lewat HTTPS
 - Teknisi lama harus diisi username dan password di Kelola Teknisi sebelum bisa masuk
 - **[CHORE]** Bump versi root, frontend, dan backend ke 5.24.0
-
-### v5.23.0 — 2026-10-20 - Bayar di Dalam Aplikasi + Update APK dari Aplikasi + Kasir QRIS di Aplikasi Admin + Peta Jaringan
-
-### Summary
-Rilis setelah 5.22.0 (27 commit). Pelanggan membayar tagihan, perpanjangan, top-up, dan upgrade paket tanpa keluar dari aplikasi. Aplikasi admin dan pelanggan bisa memperbarui dirinya sendiri dari APK yang diunggah di panel web. QRIS Listener kini bagian dari aplikasi admin (Kasir QRIS), aplikasi admin mendapat Peta Jaringan, backup otomatis Telegram benar-benar berjalan, backup dan restore FreeRADIUS diperbaiki dan diamankan, dan updater web tidak lagi gagal build. Aplikasi pelanggan 1.1.8, aplikasi admin 1.0.7.
-
-### Pembayaran di Aplikasi Pelanggan
-- **[FEATURE]** Bayar tagihan, perpanjangan, top-up saldo, dan upgrade paket di dalam aplikasi, tidak lagi dibuka di browser: QRIS lebih dulu, semua payment gateway yang aktif (dengan pilihan channel bila gateway menyediakannya), dan transfer manual
-- **[FEATURE]** QRIS Mandiri native: QR dari server, nominal dengan kode unik dan tombol salin, hitung mundur, status langsung, QR bisa disimpan atau dibagikan untuk dibayar dari DANA atau m-banking di HP yang sama
-- **[FEATURE]** Halaman checkout gateway di WebView dalam aplikasi; tautan e-wallet (GoPay, DANA, `intent://`) membuka aplikasi e-wallet, dan layar menutup sendiri saat gateway kembali ke situs operator
-- **[FEATURE]** Transfer manual: rekening operator dengan tombol salin, data pengirim, dan foto bukti transfer
-- **[FIX]** Memilih payment gateway tidak lagi error: batas minimum Rp 10.000 yang menolak tagihan kecil dihapus, channel hanya diminta dari Duitku dan Tripay, dan pesan error menampilkan alasan dari gateway
-- **[FIX]** Tripay memakai channel yang dipilih pelanggan, bukan selalu QRIS
-- **[FIX]** "Tautan pembayaran tagihan tidak valid" di aplikasi: endpoint lama yang membuat transaksi Midtrans setiap dipanggil dan menimpa link `/pay` tagihan kini hanya mengembalikan token tagihan, dan link yang tertimpa dipulihkan
-
-### Update APK dari Dalam Aplikasi
-- **[FEATURE]** Aplikasi admin dan pelanggan memeriksa versi terbaru saat dibuka, mengunduh APK di dalam aplikasi dengan progress, lalu membuka layar pasang Android; data dan login tetap tersimpan
-- **[FEATURE]** Menu Pembaruan Aplikasi di kedua aplikasi: versi terpasang, versi di server, catatan rilis, dan tombol perbarui, dengan alasan bila versi tidak terbaca
-- **[FEATURE]** Opsi Wajib Update: aplikasi di bawah build tertentu tidak bisa dipakai sebelum diperbarui
-- **[FEATURE]** Panel Rilis APK di Build APK: Super Admin mengunggah APK pelanggan atau admin tanpa SSH, dengan catatan rilis
-- **[SECURITY]** Unggahan APK dibaca nama paket, nomor build, dan sertifikat tanda tangannya; APK yang tertukar, ditandatangani kunci berbeda, atau nomor build-nya tidak lebih tinggi ditolak karena Android tidak akan memasangnya sebagai update
-- **[FEATURE]** Link unduh aplikasi admin Android di halaman login admin; link unduh memakai id versi sehingga CDN selalu menyajikan file terbaru
-- **[CHORE]** Build release memakai satu keystore tetap lewat `android/key.properties` (tidak masuk git)
-
-### Aplikasi Admin Android
-- **[FEATURE]** Kasir QRIS: QRIS Listener kini bagian dari aplikasi admin (application ID `id.my.salfa.admin_app`); build QRIS Listener terpisah di Build APK dihapus
-- **[FIX]** Listener tidak membaca notifikasi milik aplikasinya sendiri, sehingga push "Pembayaran diterima" dari server tidak dilaporkan balik sebagai pembayaran baru
-- **[FEATURE]** Peta Jaringan: OLT, ODC, ODP, OTB/Joint Closure, dan pelanggan berkoordinat, garis jalur kabel, filter per jenis, peta jalan atau satelit, lokasi saya, dan petunjuk arah ke Google Maps
-- **[FEATURE]** Alamat login tiap portal dengan tombol salin di Staf & Tim, Teknisi Lapangan, dan Kolektor
-- **[FIX]** Field angka bisa dikosongkan dan diketik ulang
-
-### Staf, Teknisi & Kolektor
-- **[FIX]** Satu tempat per jenis akun: kolektor hanya di Kelola Kolektor, teknisi hanya di Kelola Teknisi; Admin & Role untuk staf kantor
-- **[FIX]** Akun teknisi lama (role TECHNICIAN di Admin & Role) bisa mengambil dan menyelesaikan work order serta mendaftarkan pelanggan, karena kini ditautkan ke data teknisi
-- **[FIX]** Role bawaan yang tidak valid (OPERATOR) diganti CUSTOMER_SERVICE
-- **[FEATURE]** Alamat login semua portal (admin, teknisi, kolektor, agen, pelanggan) dengan tombol salin di Admin & Role, Kelola Teknisi, dan Kelola Kolektor, mengikuti domain instalasi
-
-### Backup & Restore
-- **[FIX]** Backup otomatis Telegram benar-benar berjalan: jadwal di Pengaturan Telegram (harian, 12 jam, 6 jam, mingguan) sebelumnya tidak pernah dibaca. Job baru `telegram_backup` mengirim backup ke topic Backup, laporan kesehatan ke topic Health, menyimpan N backup terakhir, mengejar jadwal yang terlewat saat server mati, dan melaporkan kegagalan ke grup
-- **[FIX]** Buat Backup FreeRADIUS tidak pernah berhasil karena script dicari di lokasi yang salah; arsip kini dibuat langsung oleh backend
-- **[SECURITY]** Restore FreeRADIUS tidak lagi menjalankan shell dengan isi arsip (nama folder di arsip unggahan bisa menjalankan perintah sebagai root); symlink hanya dipulihkan bila menunjuk ke dalam folder config
-- **[FIX]** Restore FreeRADIUS menyimpan config saat ini lebih dulu, memeriksa hasilnya dengan `freeradius -C`, dan mengembalikan config lama bila ditolak; login database dan alamat API server ini dipertahankan saat restore dari VPS lain; FreeRADIUS di-restart, bukan reload
-- **[SECURITY]** Buat, unduh, unggah, dan restore backup FreeRADIUS khusus Super Admin
-- **[FIX]** Arsip FreeRADIUS pindah ke `/var/data/salfanet/backups/freeradius`, aman dari `rsync --delete` saat deploy
-
-### Pembaruan Sistem (Update dari Web)
-- **[FIX]** Update Sekarang tidak lagi memakai `pnpm install --force` yang memasang binary untuk semua platform dan memenuhi disk
-- **[FIX]** Update berhenti di awal dengan pesan jelas bila sisa disk kurang dari 3 GB
-- **[FIX]** Build lewat web mengikuti `deploy.sh`: secret diambil dari file `.env`, heap 1,5 GB, dan `public/`, `.next/static`, `.env` disalin ke bundle standalone
-- **[UI]** Bila update gagal, halaman Sistem menampilkan log terakhir
-
-### Notifikasi & E-Voucher
-- **[FIX]** Pengingat tagihan mengikuti pengaturannya: hari, jam kirim, jeda batch, dan urutan acak; H+1 dan H+3 bisa dipilih; WhatsApp, email, dan push satu jadwal, dan pengiriman gagal dicoba lagi
-- **[FIX]** Setiap isolir diumumkan ke pelanggan
-- **[FIX]** Link pembayaran dan kode voucher e-voucher sampai ke pembeli lewat WhatsApp dan email; beli dengan "Email saja" tidak lagi gagal; placeholder yang tidak dikenal tidak muncul ke pembeli
-- **[FIX]** Link pembayaran e-voucher kedaluwarsa 24 jam sesuai pesan
-
-### Web UI
-- **[FIX]** Field angka di seluruh form bisa dikosongkan dan diketik ulang (komponen `NumberInput` menggantikan 143 field angka)
-- **[UI]** Stat card dashboard lebih ringkas: judul huruf biasa, angka dan ikon lebih kecil
-- **[UI]** Aplikasi admin dan pelanggan memakai warna brand apa adanya di atas permukaan abu netral
-
-### Sistem
-- **[CHORE]** Bump versi root, frontend, dan backend ke 5.23.0
 
 <!-- AUTO-CHANGELOG:END -->
 
