@@ -1,6 +1,8 @@
 name: Build Native APKs
 
 on:
+  push:
+    tags: ["apk-v*"]
   workflow_dispatch:
     inputs:
       server_url:
@@ -60,7 +62,7 @@ jobs:
 
       - name: Build release APK
         working-directory: ${{ matrix.app_dir }}
-        run: flutter build apk --release --split-per-abi --android-skip-build-dependency-validation --dart-define=API_BASE_URL=${{ inputs.server_url }}
+        run: flutter build apk --release --split-per-abi --android-skip-build-dependency-validation --dart-define=API_BASE_URL=${{ inputs.server_url || 'https://radius.salfa.my.id' }}
 
       - name: Rename APK
         run: |
@@ -75,7 +77,7 @@ jobs:
           retention-days: 90
 
       - name: Publish to apk-latest release
-        if: ${{ inputs.release }}
+        if: ${{ github.event_name == 'push' || inputs.release }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: apk-latest
