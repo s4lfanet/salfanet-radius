@@ -6,8 +6,11 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.CAMERA"/>
-         notification access is granted on that phone. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <application
         android:label="Salfanet Kolektor"
         android:name="${applicationName}"
@@ -49,10 +52,10 @@
             android:name="flutterEmbedding"
             android:value="2" />
         <!-- Must match _channelId in lib/core/push/push_service.dart and the
-             admin channel in backend fcm-push.service.ts. -->
+             collector channel in backend fcm-push.service.ts. -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
-            android:value="salfanet_admin" />
+            android:value="salfanet_collector" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

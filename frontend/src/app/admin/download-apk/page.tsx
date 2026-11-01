@@ -477,7 +477,7 @@ interface FirebaseStatus {
   clientConfig: { projectId: string; apps: Array<'customer' | 'admin'> } | null;
   serviceAccount: { projectId: string; clientEmail: string; source: 'env' | 'file' } | null;
   projectMismatch: boolean;
-  ready: { customer: boolean; admin: boolean };
+  ready: { customer: boolean; admin: boolean; collector: boolean };
 }
 
 const FIREBASE_FILES: Array<{ kind: FirebaseKind; label: string; hint: string }> = [
@@ -557,13 +557,13 @@ function FirebasePanel() {
       {status && (
         <>
           <div className="flex flex-wrap gap-2 mb-3">
-            {(['customer', 'admin'] as const).map((app) => (
+            {(['customer', 'admin', 'collector'] as const).map((app) => (
               <span
                 key={app}
                 className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] border ${status.ready[app] ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300' : 'border-slate-600 bg-slate-800/60 text-slate-300'}`}
               >
                 {status.ready[app] ? <CheckCircle2 className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-                Aplikasi {app === 'admin' ? 'admin' : 'pelanggan'}: {status.ready[app] ? 'Firebase (seketika)' : 'cek berkala'}
+                Aplikasi {app === 'admin' ? 'admin' : app === 'collector' ? 'kolektor' : 'pelanggan'}: {status.ready[app] ? 'Firebase (seketika)' : 'cek berkala'}
               </span>
             ))}
           </div>

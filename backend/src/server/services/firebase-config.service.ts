@@ -16,6 +16,7 @@ import { join } from 'path';
 export const APP_PACKAGES = {
   customer: 'id.my.salfa.customer_app',
   admin: 'id.my.salfa.admin_app',
+  collector: 'id.my.salfa.collector_app',
 } as const;
 export type PushApp = keyof typeof APP_PACKAGES;
 
@@ -78,8 +79,8 @@ export function parseGoogleServices(raw: string): ClientConfig {
       };
     }
   }
-  if (!apps.customer && !apps.admin) {
-    throw new Error(`Tidak ada aplikasi Android dengan package ${APP_PACKAGES.customer} atau ${APP_PACKAGES.admin} di file ini.`);
+  if (!apps.customer && !apps.admin && !apps.collector) {
+    throw new Error(`Tidak ada aplikasi Android dengan package ${APP_PACKAGES.customer}, ${APP_PACKAGES.admin}, atau ${APP_PACKAGES.collector} di file ini.`);
   }
   return { projectId: info.project_id, apps };
 }
@@ -153,6 +154,7 @@ export function getFirebaseStatus() {
     ready: {
       customer: !!getAppFirebaseOptions('customer'),
       admin: !!getAppFirebaseOptions('admin'),
+      collector: !!getAppFirebaseOptions('collector'),
     },
   };
 }

@@ -108,10 +108,10 @@ export async function removeCustomerPushToken(userId: string, token?: string | n
   return result.count;
 }
 
-type TokenAudience = 'customer' | 'admin';
+type TokenAudience = 'customer' | 'admin' | 'collector';
 
 // Channel ids must match each app's AndroidNotificationChannel.
-const CHANNEL: Record<TokenAudience, string> = { customer: 'salfanet_customer', admin: 'salfanet_admin' };
+const CHANNEL: Record<TokenAudience, string> = { customer: 'salfanet_customer', admin: 'salfanet_admin', collector: 'salfanet_collector' };
 
 async function sendToTokenRows(
   tokenRows: Array<{ id: string; token: string }>,
@@ -157,7 +157,8 @@ async function sendToTokenRows(
 
   if (staleIds.length > 0) {
     const where = { where: { id: { in: staleIds } } };
-    await (audience === 'admin' ? prisma.adminPushToken.deleteMany(where) : prisma.customerPushToken.deleteMany(where)).catch(() => {});
+    const del = audience === 'admin' ? prisma.adminPushToken.deleteMany(where) : audience === 'collector' ? prisma.collectorPushToken.deleteMany(where) : prisma.customerPushToken.deleteMany(where);
+    await del.catch(() => {});
   }
 
   return { sent, failed };
@@ -216,4 +217,31 @@ export async function sendFcmToAdmins(payload: FcmPushPayload): Promise<{ sent: 
     if ((await isSuperAdmin(adminId)) || (await hasPermission(adminId, 'notifications.view'))) allowed.add(adminId);
   }
   return sendToTokenRows(rows.filter((r) => allowed.has(r.adminId)), { url: '/admin', ...payload }, 'admin');
+}
+
+// ── Collector Flutter app ─────────────────────────────────────────────────
+
+export async function registerCollectorPushToken(collectorId: string, token: string, platform = 'android') {
+  const cleanToken = token.trim();
+  if (!cleanToken) throw new Error('Invalid FCM token');
+
+  return prisma.collectorPushToken.upsert({
+    where: { token: cleanToken },
+    update: { collectorId, platform, lastUsedAt: new Date() },
+    create: { collectorId, token: cleanToken, platform },
+  });
+}
+
+export async function removeCollectorPushToken(collectorId: string, token?: string | null) {
+  const where: { collectorId: string; token?: string } = { collectorId };
+  if (token?.trim()) where.token = token.trim();
+  const result = await prisma.collectorPushToken.deleteMany({ where });
+  return result.count;
+}
+
+/** Pushes to every phone the collector is signed in on. */
+export async function sendFcmToCollector(collectorId: string, payload: FcmPushPayload): Promise<{ sent: number; failed: number }> {
+  if (!getFcmApp()) return { sent: 0, failed: 0 };
+  const rows = await prisma.collectorPushToken.findMany({ where: { collectorId }, select: { id: true, token: true } });
+  return sendToTokenRows(rows, { url: '/collector/dashboard', ...payload }, 'collector');
 }

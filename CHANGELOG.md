@@ -6,6 +6,27 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.29.0] - 2026-11-01 - Notifikasi FCM Aplikasi Kolektor
+
+### Summary
+Aplikasi kolektor kini menerima notifikasi push seperti aplikasi admin dan pelanggan: lewat Firebase (FCM) bila server sudah punya Firebase, dan lewat pengecekan berkala bila belum.
+
+### Aplikasi Kolektor 1.1.0
+- **[FEATURE]** Notifikasi push: konfigurasi Firebase diambil dari server (`/api/public/push-config?app=collector`), jadi satu APK berlaku untuk semua instalasi. Tanpa Firebase, aplikasi mengecek notifikasi portal kolektor tiap sekitar 15 menit di latar belakang dan tiap menit saat aplikasi terbuka
+- **[FEATURE]** Notifikasi muncul saat pembayaran dikonfirmasi, setoran ditinjau, dan info lain yang sama dengan lonceng portal kolektor; ketuk notifikasi membuka layar Notifikasi
+- **[FIX]** Manifest kolektor kini punya izin notifikasi (Android 13+) dan channel `salfanet_collector`; komentar manifest yang rusak dibersihkan
+
+### Backend
+- **[FEATURE]** Tabel `collector_push_tokens` dan endpoint `POST/DELETE /api/collector/push-token`; token dihapus saat keluar atau saat FCM melaporkannya kedaluwarsa
+- **[FEATURE]** `notifyCollector` mengirim FCM selain web push, ke channel `salfanet_collector`
+- **[FEATURE]** `google-services.json` yang diunggah di Download APK kini dikenali untuk paket `id.my.salfa.collector_app`; halaman menampilkan status Firebase aplikasi kolektor
+
+### Catatan Pembaruan
+- Jalankan `prisma db push` (otomatis oleh updater) untuk tabel baru. Untuk FCM, tambahkan aplikasi Android `id.my.salfa.collector_app` di proyek Firebase lalu unggah ulang `google-services.json`
+- Naikkan versi: root, backend, frontend ke 5.29.0; aplikasi kolektor 1.1.0+3
+
+---
+
 ## [5.28.1] - 2026-11-01 - Perbaikan Hasil Audit 5.28 + APK Admin 1.0.22
 
 ### Summary

@@ -44,6 +44,18 @@ export async function notifyCollector(collectorId: string, notice: CollectorNoti
   } catch (error) {
     console.error('[CollectorNotify] Push failed:', error instanceof Error ? error.message : error);
   }
+
+  try {
+    const { sendFcmToCollector } = await import('@/server/services/fcm-push.service');
+    await sendFcmToCollector(collectorId, {
+      title: notice.title,
+      body: notice.message,
+      url: notice.link || '/collector/dashboard',
+      tag: `collector-${notice.type}`,
+    });
+  } catch (error) {
+    console.error('[CollectorNotify] FCM failed:', error instanceof Error ? error.message : error);
+  }
 }
 
 /** One notification per collector for a batch of payments, e.g. a confirmation of 12 payments. */

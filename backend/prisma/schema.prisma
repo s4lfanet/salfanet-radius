@@ -1692,6 +1692,7 @@ model adminUser {
   userPermissions   userPermission[]
   pushSubscriptions adminPushSubscription[]
   pushTokens        adminPushToken[]
+  collectorPushTokens collectorPushToken[]
   // Collector portal only (role COLLECTOR)
   collectorNotifications      collectorNotification[]
   collectorPushSubscriptions  collectorPushSubscription[]
@@ -1717,6 +1718,21 @@ model adminPushToken {
 
   @@index([adminId])
   @@map("admin_push_tokens")
+}
+
+// FCM device token for the collector Flutter app. collectorPushSubscription
+// holds the browser Web Push subscriptions of the collector portal.
+model collectorPushToken {
+  id          String    @id @default(cuid())
+  collectorId String
+  collector   adminUser @relation(fields: [collectorId], references: [id], onDelete: Cascade)
+  token       String    @unique @db.VarChar(500)
+  platform    String    @default("android")
+  createdAt   DateTime  @default(now())
+  lastUsedAt  DateTime  @default(now())
+
+  @@index([collectorId])
+  @@map("collector_push_tokens")
 }
 
 // What the collector portal's bell lists. Stored, so each one can be marked

@@ -5,6 +5,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 
 import 'core/api/api_client.dart';
+import 'core/push/push_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
 import 'features/auth/auth_provider.dart';
@@ -17,6 +18,7 @@ Future<void> main() async {
   await initializeDateFormatting('id_ID', null);
   final themeController = ThemeController();
   await themeController.restore();
+  await PushService.instance.initialize();
   runApp(CollectorApp(themeController: themeController));
 }
 
@@ -34,6 +36,7 @@ class CollectorApp extends StatelessWidget {
       child: Consumer<ThemeController>(
         builder: (context, theme, _) => MaterialApp(
           title: 'Salfanet Kolektor',
+          navigatorKey: PushService.instance.navigatorKey,
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light,
           darkTheme: AppTheme.dark,

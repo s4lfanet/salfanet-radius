@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.28.1 - Perbaikan Hasil Audit 5.28 + APK Admin 1.0.22
+> **Version:** 5.29.0 - Notifikasi FCM Aplikasi Kolektor
 
 ---
 
@@ -1111,6 +1111,25 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.29.0 — 2026-11-01 - Notifikasi FCM Aplikasi Kolektor
+
+### Summary
+Aplikasi kolektor kini menerima notifikasi push seperti aplikasi admin dan pelanggan: lewat Firebase (FCM) bila server sudah punya Firebase, dan lewat pengecekan berkala bila belum.
+
+### Aplikasi Kolektor 1.1.0
+- **[FEATURE]** Notifikasi push: konfigurasi Firebase diambil dari server (`/api/public/push-config?app=collector`), jadi satu APK berlaku untuk semua instalasi. Tanpa Firebase, aplikasi mengecek notifikasi portal kolektor tiap sekitar 15 menit di latar belakang dan tiap menit saat aplikasi terbuka
+- **[FEATURE]** Notifikasi muncul saat pembayaran dikonfirmasi, setoran ditinjau, dan info lain yang sama dengan lonceng portal kolektor; ketuk notifikasi membuka layar Notifikasi
+- **[FIX]** Manifest kolektor kini punya izin notifikasi (Android 13+) dan channel `salfanet_collector`; komentar manifest yang rusak dibersihkan
+
+### Backend
+- **[FEATURE]** Tabel `collector_push_tokens` dan endpoint `POST/DELETE /api/collector/push-token`; token dihapus saat keluar atau saat FCM melaporkannya kedaluwarsa
+- **[FEATURE]** `notifyCollector` mengirim FCM selain web push, ke channel `salfanet_collector`
+- **[FEATURE]** `google-services.json` yang diunggah di Download APK kini dikenali untuk paket `id.my.salfa.collector_app`; halaman menampilkan status Firebase aplikasi kolektor
+
+### Catatan Pembaruan
+- Jalankan `prisma db push` (otomatis oleh updater) untuk tabel baru. Untuk FCM, tambahkan aplikasi Android `id.my.salfa.collector_app` di proyek Firebase lalu unggah ulang `google-services.json`
+- Naikkan versi: root, backend, frontend ke 5.29.0; aplikasi kolektor 1.1.0+3
+
 ### v5.28.1 — 2026-11-01 - Perbaikan Hasil Audit 5.28 + APK Admin 1.0.22
 
 ### Summary
@@ -1243,48 +1262,6 @@ Rilis setelah 5.25.0 (14 commit). Satu APK native kini dipakai semua instalasi: 
 - Skema database berubah: tabel `customer_app_notices` dibuat otomatis oleh `prisma db push` saat update
 - Aplikasi admin naik ke **1.0.17** dan aplikasi pelanggan ke **1.1.12** — publish APK baru dari release `apk-latest` agar pengguna ditawari update
 - QRIS Listener standalone: rebuild lewat Payment Gateway → QRIS Mandiri setelah update
-
-### v5.25.0 — 2026-10-27 - Foto Tiket + PPPoE Online Teknisi + Build APK Native di GitHub
-
-### Summary
-Rilis setelah 5.24.0 (20 commit). Tiket pelanggan dengan foto kini tersimpan dan fotonya tampil di admin, teknisi, dan kedua aplikasi. PPPoE Online teknisi hanya menampilkan pelanggan PPPoE yang terhubung lewat RADIUS, dengan pemakaian download dan upload live dari MikroTik. Toggle web push di sidebar sama di semua portal. APK QRIS Listener bisa di-build lagi, dan aplikasi native admin dan pelanggan di-build lewat GitHub Actions.
-
-### Tiket
-- **[FIX]** Pelanggan yang punya ID pelanggan gagal membuat tiket di aplikasi ("failed create ticket"): tiket disimpan dengan kode pelanggan, padahal kolomnya merujuk ke akun pelanggan. Daftar tiket pelanggan memfilter dengan nilai yang sama, sehingga tiketnya juga tidak muncul
-- **[FIX]** Foto dari form tiket web pelanggan dan form tiket admin tidak pernah tersimpan: `POST /api/tickets` mengabaikan lampiran dan lokasi GPS. File sudah terunggah, tapi tidak terhubung ke tiket
-- **[FEATURE]** Foto lampiran tampil di detail tiket admin, teknisi, aplikasi admin, dan aplikasi pelanggan. Ketuk foto untuk melihat penuh; PDF dibuka di aplikasi luar
-- **[FIX]** Batas unggah lampiran tiket pelanggan naik dari 5 ke 20 file per menit, sehingga tiket dengan beberapa foto tidak tertolak
-
-### Portal Teknisi
-- **[FIX]** PPPoE Online ikut menampilkan sesi hotspot dan sesi lokal MikroTik. Kini hanya pelanggan PPPoE terdaftar yang sesinya tercatat di RADIUS, satu sesi per pelanggan
-- **[FIX]** Pemakaian download dan upload tidak bertambah selama sesi berjalan, karena hanya dibaca dari radacct yang menunggu interim update. Admin dan teknisi kini memakai counter live dari MikroTik. Router dicari dari NAS IP sesi, jadi pelanggan yang belum ditetapkan routernya tetap terbaca
-- **[FEATURE]** Menu Pelanggan Isolir di sidebar (halamannya sudah ada, tapi hanya bisa dibuka lewat URL)
-- **[FEATURE]** Status pembayaran Belum Lunas dan Terlambat di daftar pelanggan, sama seperti portal kolektor
-- **[UI]** Tambah pelanggan: tombol Selanjutnya dan Buat Pelanggan Baru nonaktif sampai data wajib terisi, dengan daftar field yang belum diisi. Tab Paket & Dokumen tidak bisa dibuka lebih dulu
-
-### Web Push
-- **[UI]** Toggle notifikasi push di sidebar sama di admin, agent, teknisi, pelanggan, dan kolektor: Notif Push: Aktif, Nonaktif, atau Diblokir, dengan alasan bila perangkat tidak mendukung
-- **[FIX]** Portal teknisi mengirim ulang langganan push ke server setiap kali halaman dirender
-
-### Keuangan
-- **[FIX]** Menghapus tagihan, lunas maupun belum, kini juga menghapus transaksinya di Keuangan
-
-### APK
-- **[FEATURE]** Build APK QRIS Listener standalone kembali tersedia di tab QRIS Mandiri (Payment Gateway), dengan device key dan webhook server yang sudah terisi
-- **[FEATURE]** Workflow GitHub Actions "Build Native APKs" untuk aplikasi admin dan pelanggan. Signing release dan `google-services.json` diambil dari repository secrets, APK dipecah per ABI (sekitar 20 MB, sebelumnya 61 MB), lalu diunggah ke release `apk-latest`
-- **[DOCS]** `docs/BUILD-APK.md`: panduan build semua APK untuk instalasi baru. APK WebView dan QRIS Listener butuh Java 17 + Android SDK di server; APK native butuh Firebase dan keystore sendiri, di-build di PC/laptop atau GitHub Actions
-- **[UI]** Kartu QRIS Listener memberi tahu bila Java atau Android SDK belum terpasang di server, dengan tautan ke perintah setup, dan tombol build nonaktif sampai server siap
-- **[FIX]** Ringkasan akhir installer menyuruh menjalankan `install-apk.sh`, yang sudah usang dan membangun dari folder yang tidak ada lagi. Kini menunjuk ke `docs/BUILD-APK.md`
-- **[CHORE]** Aplikasi admin naik ke 1.0.14 dan aplikasi pelanggan ke 1.1.9
-
-### Updater
-- **[FIX]** Backup sebelum update menyalin seluruh folder aplikasi, termasuk `node_modules` dan `.next` (sekitar 4 GB per backup), bila rsync tidak tersedia, sehingga disk VPS penuh. Kini memakai tar dengan pengecualian yang sama, atau dilewati bila keduanya tidak ada
-
-### Catatan Pembaruan
-- Tidak ada perubahan skema database
-- Tiket yang dibuat sebelum rilis ini tidak punya foto, karena URL fotonya tidak pernah tersimpan
-- Aplikasi pelanggan versi lama masih gagal membuat tiket. Pasang APK terbaru dari release `apk-latest`, atau terbitkan lewat Download APK agar aplikasi menawarkan update
-- **[CHORE]** Bump versi root, frontend, dan backend ke 5.25.0
 
 <!-- AUTO-CHANGELOG:END -->
 
