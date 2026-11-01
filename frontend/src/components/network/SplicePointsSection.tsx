@@ -38,6 +38,11 @@ interface SplicePoint {
   outgoingCore?: CoreInfo;
 }
 
+type SplicePointApi = Omit<SplicePoint, 'insertionLoss' | 'reflectance'> & {
+  insertionLoss: number | string | null;
+  reflectance: number | string | null;
+};
+
 interface CoreInfo {
   id: string;
   coreNumber: number;
@@ -81,9 +86,16 @@ interface Props {
 }
 
 const SPLICE_TYPES = [
-  { value: 'FUSION', label: 'Fusion', icon: Zap, color: 'blue' },
-  { value: 'MECHANICAL', label: 'Mechanical', icon: Settings, color: 'orange' },
+  { value: 'FUSION', label: 'Fusion', icon: Zap },
+  { value: 'MECHANICAL', label: 'Mechanical', icon: Settings },
 ] as const;
+
+// Static class names — Tailwind can't see dynamic `border-${color}-500`
+// templates, so the selected state must be spelled out per type.
+const SPLICE_TYPE_STYLES: Record<string, { active: string; icon: string }> = {
+  FUSION: { active: 'border-blue-500 bg-blue-50 dark:bg-blue-900/20', icon: 'text-blue-600' },
+  MECHANICAL: { active: 'border-orange-500 bg-orange-50 dark:bg-orange-900/20', icon: 'text-orange-600' },
+};
 
 export default function SplicePointsSection({ 
   deviceType, 
@@ -123,8 +135,14 @@ export default function SplicePointsSection({
         deviceType,
         deviceId,
       });
-      const data = await apiAdmin<{ splices?: SplicePoint[] }>(`/api/network/splices?${params}`);
-      setSplicePoints(data.splices || []);
+      const data = await apiAdmin<{ splices?: SplicePointApi[] }>(`/api/network/splices?${params}`);
+      // Prisma Decimal fields arrive as strings — coerce once so the list
+      // math (.toFixed, averaging) doesn't crash or concatenate strings.
+      setSplicePoints((data.splices || []).map(s => ({
+        ...s,
+        insertionLoss: s.insertionLoss != null ? Number(s.insertionLoss) : null,
+        reflectance: s.reflectance != null ? Number(s.reflectance) : null,
+      })));
     } catch (error) {
       console.error('Failed to load splice points:', error);
     } finally {
@@ -497,11 +515,11 @@ export default function SplicePointsSection({
                           onClick={() => setFormData(prev => ({ ...prev, spliceType: type.value }))}
                           className={`flex-1 p-2 rounded-lg border-2 transition text-center ${
                             isActive 
-                              ? `border-${type.color}-500 bg-${type.color}-50 dark:bg-${type.color}-900/20`
+                              ? SPLICE_TYPE_STYLES[type.value].active
                               : 'border-border hover:border-gray-300'
                           }`}
                         >
-                          <Icon className={`h-4 w-4 mx-auto mb-0.5 ${isActive ? `text-${type.color}-600` : 'text-gray-400'}`} />
+                          <Icon className={`h-4 w-4 mx-auto mb-0.5 ${isActive ? SPLICE_TYPE_STYLES[type.value].icon : 'text-gray-400'}`} />
                           <span className="text-[10px] font-medium">{type.label}</span>
                         </button>
                       );

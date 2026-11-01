@@ -385,7 +385,7 @@ export default function OLTsPage() {
   const handleDelete = async (olt: OLT) => {
     const confirmed = await showConfirm(
       'Delete OLT',
-      `Are you sure you want to delete "${olt.name}"? This will also delete all associated ODCs and ODPs.`
+      `Are you sure you want to delete "${olt.name}"? This will also delete its ODCs — ODPs and OTBs will be unlinked, not deleted.`
     );
     if (!confirmed) return;
 

@@ -5,6 +5,7 @@ import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Plus, Pencil, Trash2, RefreshCcw, MapPin, Cable, Circle, Link2 } from 'lucide-react';
 import MapPicker from '@/components/MapPicker';
+import SplicePointsSection from '@/components/network/SplicePointsSection';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import {
@@ -58,6 +59,7 @@ export default function FiberJointClosuresPage() {
   const [filterStatus, setFilterStatus] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingJC, setEditingJC] = useState<JointClosure | null>(null);
+  const [spliceDetailJC, setSpliceDetailJC] = useState<JointClosure | null>(null);
   const [showMapPicker, setShowMapPicker] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -362,6 +364,13 @@ export default function FiberJointClosuresPage() {
                     <td className="py-3 px-4">
                       <div className="flex items-center justify-end gap-2">
                         <button
+                          onClick={() => setSpliceDetailJC(jc)}
+                          className="p-1.5 text-gray-500 hover:text-cyan-600 hover:bg-cyan-50 dark:hover:bg-cyan-900/30 rounded transition-colors"
+                          title="Splice points JC ini"
+                        >
+                          <Link2 className="h-4 w-4" />
+                        </button>
+                        <button
                           onClick={() => openEditDialog(jc)}
                           className="p-1.5 text-gray-500 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded transition-colors"
                           title={t('network.jointClosure.edit') || 'Edit'}
@@ -384,6 +393,31 @@ export default function FiberJointClosuresPage() {
           </div>
         )}
       </div>
+
+      {/* Splice points detail */}
+      {spliceDetailJC && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-card rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b border-border sticky top-0 bg-card z-10">
+              <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+                <Link2 className="h-4 w-4 text-blue-600" />
+                Splice {spliceDetailJC.name}
+              </h2>
+              <button onClick={() => setSpliceDetailJC(null)} className="p-1 hover:bg-muted rounded">
+                <Plus className="h-4 w-4 rotate-45" />
+              </button>
+            </div>
+            <div className="p-4">
+              <SplicePointsSection
+                deviceType="JOINT_CLOSURE"
+                deviceId={spliceDetailJC.id}
+                deviceName={spliceDetailJC.name}
+                spliceTrayCount={spliceDetailJC.spliceTrayCount ?? 4}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Create/Edit Dialog */}
       {isDialogOpen && (

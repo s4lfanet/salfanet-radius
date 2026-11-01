@@ -28,8 +28,8 @@ export async function POST(request: NextRequest) {
     let sshEnabled: boolean;
     let telnetEnabled: boolean;
 
-    if (oltId) {
-      // Load from DB
+    if (oltId && !body.ipAddress) {
+      // Load from DB (no direct params supplied)
       const olt = await prisma.networkOLT.findUnique({ where: { id: oltId } });
       if (!olt) {
         return NextResponse.json({ error: 'OLT not found' }, { status: 404 });
@@ -44,7 +44,9 @@ export async function POST(request: NextRequest) {
       sshEnabled = olt.sshEnabled ?? true;
       telnetEnabled = olt.telnetEnabled ?? false;
     } else {
-      // Use direct params from request body (for new OLT not yet saved)
+      // Use direct params from request body — also when editing, so the
+      // test targets the credentials currently typed into the form rather
+      // than the previously saved ones (oltId still updates isOnline below).
       if (!body.ipAddress) {
         return NextResponse.json({ error: 'ipAddress is required when oltId is not provided' }, { status: 400 });
       }

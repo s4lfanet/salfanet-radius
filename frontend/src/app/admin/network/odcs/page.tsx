@@ -7,6 +7,8 @@ import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import { Plus, Pencil, Trash2, Server, MapPin, Map, RefreshCcw, Activity, Box, HardDrive } from 'lucide-react';
 import MapPicker from '@/components/MapPicker';
+import SplicePointsSection from '@/components/network/SplicePointsSection';
+import SplitterSection, { SplitterConfig } from '@/components/network/SplitterSection';
 import {
   SimpleModal,
   ModalHeader,
@@ -30,6 +32,10 @@ interface ODC {
   oltId: string;
   ponPort: number;
   portCount: number;
+  spliceTrayCount?: number;
+  splitterConfig?: SplitterConfig | null;
+  splitterRatio?: string | null;
+  splitterType?: string | null;
   createdAt: string;
   olt: {
     id: string;
@@ -63,6 +69,7 @@ export default function ODCsPage() {
   const [editingOdc, setEditingOdc] = useState<ODC | null>(null);
   const [showMapPicker, setShowMapPicker] = useState(false);
   const [filterOlt, setFilterOlt] = useState('');
+  const [fiberDetailOdc, setFiberDetailOdc] = useState<ODC | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -322,6 +329,13 @@ export default function ODCsPage() {
                 </div>
                 <div className="flex justify-end gap-1 border-t border-border pt-2">
                   <button
+                    onClick={() => setFiberDetailOdc(odc)}
+                    className="p-2 text-muted-foreground hover:bg-muted rounded"
+                    title="Splice & splitter ODC ini"
+                  >
+                    <Activity className="h-3.5 w-3.5" />
+                  </button>
+                  <button
                     onClick={() => handleEdit(odc)}
                     className="p-2 text-muted-foreground hover:bg-muted rounded"
                     title="Edit ODC"
@@ -420,6 +434,13 @@ export default function ODCsPage() {
                       <td className="px-3 py-2 text-right">
                         <div className="flex justify-end gap-1">
                           <button
+                            onClick={() => setFiberDetailOdc(odc)}
+                            className="p-1 text-muted-foreground hover:bg-muted rounded"
+                            title="Splice & splitter ODC ini"
+                          >
+                            <Activity className="h-3 w-3" />
+                          </button>
+                          <button
                             onClick={() => handleEdit(odc)}
                             className="p-1 text-muted-foreground hover:bg-muted rounded"
                             title="Edit ODC"
@@ -442,6 +463,39 @@ export default function ODCsPage() {
             </table>
           </div>
         </div>
+
+        {/* Fiber detail: splices + splitter per ODC */}
+        {fiberDetailOdc && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-card rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-y-auto">
+              <div className="flex items-center justify-between p-4 border-b border-border sticky top-0 bg-card z-10">
+                <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-cyan-600" />
+                  Fiber ODC {fiberDetailOdc.name}
+                </h2>
+                <button onClick={() => setFiberDetailOdc(null)} className="p-1 hover:bg-muted rounded">
+                  <Plus className="h-4 w-4 rotate-45" />
+                </button>
+              </div>
+              <div className="p-4 space-y-6">
+                <SplicePointsSection
+                  deviceType="ODC"
+                  deviceId={fiberDetailOdc.id}
+                  deviceName={fiberDetailOdc.name}
+                  spliceTrayCount={fiberDetailOdc.spliceTrayCount ?? 2}
+                />
+                <SplitterSection
+                  deviceType="ODC"
+                  deviceId={fiberDetailOdc.id}
+                  deviceName={fiberDetailOdc.name}
+                  currentConfig={fiberDetailOdc.splitterConfig}
+                  splitterRatio={fiberDetailOdc.splitterRatio ?? undefined}
+                  splitterType={fiberDetailOdc.splitterType ?? undefined}
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Add/Edit Dialog */}
         <SimpleModal isOpen={isDialogOpen} onClose={() => { setIsDialogOpen(false); setEditingOdc(null); resetForm(); }} size="lg">

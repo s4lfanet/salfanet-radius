@@ -36,6 +36,19 @@ export async function GET() {
       },
     });
 
+    // Real per-status ONU counts — the list's LOS / Dying Gasp / Unconfig
+    // badges previously showed hardcoded zeros.
+    const onuGroups = await prisma.oltOnuStatus.groupBy({
+      by: ['oltId', 'status'],
+      _count: { _all: true },
+    });
+    const onuStatsByOlt = new Map<string, Record<string, number>>();
+    for (const g of onuGroups) {
+      const stats = onuStatsByOlt.get(g.oltId) || {};
+      stats[g.status] = g._count._all;
+      onuStatsByOlt.set(g.oltId, stats);
+    }
+
     return NextResponse.json({
       success: true,
       olts: olts.map(olt => ({
@@ -46,11 +59,11 @@ export async function GET() {
           olt_onu_status: olt._count.onuStatuses,
         },
         onu_stats: {
-          online: olt.onlineOnu,
-          offline: olt.offlineOnu,
-          los: 0,
-          dying_gasp: 0,
-          unconfig: 0,
+          online: onuStatsByOlt.get(olt.id)?.online ?? olt.onlineOnu,
+          offline: onuStatsByOlt.get(olt.id)?.offline ?? olt.offlineOnu,
+          los: onuStatsByOlt.get(olt.id)?.los ?? 0,
+          dying_gasp: onuStatsByOlt.get(olt.id)?.dying_gasp ?? 0,
+          unconfig: onuStatsByOlt.get(olt.id)?.auth_failed ?? 0,
         },
       })),
     });

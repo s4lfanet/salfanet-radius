@@ -14,7 +14,7 @@ interface SplitterPort {
   status: 'available' | 'used' | 'reserved' | 'damaged';
 }
 
-interface SplitterConfig {
+export interface SplitterConfig {
   splitterType: 'PLC' | 'FBT';
   ratio: string; // e.g., "1:8", "1:16", "1:32"
   inputLoss: number; // dB

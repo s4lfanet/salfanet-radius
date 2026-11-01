@@ -21,6 +21,8 @@ import { useApiQuery, useApiMutation, buildQueryKey } from '@/lib/api/hooks';
 import { apiAdmin } from '@/lib/api';
 import AssignCustomerDialog from '@/components/network/AssignCustomerDialog';
 import EditAssignmentDialog from '@/components/network/EditAssignmentDialog';
+import SplicePointsSection from '@/components/network/SplicePointsSection';
+import SplitterSection, { SplitterConfig } from '@/components/network/SplitterSection';
 
 interface ODP {
   id: string;
@@ -33,6 +35,9 @@ interface ODP {
   oltId: string;
   ponPort: number;
   portCount: number;
+  splitterRatio?: string | null;
+  splitterType?: string | null;
+  splitterDiagram?: SplitterConfig | null;
   parentOdpId: string | null;
   createdAt: string;
   olt: {
@@ -90,6 +95,7 @@ export default function ODPsPage() {
   const [assignments, setAssignments] = useState<AssignmentRow[]>([]);
   const [loadingAssignments, setLoadingAssignments] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState<AssignmentRow | null>(null);
+  const [fiberDetailOdp, setFiberDetailOdp] = useState<ODP | null>(null);
   const [filterOlt, setFilterOlt] = useState('');
   const [filterOdc, setFilterOdc] = useState('');
   const [connectionType, setConnectionType] = useState<'odc' | 'odp'>('odc');
@@ -468,6 +474,13 @@ export default function ODPsPage() {
                 </div>
                 <div className="flex justify-end gap-1 border-t border-border pt-2">
                   <button
+                    onClick={() => setFiberDetailOdp(odp)}
+                    className="p-2 text-muted-foreground hover:bg-muted rounded"
+                    title="Splice & splitter ODP ini"
+                  >
+                    <Activity className="h-3.5 w-3.5" />
+                  </button>
+                  <button
                     onClick={() => openAssignments(odp)}
                     className="p-2 text-muted-foreground hover:bg-muted rounded"
                     title="Pelanggan pada ODP ini"
@@ -594,14 +607,21 @@ export default function ODPsPage() {
                       <td className="px-3 py-2 text-right">
                         <div className="flex justify-end gap-1">
                           <button
+                            onClick={() => setFiberDetailOdp(odp)}
+                            className="p-1 text-muted-foreground hover:bg-muted rounded"
+                            title="Splice & splitter ODP ini"
+                          >
+                            <Activity className="h-3 w-3" />
+                          </button>
+                          <button
                             onClick={() => openAssignments(odp)}
-                              className="p-1.5 text-muted-foreground hover:bg-muted rounded"
-                              title="Pelanggan pada ODP ini"
-                            >
-                              <Users className="h-3.5 w-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleEdit(odp)}
+                            className="p-1 text-muted-foreground hover:bg-muted rounded"
+                            title="Pelanggan pada ODP ini"
+                          >
+                            <Users className="h-3 w-3" />
+                          </button>
+                          <button
+                            onClick={() => handleEdit(odp)}
                             className="p-1 text-muted-foreground hover:bg-muted rounded"
                             title="Edit ODP"
                           >
@@ -791,6 +811,38 @@ export default function ODPsPage() {
           }}
           assignment={editingAssignment}
         />
+        {/* Fiber detail: splices + splitter per ODP */}
+        {fiberDetailOdp && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-card rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-y-auto">
+              <div className="flex items-center justify-between p-4 border-b border-border sticky top-0 bg-card z-10">
+                <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-cyan-600" />
+                  Fiber ODP {fiberDetailOdp.name}
+                </h2>
+                <button onClick={() => setFiberDetailOdp(null)} className="p-1 hover:bg-muted rounded">
+                  <Plus className="h-4 w-4 rotate-45" />
+                </button>
+              </div>
+              <div className="p-4 space-y-6">
+                <SplicePointsSection
+                  deviceType="ODP"
+                  deviceId={fiberDetailOdp.id}
+                  deviceName={fiberDetailOdp.name}
+                />
+                <SplitterSection
+                  deviceType="ODP"
+                  deviceId={fiberDetailOdp.id}
+                  deviceName={fiberDetailOdp.name}
+                  currentConfig={fiberDetailOdp.splitterDiagram}
+                  splitterRatio={fiberDetailOdp.splitterRatio ?? undefined}
+                  splitterType={fiberDetailOdp.splitterType ?? undefined}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Map Picker */}
         <MapPicker
           isOpen={showMapPicker}

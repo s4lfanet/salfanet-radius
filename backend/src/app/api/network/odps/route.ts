@@ -113,7 +113,7 @@ export async function PUT(request: NextRequest) {
   if (!authCheck.authorized) return authCheck.response;
   try {
     const body = await request.json();
-    const { id, name, latitude, longitude, odcId, parentOdpId, ponPort, oltId, portCount, followRoad, status } = body;
+    const { id, name, latitude, longitude, odcId, parentOdpId, ponPort, oltId, portCount, followRoad, status, splitterConfig, splitterRatio, splitterType } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -148,6 +148,11 @@ export async function PUT(request: NextRequest) {
         ...(parentOdpId !== undefined && { parentOdpId: parentOdpId || null }),
         ...(followRoad !== undefined && { followRoad }),
         ...(status && { status }),
+        // networkODP has no splitterConfig column; persist the port map in
+        // the unused splitterDiagram Json field instead.
+        ...(splitterConfig !== undefined && { splitterDiagram: splitterConfig }),
+        ...(splitterRatio !== undefined && { splitterRatio }),
+        ...(splitterType !== undefined && { splitterType }),
       },
       include: {
         olt: true,

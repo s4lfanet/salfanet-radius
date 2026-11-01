@@ -75,7 +75,9 @@ export async function POST(request: NextRequest) {
             username: (row.username || row.Username || null)?.toString().trim() || null,
             password: (row.password || row.Password || null)?.toString() || null,
             pollingInterval: parseInt(String(row.pollingInterval ?? row['Polling Interval'] ?? 300)) || 300,
-            monitoringEnabled: false,
+            // Same default as manual create — with this off the poller skips
+            // imported OLTs forever and they stay "Offline" with no ONU data.
+            monitoringEnabled: true,
           },
         });
 

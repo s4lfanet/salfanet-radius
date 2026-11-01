@@ -107,7 +107,7 @@ export async function PUT(request: NextRequest) {
   if (!authCheck.authorized) return authCheck.response;
   try {
     const body = await request.json();
-    const { id, name, latitude, longitude, oltId, ponPort, portCount, followRoad, status } = body;
+    const { id, name, latitude, longitude, oltId, ponPort, portCount, followRoad, status, splitterConfig, splitterRatio, splitterType } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -140,6 +140,9 @@ export async function PUT(request: NextRequest) {
         ...(portCount !== undefined && { portCount: parseInt(portCount) }),
         ...(followRoad !== undefined && { followRoad }),
         ...(status && { status }),
+        ...(splitterConfig !== undefined && { splitterConfig }),
+        ...(splitterRatio !== undefined && { splitterRatio }),
+        ...(splitterType !== undefined && { splitterType }),
       },
       include: {
         olt: {
