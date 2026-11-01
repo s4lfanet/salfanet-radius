@@ -198,6 +198,7 @@ export async function DELETE(request: NextRequest) {
         _count: {
           select: {
             childOdps: true,
+            customers: true,
           },
         },
       },
@@ -210,12 +211,16 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Check if ODP has children
-    if (existingOdp._count.childOdps > 0) {
+    // Refuse to delete an ODP that is still in use — the customer FK would
+    // trip a 500 with no clear cause.
+    if (existingOdp._count.childOdps > 0 || existingOdp._count.customers > 0) {
+      const parts: string[] = [];
+      if (existingOdp._count.childOdps > 0) parts.push(`${existingOdp._count.childOdps} ODP anak`);
+      if (existingOdp._count.customers > 0) parts.push(`${existingOdp._count.customers} pelanggan`);
       return NextResponse.json(
         {
           success: false,
-          error: `Cannot delete ODP with ${existingOdp._count.childOdps} child ODP(s). Please delete or reassign them first.`,
+          error: `Tidak bisa hapus ODP yang masih dipakai (${parts.join(' dan ')}). Pindahkan atau lepas dulu.`,
         },
         { status: 400 }
       );

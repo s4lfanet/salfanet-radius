@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Plus, Pencil, Trash2, Server, MapPin, Map, RefreshCcw, Activity, Box, Users, HardDrive, Link as LinkIcon } from 'lucide-react';
+import { Plus, Pencil, Trash2, Server, MapPin, Map, RefreshCcw, Activity, Box, Users, HardDrive, Link as LinkIcon, PencilLine, Unlink } from 'lucide-react';
 import MapPicker from '@/components/MapPicker';
 import {
   SimpleModal,
@@ -18,6 +18,9 @@ import {
   ModalButton,
 } from '@/components/cyberpunk';
 import { useApiQuery, useApiMutation, buildQueryKey } from '@/lib/api/hooks';
+import { apiAdmin } from '@/lib/api';
+import AssignCustomerDialog from '@/components/network/AssignCustomerDialog';
+import EditAssignmentDialog from '@/components/network/EditAssignmentDialog';
 
 interface ODP {
   id: string;
@@ -44,6 +47,7 @@ interface ODP {
   } | null;
   _count: {
     childOdps: number;
+    customers?: number;
   };
 }
 
@@ -59,6 +63,16 @@ interface ODC {
   oltId: string;
 }
 
+interface AssignmentRow {
+  id: string;
+  customerId: string;
+  odpId: string;
+  portNumber: number;
+  notes?: string;
+  customer: { id: string; name: string; username: string };
+  odp: { id: string; name: string; portCount: number };
+}
+
 export default function ODPsPage() {
   const { t } = useTranslation();
   const odpsQuery = useApiQuery<{ odps?: ODP[] }>('/api/network/odps');
@@ -71,6 +85,11 @@ export default function ODPsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingOdp, setEditingOdp] = useState<ODP | null>(null);
   const [showMapPicker, setShowMapPicker] = useState(false);
+  const [showAssignDialog, setShowAssignDialog] = useState(false);
+  const [assignmentsOdp, setAssignmentsOdp] = useState<ODP | null>(null);
+  const [assignments, setAssignments] = useState<AssignmentRow[]>([]);
+  const [loadingAssignments, setLoadingAssignments] = useState(false);
+  const [editingAssignment, setEditingAssignment] = useState<AssignmentRow | null>(null);
   const [filterOlt, setFilterOlt] = useState('');
   const [filterOdc, setFilterOdc] = useState('');
   const [connectionType, setConnectionType] = useState<'odc' | 'odp'>('odc');
@@ -166,7 +185,7 @@ export default function ODPsPage() {
   const handleDelete = async (odp: ODP) => {
     const confirmed = await showConfirm(
       'Delete ODP',
-      `Are you sure you want to delete "${odp.name}"? This will also delete all child ODPs and customer assignments.`
+      `Hapus "${odp.name}"? ODP yang masih punya ODP anak atau pelanggan terpasang tidak bisa dihapus.`
     );
     if (!confirmed) return;
 
@@ -180,6 +199,32 @@ export default function ODPsPage() {
       }
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || t('common.failedDeleteOdp'));
+    }
+  };
+
+  const openAssignments = async (odp: ODP) => {
+    setAssignmentsOdp(odp);
+    setLoadingAssignments(true);
+    try {
+      const all = await apiAdmin<AssignmentRow[]>('/api/network/customers/assign');
+      setAssignments(all.filter(a => a.odpId === odp.id));
+    } catch (error: unknown) {
+      showError((error instanceof Error ? error.message : String(error)) || 'Gagal memuat penempatan pelanggan');
+      setAssignments([]);
+    } finally {
+      setLoadingAssignments(false);
+    }
+  };
+
+  const removeAssignment = async (row: AssignmentRow) => {
+    const ok = await showConfirm(`Lepas ${row.customer.name} dari ${row.odp.name} (port ${row.portNumber})?`);
+    if (!ok) return;
+    try {
+      await apiAdmin(`/api/network/customers/assign?id=${row.id}`, { method: 'DELETE' });
+      showSuccess('Penempatan dilepas');
+      if (assignmentsOdp) openAssignments(assignmentsOdp);
+    } catch (error: unknown) {
+      showError((error instanceof Error ? error.message : String(error)) || 'Gagal melepas penempatan');
     }
   };
 
@@ -232,6 +277,13 @@ export default function ODPsPage() {
               Manage Optical Distribution Points (ODP) for FTTH network
             </p>
           </div>
+          <button
+            onClick={() => setShowAssignDialog(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+          >
+            <Users className="h-4 w-4" />
+            Tempatkan Pelanggan
+          </button>
           <button
             onClick={() => { resetForm(); setEditingOdp(null); setIsDialogOpen(true); }}
             className="inline-flex items-center px-4 py-2.5 text-sm font-bold bg-brand-500 text-black rounded-lg hover:bg-brand-500/90 transition  uppercase tracking-wide"
@@ -345,7 +397,12 @@ export default function ODPsPage() {
                     <span className="text-sm font-medium">{odp.name}</span>
                     {(odp._count?.childOdps || 0) > 0 && (
                       <span className="px-1 py-0.5 text-[9px] bg-orange-100 text-orange-700 rounded">
-                        {odp._count.childOdps} children
+                        {odp._count.childOdps} anak
+                      </span>
+                    )}
+                    {(odp._count?.customers || 0) > 0 && (
+                      <span className="px-1 py-0.5 text-[9px] bg-blue-100 text-blue-700 rounded">
+                        {odp._count.customers} pelanggan
                       </span>
                     )}
                   </div>
@@ -411,6 +468,13 @@ export default function ODPsPage() {
                 </div>
                 <div className="flex justify-end gap-1 border-t border-border pt-2">
                   <button
+                    onClick={() => openAssignments(odp)}
+                    className="p-2 text-muted-foreground hover:bg-muted rounded"
+                    title="Pelanggan pada ODP ini"
+                  >
+                    <Users className="h-3.5 w-3.5" />
+                  </button>
+                  <button
                     onClick={() => handleEdit(odp)}
                     className="p-2 text-muted-foreground hover:bg-muted rounded"
                     title="Edit ODP"
@@ -465,7 +529,12 @@ export default function ODPsPage() {
                             <span className="text-xs font-medium">{odp.name}</span>
                             {(odp._count?.childOdps || 0) > 0 && (
                               <span className="ml-1 px-1 py-0.5 text-[9px] bg-orange-100 text-orange-700 rounded">
-                                {odp._count.childOdps} children
+                                {odp._count.childOdps} anak
+                              </span>
+                            )}
+                            {(odp._count?.customers || 0) > 0 && (
+                              <span className="ml-1 px-1 py-0.5 text-[9px] bg-blue-100 text-blue-700 rounded">
+                                {odp._count.customers} pelanggan
                               </span>
                             )}
                           </div>
@@ -525,7 +594,14 @@ export default function ODPsPage() {
                       <td className="px-3 py-2 text-right">
                         <div className="flex justify-end gap-1">
                           <button
-                            onClick={() => handleEdit(odp)}
+                            onClick={() => openAssignments(odp)}
+                              className="p-1.5 text-muted-foreground hover:bg-muted rounded"
+                              title="Pelanggan pada ODP ini"
+                            >
+                              <Users className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleEdit(odp)}
                             className="p-1 text-muted-foreground hover:bg-muted rounded"
                             title="Edit ODP"
                           >
@@ -638,6 +714,83 @@ export default function ODPsPage() {
           </form>
         </SimpleModal>
 
+        {/* Assign customer to ODP */}
+        <AssignCustomerDialog
+          isOpen={showAssignDialog}
+          onClose={() => setShowAssignDialog(false)}
+          onSuccess={() => {
+            setShowAssignDialog(false);
+            odpsQuery.refetch();
+          }}
+        />
+
+        {/* Per-ODP assignments */}
+        {assignmentsOdp && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-card rounded-xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col">
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <div>
+                  <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+                    <Users className="h-4 w-4 text-blue-600" />
+                    Pelanggan pada {assignmentsOdp.name}
+                  </h2>
+                  <p className="text-[11px] text-muted-foreground">
+                    {assignments.length} penempatan · port {assignmentsOdp.portCount}
+                  </p>
+                </div>
+                <button onClick={() => setAssignmentsOdp(null)} className="p-1 hover:bg-muted rounded">
+                  <Plus className="h-4 w-4 rotate-45" />
+                </button>
+              </div>
+              <div className="p-4 overflow-y-auto space-y-2">
+                {loadingAssignments ? (
+                  <p className="text-sm text-muted-foreground text-center py-6">Memuat...</p>
+                ) : assignments.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-6">
+                    Belum ada pelanggan pada ODP ini. Gunakan Tempatkan Pelanggan.
+                  </p>
+                ) : (
+                  assignments.map(row => (
+                    <div key={row.id} className="flex items-center justify-between gap-2 p-2.5 rounded-lg border border-border">
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-foreground truncate">{row.customer.name}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {row.customer.username} · port {row.portNumber}{row.notes ? ' · ' + row.notes : ''}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => setEditingAssignment(row)}
+                          className="p-1.5 text-muted-foreground hover:bg-muted rounded"
+                          title="Ubah port / ODP"
+                        >
+                          <PencilLine className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => removeAssignment(row)}
+                          className="p-1.5 text-destructive hover:bg-destructive/10 rounded"
+                          title="Lepas penempatan"
+                        >
+                          <Unlink className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <EditAssignmentDialog
+          isOpen={!!editingAssignment}
+          onClose={() => setEditingAssignment(null)}
+          onSuccess={() => {
+            setEditingAssignment(null);
+            if (assignmentsOdp) openAssignments(assignmentsOdp);
+          }}
+          assignment={editingAssignment}
+        />
         {/* Map Picker */}
         <MapPicker
           isOpen={showMapPicker}

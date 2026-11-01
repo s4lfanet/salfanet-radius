@@ -135,7 +135,7 @@ export default function ODCsPage() {
   const handleDelete = async (odc: ODC) => {
     const confirmed = await showConfirm(
       'Delete ODC',
-      `Are you sure you want to delete "${odc.name}"? This will also delete all associated ODPs.`
+      `Hapus "${odc.name}"? ODC yang masih punya ODP terhubung tidak bisa dihapus.`
     );
     if (!confirmed) return;
 
