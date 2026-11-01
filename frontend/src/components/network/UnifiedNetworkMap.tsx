@@ -52,6 +52,8 @@ export interface ConnectionLine {
   totalCores: number;
   lengthMeters: number;
   color: string;
+  /** Drawn from stored parent links (no cable segment) */
+  derived?: boolean;
 }
 
 interface UnifiedNetworkMapProps {
@@ -735,18 +737,24 @@ export default function UnifiedNetworkMap({
           positions={[[conn.from.lat, conn.from.lng], [conn.to.lat, conn.to.lng]]}
           pathOptions={{
             color: conn.color,
-            weight: Math.min(2 + conn.segmentCount * 0.3, 5),
-            opacity: 0.75,
-            dashArray: conn.segmentCount === 1 ? '6 4' : undefined,
+            weight: conn.derived ? 2 : Math.min(2 + conn.segmentCount * 0.3, 5),
+            opacity: conn.derived ? 0.6 : 0.75,
+            dashArray: conn.derived ? '2 6' : conn.segmentCount === 1 ? '6 4' : undefined,
           }}
         >
           <Popup>
             <div className="p-2 min-w-[180px] text-sm">
-              <p className="font-bold text-gray-900 mb-1">{conn.cableName}</p>
+              <p className="font-bold text-gray-900 mb-1">{conn.derived ? `${conn.from.type} → ${conn.to.type}` : conn.cableName}</p>
               <p className="text-gray-600">{conn.from.name} → {conn.to.name}</p>
-              <p className="text-gray-500">{conn.tubeCount}T × {conn.coresPerTube}C = {conn.totalCores} core</p>
-              {conn.lengthMeters > 0 && <p className="text-gray-400">≈{conn.lengthMeters}m</p>}
-              <p className="text-gray-400">{conn.segmentCount} segment(s)</p>
+              {conn.derived ? (
+                <p className="text-gray-500">Relasi otomatis dari data infrastruktur</p>
+              ) : (
+                <>
+                  <p className="text-gray-500">{conn.tubeCount}T × {conn.coresPerTube}C = {conn.totalCores} core</p>
+                  {conn.lengthMeters > 0 && <p className="text-gray-400">≈{conn.lengthMeters}m</p>}
+                  <p className="text-gray-400">{conn.segmentCount} segment(s)</p>
+                </>
+              )}
             </div>
           </Popup>
         </Polyline>

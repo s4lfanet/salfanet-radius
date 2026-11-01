@@ -786,14 +786,14 @@ export const GUIDES: PageGuide[] = [
   // Infrastruktur
   {
     path: '/admin/network/unified-map',
-    title: 'Peta Terpadu',
+    title: 'Peta Jaringan',
     section: S.infra,
     summary: 'Satu-satunya peta jaringan: router, OLT, OTB, Joint Closure, ODC, ODP, dan pelanggan berkoordinat, dengan garis sambungan antar perangkat.',
     steps: [
       'Pakai Filter untuk memilih jenis perangkat (termasuk Router) dan status.',
       'Ganti latar peta (jalan, satelit, topografi) dan pakai Lokasi Saya saat di lapangan.',
-      'Mode tambah: klik lokasi di peta untuk menaruh perangkat baru.',
-      'Mode hubungkan: klik perangkat sumber lalu tujuan untuk membuat garis sambungan.',
+      'Garis relasi (OLT, OTB, ODC, ODP) digambar otomatis dari data induk tiap perangkat; garis putus-putus berarti dari data, bukan kabel fiber.',
+      'Data perangkat diinput di menu Infrastruktur (ODC, ODP, JC) dan OLT Management; peta hanya menampilkan. Mode Geser untuk koreksi titik.',
     ],
   },
   {
@@ -801,7 +801,7 @@ export const GUIDES: PageGuide[] = [
     title: 'Infrastruktur Jaringan',
     section: S.infra,
     summary: 'Tabel OTB, Joint Closure, ODC, dan ODP beserta port dan sambungannya.',
-    steps: ['Pilih tab jenis perangkat.', 'Lihat di peta, ubah, atau hapus dari tabel. Perangkat baru ditambahkan lewat peta.'],
+    steps: ['Pilih tab jenis perangkat.', 'Lihat di peta atau hapus dari tabel. Tombol Tambah membuka halaman ODC, ODP, atau Joint Closure untuk input dan pilih induknya; OTB ditempatkan lewat peta.'],
   },
   {
     path: '/admin/network/diagrams',

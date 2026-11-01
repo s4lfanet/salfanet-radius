@@ -425,6 +425,14 @@ function MapPinLink({ lat, lng }: { lat: number; lng: number }) {
   );
 }
 
+// ODC/ODP/JC are managed (add, edit, parent link, coordinates) on their own
+// pages; the map draws their relations automatically. OTB is placed on the map.
+const MANAGE_PAGE: Partial<Record<TabType, string>> = {
+  JC: '/admin/network/fiber-joint-closures',
+  ODC: '/admin/network/odcs',
+  ODP: '/admin/network/odps',
+};
+
 const ADD_TYPE_MAP: Record<TabType, string> = {
   OTB: 'OTB',
   JC: 'JOINT_CLOSURE',
@@ -448,7 +456,8 @@ export default function InfrastrukturPage() {
   }, [searchInput]);
 
   const handleAddOnMap = () => {
-    router.push(`/admin/network/unified-map?addMode=true&nodeType=${ADD_TYPE_MAP[activeTab]}`);
+    const page = MANAGE_PAGE[activeTab];
+    router.push(page ?? `/admin/network/unified-map?addMode=true&nodeType=${ADD_TYPE_MAP[activeTab]}`);
   };
 
   return (
@@ -467,7 +476,9 @@ export default function InfrastrukturPage() {
             className="flex items-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
           >
             <Plus className="w-4 h-4" />
-            {t('infrastruktur.addToMap', { type: activeTab === 'JC' ? 'Joint Closure' : activeTab })}
+            {MANAGE_PAGE[activeTab]
+              ? `Tambah / Kelola ${activeTab === 'JC' ? 'Joint Closure' : activeTab}`
+              : t('infrastruktur.addToMap', { type: activeTab })}
           </button>
           <a
             href="/admin/network/unified-map"

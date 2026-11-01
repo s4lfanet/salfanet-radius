@@ -4,12 +4,11 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { Plus, X, SlidersHorizontal, ChevronDown, Link2, Loader2, Eye, EyeOff, Navigation, Move } from 'lucide-react';
+import { X, SlidersHorizontal, ChevronDown, Loader2, Eye, EyeOff, Navigation, Move } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import FilterPanel from '@/components/network/FilterPanel';
 import NetworkNodePanel, { type MapEntity } from '@/components/network/NetworkNodePanel';
 import type { ConnectionLine, BasemapKey } from '@/components/network/UnifiedNetworkMap';
-import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';
 
 // Dynamic imports (client-side only) - prevents Lucide icon hydration mismatch
@@ -22,19 +21,6 @@ const AddNodePanel = dynamic(
   { ssr: false, loading: () => null }
 );
 import type { AddNodeType } from '@/components/network/AddNodePanel';
-
-// ─── Type labels ────────────────────────────────────────────────────────────
-const TYPE_LABEL: Record<string, string> = {
-  ROUTER: 'Router', OLT: 'OLT', OTB: 'OTB', JOINT_CLOSURE: 'JC', ODC: 'ODC', ODP: 'ODP', CUSTOMER: 'Pelanggan',
-};
-const TYPE_COLOR: Record<string, string> = {
-  ROUTER: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
-  OLT: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
-  OTB: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-  JOINT_CLOSURE: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
-  ODC: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300',
-  ODP: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
-};
 
 export default function UnifiedMapPage() {
   const { t } = useTranslation();
@@ -53,12 +39,6 @@ export default function UnifiedMapPage() {
   const [addCoords, setAddCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [initialNodeType, setInitialNodeType] = useState<string | null>(() => searchParams.get('nodeType'));
   const [pendingNodeType, setPendingNodeType] = useState<string | null>(null);
-
-  // ── Connect mode state ─────────────────────────────────────────────────
-  const [connectMode, setConnectMode] = useState(false);
-  const [connectSource, setConnectSource] = useState<MapEntity | null>(null);
-  const [connectTarget, setConnectTarget] = useState<MapEntity | null>(null);
-  const [connecting, setConnecting] = useState(false);
 
   // ── Connection lines state ─────────────────────────────────────────────
   const [connections, setConnections] = useState<ConnectionLine[]>([]);
@@ -150,7 +130,7 @@ export default function UnifiedMapPage() {
 
   // ── Handlers ───────────────────────────────────────────────────────────
   const handleEntityClick = (entity: MapEntity) => {
-    if (addMode || connectMode) return;
+    if (addMode) return;
     setSelectedEntity(entity);
     setShowPanel(false);
   };
@@ -178,79 +158,6 @@ export default function UnifiedMapPage() {
     setInitialNodeType(null);
     setPendingNodeType(null);
     setRefreshKey(k => k + 1);
-  };
-
-  // ── Connect mode handlers ─────────────────────────────────────────────
-  const enterConnectMode = () => {
-    setConnectMode(true);
-    setConnectSource(null);
-    setConnectTarget(null);
-    setAddMode(false);
-    setAddCoords(null);
-    setSelectedEntity(null);
-  };
-
-  const exitConnectMode = () => {
-    setConnectMode(false);
-    setConnectSource(null);
-    setConnectTarget(null);
-  };
-
-  const handleConnectNodeClick = (entity: MapEntity) => {
-    if (!connectMode) return;
-    // Skip customers - can't connect them in infrastructure mode
-    if (entity.type === 'CUSTOMER') return;
-
-    if (!connectSource) {
-      // First click → set source
-      setConnectSource(entity);
-    } else if (entity.id === connectSource.id) {
-      // Clicked same node → deselect
-      setConnectSource(null);
-    } else {
-      // Second click → set target → show confirmation
-      setConnectTarget(entity);
-    }
-  };
-
-  const executeConnection = async () => {
-    if (!connectSource || !connectTarget) return;
-    setConnecting(true);
-    try {
-      const data = await apiAdmin<{ summary: string }>('/api/network/auto-connect', {
-        method: 'POST',
-        body: JSON.stringify({
-          sourceId: connectSource.id,
-          sourceType: connectSource.type,
-          targetId: connectTarget.id,
-          targetType: connectTarget.type,
-        }),
-      });
-
-      showSuccess(data.summary || 'Koneksi berhasil dibuat', 'Koneksi Berhasil!');
-
-      // Reset and refresh
-      setConnectSource(null);
-      setConnectTarget(null);
-      setRefreshKey(k => k + 1);
-    } catch (err: unknown) {
-      showError(err instanceof Error ? err.message : String(err), 'Gagal Menghubungkan');
-    } finally {
-      setConnecting(false);
-    }
-  };
-
-  const _deleteConnection = async (fromId: string, toId: string) => {
-    const confirmed = await showConfirm('Semua segment antara kedua device ini akan dihapus.', 'Hapus Koneksi?', 'Hapus', 'Batal');
-    if (!confirmed) return;
-
-    try {
-      await apiAdmin(`/api/network/connections?from=${fromId}&to=${toId}`, { method: 'DELETE' });
-      showSuccess('Koneksi dihapus');
-      setRefreshKey(k => k + 1);
-    } catch (err: unknown) {
-      showError(err instanceof Error ? err.message : String(err));
-    }
   };
 
   return (
@@ -302,9 +209,6 @@ export default function UnifiedMapPage() {
             pendingPin={addCoords ? { lat: addCoords.lat, lng: addCoords.lng, nodeType: pendingNodeType ?? undefined } : null}
             onPinMoved={(lat, lng) => setAddCoords({ lat, lng })}
             refreshSignal={refreshKey}
-            connectMode={connectMode}
-            connectSource={connectSource}
-            onConnectNodeClick={handleConnectNodeClick}
             connections={connections}
             showConnections={showConnections}
             flyToLocation={userLocation}
@@ -373,7 +277,6 @@ export default function UnifiedMapPage() {
               onClick={() => setMoveMode(v => {
                 const next = !v;
                 if (next) {
-                  if (connectMode) exitConnectMode();
                   setAddMode(false);
                   setAddCoords(null);
                 }
@@ -391,138 +294,23 @@ export default function UnifiedMapPage() {
               <span className="hidden sm:inline">{moveMode ? 'Selesai' : 'Geser'}</span>
             </button>
 
-            {/* Connect Mode Button */}
-            <button
-              onClick={() => { setMoveMode(false); connectMode ? exitConnectMode() : enterConnectMode(); }}
-              className={cn(
-                'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium shadow-lg transition',
-                connectMode
-                  ? 'bg-amber-500 hover:bg-amber-600 text-white ring-2 ring-white ring-offset-1 ring-offset-amber-500'
-                  : 'bg-emerald-600 hover:bg-emerald-700 text-white',
-              )}
-            >
-              {connectMode ? <X className="w-4 h-4" /> : <Link2 className="w-4 h-4" />}
-              <span className="hidden sm:inline">{connectMode ? 'Batal' : 'Hubungkan'}</span>
-            </button>
-
-            {/* Add Node Button */}
-            <button
-              onClick={() => {
-                if (connectMode) exitConnectMode();
-                setMoveMode(false);
-                setAddMode(v => !v);
-                setAddCoords(null);
-                setSelectedEntity(null);
-              }}
-              className={cn(
-                'flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium shadow-lg transition',
-                addMode
-                  ? 'bg-orange-500 hover:bg-orange-600 text-white ring-2 ring-white ring-offset-1 ring-offset-orange-500'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white',
-              )}
-            >
-              {addMode ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-              <span className="hidden sm:inline">{addMode ? 'Batal' : 'Tambah Node'}</span>
-            </button>
+            {/* Add mode is entered from Infrastruktur (OTB placement) — allow cancel */}
+            {addMode && (
+              <button
+                onClick={() => { setAddMode(false); setAddCoords(null); setInitialNodeType(null); }}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium shadow-lg transition bg-orange-500 hover:bg-orange-600 text-white"
+              >
+                <X className="w-4 h-4" />
+                <span className="hidden sm:inline">Batal</span>
+              </button>
+            )}
           </div>
 
           {/* Add mode hint */}
-          {addMode && !connectMode && (
+          {addMode && (
             <div className="absolute inset-0 z-[500] cursor-crosshair pointer-events-none">
               <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-orange-500 text-white text-sm px-4 py-2 rounded-full shadow-lg font-medium whitespace-nowrap truncate overflow-hidden">
                 Klik lokasi di peta untuk menempatkan node baru
-              </div>
-            </div>
-          )}
-
-          {/* ── Connect mode hint ──────────────────────────────────────── */}
-          {connectMode && !connectTarget && (
-            <div className="absolute inset-0 z-[500] pointer-events-none">
-              <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-sm px-4 py-2 rounded-full shadow-lg font-medium whitespace-nowrap truncate overflow-hidden">
-                {!connectSource
-                  ? '🔗 Klik node SUMBER (asal koneksi)'
-                  : `🔗 ${TYPE_LABEL[connectSource.type] ?? connectSource.type}: ${connectSource.name} - Klik node TUJUAN`}
-              </div>
-            </div>
-          )}
-
-          {/* ── Connect confirmation drawer (bottom sheet) ────────────── */}
-          {connectMode && connectTarget && connectSource && (
-            <div className="absolute bottom-0 inset-x-0 z-[700] animate-in slide-in-from-bottom duration-300">
-              <div className="bg-card rounded-t-2xl shadow-2xl border-t border-border p-4 sm:p-6 max-w-lg mx-auto">
-                <div className="w-12 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4" />
-                <h3 className="font-bold text-foreground text-center mb-4">Hubungkan Device?</h3>
-
-                {/* Source → Target visual */}
-                <div className="flex items-center justify-center gap-3 mb-4">
-                  {/* Source */}
-                  <div className="text-center">
-                    <span className={cn('inline-block px-2 py-0.5 rounded text-xs font-bold mb-1', TYPE_COLOR[connectSource.type] || 'bg-gray-100 text-gray-700')}>
-                      {TYPE_LABEL[connectSource.type]}
-                    </span>
-                    <p className="text-sm font-medium text-foreground truncate max-w-[120px]">{connectSource.name}</p>
-                    <p className="text-[10px] text-gray-400">{connectSource.code}</p>
-                  </div>
-
-                  {/* Arrow */}
-                  <div className="flex flex-col items-center">
-                    <div className="text-amber-500 text-xl">→</div>
-                    <span className="text-[10px] text-gray-400 whitespace-nowrap">draw line</span>
-                  </div>
-
-                  {/* Target */}
-                  <div className="text-center">
-                    <span className={cn('inline-block px-2 py-0.5 rounded text-xs font-bold mb-1', TYPE_COLOR[connectTarget.type] || 'bg-gray-100 text-gray-700')}>
-                      {TYPE_LABEL[connectTarget.type]}
-                    </span>
-                    <p className="text-sm font-medium text-foreground truncate max-w-[120px]">{connectTarget.name}</p>
-                    <p className="text-[10px] text-gray-400">{connectTarget.code}</p>
-                  </div>
-                </div>
-
-                {/* Info */}
-                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 mb-4 text-xs text-muted-foreground">
-                  {connectSource.type === 'OTB' && connectTarget.type === 'JOINT_CLOSURE' && (
-                    <p>Semua tube dari kabel feeder OTB akan otomatis diteruskan ke JC ini (patch-through). Core assignment otomatis.</p>
-                  )}
-                  {connectSource.type === 'JOINT_CLOSURE' && connectTarget.type === 'JOINT_CLOSURE' && (
-                    <p>Kabel distribusi baru akan otomatis dibuat. Default: 6T × 12C = 72 core.</p>
-                  )}
-                  {connectSource.type === 'JOINT_CLOSURE' && connectTarget.type === 'ODC' && (
-                    <p>Kabel distribusi baru akan dibuat. Default: 4T × 12C = 48 core.</p>
-                  )}
-                  {connectSource.type === 'JOINT_CLOSURE' && connectTarget.type === 'ODP' && (
-                    <p>Kabel drop baru akan dibuat. Default: 2T × 12C = 24 core.</p>
-                  )}
-                  {connectSource.type === 'ODC' && connectTarget.type === 'ODP' && (
-                    <p>Kabel distribusi ODC → ODP. Default: 2T × 12C = 24 core.</p>
-                  )}
-                  {!(
-                    (connectSource.type === 'OTB' && connectTarget.type === 'JOINT_CLOSURE') ||
-                    (connectSource.type === 'JOINT_CLOSURE') ||
-                    (connectSource.type === 'ODC' && connectTarget.type === 'ODP')
-                  ) && (
-                    <p>Koneksi {TYPE_LABEL[connectSource.type]} → {TYPE_LABEL[connectTarget.type]}. Kabel baru otomatis dibuat.</p>
-                  )}
-                </div>
-
-                {/* Action buttons */}
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setConnectTarget(null)}
-                    className="flex-1 py-2.5 px-4 rounded-lg border border-gray-300 dark:border-gray-600 text-muted-foreground text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    onClick={executeConnection}
-                    disabled={connecting}
-                    className="flex-1 py-2.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white text-sm font-medium transition-colors flex items-center justify-center gap-2"
-                  >
-                    {connecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link2 className="w-4 h-4" />}
-                    {connecting ? 'Menghubungkan...' : 'Hubungkan'}
-                  </button>
-                </div>
               </div>
             </div>
           )}
@@ -562,10 +350,13 @@ export default function UnifiedMapPage() {
                 <div className="border-t border-gray-200/60 dark:border-gray-700/60 mt-1.5 pt-1.5">
                   <span className="text-muted-foreground/70 font-semibold text-[10px] uppercase tracking-wider">Koneksi</span>
                   {[
+                    ['#6366f1', 'OLT → OTB/ODC/ODP'],
+                    ['#3b82f6', 'OTB → ODC'],
                     ['#a855f7', 'OTB → JC (Feeder)'],
                     ['#8b5cf6', 'JC → JC (Branch)'],
                     ['#06b6d4', 'JC/ODC → ODP'],
-                    ['#22c55e', 'Distribusi'],
+                    ['#22c55e', 'ODC → ODP'],
+                    ['#84cc16', 'ODP → ODP'],
                   ].map(([color, label]) => (
                     <div key={label} className="flex items-center gap-1.5">
                       <div className="w-4 h-0.5 rounded" style={{ backgroundColor: color as string }} />
@@ -573,7 +364,7 @@ export default function UnifiedMapPage() {
                     </div>
                   ))}
                   {connections.length > 0 && (
-                    <p className="text-[10px] text-gray-400 mt-1">{connections.length} koneksi aktif</p>
+                    <p className="text-[10px] text-gray-400 mt-1">{connections.length} koneksi (putus-putus = otomatis dari data)</p>
                   )}
                 </div>
               </div>
@@ -582,7 +373,7 @@ export default function UnifiedMapPage() {
         </div>
 
         {/* Node Detail / Edit Panel */}
-        {selectedEntity && !addCoords && !connectMode && (
+        {selectedEntity && !addCoords && (
           <NetworkNodePanel
             entity={selectedEntity}
             onClose={() => setSelectedEntity(null)}

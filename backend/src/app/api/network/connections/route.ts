@@ -21,6 +21,9 @@ const CONNECTION_COLORS: Record<string, string> = {
   'ODC:ODP': '#22c55e',                // green (ODC → ODP)
   'ODP:ODP': '#84cc16',                // lime (ODP daisy-chain)
   'OTB:ODC': '#3b82f6',                // blue (OTB → ODC)
+  'OLT:OTB': '#6366f1',                // indigo (OLT → OTB)
+  'OLT:ODC': '#0ea5e9',                // sky (OLT → ODC)
+  'OLT:ODP': '#14b8a6',                // teal (OLT → ODP)
   'DEFAULT': '#6b7280',                // gray fallback
 };
 
@@ -47,10 +50,6 @@ export async function GET(_request: NextRequest) {
         },
       },
     });
-
-    if (segments.length === 0) {
-      return NextResponse.json({ connections: [] });
-    }
 
     // Collect all unique device IDs
     const deviceIds = new Set<string>();
@@ -149,6 +148,59 @@ export async function GET(_request: NextRequest) {
         totalCores: group.cable?.totalCores ?? (group.segmentCount * 12),
         lengthMeters: group.lengthMeters,
         color,
+      });
+    }
+
+    // ── Auto-derived relation lines ────────────────────────────────────────
+    // Parent links already stored on the infrastructure records (OTB→OLT,
+    // ODC→OTB/OLT, ODP→parent ODP/ODC/OLT) are drawn automatically — no cable
+    // segment or manual "connect" step is needed. A pair that already has a
+    // real cable segment keeps the cable line instead of a duplicate.
+    const pairKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);
+    const cabled = new Set(connections.map((c: any) => pairKey(c.from.id, c.to.id)));
+
+    const [allOlts, allOtbs, allOdcs, allOdps] = await Promise.all([
+      prisma.networkOLT.findMany({ select: { id: true, name: true, latitude: true, longitude: true } }),
+      prisma.network_otbs.findMany({ select: { id: true, name: true, code: true, latitude: true, longitude: true, oltId: true } }),
+      prisma.networkODC.findMany({ select: { id: true, name: true, latitude: true, longitude: true, oltId: true, otbId: true } }),
+      prisma.networkODP.findMany({ select: { id: true, name: true, latitude: true, longitude: true, oltId: true, odcId: true, parentOdpId: true } }),
+    ]);
+    type Dev = { id: string; type: string; name: string; code: string; lat: number; lng: number };
+    const dev = new Map<string, Dev>();
+    for (const o of allOlts) dev.set(o.id, { id: o.id, type: 'OLT', name: o.name, code: o.name, lat: o.latitude, lng: o.longitude });
+    for (const o of allOtbs) dev.set(o.id, { id: o.id, type: 'OTB', name: o.name, code: o.code, lat: o.latitude, lng: o.longitude });
+    for (const o of allOdcs) dev.set(o.id, { id: o.id, type: 'ODC', name: o.name, code: o.name, lat: o.latitude, lng: o.longitude });
+    for (const o of allOdps) dev.set(o.id, { id: o.id, type: 'ODP', name: o.name, code: o.name, lat: o.latitude, lng: o.longitude });
+
+    const relations: Array<[string, string]> = []; // [parentId, childId]
+    for (const o of allOtbs) if (o.oltId) relations.push([o.oltId, o.id]);
+    for (const o of allOdcs) {
+      const parent = o.otbId || o.oltId;
+      if (parent) relations.push([parent, o.id]);
+    }
+    for (const o of allOdps) {
+      const parent = o.parentOdpId || o.odcId || o.oltId;
+      if (parent) relations.push([parent, o.id]);
+    }
+
+    for (const [parentId, childId] of relations) {
+      const from = dev.get(parentId);
+      const to = dev.get(childId);
+      if (!from || !to || cabled.has(pairKey(parentId, childId))) continue;
+      connections.push({
+        id: `rel:${parentId}:${childId}`,
+        cableId: '',
+        cableName: 'Relasi otomatis',
+        cableCode: undefined,
+        from: { id: from.id, type: from.type, name: from.name, code: from.code, lat: Number(from.lat), lng: Number(from.lng) },
+        to: { id: to.id, type: to.type, name: to.name, code: to.code, lat: Number(to.lat), lng: Number(to.lng) },
+        segmentCount: 0,
+        tubeCount: 0,
+        coresPerTube: 0,
+        totalCores: 0,
+        lengthMeters: 0,
+        color: CONNECTION_COLORS[`${from.type}:${to.type}`] || CONNECTION_COLORS.DEFAULT,
+        derived: true,
       });
     }
 

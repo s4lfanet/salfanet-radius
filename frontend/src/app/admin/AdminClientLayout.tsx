@@ -260,7 +260,7 @@ const menuGroups: MenuGroup[] = [
         icon: <Globe className="w-4 h-4" />,
         requiredPermission: 'network.view',
         children: [
-          // Peta Terpadu = satu-satunya peta; Infrastruktur = daftar OTB/JC/ODC/ODP.
+          // Peta Jaringan = satu-satunya peta; Infrastruktur = daftar OTB/JC/ODC/ODP.
           // Halaman lama (Peta Jaringan, ODC, ODP) tetap ada via URL tapi tidak
           // lagi di sidebar karena datanya duplikat dengan dua menu ini.
           { titleKey: 'nav.unifiedMap', href: '/admin/network/unified-map', requiredPermission: 'network.view' },

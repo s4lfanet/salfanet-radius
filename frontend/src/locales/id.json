@@ -379,7 +379,7 @@
     "opticalPower": "Daya Optik",
     "networkTrace": "Network Trace",
     "splitterDiagrams": "Diagram Splitter",
-    "unifiedMap": "Peta Terpadu",
+    "unifiedMap": "Peta Jaringan",
     "infrastructure": "Infrastruktur",
     "topology": "Topologi",
     "jointClosures": "Joint Closure",
@@ -1992,8 +1992,8 @@
       "feeder": "Feeder"
     },
     "unifiedMap": {
-      "title": "Peta Jaringan Terpadu",
-      "subtitle": "Visualisasi semua infrastruktur jaringan dan pelanggan dalam satu peta",
+      "title": "Peta Jaringan",
+      "subtitle": "Router, OLT, OTB, JC, ODC, ODP, dan pelanggan dalam satu peta. Garis relasi dibuat otomatis dari data infrastruktur",
       "statisticsTitle": "Statistik",
       "legend": "Legenda",
       "searchPlaceholder": "Cari node...",
