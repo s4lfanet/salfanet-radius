@@ -260,13 +260,13 @@ const menuGroups: MenuGroup[] = [
         icon: <Globe className="w-4 h-4" />,
         requiredPermission: 'network.view',
         children: [
+          // Peta Terpadu = satu-satunya peta; Infrastruktur = daftar OTB/JC/ODC/ODP.
+          // Halaman lama (Peta Jaringan, ODC, ODP) tetap ada via URL tapi tidak
+          // lagi di sidebar karena datanya duplikat dengan dua menu ini.
           { titleKey: 'nav.unifiedMap', href: '/admin/network/unified-map', requiredPermission: 'network.view' },
           { titleKey: 'nav.infrastructure', href: '/admin/network/infrastruktur', requiredPermission: 'network.view' },
           { titleKey: 'nav.splitterDiagrams', href: '/admin/network/diagrams', requiredPermission: 'network.view' },
           { titleKey: 'nav.networkTrace', href: '/admin/network/trace', requiredPermission: 'network.view' },
-          { titleKey: 'nav.networkMap', href: '/admin/network/map', requiredPermission: 'network.view' },
-          { titleKey: 'nav.odc', href: '/admin/network/odcs', requiredPermission: 'network.view' },
-          { titleKey: 'nav.odp', href: '/admin/network/odps', requiredPermission: 'network.view' },
         ],
       },
       {
@@ -277,9 +277,6 @@ const menuGroups: MenuGroup[] = [
           { titleKey: 'nav.fiberCables', href: '/admin/network/fiber-cables', requiredPermission: 'network.view' },
           { titleKey: 'nav.fiberCores', href: '/admin/network/fiber-cores', requiredPermission: 'network.view' },
           { titleKey: 'nav.splicePoints', href: '/admin/network/splice-points', requiredPermission: 'network.view' },
-          { titleKey: 'nav.jointClosures', href: '/admin/network/fiber-joint-closures', requiredPermission: 'network.view' },
-          { titleKey: 'nav.fiberOdcs', href: '/admin/network/fiber-odcs', requiredPermission: 'network.view' },
-          { titleKey: 'nav.fiberOdps', href: '/admin/network/fiber-odps', requiredPermission: 'network.view' },
         ],
       },
     ],

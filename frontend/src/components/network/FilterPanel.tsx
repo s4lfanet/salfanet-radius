@@ -12,6 +12,7 @@ interface FilterPanelProps {
   };
   onFilterChange: (filters: { types: string[]; status: string[]; search: string }) => void;
   statistics: {
+    router: number;
     olt: number;
     otb: number;
     jc: number;
@@ -27,6 +28,7 @@ export default function FilterPanel({ filters, onFilterChange, statistics }: Fil
   const { t } = useTranslation();
 
   const entityTypes = [
+    { value: 'ROUTER', label: 'Router (NAS)', color: 'bg-amber-500', icon: '◈' },
     { value: 'OLT', label: 'OLT', color: 'bg-purple-500', icon: '⬟' },
     { value: 'OTB', label: 'OTB (Distribution)', color: 'bg-blue-600', icon: '◇' },
     { value: 'JOINT_CLOSURE', label: 'Joint Closure', color: 'bg-purple-400', icon: '◆' },
@@ -64,7 +66,7 @@ export default function FilterPanel({ filters, onFilterChange, statistics }: Fil
 
   const clearFilters = () => {
     onFilterChange({
-      types: ['OLT', 'OTB', 'JOINT_CLOSURE', 'ODC', 'ODP', 'CUSTOMER'],
+      types: ['ROUTER', 'OLT', 'OTB', 'JOINT_CLOSURE', 'ODC', 'ODP', 'CUSTOMER'],
       status: ['active', 'inactive', 'maintenance', 'damaged', 'isolated', 'offline'],
       search: '',
     });
@@ -84,6 +86,11 @@ export default function FilterPanel({ filters, onFilterChange, statistics }: Fil
           {t('network.unifiedMap.statisticsTitle')}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+          <div className="flex items-center space-x-2">
+            <span className="text-amber-500">◈</span>
+            <span className="text-gray-500 dark:text-gray-300">Router:</span>
+            <span className="text-foreground font-bold">{statistics.router}</span>
+          </div>
           <div className="flex items-center space-x-2">
             <span className="text-primary">⬟</span>
             <span className="text-gray-500 dark:text-gray-300">OLT:</span>

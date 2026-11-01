@@ -9,7 +9,7 @@ import { GenieAcsInfo } from '@/components/network/UnifiedNetworkMap';
 
 export interface MapEntity {
   id: string;
-  type: 'OLT' | 'OTB' | 'JOINT_CLOSURE' | 'ODC' | 'ODP' | 'CUSTOMER';
+  type: 'OLT' | 'OTB' | 'JOINT_CLOSURE' | 'ODC' | 'ODP' | 'CUSTOMER' | 'ROUTER';
   code?: string;
   name: string;
   latitude: number;

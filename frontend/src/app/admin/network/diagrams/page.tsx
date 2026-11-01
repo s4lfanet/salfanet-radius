@@ -528,7 +528,7 @@ export default function NetworkDiagramsPage() {
                     <div className="bg-card rounded-lg p-4 sm:p-8 text-center border border-border">
                       <p className="text-muted-foreground mb-4">Belum ada OTB yang terdaftar.</p>
                       <Link
-                        href="/admin/network/map"
+                        href="/admin/network/unified-map"
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors inline-block"
                       >
                         Tambah OTB di Peta

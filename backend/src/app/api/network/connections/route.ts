@@ -59,12 +59,22 @@ export async function GET(_request: NextRequest) {
       if (seg.toDeviceId && seg.toDeviceId !== 'unlinked') deviceIds.add(seg.toDeviceId);
     }
 
-    // Fetch coordinates from network_nodes (all device types share IDs with network_nodes)
-    const nodes = await prisma.network_nodes.findMany({
-      where: { id: { in: Array.from(deviceIds) } },
-      select: { id: true, type: true, code: true, name: true, latitude: true, longitude: true },
-    });
-    const nodeMap = new Map(nodes.map((n: any) => [n.id, n]));
+    // Resolve coordinates from the native per-type tables. The legacy
+    // `network_nodes` graph table stays empty (every input form writes to the
+    // per-type tables), so reading it left every connection without
+    // coordinates and no cable line was ever drawn on the unified map.
+    const ids = { in: Array.from(deviceIds) };
+    const [olts, odcs, odps, otbs, jcs] = await Promise.all([
+      prisma.networkOLT.findMany({ where: { id: ids }, select: { id: true, name: true, latitude: true, longitude: true } }),
+      prisma.networkODC.findMany({ where: { id: ids }, select: { id: true, name: true, latitude: true, longitude: true } }),
+      prisma.networkODP.findMany({ where: { id: ids }, select: { id: true, name: true, latitude: true, longitude: true } }),
+      prisma.network_otbs.findMany({ where: { id: ids }, select: { id: true, name: true, code: true, latitude: true, longitude: true } }),
+      prisma.network_joint_closures.findMany({ where: { id: ids }, select: { id: true, name: true, code: true, latitude: true, longitude: true } }),
+    ]);
+    const nodeMap = new Map<string, { name: string; code: string; latitude: number; longitude: number }>();
+    for (const n of [...olts, ...odcs, ...odps, ...otbs, ...jcs] as Array<{ id: string; name: string; code?: string; latitude: number; longitude: number }>) {
+      nodeMap.set(n.id, { name: n.name, code: n.code ?? n.name, latitude: n.latitude, longitude: n.longitude });
+    }
 
     // Group segments by device pair (fromDeviceId + toDeviceId + cableId)
     const groupMap = new Map<string, {

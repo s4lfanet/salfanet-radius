@@ -25,9 +25,10 @@ import type { AddNodeType } from '@/components/network/AddNodePanel';
 
 // ─── Type labels ────────────────────────────────────────────────────────────
 const TYPE_LABEL: Record<string, string> = {
-  OLT: 'OLT', OTB: 'OTB', JOINT_CLOSURE: 'JC', ODC: 'ODC', ODP: 'ODP', CUSTOMER: 'Pelanggan',
+  ROUTER: 'Router', OLT: 'OLT', OTB: 'OTB', JOINT_CLOSURE: 'JC', ODC: 'ODC', ODP: 'ODP', CUSTOMER: 'Pelanggan',
 };
 const TYPE_COLOR: Record<string, string> = {
+  ROUTER: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
   OLT: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
   OTB: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
   JOINT_CLOSURE: 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
@@ -40,7 +41,7 @@ export default function UnifiedMapPage() {
   const searchParams = useSearchParams();
 
   const [filters, setFilters] = useState({
-    types: ['OLT', 'OTB', 'JOINT_CLOSURE', 'ODC', 'ODP', 'CUSTOMER'],
+    types: ['ROUTER', 'OLT', 'OTB', 'JOINT_CLOSURE', 'ODC', 'ODP', 'CUSTOMER'],
     status: ['active', 'inactive', 'maintenance', 'damaged', 'isolated', 'offline'],
     search: '',
   });
@@ -132,9 +133,10 @@ export default function UnifiedMapPage() {
 
   // ── Statistics ─────────────────────────────────────────────────────────
   const statistics = useMemo(() => {
-    const s = { olt: 0, otb: 0, jc: 0, odc: 0, odp: 0, customers: 0, active: 0, issues: 0 };
+    const s = { router: 0, olt: 0, otb: 0, jc: 0, odc: 0, odp: 0, customers: 0, active: 0, issues: 0 };
     entities.forEach(e => {
-      if (e.type === 'OLT') s.olt++;
+      if (e.type === 'ROUTER') s.router++;
+      else if (e.type === 'OLT') s.olt++;
       else if (e.type === 'OTB') s.otb++;
       else if (e.type === 'JOINT_CLOSURE') s.jc++;
       else if (e.type === 'ODC') s.odc++;

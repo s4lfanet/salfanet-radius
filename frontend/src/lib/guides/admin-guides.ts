@@ -788,9 +788,10 @@ export const GUIDES: PageGuide[] = [
     path: '/admin/network/unified-map',
     title: 'Peta Terpadu',
     section: S.infra,
-    summary: 'Semua perangkat jaringan dan pelanggan berkoordinat dalam satu peta, dengan garis sambungan antar perangkat.',
+    summary: 'Satu-satunya peta jaringan: router, OLT, OTB, Joint Closure, ODC, ODP, dan pelanggan berkoordinat, dengan garis sambungan antar perangkat.',
     steps: [
-      'Pakai Filter untuk memilih jenis perangkat dan status.',
+      'Pakai Filter untuk memilih jenis perangkat (termasuk Router) dan status.',
+      'Ganti latar peta (jalan, satelit, topografi) dan pakai Lokasi Saya saat di lapangan.',
       'Mode tambah: klik lokasi di peta untuk menaruh perangkat baru.',
       'Mode hubungkan: klik perangkat sumber lalu tujuan untuk membuat garis sambungan.',
     ],
@@ -815,13 +816,6 @@ export const GUIDES: PageGuide[] = [
     section: S.infra,
     summary: 'Melacak jalur dari satu perangkat ke perangkat lain, secara logis atau per core fiber.',
     steps: ['Pilih node awal dan tujuan, lalu Lacak Jalur.', 'Untuk jalur fisik, isi ID core atau perangkat.'],
-  },
-  {
-    path: '/admin/network/map',
-    title: 'Peta Jaringan',
-    section: S.infra,
-    summary: 'Peta OLT, ODC, ODP, dan pelanggan dengan status online, isolir, atau menunggak.',
-    steps: ['Ganti latar peta (jalan, satelit, topografi) dari pilihan layer.', 'Klik pelanggan untuk melihat atau mengubah datanya.', 'Pakai Lokasi Saya saat di lapangan.'],
   },
   {
     path: '/admin/network/odcs',

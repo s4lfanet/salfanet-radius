@@ -25,7 +25,7 @@ L.Icon.Default.mergeOptions({
 
 interface MapEntity {
   id: string;
-  type: 'OLT' | 'OTB' | 'JOINT_CLOSURE' | 'ODC' | 'ODP' | 'CUSTOMER';
+  type: 'OLT' | 'OTB' | 'JOINT_CLOSURE' | 'ODC' | 'ODP' | 'CUSTOMER' | 'ROUTER';
   code?: string;
   username?: string;
   name: string;
@@ -264,6 +264,10 @@ const createCustomIcon = (type: string, status: string) => {
   let iconSymbol = '●';
 
   switch (type) {
+    case 'ROUTER':
+      color = '#f59e0b'; // Amber
+      iconSymbol = '◈';
+      break;
     case 'OLT':
       color = '#8b5cf6'; // Purple
       iconSymbol = '⬟';
@@ -581,6 +585,7 @@ export default function UnifiedNetworkMap({
   };
 
   const TYPE_GRADIENT: Record<string, string> = {
+    ROUTER: 'from-amber-500 to-amber-600',
     OLT: 'from-violet-500 to-violet-600',
     OTB: 'from-blue-500 to-blue-600',
     JOINT_CLOSURE: 'from-purple-500 to-purple-600',
@@ -595,6 +600,7 @@ export default function UnifiedNetworkMap({
     const typeLabel =
       entity.type === 'JOINT_CLOSURE' ? 'Joint Closure' :
       entity.type === 'OTB' ? 'OTB (Distribution)' :
+      entity.type === 'ROUTER' ? 'Router (NAS)' :
       entity.type === 'CUSTOMER' ? 'Pelanggan' : entity.type;
     const gradient = TYPE_GRADIENT[entity.type] ?? 'from-slate-500 to-slate-600';
     const coords = `${entity.latitude.toFixed(5)}, ${entity.longitude.toFixed(5)}`;
@@ -644,15 +650,17 @@ export default function UnifiedNetworkMap({
             {statusPill(entity.status)}
           </div>
           {upstream ? popupRow('Upstream', `${upstream.name} (${upstream.type})`) : null}
-          {entity.type === 'OLT' ? popupRow('IP', String(meta.ipAddress ?? '')) : null}
-          {popupRow('Lokasi', entity.address)}
+          {entity.type === 'OLT' || entity.type === 'ROUTER' ? popupRow('IP', String(meta.ipAddress ?? '')) : null}
+          {entity.type === 'ROUTER' ? null : popupRow('Lokasi', entity.address)}
           {popupRow('Koordinat', coords)}
-          <button
-            onClick={() => onEntityClick?.(entity)}
-            className="mt-2 w-full rounded bg-indigo-600 text-white px-3 py-1.5 text-sm font-medium hover:bg-indigo-700"
-          >
-            Lihat Detail
-          </button>
+          {entity.type === 'ROUTER' ? null : (
+            <button
+              onClick={() => onEntityClick?.(entity)}
+              className="mt-2 w-full rounded bg-indigo-600 text-white px-3 py-1.5 text-sm font-medium hover:bg-indigo-700"
+            >
+              Lihat Detail
+            </button>
+          )}
         </div>
       </div>
     );
