@@ -22,7 +22,7 @@ Aplikasi kolektor kini menerima notifikasi push seperti aplikasi admin dan pelan
 - **[FEATURE]** `google-services.json` yang diunggah di Download APK kini dikenali untuk paket `id.my.salfa.collector_app`; halaman menampilkan status Firebase aplikasi kolektor
 
 ### Catatan Pembaruan
-- Jalankan `prisma db push` (otomatis oleh updater) untuk tabel baru. Untuk FCM, tambahkan aplikasi Android `id.my.salfa.collector_app` di proyek Firebase lalu unggah ulang `google-services.json`
+- Jalankan `prisma db push` (otomatis oleh updater) untuk tabel baru. Satu `google-services.json` tetap cukup: bila tidak memuat paket `id.my.salfa.collector_app`, aplikasi kolektor memakai entri aplikasi admin atau pelanggan dari proyek Firebase yang sama
 - Naikkan versi: root, backend, frontend ke 5.29.0; aplikasi kolektor 1.1.0+3
 
 ---
