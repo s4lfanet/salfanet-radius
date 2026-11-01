@@ -26,7 +26,7 @@ class AppUpdater {
   static String? lastError;
 
   /// Installed version, or null when not running as an Android app (tests, web).
-  static Future<({int code, String name})?> installed() async {
+  static Future<({int code, String name, String? abi})?> installed() async {
     if (!Platform.isAndroid) {
       lastError = 'Bukan aplikasi Android.';
       return null;
@@ -38,7 +38,7 @@ class AppUpdater {
         return null;
       }
       lastError = null;
-      return (code: (info['versionCode'] as num).toInt(), name: (info['versionName'] ?? '').toString());
+      return (code: (info['versionCode'] as num).toInt(), name: (info['versionName'] ?? '').toString(), abi: info['abi']?.toString());
     } on MissingPluginException {
       lastError = 'Fitur update tidak terpasang di build ini.';
       return null;
@@ -52,8 +52,8 @@ class AppUpdater {
   }
 
   /// The release the server offers for this app, or null when none is published.
-  static Future<AppRelease?> published() async {
-    final res = await ApiClient.instance.get('/api/public/apk-releases');
+  static Future<AppRelease?> published({String? abi}) async {
+    final res = await ApiClient.instance.get('/api/public/apk-releases', query: abi == null || abi.isEmpty ? null : {'abi': abi});
     final r = (res as Map)['releases']?[_target];
     if (r is Map && r['available'] == true && r['versionCode'] is num && r['url'] is String) {
       return AppRelease.fromJson(Map<String, dynamic>.from(r));
@@ -78,7 +78,7 @@ class AppUpdater {
     if (current == null) return say('Versi aplikasi tidak terbaca: ${lastError ?? '-'}');
     AppRelease? release;
     try {
-      release = await published();
+      release = await published(abi: current.abi);
     } catch (_) {
       return say('Gagal memeriksa pembaruan. Periksa koneksi lalu coba lagi.');
     }
@@ -301,7 +301,7 @@ class AppVersionFooter extends StatefulWidget {
 }
 
 class _AppVersionFooterState extends State<AppVersionFooter> {
-  ({int code, String name})? _v;
+  ({int code, String name, String? abi})? _v;
   bool _checking = false;
 
   @override
@@ -342,7 +342,7 @@ class AppUpdateScreen extends StatefulWidget {
 
 class _AppUpdateScreenState extends State<AppUpdateScreen> {
   bool _loading = true;
-  ({int code, String name})? _installed;
+  ({int code, String name, String? abi})? _installed;
   String? _installedError;
   AppRelease? _release;
   String? _serverError;
@@ -360,7 +360,7 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
     AppRelease? release;
     String? serverError;
     try {
-      release = await AppUpdater.published();
+      release = await AppUpdater.published(abi: installed?.abi);
     } catch (_) {
       serverError = 'Server tidak bisa dihubungi.';
     }

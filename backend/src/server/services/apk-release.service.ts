@@ -186,3 +186,77 @@ export function saveApkRelease(target: ApkTarget, bytes: Buffer, uploadedBy?: st
 
   return apkReleaseInfo(target);
 }
+
+// ── Updates straight from GitHub ───────────────────────────────────────────
+// The "Build Native APKs" workflow publishes each app's split APKs plus a
+// small JSON manifest (version and per-ABI files) to the apk-latest release.
+// With this source on, the in-app updater is pointed at that release instead
+// of the APK uploaded above. Off by default: an installation that ships its
+// own branded APK must not have it replaced by the generic build.
+
+export type ApkSource = 'upload' | 'github';
+
+const SOURCE_PATH = join(DATA_DIR, 'source.json');
+const GITHUB_REPO = process.env.APK_GITHUB_REPO || 's4lfanet/salfanet-radius';
+const GITHUB_BASE = `https://github.com/${GITHUB_REPO}/releases/download/apk-latest`;
+const GITHUB_ASSET = /^salfanet-[a-z]+-[a-z0-9_-]+\.apk$/;
+const GITHUB_CACHE_MS = 10 * 60 * 1000;
+
+export function getApkSource(): ApkSource {
+  try {
+    return JSON.parse(readFileSync(SOURCE_PATH, 'utf-8')).source === 'github' ? 'github' : 'upload';
+  } catch {
+    return 'upload';
+  }
+}
+
+export function setApkSource(source: ApkSource) {
+  mkdirSync(DATA_DIR, { recursive: true });
+  writeFileSync(SOURCE_PATH, JSON.stringify({ source }));
+}
+
+interface GithubManifest {
+  versionName: string;
+  builtAt?: string;
+  files: Record<string, { name: string; size?: number; versionCode: number }>;
+}
+
+const githubCache = new Map<ApkTarget, { at: number; manifest: GithubManifest | null }>();
+
+async function githubManifest(target: ApkTarget): Promise<GithubManifest | null> {
+  const hit = githubCache.get(target);
+  if (hit && Date.now() - hit.at < GITHUB_CACHE_MS) return hit.manifest;
+  let manifest: GithubManifest | null = null;
+  try {
+    const res = await fetch(`${GITHUB_BASE}/salfanet-${target}-manifest.json`, { signal: AbortSignal.timeout(8000), cache: 'no-store' });
+    if (res.ok) {
+      const json = (await res.json()) as GithubManifest;
+      if (json && typeof json.versionName === 'string' && json.files && typeof json.files === 'object') manifest = json;
+    }
+  } catch {
+    // GitHub unreachable: the caller falls back to the uploaded APK.
+  }
+  // A failed lookup is remembered briefly too, so a blocked network does not stall every app start.
+  githubCache.set(target, { at: manifest ? Date.now() : Date.now() - GITHUB_CACHE_MS + 60_000, manifest });
+  return manifest;
+}
+
+/** The GitHub build for this phone's ABI (arm64 when unknown), or null when none can be offered. */
+export async function githubReleaseInfo(target: ApkTarget, abi?: string | null): Promise<ApkReleaseInfo | null> {
+  const manifest = await githubManifest(target);
+  if (!manifest) return null;
+  const key = abi && manifest.files[abi] ? abi : 'arm64-v8a';
+  const file = manifest.files[key];
+  if (!file || !GITHUB_ASSET.test(file.name)) return null;
+  return {
+    target,
+    label: APK_RELEASES[target].label,
+    available: true,
+    size: file.size,
+    updatedAt: manifest.builtAt,
+    url: `${GITHUB_BASE}/${file.name}`,
+    versionCode: file.versionCode,
+    versionName: manifest.versionName,
+    note: 'Dari GitHub',
+  };
+}

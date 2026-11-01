@@ -70,10 +70,34 @@ jobs:
             cp "${{ matrix.app_dir }}/build/app/outputs/flutter-apk/app-$abi-release.apk" "${{ matrix.artifact }}-$abi.apk"
           done
 
+      # Read by the server's GitHub update source (Download APK page): the
+      # version from pubspec and each ABI's file. flutter's --split-per-abi
+      # adds 1000 x the ABI index to the version code (v7a 1, arm64 2, x86_64 4).
+      - name: Write update manifest
+        env:
+          APP_DIR: ${{ matrix.app_dir }}
+          ARTIFACT: ${{ matrix.artifact }}
+        run: |
+          export APP_VERSION="$(grep -m1 '^version:' "$APP_DIR/pubspec.yaml" | sed 's/^version: *//' | tr -d '[:space:]')"
+          node -e '
+            const fs = require("fs");
+            const [name, build] = process.env.APP_VERSION.split("+");
+            const offsets = { "armeabi-v7a": 1000, "arm64-v8a": 2000, "x86_64": 4000 };
+            const files = {};
+            for (const [abi, off] of Object.entries(offsets)) {
+              const file = process.env.ARTIFACT + "-" + abi + ".apk";
+              files[abi] = { name: file, size: fs.statSync(file).size, versionCode: Number(build) + off };
+            }
+            fs.writeFileSync(process.env.ARTIFACT + "-manifest.json", JSON.stringify({ versionName: name, builtAt: new Date().toISOString(), files }, null, 2));
+          '
+          cat "$ARTIFACT-manifest.json"
+
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: ${{ matrix.artifact }}-*.apk
+          path: |
+            ${{ matrix.artifact }}-*.apk
+            ${{ matrix.artifact }}-manifest.json
           retention-days: 90
 
       - name: Publish to apk-latest release
@@ -82,5 +106,7 @@ jobs:
         with:
           tag_name: apk-latest
           name: APK Builds
-          files: ${{ matrix.artifact }}-*.apk
+          files: |
+            ${{ matrix.artifact }}-*.apk
+            ${{ matrix.artifact }}-manifest.json
           prerelease: true

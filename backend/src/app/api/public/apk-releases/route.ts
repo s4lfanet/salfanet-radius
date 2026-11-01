@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
-import { APK_RELEASES, apkReleaseInfo, type ApkTarget } from '@/server/services/apk-release.service';
+import { NextRequest, NextResponse } from 'next/server';
+import { APK_RELEASES, apkReleaseInfo, getApkSource, githubReleaseInfo, type ApkTarget } from '@/server/services/apk-release.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,6 +9,10 @@ export const dynamic = 'force-dynamic';
  * Public: the login pages call it before anyone is signed in, and the apps
  * call it to offer an update (versionCode above the installed one; below
  * minVersionCode the update is required).
+ *
+ * With the GitHub source on (Download APK page), the apps are offered the
+ * latest GitHub build for the phone's ABI (?abi=arm64-v8a); when GitHub
+ * cannot be reached the uploaded APK is offered instead.
  */
 type PublicRelease = {
   available: boolean;
@@ -21,10 +25,12 @@ type PublicRelease = {
   note?: string;
 };
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const abi = request.nextUrl.searchParams.get('abi');
+  const github = getApkSource() === 'github';
   const releases: Record<string, PublicRelease> = {};
   for (const target of Object.keys(APK_RELEASES) as ApkTarget[]) {
-    const r = apkReleaseInfo(target);
+    const r = (github ? await githubReleaseInfo(target, abi) : null) ?? apkReleaseInfo(target);
     releases[target] = r.available
       ? {
           available: true,
@@ -38,5 +44,5 @@ export async function GET() {
         }
       : { available: false };
   }
-  return NextResponse.json({ success: true, releases }, { headers: { 'Cache-Control': 'no-store' } });
+  return NextResponse.json({ success: true, releases, source: github ? 'github' : 'upload' }, { headers: { 'Cache-Control': 'no-store' } });
 }

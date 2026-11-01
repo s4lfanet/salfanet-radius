@@ -40,6 +40,8 @@ class AppUpdater(private val activity: Activity) : MethodChannel.MethodCallHandl
                     mapOf(
                         "versionCode" to code,
                         "versionName" to (pi.versionName ?: ""),
+                        // Split APKs differ per ABI; the server picks the matching build.
+                        "abi" to (Build.SUPPORTED_ABIS.firstOrNull() ?: ""),
                         "updatesDir" to updatesDir().absolutePath,
                     ),
                 )

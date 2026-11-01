@@ -325,6 +325,22 @@ function ReleasePanel() {
   const [errors, setErrors] = useState<Record<string, string | null>>({});
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [mandatory, setMandatory] = useState<Record<string, boolean>>({});
+  const sourceQuery = useApiQuery<{ success: boolean; source: 'upload' | 'github' }>('/api/admin/apk/source');
+  const [savingSource, setSavingSource] = useState(false);
+  const [sourceError, setSourceError] = useState<string | null>(null);
+  const source = sourceQuery.data?.source ?? 'upload';
+  const changeSource = async (next: 'upload' | 'github') => {
+    setSavingSource(true);
+    setSourceError(null);
+    try {
+      await apiAdmin('/api/admin/apk/source', { method: 'PUT', body: JSON.stringify({ source: next }) });
+      await sourceQuery.refetch();
+    } catch (e) {
+      setSourceError(e instanceof Error ? e.message : 'Gagal menyimpan sumber pembaruan.');
+    } finally {
+      setSavingSource(false);
+    }
+  };
   const releases = query.data?.releases ?? [];
   const maxBytes = query.data?.maxBytes ?? 50 * 1024 * 1024;
 
@@ -384,6 +400,30 @@ function ReleasePanel() {
         maksimal {formatBytes(maxBytes)}. Nomor build harus lebih tinggi dari yang sekarang dan kunci tanda tangannya
         harus sama.
       </p>
+      <div className="rounded-lg border border-slate-700/60 bg-slate-800/40 p-3 mb-3">
+        <p className="text-xs font-semibold text-white mb-1">Sumber pembaruan di aplikasi</p>
+        <p className="text-[11px] text-slate-400 mb-2">
+          Dengan GitHub, aplikasi admin, pelanggan, dan kolektor yang terpasang langsung ditawari build terbaru dari rilis
+          <span className="font-mono"> apk-latest</span> (sesuai arsitektur HP), tanpa perlu mengunggah APK di sini. Pakai
+          Unggahan sendiri bila APK Anda memakai logo, alamat server, atau kunci tanda tangan sendiri; build GitHub bisa
+          ditolak Android bila kunci tanda tangannya berbeda. Bila GitHub tidak terjangkau, APK unggahan yang ditawarkan.
+        </p>
+        <div className="flex rounded-lg border border-slate-600 p-0.5 w-fit" role="group" aria-label="Sumber pembaruan">
+          {([['upload', 'Unggahan sendiri'], ['github', 'GitHub']] as const).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              aria-pressed={source === key}
+              disabled={savingSource || sourceQuery.isLoading}
+              onClick={() => source !== key && changeSource(key)}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium disabled:opacity-60 ${source === key ? 'bg-cyan-600 text-white' : 'text-slate-300 hover:text-white'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {sourceError && <p className="text-xs text-red-400 mt-2">{sourceError}</p>}
+      </div>
       {query.isLoading && (
         <div className="flex items-center gap-2 text-slate-400 text-xs"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Memuat…</div>
       )}
