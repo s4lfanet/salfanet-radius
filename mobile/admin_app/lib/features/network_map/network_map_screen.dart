@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/forms/field_spec.dart' show extractList;
+import '../../core/location/route_launcher.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/state_views.dart';
 import '../../core/guides/guides.dart';
@@ -467,10 +467,7 @@ class _NetworkMapScreenState extends State<NetworkMapScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton.icon(
-                    onPressed: () => launchUrl(
-                      Uri.parse('https://www.google.com/maps/dir/?api=1&destination=${p.pos.latitude},${p.pos.longitude}'),
-                      mode: LaunchMode.externalApplication,
-                    ),
+                    onPressed: () => openRouteTo(context, p.pos.latitude, p.pos.longitude),
                     icon: const Icon(Icons.directions_rounded),
                     label: const Text('Petunjuk arah'),
                   ),

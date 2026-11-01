@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.31.0 - Pembaruan Aplikasi Langsung dari GitHub
+> **Version:** 5.31.1 - Rute yang Dimulai dari Posisi Pengguna
 
 ---
 
@@ -1111,6 +1111,15 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.31.1 — 2026-11-01 - Rute yang Dimulai dari Posisi Pengguna
+
+### Aplikasi Admin 1.0.25 dan Kolektor 1.2.2
+- **[FIX]** Tombol Rute dan Petunjuk arah membuka Google Maps tanpa titik awal, sehingga rute salah saat GPS mati atau Maps tidak punya izin lokasi. Kini aplikasi memeriksa GPS dan izin lokasi lebih dulu, lalu mengirim posisi pengguna sebagai titik awal
+- **[FEATURE]** Bila GPS mati, muncul pemberitahuan **Aktifkan GPS** dengan tombol ke pengaturan lokasi. Bila izin lokasi ditolak permanen, muncul pemberitahuan dengan tombol ke pengaturan aplikasi. Bila posisi tidak terbaca, rute tetap dibuka dengan pesan peringatan
+
+### Catatan Pembaruan
+- Naikkan versi: root, backend, frontend ke 5.31.1; aplikasi admin 1.0.25+26, kolektor 1.2.2+7
+
 ### v5.31.0 — 2026-11-01 - Pembaruan Aplikasi Langsung dari GitHub
 
 ### Summary
@@ -1173,26 +1182,6 @@ Aplikasi kolektor kini menerima notifikasi push seperti aplikasi admin dan pelan
 ### Catatan Pembaruan
 - Jalankan `prisma db push` (otomatis oleh updater) untuk tabel baru. Satu `google-services.json` tetap cukup: bila tidak memuat paket `id.my.salfa.collector_app`, aplikasi kolektor memakai entri aplikasi admin atau pelanggan dari proyek Firebase yang sama
 - Naikkan versi: root, backend, frontend ke 5.29.0; aplikasi kolektor 1.1.0+3
-
-### v5.28.1 — 2026-11-01 - Perbaikan Hasil Audit 5.28 + APK Admin 1.0.22
-
-### Summary
-Perbaikan dari audit commit 5.28.0 dan penyesuaian APK admin agar sama dengan web.
-
-### Backend
-- **[FIX]** Uji koneksi OLT saat mengubah OLT: username atau password yang dikosongkan (artinya tetap memakai yang tersimpan) kini diisi dari data tersimpan, tidak lagi diuji dengan password kosong dan menandai OLT sehat sebagai offline
-- **[FIX]** Konfigurasi splitter ODP dan ODC: nilai `null` kini dikirim sebagai `Prisma.DbNull`, tidak lagi menghasilkan error 500
-
-### APK Admin 1.0.22
-- **[FIX]** Peta Jaringan: OTB dan Joint Closure dibaca dari tabel aslinya (`/api/network/otbs` dan `joint-closures`), bukan `network_nodes` yang sudah kosong
-- **[FEATURE]** Peta Jaringan: layer Router (GPS), dan garis relasi OTB ke OLT serta ODC ke OTB atau OLT
-- **[FEATURE]** ODC dan ODP: aksi **Splitter** (jenis, rasio, panjang gelombang, loss, peta port) sama seperti web
-- **[FIX]** Kabel: jumlah tube dan core terkunci saat mengubah kabel, sama seperti web
-- **[FIX]** Perbaikan error kompilasi pada konstruktor titik peta
-- **[CHORE]** Workflow build APK kini juga berjalan otomatis saat tag `apk-v*` di-push
-
-### Catatan Pembaruan
-- Naikkan versi: root, backend, dan frontend `package.json` ke 5.28.1; aplikasi admin ke 1.0.22+23 (pelanggan 1.1.13, kolektor 1.0.1 tidak berubah)
 
 <!-- AUTO-CHANGELOG:END -->
 

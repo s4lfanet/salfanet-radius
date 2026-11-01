@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/formatters.dart';
+import '../../core/location/route_launcher.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/detail.dart';
 import '../../core/widgets/dialogs.dart';
@@ -391,7 +392,7 @@ class _CustomerCard extends StatelessWidget {
                     }),
                   ],
                   if (lat != null && lng != null)
-                    _action(Icons.directions_rounded, 'Rute', () => launchUrl(Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$lat,$lng'), mode: LaunchMode.externalApplication)),
+                    _action(Icons.directions_rounded, 'Rute', () => openRouteTo(context, lat, lng)),
                 ],
               ),
             ],

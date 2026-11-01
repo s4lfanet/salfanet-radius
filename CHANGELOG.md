@@ -6,6 +6,17 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.31.1] - 2026-11-01 - Rute yang Dimulai dari Posisi Pengguna
+
+### Aplikasi Admin 1.0.25 dan Kolektor 1.2.2
+- **[FIX]** Tombol Rute dan Petunjuk arah membuka Google Maps tanpa titik awal, sehingga rute salah saat GPS mati atau Maps tidak punya izin lokasi. Kini aplikasi memeriksa GPS dan izin lokasi lebih dulu, lalu mengirim posisi pengguna sebagai titik awal
+- **[FEATURE]** Bila GPS mati, muncul pemberitahuan **Aktifkan GPS** dengan tombol ke pengaturan lokasi. Bila izin lokasi ditolak permanen, muncul pemberitahuan dengan tombol ke pengaturan aplikasi. Bila posisi tidak terbaca, rute tetap dibuka dengan pesan peringatan
+
+### Catatan Pembaruan
+- Naikkan versi: root, backend, frontend ke 5.31.1; aplikasi admin 1.0.25+26, kolektor 1.2.2+7
+
+---
+
 ## [5.31.0] - 2026-11-01 - Pembaruan Aplikasi Langsung dari GitHub
 
 ### Summary
