@@ -53,7 +53,7 @@ interface FiberCable {
   coresPerTube: number;
   totalCores: number;
   outerDiameter?: number;
-  isActive: boolean;
+  status: string;
   tubes: FiberTube[];
   createdAt: string;
   updatedAt: string;
@@ -73,6 +73,7 @@ export default function FiberCablesPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const cablesQuery = useApiQuery<{ cables?: FiberCable[] }>('/api/network/cables', {
+    params: { limit: 500 },
     staleTime: 30000,
   });
   const cables = cablesQuery.data?.cables || [];
@@ -176,8 +177,8 @@ export default function FiberCablesPage() {
 
   const viewDetails = async (cable: FiberCable) => {
     try {
-      const data = await apiAdmin<{ cable?: FiberCable; error?: string }>(`/api/network/cables/${cable.id}`);
-      setSelectedCable(data.cable ?? null);
+      const data = await apiAdmin<FiberCable & { cable?: FiberCable }>(`/api/network/cables/${cable.id}`);
+      setSelectedCable(data.cable ?? data);
       setExpandedTubes(new Set());
       setIsDetailDialogOpen(true);
     } catch (error: unknown) {
@@ -204,7 +205,7 @@ export default function FiberCablesPage() {
   const stats = {
     total: cables.length,
     totalCores: cables.reduce((sum, c) => sum + c.totalCores, 0),
-    active: cables.filter(c => c.isActive).length,
+    active: cables.filter(c => c.status === 'ACTIVE').length,
     types: [...new Set(cables.map(c => c.cableType))].length,
   };
 
@@ -344,11 +345,11 @@ export default function FiberCablesPage() {
                   </div>
                 </div>
                 <span className={`px-2 py-0.5 text-[10px] rounded-full border ${
-                  cable.isActive 
+                  (cable.status === 'ACTIVE') 
                     ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-300'
                     : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 border-gray-300'
                 }`}>
-                  {cable.isActive ? t('common.active') : t('fiberCable.inactive')}
+                  {(cable.status === 'ACTIVE') ? t('common.active') : t('fiberCable.inactive')}
                 </span>
               </div>
 
@@ -495,7 +496,8 @@ export default function FiberCablesPage() {
                         key={preset.label}
                         type="button"
                         onClick={() => handlePresetChange(preset)}
-                        className={`p-2 rounded-lg border-2 text-center transition ${
+                        disabled={!!editingCable}
+                        className={`p-2 rounded-lg border-2 text-center transition disabled:opacity-50 disabled:cursor-not-allowed ${
                           isActive 
                             ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                             : 'border-border hover:border-gray-300'
@@ -514,6 +516,9 @@ export default function FiberCablesPage() {
                   <Layers className="h-3.5 w-3.5" />
                   {t('fiberCable.manualConfig')}
                 </h3>
+                {editingCable && (
+                  <p className="text-[10px] text-muted-foreground">Jumlah tube dan core dibuat saat kabel dibuat dan tidak bisa diubah. Hapus lalu buat ulang bila salah.</p>
+                )}
                 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
@@ -523,6 +528,7 @@ export default function FiberCablesPage() {
                       value={formData.tubeCount}
                       onChange={(e) => setFormData({ ...formData, tubeCount: e.target.value })}
                       min="1"
+                      disabled={!!editingCable}
                       className="w-full px-3 py-2 text-sm border dark:border-gray-700 rounded-lg dark:bg-gray-800"
                     />
                   </div>
@@ -533,6 +539,7 @@ export default function FiberCablesPage() {
                       value={formData.coresPerTube}
                       onChange={(e) => setFormData({ ...formData, coresPerTube: e.target.value })}
                       min="1"
+                      disabled={!!editingCable}
                       className="w-full px-3 py-2 text-sm border dark:border-gray-700 rounded-lg dark:bg-gray-800"
                     />
                   </div>
@@ -653,11 +660,13 @@ export default function FiberCablesPage() {
                             <div
                               key={core.id}
                               className={`relative group px-2 py-1 rounded text-[9px] flex items-center gap-1 border ${
-                                core.status === 'available' 
+                                core.status === 'AVAILABLE' 
                                   ? 'bg-green-50 dark:bg-green-900/20 border-green-200' 
-                                  : core.status === 'used'
-                                    ? 'bg-red-50 dark:bg-red-900/20 border-red-200'
-                                    : 'bg-muted border-gray-200'
+                                  : core.status === 'ASSIGNED'
+                                    ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200'
+                                    : core.status === 'DAMAGED'
+                                      ? 'bg-red-50 dark:bg-red-900/20 border-red-200'
+                                      : 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200'
                               }`}
                               title={`Core ${core.coreNumber} - ${core.colorCode} (${core.status})`}
                             >

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
 import { RefreshCcw, Plus, Trash2, Eye, Link2, Cable, X, Zap, Activity, Settings } from 'lucide-react';
@@ -24,6 +24,24 @@ const _FIBER_COLORS: Record<string, string> = {
   Rose: '#FF007F',
   Aqua: '#00CED1',
 };
+
+type DeviceType = 'OTB' | 'JOINT_CLOSURE' | 'ODC' | 'ODP';
+
+interface RawSplice {
+  id: string;
+  deviceType: DeviceType;
+  deviceId: string;
+  trayNumber?: number;
+  spliceType: 'FUSION' | 'MECHANICAL' | 'PIGTAIL';
+  insertionLoss?: number | string | null;
+  spliceDate?: string | null;
+  splicedBy?: string | null;
+  status?: string;
+  notes?: string | null;
+  incomingCore?: CoreInfo;
+  outgoingCore?: CoreInfo;
+  createdAt: string;
+}
 
 interface SplicePoint {
   id: string;
@@ -75,8 +93,17 @@ interface FiberCore {
 }
 
 interface SplicesResponse {
-  splices: SplicePoint[];
+  splices: RawSplice[];
 }
+
+const DEVICE_TYPES: { value: DeviceType; label: string }[] = [
+  { value: 'JOINT_CLOSURE', label: 'Joint Closure' },
+  { value: 'OTB', label: 'OTB' },
+  { value: 'ODC', label: 'ODC' },
+  { value: 'ODP', label: 'ODP' },
+];
+
+interface DeviceOption { id: string; name: string; code?: string }
 
 interface CablesResponse {
   cables: FiberCable[];
@@ -102,14 +129,45 @@ export default function SplicePointsPage() {
 
   // React Query: splices (with filterType param), cables
   const splicesQuery = useApiQuery<SplicesResponse>('/api/network/splices', {
-    params: filterType ? { spliceType: filterType } : undefined,
+    params: { limit: 500, ...(filterType && { spliceType: filterType }) },
     staleTime: 30000,
   });
   const cablesQuery = useApiQuery<CablesResponse>('/api/network/cables', {
+    params: { limit: 500 },
     staleTime: 30000,
   });
+  const otbsQuery = useApiQuery<{ otbs?: DeviceOption[] }>('/api/network/otbs', { params: { limit: 500 }, staleTime: 30000 });
+  const jcsQuery = useApiQuery<{ data?: DeviceOption[] }>('/api/network/joint-closures', { staleTime: 30000 });
+  const odcsQuery = useApiQuery<{ odcs?: DeviceOption[] }>('/api/network/odcs', { staleTime: 30000 });
+  const odpsQuery = useApiQuery<{ odps?: DeviceOption[] }>('/api/network/odps', { staleTime: 30000 });
 
-  const splicePoints = splicesQuery.data?.splices || [];
+  const devicesByType: Record<DeviceType, DeviceOption[]> = {
+    OTB: otbsQuery.data?.otbs || [],
+    JOINT_CLOSURE: jcsQuery.data?.data || [],
+    ODC: odcsQuery.data?.odcs || [],
+    ODP: odpsQuery.data?.odps || [],
+  };
+
+  // API returns Decimal as string and status as enum; the cards expect number + isActive
+  const splicePoints: SplicePoint[] = useMemo(() => (splicesQuery.data?.splices || []).map((s) => {
+    const device = (devicesByType[s.deviceType] || []).find(d => d.id === s.deviceId);
+    const typeLabel = DEVICE_TYPES.find(d => d.value === s.deviceType)?.label ?? s.deviceType;
+    return {
+      id: s.id,
+      spliceType: s.spliceType,
+      insertionLoss: s.insertionLoss != null ? Number(s.insertionLoss) : undefined,
+      splicedAt: s.spliceDate ?? undefined,
+      splicedBy: s.splicedBy ?? undefined,
+      notes: s.notes ?? undefined,
+      isActive: (s.status ?? 'ACTIVE') === 'ACTIVE',
+      locationDescription: `${typeLabel} ${device?.name ?? ''} · Tray ${s.trayNumber ?? 1}`.replace('  ', ' '),
+      incomingCore: s.incomingCore,
+      outgoingCore: s.outgoingCore,
+      createdAt: s.createdAt,
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [splicesQuery.data, otbsQuery.data, jcsQuery.data, odcsQuery.data, odpsQuery.data]);
+
   const cables = cablesQuery.data?.cables || [];
   const loading = splicesQuery.isLoading;
 
@@ -123,7 +181,9 @@ export default function SplicePointsPage() {
     coreAId: '',
     coreBId: '',
     spliceType: 'FUSION' as 'FUSION' | 'MECHANICAL' | 'PIGTAIL',
-    locationDescription: '',
+    deviceType: 'JOINT_CLOSURE' as DeviceType,
+    deviceId: '',
+    trayNumber: '1',
     insertionLoss: '',
     splicedBy: '',
     notes: '',
@@ -138,7 +198,7 @@ export default function SplicePointsPage() {
 
   const loadCoresForCable = async (cableId: string, target: 'A' | 'B') => {
     try {
-      const data = await apiAdmin<CoresResponse>(`/api/network/cores?cableId=${cableId}&status=AVAILABLE`);
+      const data = await apiAdmin<CoresResponse>(`/api/network/cores?cableId=${cableId}&status=AVAILABLE&limit=1000`);
 
       if (target === 'A') {
         setCoresForCableA(data.cores || []);
@@ -165,7 +225,9 @@ export default function SplicePointsPage() {
       coreAId: '',
       coreBId: '',
       spliceType: 'FUSION',
-      locationDescription: '',
+      deviceType: 'JOINT_CLOSURE',
+      deviceId: '',
+      trayNumber: '1',
       insertionLoss: '',
       splicedBy: '',
       notes: '',
@@ -189,13 +251,20 @@ export default function SplicePointsPage() {
       return;
     }
 
+    if (!formData.deviceId) {
+      showError('Pilih perangkat tempat splice ini dikerjakan');
+      return;
+    }
+
     setSubmitting(true);
     try {
       const body = {
+        deviceType: formData.deviceType,
+        deviceId: formData.deviceId,
+        trayNumber: parseInt(formData.trayNumber) || 1,
         incomingCoreId: formData.coreAId,
         outgoingCoreId: formData.coreBId,
         spliceType: formData.spliceType,
-        locationDescription: formData.locationDescription || null,
         insertionLoss: formData.insertionLoss ? parseFloat(formData.insertionLoss) : null,
         splicedBy: formData.splicedBy || null,
         notes: formData.notes || null,
@@ -693,15 +762,42 @@ export default function SplicePointsPage() {
                 </div>
               </div>
 
+              {/* Device where the splice is made */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-medium mb-1">Jenis Perangkat</label>
+                  <select
+                    value={formData.deviceType}
+                    onChange={(e) => setFormData(prev => ({ ...prev, deviceType: e.target.value as DeviceType, deviceId: '' }))}
+                    className="w-full px-3 py-2 text-sm border dark:border-gray-700 rounded-lg dark:bg-gray-800"
+                  >
+                    {DEVICE_TYPES.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-medium mb-1">Perangkat *</label>
+                  <select
+                    value={formData.deviceId}
+                    onChange={(e) => setFormData(prev => ({ ...prev, deviceId: e.target.value }))}
+                    className="w-full px-3 py-2 text-sm border dark:border-gray-700 rounded-lg dark:bg-gray-800"
+                  >
+                    <option value="">{devicesByType[formData.deviceType].length ? 'Pilih perangkat' : 'Belum ada data'}</option>
+                    {devicesByType[formData.deviceType].map(d => (
+                      <option key={d.id} value={d.id}>{d.code && d.code !== d.name ? `${d.code} - ${d.name}` : d.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               {/* Splice Info */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-medium mb-1">{t('common.location')}</label>
-                  <input
-                    type="text"
-                    value={formData.locationDescription}
-                    onChange={(e) => setFormData(prev => ({ ...prev, locationDescription: e.target.value }))}
-                    placeholder="Mis: Joint Closure JC-001"
+                  <label className="block text-[10px] font-medium mb-1">Tray</label>
+                  <NumberInput
+                    type="number"
+                    min={1}
+                    value={formData.trayNumber}
+                    onChange={(e) => setFormData(prev => ({ ...prev, trayNumber: e.target.value }))}
                     className="w-full px-3 py-2 text-sm border dark:border-gray-700 rounded-lg dark:bg-gray-800"
                   />
                 </div>

@@ -65,13 +65,17 @@ export default function FiberCoresPage() {
     totalPages: 0,
   });
 
+  // Assignment form
+  const [assignToType, setAssignToType] = useState('ODP');
+  const [assignToId, setAssignToId] = useState('');
+
   // Filters
   const [filterCable, setFilterCable] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
 
   // React Query: cores (with filter/pagination params), cables
-  const coresQuery = useApiQuery<{ cores?: FiberCore[]; pagination?: { total?: number; totalPages?: number }; error?: string }>('/api/network/cores', {
+  const coresQuery = useApiQuery<{ cores?: FiberCore[]; stats?: { total: number; available: number; assigned: number; reserved: number; damaged: number }; pagination?: { total?: number; totalPages?: number }; error?: string }>('/api/network/cores', {
     params: {
       page: pagination.page,
       limit: pagination.limit,
@@ -81,8 +85,20 @@ export default function FiberCoresPage() {
     staleTime: 30000,
   });
   const cablesQuery = useApiQuery<{ cables?: FiberCable[] }>('/api/network/cables', {
+    params: { limit: 500 },
     staleTime: 30000,
   });
+
+  const otbsQuery = useApiQuery<{ otbs?: { id: string; name: string }[] }>('/api/network/otbs', { params: { limit: 500 }, staleTime: 30000 });
+  const odcsQuery = useApiQuery<{ odcs?: { id: string; name: string }[] }>('/api/network/odcs', { staleTime: 30000 });
+  const odpsQuery = useApiQuery<{ odps?: { id: string; name: string }[] }>('/api/network/odps', { staleTime: 30000 });
+  const jcsQuery = useApiQuery<{ data?: { id: string; name: string }[] }>('/api/network/joint-closures', { staleTime: 30000 });
+  const targetOptions: { id: string; name: string }[] =
+    assignToType === 'OTB' ? otbsQuery.data?.otbs || []
+    : assignToType === 'ODC' ? odcsQuery.data?.odcs || []
+    : assignToType === 'JOINT_CLOSURE' ? jcsQuery.data?.data || []
+    : assignToType === 'ODP' ? odpsQuery.data?.odps || []
+    : [];
 
   const cores = coresQuery.data?.cores || [];
   const cables = cablesQuery.data?.cables || [];
@@ -108,9 +124,6 @@ export default function FiberCoresPage() {
   const [actionReason, setActionReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Assignment form
-  const [assignToType, setAssignToType] = useState('ODP');
-  const [assignToId, setAssignToId] = useState('');
 
   const _handleSelectAll = () => {
     if (selectedCores.size === filteredCores.length) {
@@ -154,17 +167,26 @@ export default function FiberCoresPage() {
         coreIds,
       };
 
-      if (actionType === 'assign' && coreIds.length === 1) {
-        body = {
-          action: 'assign',
-          coreId: coreIds[0],
-          assignedToType: assignToType,
-          assignedToId: assignToId,
-          notes: actionReason,
-        };
-      } else if (actionType !== 'assign') {
-        body.reason = actionReason;
+      if (actionType === 'assign') {
+        if (!assignToId) {
+          showError('Pilih tujuan penugasan core');
+          setSubmitting(false);
+          return;
+        }
+        // The assign action takes a single core, so send one request per selected core
+        for (const coreId of coreIds) {
+          await apiAdmin('/api/network/cores', {
+            method: 'POST',
+            body: JSON.stringify({ action: 'assign', coreId, assignedToType: assignToType, assignedToId: assignToId, notes: actionReason }),
+          });
+        }
+        showSuccess(`${coreIds.length} core ditugaskan`);
+        setIsActionDialogOpen(false);
+        setSelectedCores(new Set());
+        queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/cores') });
+        return;
       }
+      body.reason = actionReason;
 
       const data = await apiAdmin<{ message?: string; error?: string }>('/api/network/cores', {
         method: 'POST',
@@ -224,7 +246,7 @@ export default function FiberCoresPage() {
   });
 
   // Calculate statistics
-  const stats = {
+  const stats = coresQuery.data?.stats ?? {
     total: cores.length,
     available: cores.filter(c => c.status === 'AVAILABLE').length,
     assigned: cores.filter(c => c.status === 'ASSIGNED').length,
@@ -570,24 +592,36 @@ export default function FiberCoresPage() {
                     <label className="block text-[10px] font-medium mb-1">{t('fiberCore.targetType')}</label>
                     <select
                       value={assignToType}
-                      onChange={(e) => setAssignToType(e.target.value)}
+                      onChange={(e) => { setAssignToType(e.target.value); setAssignToId(''); }}
                       className="w-full px-3 py-2 text-sm border dark:border-gray-700 rounded-lg dark:bg-gray-800"
                     >
                       <option value="ODP">ODP</option>
                       <option value="ODC">ODC</option>
                       <option value="OTB">OTB</option>
+                      <option value="JOINT_CLOSURE">Joint Closure</option>
                       <option value="Customer">Customer</option>
                     </select>
                   </div>
                   <div>
                     <label className="block text-[10px] font-medium mb-1">{t('fiberCore.targetId')}</label>
-                    <input
-                      type="text"
-                      value={assignToId}
-                      onChange={(e) => setAssignToId(e.target.value)}
-                      placeholder="Masukkan ID..."
-                      className="w-full px-3 py-2 text-sm border dark:border-gray-700 rounded-lg dark:bg-gray-800"
-                    />
+                    {assignToType === 'Customer' ? (
+                      <input
+                        type="text"
+                        value={assignToId}
+                        onChange={(e) => setAssignToId(e.target.value)}
+                        placeholder="Masukkan ID pelanggan..."
+                        className="w-full px-3 py-2 text-sm border dark:border-gray-700 rounded-lg dark:bg-gray-800"
+                      />
+                    ) : (
+                      <select
+                        value={assignToId}
+                        onChange={(e) => setAssignToId(e.target.value)}
+                        className="w-full px-3 py-2 text-sm border dark:border-gray-700 rounded-lg dark:bg-gray-800"
+                      >
+                        <option value="">{targetOptions.length ? 'Pilih tujuan' : 'Belum ada data'}</option>
+                        {targetOptions.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                      </select>
+                    )}
                   </div>
                 </>
               )}

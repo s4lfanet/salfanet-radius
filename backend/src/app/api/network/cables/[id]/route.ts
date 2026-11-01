@@ -149,6 +149,18 @@ export async function PUT(
       }
     }
 
+    // Tubes and cores are generated when the cable is created; changing the
+    // structure afterwards would leave totalCores out of sync with them.
+    const structureChanged =
+      (updateData.tubeCount !== undefined && updateData.tubeCount !== existingCable.tubeCount) ||
+      (updateData.coresPerTube !== undefined && updateData.coresPerTube !== existingCable.coresPerTube);
+    if (structureChanged) {
+      return NextResponse.json(
+        { error: 'Jumlah tube dan core tidak bisa diubah setelah kabel dibuat. Hapus lalu buat ulang kabel.' },
+        { status: 400 }
+      );
+    }
+
     // Recompute totalCores if tube structure changed
     const finalTubeCount = (updateData.tubeCount as number) ?? existingCable.tubeCount;
     const finalCoresPerTube = (updateData.coresPerTube as number) ?? existingCable.coresPerTube;

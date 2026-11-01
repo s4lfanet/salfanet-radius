@@ -38,7 +38,11 @@ export async function GET(request: NextRequest) {
       where.assignedToId = assignedToId;
     }
 
-    const [cores, total] = await Promise.all([
+    // Status counts for the cards: same cable/tube scope but ignoring the status
+    // filter, so the cards stay accurate across pages and filters.
+    const { status: _ignoredStatus, ...scopeWhere } = where;
+
+    const [cores, total, statusGroups] = await Promise.all([
       prisma.fiber_cores.findMany({
         where,
         skip,
@@ -62,10 +66,20 @@ export async function GET(request: NextRequest) {
         },
       }),
       prisma.fiber_cores.count({ where }),
+      prisma.fiber_cores.groupBy({ by: ['status'], where: scopeWhere, _count: { _all: true } }),
     ]);
+
+    const stats = { total: 0, available: 0, assigned: 0, reserved: 0, damaged: 0 };
+    for (const g of statusGroups) {
+      const n = g._count._all;
+      stats.total += n;
+      const key = g.status.toLowerCase() as 'available' | 'assigned' | 'reserved' | 'damaged';
+      if (key in stats) stats[key] += n;
+    }
 
     return NextResponse.json({
       cores,
+      stats,
       pagination: {
         total,
         page,
