@@ -118,7 +118,7 @@ const NODE_TYPES: {
   {
     type: 'OLT',
     label: 'OLT',
-    description: 'Optical Line Terminal - perangkat inti jaringan fiber optik',
+    description: 'Optical Line Terminal - tempatkan OLT yang sudah diinput di OLT Management',
     color: 'bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-700 hover:bg-purple-100 dark:hover:bg-purple-900/40',
     iconBg: 'bg-purple-100 dark:bg-purple-900/50',
     iconColor: 'text-purple-600 dark:text-purple-300',
@@ -447,15 +447,14 @@ function SubmitBtn({ loading, label = 'Tambah Node' }: { loading: boolean; label
 }
 
 // ─── OLT Form ─────────────────────────────────────────────────────────────────
+// OLT baru tidak dibuat dari peta: data perangkat (IP, vendor, SNMP/SSH) diinput
+// di halaman OLT Management. Di sini OLT yang sudah ada hanya ditempatkan.
 function OLTForm({
-  lat, lng, olts, onSubmit, onPlace, loading,
+  lat, lng, olts, onPlace, loading,
 }: {
-  lat: number; lng: number; olts: OltOption[]; onSubmit: (d: NodeFormData) => void; onPlace: (olt: OltOption) => void; loading: boolean;
+  lat: number; lng: number; olts: OltOption[]; onPlace: (olt: OltOption) => void; loading: boolean;
 }) {
-  const [mode, setMode] = useState<'place' | 'create'>('place');
   const [search, setSearch] = useState('');
-  const [data, setData] = useState({ name: '', ipAddress: '', vendor: 'huawei', model: '', username: '', password: '' });
-  const set = (k: string, v: string) => setData(p => ({ ...p, [k]: v }));
 
   const filtered = olts.filter(
     o =>
@@ -465,92 +464,56 @@ function OLTForm({
 
   return (
     <div className="space-y-3">
-      {/* Mode toggle */}
-      <div className="flex rounded-lg border border-border overflow-hidden text-xs font-medium">
-        <button type="button" onClick={() => setMode('place')}
-          className={`flex-1 py-2 transition-colors ${mode === 'place' ? 'bg-purple-600 text-white' : 'bg-card text-muted-foreground hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
-          Tempatkan OLT Ada
-        </button>
-        <button type="button" onClick={() => setMode('create')}
-          className={`flex-1 py-2 transition-colors ${mode === 'create' ? 'bg-purple-600 text-white' : 'bg-card text-muted-foreground hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
-          Buat OLT Baru
-        </button>
+      <div className="rounded-lg border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/20 p-3 text-xs text-gray-700 dark:text-gray-200">
+        <p>OLT baru tidak ditambahkan dari peta. Input data OLT di halaman OLT Management, lalu tempatkan di sini.</p>
+        <a href="/admin/network/olts"
+          className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-purple-600 px-3 py-1.5 font-medium text-white hover:bg-purple-700">
+          <Server className="w-3.5 h-3.5" />
+          Buka OLT Management
+        </a>
       </div>
 
-      {mode === 'place' ? (
-        <>
-          <p className="text-xs text-muted-foreground">
-            Pilih OLT dari database untuk ditempatkan pada koordinat ini.
+      <p className="text-xs text-muted-foreground">
+        Pilih OLT dari database untuk ditempatkan pada koordinat ini.
+      </p>
+      <div className="relative">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+        <input value={search} onChange={e => setSearch(e.target.value)}
+          placeholder="Cari nama atau IP..." className={`${INPUT} pl-8`} />
+      </div>
+      <div className="space-y-1.5 max-h-72 overflow-y-auto pr-0.5">
+        {filtered.length === 0 ? (
+          <p className="text-xs text-muted-foreground/70 text-center py-6">
+            {olts.length === 0 ? 'Belum ada OLT di database' : 'OLT tidak ditemukan'}
           </p>
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-            <input value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Cari nama atau IP..." className={`${INPUT} pl-8`} />
-          </div>
-          <div className="space-y-1.5 max-h-72 overflow-y-auto pr-0.5">
-            {filtered.length === 0 ? (
-              <p className="text-xs text-muted-foreground/70 text-center py-6">
-                {olts.length === 0 ? 'Belum ada OLT di database' : 'OLT tidak ditemukan'}
-              </p>
-            ) : (
-              filtered.map(olt => (
-                <button key={olt.id} type="button" disabled={loading} onClick={() => onPlace(olt)}
-                  className="w-full text-left p-2.5 rounded-lg border border-border bg-card hover:border-purple-400 dark:hover:border-primary/50 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group disabled:opacity-50">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-md bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center shrink-0">
-                      <Server className="w-3.5 h-3.5 text-purple-600 dark:text-primary" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-gray-800 dark:text-white truncate group-hover:text-purple-700 dark:group-hover:text-purple-300">
-                        {olt.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground font-mono">{olt.ipAddress}</p>
-                    </div>
-                    {olt.latitude && olt.longitude ? (
-                      <span className="text-xs text-amber-600 dark:text-amber-400 shrink-0">sudah ada posisi</span>
-                    ) : (
-                      <span className="text-xs text-green-600 dark:text-green-400 shrink-0">belum ditempatkan</span>
-                    )}
-                  </div>
-                </button>
-              ))
-            )}
-          </div>
-          <CoordRow lat={lat} lng={lng} />
-        </>
-      ) : (
-        <form onSubmit={e => { e.preventDefault(); onSubmit({ ...data, latitude: lat, longitude: lng }); }} className="space-y-3">
-          <FRow label="Nama *">
-            <input required value={data.name} onChange={e => set('name', e.target.value)} className={INPUT} placeholder="OLT Senayan" />
-          </FRow>
-          <FRow label="IP Address *">
-            <input required value={data.ipAddress} onChange={e => set('ipAddress', e.target.value)} className={INPUT} placeholder="192.168.1.1" />
-          </FRow>
-          <FRow label="Vendor">
-            <select value={data.vendor} onChange={e => set('vendor', e.target.value)} className={INPUT}>
-              {['huawei', 'zte', 'fiberhome', 'nokia', 'other'].map(v => (
-                <option key={v} value={v}>{v.charAt(0).toUpperCase() + v.slice(1)}</option>
-              ))}
-            </select>
-          </FRow>
-          <FRow label="Model">
-            <input value={data.model} onChange={e => set('model', e.target.value)} className={INPUT} placeholder="MA5800-X17" />
-          </FRow>
-          <FRow label="Username SNMP/SSH">
-            <input value={data.username} onChange={e => set('username', e.target.value)} className={INPUT} placeholder="admin" />
-          </FRow>
-          <FRow label="Password SNMP/SSH">
-            <input type="password" value={data.password} onChange={e => set('password', e.target.value)} className={INPUT} placeholder="••••••••" />
-          </FRow>
-          <CoordRow lat={lat} lng={lng} />
-          <SubmitBtn loading={loading} label="Buat OLT Baru" />
-        </form>
-      )}
+        ) : (
+          filtered.map(olt => (
+            <button key={olt.id} type="button" disabled={loading} onClick={() => onPlace(olt)}
+              className="w-full text-left p-2.5 rounded-lg border border-border bg-card hover:border-purple-400 dark:hover:border-primary/50 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group disabled:opacity-50">
+              <div className="flex items-center gap-2.5">
+                <div className="w-7 h-7 rounded-md bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center shrink-0">
+                  <Server className="w-3.5 h-3.5 text-purple-600 dark:text-primary" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-gray-800 dark:text-white truncate group-hover:text-purple-700 dark:group-hover:text-purple-300">
+                    {olt.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground font-mono">{olt.ipAddress}</p>
+                </div>
+                {olt.latitude && olt.longitude ? (
+                  <span className="text-xs text-amber-600 dark:text-amber-400 shrink-0">sudah ada posisi</span>
+                ) : (
+                  <span className="text-xs text-green-600 dark:text-green-400 shrink-0">belum ditempatkan</span>
+                )}
+              </div>
+            </button>
+          ))
+        )}
+      </div>
+      <CoordRow lat={lat} lng={lng} />
     </div>
   );
 }
-
-
 
 // ─── Tube color map (IEC 60794) ──────────────────────────────────────────────
 const TUBE_COLORS = ['#4B9CD3','#FF6B35','#5CB85C','#FFD700','#808080','#8B4513','#FF69B4','#1E1E1E','#FFCC00','#DC143C','#00CED1','#9370DB'];
@@ -876,7 +839,7 @@ export default function AddNodePanel({ lat, lng, onClose, onCreated, initialNode
           </div>
         ) : (
           <div>
-            {selectedType === 'OLT' && <OLTForm lat={lat} lng={lng} olts={olts} onSubmit={handleSubmit} onPlace={handlePlaceOlt} loading={loading} />}
+            {selectedType === 'OLT' && <OLTForm lat={lat} lng={lng} olts={olts} onPlace={handlePlaceOlt} loading={loading} />}
             {selectedType === 'OTB' && <OTBForm lat={lat} lng={lng} olts={olts} cables={cables} onSubmit={handleSubmit} loading={loading} />}
             {selectedType === 'JOINT_CLOSURE' && <JCForm lat={lat} lng={lng} otbs={otbs} cables={cables} odcsList={odcs} jcsList={jcs} onSubmit={handleSubmit} loading={loading} />}
             {selectedType === 'ODC' && <ODCForm lat={lat} lng={lng} olts={olts} onSubmit={handleSubmit} loading={loading} />}
