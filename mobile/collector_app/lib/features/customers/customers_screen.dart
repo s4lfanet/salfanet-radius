@@ -108,7 +108,7 @@ class _CustomerTile extends StatelessWidget {
   final VoidCallback onChanged;
 
   (String, Tone) _payStatus() {
-    final s = (user['pay_status'] ?? (num.tryParse('${user['unpaid_count']}') ?? 0) > 0 ? 'unpaid' : 'none').toString();
+    final s = (user['pay_status'] ?? ((num.tryParse('${user['unpaid_count']}') ?? 0) > 0 ? 'unpaid' : 'none')).toString();
     if (s == 'unpaid') {
       return user['has_overdue'] == true ? ('Terlambat', Tone.danger) : ('Belum lunas', Tone.warning);
     }

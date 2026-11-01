@@ -6,6 +6,16 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.29.1] - 2026-11-01 - Perbaikan Daftar Pelanggan APK Kolektor
+
+### Aplikasi Kolektor 1.1.1
+- **[FIX]** Daftar pelanggan tampil sebagai kotak abu-abu kosong: status bayar dihitung dengan `a ?? b > 0 ? x : y`, yang dibaca sebagai `(a ?? b) ? x : y`. Saat server mengirim `pay_status` (teks), Dart melempar error tipe pada setiap baris. Kini kondisinya diberi tanda kurung
+
+### Catatan Pembaruan
+- Naikkan versi: root, backend, frontend ke 5.29.1; aplikasi kolektor 1.1.1+4
+
+---
+
 ## [5.29.0] - 2026-11-01 - Notifikasi FCM Aplikasi Kolektor
 
 ### Summary

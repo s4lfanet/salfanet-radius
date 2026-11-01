@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.29.0 - Notifikasi FCM Aplikasi Kolektor
+> **Version:** 5.29.1 - Perbaikan Daftar Pelanggan APK Kolektor
 
 ---
 
@@ -1111,6 +1111,14 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.29.1 — 2026-11-01 - Perbaikan Daftar Pelanggan APK Kolektor
+
+### Aplikasi Kolektor 1.1.1
+- **[FIX]** Daftar pelanggan tampil sebagai kotak abu-abu kosong: status bayar dihitung dengan `a ?? b > 0 ? x : y`, yang dibaca sebagai `(a ?? b) ? x : y`. Saat server mengirim `pay_status` (teks), Dart melempar error tipe pada setiap baris. Kini kondisinya diberi tanda kurung
+
+### Catatan Pembaruan
+- Naikkan versi: root, backend, frontend ke 5.29.1; aplikasi kolektor 1.1.1+4
+
 ### v5.29.0 — 2026-11-01 - Notifikasi FCM Aplikasi Kolektor
 
 ### Summary
@@ -1234,34 +1242,6 @@ Rilis besar setelah 5.26.0. Peta Terpadu yang sebelumnya hanya menampilkan pelan
 - Aplikasi admin naik ke **1.0.21** — publish APK baru dari release `apk-latest` agar pengguna ditawari update
 - APK Kolektor: unduh `salfanet-collector-*` dari `apk-latest`, lalu unggah di Admin → Download APK (kartu "Kolektor Lapangan") agar update in-app berfungsi
 - **[CHORE]** Bump versi root, frontend, dan backend ke 5.27.0 (sebelumnya masih 5.26.0, sehingga panel dan `/api/health` menampilkan versi lama)
-
-### v5.26.0 — 2026-10-28 - Push Tanpa Firebase Wajib + QRIS Livin' + Splash & Panduan App
-
-### Summary
-Rilis setelah 5.25.0 (14 commit). Satu APK native kini dipakai semua instalasi: konfigurasi Firebase diatur per server lewat panel, dan instalasi tanpa Firebase tetap menerima notifikasi lewat polling berkala. QRIS Listener membaca notifikasi Livin' Merchant, dashboard tidak lagi bisa disandera router MikroTik yang mati, dan kedua aplikasi punya layar pembuka animasi serta panduan penggunaan.
-
-### Push Notifikasi Aplikasi
-- **[FEATURE]** Firebase diatur per instalasi dari panel (Admin → Download APK → Notifikasi Push Aplikasi): unggah `google-services.json` + service account satu project. Aplikasi mengambil konfigurasinya dari server saat berjalan — `google-services.json` tidak lagi dibakar ke APK, jadi satu APK publik dipakai semua instalasi
-- **[FEATURE]** Instalasi tanpa Firebase tetap dapat notifikasi: aplikasi mengecek notifikasi baru secara berkala (sekitar 15 menit via WorkManager, tiap menit saat aplikasi dibuka) dari endpoint `app-notices`
-- **[FIX]** Admin menyelesaikan/menutup tiket tidak memberi notifikasi apa pun ke pelanggan (route teknisi sudah). Kini push dikirim lewat jalur yang sama: web push + FCM + salinan polling
-- **[FIX]** Private key service account tidak pernah keluar lewat API; konfigurasi disimpan di folder data server, dan `FIREBASE_SERVICE_ACCOUNT_JSON` di `.env` tetap didukung serta diutamakan
-- **[DOCS]** Kunci VAPID web push dicatat wajib ikut backup — menghilangkannya merusak semua subscription push
-
-### QRIS
-- **[FEATURE]** Listener membaca notifikasi pembayaran dari **Livin' Merchant** (`id.bmri.livinmerchant`), termasuk pola "menerima pembayaran Rp X" — selain DANA, GoPay, BRImo, BCA Mobile, OVO, LinkAja yang sudah ada. Berlaku di Kasir QRIS dalam aplikasi admin dan APK QRIS Listener standalone (v1.0.1)
-
-### Aplikasi Mobile
-- **[FEATURE]** Layar pembuka animasi sebelum login di aplikasi admin dan pelanggan: logo membesar, teks masuk bertahap, lalu crossfade — menggantikan spinner polos
-- **[FEATURE]** Menu **Panduan** di aplikasi pelanggan (Lainnya → Alat Bantu): 11 panduan penggunaan aplikasi berbahasa Indonesia
-- **[DOCS]** Panduan dalam aplikasi admin disinkronkan: QRIS Listener, Livin' Merchant, dan pengaturan Firebase runtime
-
-### Perbaikan
-- **[FIX]** Dashboard bisa kena Cloudflare 524: `api.write` MikroTik menggantung selamanya di socket setengah-terbuka. Kini dibatasi 12 detik per print dan seluruh batch dibatasi 12 detik — router mati tidak lagi menahan halaman dashboard
-
-### Catatan Pembaruan
-- Skema database berubah: tabel `customer_app_notices` dibuat otomatis oleh `prisma db push` saat update
-- Aplikasi admin naik ke **1.0.17** dan aplikasi pelanggan ke **1.1.12** — publish APK baru dari release `apk-latest` agar pengguna ditawari update
-- QRIS Listener standalone: rebuild lewat Payment Gateway → QRIS Mandiri setelah update
 
 <!-- AUTO-CHANGELOG:END -->
 
