@@ -22,9 +22,11 @@ import { PathTracerTool, TraceResultDisplay, ImpactAnalysisPanel } from '@/compo
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface NetworkNode {
   id: string;
-  type: 'OLT' | 'JOINT_CLOSURE' | 'ODC' | 'ODP';
+  type: 'OLT' | 'OTB' | 'JOINT_CLOSURE' | 'ODC' | 'ODP';
   name: string;
   code: string;
+  customers?: number;
+  _count?: { customers?: number };
 }
 
 interface PathNode { type: string; id: string; name: string; order: number; coordinates: { lat: string; lng: string } | null; distance?: number; }
@@ -47,24 +49,28 @@ type TabId = 'logical' | 'physical';
 // ─── Logical Trace Tab ────────────────────────────────────────────────────────
 function LogicalTraceTab() {
   const { t } = useTranslation();
-  const oltsQuery = useApiQuery<{ data?: NetworkNode[] } | NetworkNode[]>('/api/network/olts');
+  const oltsQuery = useApiQuery<{ olts?: NetworkNode[]; data?: NetworkNode[] } | NetworkNode[]>('/api/network/olts');
+  const otbsQuery = useApiQuery<{ otbs?: NetworkNode[] }>('/api/network/otbs', { params: { limit: 500 } });
   const jcsQuery = useApiQuery<{ data?: NetworkNode[] } | NetworkNode[]>('/api/network/joint-closures');
   const odcsQuery = useApiQuery<{ odcs?: NetworkNode[] } | NetworkNode[]>('/api/network/odcs');
   const odpsQuery = useApiQuery<{ odps?: NetworkNode[]; data?: NetworkNode[] } | NetworkNode[]>('/api/network/odps');
   const nodes: NetworkNode[] = React.useMemo(() => {
     const olts = oltsQuery.data;
+    const otbs = otbsQuery.data;
     const jcs = jcsQuery.data;
     const odcs = odcsQuery.data;
     const odps = odpsQuery.data;
-    if (!olts && !jcs && !odcs && !odps) return [];
+    if (!olts && !otbs && !jcs && !odcs && !odps) return [];
+    const oltRows = (olts as { olts?: NetworkNode[]; data?: NetworkNode[] })?.olts || (olts as { data?: NetworkNode[] })?.data || [];
     const allNodes: NetworkNode[] = [
-      ...((olts as { data?: NetworkNode[] })?.data || []).map((n) => ({ ...n, type: 'OLT' as const })),
+      ...oltRows.map((n) => ({ ...n, code: n.code || n.name, type: 'OLT' as const })),
+      ...(otbs?.otbs || []).map((n) => ({ ...n, type: 'OTB' as const })),
       ...((jcs as { data?: NetworkNode[] })?.data || []).map((n) => ({ ...n, type: 'JOINT_CLOSURE' as const })),
-      ...((odcs as { odcs?: NetworkNode[] })?.odcs || []).map((n) => ({ ...n, type: 'ODC' as const })),
-      ...((odps as { odps?: NetworkNode[] })?.odps || (odps as { data?: NetworkNode[] })?.data || []).map((n) => ({ ...n, type: 'ODP' as const })),
+      ...((odcs as { odcs?: NetworkNode[] })?.odcs || []).map((n) => ({ ...n, code: n.code || n.name, type: 'ODC' as const })),
+      ...((odps as { odps?: NetworkNode[] })?.odps || (odps as { data?: NetworkNode[] })?.data || []).map((n) => ({ ...n, code: n.code || n.name, customers: n._count?.customers ?? 0, type: 'ODP' as const })),
     ];
     return allNodes;
-  }, [oltsQuery.data, jcsQuery.data, odcsQuery.data, odpsQuery.data]);
+  }, [oltsQuery.data, otbsQuery.data, jcsQuery.data, odcsQuery.data, odpsQuery.data]);
   const [traceResult, setTraceResult] = React.useState<LogicalTraceResult | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -83,7 +89,7 @@ function LogicalTraceTab() {
     if (!traceResult) return null;
     const affectedNodes = traceResult.path.slice(1).map(node => ({
       id: node.id, type: node.type, name: node.name, code: nodes.find(n => n.id === node.id)?.code || '',
-      customersCount: node.type === 'ODP' ? Math.floor(Math.random() * 8) + 1 : undefined,
+      customersCount: node.type === 'ODP' ? (nodes.find(n => n.id === node.id)?.customers ?? 0) : undefined,
     }));
     const totalCustomers = affectedNodes.reduce((s, n) => s + (n.customersCount || 0), 0);
     // alternatives is PathNode[][] from API but ImpactAnalysis expects a different shape
@@ -138,9 +144,19 @@ function PhysicalTraceTab() {
   const [deviceType, setDeviceType] = useState('ODP');
   const [deviceId, setDeviceId] = useState('');
 
+  const otbsQ = useApiQuery<{ otbs?: { id: string; name: string; code?: string }[] }>('/api/network/otbs', { params: { limit: 500 } });
+  const jcsQ = useApiQuery<{ data?: { id: string; name: string; code?: string }[] }>('/api/network/joint-closures');
+  const odcsQ = useApiQuery<{ odcs?: { id: string; name: string }[] }>('/api/network/odcs');
+  const odpsQ = useApiQuery<{ odps?: { id: string; name: string }[] }>('/api/network/odps');
+  const deviceOptions: { id: string; name: string; code?: string }[] =
+    deviceType === 'OTB' ? otbsQ.data?.otbs || []
+    : deviceType === 'JOINT_CLOSURE' ? jcsQ.data?.data || []
+    : deviceType === 'ODC' ? odcsQ.data?.odcs || []
+    : odpsQ.data?.odps || [];
+
   const performTrace = async () => {
     if (searchType === 'core' && !coreId) { showError('Please enter a core ID'); return; }
-    if (searchType === 'device' && !deviceId) { showError('Please enter a device ID'); return; }
+    if (searchType === 'device' && !deviceId) { showError('Pilih perangkat yang akan dilacak'); return; }
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -148,7 +164,7 @@ function PhysicalTraceTab() {
       else { params.append('deviceType', deviceType); params.append('deviceId', deviceId); }
       const data = await apiAdmin<FiberTraceResult>(`/api/network/trace?${params}`);
       setTraceResult(data);
-      if (!data.path?.length) showError('No fiber path found');
+      if (!data.path?.some(pt => pt.type !== 'device')) showError('Belum ada core atau splice yang tercatat pada perangkat ini. Isi di menu Splice Points.');
     } catch (error: unknown) {
       showError((error as Error).message || 'Failed to trace fiber path');
       setTraceResult(null);
@@ -193,7 +209,7 @@ function PhysicalTraceTab() {
       <Card>
         <CardHeader className="px-5 pt-5 pb-3">
           <CardTitle className="leading-snug">Trace Fiber Path</CardTitle>
-          <CardDescription>Enter a core ID or device to trace the complete physical fiber path</CardDescription>
+          <CardDescription>Pilih perangkat (atau isi core ID) untuk melacak jalur fiber fisik lengkap</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 px-5 pt-0 pb-5">
           <div>
@@ -221,14 +237,22 @@ function PhysicalTraceTab() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Label>Device Type</Label>
-                <Select value={deviceType} onValueChange={setDeviceType}>
+                <Select value={deviceType} onValueChange={(v) => { setDeviceType(v); setDeviceId(''); }}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {['ODP','OTB','ODC','JOINT_CLOSURE','OLT','CUSTOMER'].map(t => <SelectItem key={t} value={t}>{t === 'JOINT_CLOSURE' ? 'Joint Closure' : t}</SelectItem>)}
+                    {['ODP','OTB','ODC','JOINT_CLOSURE'].map(t => <SelectItem key={t} value={t}>{t === 'JOINT_CLOSURE' ? 'Joint Closure' : t}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
-              <div><Label>Device ID</Label><Input value={deviceId} onChange={e => setDeviceId(e.target.value)} placeholder="Enter device ID" /></div>
+              <div>
+                <Label>Perangkat</Label>
+                <Select value={deviceId} onValueChange={setDeviceId}>
+                  <SelectTrigger><SelectValue placeholder={deviceOptions.length ? 'Pilih perangkat' : 'Belum ada data'} /></SelectTrigger>
+                  <SelectContent>
+                    {deviceOptions.map(d => <SelectItem key={d.id} value={d.id}>{d.code && d.code !== d.name ? `${d.code} - ${d.name}` : d.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex items-end">
                 <Button onClick={performTrace} disabled={loading} className="w-full">
                   {loading && <RefreshCcw className="h-4 w-4 animate-spin mr-2" />}

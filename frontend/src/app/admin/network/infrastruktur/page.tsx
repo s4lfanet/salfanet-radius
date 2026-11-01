@@ -17,7 +17,7 @@ interface OTB {
   id: string; name: string; code: string; status: string;
   latitude: number; longitude: number; address?: string;
   portCount: number; usedPorts: number; oltId?: string;
-  network_olts?: { id: string; name: string; ipAddress: string };
+  olt?: { id: string; name: string; ipAddress: string };
 }
 interface JC {
   id: string; name: string; code: string; status: string;
@@ -28,15 +28,15 @@ interface ODC {
   id: string; name: string; status: string;
   latitude: number; longitude: number;
   portCount: number; ponPort: number;
-  network_olts?: { id: string; name: string; ipAddress: string };
-  _count?: { network_odps: number };
+  olt?: { id: string; name: string; ipAddress: string };
+  _count?: { odps: number };
 }
 interface ODP {
   id: string; name: string; status: string;
   latitude: number; longitude: number;
   portCount: number; splitterRatio?: string;
-  network_olts?: { id: string; name: string };
-  network_odcs?: { id: string; name: string };
+  olt?: { id: string; name: string };
+  odc?: { id: string; name: string };
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -135,7 +135,7 @@ function OTBTable({ search }: { search: string }) {
               {r.usedPorts}/{r.portCount}
             </td>
             <td className="px-4 py-3 text-sm text-muted-foreground">
-              {r.network_olts?.name ?? <span className="text-gray-400">-</span>}
+              {r.olt?.name ?? <span className="text-gray-400">-</span>}
             </td>
             <td className="px-4 py-3 text-sm text-muted-foreground max-w-[180px] truncate">
               {r.address || <span className="text-gray-400">-</span>}
@@ -258,11 +258,11 @@ function ODCTable({ search }: { search: string }) {
             </td>
             <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
             <td className="px-4 py-3 text-sm text-muted-foreground">
-              {r.network_olts?.name ?? <span className="text-gray-400">-</span>}
+              {r.olt?.name ?? <span className="text-gray-400">-</span>}
             </td>
             <td className="px-4 py-3 text-sm text-muted-foreground">{r.ponPort}</td>
             <td className="px-4 py-3 text-sm text-muted-foreground">{r.portCount}</td>
-            <td className="px-4 py-3 text-sm text-muted-foreground">{r._count?.network_odps ?? 0}</td>
+            <td className="px-4 py-3 text-sm text-muted-foreground">{r._count?.odps ?? 0}</td>
             <td className="px-4 py-3"><CoordCell lat={r.latitude} lng={r.longitude} /></td>
             <td className="px-4 py-3"><MapPinLink lat={r.latitude} lng={r.longitude} /></td>
             <td className="px-4 py-3">
@@ -322,10 +322,10 @@ function ODPTable({ search }: { search: string }) {
             </td>
             <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
             <td className="px-4 py-3 text-sm text-muted-foreground">
-              {r.network_olts?.name ?? <span className="text-gray-400">-</span>}
+              {r.olt?.name ?? <span className="text-gray-400">-</span>}
             </td>
             <td className="px-4 py-3 text-sm text-muted-foreground">
-              {r.network_odcs?.name ?? <span className="text-gray-400">-</span>}
+              {r.odc?.name ?? <span className="text-gray-400">-</span>}
             </td>
             <td className="px-4 py-3 text-sm text-muted-foreground">{r.portCount}</td>
             <td className="px-4 py-3 text-sm text-muted-foreground">{r.splitterRatio ?? '-'}</td>

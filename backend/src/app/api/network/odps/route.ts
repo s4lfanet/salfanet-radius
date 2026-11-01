@@ -30,6 +30,7 @@ export async function GET() {
         _count: {
           select: {
             childOdps: true,
+            customers: true,
           },
         },
       },

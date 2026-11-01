@@ -53,6 +53,7 @@ interface OtbOutputSegment {
 interface OtbDetail {
   id: string; code: string; name: string; latitude?: number; longitude?: number;
   address?: string; portCount?: number; status?: string; spliceTrayCount?: number;
+  olt?: { id: string; name: string };
   network_olts?: { id: string; name: string };
   feederCableAssignments?: FeederCableAssignment[];
   outputSegments?: OtbOutputSegment[];
@@ -575,8 +576,8 @@ export default function NetworkDiagramsPage() {
                               status: (otbDetail.status || 'ACTIVE').toUpperCase() as 'ACTIVE' | 'MAINTENANCE' | 'INACTIVE',
                               hasSplitter: false,
                               spliceTrayCount: otbDetail.spliceTrayCount ?? 1,
-                              upstreamNode: otbDetail.network_olts
-                                ? { id: otbDetail.network_olts.id, type: 'OLT' as const, code: otbDetail.network_olts.name }
+                              upstreamNode: (otbDetail.olt ?? otbDetail.network_olts)
+                                ? { id: (otbDetail.olt ?? otbDetail.network_olts)!.id, type: 'OLT' as const, code: (otbDetail.olt ?? otbDetail.network_olts)!.name }
                                 : undefined,
                               metadata: {
                                 feederCableAssignments: otbDetail.feederCableAssignments ?? [],

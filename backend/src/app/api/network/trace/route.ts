@@ -267,6 +267,46 @@ async function traceCoreFromId(
   };
 }
 
+// The physical-trace tab renders a flat list of core / splice / device points.
+type PathPoint = { type: 'core' | 'splice' | 'device'; data: Record<string, unknown> };
+
+function pathFromSteps(steps: TraceStep[]): PathPoint[] {
+  return steps.map((st): PathPoint =>
+    st.type === 'CORE'
+      ? { type: 'core', data: { id: st.coreId || '', coreNumber: st.coreNumber, tubeNumber: st.tubeNumber, cableName: st.deviceName } }
+      : {
+          type: 'splice',
+          data: {
+            id: st.spliceId || '',
+            spliceType: st.spliceType,
+            insertionLoss: st.attenuation,
+            deviceType: st.deviceType,
+            deviceId: st.deviceId,
+            locationDescription: st.deviceName,
+          },
+        },
+  );
+}
+
+function summarizePath(path: PathPoint[]) {
+  return {
+    success: true,
+    path,
+    coreCount: path.filter(p => p.type === 'core').length,
+    spliceCount: path.filter(p => p.type === 'splice').length,
+    totalLoss: path.reduce((sum, p) => sum + (Number(p.data.insertionLoss) || 0), 0),
+  };
+}
+
+async function resolveDeviceName(type: 'OTB' | 'JOINT_CLOSURE' | 'ODC' | 'ODP', id: string): Promise<string> {
+  const row =
+    type === 'OTB' ? await prisma.network_otbs.findUnique({ where: { id }, select: { name: true } })
+    : type === 'JOINT_CLOSURE' ? await prisma.network_joint_closures.findUnique({ where: { id }, select: { name: true } })
+    : type === 'ODC' ? await prisma.networkODC.findUnique({ where: { id }, select: { name: true } })
+    : await prisma.networkODP.findUnique({ where: { id }, select: { name: true } });
+  return row?.name ?? id;
+}
+
 // GET /api/network/trace - Trace fiber path
 export async function GET(request: NextRequest) {
   try {
@@ -293,7 +333,7 @@ export async function GET(request: NextRequest) {
         }
 
         const trace = await traceCoreFromId(coreId, direction);
-        return NextResponse.json(trace);
+        return NextResponse.json({ ...trace, ...summarizePath(pathFromSteps(trace.steps)) });
       }
 
       case 'customer': {
@@ -479,7 +519,39 @@ export async function GET(request: NextRequest) {
           ],
         });
 
+        const deviceName = await resolveDeviceName(mappedDeviceType, deviceId);
+        const points: PathPoint[] = [{ type: 'device', data: { id: deviceId, deviceType: mappedDeviceType, deviceId, deviceName } }];
+        const corePoint = (c: (typeof splices)[number]['incomingCore']): PathPoint | null =>
+          c ? {
+            type: 'core',
+            data: {
+              id: c.id,
+              coreNumber: c.coreNumber,
+              tubeNumber: c.tube?.tubeNumber,
+              colorCode: c.colorCode,
+              colorHex: c.colorHex,
+              cableCode: c.tube?.cable?.code,
+              cableName: c.tube?.cable?.name,
+            },
+          } : null;
+        for (const sp of splices) {
+          const incoming = corePoint(sp.incomingCore);
+          const outgoing = corePoint(sp.outgoingCore);
+          if (incoming) points.push(incoming);
+          points.push({
+            type: 'splice',
+            data: {
+              id: sp.id,
+              spliceType: sp.spliceType,
+              insertionLoss: sp.insertionLoss ? Number(sp.insertionLoss) : undefined,
+              locationDescription: `Tray ${sp.trayNumber}`,
+            },
+          });
+          if (outgoing) points.push(outgoing);
+        }
+
         return NextResponse.json({
+          ...summarizePath(points),
           deviceType,
           deviceId,
           spliceCount: splices.length,

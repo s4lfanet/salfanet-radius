@@ -5,9 +5,10 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 interface NetworkNode {
   id: string;
-  type: 'OLT' | 'JOINT_CLOSURE' | 'ODC' | 'ODP';
+  type: 'OLT' | 'OTB' | 'JOINT_CLOSURE' | 'ODC' | 'ODP';
   name: string;
   code: string;
+  customers?: number;
 }
 
 interface PathTracerToolProps {
@@ -46,6 +47,7 @@ export function PathTracerTool({ nodes, onTrace, isLoading = false, onClear }: P
   const getNodeTypeLabel = (type: string) => {
     switch (type) {
       case 'OLT': return 'OLT';
+      case 'OTB': return 'OTB';
       case 'JOINT_CLOSURE': return t('network.jointClosure.title');
       case 'ODC': return t('network.odc.title');
       case 'ODP': return t('network.odp.title');
@@ -56,6 +58,7 @@ export function PathTracerTool({ nodes, onTrace, isLoading = false, onClear }: P
   const getNodeTypeColor = (type: string) => {
     switch (type) {
       case 'OLT': return 'text-purple-700';
+      case 'OTB': return 'text-blue-700';
       case 'JOINT_CLOSURE': return 'text-purple-600';
       case 'ODC': return 'text-cyan-700';
       case 'ODP': return 'text-emerald-700';
