@@ -1,6 +1,6 @@
 {
   "name": "salfanet-radius",
-  "version": "5.32.0",
+  "version": "5.32.1",
   "private": true,
   "description": "Salfanet Radius — ISP/RADIUS management system (monorepo)",
   "scripts": {

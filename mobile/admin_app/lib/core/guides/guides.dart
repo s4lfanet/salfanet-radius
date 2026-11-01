@@ -13,6 +13,10 @@ import '../widgets/entity_tile.dart' show listBottomPadding;
 /// the web page it mirrors; [GuideAction] in its app bar opens that page's
 /// guide, and hides itself when the screen has none.
 
+/// A list of strings, or a single string, or nothing: one malformed entry
+/// must not take the whole guide center down.
+List<String> _strings(dynamic v) => v is List ? [for (final e in v) '$e'] : (v is String && v.isNotEmpty ? [v] : const []);
+
 class Guide {
   Guide({required this.path, required this.title, required this.section, required this.summary, required this.steps, required this.notes, required this.related});
 
@@ -29,9 +33,9 @@ class Guide {
         title: j['title'] as String,
         section: j['section'] as String,
         summary: j['summary'] as String,
-        steps: [for (final s in j['steps'] as List) s as String],
-        notes: [for (final s in (j['notes'] as List?) ?? const []) s as String],
-        related: [for (final r in (j['related'] as List?) ?? const []) (r as Map)['label'] as String],
+        steps: _strings(j['steps']),
+        notes: _strings(j['notes']),
+        related: [for (final r in (j['related'] is List ? j['related'] as List : const [])) if (r is Map && r['label'] != null) '${r['label']}'],
       );
 }
 
@@ -44,7 +48,7 @@ class SetupStep {
   factory SetupStep.fromJson(Map<String, dynamic> j) => SetupStep(
         title: j['title'] as String,
         detail: j['detail'] as String,
-        pages: [for (final l in j['links'] as List) (l as Map)['label'] as String],
+        pages: [for (final l in (j['links'] is List ? j['links'] as List : const [])) if (l is Map && l['label'] != null) '${l['label']}'],
       );
 }
 
@@ -57,12 +61,21 @@ class GuideBook {
 
   /// Loaded once from the bundled asset.
   static Future<GuideBook> load() => _loading ??= () async {
-        final data = jsonDecode(await rootBundle.loadString('assets/guides.json')) as Map<String, dynamic>;
-        return GuideBook(
-          [for (final s in data['setup'] as List) SetupStep.fromJson(s as Map<String, dynamic>)],
-          [for (final g in data['guides'] as List) Guide.fromJson(g as Map<String, dynamic>)],
-        );
+        try {
+          return await _read();
+        } catch (_) {
+          _loading = null; // a failed load can be retried
+          rethrow;
+        }
       }();
+
+  static Future<GuideBook> _read() async {
+        final data = jsonDecode(await rootBundle.loadString('assets/guides.json')) as Map<String, dynamic>;
+    return GuideBook(
+      [for (final s in data['setup'] as List) SetupStep.fromJson(s as Map<String, dynamic>)],
+      [for (final g in data['guides'] as List) Guide.fromJson(g as Map<String, dynamic>)],
+    );
+  }
 
   /// Exact path, or the longest guide path it sits under (as on the web).
   Guide? forPath(String path) {
@@ -230,7 +243,25 @@ class _GuideHubScreenState extends State<GuideHubScreen> {
       body: FutureBuilder<GuideBook>(
         future: GuideBook.load(),
         builder: (context, snap) {
-          if (snap.hasError) return Center(child: Text('Panduan tidak bisa dimuat.', style: TextStyle(color: muted)));
+          if (snap.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(Gap.page),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.menu_book_outlined, size: 40, color: muted),
+                    const SizedBox(height: Gap.sm),
+                    const Text('Panduan tidak bisa dimuat', style: TextStyle(fontWeight: FontWeight.w700)),
+                    const SizedBox(height: Gap.xs),
+                    Text('${snap.error}', maxLines: 3, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: muted)),
+                    const SizedBox(height: Gap.md),
+                    OutlinedButton(onPressed: () => setState(() {}), child: const Text('Coba lagi')),
+                  ],
+                ),
+              ),
+            );
+          }
           final book = snap.data;
           if (book == null) return const Center(child: CircularProgressIndicator());
 

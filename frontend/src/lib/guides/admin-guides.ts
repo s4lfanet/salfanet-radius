@@ -407,7 +407,7 @@ export const GUIDES: PageGuide[] = [
       'Saring per status: Belum Bayar, Jatuh Tempo, Lunas.',
       'Kirim pengingat satu pelanggan lewat WhatsApp, atau pilih beberapa invoice lalu Broadcast Tagihan.',
       'Salin link bayar untuk dikirim manual.',
-      'Klik Tandai Lunas untuk pembayaran tunai di kantor.',
+      'Klik Tandai Lunas untuk pembayaran yang diterima di luar sistem. Pilih Diterima oleh (kantor atau kolektor) dan metodenya, Tunai atau Transfer. Bila diterima kolektor, pembayarannya masuk ke Setoran Kolektor.',
       'Cetak invoice atau export ke Excel/PDF.',
     ],
     notes: [
@@ -496,8 +496,18 @@ export const GUIDES: PageGuide[] = [
     title: 'Setoran Kolektor',
     section: S.billing,
     summary: 'Uang yang ditagih kolektor di lapangan per hari, untuk dicocokkan dengan setoran yang diterima.',
-    steps: ['Pilih tanggal dan kolektor.', 'Cocokkan total tunai dan transfer dengan uang yang disetor.', 'Konfirmasi setoran; Batal Konfirmasi bila ternyata keliru.'],
-    related: [{ label: 'Bukti Transfer Kolektor', href: '/admin/payment-proofs' }],
+    steps: [
+      'Atur rentang tanggal dan saring per kolektor, Metode bayar (Tunai atau Transfer), atau Status konfirmasi (Belum atau Sudah).',
+      'Tiap baris sudah memuat pelanggan lengkap, kolektor, jumlah tagihan, dan metode bayar. Tidak perlu membuka rincian.',
+      'Cocokkan total tunai dan transfer dengan uang yang disetor, lalu klik Konfirmasi pada barisnya. untuk banyak pelanggan sekaligus, centang barisnya lalu konfirmasi sekaligus.',
+      'Batal Konfirmasi bila ternyata keliru.',
+      'Tagihan yang dilunasi tanpa kolektor tampil di panel tersendiri; tetapkan kolektornya agar ikut disetor.',
+    ],
+    notes: ['Kolektor mendapat notifikasi (lonceng, web push, dan aplikasi) saat setorannya dikonfirmasi atau ditinjau.'],
+    related: [
+      { label: 'Bukti Transfer Kolektor', href: '/admin/payment-proofs' },
+      { label: 'Tagihan', href: '/admin/invoices' },
+    ],
   },
   {
     path: '/admin/payment-proofs',
@@ -543,6 +553,7 @@ export const GUIDES: PageGuide[] = [
       'Bila router tidak punya IP publik, sambungkan VPN dulu (VPN Server atau VPN Client).',
       'Klik Tambah Router: isi IP (IP VPN bila lewat VPN), username dan password API MikroTik, dan secret RADIUS.',
       'Klik Test & Simpan; router harus bisa dihubungi.',
+      'Isi latitude dan longitude bila ingin router tampil di Peta Jaringan: ketik, klik Pilih di Peta, atau Auto GPS dari perangkat Anda. Boleh dikosongkan.',
       'Klik RADIUS Script, pilih versi RouterOS, salin, dan tempel di terminal MikroTik.',
     ],
     notes: [
@@ -588,7 +599,10 @@ export const GUIDES: PageGuide[] = [
       'Klik Tambah OLT, pilih model yang sesuai, isi IP, community SNMP, dan akses Telnet bila diminta.',
       'Isi koordinat agar OLT tampil di peta.',
       'Hubungkan OLT ke router uplink-nya bila dipakai untuk ping dan peta jalur.',
+      'Tombol Uji Koneksi memakai isian form. Saat mengubah OLT, kolom password yang dikosongkan berarti memakai password tersimpan.',
+      'Impor dari Excel atau CSV langsung mengaktifkan pemantauan; pastikan username dan password terisi agar login ke OLT berhasil.',
     ],
+    notes: ['OLT baru dibuat di sini. Peta Jaringan hanya menempatkan OLT yang sudah ada.'],
     related: [{ label: 'Monitoring OLT', href: '/admin/olt/monitoring' }],
   },
   {
@@ -823,7 +837,11 @@ export const GUIDES: PageGuide[] = [
     title: 'ODC',
     section: S.infra,
     summary: 'Optical Distribution Cabinet: titik bagi dari OLT ke beberapa ODP.',
-    steps: ['Klik Add ODC, pilih OLT dan PON port, jumlah port, dan lokasinya.', 'ODP dihubungkan ke ODC dari halaman ODP.'],
+    steps: [
+      'Klik Add ODC, pilih OLT dan PON port, jumlah port, dan lokasinya.',
+      'Atur splitter (jenis, rasio, redaman) dari bagian Splitter; konfigurasinya tersimpan.',
+      'ODP dihubungkan ke ODC dari halaman ODP.',
+    ],
   },
   {
     path: '/admin/network/odps',
@@ -832,8 +850,10 @@ export const GUIDES: PageGuide[] = [
     summary: 'Optical Distribution Point: kotak tempat kabel drop pelanggan terpasang.',
     steps: [
       'Klik Tambah ODP, pilih induknya (ODC atau ODP lain), port, dan lokasi.',
+      'Atur splitter ODP dari bagian Splitter; konfigurasi dan peta portnya tersimpan.',
       'Tempatkan pelanggan ke port ODP di halaman Penempatan Pelanggan ODP, agar jalur dan peta lengkap.',
     ],
+    notes: ['ODP yang masih punya pelanggan atau ODP anak tidak bisa dihapus. Pindahkan dulu. Kartu ODP menampilkan jumlah pelanggannya.'],
     related: [{ label: 'Penempatan Pelanggan ODP', href: '/admin/network/customers' }],
   },
   {
@@ -848,21 +868,22 @@ export const GUIDES: PageGuide[] = [
     title: 'Kabel Fiber',
     section: S.infra,
     summary: 'Kabel fiber optik dengan susunan tube dan core (12 sampai 144 core).',
-    steps: ['Klik Tambah Kabel, pilih jenis dan jumlah core. Tube dan core dibuat otomatis.', 'Menghapus kabel ikut menghapus tube dan core-nya.'],
+    steps: ['Klik Tambah Kabel, pilih jenis dan jumlah core. Tube dan core dibuat otomatis.', 'Buka detail kabel untuk melihat tube dan core beserta statusnya.', 'Menghapus kabel ikut menghapus tube dan core-nya.'],
+    notes: ['Jumlah tube dan core tidak bisa diubah setelah kabel dibuat. Hapus lalu buat ulang bila salah.'],
   },
   {
     path: '/admin/network/fiber-cores',
     title: 'Core Fiber',
     section: S.infra,
     summary: 'Status setiap core: tersedia, terpakai, dipesan, atau rusak.',
-    steps: ['Saring per kabel dan status.', 'Pilih core lalu Assign, Release, Reserve, atau Tandai Rusak.'],
+    steps: ['Saring per kabel dan status.', 'Pilih core lalu Assign, Release, Reserve, atau Tandai Rusak. Beberapa core bisa diproses sekaligus.'],
   },
   {
     path: '/admin/network/splice-points',
     title: 'Titik Splice',
     section: S.infra,
     summary: 'Sambungan antar core (fusion, mekanik, pigtail) beserta redamannya.',
-    steps: ['Klik Buat Splice, pilih dua core yang disambung dan isi redaman hasil ukur.', 'Menghapus splice mengembalikan core ke status tersedia.'],
+    steps: ['Klik Buat Splice, pilih dua core yang disambung dan isi redaman hasil ukur.', 'Pilih perangkat tempat sambungan berada (Joint Closure, OTB, atau lainnya) dan nomor tray-nya.', 'Menghapus splice mengembalikan core ke status tersedia.'],
   },
   {
     path: '/admin/network/fiber-joint-closures',
@@ -942,6 +963,7 @@ export const GUIDES: PageGuide[] = [
       'Bagikan alamat login kolektor beserta username dan passwordnya.',
       'Pakai Edit untuk mengganti data, area, atau password, dan Hapus untuk menghapus akun.',
       'Pantau hasil tagihan di Setoran Kolektor.',
+      'Kolektor yang memasang aplikasi Android mendapat notifikasi push (lihat Aplikasi Android). Di portal web, notifikasi muncul di lonceng dan bisa diaktifkan lewat Aktifkan notifikasi.',
     ],
     notes: [
       'Kolektor yang sudah pernah menagih tidak bisa dihapus, agar riwayat setorannya tetap tercatat. Nonaktifkan saja.',
@@ -957,7 +979,7 @@ export const GUIDES: PageGuide[] = [
     steps: [
       'Unggah logo (maks 2 MB) dan isi nama, email, telepon, alamat.',
       'Base URL adalah alamat panel yang dipakai pelanggan, misalnya https://billing.domainanda.id. Dipakai di link bayar.',
-      'Pilih zona waktu. Layanan direstart otomatis agar berlaku.',
+      'Pilih zona waktu. Layanan direstart otomatis agar berlaku; halaman menunggu sampai panel kembali lalu memuat ulang sendiri, jadi tidak perlu dibuka ulang.',
       'Atur berapa hari sebelum jatuh tempo tagihan dibuat.',
     ],
   },
@@ -1030,11 +1052,17 @@ export const GUIDES: PageGuide[] = [
     path: '/admin/download-apk',
     title: 'Aplikasi Android',
     section: S.management,
-    summary: 'Rilis APK aplikasi native (admin dan pelanggan) di halaman login, dan build APK WebView per portal.',
+    summary: 'Rilis APK aplikasi native (admin, pelanggan, dan kolektor), sumber pembaruan di aplikasi, Firebase untuk notifikasi, dan build APK WebView per portal.',
     steps: [
-      'Rilis APK: unggah APK release aplikasi pelanggan atau admin. Nomor build harus lebih tinggi dan kunci tanda tangannya sama.',
+      'Pilih Sumber pembaruan di aplikasi. GitHub: aplikasi yang terpasang langsung ditawari build terbaru dari rilis apk-latest, sesuai arsitektur HP, tanpa unggah. Unggahan sendiri: aplikasi menawarkan APK yang Anda unggah di sini.',
+      'Untuk Unggahan sendiri, unggah APK release aplikasi. Nomor build harus lebih tinggi dan kunci tanda tangannya sama.',
       'Isi catatan rilis, centang Wajib update bila versi lama tidak boleh dipakai lagi.',
-      'Aplikasi yang sudah terpasang menawarkan update ini sendiri.',
+      'Notifikasi: unggah satu google-services.json dan kunci service account Firebase. Satu file cukup untuk aplikasi admin, pelanggan, dan kolektor; tanpa Firebase aplikasi mengecek notifikasi berkala.',
+    ],
+    notes: [
+      'Pakai Unggahan sendiri bila APK Anda memakai logo, alamat server, atau kunci tanda tangan sendiri. Android menolak update bila kunci tanda tangannya berbeda dari yang terpasang.',
+      'Aplikasi mengecek pembaruan saat dibuka. Pembaruan dikonfirmasi dulu oleh pengguna di layar Android.',
+      'Sumber GitHub hanya bisa diubah Super Admin. Bila GitHub tidak terjangkau dari server, APK unggahan yang ditawarkan.',
     ],
   },
 
@@ -1050,7 +1078,7 @@ export const GUIDES: PageGuide[] = [
     path: '/admin/notifications',
     title: 'Notifikasi',
     section: S.notify,
-    summary: 'Pemberitahuan sistem untuk admin: pembayaran masuk, pendaftaran baru, alert jaringan.',
+    summary: 'Pemberitahuan sistem untuk admin: pembayaran masuk, pendaftaran baru, alert jaringan. Aplikasi admin juga menerimanya sebagai push.',
     steps: ['Klik notifikasi untuk membuka halamannya.', 'Tandai dibaca atau hapus yang sudah tidak perlu.'],
   },
   {

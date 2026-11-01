@@ -503,7 +503,7 @@ const _guidePaths = <String, String>{
   'Pesanan E-Voucher': '/admin/hotspot/evoucher',
   'Agent': '/admin/hotspot/agent',
   'Deposit Agent': '/admin/hotspot/agent/deposits',
-  'Peta Jaringan': '/admin/network/map',
+  'Peta Jaringan': '/admin/network/unified-map',
   'Sesi Online': '/admin/sessions/pppoe',
   'Router / NAS': '/admin/network/routers',
   'Status OLT': '/admin/olt/monitoring',
