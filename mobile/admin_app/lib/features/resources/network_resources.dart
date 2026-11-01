@@ -569,12 +569,12 @@ CrudConfig cablesConfig() => CrudConfig(
   subtitleOf: (c) => '${c['cableType'] ?? '-'} · ${c['tubeCount'] ?? '-'} tube × ${c['coresPerTube'] ?? '-'} core',
   metaOf: (c) => [str(c, 'manufacturer'), if (c['outerDiameter'] != null) 'Ø ${c['outerDiameter']} mm'].whereType<String>().join(' · '),
   statusOf: (c) => c['status'] == null ? null : _statusPill(c),
-  fields: (_) => [
+  fields: (c) => [
     const FieldSpec('code', 'Kode', required: true),
     const FieldSpec('name', 'Nama', required: true),
     FieldSpec('cableType', 'Jenis', type: FieldType.select, required: true, initial: 'GPON', options: [for (final c in _cableTypes) (c, c)]),
-    const FieldSpec('tubeCount', 'Jumlah tube', type: FieldType.integer, required: true, initial: 12, min: 1),
-    const FieldSpec('coresPerTube', 'Core per tube', type: FieldType.integer, required: true, initial: 12, min: 1),
+    FieldSpec('tubeCount', 'Jumlah tube', type: FieldType.integer, required: true, initial: 12, min: 1, readOnly: c != null, helper: c != null ? 'Tidak bisa diubah setelah kabel dibuat.' : null),
+    FieldSpec('coresPerTube', 'Core per tube', type: FieldType.integer, required: true, initial: 12, min: 1, readOnly: c != null, helper: c != null ? 'Tidak bisa diubah setelah kabel dibuat.' : null),
     const FieldSpec('outerDiameter', 'Diameter luar (mm)', type: FieldType.decimal),
     const FieldSpec('manufacturer', 'Pabrikan'),
     const FieldSpec('partNumber', 'Part number'),
