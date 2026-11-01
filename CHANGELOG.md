@@ -6,6 +6,28 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.28.1] - 2026-11-01 - Perbaikan Hasil Audit 5.28 + APK Admin 1.0.22
+
+### Summary
+Perbaikan dari audit commit 5.28.0 dan penyesuaian APK admin agar sama dengan web.
+
+### Backend
+- **[FIX]** Uji koneksi OLT saat mengubah OLT: username atau password yang dikosongkan (artinya tetap memakai yang tersimpan) kini diisi dari data tersimpan, tidak lagi diuji dengan password kosong dan menandai OLT sehat sebagai offline
+- **[FIX]** Konfigurasi splitter ODP dan ODC: nilai `null` kini dikirim sebagai `Prisma.DbNull`, tidak lagi menghasilkan error 500
+
+### APK Admin 1.0.22
+- **[FIX]** Peta Jaringan: OTB dan Joint Closure dibaca dari tabel aslinya (`/api/network/otbs` dan `joint-closures`), bukan `network_nodes` yang sudah kosong
+- **[FEATURE]** Peta Jaringan: layer Router (GPS), dan garis relasi OTB ke OLT serta ODC ke OTB atau OLT
+- **[FEATURE]** ODC dan ODP: aksi **Splitter** (jenis, rasio, panjang gelombang, loss, peta port) sama seperti web
+- **[FIX]** Kabel: jumlah tube dan core terkunci saat mengubah kabel, sama seperti web
+- **[FIX]** Perbaikan error kompilasi pada konstruktor titik peta
+- **[CHORE]** Workflow build APK kini juga berjalan otomatis saat tag `apk-v*` di-push
+
+### Catatan Pembaruan
+- Naikkan versi: root, backend, dan frontend `package.json` ke 5.28.1; aplikasi admin ke 1.0.22+23 (pelanggan 1.1.13, kolektor 1.0.1 tidak berubah)
+
+---
+
 ## [5.28.0] - 2026-11-01 - Satu Peta Jaringan + Relasi Otomatis + Audit Topologi dan Fiber
 
 ### Summary

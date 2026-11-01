@@ -384,6 +384,7 @@ CrudConfig odcsConfig() => CrudConfig(
   create: CrudRoutes.postTo('/api/network/odcs'),
   update: CrudRoutes.putWithBodyId('/api/network/odcs'),
   delete: CrudRoutes.deleteWithQueryId('/api/network/odcs'),
+  itemActions: [splitterAction('/api/network/odcs', 'splitterConfig')],
 );
 
 /// ODP — mirrors /admin/network/odps.
@@ -413,6 +414,7 @@ CrudConfig odpsConfig() => CrudConfig(
   create: CrudRoutes.postTo('/api/network/odps'),
   update: CrudRoutes.putWithBodyId('/api/network/odps'),
   delete: CrudRoutes.deleteWithQueryId('/api/network/odps'),
+  itemActions: [splitterAction('/api/network/odps', 'splitterDiagram')],
 );
 
 /// Joint closure — mirrors /admin/network/fiber-joint-closures.
@@ -1030,3 +1032,56 @@ Future<void> showLastVpnCredentials(BuildContext context) async {
   if (data == null || !context.mounted) return;
   await showResultScreen(context, title: 'Kredensial VPN', data: data, intro: 'Simpan kredensial ini — password tidak ditampilkan lagi.');
 }
+
+/// Splitter setup for ODC / ODP — same payload as the web SplitterSection
+/// (config with a port map, plus ratio and type columns).
+const _splitterRatios = {
+  '1:2': (2, 3.8, 3.5),
+  '1:4': (4, 7.4, 7.0),
+  '1:8': (8, 10.8, 10.5),
+  '1:16': (16, 14.0, 14.0),
+  '1:32': (32, 17.3, 18.0),
+  '1:64': (64, 21.0, 22.0),
+};
+
+CrudAction splitterAction(String path, String configKey) => CrudAction('Splitter', Icons.call_split_rounded, (ctx, o) async {
+  final raw = o[configKey];
+  final cfg = raw is Map ? Map<String, dynamic>.from(raw) : <String, dynamic>{};
+  return openForm(
+    ctx,
+    title: 'Splitter ${o['name'] ?? ''}',
+    initial: {
+      'splitterType': str(o, 'splitterType') ?? cfg['splitterType'] ?? 'PLC',
+      'splitterRatio': str(o, 'splitterRatio') ?? cfg['ratio'] ?? '1:8',
+      'wavelength': cfg['wavelength'] ?? '1310',
+      'inputLoss': cfg['inputLoss'] ?? 0.5,
+    },
+    fields: [
+      const FieldSpec('splitterType', 'Jenis splitter', type: FieldType.select, required: true, options: [('PLC', 'PLC (loss merata)'), ('FBT', 'FBT (lebih ekonomis)')]),
+      FieldSpec('splitterRatio', 'Rasio', type: FieldType.select, required: true, options: [for (final r in _splitterRatios.keys) (r, r)]),
+      const FieldSpec('wavelength', 'Panjang gelombang', type: FieldType.select, options: [('1310', '1310 nm'), ('1490', '1490 nm'), ('1550', '1550 nm')]),
+      const FieldSpec('inputLoss', 'Loss input (dB)', type: FieldType.decimal),
+    ],
+    success: 'Konfigurasi splitter disimpan.',
+    onSubmit: (v) async {
+      final ratio = '${v['splitterRatio']}';
+      final type = '${v['splitterType']}';
+      final info = _splitterRatios[ratio]!;
+      // Keep the port map when the ratio is unchanged; a new ratio starts fresh.
+      final keep = cfg['ratio'] == ratio && cfg['ports'] is List;
+      await _api.put(path, data: {
+        'id': o['id'],
+        'splitterRatio': ratio,
+        'splitterType': type,
+        'splitterConfig': {
+          'splitterType': type,
+          'ratio': ratio,
+          'inputLoss': v['inputLoss'] ?? 0.5,
+          'outputLoss': type == 'PLC' ? info.$2 : info.$3,
+          'wavelength': '${v['wavelength'] ?? '1310'}',
+          'ports': keep ? cfg['ports'] : [for (var i = 1; i <= info.$1; i++) {'portNumber': i, 'status': 'available'}],
+        },
+      });
+    },
+  );
+});
