@@ -23,9 +23,10 @@ class NetworkMapScreen extends StatefulWidget {
   State<NetworkMapScreen> createState() => _NetworkMapScreenState();
 }
 
-enum _Kind { olt, odc, odp, node, customer }
+enum _Kind { olt, odc, odp, node, router, customer }
 
 const _kindLabel = {
+  _Kind.router: 'Router',
   _Kind.olt: 'OLT',
   _Kind.odc: 'ODC',
   _Kind.odp: 'ODP',
@@ -34,6 +35,7 @@ const _kindLabel = {
 };
 
 const _kindIcon = {
+  _Kind.router: Icons.router_rounded,
   _Kind.olt: Icons.dns_rounded,
   _Kind.odc: Icons.hub_rounded,
   _Kind.odp: Icons.device_hub_rounded,
@@ -42,6 +44,7 @@ const _kindIcon = {
 };
 
 const _kindTone = {
+  _Kind.router: Tone.danger,
   _Kind.olt: Tone.violet,
   _Kind.odc: Tone.accent,
   _Kind.odp: Tone.success,
@@ -50,7 +53,7 @@ const _kindTone = {
 };
 
 class _Point {
-  _Point({required this.id, required this.kind, required this.name, required this.pos, required this.status, required this.rows, this.subtype, this.typePath});
+  _Point({required this.id, required this.kind, required this.name, required this.pos, required this.status, required this.rows, this.subtype, this.typePath, this.username});
   final String id;
   final _Kind kind;
   final String name;
@@ -121,8 +124,10 @@ class _NetworkMapScreenState extends State<NetworkMapScreen> {
       _get('/api/network/olts', 'OLT'),
       _get('/api/network/odcs', 'ODC'),
       _get('/api/network/odps', 'ODP'),
-      _get('/api/network/nodes?limit=2000', 'OTB / JC'),
+      _get('/api/network/otbs?limit=2000', 'OTB'),
       _get('/api/customers/with-location?limit=2000', 'Pelanggan'),
+      _get('/api/network/joint-closures', 'Joint Closure'),
+      _get('/api/network/routers', 'Router'),
     ]);
     if (!mounted) return;
 
@@ -190,31 +195,49 @@ class _NetworkMapScreenState extends State<NetworkMapScreen> {
         ],
       ));
     }
-    // network_nodes holds OTB and joint closures (and nodes added on the web's
-    // unified map). Skip one that is already on the map as an OLT/ODC/ODP.
-    final nodes = extractList(res[3], listKey: 'data');
-    for (final n in nodes) {
+    // OTB and joint closures live in their own tables (the old network_nodes
+    // table is no longer filled), same sources as the web Peta Jaringan.
+    final otbs = extractList(res[3], listKey: 'otbs');
+    final jcs = extractList(res[5], listKey: 'data');
+    void addNode(Map<String, dynamic> n, String label, String typePath) {
       final pos = _latLng(n);
-      if (pos == null) continue;
-      final type = _s(n['type']);
+      if (pos == null) return;
       final name = _s(n['name']);
-      final dup = points.any((p) => p.kind != _Kind.customer && p.name == name && (p.pos.latitude - pos.latitude).abs() < 1e-5 && (p.pos.longitude - pos.longitude).abs() < 1e-5);
-      if (dup) continue;
       add(_Point(
         id: _s(n['id']),
-        kind: switch (type) { 'OLT' => _Kind.olt, 'ODC' => _Kind.odc, 'ODP' => _Kind.odp, _ => _Kind.node },
-        subtype: type == 'JOINT_CLOSURE' ? 'Joint Closure' : type,
-        typePath: switch (type) {
-          'OTB' => 'otbs', 'JOINT_CLOSURE' => 'joint-closures', 'OLT' => 'olts',
-          'ODC' => 'odcs', 'ODP' => 'odps', _ => null,
-        },
+        kind: _Kind.node,
+        subtype: label,
+        typePath: typePath,
         name: name.isEmpty ? _s(n['code']) : name,
         pos: pos,
         status: _s(n['status']),
         rows: [
           if (_s(n['code']).isNotEmpty) ('Kode', _s(n['code'])),
-          ('Jenis', type == 'JOINT_CLOSURE' ? 'Joint Closure' : type),
+          ('Jenis', label),
+          if (n['olt'] is Map) ('OLT', _s((n['olt'] as Map)['name'])),
           if (_s(n['address']).isNotEmpty) ('Alamat', _s(n['address'])),
+        ],
+      ));
+    }
+    for (final n in otbs) {
+      addNode(n, 'OTB', 'otbs');
+    }
+    for (final n in jcs) {
+      addNode(n, 'Joint Closure', 'joint-closures');
+    }
+    final routers = extractList(res[6], listKey: 'routers');
+    for (final r in routers) {
+      final pos = _latLng(r);
+      if (pos == null) continue;
+      add(_Point(
+        id: 'r:${_s(r['id'])}',
+        kind: _Kind.router,
+        name: _s(r['name']),
+        pos: pos,
+        status: r['isActive'] == false ? 'inactive' : 'active',
+        rows: [
+          if (_s(r['ipAddress']).isNotEmpty) ('IP', _s(r['ipAddress'])),
+          if (_s(r['type']).isNotEmpty) ('Jenis', _s(r['type'])),
         ],
       ));
     }
@@ -245,21 +268,22 @@ class _NetworkMapScreenState extends State<NetworkMapScreen> {
       }
     }
 
-    // Cable path: ODC → OLT, ODP → parent ODP / ODC / OLT.
-    for (final o in odcs) {
+    // Relations come from the parent columns (same as the web map):
+    // OTB → OLT, ODC → OTB / OLT, ODP → parent ODP / ODC / OLT.
+    for (final o in otbs) {
       final from = byId[_s(o['id'])];
       final to = byId[_s(o['oltId'])];
+      if (from != null && to != null) lines.add((from.pos, to.pos, _Kind.node));
+    }
+    for (final o in odcs) {
+      final from = byId[_s(o['id'])];
+      final to = byId[_s(o['otbId'])] ?? byId[_s(o['oltId'])];
       if (from != null && to != null) lines.add((from.pos, to.pos, _Kind.odc));
     }
     for (final o in odps) {
       final from = byId[_s(o['id'])];
       final to = byId[_s(o['parentOdpId'])] ?? byId[_s(o['odcId'])] ?? byId[_s(o['oltId'])];
       if (from != null && to != null) lines.add((from.pos, to.pos, _Kind.odp));
-    }
-    for (final n in nodes) {
-      final from = byId[_s(n['id'])];
-      final to = byId[_s(n['upstreamId'])];
-      if (from != null && to != null) lines.add((from.pos, to.pos, _Kind.node));
     }
 
     setState(() {

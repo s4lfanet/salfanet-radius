@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
+import { Prisma } from '@prisma/client';
 import { nanoid } from 'nanoid';
 import { requirePermission } from '@/server/middleware/api-auth';
 
@@ -140,7 +141,7 @@ export async function PUT(request: NextRequest) {
         ...(portCount !== undefined && { portCount: parseInt(portCount) }),
         ...(followRoad !== undefined && { followRoad }),
         ...(status && { status }),
-        ...(splitterConfig !== undefined && { splitterConfig }),
+        ...(splitterConfig !== undefined && { splitterConfig: splitterConfig === null ? Prisma.DbNull : splitterConfig }),
         ...(splitterRatio !== undefined && { splitterRatio }),
         ...(splitterType !== undefined && { splitterType }),
       },

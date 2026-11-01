@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
+import { Prisma } from '@prisma/client';
 import { nanoid } from 'nanoid';
 import { requirePermission } from '@/server/middleware/api-auth';
 
@@ -150,7 +151,7 @@ export async function PUT(request: NextRequest) {
         ...(status && { status }),
         // networkODP has no splitterConfig column; persist the port map in
         // the unused splitterDiagram Json field instead.
-        ...(splitterConfig !== undefined && { splitterDiagram: splitterConfig }),
+        ...(splitterConfig !== undefined && { splitterDiagram: splitterConfig === null ? Prisma.DbNull : splitterConfig }),
         ...(splitterRatio !== undefined && { splitterRatio }),
         ...(splitterType !== undefined && { splitterType }),
       },

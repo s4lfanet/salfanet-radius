@@ -50,9 +50,12 @@ export async function POST(request: NextRequest) {
       if (!body.ipAddress) {
         return NextResponse.json({ error: 'ipAddress is required when oltId is not provided' }, { status: 400 });
       }
+      // A blank username/password while editing means "keep the saved one",
+      // so fall back to the stored value.
+      const saved = oltId ? await prisma.networkOLT.findUnique({ where: { id: oltId } }) : null;
       ipAddress = body.ipAddress;
-      username = body.username || null;
-      password = body.password || null;
+      username = body.username || saved?.username || null;
+      password = body.password || saved?.password || null;
       snmpCommunity = body.snmpCommunity || 'public';
       sshPort = body.sshPort ? parseInt(String(body.sshPort)) : 22;
       telnetPort = body.telnetPort ? parseInt(String(body.telnetPort)) : 23;
