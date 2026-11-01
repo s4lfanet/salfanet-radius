@@ -5,11 +5,12 @@ import { createPortal } from 'react-dom';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Server, Plus, Trash2, Edit, CheckCircle, XCircle, Copy, Loader2, Shield, Radio, Wifi, Activity, RefreshCw, X, ChevronDown, ChevronUp, Info, ArrowRightCircle, RefreshCcw } from 'lucide-react';
+import { Server, Plus, Trash2, Edit, MapPin, Map as MapIcon, CheckCircle, XCircle, Copy, Loader2, Shield, Radio, Wifi, Activity, RefreshCw, X, ChevronDown, ChevronUp, Info, ArrowRightCircle, RefreshCcw } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
 import { pppoeApi } from '@/lib/api/pppoe';
 import { useApiQuery, useApiMutation, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import { NumberInput } from '@/components/ui/number-input';
+import MapPicker from '@/components/MapPicker';
 
 interface Router {
   id: string
@@ -28,6 +29,8 @@ interface Router {
   community?: string
   description?: string
   vpnClientId?: string
+  latitude?: number | null
+  longitude?: number | null
   vpnClient?: {
     id: string
     name: string
@@ -111,7 +114,10 @@ export default function RouterPage() {
     community: '',
     description: '',
     vpnClientId: '',
+    latitude: '',
+    longitude: '',
   })
+  const [showMapPicker, setShowMapPicker] = useState(false)
   const [useVpnClient, setUseVpnClient] = useState(false)
   const [testResult, setTestResult] = useState<{
     success: boolean
@@ -312,7 +318,7 @@ export default function RouterPage() {
     setFormData({
       name: '', nasname: '', shortname: '', type: 'mikrotik', authMode: 'radius',
       ipAddress: '', username: '', password: '',
-      port: '8728', secret: generateSecret(), ports: '1812', server: '', community: '', description: '', vpnClientId: '',
+      port: '8728', secret: generateSecret(), ports: '1812', server: '', community: '', description: '', vpnClientId: '', latitude: '', longitude: '',
     })
     setTestResult(null)
     setUseVpnClient(false)
@@ -327,6 +333,8 @@ export default function RouterPage() {
       port: routerData.port.toString(), secret: routerData.secret,
       ports: routerData.ports.toString(), server: routerData.server || '', community: routerData.community || '',
       description: routerData.description || '', vpnClientId: routerData.vpnClientId || '',
+      latitude: routerData.latitude != null ? String(routerData.latitude) : '',
+      longitude: routerData.longitude != null ? String(routerData.longitude) : '',
     })
     setUseVpnClient(!!routerData.vpnClientId)
     setTestResult(null)
@@ -931,6 +939,62 @@ export default function RouterPage() {
                   />
                 </div>
 
+                {/* GPS location (optional) - shown on the Peta Jaringan */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-brand-500">Lokasi GPS (opsional)</label>
+                    <div className="flex gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setShowMapPicker(true)}
+                        className="inline-flex items-center px-2.5 py-1 text-xs bg-brand-500 text-black font-bold rounded-lg"
+                      >
+                        <MapIcon className="w-3 h-3 mr-1" /> Pilih di Peta
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!navigator.geolocation) { showError(t('common.gpsNotAvailableInBrowser')); return }
+                          navigator.geolocation.getCurrentPosition(
+                            (pos) => {
+                              setFormData(prev => ({ ...prev, latitude: pos.coords.latitude.toFixed(6), longitude: pos.coords.longitude.toFixed(6) }))
+                              showSuccess(t('common.gpsSuccess'))
+                            },
+                            (err) => showError(err.code === 1 ? t('common.gpsPermissionDenied') : err.code === 3 ? t('common.gpsTimeout') : t('common.gpsFailedGet')),
+                            { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+                          )
+                        }}
+                        className="inline-flex items-center px-2.5 py-1 text-xs bg-green-500 text-black font-bold rounded-lg"
+                      >
+                        <MapPin className="w-3 h-3 mr-1" /> Auto GPS
+                      </button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <input
+                      type="number"
+                      step="any"
+                      min={-90}
+                      max={90}
+                      value={formData.latitude}
+                      onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
+                      className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition"
+                      placeholder="Latitude, contoh -7.071285"
+                    />
+                    <input
+                      type="number"
+                      step="any"
+                      min={-180}
+                      max={180}
+                      value={formData.longitude}
+                      onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
+                      className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition"
+                      placeholder="Longitude, contoh 108.044771"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1.5">Router yang punya koordinat tampil di Peta Jaringan.</p>
+                </div>
+
                 {/* API Port - only show for MikroTik routers, not gateway/VPS */}
                 {formData.type === 'mikrotik' && (
                 <div>
@@ -1049,6 +1113,14 @@ export default function RouterPage() {
           </div>
         )}
       </main>
+
+      <MapPicker
+        isOpen={showMapPicker}
+        onClose={() => setShowMapPicker(false)}
+        onSelect={(lat, lng) => setFormData(prev => ({ ...prev, latitude: lat.toFixed(6), longitude: lng.toFixed(6) }))}
+        initialLat={formData.latitude ? parseFloat(formData.latitude) : undefined}
+        initialLng={formData.longitude ? parseFloat(formData.longitude) : undefined}
+      />
     </>
   )
 }
