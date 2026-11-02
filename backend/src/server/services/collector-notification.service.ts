@@ -73,3 +73,49 @@ export async function notifyCollectorsOfPayments(
   }
   await Promise.all([...byCollector].map(([id, t]) => notifyCollector(id, build(t.count, t.amount))));
 }
+
+/**
+ * A customer settled an invoice without a collector (transfer, payment
+ * gateway, QRIS, or the office): tell the collectors who work that
+ * customer's area or router, so nobody drives out to collect what is
+ * already paid. Best effort; the payment must never fail because of this.
+ */
+export async function notifyCollectorsCustomerPaid(args: {
+  userId: string;
+  invoiceNumber: string;
+  amount: number;
+  /** The collector who took the payment, who already knows. */
+  excludeCollectorId?: string | null;
+}): Promise<void> {
+  try {
+    const customer = await prisma.pppoeUser.findUnique({
+      where: { id: args.userId },
+      select: { name: true, username: true, areaId: true, routerId: true },
+    });
+    if (!customer) return;
+
+    const collectors = await prisma.adminUser.findMany({
+      where: { role: 'COLLECTOR', isActive: true, ...(args.excludeCollectorId ? { id: { not: args.excludeCollectorId } } : {}) },
+      select: { id: true, areaId: true, collectorRouterIds: true },
+    });
+    const { inScope, parseRouterIds } = await import('@/server/auth/collector-scope');
+    // A collector with no area and no router works nobody (inScope alone would match everyone).
+    const targets = collectors.filter((c) => {
+      const routerIds = parseRouterIds(c.collectorRouterIds);
+      return (c.areaId || routerIds.length) && inScope({ areaId: c.areaId, routerIds }, customer);
+    });
+
+    await Promise.all(
+      targets.map((c) =>
+        notifyCollector(c.id, {
+          type: 'customer_paid',
+          title: 'Pelanggan Sudah Membayar',
+          message: `${customer.name || customer.username} melunasi ${args.invoiceNumber} (${fmtRupiah(args.amount)}). Tidak perlu ditagih lagi.`,
+          link: '/collector/billing',
+        }),
+      ),
+    );
+  } catch (error) {
+    console.error('[CollectorNotify] Customer-paid notice failed:', error instanceof Error ? error.message : error);
+  }
+}

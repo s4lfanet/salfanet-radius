@@ -364,6 +364,10 @@ export async function handleInvoicePayment(
           console.error('Push notification error:', pushError);
         }
 
+        // Collectors of this customer's area/router: no need to collect it now.
+        const { notifyCollectorsCustomerPaid } = await import('@/server/services/collector-notification.service');
+        await notifyCollectorsCustomerPaid({ userId: user.id, invoiceNumber: invoice.invoiceNumber, amount: invoice.amount });
+
         // ============================================
         // SEND EMAIL NOTIFICATION FOR PAYMENT SUCCESS
         // ============================================

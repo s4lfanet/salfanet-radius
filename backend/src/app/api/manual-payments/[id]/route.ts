@@ -338,6 +338,8 @@ export async function PATCH(
           companyName: company?.name || '',
           companyPhone: company?.phone || '',
         });
+        const { notifyCollectorsCustomerPaid } = await import('@/server/services/collector-notification.service');
+        await notifyCollectorsCustomerPaid({ userId: manualPayment.userId, invoiceNumber: manualPayment.invoice.invoiceNumber, amount: manualPayment.invoice.amount });
       } catch (pushErr) {
         console.error('[Manual Payment APPROVE] FCM push error:', pushErr);
       }

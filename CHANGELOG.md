@@ -6,6 +6,19 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.33.1] - 2026-11-02 - Kolektor Diberi Tahu Saat Pelanggan Sudah Membayar
+
+### Notifikasi baru
+- **[FEATURE]** Pelanggan ke kolektor: saat pelanggan melunasi tagihan lewat transfer yang disetujui admin, payment gateway, QRIS, atau dicatat admin, kolektor yang area atau router/NAS-nya mencakup pelanggan itu mendapat notifikasi (lonceng, web push, dan FCM): "Pelanggan Sudah Membayar, tidak perlu ditagih lagi". Kolektor yang memang menerima pembayaran itu tidak diberi tahu, dan kolektor tanpa area dan router tidak pernah menerimanya
+
+### Aplikasi
+- **[FEATURE]** Kolektor 1.4.1: notifikasi baru memakai ikon pembayaran di layar Notifikasi
+
+### Catatan Pembaruan
+- Naikkan versi: root, backend, frontend ke 5.33.1; aplikasi kolektor 1.4.1+10
+
+---
+
 ## [5.33.0] - 2026-11-02 - Audit Notifikasi: Lonceng Kolektor dan Notifikasi Antar Peran
 
 ### Penyebab

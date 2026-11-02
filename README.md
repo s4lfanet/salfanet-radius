@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.33.0 - Audit Notifikasi: Lonceng Kolektor dan Notifikasi Antar Peran
+> **Version:** 5.33.1 - Kolektor Diberi Tahu Saat Pelanggan Sudah Membayar
 
 ---
 
@@ -1111,6 +1111,17 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.33.1 — 2026-11-02 - Kolektor Diberi Tahu Saat Pelanggan Sudah Membayar
+
+### Notifikasi baru
+- **[FEATURE]** Pelanggan ke kolektor: saat pelanggan melunasi tagihan lewat transfer yang disetujui admin, payment gateway, QRIS, atau dicatat admin, kolektor yang area atau router/NAS-nya mencakup pelanggan itu mendapat notifikasi (lonceng, web push, dan FCM): "Pelanggan Sudah Membayar, tidak perlu ditagih lagi". Kolektor yang memang menerima pembayaran itu tidak diberi tahu, dan kolektor tanpa area dan router tidak pernah menerimanya
+
+### Aplikasi
+- **[FEATURE]** Kolektor 1.4.1: notifikasi baru memakai ikon pembayaran di layar Notifikasi
+
+### Catatan Pembaruan
+- Naikkan versi: root, backend, frontend ke 5.33.1; aplikasi kolektor 1.4.1+10
+
 ### v5.33.0 — 2026-11-02 - Audit Notifikasi: Lonceng Kolektor dan Notifikasi Antar Peran
 
 ### Penyebab
@@ -1180,23 +1191,6 @@ Cabut ONT kini selalu diperintahkan admin, ke teknisi, kolektor, atau keduanya. 
 
 ### Catatan Pembaruan
 - Naikkan versi: root, backend, frontend ke 5.31.1; aplikasi admin 1.0.25+26, kolektor 1.2.2+7
-
-### v5.31.0 — 2026-11-01 - Pembaruan Aplikasi Langsung dari GitHub
-
-### Summary
-Aplikasi admin, pelanggan, dan kolektor bisa ditawari update langsung dari build GitHub, tanpa mengunggah APK ke server lebih dulu.
-
-### Backend dan Panel
-- **[FEATURE]** Sumber pembaruan aplikasi di Download APK: **Unggahan sendiri** (bawaan) atau **GitHub**. Dengan GitHub, `/api/public/apk-releases` menawarkan build terbaru dari rilis `apk-latest` sesuai arsitektur HP (`?abi=`), dan kembali ke APK unggahan bila GitHub tidak terjangkau. Hanya Super Admin yang bisa mengubahnya
-- **[FEATURE]** Workflow Build Native APKs menerbitkan `salfanet-<app>-manifest.json` (versi dan berkas tiap ABI) ke rilis `apk-latest`
-- **[CHORE]** Repositori sumber bisa diganti dengan `APK_GITHUB_REPO` (bawaan `s4lfanet/salfanet-radius`)
-
-### Aplikasi
-- **[FEATURE]** Ketiga aplikasi mengirim arsitektur HP (arm64, armeabi-v7a, x86_64) saat memeriksa pembaruan, supaya HP 32-bit tidak ditawari APK 64-bit. Admin 1.0.24, pelanggan 1.1.14, kolektor 1.2.1
-
-### Catatan Pembaruan
-- Pilih sumber GitHub hanya bila APK Anda memang build dari repositori ini. APK dengan logo atau kunci tanda tangan sendiri ditolak Android saat update, jadi tetap pakai Unggahan sendiri
-- Naikkan versi: root, backend, frontend ke 5.31.0
 
 <!-- AUTO-CHANGELOG:END -->
 

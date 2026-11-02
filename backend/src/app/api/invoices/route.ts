@@ -383,6 +383,16 @@ export async function PUT(request: NextRequest) {
         });
       }
 
+      if (user && existingInvoice.userId) {
+        const { notifyCollectorsCustomerPaid } = await import('@/server/services/collector-notification.service');
+        await notifyCollectorsCustomerPaid({
+          userId: existingInvoice.userId,
+          invoiceNumber: existingInvoice.invoiceNumber,
+          amount: existingInvoice.amount,
+          excludeCollectorId: collectorId ? String(collectorId) : null,
+        });
+      }
+
       if (!user) {
         console.log('[Invoice Payment] User not found, skipping activation');
         return ok({ invoice });

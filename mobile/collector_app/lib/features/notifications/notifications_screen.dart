@@ -32,6 +32,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       case 'settlement_confirmed':
       case 'settlement_unconfirmed':
       case 'payment_assigned':
+      case 'customer_paid':
       case 'payment':
         return (Icons.payments_outlined, Tone.success);
       case 'proof_approved':
