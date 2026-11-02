@@ -10,6 +10,7 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
 import 'features/auth/auth_provider.dart';
 import 'features/auth/login_screen.dart';
+import 'features/notifications/notifications_provider.dart';
 import 'features/shell/main_shell.dart';
 import 'features/splash/splash_screen.dart';
 
@@ -32,6 +33,7 @@ class CollectorApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider.value(value: themeController),
         ChangeNotifierProvider(create: (_) => AuthProvider()..bootstrap()),
+        ChangeNotifierProvider(create: (_) => NotificationsProvider()),
       ],
       child: Consumer<ThemeController>(
         builder: (context, theme, _) => MaterialApp(

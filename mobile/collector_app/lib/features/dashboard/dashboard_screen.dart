@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/formatters.dart';
+import '../../core/push/push_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/state_views.dart';
+import '../notifications/notifications_provider.dart';
+import '../notifications/notifications_screen.dart';
 
 /// Answers the collector's first question: "berapa yang belum tertagih
 /// bulan ini" — same summary the web portal's dashboard card shows.
@@ -41,6 +45,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _load();
+    PushService.instance.incoming.addListener(_refreshBell);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshBell());
+  }
+
+  @override
+  void dispose() {
+    PushService.instance.incoming.removeListener(_refreshBell);
+    super.dispose();
+  }
+
+  /// Keeps the bell's unread count current: on open, when a push arrives, and when the app returns.
+  void _refreshBell() {
+    if (mounted) context.read<NotificationsProvider>().load(quiet: true);
   }
 
   Future<void> _load() async {
@@ -66,7 +83,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Dashboard Kolektor')),
+      appBar: AppBar(
+        title: const Text('Dashboard Kolektor'),
+        actions: [
+          Builder(builder: (context) {
+            final unread = context.watch<NotificationsProvider>().unreadCount;
+            return IconButton(
+              tooltip: 'Notifikasi',
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsScreen())),
+              icon: Badge(
+                isLabelVisible: unread > 0,
+                label: Text(unread > 99 ? '99+' : '$unread'),
+                child: const Icon(Icons.notifications_outlined),
+              ),
+            );
+          }),
+        ],
+      ),
       body: DataStateView(
         loading: _loading && _summary == null,
         error: _error,

@@ -140,6 +140,10 @@ class PushService with WidgetsBindingObserver {
   PushService._();
   static final PushService instance = PushService._();
 
+  /// Bumped when a push arrives while the app is open and when the app comes
+  /// back to the foreground, so the dashboard bell can refresh its count.
+  final ValueNotifier<int> incoming = ValueNotifier(0);
+
   /// True when FCM is running and tokens can be registered.
   bool available = false;
   bool _initialized = false;
@@ -231,6 +235,7 @@ class PushService with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      incoming.value++;
       // Picks up Firebase being set up (or removed) on the server meanwhile.
       unawaited(_refreshConfig());
     } else if (state == AppLifecycleState.paused) {
@@ -324,6 +329,7 @@ class PushService with WidgetsBindingObserver {
   }
 
   void _showForegroundNotification(RemoteMessage message) {
+    incoming.value++;
     final notification = message.notification;
     if (notification == null) return;
     _localNotifications.show(

@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.32.1 - Pusat Panduan Dimuat Ulang dan Diperbarui
+> **Version:** 5.33.0 - Audit Notifikasi: Lonceng Kolektor dan Notifikasi Antar Peran
 
 ---
 
@@ -1111,6 +1111,26 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.33.0 — 2026-11-02 - Audit Notifikasi: Lonceng Kolektor dan Notifikasi Antar Peran
+
+### Penyebab
+- APK kolektor tidak punya ikon lonceng di dashboard, dan layar Notifikasinya selalu kosong karena membaca kunci `notifications` sedangkan server mengirim `events`. Tidak ada status dibaca
+- Beberapa kejadian lintas peran tidak memberi tahu pihak lawannya: permintaan suspend dan top-up pelanggan tidak sampai ke admin, keputusan admin atas keduanya tidak sampai ke pelanggan, janji bayar kolektor tidak sampai ke admin dan pelanggan, dan laporan cabut ONT tidak sampai ke admin
+
+### Aplikasi
+- **[FEATURE]** Kolektor 1.4.0: ikon lonceng dengan jumlah belum dibaca di dashboard, layar Notifikasi yang benar (daftar, tanda belum dibaca, ketuk untuk menandai dibaca dan membuka Setoran, Bukti Transfer, atau Cabut ONT, serta Tandai semua dibaca)
+- **[FEATURE]** Lonceng di aplikasi kolektor, admin 1.0.28, dan pelanggan 1.1.15 menyegarkan jumlahnya saat ada push masuk dan saat aplikasi kembali dibuka, bukan hanya saat dashboard dibuka
+- **[CHORE]** Dua berkas kolektor yang tidak terpakai dan tidak bisa dikompilasi (`crud_list_screen.dart`, `files.dart`) dihapus
+
+### Notifikasi baru
+- **[FEATURE]** Pelanggan ke admin: permintaan suspend, permintaan top-up saldo
+- **[FEATURE]** Admin ke pelanggan: permintaan suspend disetujui atau ditolak, top-up disetujui atau ditolak
+- **[FEATURE]** Kolektor ke admin dan pelanggan: janji bayar tercatat (admin lewat lonceng dan FCM, pelanggan lewat push)
+- **[FEATURE]** Kolektor atau teknisi ke admin: laporan cabut ONT selesai atau tidak bisa dikerjakan
+
+### Catatan Pembaruan
+- Naikkan versi: root, backend, frontend ke 5.33.0; admin 1.0.28+29, pelanggan 1.1.15+17, kolektor 1.4.0+9
+
 ### v5.32.1 — 2026-11-02 - Pusat Panduan Dimuat Ulang dan Diperbarui
 
 ### Penyebab
@@ -1177,25 +1197,6 @@ Aplikasi admin, pelanggan, dan kolektor bisa ditawari update langsung dari build
 ### Catatan Pembaruan
 - Pilih sumber GitHub hanya bila APK Anda memang build dari repositori ini. APK dengan logo atau kunci tanda tangan sendiri ditolak Android saat update, jadi tetap pakai Unggahan sendiri
 - Naikkan versi: root, backend, frontend ke 5.31.0
-
-### v5.30.0 — 2026-11-01 - Menu dan Daftar Pelanggan APK Kolektor dan Admin
-
-### Summary
-Data pelanggan di APK kolektor disamakan dengan portal kolektor web, dan menu kedua APK ditata ulang mengikuti kategori di web serta diberi kolom pencarian.
-
-### Aplikasi Kolektor 1.2.0
-- **[FEATURE]** Daftar pelanggan sama dengan web: filter Semua, Aktif, Isolir, Belum lunas, dan Lunas dengan jumlahnya, filter Area dan Router/NAS dari wilayah tugas, ringkasan jumlah dan total tunggakan, serta pencarian nama, ID, username, nomor HP, dan alamat
-- **[FEATURE]** Kartu pelanggan memuat paket dan harga, router dan area, tanggal aktif, alamat, telepon, status pelanggan, status pembayaran beserta jumlah tagihan atau tanggal terakhir dibayar, dan tombol berlabel Tagih, Telepon, WhatsApp (pesan pengingat sama dengan web), dan Rute
-- **[UI]** Tab bawah sama dengan web: Ringkasan, Tagihan, Pelanggan, Isolir, dan Menu. Setoran Saya, Koleksi Saya, Bukti Transfer, dan Cabut ONT ada di Menu dengan nama yang sama seperti di web
-- **[FEATURE]** Menu punya kolom pencarian yang mencari nama dan keterangan menu
-
-### Aplikasi Admin 1.0.23
-- **[UI]** Menu Lainnya ditata ulang mengikuti sidebar web: Pelanggan dan Layanan, Keuangan, Jaringan, Infrastruktur, Manajemen, dan Notifikasi. Tiap kategori bisa dibuka dan ditutup dan punya sub-judul (PPPoE, Hotspot, Isolasi, OLT dan ONU, Topologi, Fiber, dan seterusnya)
-- **[FEATURE]** Kolom pencarian menu: mencari nama, keterangan, kategori, dan sub-judul, dan menampilkan letak menu di hasilnya
-- **[FIX]** Menu Penarikan ONT tersembunyi di urutan paling bawah kategori Jaringan. Kini bernama **Tugas Cabut ONT** (sama dengan web) dan ada di Pelanggan dan Layanan, Isolasi
-
-### Catatan Pembaruan
-- Naikkan versi: root, backend, frontend ke 5.30.0; aplikasi admin 1.0.23+24, kolektor 1.2.0+5
 
 <!-- AUTO-CHANGELOG:END -->
 

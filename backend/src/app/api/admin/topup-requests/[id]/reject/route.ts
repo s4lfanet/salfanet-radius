@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
+import { notifyAdmins, pushToCustomer } from '@/server/services/notifications/event-notices.service';
 
 export async function POST(
   request: NextRequest,
@@ -45,6 +46,15 @@ export async function POST(
       return NextResponse.json(
         { error: `Transaksi sudah diproses (status: ${currentStatus})` },
         { status: 409 }
+      );
+    }
+
+    const rejected = transaction.notes ? JSON.parse(transaction.notes) : {};
+    if (rejected.pppoeUserId) {
+      await pushToCustomer(
+        rejected.pppoeUserId,
+        'Top-Up Saldo Ditolak',
+        `Permintaan top-up Rp ${Number(transaction.amount).toLocaleString('id-ID')} ditolak. Hubungi admin bila ada pertanyaan.`,
       );
     }
 

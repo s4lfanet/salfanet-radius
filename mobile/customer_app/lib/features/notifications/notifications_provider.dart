@@ -8,17 +8,19 @@ class NotificationsProvider extends ChangeNotifier {
   bool loading = false;
   String? error;
 
-  Future<void> load() async {
-    loading = true;
-    error = null;
-    notifyListeners();
+  Future<void> load({bool quiet = false}) async {
+    if (!quiet) {
+      loading = true;
+      error = null;
+      notifyListeners();
+    }
     try {
       final res = await ApiClient.instance.get('/api/customer/notifications');
       final list = res['events'] as List? ?? const [];
       events = list.map((e) => NotificationEvent.fromJson(e as Map<String, dynamic>)).toList();
       unreadCount = (res['unreadCount'] as num?)?.toInt() ?? 0;
     } on ApiException catch (e) {
-      error = e.message;
+      if (!quiet) error = e.message;
     } finally {
       loading = false;
       notifyListeners();

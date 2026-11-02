@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../core/crud/crud_list_screen.dart';
 import '../../core/forms/form_screen.dart';
 import '../../core/formatters.dart';
+import '../../core/push/push_service.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
@@ -48,10 +49,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
+    PushService.instance.incoming.addListener(_refreshBell);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<DashboardProvider>().load();
       context.read<NotificationsProvider>().load();
     });
+  }
+
+  /// Keeps the bell's unread count current when a push arrives or the app returns.
+  void _refreshBell() {
+    if (mounted) context.read<NotificationsProvider>().load();
+  }
+
+  @override
+  void dispose() {
+    PushService.instance.incoming.removeListener(_refreshBell);
+    super.dispose();
   }
 
   Future<void> _refresh() async {

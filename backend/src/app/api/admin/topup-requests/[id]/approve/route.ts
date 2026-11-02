@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
+import { notifyAdmins, pushToCustomer } from '@/server/services/notifications/event-notices.service';
 
 export async function POST(
   request: NextRequest,
@@ -103,7 +104,11 @@ export async function POST(
       );
     }
 
-    // TODO: Send WhatsApp/Email notification to user
+    await pushToCustomer(
+      pppoeUserId,
+      'Top-Up Saldo Disetujui',
+      `Top-up Rp ${Number(transaction.amount).toLocaleString('id-ID')} sudah masuk. Saldo Anda sekarang Rp ${Number(result.user!.balance).toLocaleString('id-ID')}.`,
+    );
 
     return NextResponse.json({
       success: true,

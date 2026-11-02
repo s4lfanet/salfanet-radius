@@ -4,6 +4,7 @@ import { verifyCollector } from '@/server/auth/collector-auth';
 import { getCollectorScope, inScope } from '@/server/auth/collector-scope';
 import { managePppSecret, kickPppoeSession, shouldManagePppSecretForSuspend } from '@/server/services/mikrotik/ppp-secret.service';
 import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service';
+import { notifyAdmins, pushToCustomer } from '@/server/services/notifications/event-notices.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -160,6 +161,17 @@ export async function POST(req: NextRequest) {
         console.error(`[CollectorPromise] RADIUS restore error for ${user.username}:`, radiusErr?.message);
       }
     }
+
+    const when = promiseDateObj.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta' });
+    await Promise.all([
+      notifyAdmins({
+        type: 'payment_promise',
+        title: 'Janji Bayar dari Kolektor',
+        message: `${collector.name} mencatat janji bayar ${user.username} sampai ${when}.`,
+        link: '/admin/isolated-users',
+      }),
+      pushToCustomer(user.id, 'Janji Bayar Tercatat', `Janji bayar Anda tercatat sampai ${when}. Mohon lunasi sebelum tanggal itu agar layanan tidak diisolir.`),
+    ]);
 
     return NextResponse.json(
       { success: true, message: 'Janji bayar tercatat dengan lokasi GPS. Akses internet dibuka hingga tanggal janji.', promise },

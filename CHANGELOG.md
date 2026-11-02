@@ -6,6 +6,28 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.33.0] - 2026-11-02 - Audit Notifikasi: Lonceng Kolektor dan Notifikasi Antar Peran
+
+### Penyebab
+- APK kolektor tidak punya ikon lonceng di dashboard, dan layar Notifikasinya selalu kosong karena membaca kunci `notifications` sedangkan server mengirim `events`. Tidak ada status dibaca
+- Beberapa kejadian lintas peran tidak memberi tahu pihak lawannya: permintaan suspend dan top-up pelanggan tidak sampai ke admin, keputusan admin atas keduanya tidak sampai ke pelanggan, janji bayar kolektor tidak sampai ke admin dan pelanggan, dan laporan cabut ONT tidak sampai ke admin
+
+### Aplikasi
+- **[FEATURE]** Kolektor 1.4.0: ikon lonceng dengan jumlah belum dibaca di dashboard, layar Notifikasi yang benar (daftar, tanda belum dibaca, ketuk untuk menandai dibaca dan membuka Setoran, Bukti Transfer, atau Cabut ONT, serta Tandai semua dibaca)
+- **[FEATURE]** Lonceng di aplikasi kolektor, admin 1.0.28, dan pelanggan 1.1.15 menyegarkan jumlahnya saat ada push masuk dan saat aplikasi kembali dibuka, bukan hanya saat dashboard dibuka
+- **[CHORE]** Dua berkas kolektor yang tidak terpakai dan tidak bisa dikompilasi (`crud_list_screen.dart`, `files.dart`) dihapus
+
+### Notifikasi baru
+- **[FEATURE]** Pelanggan ke admin: permintaan suspend, permintaan top-up saldo
+- **[FEATURE]** Admin ke pelanggan: permintaan suspend disetujui atau ditolak, top-up disetujui atau ditolak
+- **[FEATURE]** Kolektor ke admin dan pelanggan: janji bayar tercatat (admin lewat lonceng dan FCM, pelanggan lewat push)
+- **[FEATURE]** Kolektor atau teknisi ke admin: laporan cabut ONT selesai atau tidak bisa dikerjakan
+
+### Catatan Pembaruan
+- Naikkan versi: root, backend, frontend ke 5.33.0; admin 1.0.28+29, pelanggan 1.1.15+17, kolektor 1.4.0+9
+
+---
+
 ## [5.32.1] - 2026-11-02 - Pusat Panduan Dimuat Ulang dan Diperbarui
 
 ### Penyebab

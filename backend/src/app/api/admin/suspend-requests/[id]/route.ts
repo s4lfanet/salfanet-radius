@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
+import { notifyAdmins, pushToCustomer } from '@/server/services/notifications/event-notices.service';
 
 /**
  * PUT /api/admin/suspend-requests/[id]
@@ -66,6 +67,14 @@ export async function PUT(
     // If endDate is in the future, schedule unsuspend via cron is handled by existing cron job
     // (cron checks suspendRequests APPROVED where endDate <= now → restore 'active')
   }
+
+  await pushToCustomer(
+    req.userId,
+    action === 'APPROVE' ? 'Permintaan Suspend Disetujui' : 'Permintaan Suspend Ditolak',
+    action === 'APPROVE'
+      ? 'Permintaan cuti langganan Anda disetujui.'
+      : `Permintaan cuti langganan Anda ditolak${adminNotes?.trim() ? `: ${adminNotes.trim().slice(0, 100)}` : '.'}`,
+  );
 
   return NextResponse.json({ success: true, data: updated });
 }

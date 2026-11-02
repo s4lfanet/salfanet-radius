@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { verifyCollector } from '@/server/auth/collector-auth';
 import { reconcileOntTasks } from '@/server/services/ont-removal-task.service';
+import { notifyAdmins, pushToCustomer } from '@/server/services/notifications/event-notices.service';
 
 /**
  * PATCH - the collector reports on a task an admin assigned to them:
@@ -52,6 +53,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (claimed.count === 0) {
       return NextResponse.json({ error: 'Task sudah diselesaikan atau dibatalkan oleh pihak lain' }, { status: 409 });
     }
+    await notifyAdmins({
+      type: 'ont_task_update',
+      title: action === 'complete' ? 'ONT Sudah Dicabut' : 'Tugas Cabut ONT Tidak Bisa Dikerjakan',
+      message: action === 'complete'
+        ? `${collector.name} melaporkan ONT ${task.username} sudah dicabut${text ? `: ${text.slice(0, 80)}` : ''}.`
+        : `${collector.name} tidak bisa mengerjakan cabut ONT ${task.username}: ${text.slice(0, 80)}.`,
+      link: '/admin/ont-removal-tasks',
+    });
     const updated = await prisma.ontRemovalTask.findUnique({ where: { id } });
     return NextResponse.json({ success: true, task: updated });
   } catch (error) {

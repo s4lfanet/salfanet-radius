@@ -3,6 +3,7 @@ import { prisma } from '@/server/db/client';
 import { jwtVerify } from 'jose';
 import { TECH_JWT_SECRET } from '@/server/auth/technician-secret';
 import { reconcileOntTasks } from '@/server/services/ont-removal-task.service';
+import { notifyAdmins, pushToCustomer } from '@/server/services/notifications/event-notices.service';
 
 async function verifyTechnician(req: NextRequest) {
   const token = req.cookies.get('technician-token')?.value;
@@ -65,6 +66,15 @@ export async function PATCH(
       data: action === 'complete'
         ? { status: 'COMPLETED', completedAt: new Date(), completedNotes: notes || null, completedById: tech.id, completedByRole: 'technician' }
         : { status: 'CANCELLED', cancelledBy: tech.id, cancelledAt: new Date(), cancelReason: notes || null },
+    });
+
+    await notifyAdmins({
+      type: 'ont_task_update',
+      title: action === 'complete' ? 'ONT Sudah Dicabut' : 'Tugas Cabut ONT Dibatalkan Teknisi',
+      message: action === 'complete'
+        ? `${tech.name || 'Teknisi'} melaporkan ONT ${task.username} sudah dicabut${notes ? `: ${String(notes).slice(0, 80)}` : ''}.`
+        : `${tech.name || 'Teknisi'} membatalkan cabut ONT ${task.username}${notes ? `: ${String(notes).slice(0, 80)}` : ''}.`,
+      link: '/admin/ont-removal-tasks',
     });
 
     return NextResponse.json({ success: true, task: updated });

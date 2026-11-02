@@ -13,6 +13,7 @@ import '../../models/invoice.dart';
 import '../auth/auth_provider.dart';
 import '../invoices/invoice_detail_screen.dart';
 import '../invoices/invoice_provider.dart';
+import '../../core/push/push_service.dart';
 import '../notifications/notifications_provider.dart';
 import '../notifications/notifications_screen.dart';
 import '../referral/referral_screen.dart';
@@ -50,13 +51,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
     // changes without the customer doing anything, so it refreshes itself
     // instead of waiting for a manual pull. Silent: it must never yank the
     // screen into a loading state while someone is reading it.
+    PushService.instance.incoming.addListener(_refreshBell);
     _liveTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       if (mounted) context.read<DashboardProvider>().load(silent: true);
     });
   }
 
+  /// Keeps the bell's unread count current when a push arrives or the app returns.
+  void _refreshBell() {
+    if (mounted) context.read<NotificationsProvider>().load(quiet: true);
+  }
+
   @override
   void dispose() {
+    PushService.instance.incoming.removeListener(_refreshBell);
     _liveTimer?.cancel();
     super.dispose();
   }

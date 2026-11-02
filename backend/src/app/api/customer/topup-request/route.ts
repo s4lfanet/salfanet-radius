@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
+import { notifyAdmins, pushToCustomer } from '@/server/services/notifications/event-notices.service';
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
 import { rateLimit } from '@/server/middleware/rate-limit';
@@ -106,8 +107,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // TODO: Send notification to admin (WhatsApp/Email)
-    // This can be implemented later with notification system
+    await notifyAdmins({
+      type: 'topup_request',
+      title: 'Permintaan Top-Up Saldo',
+      message: `${pppoeUser.name || pppoeUser.username} meminta top-up Rp ${Number(amount).toLocaleString('id-ID')}`,
+      link: '/admin/topup-requests',
+    });
 
     return NextResponse.json({
       success: true,

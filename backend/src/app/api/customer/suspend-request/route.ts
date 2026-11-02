@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
+import { notifyAdmins, pushToCustomer } from '@/server/services/notifications/event-notices.service';
 
 // Helper: get userId from Bearer token
 async function getCustomerUserId(request: NextRequest): Promise<string | null> {
@@ -107,6 +108,14 @@ export async function POST(request: NextRequest) {
         endDate: end,
         status: 'PENDING',
       },
+    });
+
+    const who = await prisma.pppoeUser.findUnique({ where: { id: userId }, select: { name: true, username: true } });
+    await notifyAdmins({
+      type: 'suspend_request',
+      title: 'Permintaan Suspend Baru',
+      message: `${who?.name || who?.username || 'Pelanggan'} meminta cuti langganan${reason?.trim() ? `: ${reason.trim().slice(0, 80)}` : ''}`,
+      link: '/admin/suspend-requests',
     });
 
     return NextResponse.json({ success: true, data: suspendReq }, { status: 201 });
