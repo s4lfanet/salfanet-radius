@@ -16,6 +16,11 @@ import { sendBackupToTelegram, sendHealthReport, sendTelegramMessage } from '@/s
 const PERIOD_HOURS: Record<string, number> = { daily: 24, '12h': 12, '6h': 6, weekly: 168 };
 const HOUR = 3600_000;
 
+// A scheduled backup that failed is tried again, not skipped until tomorrow:
+// up to this many attempts per scheduled time, at least this far apart.
+const MAX_ATTEMPTS = 3;
+const RETRY_GAP_MS = 10 * 60_000;
+
 /** The most recent scheduled time at or before [now], in the company timezone. */
 export function lastScheduledRun(now: Date, schedule: string, time: string, tz: string): Date {
   const period = (PERIOD_HOURS[schedule] ?? 24) * HOUR;
@@ -35,6 +40,11 @@ export function lastScheduledRun(now: Date, schedule: string, time: string, tz: 
   return new Date(anchor);
 }
 
+/** The next scheduled time after [now]. */
+export function nextScheduledRun(now: Date, schedule: string, time: string, tz: string): Date {
+  return new Date(lastScheduledRun(now, schedule, time, tz).getTime() + (PERIOD_HOURS[schedule] ?? 24) * HOUR);
+}
+
 export async function runTelegramBackup(opts: { force?: boolean } = {}) {
   const settings = await prisma.telegramBackupSettings.findFirst({ where: { enabled: true }, orderBy: { createdAt: 'desc' } });
   if (!settings) return { skipped: 'Backup Telegram tidak aktif' };
@@ -49,9 +59,16 @@ export async function runTelegramBackup(opts: { force?: boolean } = {}) {
     // Settings saved after that time: wait for the next one, rather than
     // backing up the moment the feature is switched on.
     if (settings.updatedAt > due) return { skipped: `Menunggu jadwal berikutnya (dihitung dari ${formatInTimeZone(due, tz, 'dd MMM HH:mm')})` };
-    // One attempt per scheduled time, also when that attempt failed.
-    const attempted = await prisma.backupHistory.findFirst({ where: { type: 'auto', createdAt: { gte: due } }, select: { id: true } });
-    if (attempted) return { skipped: 'Sudah dibackup untuk jadwal ini' };
+    // Done once a backup for this scheduled time reached Telegram. A failed
+    // attempt is retried a few times, a few minutes apart.
+    const attempts = await prisma.backupHistory.findMany({
+      where: { type: 'auto', createdAt: { gte: due } },
+      orderBy: { createdAt: 'desc' },
+      select: { status: true, method: true, createdAt: true },
+    });
+    if (attempts.some((a) => a.status === 'success' && a.method === 'telegram')) return { skipped: 'Sudah dibackup untuk jadwal ini' };
+    if (attempts.length >= MAX_ATTEMPTS) return { skipped: `Percobaan backup untuk jadwal ini sudah ${MAX_ATTEMPTS} kali dan semuanya gagal. Periksa pesan galat di riwayat backup.` };
+    if (attempts[0] && now.getTime() - attempts[0].createdAt.getTime() < RETRY_GAP_MS) return { skipped: 'Percobaan sebelumnya gagal; mencoba lagi beberapa menit lagi' };
   }
 
   const target = { botToken: settings.botToken, chatId: settings.chatId, topicId: settings.backupTopicId || undefined };

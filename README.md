@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.33.1 - Kolektor Diberi Tahu Saat Pelanggan Sudah Membayar
+> **Version:** 5.33.2 - Audit Telegram Auto-Backup
 
 ---
 
@@ -1111,6 +1111,24 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.33.2 — 2026-11-03 - Audit Telegram Auto-Backup
+
+### Hasil audit
+- Jalur backup otomatis (job `telegram_backup` di cron, `/api/cron`, `runTelegramBackup`, `createBackup`, pengiriman ke Telegram) dan perhitungan jadwal diperiksa dan tidak diubah untuk kasus yang berhasil. Perhitungan jadwal (harian, 12 jam, 6 jam, mingguan) diuji dan benar
+- Panggilan ke Telegram dari mesin pengembangan berhasil dan galatnya terbaca dengan benar
+
+### Perbaikan
+- **[FIX]** Menyimpan pengaturan Telegram selalu berakhir dengan pesan galat: halaman memanggil `/api/cron/telegram` dengan aksi `restart` yang ditolak (400) padahal pengaturan sudah tersimpan. Aksi `restart` kini diterima (tidak ada yang perlu direstart karena runner membaca pengaturan pada tiap jalan)
+- **[FIX]** Backup otomatis yang gagal sekali (galat Telegram, jaringan, atau topic) dilewati sampai jadwal berikutnya, sehingga satu gangguan sesaat menghilangkan backup hari itu. Kini dicoba lagi sampai 3 kali per jadwal, berjarak minimal 10 menit. Backup yang sudah terkirim tetap dihitung selesai seperti sebelumnya
+- **[FIX]** Panggilan ke Telegram tidak punya batas waktu dan galat jaringan tampil sebagai pesan teknis. Kini ada batas waktu (60 detik untuk pesan, 5 menit untuk file) dan pesan yang menunjuk penyebab: timeout, DNS, api.telegram.org diblokir, atau balasan bukan JSON dari proxy atau pemblokiran ISP
+
+### Tambahan
+- **[FEATURE]** Kartu Status Backup Otomatis di halaman Telegram Backup: apakah backup bisa berjalan (dan alasannya bila tidak, misalnya belum diaktifkan atau job dimatikan di Cron Jobs), jadwal berikutnya, hasil 5 backup otomatis terakhir dengan pesan galatnya, dan pengecekan runner terakhir. Catatan bahwa pengaturan yang baru disimpan baru dipakai pada jadwal berikutnya
+- **[DOCS]** Panduan Telegram Backup diperbarui
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema. Naikkan versi: root, backend, frontend ke 5.33.2; aplikasi tidak berubah
+
 ### v5.33.1 — 2026-11-02 - Kolektor Diberi Tahu Saat Pelanggan Sudah Membayar
 
 ### Notifikasi baru
@@ -1182,15 +1200,6 @@ Cabut ONT kini selalu diperintahkan admin, ke teknisi, kolektor, atau keduanya. 
 - Perubahan skema: `assignedTechnicianId` menjadi opsional, kolom `assignedCollectorId`, `completedById`, `completedByRole` ditambahkan. Dijalankan otomatis oleh `prisma db push` saat Update Sekarang
 - Catatan cabut ONT lama dari kolektor (tabel `ont_removals`) tidak lagi ditampilkan
 - Naikkan versi: root, backend, frontend ke 5.32.0; aplikasi admin 1.0.26+27, kolektor 1.3.0+8
-
-### v5.31.1 — 2026-11-01 - Rute yang Dimulai dari Posisi Pengguna
-
-### Aplikasi Admin 1.0.25 dan Kolektor 1.2.2
-- **[FIX]** Tombol Rute dan Petunjuk arah membuka Google Maps tanpa titik awal, sehingga rute salah saat GPS mati atau Maps tidak punya izin lokasi. Kini aplikasi memeriksa GPS dan izin lokasi lebih dulu, lalu mengirim posisi pengguna sebagai titik awal
-- **[FEATURE]** Bila GPS mati, muncul pemberitahuan **Aktifkan GPS** dengan tombol ke pengaturan lokasi. Bila izin lokasi ditolak permanen, muncul pemberitahuan dengan tombol ke pengaturan aplikasi. Bila posisi tidak terbaca, rute tetap dibuka dengan pesan peringatan
-
-### Catatan Pembaruan
-- Naikkan versi: root, backend, frontend ke 5.31.1; aplikasi admin 1.0.25+26, kolektor 1.2.2+7
 
 <!-- AUTO-CHANGELOG:END -->
 

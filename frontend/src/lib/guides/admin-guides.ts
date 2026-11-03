@@ -1112,7 +1112,12 @@ export const GUIDES: PageGuide[] = [
       'Pilih jadwal dan jam, lalu jumlah backup yang disimpan.',
       'Klik Test Connection, lalu Test Auto Backup untuk mengirim satu backup nyata. Aktifkan dan simpan.',
     ],
-    notes: ['Backup pertama dikirim pada jadwal berikutnya setelah pengaturan disimpan. Telegram membatasi file 50 MB; backup yang lebih besar dikompres otomatis.'],
+    notes: [
+      'Backup pertama dikirim pada jadwal berikutnya setelah pengaturan disimpan, bukan langsung. Telegram membatasi file 50 MB; backup yang lebih besar dikompres otomatis.',
+      'Kartu Status Backup Otomatis menunjukkan apakah backup bisa berjalan, jadwal berikutnya, dan hasil beberapa backup terakhir beserta pesan galatnya.',
+      'Backup yang gagal dicoba lagi sampai 3 kali per jadwal, berjarak minimal 10 menit.',
+      'Bila galatnya soal koneksi atau timeout, api.telegram.org kemungkinan tidak terjangkau dari jaringan server (diblokir atau DNS bermasalah).',
+    ],
   },
   {
     path: '/admin/settings/telegram-bot',

@@ -7,6 +7,30 @@ import { pipeline } from 'stream/promises';
 import { formatInTimeZone } from 'date-fns-tz';
 import { getCurrentTimezone } from '@/lib/timezone';
 
+/** Why a call to Telegram failed, in words that point at the cause. */
+function describeTelegramError(error: any): string {
+  const code = error?.cause?.code || error?.code;
+  if (error?.name === 'TimeoutError' || error?.name === 'AbortError') {
+    return 'Telegram tidak menjawab (timeout). Periksa koneksi server ke api.telegram.org.';
+  }
+  if (code === 'ENOTFOUND' || code === 'EAI_AGAIN') {
+    return 'Server tidak menemukan api.telegram.org (DNS). Periksa DNS server atau pemblokiran.';
+  }
+  if (['ECONNREFUSED', 'ECONNRESET', 'ETIMEDOUT', 'EHOSTUNREACH', 'ENETUNREACH'].includes(code)) {
+    return `Server tidak bisa terhubung ke Telegram (${code}). api.telegram.org mungkin diblokir dari jaringan server.`;
+  }
+  return error?.message || 'Gagal menghubungi Telegram';
+}
+
+/** Telegram's JSON reply, or a readable stand-in when something in between (an ISP block page) answered instead. */
+async function readTelegramJson(response: Response): Promise<any> {
+  try {
+    return await response.json();
+  } catch {
+    return { ok: false, description: `Telegram membalas HTTP ${response.status} dengan isi bukan JSON (kemungkinan diblokir atau melalui proxy).` };
+  }
+}
+
 interface TelegramSendOptions {
   botToken: string;
   chatId: string;
@@ -42,9 +66,10 @@ export async function sendTelegramMessage(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),
+      signal: AbortSignal.timeout(60_000),
     });
     
-    const data = await response.json();
+    const data = await readTelegramJson(response);
     
     if (!data.ok) {
       console.error('[Telegram] Send message error:', data);
@@ -59,7 +84,7 @@ export async function sendTelegramMessage(
     console.error('[Telegram] Error:', error);
     return {
       success: false,
-      error: error.message,
+      error: describeTelegramError(error),
     };
   }
 }
@@ -105,9 +130,10 @@ export async function sendTelegramFile(
     const response = await fetch(url, {
       method: 'POST',
       body: formData,
+      signal: AbortSignal.timeout(5 * 60_000),
     });
     
-    const data = await response.json();
+    const data = await readTelegramJson(response);
     
     if (!data.ok) {
       console.error('[Telegram] Send file error:', data);
@@ -123,7 +149,7 @@ export async function sendTelegramFile(
     console.error('[Telegram] Error:', error);
     return {
       success: false,
-      error: error.message,
+      error: describeTelegramError(error),
     };
   }
 }

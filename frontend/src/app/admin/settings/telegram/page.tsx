@@ -12,6 +12,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { PERMISSIONS } from '@/lib/permissions';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
+import { formatWIB } from '@/lib/timezone';
 import { Toggle } from '@/components/ui/toggle';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import { NumberInput } from '@/components/ui/number-input';
@@ -41,6 +42,17 @@ interface TelegramTestResponse {
   error?: string;
 }
 
+interface BackupStatus {
+  success: boolean;
+  enabled: boolean;
+  canRun: boolean;
+  problems: string[];
+  nextRunAt: string | null;
+  duePending: boolean;
+  lastRunner: { at: string; status: string; result: string | null; error: string | null } | null;
+  recent: { at: string; filename: string; status: string; sentToTelegram: boolean; error: string | null }[];
+}
+
 interface TelegramTestBackupResponse {
   success: boolean;
   filename?: string;
@@ -52,6 +64,8 @@ export default function TelegramSettingsPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { data: telegramData, isLoading: loading } = useApiQuery<TelegramSettingsResponse>('/api/telegram/settings', { staleTime: 300000, enabled: hasPermission('settings.view') });
+  const statusQuery = useApiQuery<BackupStatus>('/api/telegram/backup-status', { staleTime: 30000, enabled: hasPermission('settings.view') });
+  const refreshStatus = () => queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/telegram/backup-status') });
   const [testing, setTesting] = useState(false);
   const [testingBackup, setTestingBackup] = useState(false);
 
@@ -88,6 +102,7 @@ export default function TelegramSettingsPage() {
 
         await showSuccess(t('settings.telegramTestSuccess'));
         queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/telegram/settings') });
+        refreshStatus();
       } else {
         await showError(data.error || t('common.saveFailed'));
       }
@@ -141,6 +156,7 @@ export default function TelegramSettingsPage() {
 
       if (data.success) {
         await showSuccess(`Backup berhasil dikirim ke Telegram!\nFile: ${data.filename}`);
+        refreshStatus();
       } else {
         await showError(data.error || 'Gagal mengirim backup ke Telegram');
       }
@@ -418,6 +434,57 @@ export default function TelegramSettingsPage() {
             )}
           </div>
         </div>
+
+        {/* Status backup otomatis */}
+        {statusQuery.data?.success && (
+          <div className="bg-card rounded-lg border border-border shadow-sm p-6">
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <h3 className="font-semibold text-foreground">Status Backup Otomatis</h3>
+              <button onClick={refreshStatus} className="text-xs text-muted-foreground hover:text-foreground">Muat ulang</button>
+            </div>
+            {statusQuery.data.problems.length > 0 ? (
+              <ul className="text-sm text-amber-700 dark:text-amber-400 space-y-1 list-disc list-inside mb-3">
+                {statusQuery.data.problems.map((p) => <li key={p}>{p}</li>)}
+              </ul>
+            ) : (
+              <p className="text-sm text-emerald-700 dark:text-emerald-400 mb-3">
+                Siap berjalan.
+                {statusQuery.data.duePending
+                  ? ' Ada jadwal yang belum terkirim ke Telegram; dicoba otomatis dalam beberapa menit.'
+                  : statusQuery.data.nextRunAt
+                    ? ` Backup berikutnya ${formatWIB(statusQuery.data.nextRunAt, 'dd MMM yyyy HH:mm')}.`
+                    : ''}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground mb-3">
+              Pengaturan yang baru disimpan baru dipakai pada jadwal berikutnya, bukan langsung. Untuk mencoba sekarang, pakai Test Auto Backup.
+            </p>
+            {statusQuery.data.recent.length > 0 ? (
+              <ul className="divide-y divide-border text-sm">
+                {statusQuery.data.recent.map((b) => (
+                  <li key={b.at + b.filename} className="py-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-muted-foreground">{formatWIB(b.at, 'dd MMM yyyy HH:mm')}</span>
+                      <span className={b.status === 'success' && b.sentToTelegram ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}>
+                        {b.status !== 'success' ? 'Gagal dibuat' : b.sentToTelegram ? 'Terkirim ke Telegram' : 'Tersimpan di server, gagal dikirim'}
+                      </span>
+                    </div>
+                    {b.error && <p className="text-xs text-muted-foreground mt-1 break-words">{b.error}</p>}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-muted-foreground">Belum ada backup otomatis tercatat.</p>
+            )}
+            {statusQuery.data.lastRunner && (
+              <p className="text-xs text-muted-foreground mt-3 break-words">
+                Pengecekan terakhir {formatWIB(statusQuery.data.lastRunner.at, 'dd MMM yyyy HH:mm')}: {statusQuery.data.lastRunner.status}
+                {statusQuery.data.lastRunner.result ? ` ${statusQuery.data.lastRunner.result}` : ''}
+                {statusQuery.data.lastRunner.error ? ` ${statusQuery.data.lastRunner.error}` : ''}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Info Card */}
         <div className="bg-primary/10 dark:bg-primary/20 border border-primary/30 dark:border-primary/40 rounded-lg p-4">

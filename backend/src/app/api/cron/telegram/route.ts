@@ -37,8 +37,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { action } = body;
-    if (!action || !['start', 'stop', 'test'].includes(action)) {
-      return badRequest('Action must be start, stop, or test');
+    if (!action || !['start', 'stop', 'test', 'restart'].includes(action)) {
+      return badRequest('Action must be start, stop, restart, or test');
     }
 
     if (action === 'test') {
@@ -56,6 +56,11 @@ export async function POST(request: NextRequest) {
       } catch (e: any) {
         return serverError(`Failed to send: ${e.message}`);
       }
+    }
+
+    // The runner reads the settings on every run, so there is nothing to restart.
+    if (action === 'restart') {
+      return NextResponse.json({ success: true, message: 'Pengaturan dipakai pada jadwal berikutnya' });
     }
 
     // start/stop — just toggle enabled flag
