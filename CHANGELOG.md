@@ -6,6 +6,16 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.33.3] - 2026-11-03 - Aplikasi Admin 1.0.29
+
+### Aplikasi
+- **[DOCS]** Admin 1.0.29: Pusat Panduan memuat panduan Telegram Backup yang diperbarui (kartu Status Backup Otomatis, percobaan ulang, dan petunjuk galat koneksi)
+
+### Catatan Pembaruan
+- Naikkan versi: root, backend, frontend ke 5.33.3; aplikasi admin 1.0.29+30
+
+---
+
 ## [5.33.2] - 2026-11-03 - Audit Telegram Auto-Backup
 
 ### Hasil audit

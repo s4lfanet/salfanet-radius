@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.33.2 - Audit Telegram Auto-Backup
+> **Version:** 5.33.3 - Aplikasi Admin 1.0.29
 
 ---
 
@@ -1111,6 +1111,14 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.33.3 — 2026-11-03 - Aplikasi Admin 1.0.29
+
+### Aplikasi
+- **[DOCS]** Admin 1.0.29: Pusat Panduan memuat panduan Telegram Backup yang diperbarui (kartu Status Backup Otomatis, percobaan ulang, dan petunjuk galat koneksi)
+
+### Catatan Pembaruan
+- Naikkan versi: root, backend, frontend ke 5.33.3; aplikasi admin 1.0.29+30
+
 ### v5.33.2 — 2026-11-03 - Audit Telegram Auto-Backup
 
 ### Hasil audit
@@ -1174,32 +1182,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 ### Catatan Pembaruan
 - Naikkan versi: root, backend, frontend ke 5.32.1; aplikasi admin 1.0.27+28
-
-### v5.32.0 — 2026-11-01 - Cabut ONT Hanya Diperintahkan Admin
-
-### Summary
-Cabut ONT kini selalu diperintahkan admin, ke teknisi, kolektor, atau keduanya. Kolektor tidak lagi bisa mencatat cabut ONT sendiri, dan tugas otomatis batal bila pelanggan berlangganan kembali.
-
-### Penyebab
-- Kolektor bisa mencatat "cabut ONT" sendiri untuk pelanggan terisolir, tetapi catatan itu tidak pernah ikut batal. Saat pelanggan membayar atau diaktifkan lagi, daftar kolektor masih memuat cabut ONT untuk pelanggan yang sudah berlangganan kembali
-- Pembatalan otomatis hanya terjadi saat pembayaran lewat jalur tertentu, bukan saat admin mengaktifkan pelanggan
-
-### Backend dan Web
-- **[FEATURE]** Tugas Cabut ONT bisa ditugaskan ke teknisi, kolektor, atau keduanya. Yang menyelesaikan lebih dulu menutup tugas, dan penyelesaian mencatat siapa dan perannya. Penerima mendapat notifikasi (web push dan lonceng serta FCM untuk kolektor)
-- **[FEATURE]** Kolektor melaporkan hasil tugas: Sudah dicabut atau Tidak bisa (alasan wajib) lewat `PATCH /api/collector/ont-removals/[id]`
-- **[CHANGE]** `POST /api/collector/ont-removals` ditolak (403). Tombol Catat cabut ONT di halaman Pelanggan Isolir portal kolektor dihapus
-- **[FIX]** Tugas PENDING dibatalkan otomatis ("Pelanggan berlangganan kembali") bila status pelanggan tidak lagi terisolir atau ditangguhkan, dicek tiap daftar tugas dibuka oleh admin, teknisi, dan kolektor, dan saat tugas dikerjakan. Penerima diberi tahu
-- **[FIX]** Admin hanya bisa membuat tugas untuk pelanggan terisolir atau ditangguhkan
-- **[FEATURE]** `GET /api/admin/ont-removal-tasks/assignees` mengembalikan teknisi dan kolektor aktif
-
-### Aplikasi
-- **[FEATURE]** Admin 1.0.26: form Tugaskan memilih pelanggan terisolir dari daftar, teknisi, dan kolektor; detail tugas menampilkan kolektor, status pelanggan, dan siapa yang menyelesaikan
-- **[CHANGE]** Kolektor 1.3.0: menu Cabut ONT menampilkan tugas dari admin dengan tombol Sudah dicabut dan Tidak bisa. Tombol Ajukan Cabut ONT di detail pelanggan dihapus
-
-### Catatan Pembaruan
-- Perubahan skema: `assignedTechnicianId` menjadi opsional, kolom `assignedCollectorId`, `completedById`, `completedByRole` ditambahkan. Dijalankan otomatis oleh `prisma db push` saat Update Sekarang
-- Catatan cabut ONT lama dari kolektor (tabel `ont_removals`) tidak lagi ditampilkan
-- Naikkan versi: root, backend, frontend ke 5.32.0; aplikasi admin 1.0.26+27, kolektor 1.3.0+8
 
 <!-- AUTO-CHANGELOG:END -->
 
