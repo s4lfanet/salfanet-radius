@@ -147,11 +147,16 @@ export default function TelegramSettingsPage() {
       return;
     }
 
-    // Must save settings first before test backup (API loads from DB)
+    // Uses what is typed in the form, like Test Connection: no need to save or enable first.
     setTestingBackup(true);
     try {
       const data = await apiAdmin<TelegramTestBackupResponse>('/api/telegram/test-backup', {
         method: 'POST',
+        body: JSON.stringify({
+          botToken: telegramSettings.botToken,
+          chatId: telegramSettings.chatId,
+          backupTopicId: telegramSettings.backupTopicId || undefined,
+        }),
       });
 
       if (data.success) {

@@ -6,6 +6,17 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.33.4] - 2026-11-03 - Test Auto Backup Telegram Tanpa Simpan Dulu
+
+### Perbaikan
+- **[FIX]** Test Auto Backup di Pengaturan Telegram ditolak (400) walau Test Connection berhasil, karena tombol itu membaca pengaturan yang tersimpan dan aktif di database, sedangkan Test Connection memakai isian form. Kini Test Auto Backup juga memakai isian form (Bot Token, Chat ID, Topic Backup), jadi bisa dicoba sebelum menyimpan atau mengaktifkan. Bila form kosong, dipakai pengaturan tersimpan, aktif atau tidak. Pesan galatnya kini jelas: "Isi Bot Token dan Chat ID dulu."
+- Backup otomatis terjadwal tidak berubah: tetap hanya berjalan bila diaktifkan dan disimpan
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema atau aplikasi. Naikkan versi: root, backend, frontend ke 5.33.4
+
+---
+
 ## [5.33.3] - 2026-11-03 - Aplikasi Admin 1.0.29
 
 ### Aplikasi

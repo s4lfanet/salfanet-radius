@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.33.3 - Aplikasi Admin 1.0.29
+> **Version:** 5.33.4 - Test Auto Backup Telegram Tanpa Simpan Dulu
 
 ---
 
@@ -1111,6 +1111,15 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.33.4 — 2026-11-03 - Test Auto Backup Telegram Tanpa Simpan Dulu
+
+### Perbaikan
+- **[FIX]** Test Auto Backup di Pengaturan Telegram ditolak (400) walau Test Connection berhasil, karena tombol itu membaca pengaturan yang tersimpan dan aktif di database, sedangkan Test Connection memakai isian form. Kini Test Auto Backup juga memakai isian form (Bot Token, Chat ID, Topic Backup), jadi bisa dicoba sebelum menyimpan atau mengaktifkan. Bila form kosong, dipakai pengaturan tersimpan, aktif atau tidak. Pesan galatnya kini jelas: "Isi Bot Token dan Chat ID dulu."
+- Backup otomatis terjadwal tidak berubah: tetap hanya berjalan bila diaktifkan dan disimpan
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema atau aplikasi. Naikkan versi: root, backend, frontend ke 5.33.4
+
 ### v5.33.3 — 2026-11-03 - Aplikasi Admin 1.0.29
 
 ### Aplikasi
@@ -1167,21 +1176,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 ### Catatan Pembaruan
 - Naikkan versi: root, backend, frontend ke 5.33.0; admin 1.0.28+29, pelanggan 1.1.15+17, kolektor 1.4.0+9
-
-### v5.32.1 — 2026-11-02 - Pusat Panduan Dimuat Ulang dan Diperbarui
-
-### Penyebab
-- Pusat Panduan di APK admin tidak bisa dimuat karena berkas panduan bawaan aplikasi sudah basi: dua panduan (Aplikasi Android dan Push Notifikasi) menyimpan `notes` sebagai teks, sedangkan aplikasi mengharapkan daftar. Satu entri salah membuat seluruh panduan gagal
-
-### Perbaikan
-- **[FIX]** Panduan APK dibuat ulang dari panduan web, jadi keduanya satu teks. Pembaca di aplikasi kini menerima teks tunggal atau daftar, melewati entri rusak, dan layar galat punya tombol Coba lagi (kegagalan tidak lagi disimpan)
-- **[FIX]** Tombol panduan di Peta Jaringan APK memakai alamat lama sehingga tidak menemukan panduannya; kini `/admin/network/unified-map`
-
-### Panduan diperbarui (web dan APK)
-- Tagihan (Tandai Lunas: diterima oleh dan metode), Setoran Kolektor (daftar, saring, konfirmasi massal, tagihan tanpa kolektor), Router (koordinat dan GPS), Data OLT (uji koneksi, impor), ODC dan ODP (splitter, hapus dengan pelanggan), Kabel, Core, dan Splice, Kelola Kolektor (notifikasi), Profil Perusahaan (restart zona waktu), Aplikasi Android (sumber pembaruan GitHub, satu google-services.json, aplikasi kolektor), dan Notifikasi
-
-### Catatan Pembaruan
-- Naikkan versi: root, backend, frontend ke 5.32.1; aplikasi admin 1.0.27+28
 
 <!-- AUTO-CHANGELOG:END -->
 

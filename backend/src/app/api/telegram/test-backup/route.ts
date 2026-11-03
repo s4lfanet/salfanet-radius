@@ -11,24 +11,27 @@ import * as fs from 'fs/promises';
 export const maxDuration = 300;
 
 // POST - Test auto backup by creating a real backup and sending it to Telegram
-export async function POST(_request: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
     const authCheck = await requirePermission('settings.edit');
     if (!authCheck.authorized) return authCheck.response;
 
-    // Load Telegram settings from database
-    const settings = await prisma.telegramBackupSettings.findFirst({
-      where: { enabled: true },
-      orderBy: { createdAt: 'desc' },
-    });
-    if (!settings || !settings.botToken || !settings.chatId) {
-      return NextResponse.json(
-        { error: 'Telegram backup settings must be enabled and bot token/chat ID must be saved first' },
-        { status: 400 }
-      );
+    // The values typed in the form win, so the test works before anything is
+    // saved or switched on (Test Connection already works that way). Without
+    // them, the saved settings are used, enabled or not.
+    const body = await request.json().catch(() => ({}));
+    const typed = {
+      botToken: typeof body?.botToken === 'string' ? body.botToken.trim() : '',
+      chatId: typeof body?.chatId === 'string' ? body.chatId.trim() : '',
+      backupTopicId: typeof body?.backupTopicId === 'string' ? body.backupTopicId.trim() : '',
+    };
+    const saved = typed.botToken && typed.chatId ? null : await prisma.telegramBackupSettings.findFirst({ orderBy: { createdAt: 'desc' } });
+    const botToken = typed.botToken || saved?.botToken || '';
+    const chatId = typed.chatId || saved?.chatId || '';
+    const backupTopicId = typed.botToken && typed.chatId ? typed.backupTopicId : saved?.backupTopicId || '';
+    if (!botToken || !chatId) {
+      return NextResponse.json({ error: 'Isi Bot Token dan Chat ID dulu.' }, { status: 400 });
     }
-
-    const { botToken, chatId, backupTopicId } = settings;
     const now = formatInTimeZone(new Date(), getCurrentTimezone(), 'dd MMM yyyy HH:mm');
 
     // Step 1: Create actual backup
