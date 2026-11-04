@@ -1,7 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
-import { generateTransactionId, generateCategoryId } from '@/server/services/billing/invoice.service';
+import { recordInvoiceIncome } from '@/server/services/billing/invoice-income.service';
 import { managePppSecret, shouldManagePppSecretForSuspend, kickPppoeSession } from '@/server/services/mikrotik/ppp-secret.service';
 
 export async function POST(
@@ -22,7 +22,7 @@ export async function POST(
         name: true,
         password: true,
         ipAddress: true,
-        profile: { select: { groupName: true } },
+        profile: { select: { groupName: true, name: true } },
         router: { select: { id: true, authMode: true } },
       },
     });
@@ -85,40 +85,19 @@ export async function POST(
 
       const totalAmount = markedInvoices.reduce((sum, inv) => sum + inv.amount, 0);
 
-      // Find or create transaction category for subscription
-      let category = await tx.transactionCategory.findFirst({
-        where: { name: 'Subscription', type: 'INCOME' },
-      });
-
-      if (!category) {
-        category = await tx.transactionCategory.create({
-          data: {
-            id: generateCategoryId(),
-            name: 'Subscription',
-            type: 'INCOME',
-          },
-        });
-      }
-
-      // Create transaction records — check for existing records to prevent duplicates
+      // One Riwayat Transaksi row per invoice, in the same category and with
+      // the same INV- reference as gateway and collector payments. This used
+      // a separate 'Subscription' category, so the PPPoE income total on the
+      // Riwayat Transaksi page left these payments out.
       for (const invoice of markedInvoices) {
-        const existingTx = await tx.transaction.findFirst({
-          where: { reference: invoice.invoiceNumber },
+        await recordInvoiceIncome(tx, {
+          invoiceNumber: invoice.invoiceNumber,
+          amount: invoice.amount,
+          customerName: userRecord.name || userRecord.username,
+          profileName: userRecord.profile?.name,
+          notes: 'Ditandai lunas oleh admin',
+          date: now,
         });
-
-        if (!existingTx) {
-          await tx.transaction.create({
-            data: {
-              id: await generateTransactionId(),
-              categoryId: category.id,
-              type: 'INCOME',
-              amount: invoice.amount,
-              description: `Pembayaran tagihan ${invoice.invoiceNumber}`,
-              reference: invoice.invoiceNumber,
-              date: now,
-            },
-          });
-        }
       }
 
       // Update user status to active

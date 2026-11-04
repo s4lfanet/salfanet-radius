@@ -6,6 +6,7 @@ import { cancelPendingOntTasksForPaidUser } from '@/server/services/ont-removal-
 import { nowWIB, toUTC, getCurrentTimezone } from '@/lib/timezone';
 import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service';
 import { managePppSecret, shouldManagePppSecretForSuspend, kickPppoeSession } from '@/server/services/mikrotik/ppp-secret.service';
+import { recordInvoiceIncome } from '@/server/services/billing/invoice-income.service';
 
 // POST - mark invoice as paid by collector
 // Mirrors the payment webhook flow: records payment, extends expiry,
@@ -79,6 +80,16 @@ export async function POST(req: NextRequest) {
 
     const method = paymentMethod || 'cash';
 
+    // A transfer is only final after admin checks the receipt; without one
+    // there is nothing to check. The web portal already required it, the
+    // APK did not, so transfers from the APK skipped verification.
+    if (method === 'transfer' && !collectorProof) {
+      return NextResponse.json(
+        { error: 'Bukti transfer wajib diunggah. Jika memakai aplikasi, perbarui ke versi terbaru.' },
+        { status: 400 },
+      );
+    }
+
     // ─── Reactivation prep (mirror webhook flow) ─────────────────────────────
     const normalizedStatus = (user.status || '').toLowerCase();
     const wasDisabled = ['isolated', 'suspended', 'blocked', 'stop'].includes(normalizedStatus);
@@ -116,12 +127,13 @@ export async function POST(req: NextRequest) {
     // The PAID check above runs outside the transaction; two taps at once
     // both passed it and each extended the subscription. Only the request
     // that flips the invoice from unpaid goes on.
+    const paidAt = new Date();
     const settled = await prisma.$transaction(async (tx) => {
       const flipped = await tx.invoice.updateMany({
         where: { id: invoiceId, status: { not: 'PAID' } },
         data: {
           status: 'PAID',
-          paidAt: new Date(),
+          paidAt,
           paidById: collector.id,
           paymentMethod: method,
           collectorProof: collectorProof || null,
@@ -161,10 +173,22 @@ export async function POST(req: NextRequest) {
             amount: invoice.amount,
             method: `collector_${method}`,
             status: 'completed',
-            paidAt: new Date(),
+            paidAt,
           },
         });
       }
+
+      // Ledger row so the payment shows in Riwayat Transaksi. Was missing:
+      // cash a collector took only existed on the invoice and in Setoran.
+      await recordInvoiceIncome(tx, {
+        invoiceNumber: invoice.invoiceNumber,
+        amount: invoice.amount,
+        customerName: user.name || user.username,
+        profileName: user.profile?.name,
+        notes: `Dibayar ${method === 'cash' ? 'tunai' : method} lewat kolektor ${collector.name || collector.id}`,
+        date: paidAt,
+        createdBy: collector.id,
+      });
 
       // Extend expiry + reactivate user status
       await tx.pppoeUser.update({

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { checkAuth } from '@/server/middleware/api-auth';
 import { notifyCollector, fmtRupiah } from '@/server/services/collector-notification.service';
+import { removeInvoiceIncome } from '@/server/services/billing/invoice-income.service';
 
 /** Tell the collector who uploaded a transfer proof how admin ruled on it. */
 async function notifyProofReview(proof: { collectorId: string | null; invoiceId: string; amount: number; username: string }, approved: boolean, reason?: string) {
@@ -74,7 +75,7 @@ export async function PUT(
           },
         });
 
-        await tx.invoice.update({
+        const inv = await tx.invoice.update({
           where: { id: proof.invoiceId },
           data: {
             status: 'PENDING',
@@ -83,7 +84,14 @@ export async function PUT(
             paymentMethod: null,
             collectorProof: null,
           },
+          select: { invoiceNumber: true },
         });
+
+        // The payment did not happen: take back its payment record and its
+        // Riwayat Transaksi row too, or income stays overstated and the
+        // reconciliation flags an orphan payment every day.
+        await tx.payment.deleteMany({ where: { invoiceId: proof.invoiceId } });
+        await removeInvoiceIncome(tx, inv.invoiceNumber);
       });
 
       await notifyProofReview(proof, false, rejectReason || 'Ditolak oleh admin');

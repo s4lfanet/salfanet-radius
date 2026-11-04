@@ -1,5 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api/api_client.dart';
@@ -515,6 +518,15 @@ Future<void> _markPaid(BuildContext context, Map<String, dynamic> user, Map<Stri
     ),
   );
   if (method == null || !context.mounted) return;
+
+  // A transfer needs a photo of the receipt: admin checks it before the
+  // payment is final (same rule as the web portal and the API).
+  String? proof;
+  if (method == 'transfer') {
+    proof = await _pickTransferProof(context);
+    if (proof == null || !context.mounted) return;
+  }
+
   final ok = await confirmAction(
     context,
     title: 'Tandai lunas?',
@@ -523,12 +535,44 @@ Future<void> _markPaid(BuildContext context, Map<String, dynamic> user, Map<Stri
   );
   if (!ok || !context.mounted) return;
   final done = await runAction(context, () async {
-    await ApiClient.instance.post('/api/collector/mark-paid', data: {'invoiceId': inv['id'], 'paymentMethod': method});
+    await ApiClient.instance.post('/api/collector/mark-paid', data: {
+      'invoiceId': inv['id'],
+      'paymentMethod': method,
+      if (proof != null) 'collectorProof': proof,
+    });
   }, success: 'Pembayaran dicatat.');
   if (done && context.mounted) {
     Navigator.of(context).maybePop();
     onChanged();
   }
+}
+
+/// Photo of the transfer receipt as a data URL, the format the web portal sends.
+Future<String?> _pickTransferProof(BuildContext context) async {
+  final source = await showModalBottomSheet<ImageSource>(
+    context: context,
+    builder: (ctx) => SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const ListTile(title: Text('Bukti transfer', style: TextStyle(fontWeight: FontWeight.w700))),
+          ListTile(leading: const Icon(Icons.photo_camera_rounded), title: const Text('Foto dengan kamera'), onTap: () => Navigator.pop(ctx, ImageSource.camera)),
+          ListTile(leading: const Icon(Icons.photo_library_rounded), title: const Text('Pilih dari galeri'), onTap: () => Navigator.pop(ctx, ImageSource.gallery)),
+        ],
+      ),
+    ),
+  );
+  if (source == null) return null;
+  final file = await ImagePicker().pickImage(source: source, maxWidth: 1200, imageQuality: 80);
+  if (file == null) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Bukti transfer wajib untuk pembayaran transfer.')));
+    }
+    return null;
+  }
+  final bytes = await file.readAsBytes();
+  final mime = file.name.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+  return 'data:$mime;base64,${base64Encode(bytes)}';
 }
 
 Future<void> _promise(BuildContext context, Map<String, dynamic> user, Map<String, dynamic> inv, VoidCallback onChanged) async {
