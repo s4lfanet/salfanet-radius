@@ -1111,6 +1111,27 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.34.0 — 2026-11-05 - Auto Stop, Pelanggan Berhenti, Pembayaran Kolektor di Riwayat Transaksi
+
+### Perbaikan
+- **[FIX]** Auto Stop tidak lagi menghentikan pelanggan yang bukan isolir tunggakan. Sebelumnya semua pelanggan berstatus isolir dengan masa aktif lewat 30 hari ikut di-stop, termasuk pelanggan cuti, pelanggan yang sudah bayar lewat admin, dan pelanggan yang baru beberapa jam diisolir. Kini hanya yang auto-isolirnya aktif, tidak berubah 30 hari, tidak sedang cuti, dan benar-benar menunggak (prabayar expired >30 hari, pascabayar punya tagihan OVERDUE >30 hari). Setiap auto-stop dicatat di log aktivitas
+- **[FIX]** Cuti (suspend) berakhir otomatis di tanggal selesai dan pelanggan dipulihkan ke aktif. Persetujuan cuti tidak lagi menulis status `stopped` yang tidak dikenal sistem
+- **[FIX]** Pembayaran yang dilunasi kolektor (tunai maupun transfer, dari portal web atau aplikasi) kini masuk Riwayat Transaksi. Sebelumnya hanya tercatat di invoice dan Setoran Kolektor
+- **[FIX]** Tandai lunas oleh admin dari detail pelanggan dicatat di kategori Pembayaran PPPoE, sama seperti pembayaran lain
+- **[FIX]** Bukti transfer kolektor yang ditolak ikut menghapus catatan pembayaran dan baris Riwayat Transaksinya
+
+### Fitur
+- **[NEW]** Menu PPPoE → Pelanggan Berhenti dan filter status Stop di daftar pelanggan
+- **[NEW]** Halaman Pelanggan Berhenti didesain ulang mengikuti tampilan halaman lain, dengan peringatan otomatis untuk pelanggan yang kemungkinan salah di-stop oleh Auto Stop dan tombol aktifkan sekaligus
+- **[NEW]** Rekonsiliasi Keuangan mengisi baris Riwayat Transaksi yang hilang untuk pembayaran kolektor lama, sesuai tanggal pembayaran
+
+### Aplikasi
+- **[FIX]** Kolektor 1.4.2: pembayaran transfer wajib melampirkan foto bukti (kamera atau galeri), sama seperti portal web. Versi lama tidak bisa lagi menandai lunas transfer
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema. Naikkan versi: root, backend, frontend ke 5.34.0; aplikasi kolektor 1.4.2+11
+- Setelah update, buka Pelanggan Berhenti untuk memeriksa pelanggan yang salah di-stop, lalu jalankan Rekonsiliasi Keuangan dari halaman Cron agar pembayaran kolektor lama masuk Riwayat Transaksi
+
 ### v5.33.4 — 2026-11-03 - Test Auto Backup Telegram Tanpa Simpan Dulu
 
 ### Perbaikan
@@ -1156,26 +1177,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 ### Catatan Pembaruan
 - Naikkan versi: root, backend, frontend ke 5.33.1; aplikasi kolektor 1.4.1+10
-
-### v5.33.0 — 2026-11-02 - Audit Notifikasi: Lonceng Kolektor dan Notifikasi Antar Peran
-
-### Penyebab
-- APK kolektor tidak punya ikon lonceng di dashboard, dan layar Notifikasinya selalu kosong karena membaca kunci `notifications` sedangkan server mengirim `events`. Tidak ada status dibaca
-- Beberapa kejadian lintas peran tidak memberi tahu pihak lawannya: permintaan suspend dan top-up pelanggan tidak sampai ke admin, keputusan admin atas keduanya tidak sampai ke pelanggan, janji bayar kolektor tidak sampai ke admin dan pelanggan, dan laporan cabut ONT tidak sampai ke admin
-
-### Aplikasi
-- **[FEATURE]** Kolektor 1.4.0: ikon lonceng dengan jumlah belum dibaca di dashboard, layar Notifikasi yang benar (daftar, tanda belum dibaca, ketuk untuk menandai dibaca dan membuka Setoran, Bukti Transfer, atau Cabut ONT, serta Tandai semua dibaca)
-- **[FEATURE]** Lonceng di aplikasi kolektor, admin 1.0.28, dan pelanggan 1.1.15 menyegarkan jumlahnya saat ada push masuk dan saat aplikasi kembali dibuka, bukan hanya saat dashboard dibuka
-- **[CHORE]** Dua berkas kolektor yang tidak terpakai dan tidak bisa dikompilasi (`crud_list_screen.dart`, `files.dart`) dihapus
-
-### Notifikasi baru
-- **[FEATURE]** Pelanggan ke admin: permintaan suspend, permintaan top-up saldo
-- **[FEATURE]** Admin ke pelanggan: permintaan suspend disetujui atau ditolak, top-up disetujui atau ditolak
-- **[FEATURE]** Kolektor ke admin dan pelanggan: janji bayar tercatat (admin lewat lonceng dan FCM, pelanggan lewat push)
-- **[FEATURE]** Kolektor atau teknisi ke admin: laporan cabut ONT selesai atau tidak bisa dikerjakan
-
-### Catatan Pembaruan
-- Naikkan versi: root, backend, frontend ke 5.33.0; admin 1.0.28+29, pelanggan 1.1.15+17, kolektor 1.4.0+9
 
 <!-- AUTO-CHANGELOG:END -->
 
