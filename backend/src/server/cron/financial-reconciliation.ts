@@ -6,6 +6,7 @@
  * 2. Duplicate payment detection
  * 3. Orphaned payments (payments without PAID invoice)
  * 4. Negative balance detection
+ * 5. Collector payments missing from Riwayat Transaksi — written in (backfill)
  *
  * Note: The transaction model does not have a userId field, so we cannot
  * directly reconcile user.balance against sum(transactions). Instead, we
@@ -16,9 +17,10 @@
 import 'server-only';
 import { prisma } from '@/server/db/client';
 import { nowWIB } from '@/lib/timezone';
+import { recordInvoiceIncome, invoiceReference } from '@/server/services/billing/invoice-income.service';
 
 export interface ReconciliationIssue {
-  type: 'paid_without_payment' | 'amount_mismatch' | 'orphan_payment' | 'duplicate_payment' | 'negative_balance';
+  type: 'paid_without_payment' | 'amount_mismatch' | 'orphan_payment' | 'duplicate_payment' | 'negative_balance' | 'ledger_backfilled';
   entityId: string;
   entityLabel: string;
   details: string;
@@ -33,6 +35,7 @@ export interface ReconciliationResult {
   totalPayments: number;
   issues: ReconciliationIssue[];
   issueCount: number;
+  ledgerBackfilled: number;
   durationMs: number;
 }
 
@@ -141,6 +144,9 @@ export async function runFinancialReconciliation(): Promise<ReconciliationResult
     });
   }
 
+  // ── Check 6: collector payments without a Riwayat Transaksi row ────────
+  const ledgerBackfilled = await backfillCollectorLedger(issues);
+
   const completedAt = nowWIB();
   const durationMs = completedAt.getTime() - startedAt.getTime();
 
@@ -152,6 +158,7 @@ export async function runFinancialReconciliation(): Promise<ReconciliationResult
     totalPayments: orphanPayments.length,
     issues,
     issueCount: issues.length,
+    ledgerBackfilled,
     durationMs,
   };
 
@@ -170,4 +177,74 @@ export async function runFinancialReconciliation(): Promise<ReconciliationResult
   }
 
   return result;
+}
+
+/**
+ * Collector mark-paid did not write the ledger before; add the missing rows,
+ * dated when the collector took the money. Only invoices settled by a
+ * collector (paidById set) — balance auto-renewals have their own row under a
+ * different reference and must not be counted twice.
+ */
+async function backfillCollectorLedger(issues: ReconciliationIssue[]): Promise<number> {
+  let ledgerBackfilled = 0;
+  const collectorPaid = await prisma.invoice.findMany({
+    where: {
+      status: 'PAID',
+      paidById: { not: null },
+      paymentMethod: { not: 'discount' },
+    },
+    select: {
+      invoiceNumber: true,
+      amount: true,
+      paidAt: true,
+      paidById: true,
+      paymentMethod: true,
+      customerName: true,
+      customerUsername: true,
+      user: { select: { name: true, profile: { select: { name: true } } } },
+    },
+    orderBy: { paidAt: 'desc' },
+    take: 5000,
+  });
+  if (collectorPaid.length > 0) {
+    const refs = collectorPaid.flatMap((i) => [invoiceReference(i.invoiceNumber), i.invoiceNumber]);
+    const existing = await prisma.transaction.findMany({
+      where: { reference: { in: refs } },
+      select: { reference: true },
+    });
+    const have = new Set(existing.map((t) => t.reference));
+    const collectorIds = [...new Set(collectorPaid.map((i) => i.paidById!))];
+    const collectors = await prisma.adminUser.findMany({ where: { id: { in: collectorIds } }, select: { id: true, name: true } });
+    const nameOf = new Map(collectors.map((c) => [c.id, c.name]));
+
+    for (const inv of collectorPaid) {
+      if (have.has(invoiceReference(inv.invoiceNumber)) || have.has(inv.invoiceNumber)) continue;
+      try {
+        const method = !inv.paymentMethod || inv.paymentMethod === 'cash' ? 'tunai' : inv.paymentMethod;
+        const added = await recordInvoiceIncome(prisma, {
+          invoiceNumber: inv.invoiceNumber,
+          amount: inv.amount,
+          customerName: inv.user?.name || inv.customerName || inv.customerUsername || 'Pelanggan',
+          profileName: inv.user?.profile?.name,
+          notes: `Dibayar ${method} lewat kolektor ${nameOf.get(inv.paidById!) || inv.paidById} (dicatat ulang oleh rekonsiliasi)`,
+          date: inv.paidAt ?? undefined,
+          createdBy: inv.paidById,
+        });
+        if (added) {
+          ledgerBackfilled++;
+          issues.push({
+            type: 'ledger_backfilled',
+            entityId: inv.invoiceNumber,
+            entityLabel: inv.invoiceNumber,
+            details: `Invoice ${inv.invoiceNumber} (Rp ${inv.amount}) dibayar lewat kolektor tapi belum ada di Riwayat Transaksi — sudah ditambahkan`,
+            severity: 'warning',
+          });
+        }
+      } catch (e) {
+        console.error(`[Financial Reconciliation] Ledger backfill failed for ${inv.invoiceNumber}:`, e);
+      }
+    }
+  }
+
+  return ledgerBackfilled;
 }
