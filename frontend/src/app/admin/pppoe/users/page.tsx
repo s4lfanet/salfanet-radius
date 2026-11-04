@@ -1622,6 +1622,7 @@ export default function PppoeUsersPage() {
                     <option value="active">{t('pppoe.active')}</option>
                     <option value="isolated">{t('pppoe.isolir')}</option>
                     <option value="blocked">{t('pppoe.block')}</option>
+                    <option value="stop">Stop</option>
                   </select>
                 </div>
                 <div>

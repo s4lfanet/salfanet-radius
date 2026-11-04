@@ -56,16 +56,18 @@ export async function PUT(
     },
   });
 
-  // If APPROVE and startDate is today or in the past → immediately set user status = 'stopped'
-  if (action === 'APPROVE') {
-    if (req.startDate <= now) {
-      await prisma.pppoeUser.update({
-        where: { id: req.userId },
-        data: { status: 'stopped' },
-      });
+  // If APPROVE and the suspend has already started, apply it now through
+  // the suspend check (DB status 'isolated' + RADIUS + MikroTik). This used
+  // to write status 'stopped', which is not a status the rest of the app
+  // knows; the hourly job then turned it into 'isolated' and the request
+  // was never ended. Ending + restore is handled by runSuspendCheck too.
+  if (action === 'APPROVE' && req.startDate <= now) {
+    try {
+      const { runSuspendCheck } = await import('@/server/cron/invoice-jobs');
+      await runSuspendCheck();
+    } catch (e: any) {
+      console.error('[SuspendRequest] Immediate suspend apply failed (cron will retry):', e?.message || e);
     }
-    // If endDate is in the future, schedule unsuspend via cron is handled by existing cron job
-    // (cron checks suspendRequests APPROVED where endDate <= now → restore 'active')
   }
 
   await pushToCustomer(
