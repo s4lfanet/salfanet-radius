@@ -906,16 +906,44 @@ export async function runDisconnectSessions(): Promise<{ disconnected: number; t
  * 'isolated' — without it, the user's DB status changes but their MikroTik
  * session stays on the normal profile (no actual isolation).
  */
-export async function runSuspendCheck(): Promise<{ suspended: number; total: number; errors: string[] }> {
+export async function runSuspendCheck(): Promise<{ suspended: number; restored: number; total: number; errors: string[] }> {
   const { managePppSecret, shouldManagePppSecretForSuspend, kickPppoeSession } = await import('@/server/services/mikrotik/ppp-secret.service');
   const { disconnectPPPoEUser } = await import('@/server/services/radius/coa-handler.service');
+  const { restoreUserAccess } = await import('@/server/services/pppoe-restore.service');
 
   let suspended = 0;
+  let restored = 0;
   const errors: string[] = [];
 
   const now = await nowWIBAsync();
+
+  // 1. Finished suspends: APPROVED with endDate passed → COMPLETED + restore.
+  // Previously nothing ever ended a suspend: the request stayed APPROVED
+  // forever, this job re-isolated the user every hour (even after payment
+  // or a manual reactivation), and auto-stop later stopped them.
+  const finished = await prisma.suspendRequest.findMany({
+    where: { status: 'APPROVED', endDate: { lte: now } },
+    select: { id: true, userId: true },
+  });
+  for (const req of finished) {
+    try {
+      const done = await prisma.suspendRequest.updateMany({
+        where: { id: req.id, status: 'APPROVED' },
+        data: { status: 'COMPLETED' },
+      });
+      if (done.count === 0) continue;
+      // Only users still held by the suspend; 'stop'/'blocked' set by an
+      // admin are left alone.
+      const r = await restoreUserAccess(req.userId, ['isolated', 'stopped'], 'SUSPEND_END');
+      if (r.restored) restored++;
+    } catch (e: any) {
+      errors.push(`suspend_end_${req.id}: ${e?.message || e}`);
+    }
+  }
+
+  // 2. Suspends in their window: apply isolation.
   const approved = await prisma.suspendRequest.findMany({
-    where: { status: 'APPROVED', startDate: { lte: now } },
+    where: { status: 'APPROVED', startDate: { lte: now }, endDate: { gt: now } },
     include: {
       user: {
         select: {
@@ -936,13 +964,14 @@ export async function runSuspendCheck(): Promise<{ suspended: number; total: num
         continue;
       }
 
-      // Idempotency: skip if user is already isolated (this request was
-      // already processed by a previous cron run)
+      // Only take active users (or 'stopped', the value the approve endpoint
+      // used to write). Already isolated = processed by an earlier run;
+      // 'stop'/'blocked' are admin decisions this job must not undo.
       const currentUser = await prisma.pppoeUser.findUnique({
         where: { id: req.userId },
         select: { status: true },
       });
-      if (currentUser?.status === 'isolated') {
+      if (!currentUser || !['active', 'stopped'].includes(currentUser.status)) {
         continue;
       }
 
@@ -1012,5 +1041,5 @@ export async function runSuspendCheck(): Promise<{ suspended: number; total: num
     }
   }
 
-  return { suspended, total: approved.length, errors };
+  return { suspended, restored, total: approved.length + finished.length, errors };
 }

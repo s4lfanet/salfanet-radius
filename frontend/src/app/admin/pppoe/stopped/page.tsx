@@ -7,6 +7,7 @@ import { Users, Trash2, RefreshCcw, Shield, FileText, UserX } from 'lucide-react
 import { Pagination } from '@/components/Pagination';
 import { formatWIB } from '@/lib/timezone';
 import { pppoeApi } from '@/lib/api';
+import { apiAdmin } from '@/lib/api/client';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface StoppedUser {
@@ -27,6 +28,18 @@ interface StoppedUser {
   area?: { id: string; name: string } | null;
 }
 
+interface RepairCandidate {
+  id: string;
+  username: string;
+  name: string;
+  customerId: string | null;
+  subscriptionType: string;
+  expiredAt: string | null;
+  stoppedAt: string;
+  reasons: string[];
+  manualStop: boolean;
+}
+
 export default function StoppedSubscriptionsPage() {
   const { hasPermission, loading: permLoading } = usePermissions();
   const { t } = useTranslation();
@@ -43,6 +56,45 @@ export default function StoppedSubscriptionsPage() {
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
   const [deletePassword, setDeletePassword] = useState('');
   const [deleting, setDeleting] = useState(false);
+  const [repairList, setRepairList] = useState<RepairCandidate[] | null>(null);
+  const [repairSelected, setRepairSelected] = useState<Set<string>>(new Set());
+  const [repairBusy, setRepairBusy] = useState(false);
+
+  // Customers the old auto-stop job may have stopped by mistake.
+  const loadRepairCandidates = async () => {
+    setRepairBusy(true);
+    try {
+      const res = await apiAdmin<{ success: boolean; data: RepairCandidate[] }>('/api/admin/pppoe/repair-auto-stop');
+      const list = res.data || [];
+      setRepairList(list);
+      setRepairSelected(new Set(list.filter(c => !c.manualStop).map(c => c.id)));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('common.failed'));
+    } finally {
+      setRepairBusy(false);
+    }
+  };
+
+  const applyRepair = async () => {
+    if (repairSelected.size === 0) return;
+    const confirmed = await showConfirm(`Aktifkan kembali ${repairSelected.size} pelanggan yang terpilih?`);
+    if (!confirmed) return;
+    setRepairBusy(true);
+    try {
+      const res = await apiAdmin<{ success: boolean; restored: number }>('/api/admin/pppoe/repair-auto-stop', {
+        method: 'POST',
+        body: JSON.stringify({ userIds: Array.from(repairSelected) }),
+      });
+      await showSuccess(`${res.restored} pelanggan diaktifkan kembali`);
+      setRepairList(null);
+      setRepairSelected(new Set());
+      queryClient.invalidateQueries({ queryKey: usersQueryKey });
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('common.failedActivate'));
+    } finally {
+      setRepairBusy(false);
+    }
+  };
 
   const handleExport = async () => {
     try {
@@ -242,7 +294,70 @@ export default function StoppedSubscriptionsPage() {
           <Trash2 className="h-3 w-3" />
           {t('pppoe.delete')}
         </button>
+        {hasPermission('customers.edit') && (
+          <button
+            onClick={loadRepairCandidates}
+            disabled={repairBusy}
+            className="px-3 py-1.5 text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-bold rounded-lg flex items-center gap-1.5 disabled:opacity-50 transition border border-primary/50"
+          >
+            <Shield className="h-3 w-3" />
+            Cek Salah Auto-Stop
+          </button>
+        )}
       </div>
+
+      {repairList && (
+        <div className="bg-card border border-border rounded-lg p-3 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <div className="text-sm font-semibold">Kemungkinan salah di-stop oleh Auto Stop: {repairList.length}</div>
+            <div className="flex gap-2">
+              <button onClick={() => setRepairList(null)} className="px-3 py-1.5 text-xs bg-muted hover:bg-muted/80 rounded">Tutup</button>
+              <button
+                onClick={applyRepair}
+                disabled={repairBusy || repairSelected.size === 0}
+                className="px-3 py-1.5 text-xs bg-success hover:bg-success/90 text-white font-bold rounded-lg disabled:opacity-50"
+              >
+                Aktifkan {repairSelected.size} terpilih
+              </button>
+            </div>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Yang ditandai &quot;stop manual&quot; tidak dicentang otomatis. Pelanggan PREPAID yang masa aktifnya sudah lewat akan diisolir lagi oleh Auto Isolir — perpanjang dulu jika memang sudah bayar.
+          </p>
+          {repairList.length === 0 ? (
+            <div className="text-xs text-muted-foreground">Tidak ada kandidat.</div>
+          ) : (
+            <div className="max-h-96 overflow-auto divide-y divide-border">
+              {repairList.map((c) => (
+                <label key={c.id} className="flex items-start gap-2 py-2 text-xs cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5"
+                    checked={repairSelected.has(c.id)}
+                    onChange={(e) => setRepairSelected(prev => {
+                      const n = new Set(prev);
+                      if (e.target.checked) n.add(c.id); else n.delete(c.id);
+                      return n;
+                    })}
+                  />
+                  <div className="flex-1">
+                    <div className="font-medium">
+                      {c.name} <span className="text-muted-foreground">({c.username}{c.customerId ? ` · ${c.customerId}` : ''} · {c.subscriptionType})</span>
+                      {c.manualStop && <span className="ml-1 px-1.5 py-0.5 rounded bg-warning/20 text-warning text-[10px]">stop manual</span>}
+                    </div>
+                    <div className="text-muted-foreground">
+                      Di-stop: {formatWIB(c.stoppedAt, 'dd/MM/yyyy HH:mm')} · Expired: {c.expiredAt ? formatWIB(c.expiredAt, 'dd/MM/yyyy') : '-'}
+                    </div>
+                    <ul className="list-disc list-inside text-muted-foreground">
+                      {c.reasons.map((r) => <li key={r}>{r}</li>)}
+                    </ul>
+                  </div>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Info Box */}
       <div className="bg-muted border border-border rounded-lg p-3">

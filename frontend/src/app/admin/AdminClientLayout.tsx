@@ -68,6 +68,7 @@ const menuGroups: MenuGroup[] = [
           { titleKey: 'nav.approvals', href: '/admin/pppoe/approvals', badge: 'pending', requiredPermission: 'registrations.approve' },
           { titleKey: 'nav.registrations', href: '/admin/pppoe/registrations', badge: 'pending', requiredPermission: 'registrations.view' },
           { titleKey: 'nav.suspendRequests', href: '/admin/suspend-requests', requiredPermission: 'customers.view' },
+          { titleKey: 'nav.stoppedUsers', href: '/admin/pppoe/stopped', requiredPermission: 'customers.view' },
         ],
       },
       {

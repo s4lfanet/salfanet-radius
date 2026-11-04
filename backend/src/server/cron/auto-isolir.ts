@@ -14,6 +14,7 @@ import { nowWIBAsync } from '@/lib/timezone';
 import { disconnectPPPoEUser, addToMikrotikAddressList } from '@/server/services/radius/coa-handler.service';
 import { managePppSecret, shouldManagePppSecretForSuspend, kickPppoeSession } from '@/server/services/mikrotik/ppp-secret.service';
 import { sendIsolationNotice } from '@/server/services/notifications/isolation-notice.service';
+import { logActivity } from '@/server/services/activity-log.service';
 
 export async function runAutoIsolir(): Promise<{ isolated: number; total: number; errors: string[] }> {
   const errors: string[] = [];
@@ -248,12 +249,28 @@ export async function runAutoStop(): Promise<{ stopped: number; total: number; e
   const now = await nowWIBAsync();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-  // Find users isolated more than 30 days ago
-  // We use expiredAt as proxy since we don't have isolatedAt timestamp
+  // Find users isolated more than 30 days ago.
+  // No isolatedAt column yet, so be conservative — ALL of these must hold:
+  //  - status 'isolated' and auto-isolation enabled for the user
+  //  - row untouched for 30 days (updatedAt), so a user who was isolated
+  //    recently (or re-isolated after a payment/promise) is never stopped
+  //    on the same day just because expiredAt is old/stale
+  //  - not on an approved suspend (cuti) request — that also uses 'isolated'
+  //  - really owes money: PREPAID expired >30d, POSTPAID has an OVERDUE
+  //    invoice due >30d ago (POSTPAID expiredAt is not reliable)
   const longIsolatedUsers = await prisma.pppoeUser.findMany({
     where: {
       status: 'isolated',
-      expiredAt: { lt: thirtyDaysAgo },
+      autoIsolationEnabled: true,
+      updatedAt: { lt: thirtyDaysAgo },
+      suspendRequests: { none: { status: 'APPROVED' } },
+      OR: [
+        { subscriptionType: 'PREPAID', expiredAt: { lt: thirtyDaysAgo } },
+        {
+          subscriptionType: 'POSTPAID',
+          invoices: { some: { status: 'OVERDUE', dueDate: { lt: thirtyDaysAgo } } },
+        },
+      ],
     },
     select: {
       id: true,
@@ -389,6 +406,17 @@ export async function runAutoStop(): Promise<{ stopped: number; total: number; e
       } catch (e: any) {
         console.error(`[AUTO_STOP] Notice (WA/email) failed for ${user.username}:`, e?.message || e);
       }
+
+      // Leave a trace so an auto-stop can be told apart from a manual one.
+      await logActivity({
+        username: 'system',
+        userRole: 'cron',
+        action: 'auto_stop',
+        description: `Auto-stop: user ${user.username} status from isolated to stop`,
+        module: 'pppoe',
+        status: 'success',
+        metadata: { userId: user.id },
+      });
 
       stopped++;
       console.log(`[AUTO_STOP] Stopped ${user.username} (isolated >30 days)`);
