@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getGenieACSCredentials } from '../../../route';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { normalizeRxPower, normalizeUptime } from '@/lib/genieacs/tr069-parser';
+import { resolveUndeterminedBands, type Band } from '@/lib/genieacs/wlan-band';
 
 // Helper to extract raw value from GenieACS format (handles {_value: x} format)
 function extractRawValue(val: unknown): unknown {
@@ -444,11 +445,12 @@ function extractWLANConfigs(device: Record<string, unknown>): WLANConfig[] {
   // slot, so split the undecided ones in half by index order as a last
   // resort (entries already resolved above, e.g. via an SSID "5G" hint or
   // Channel, are left untouched).
-  if (pendingBand.length >= 2) {
-    pendingBand.sort((a, b) => a.index - b.index);
-    const mid = Math.ceil(pendingBand.length / 2);
-    pendingBand.forEach(({ entry }, i) => {
-      entry.band = i < mid ? '2.4GHz' : '5GHz';
+  if (pendingBand.length > 0) {
+    const pending = new Set(pendingBand.map((p) => p.entry));
+    const items = wlanConfigs.map((e) => ({ index: e.index, band: pending.has(e) ? null : (e.band as Band), enabled: e.enabled }));
+    resolveUndeterminedBands(items);
+    items.forEach((item, i) => {
+      if (pending.has(wlanConfigs[i]) && item.band) wlanConfigs[i].band = item.band;
     });
   }
 

@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.36.1 - Perbaikan Temuan Audit Lanjutan
+> **Version:** 5.36.2 - WiFi 5GHz Tidak Muncul di Halaman Pelanggan
 
 ---
 
@@ -1111,6 +1111,22 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.36.2 — 2026-11-05 - WiFi 5GHz Tidak Muncul di Halaman Pelanggan
+
+### Penyebab
+- Halaman WiFi pelanggan (web dan aplikasi memakai API yang sama) menampilkan satu SSID per band. Penentuan band tiap slot WLANConfiguration memakai Standard, nama SSID, dan Channel. Pada ONT dual band yang melaporkan Channel 0 (auto) untuk 5GHz dan Standard yang sama dengan 2.4GHz (misalnya `ax` atau `n`) dengan nama SSID yang sama, slot 5GHz tidak punya petunjuk band. Satu slot tanpa petunjuk selalu dianggap 2.4GHz, sehingga kedua slot menjadi 2.4GHz dan pemilihan satu SSID per band membuang slot 5GHz
+- Pada ONT bergaya Huawei (slot 1-4 untuk 2.4GHz dan 5-8 untuk 5GHz), kartu 5GHz yang tampil bisa berupa SSID tamu, bukan SSID utama
+
+### Perbaikan
+- **[FIX]** Slot tanpa petunjuk band kini ditempatkan berdasarkan posisinya di antara slot yang sudah jelas bandnya (slot 2.4GHz selalu sebelum slot 5GHz), bukan otomatis 2.4GHz. Slot tamu yang nonaktif tepat setelah slot 2.4GHz utama tidak dianggap 5GHz, jadi ONT satu band tidak mendapat kartu 5GHz palsu
+- **[FIX]** Petunjuk band tambahan dibaca: `OperatingFrequencyBand` dan `X_HW_OperatingFrequencyBand`, serta Standard seperti `a,n` (5GHz). Aturan yang sudah ada tetap sama, jadi slot yang sebelumnya terdeteksi benar tidak berubah
+- **[FIX]** Detail perangkat di panel admin memakai penempatan yang sama untuk slot yang tidak jelas bandnya (sebelumnya satu slot semacam itu selalu berlabel 2.4GHz)
+- Diuji dengan data ONT buatan untuk 7 kasus: kasus 5GHz hilang kini muncul, sedangkan kasus kontrol (5GHz bernama "5G", band dilaporkan lengkap, ONT satu band dengan SSID tamu) tidak berubah
+
+### Catatan
+- Perbaikan ini mengatasi penentuan band. Bila slot 5GHz memang belum punya nilai SSID di GenieACS (belum pernah di-refresh dari ONT), SSID-nya tetap tidak muncul; jalankan refresh parameter WLAN dari halaman perangkat di panel admin
+- Aplikasi tidak berubah. Naikkan versi: root, backend, frontend ke 5.36.2
+
 ### v5.36.1 — 2026-11-05 - Perbaikan Temuan Audit Lanjutan
 
 ### Perbaikan
@@ -1183,14 +1199,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - Skema bertambah: tabel `installers`, kolom `pppoe_users.installer_id`, dan kolom `transactions.pppoe_user_id` + `transactions.customer_linked_at`. Semua kolom boleh kosong; "Update Sekarang" menambahkannya tanpa menghapus data
 - Riwayat Transaksi menghubungkan setiap transaksi ke pelanggannya dari nomor referensi (INV-…, TOPUP-…, AUTO-RENEW-…) saat halaman pertama kali dibuka dan setiap Rekonsiliasi Keuangan berjalan
 - Naikkan versi: root, backend, frontend ke 5.35.0
-
-### v5.34.1 — 2026-11-05 - Aplikasi Admin 1.0.30: Riwayat Transaksi
-
-### Aplikasi
-- **[CHANGE]** Admin 1.0.30: menu Lainnya → Keuangan → "Keuangan" berganti nama menjadi **Riwayat Transaksi**, sama dengan web. Isinya tetap: semua pemasukan dan pengeluaran (pembayaran gateway, kolektor, admin, top up, biaya) beserta saldo kas. Judul layar dan tombol di grafik Kas 6 Bulan di Dashboard ikut berganti
-
-### Catatan Pembaruan
-- Tidak ada perubahan server. Naikkan versi: root, backend, frontend ke 5.34.1; aplikasi admin 1.0.30+31
 
 <!-- AUTO-CHANGELOG:END -->
 
