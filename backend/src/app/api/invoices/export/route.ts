@@ -2,7 +2,10 @@
 import { prisma } from '@/server/db/client';
 import { generateExcelBuffer, formatCurrencyExport, formatDateExport, generateInvoicePDF } from '@/lib/utils/export';
 import { requirePermission } from '@/server/middleware/api-auth';
-import { startOfDayWIBtoUTC, endOfDayWIBtoUTC, getCurrentTimezone } from '@/lib/timezone';
+import { getCurrentTimezone } from '@/lib/timezone';
+import type { Prisma } from '@prisma/client';
+import { buildInvoiceListWhere } from '@/server/services/billing/invoice-filter.service';
+import { installerLabel } from '@/server/services/installer.service';
 import { formatInTimeZone } from 'date-fns-tz';
 
 export async function GET(req: NextRequest) {
@@ -14,29 +17,16 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const format = searchParams.get('format') || 'excel';
-  const status = searchParams.get('status');
-  const startDate = searchParams.get('startDate');
-  const endDate = searchParams.get('endDate');
   const invoiceIds = searchParams.get('ids'); // comma-separated IDs for batch export
 
   try {
     // Build query filters
-    const where: any = {};
-    
-    if (invoiceIds) {
-      where.id = { in: invoiceIds.split(',') };
-    } else {
-      if (status && status !== 'all') {
-        where.status = status;
-      }
-      
-      if (startDate && endDate) {
-        where.createdAt = {
-          gte: startOfDayWIBtoUTC(startDate),
-          lte: endOfDayWIBtoUTC(endDate),
-        };
-      }
-    }
+    // Same filters as the Tagihan list (status, month, search, installer, …),
+    // so the file holds exactly what the screen shows.
+    const where: Prisma.invoiceWhereInput = invoiceIds
+      ? { id: { in: invoiceIds.split(',') } }
+      : buildInvoiceListWhere(searchParams);
+    const groupByInstaller = searchParams.get('groupBy') === 'installer';
 
     // Fetch invoices with relations
     const invoices = await prisma.invoice.findMany({
@@ -49,11 +39,14 @@ export async function GET(req: NextRequest) {
             phone: true,
             email: true,
             username: true,
-            profile: { select: { name: true, price: true } }
+            profile: { select: { name: true, price: true } },
+            installer: { select: { name: true } }
           }
         }
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: groupByInstaller
+        ? [{ user: { installer: { name: 'asc' } } }, { createdAt: 'desc' }]
+        : { createdAt: 'desc' }
     });
 
     // Calculate stats
@@ -69,12 +62,13 @@ export async function GET(req: NextRequest) {
 
     if (format === 'pdf') {
       // Generate PDF data for client-side rendering
-      const headers = ['No', 'Invoice #', 'Customer', 'Package', 'Amount', 'Status', 'Due Date', 'Paid At'];
+      const headers = ['No', 'Invoice #', 'Customer', 'Package', 'Instalatur', 'Amount', 'Status', 'Due Date', 'Paid At'];
       const rows = invoices.map((inv, idx) => [
         idx + 1,
         inv.invoiceNumber,
         inv.user?.name || inv.customerName || 'Deleted',
         inv.user?.profile?.name || '-',
+        installerLabel(inv.user?.installer),
         formatCurrencyExport(inv.amount),
         inv.status === 'PAID' ? 'Lunas' : inv.status === 'PENDING' ? 'Pending' : inv.status === 'OVERDUE' ? 'Jatuh Tempo' : 'Dibatalkan',
         formatDateExport(inv.dueDate),
@@ -149,6 +143,7 @@ export async function GET(req: NextRequest) {
       { key: 'customerPhone', header: 'Telepon', width: 15 },
       { key: 'username', header: 'Username', width: 18 },
       { key: 'package', header: 'Package', width: 15 },
+      { key: 'installer', header: 'Instalatur', width: 20 },
       { key: 'amount', header: 'Jumlah', width: 15 },
       { key: 'status', header: 'Status', width: 12 },
       { key: 'dueDate', header: 'Due Date', width: 15 },
@@ -163,6 +158,7 @@ export async function GET(req: NextRequest) {
       customerPhone: inv.user?.phone || inv.customerPhone || '',
       username: inv.user?.username || inv.customerUsername || '',
       package: inv.user?.profile?.name || '',
+      installer: installerLabel(inv.user?.installer),
       amount: inv.amount,
       status: inv.status === 'PAID' ? 'Lunas' : inv.status === 'PENDING' ? 'Pending' : inv.status === 'OVERDUE' ? 'Jatuh Tempo' : 'Dibatalkan',
       dueDate: formatDateExport(inv.dueDate),

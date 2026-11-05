@@ -1,4 +1,6 @@
 ﻿import { NextRequest } from 'next/server';
+import { installerInvoiceWhere, parseInstallerFilter, summarizeInvoicesByInstaller } from '@/server/services/installer.service';
+import { buildInvoiceListWhere } from '@/server/services/billing/invoice-filter.service';
 import { prisma } from '@/server/db/client';
 import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service';
 import { managePppSecret, kickPppoeSession, shouldManagePppSecretForSuspend } from '@/server/services/mikrotik/ppp-secret.service';
@@ -9,7 +11,7 @@ import { EmailService } from '@/server/services/notifications/email.service';
 import { randomBytes } from 'crypto';
 import { nanoid } from 'nanoid';
 import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
-import { startOfDayWIBtoUTC, endOfDayWIBtoUTC, toUTC, nowWIB } from '@/lib/timezone';
+import { toUTC, nowWIB } from '@/lib/timezone';
 import { ok, created, badRequest, notFound, serverError } from '@/lib/api-response';
 import { notifyCollector, fmtRupiah } from '@/server/services/collector-notification.service';
 // Generate secure random token for payment link
@@ -90,52 +92,15 @@ export async function GET(request: NextRequest) {
   if (!authCheck.authorized) return authCheck.response;
   try {
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status'); // UNPAID, PAID, PENDING, OVERDUE
-    const userId = searchParams.get('userId');
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
-    const monthParam = searchParams.get('month'); // YYYY-MM
-    const searchParam = searchParams.get('search')?.trim() || '';
+    // groupBy=installer: sort by the customer's installer and return a
+    // per-installer summary computed with the same filters as the list.
+    const groupByInstaller = searchParams.get('groupBy') === 'installer';
 
-    const where: any = {};
-
-    // Month filter — PAID invoices by paidAt (kapan dibayar), others by dueDate
-    // (periode tagihan). dueDate dipakai karena invoice Oktober bisa digenerate
-    // lebih awal (createdAt September) tapi tetap "tagihan Oktober".
-    if (monthParam && /^\d{4}-\d{2}$/.test(monthParam)) {
-      const [y, m] = monthParam.split('-').map(Number);
-      const start = startOfDayWIBtoUTC(new Date(Date.UTC(y, m - 1, 1)));
-      const end = endOfDayWIBtoUTC(new Date(Date.UTC(y, m, 0))); // last day of month
-      const isPaidTab = status === 'PAID';
-      where[isPaidTab ? 'paidAt' : 'dueDate'] = { gte: start, lte: end };
-    }
-
-    if (status && status !== 'all') {
-      // UNPAID atau PENDING mencakup PENDING dan OVERDUE
-      if (status === 'UNPAID' || status === 'PENDING') {
-        where.status = { in: ['PENDING', 'OVERDUE'] };
-      } else {
-        where.status = status;
-      }
-    }
-
-    if (userId) {
-      where.userId = userId;
-    }
-
-    // Search filter — match invoice number, customer name, username, or phone
-    // Note: MySQL contains is already case-insensitive, no need for mode: 'insensitive'
-    if (searchParam) {
-      where.OR = [
-        { invoiceNumber: { contains: searchParam } },
-        { customerName: { contains: searchParam } },
-        { customerUsername: { contains: searchParam } },
-        { customerPhone: { contains: searchParam } },
-        { user: { name: { contains: searchParam } } },
-        { user: { username: { contains: searchParam } } },
-        { user: { phone: { contains: searchParam } } },
-      ];
-    }
+    // Same filters as the export (status, month, search, customer, installer)
+    const where = buildInvoiceListWhere(searchParams);
+    const installerWhere = installerInvoiceWhere(parseInstallerFilter(searchParams.get('installerId')));
 
     const skip = (page - 1) * limit;
 
@@ -161,29 +126,34 @@ export async function GET(request: NextRequest) {
                   name: true,
                 },
               },
+              installer: { select: { id: true, name: true } },
             },
           },
         },
-        orderBy: {
-          createdAt: 'desc',
-        },
+        orderBy: groupByInstaller
+          ? [{ user: { installer: { name: 'asc' } } }, { createdAt: 'desc' }]
+          : { createdAt: 'desc' },
         skip,
         take: limit,
       }),
       prisma.invoice.count({ where }),
     ]);
+    const installerSummary = groupByInstaller ? await summarizeInvoicesByInstaller(where) : undefined;
 
     const totalPages = Math.ceil(total / limit) || 1;
 
     // Calculate stats — run all 7 queries in parallel
+    // Tab counters follow the installer filter (not status/month: they are
+    // the tabs themselves), so the numbers match what the list can show.
+    const sw = (extra: Record<string, unknown> = {}) => ({ AND: [installerWhere, extra] });
     const [totalAll, unpaid, paid, pending, overdue, totalUnpaidAgg, totalPaidAgg] = await Promise.all([
-      prisma.invoice.count(),
-      prisma.invoice.count({ where: { status: { in: ['PENDING', 'OVERDUE'] } } }),
-      prisma.invoice.count({ where: { status: 'PAID' } }),
-      prisma.invoice.count({ where: { status: 'PENDING' } }),
-      prisma.invoice.count({ where: { status: 'OVERDUE' } }),
-      prisma.invoice.aggregate({ where: { status: { in: ['PENDING', 'OVERDUE'] } }, _sum: { amount: true } }),
-      prisma.invoice.aggregate({ where: { status: 'PAID' }, _sum: { amount: true } }),
+      prisma.invoice.count({ where: sw() }),
+      prisma.invoice.count({ where: sw({ status: { in: ['PENDING', 'OVERDUE'] } }) }),
+      prisma.invoice.count({ where: sw({ status: 'PAID' }) }),
+      prisma.invoice.count({ where: sw({ status: 'PENDING' }) }),
+      prisma.invoice.count({ where: sw({ status: 'OVERDUE' }) }),
+      prisma.invoice.aggregate({ where: sw({ status: { in: ['PENDING', 'OVERDUE'] } }), _sum: { amount: true } }),
+      prisma.invoice.aggregate({ where: sw({ status: 'PAID' }), _sum: { amount: true } }),
     ]);
     const stats = { total: totalAll, unpaid, paid, pending, overdue, totalUnpaidAmount: totalUnpaidAgg, totalPaidAmount: totalPaidAgg };
 
@@ -193,6 +163,7 @@ export async function GET(request: NextRequest) {
       totalPages,
       page,
       limit,
+      ...(installerSummary ? { installerSummary } : {}),
       stats: {
         ...stats,
         totalUnpaidAmount: stats.totalUnpaidAmount._sum.amount || 0,

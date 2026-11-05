@@ -3,6 +3,7 @@ import { prisma } from '@/server/db/client';
 import { generateExcelBuffer, formatDateExport } from '@/lib/utils/export';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { formatWIB } from '@/lib/timezone';
+import { installerLabel, installerUserWhere, parseInstallerFilter } from '@/server/services/installer.service';
 
 export async function GET(req: NextRequest) {
   // Any signed-in admin could export before; now the same permission as the list.
@@ -17,6 +18,9 @@ export async function GET(req: NextRequest) {
   const routerId = searchParams.get('routerId');
   const status = searchParams.get('status');
   const paymentStatus = searchParams.get('paymentStatus');
+  const areaId = searchParams.get('areaId');
+  const search = searchParams.get('search')?.trim();
+  const installerFilter = parseInstallerFilter(searchParams.get('installerId'));
   // P0 security: passwords are excluded by default. Admin must explicitly
   // request includePassword=true for backup exports containing credentials.
   const includePassword = searchParams.get('includePassword') === 'true';
@@ -44,6 +48,20 @@ export async function GET(req: NextRequest) {
     if (status) {
       where.status = status;
     }
+
+    // Same filters as the Data Pelanggan list, so the file matches the screen
+    if (areaId) {
+      where.areaId = areaId;
+    }
+    if (search) {
+      where.OR = [
+        { username: { contains: search } },
+        { name: { contains: search } },
+        { phone: { contains: search } },
+        { customerId: { contains: search } },
+      ];
+    }
+    Object.assign(where, installerUserWhere(installerFilter));
 
     // Payment status filter via invoice join
     if (paymentStatus === 'unpaid') {
@@ -79,14 +97,15 @@ export async function GET(req: NextRequest) {
         customerId: true,
         profile: { select: { name: true } },
         router: { select: { id: true, name: true, nasname: true } },
-        area: { select: { name: true } }
+        area: { select: { name: true } },
+        installer: { select: { name: true } }
       },
       orderBy: { createdAt: 'desc' }
     });
 
     if (format === 'pdf') {
       // Generate PDF data for client-side rendering
-      const headers = ['No', 'Username', 'Password', 'Nama', 'Phone', 'Profile', 'Status', 'Expired', 'Router'];
+      const headers = ['No', 'Username', 'Password', 'Nama', 'Phone', 'Profile', 'Instalatur', 'Status', 'Expired', 'Router'];
       const rows = users.map((u, idx) => [
         idx + 1,
         u.username,
@@ -94,6 +113,7 @@ export async function GET(req: NextRequest) {
         u.name,
         u.phone,
         u.profile?.name || 'Tanpa Paket',
+        installerLabel(u.installer),
         u.status === 'active' ? 'Aktif' : u.status === 'isolated' ? 'Isolir' : u.status === 'blocked' ? 'Block' : 'Stop',
         u.expiredAt ? formatDateExport(u.expiredAt) : '-',
         u.router?.name || 'Global'
@@ -129,6 +149,7 @@ export async function GET(req: NextRequest) {
       { key: 'email', header: 'Email', width: 25 },
       { key: 'address', header: 'Alamat', width: 35 },
       { key: 'area', header: 'Area', width: 18 },
+      { key: 'installer', header: 'Instalatur', width: 20 },
       { key: 'profile', header: 'Profile', width: 15 },
       { key: 'subscriptionType', header: 'Tipe Langganan', width: 15 },
       { key: 'status', header: 'Status', width: 12 },
@@ -153,6 +174,7 @@ export async function GET(req: NextRequest) {
       email: u.email || '',
       address: u.address || '',
       area: (u as any).area?.name || '',
+      installer: installerLabel(u.installer),
       profile: u.profile?.name || 'Tanpa Paket',
       subscriptionType: u.subscriptionType || 'POSTPAID',
       status: u.status === 'active' ? 'Aktif' : u.status === 'isolated' ? 'Isolir' : u.status === 'blocked' ? 'Block' : 'Stop',

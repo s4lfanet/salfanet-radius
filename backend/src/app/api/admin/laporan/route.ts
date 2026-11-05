@@ -2,6 +2,9 @@
 import { requirePermission } from '@/server/middleware/api-auth';
 import { startOfDayWIBtoUTC, endOfDayWIBtoUTC, nowWIB, formatWIB } from '@/lib/timezone';
 import { prisma } from '@/server/db/client';
+import {
+  installerInvoiceWhere, installerLabel, installerUserWhere, parseInstallerFilter, INSTALLER_UNSET_LABEL,
+} from '@/server/services/installer.service';
 
 // ── Format Rupiah ────────────────────────────────────────────────────────────
 function formatRupiah(amount: number): string {
@@ -61,6 +64,9 @@ export async function GET(request: NextRequest) {
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
     const status = searchParams.get('status') || 'all';
+    // '' | all | none | <id> — narrows every report to that installer's customers
+    const installerFilter = parseInstallerFilter(searchParams.get('installerId'));
+    const invoiceInstaller = installerInvoiceWhere(installerFilter);
 
     // Build date range with WIB-aware conversion
     const nowLocal = nowWIB();
@@ -75,6 +81,7 @@ export async function GET(request: NextRequest) {
     if (type === 'invoice') {
       const where: any = {
         createdAt: { gte: from, lte: to },
+        AND: [invoiceInstaller],
       };
       if (status !== 'all') {
         where.status = status.toUpperCase();
@@ -84,6 +91,7 @@ export async function GET(request: NextRequest) {
         where,
         orderBy: { createdAt: 'desc' },
         select: {
+          user: { select: { installer: { select: { name: true } } } },
           invoiceNumber: true,
           customerName: true,
           customerUsername: true,
@@ -104,6 +112,7 @@ export async function GET(request: NextRequest) {
         'Nama Pelanggan': inv.customerName || '-',
         'Username': inv.customerUsername || '-',
         'Telepon': inv.customerPhone || '-',
+        'Instalatur': installerLabel(inv.user?.installer),
         'Jumlah': inv.amount,
         'Jumlah (Rp)': formatRupiah(inv.amount),
         'Status': inv.status,
@@ -131,6 +140,7 @@ export async function GET(request: NextRequest) {
       const payments = await prisma.payment.findMany({
         where: {
           paidAt: { gte: from, lte: to },
+          invoice: { is: invoiceInstaller },
         },
         orderBy: { paidAt: 'desc' },
         include: {
@@ -140,6 +150,7 @@ export async function GET(request: NextRequest) {
               customerName: true,
               customerUsername: true,
               customerPhone: true,
+              user: { select: { installer: { select: { name: true } } } },
             },
           },
         },
@@ -151,6 +162,7 @@ export async function GET(request: NextRequest) {
         'Nama Pelanggan': pay.invoice?.customerName || '-',
         'Username': pay.invoice?.customerUsername || '-',
         'Telepon': pay.invoice?.customerPhone || '-',
+        'Instalatur': installerLabel(pay.invoice?.user?.installer),
         'Jumlah': pay.amount,
         'Jumlah (Rp)': formatRupiah(pay.amount),
         'Metode': translatePaymentMethod(pay.method),
@@ -171,6 +183,7 @@ export async function GET(request: NextRequest) {
     if (type === 'customer') {
       const where: any = {
         createdAt: { gte: from, lte: to },
+        ...installerUserWhere(installerFilter),
       };
       if (status !== 'all') {
         where.status = status;
@@ -182,6 +195,7 @@ export async function GET(request: NextRequest) {
         include: {
           profile: { select: { name: true, price: true } },
           area: { select: { name: true } },
+          installer: { select: { name: true } },
           pppoeCustomer: { select: { email: true } },
         },
         take: 5000,
@@ -198,6 +212,7 @@ export async function GET(request: NextRequest) {
         'Paket': c.profile?.name || '-',
         'Harga Paket': c.profile?.price ? formatRupiah(c.profile.price) : '-',
         'Area': c.area?.name || '-',
+        'Instalatur': installerLabel(c.installer),
         'Saldo': formatRupiah(c.balance),
         'Auto Renewal': c.autoRenewal ? 'Ya' : 'Tidak',
         'Terdaftar': formatDate(c.createdAt),
@@ -209,7 +224,7 @@ export async function GET(request: NextRequest) {
         total: customers.length,
         active: customers.filter(c => c.status === 'active').length,
         isolated: customers.filter(c => c.status === 'isolated').length,
-        stopped: customers.filter(c => c.status === 'stopped').length,
+        stopped: customers.filter(c => c.status === 'stop').length,
         expired: customers.filter(c => c.status === 'expired').length,
       };
 
@@ -224,6 +239,7 @@ export async function GET(request: NextRequest) {
         where: {
           createdAt: { gte: from, lte: to },
           userId: { not: null },
+          AND: [invoiceInstaller],
         },
         select: {
           amount: true,
@@ -247,7 +263,7 @@ export async function GET(request: NextRequest) {
       // Jumlah pelanggan aktif per profile (independen dari invoice, agar akurat)
       const profileCustomerCounts = await prisma.pppoeUser.groupBy({
         by: ['profileId'],
-        where: { profileId: { not: null } },
+        where: { profileId: { not: null }, ...installerUserWhere(installerFilter) },
         _count: { _all: true },
       });
       const customerCountMap = new Map(
@@ -304,7 +320,65 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, rows, summary, type });
     }
 
-    return NextResponse.json({ error: 'Invalid type. Use: invoice | payment | customer | profile' }, { status: 400 });
+    // ── INSTALLER REPORT ──────────────────────────────────────────────────
+    // Customers, invoices and revenue per installer (current installer of
+    // each customer), for invoices created in the period.
+    if (type === 'installer') {
+      const [installers, customerCounts, invoices] = await Promise.all([
+        prisma.installer.findMany({ select: { id: true, name: true, isActive: true } }),
+        prisma.pppoeUser.groupBy({ by: ['installerId'], where: installerUserWhere(installerFilter), _count: { _all: true } }),
+        prisma.invoice.findMany({
+          where: { createdAt: { gte: from, lte: to }, userId: { not: null }, AND: [invoiceInstaller] },
+          select: { amount: true, status: true, user: { select: { installerId: true } } },
+          take: 50000,
+        }),
+      ]);
+
+      type Row = { name: string; active: boolean; customers: number; invoices: number; paid: number; paidAmount: number; unpaid: number; unpaidAmount: number };
+      const byInstaller = new Map<string, Row>();
+      const keyOf = (id: string | null | undefined) => id ?? '__none__';
+      const rowFor = (id: string | null | undefined): Row => {
+        const k = keyOf(id);
+        if (!byInstaller.has(k)) {
+          const inst = installers.find((i) => i.id === id);
+          byInstaller.set(k, { name: inst?.name ?? INSTALLER_UNSET_LABEL, active: inst?.isActive ?? true, customers: 0, invoices: 0, paid: 0, paidAmount: 0, unpaid: 0, unpaidAmount: 0 });
+        }
+        return byInstaller.get(k)!;
+      };
+
+      for (const c of customerCounts) rowFor(c.installerId).customers = c._count._all;
+      for (const inv of invoices) {
+        const r = rowFor(inv.user?.installerId);
+        r.invoices += 1;
+        if (inv.status === 'PAID') { r.paid += 1; r.paidAmount += inv.amount; }
+        else if (inv.status === 'PENDING' || inv.status === 'OVERDUE') { r.unpaid += 1; r.unpaidAmount += inv.amount; }
+      }
+
+      const ordered = [...byInstaller.entries()].sort(([ka, a], [kb, b]) =>
+        ka === '__none__' ? 1 : kb === '__none__' ? -1 : b.paidAmount - a.paidAmount || a.name.localeCompare(b.name, 'id'),
+      );
+      const rows = ordered.map(([, r]) => ({
+        'Instalatur': r.active ? r.name : `${r.name} (nonaktif)`,
+        'Jumlah Pelanggan': r.customers,
+        'Total Invoice': r.invoices,
+        'Lunas': r.paid,
+        'Pendapatan': r.paidAmount,
+        'Pendapatan (Rp)': formatRupiah(r.paidAmount),
+        'Belum Bayar': r.unpaid,
+        'Tertunggak': r.unpaidAmount,
+        'Tertunggak (Rp)': formatRupiah(r.unpaidAmount),
+      }));
+
+      const summary = {
+        total: rows.length,
+        totalAmount: ordered.reduce((s, [, r]) => s + r.paidAmount, 0),
+        paidAmount: ordered.reduce((s, [, r]) => s + r.unpaidAmount, 0),
+      };
+
+      return NextResponse.json({ success: true, rows, summary, type });
+    }
+
+    return NextResponse.json({ error: 'Invalid type. Use: invoice | payment | customer | profile | installer' }, { status: 400 });
   } catch (error: any) {
     console.error('[LAPORAN API] Error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

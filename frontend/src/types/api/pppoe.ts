@@ -23,6 +23,8 @@ export interface PppoeUser {
   password?: string; // only returned in specific contexts
   profileId: ID;
   areaId: ID | null;
+  installerId?: ID | null;
+  installer?: { id: ID; name: string; isActive: boolean } | null;
   status: UserStatus;
   ipAddress: string | null;
   macAddress: string | null;

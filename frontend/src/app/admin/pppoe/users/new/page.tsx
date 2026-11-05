@@ -9,6 +9,7 @@ import { todayWIBStr, parseDateAsWIB } from '@/lib/timezone';
 import { pppoeApi, networkApi, buildUrl } from '@/lib/api';
 import type { PppoeUser } from '@/lib/api';
 import { Toggle } from '@/components/ui/toggle';
+import { InstallerOptions } from '@/components/InstallerFilter';
 
 interface Profile { id: string; name: string; groupName: string; price: number; }
 interface Router { id: string; name: string; nasname: string; ipAddress: string; authMode?: string; }
@@ -42,6 +43,7 @@ export default function NewPppoeUserPage() {
     profileId: '',
     routerId: '',
     areaId: '',
+    installerId: '',
     ipAddress: '',
     subscriptionType: 'POSTPAID' as 'POSTPAID' | 'PREPAID',
     billingDay: '1',
@@ -600,6 +602,14 @@ export default function NewPppoeUserPage() {
                     <ModalSelect value={formData.areaId} onChange={(e) => field('areaId', e.target.value)}>
                       <option value="">- Tanpa Area -</option>
                       {areas.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                    </ModalSelect>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <ModalLabel>Instalatur</ModalLabel>
+                    <ModalSelect value={formData.installerId} onChange={(e) => field('installerId', e.target.value)}>
+                      <InstallerOptions />
                     </ModalSelect>
                   </div>
                 </div>

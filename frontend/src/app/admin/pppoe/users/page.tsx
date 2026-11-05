@@ -20,6 +20,8 @@ import MapPicker from '@/components/MapPicker';
 import { CameraPhotoInput } from '@/components/CameraPhotoInput';
 import { CameraViewfinder } from '@/components/CameraViewfinder';
 import UserDetailModal from '@/components/UserDetailModal';
+import { InstallerFilter, InstallerOptions } from '@/components/InstallerFilter';
+import { INSTALLER_UNSET_LABEL } from '@/lib/api/installers';
 import { formatWIB, isExpiredWIB as isExpired, endOfDayWIBtoUTC, nowWIB, todayWIBStr } from '@/lib/timezone';
 import {
   SimpleModal,
@@ -62,6 +64,8 @@ interface PppoeUser {
   discountNote?: string | null;
   connectionType?: 'PPPOE' | 'STATIC_IP' | 'HOTSPOT' | null;
   registeredByTechnician?: { id: string; name: string } | null;
+  installerId?: string | null;
+  installer?: { id: string; name: string; isActive: boolean } | null;
   balance?: number;
 }
 
@@ -172,7 +176,7 @@ function AddPppoeUserModal({ isOpen, onClose, onSuccess, profiles, routers, area
 }) {
   const { t } = useTranslation();
   const [formData, setFormData] = useState({
-    username: '', password: '', profileId: '', routerId: '', areaId: '', name: '', phone: '',
+    username: '', password: '', profileId: '', routerId: '', areaId: '', installerId: '', name: '', phone: '',
     email: '', address: '', latitude: '', longitude: '', ipAddress: '', expiredAt: '',
     subscriptionType: 'POSTPAID' as 'POSTPAID' | 'PREPAID',
     billingDay: '1',
@@ -192,7 +196,7 @@ function AddPppoeUserModal({ isOpen, onClose, onSuccess, profiles, routers, area
   const prevIsOpen = useRef(isOpen);
   useEffect(() => {
     if (prevIsOpen.current && !isOpen) {
-      setFormData({ username: '', password: '', profileId: '', routerId: '', areaId: '', name: '', phone: '', email: '', address: '', latitude: '', longitude: '', ipAddress: '', expiredAt: '', subscriptionType: 'POSTPAID', billingDay: '1', macAddress: '', comment: '', referralCode: '', idCardNumber: '', idCardPhoto: '', installationPhotos: [], followRoad: false, registeredAt: todayWIBStr() });
+      setFormData({ username: '', password: '', profileId: '', routerId: '', areaId: '', installerId: '', name: '', phone: '', email: '', address: '', latitude: '', longitude: '', ipAddress: '', expiredAt: '', subscriptionType: 'POSTPAID', billingDay: '1', macAddress: '', comment: '', referralCode: '', idCardNumber: '', idCardPhoto: '', installationPhotos: [], followRoad: false, registeredAt: todayWIBStr() });
       setShowPassword(false);
     }
     prevIsOpen.current = isOpen;
@@ -266,6 +270,12 @@ function AddPppoeUserModal({ isOpen, onClose, onSuccess, profiles, routers, area
             <div><ModalLabel required>{t('pppoe.profile')}</ModalLabel><ModalSelect value={formData.profileId} onChange={(e) => setFormData(prev => ({ ...prev, profileId: e.target.value }))} required><option value="" className="dark:bg-card">{t('common.select')}</option>{profiles.map((p) => <option key={p.id} value={p.id} className="dark:bg-card">{p.name} - Rp {p.price.toLocaleString('id-ID')}</option>)}</ModalSelect></div>
             <div><ModalLabel>NAS ({t('common.optional')})</ModalLabel><ModalSelect value={formData.routerId} onChange={(e) => setFormData(prev => ({ ...prev, routerId: e.target.value }))}><option value="" className="dark:bg-card">{t('pppoe.global')}</option>{routers.map((r) => <option key={r.id} value={r.id} className="dark:bg-card">{r.name} ({r.ipAddress})</option>)}</ModalSelect></div>
             <div><ModalLabel>Area <span className="text-muted-foreground text-[10px]">({t('common.optional')})</span></ModalLabel><ModalSelect value={formData.areaId} onChange={(e) => setFormData(prev => ({ ...prev, areaId: e.target.value }))}><option value="" className="dark:bg-card">-- Pilih Area --</option>{areas.map((a) => <option key={a.id} value={a.id} className="dark:bg-card">{a.name}</option>)}</ModalSelect></div>
+            <div>
+              <ModalLabel>Instalatur <span className="text-muted-foreground text-[10px]">({t('common.optional')})</span></ModalLabel>
+              <ModalSelect value={formData.installerId} onChange={(e) => setFormData(prev => ({ ...prev, installerId: e.target.value }))}>
+                <InstallerOptions />
+              </ModalSelect>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><ModalLabel required>{t('common.name')}</ModalLabel><ModalInput type="text" value={formData.name} onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))} required /></div>
               <div><ModalLabel required>{t('common.phone')}</ModalLabel><ModalInput type="tel" value={formData.phone} onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))} required /></div>
@@ -431,6 +441,9 @@ export default function PppoeUsersPage() {
   const [filterStatus, setFilterStatus] = useState('');
   const [filterSession, setFilterSession] = useState('');
   const [filterPaymentStatus, setFilterPaymentStatus] = useState('');
+  // '' = semua, 'none' = belum ditentukan, else installer id. Can come from a
+  // link on the Instalatur page (?installerId=...).
+  const [filterInstaller, setFilterInstaller] = useState(() => searchParams.get('installerId') || '');
   const [showFilters, setShowFilters] = useState(true);
   const [sortBy, setSortBy] = useState<string>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -509,7 +522,7 @@ export default function PppoeUsersPage() {
   }, [searchQuery]);
 
   // Reset to first page when filters change
-  useEffect(() => { setCurrentPage(1); }, [filterProfile, filterRouter, filterStatus]);
+  useEffect(() => { setCurrentPage(1); }, [filterProfile, filterRouter, filterStatus, filterInstaller]);
 
   // Users list - server-side pagination, search, filter, sort
   const serverParams: Record<string, string> = {
@@ -522,6 +535,7 @@ export default function PppoeUsersPage() {
   if (filterProfile) serverParams.profileId = filterProfile;
   if (filterRouter && filterRouter !== 'global') serverParams.routerId = filterRouter;
   if (filterStatus) serverParams.status = filterStatus;
+  if (filterInstaller) serverParams.installerId = filterInstaller;
 
   const usersQuery = useApiQuery<PppoeUserListResponse>('/api/pppoe/users', {
     params: serverParams,
@@ -1202,6 +1216,8 @@ export default function PppoeUsersPage() {
       if (filterRouter) params.set('routerId', filterRouter);
       if (filterStatus) params.set('status', filterStatus);
       if (filterPaymentStatus) params.set('paymentStatus', filterPaymentStatus);
+      if (filterInstaller) params.set('installerId', filterInstaller);
+      if (debouncedSearch) params.set('search', debouncedSearch);
       const res = await fetch(buildUrl(`/api/pppoe/users/export?${params}`), { credentials: 'include' });
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
@@ -1218,6 +1234,8 @@ export default function PppoeUsersPage() {
       if (filterRouter) params.set('routerId', filterRouter);
       if (filterStatus) params.set('status', filterStatus);
       if (filterPaymentStatus) params.set('paymentStatus', filterPaymentStatus);
+      if (filterInstaller) params.set('installerId', filterInstaller);
+      if (debouncedSearch) params.set('search', debouncedSearch);
       const data = await apiAdmin<ExportPdfResponse>(`/api/pppoe/users/export?${params}`);
       if (data.pdfData) {
         const jsPDF = (await import('jspdf')).default;
@@ -1591,7 +1609,7 @@ export default function PppoeUsersPage() {
             <button onClick={() => setShowFilters(!showFilters)} className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border transition ${showFilters ? 'bg-primary/10 border-primary/30 text-primary' : 'bg-muted border-border text-muted-foreground hover:text-foreground'}`}>
               <Filter className="h-3.5 w-3.5" />
               {t('common.filter') || 'Filter'}
-              {(filterProfile || filterRouter || filterStatus || filterSession || filterPaymentStatus) && <span className="ml-0.5 inline-flex items-center justify-center w-4 h-4 text-[9px] font-bold rounded-full bg-primary text-primary-foreground">{[filterProfile, filterRouter, filterStatus, filterSession, filterPaymentStatus].filter(Boolean).length}</span>}
+              {(filterProfile || filterRouter || filterStatus || filterSession || filterPaymentStatus || filterInstaller) && <span className="ml-0.5 inline-flex items-center justify-center w-4 h-4 text-[9px] font-bold rounded-full bg-primary text-primary-foreground">{[filterProfile, filterRouter, filterStatus, filterSession, filterPaymentStatus, filterInstaller].filter(Boolean).length}</span>}
             </button>
           </div>
 
@@ -1599,7 +1617,7 @@ export default function PppoeUsersPage() {
           {showFilters && (
             <div className="border-t border-border p-3 space-y-2">
               {/* All filters as dropdowns in a single grid */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
                 <div>
                   <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1 block">{t('pppoe.profile')}</label>
                   <select value={filterProfile} onChange={(e) => setFilterProfile(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-border rounded-lg bg-muted focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition">
@@ -1646,12 +1664,16 @@ export default function PppoeUsersPage() {
                     <option value="isolated">Isolir</option>
                   </select>
                 </div>
+                <div>
+                  <label htmlFor="filter-installer" className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1 block">Instalatur</label>
+                  <InstallerFilter id="filter-installer" value={filterInstaller} onChange={setFilterInstaller} />
+                </div>
               </div>
 
               {/* Reset + count */}
               <div className="flex items-center justify-between gap-2 min-w-0 pt-1 border-t border-border/50">
-                {(searchQuery || filterProfile || filterRouter || filterStatus || filterSession || filterPaymentStatus) ? (
-                  <button onClick={() => { setSearchQuery(''); setFilterProfile(''); setFilterRouter(''); setFilterStatus(''); setFilterSession(''); setFilterPaymentStatus(''); }} className="text-[10px] text-destructive hover:text-destructive/80 font-medium flex items-center gap-0.5"><X className="h-3 w-3" />{t('common.reset')}</button>
+                {(searchQuery || filterProfile || filterRouter || filterStatus || filterSession || filterPaymentStatus || filterInstaller) ? (
+                  <button onClick={() => { setSearchQuery(''); setFilterProfile(''); setFilterRouter(''); setFilterStatus(''); setFilterSession(''); setFilterPaymentStatus(''); setFilterInstaller(''); }} className="text-[10px] text-destructive hover:text-destructive/80 font-medium flex items-center gap-0.5"><X className="h-3 w-3" />{t('common.reset')}</button>
                 ) : (
                   <span />
                 )}
@@ -1735,6 +1757,10 @@ export default function PppoeUsersPage() {
                     <div className="flex justify-between gap-1">
                       <span className="text-muted-foreground">{t('common.area')}:</span>
                       <span className="truncate">{user.area?.name || '-'}</span>
+                    </div>
+                    <div className="flex justify-between gap-1">
+                      <span className="text-muted-foreground">Instalatur:</span>
+                      <span className={`truncate ${user.installer ? '' : 'text-muted-foreground'}`}>{user.installer?.name || INSTALLER_UNSET_LABEL}</span>
                     </div>
                     <div className="flex justify-between gap-1">
                       <span className="text-muted-foreground">{t('pppoe.expired')}:</span>
@@ -1861,6 +1887,10 @@ export default function PppoeUsersPage() {
                       <td className="px-3 py-2 hidden lg:table-cell">
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary">{user.profile?.name || '-'}</span>
                         <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{user.profile?.groupName || ''}</p>
+                        <p className="text-[10px] mt-0.5" title="Instalatur">
+                          <span className="text-muted-foreground">Instalatur:</span>{' '}
+                          <span className={user.installer ? 'text-foreground' : 'text-muted-foreground'}>{user.installer?.name || INSTALLER_UNSET_LABEL}</span>
+                        </p>
                       </td>
                       {/* Network */}
                       <td className="px-3 py-2 hidden lg:table-cell">

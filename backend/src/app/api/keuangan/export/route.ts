@@ -4,8 +4,15 @@ import { formatCurrencyExport, formatDateExport } from "@/lib/utils/export";
 import { requirePermission } from '@/server/middleware/api-auth';
 import { formatWIB, getCurrentTimezone } from '@/lib/timezone';
 import { formatInTimeZone } from 'date-fns-tz';
-import { startOfDayWIBtoUTC, endOfDayWIBtoUTC } from "@/lib/timezone";
 import { prisma } from '@/server/db/client';
+import { buildTransactionFilters } from '@/server/services/billing/transaction-filter.service';
+import { linkTransactionCustomersSafe } from '@/server/services/billing/transaction-customer.service';
+import { installerLabel, NOT_CUSTOMER_LABEL } from '@/server/services/installer.service';
+
+/** Installer column: the customer's installer, or why there is none. */
+function transactionInstallerLabel(t: { pppoeUser?: { installer?: { name: string } | null } | null }): string {
+  return t.pppoeUser ? installerLabel(t.pppoeUser.installer) : NOT_CUSTOMER_LABEL;
+}
 
 export async function GET(request: NextRequest) {
   const authCheck = await requirePermission('reports.export');
@@ -15,44 +22,28 @@ export async function GET(request: NextRequest) {
     const format = searchParams.get("format") || "excel"; // excel or pdf
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
-    const type = searchParams.get("type"); // INCOME, EXPENSE, or all
-    const categoryId = searchParams.get("categoryId");
-    const search = searchParams.get("search");
+    const groupByInstaller = searchParams.get("groupBy") === "installer";
 
-    // Prepare date filters (optional)
-    const where: any = {};
+    // Same filters as the Riwayat Transaksi list (type, category, date,
+    // search, installer), so the file holds what the screen shows.
+    await linkTransactionCustomersSafe();
+    const { list: where } = buildTransactionFilters(searchParams);
 
-    if (startDate && endDate) {
-      const startFilter = startOfDayWIBtoUTC(startDate);
-      const endFilter = endOfDayWIBtoUTC(endDate);
-      where.date = { gte: startFilter, lte: endFilter };
-    }
-
-    if (type && type !== "all") {
-      where.type = type;
-    }
-
-    if (categoryId && categoryId !== "all") {
-      where.categoryId = categoryId;
-    }
-
-    if (search) {
-      where.OR = [
-        { description: { contains: search } },
-        { notes: { contains: search } },
-      ];
-    }
-
-    // Get transactions
     const transactions = await prisma.transaction.findMany({
       where,
       include: {
         category: true,
+        pppoeUser: { select: { name: true, installer: { select: { id: true, name: true } } } },
       },
-      orderBy: {
-        date: "asc",
-      },
+      orderBy: { date: "asc" },
     });
+
+    // Grouped export: same group order as the screen, dates ascending inside.
+    if (groupByInstaller) {
+      const rank = (t: (typeof transactions)[number]) =>
+        !t.pppoeUser ? `2` : t.pppoeUser.installer ? `1${t.pppoeUser.installer.name.toLocaleLowerCase('id')}` : `0`;
+      transactions.sort((a, b) => rank(a).localeCompare(rank(b), 'id') || a.date.getTime() - b.date.getTime());
+    }
 
     // Calculate stats
     const totalIncome = transactions
@@ -139,6 +130,8 @@ async function exportToExcel(transactions: any[], stats: any) {
     Kategori: string;
     Tipe: string;
     Jumlah: number | string;
+    Pelanggan?: string;
+    Instalatur?: string;
     Referensi: string;
     Catatan: string;
   }> = transactions.map((t) => ({
@@ -147,6 +140,8 @@ async function exportToExcel(transactions: any[], stats: any) {
     Kategori: t.category.name,
     Tipe: t.type,
     Jumlah: Number(t.amount),
+    Pelanggan: t.pppoeUser?.name || "-",
+    Instalatur: transactionInstallerLabel(t),
     Referensi: t.reference || "-",
     Catatan: t.notes || "-",
   }));
@@ -249,13 +244,14 @@ async function exportToExcel(transactions: any[], stats: any) {
 
 function exportToPDF(transactions: any[], stats: any) {
   // Generate PDF data for client-side rendering
-  const headers = ['No', 'Tanggal', 'Deskripsi', 'Kategori', 'Tipe', 'Jumlah'];
+  const headers = ['No', 'Tanggal', 'Deskripsi', 'Kategori', 'Instalatur', 'Tipe', 'Jumlah'];
   
   const rows = transactions.map((t, idx) => [
     idx + 1,
     formatDateExport(t.date),
     t.description,
     t.category.name,
+    transactionInstallerLabel(t),
     t.type === 'INCOME' ? 'Pemasukan' : 'Pengeluaran',
     formatCurrencyExport(Number(t.amount))
   ]);

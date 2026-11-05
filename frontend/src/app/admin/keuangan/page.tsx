@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,8 @@ import { showSuccess, showError, showConfirm } from "@/lib/sweetalert";
 import { formatWIB, nowWIB } from "@/lib/timezone";
 import { useTranslation } from "@/hooks/useTranslation";
 import { apiAdmin, buildUrl } from "@/lib/api";
+import { InstallerFilter, InstallerSummaryBar, groupHeading, type InstallerGroup } from "@/components/InstallerFilter";
+import { INSTALLER_UNSET_LABEL } from "@/lib/api/installers";
 import { useApiQuery, useApiMutation, useQueryClient, buildQueryKey } from "@/lib/api/hooks";
 import {
   Dialog,
@@ -68,6 +70,8 @@ interface Transaction {
   reference: string | null;
   notes: string | null;
   category: Category;
+  /** Customer behind the row (resolved from the reference); null = not a customer row. */
+  pppoeUser?: { id: string; name: string; username: string; installer: { id: string; name: string } | null } | null;
 }
 
 interface Stats {
@@ -89,6 +93,7 @@ interface TransactionsListResponse {
   transactions: Transaction[];
   stats: Stats;
   total?: number;
+  installerSummary?: InstallerGroup[];
 }
 
 interface CategoriesListResponse {
@@ -123,6 +128,16 @@ export default function KeuanganPage() {
   const [endDate, setEndDate] = useState("");
 
   const [searchQuery, setSearchQuery] = useState("");
+  // '' = semua instalatur, 'none' = belum ditentukan, else installer id
+  const [filterInstaller, setFilterInstaller] = useState("");
+  const [groupByInstaller, setGroupByInstaller] = useState(true);
+  useEffect(() => {
+    try { if (localStorage.getItem("keuangan.groupByInstaller") === "0") setGroupByInstaller(false); } catch { /* storage unavailable */ }
+  }, []);
+  const toggleGrouping = (on: boolean) => {
+    setGroupByInstaller(on);
+    try { localStorage.setItem("keuangan.groupByInstaller", on ? "1" : "0"); } catch { /* storage unavailable */ }
+  };
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
@@ -158,6 +173,8 @@ export default function KeuanganPage() {
     startDate: startDate && endDate ? startDate : undefined,
     endDate: startDate && endDate ? endDate : undefined,
     search: debouncedSearch || undefined,
+    installerId: filterInstaller || undefined,
+    groupBy: groupByInstaller ? "installer" : undefined,
   };
   const { data: transactionsData, isLoading: loading, isFetching } = useApiQuery<TransactionsListResponse>("/api/keuangan/transactions", {
     params: transactionParams,
@@ -173,6 +190,24 @@ export default function KeuanganPage() {
     expenseCount: 0,
   };
   const total = transactionsData?.total || 0;
+  const installerSummary = transactionsData?.installerSummary;
+
+  // Grouped list: a heading wherever the group changes. Groups come from the
+  // server in order, so a group continues seamlessly into the next loaded page.
+  const groupKey = (tx: Transaction) => (tx.pppoeUser ? tx.pppoeUser.installer?.id ?? "none" : "not-customer");
+  const isGroupStart = (idx: number) =>
+    groupByInstaller && (idx === 0 || groupKey(transactions[idx]) !== groupKey(transactions[idx - 1]));
+  const renderGroupHeading = (tx: Transaction) => {
+    const h = groupHeading(installerSummary, { installerId: tx.pppoeUser?.installer?.id ?? null, notCustomer: !tx.pppoeUser });
+    return (
+      <div className="flex items-baseline justify-between gap-2">
+        <span className={`text-[11px] font-semibold ${tx.pppoeUser?.installer ? "text-foreground" : "text-muted-foreground"}`}>{h.name}</span>
+        <span className="text-[10px] text-muted-foreground tabular-nums">{h.detail}</span>
+      </div>
+    );
+  };
+  const installerOf = (tx: Transaction) =>
+    tx.pppoeUser ? tx.pppoeUser.installer?.name || INSTALLER_UNSET_LABEL : "Bukan transaksi pelanggan";
 
   // ─── React Query: Mutations ──────────────────────────────────────────────────
   const createTransactionMutation = useApiMutation<KeuanganActionResponse>("/api/keuangan/transactions", {
@@ -213,7 +248,7 @@ export default function KeuanganPage() {
   useEffect(() => {
     setPage(1);
     setExtraTransactions([]);
-  }, [filterType, filterCategory, startDate, endDate, debouncedSearch]);
+  }, [filterType, filterCategory, startDate, endDate, debouncedSearch, filterInstaller, groupByInstaller]);
 
   // Sync hasMore from query data (page 1)
   useEffect(() => {
@@ -239,6 +274,8 @@ export default function KeuanganPage() {
     if (filterCategory !== "all") url += `&categoryId=${filterCategory}`;
     if (startDate && endDate) url += `&startDate=${startDate}&endDate=${endDate}`;
     if (debouncedSearch) url += `&search=${encodeURIComponent(debouncedSearch)}`;
+    if (filterInstaller) url += `&installerId=${encodeURIComponent(filterInstaller)}`;
+    if (groupByInstaller) url += `&groupBy=installer`;
     return url;
   };
 
@@ -361,6 +398,7 @@ export default function KeuanganPage() {
       let url = `/api/keuangan/transactions?filterDelete=true&type=${filterType}&categoryId=${filterCategory}`;
       if (startDate && endDate) url += `&startDate=${startDate}&endDate=${endDate}`;
       if (debouncedSearch) url += `&search=${encodeURIComponent(debouncedSearch)}`;
+      if (filterInstaller) url += `&installerId=${encodeURIComponent(filterInstaller)}`;
       const data = await apiAdmin<{ success: boolean; message: string; error: string }>(url, { method: "DELETE" });
       if (data.success) {
         await showSuccess(data.message);
@@ -415,6 +453,7 @@ export default function KeuanganPage() {
     setStartDate("");
     setEndDate("");
     setSearchQuery("");
+    setFilterInstaller("");
   };
 
   const _formatDateLocal = (date: Date) => {
@@ -447,6 +486,8 @@ export default function KeuanganPage() {
       if (startDate && endDate) url += `&startDate=${startDate}&endDate=${endDate}`;
       if (filterCategory !== "all") url += `&categoryId=${filterCategory}`;
       if (debouncedSearch) url += `&search=${encodeURIComponent(debouncedSearch)}`;
+      if (filterInstaller) url += `&installerId=${encodeURIComponent(filterInstaller)}`;
+      if (groupByInstaller) url += `&groupBy=installer`;
 
       if (format === "excel") {
         const res = await fetch(buildUrl(url), { credentials: 'include' });
@@ -478,8 +519,8 @@ export default function KeuanganPage() {
     doc.setFontSize(9);
     doc.text(`Periode: ${formatDate(startDate)} - ${formatDate(endDate)}`, 14, 21);
 
-    const tableData = transactions.map((tx) => [formatDate(tx.date), tx.description, tx.category.name, tx.type, formatCurrency(tx.amount)]);
-    autoTable(doc, { head: [[t('keuangan.pdfDate'), t('keuangan.pdfDescription'), t('keuangan.pdfCategory'), t('keuangan.pdfType'), t('keuangan.pdfAmount')]], body: tableData, startY: 26, styles: { fontSize: 8 } });
+    const tableData = transactions.map((tx) => [formatDate(tx.date), tx.description, tx.category.name, installerOf(tx), tx.type, formatCurrency(tx.amount)]);
+    autoTable(doc, { head: [[t('keuangan.pdfDate'), t('keuangan.pdfDescription'), t('keuangan.pdfCategory'), 'Instalatur', t('keuangan.pdfType'), t('keuangan.pdfAmount')]], body: tableData, startY: 26, styles: { fontSize: 8 } });
 
     // jspdf-autotable adds lastAutoTable to the doc instance at runtime
     const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
@@ -610,7 +651,7 @@ export default function KeuanganPage() {
           ))}
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
           <div className="relative col-span-2 sm:col-span-1">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
             <input
@@ -652,7 +693,22 @@ export default function KeuanganPage() {
             onChange={(e) => setEndDate(e.target.value)}
             className="px-2 py-1.5 text-xs bg-muted border border-border rounded-md"
           />
+          <InstallerFilter value={filterInstaller} onChange={setFilterInstaller} className="col-span-2 sm:col-span-1" />
         </div>
+        <label className="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground cursor-pointer select-none w-fit">
+          <input
+            type="checkbox"
+            checked={groupByInstaller}
+            onChange={(e) => toggleGrouping(e.target.checked)}
+            className="w-3.5 h-3.5 accent-primary"
+          />
+          Kelompokkan per instalatur
+        </label>
+        {filterInstaller && (
+          <p className="mt-1.5 text-[10px] text-muted-foreground">
+            Hanya transaksi pelanggan dari instalatur ini. Pengeluaran dan transaksi tanpa pelanggan tidak ikut.
+          </p>
+        )}
       </div>
 
       {/* Transactions */}
@@ -678,6 +734,10 @@ export default function KeuanganPage() {
             </button>
           </div>
         </div>
+
+        {groupByInstaller && installerSummary && (
+          <InstallerSummaryBar groups={installerSummary} selected={filterInstaller} onSelect={setFilterInstaller} unit="transaksi" />
+        )}
 
         {/* Bulk Action Toolbar */}
         {(selectedIds.size > 0 || transactions.length > 0) && (
@@ -728,8 +788,10 @@ export default function KeuanganPage() {
               <p className="text-xs">{t('common.noData')}</p>
             </div>
           ) : (
-            transactions.map((tx) => (
-              <div key={tx.id} className={`p-3 space-y-2 active:bg-muted transition-colors ${selectedIds.has(tx.id) ? 'bg-primary/5' : ''}`}>
+            transactions.map((tx, idx) => (
+              <Fragment key={tx.id}>
+              {isGroupStart(idx) && <div className="px-3 py-1.5 bg-muted/40">{renderGroupHeading(tx)}</div>}
+              <div className={`p-3 space-y-2 active:bg-muted transition-colors ${selectedIds.has(tx.id) ? 'bg-primary/5' : ''}`}>
                 <div className="flex items-start justify-between gap-2 min-w-0">
                   <label className="flex items-center gap-2 cursor-pointer flex-1 min-w-0">
                     <input
@@ -741,6 +803,7 @@ export default function KeuanganPage() {
                     <div className="min-w-0">
                       <p className="text-xs font-medium text-foreground truncate">{tx.description}</p>
                       {tx.notes && <p className="text-[10px] text-muted-foreground truncate">{tx.notes}</p>}
+                      {!groupByInstaller && <p className="text-[10px] text-muted-foreground truncate">Instalatur: {installerOf(tx)}</p>}
                     </div>
                   </label>
                   <div className="flex items-center gap-0.5 flex-shrink-0">
@@ -768,6 +831,7 @@ export default function KeuanganPage() {
                   </span>
                 </div>
               </div>
+              </Fragment>
             ))
           )}
         </div>
@@ -781,6 +845,7 @@ export default function KeuanganPage() {
                 <TableHead className="text-[10px] py-2">{t('keuangan.date')}</TableHead>
                 <TableHead className="text-[10px] py-2">{t('keuangan.description')}</TableHead>
                 <TableHead className="text-[10px] py-2 hidden sm:table-cell">{t('keuangan.category')}</TableHead>
+                {!groupByInstaller && <TableHead className="text-[10px] py-2 hidden lg:table-cell">Instalatur</TableHead>}
                 <TableHead className="text-[10px] py-2">{t('common.type')}</TableHead>
                 <TableHead className="text-[10px] py-2 text-right">{t('keuangan.amount')}</TableHead>
                 <TableHead className="text-[10px] py-2 text-right"></TableHead>
@@ -789,14 +854,20 @@ export default function KeuanganPage() {
             <TableBody>
               {transactions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     <Inbox className="w-8 h-8 mx-auto mb-2 opacity-40" />
                     <p className="text-xs">{t('common.noData')}</p>
                   </TableCell>
                 </TableRow>
               ) : (
-                transactions.map((t) => (
-                  <TableRow key={t.id} className={`text-xs ${selectedIds.has(t.id) ? 'bg-primary/5' : ''}`}>
+                transactions.map((t, idx) => (
+                  <Fragment key={t.id}>
+                  {isGroupStart(idx) && (
+                    <TableRow className="bg-muted/40 hover:bg-muted/40">
+                      <TableCell colSpan={8} className="py-1.5">{renderGroupHeading(t)}</TableCell>
+                    </TableRow>
+                  )}
+                  <TableRow className={`text-xs ${selectedIds.has(t.id) ? 'bg-primary/5' : ''}`}>
                     <TableCell className="py-2 w-8">
                       <input
                         type="checkbox"
@@ -818,6 +889,11 @@ export default function KeuanganPage() {
                     <TableCell className="py-2 hidden sm:table-cell">
                       <Badge variant="outline" className="text-[9px] px-1.5 py-0">{t.category.name}</Badge>
                     </TableCell>
+                    {!groupByInstaller && (
+                      <TableCell className="py-2 hidden lg:table-cell text-[10px] text-muted-foreground">
+                        {installerOf(t)}
+                      </TableCell>
+                    )}
                     <TableCell className="py-2">
                       <Badge className={`text-[9px] px-1.5 py-0 ${t.type === "INCOME" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>
                         {t.type}
@@ -839,6 +915,7 @@ export default function KeuanganPage() {
                       </div>
                     </TableCell>
                   </TableRow>
+                  </Fragment>
                 ))
               )}
             </TableBody>

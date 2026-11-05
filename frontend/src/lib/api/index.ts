@@ -19,6 +19,9 @@ export type { PppoeUser, PppoeProfile, PppoeArea, CreatePppoeUserPayload, Update
 export { invoiceApi, billingApi } from './billing';
 export type { Invoice } from './billing';
 
+export { installerApi, INSTALLER_NONE, INSTALLER_UNSET_LABEL } from './installers';
+export type { Installer } from './installers';
+
 export { customerApi } from './customer';
 export { agentApi } from './agent';
 export { networkApi, dashboardApi } from './network';
