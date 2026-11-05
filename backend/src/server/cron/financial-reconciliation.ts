@@ -19,6 +19,7 @@ import { prisma } from '@/server/db/client';
 import { nowWIB } from '@/lib/timezone';
 import { recordInvoiceIncome, invoiceReference } from '@/server/services/billing/invoice-income.service';
 import { linkTransactionCustomersSafe } from '@/server/services/billing/transaction-customer.service';
+import { hasFlag, setFlag } from '@/server/services/app-flag.service';
 
 export interface ReconciliationIssue {
   type: 'paid_without_payment' | 'amount_mismatch' | 'orphan_payment' | 'duplicate_payment' | 'negative_balance' | 'ledger_backfilled';
@@ -188,29 +189,42 @@ export async function runFinancialReconciliation(): Promise<ReconciliationResult
  * dated when the collector took the money. Only invoices settled by a
  * collector (paidById set) — balance auto-renewals have their own row under a
  * different reference and must not be counted twice.
+ *
+ * This is a one-time catch-up. Since then mark-paid writes the row itself, so
+ * running it every day would only put back a row an admin deleted on purpose.
+ * It goes through every collector-paid invoice in pages (oldest first, so no
+ * gap is skipped), and records a marker once it has seen them all.
  */
+const LEDGER_BACKFILL_FLAG = 'collector_ledger_backfill_done';
+const LEDGER_BACKFILL_PAGE = 1000;
+
 async function backfillCollectorLedger(issues: ReconciliationIssue[]): Promise<number> {
+  if (await hasFlag(LEDGER_BACKFILL_FLAG)) return 0;
+
   let ledgerBackfilled = 0;
-  const collectorPaid = await prisma.invoice.findMany({
-    where: {
-      status: 'PAID',
-      paidById: { not: null },
-      paymentMethod: { not: 'discount' },
-    },
-    select: {
-      invoiceNumber: true,
-      amount: true,
-      paidAt: true,
-      paidById: true,
-      paymentMethod: true,
-      customerName: true,
-      customerUsername: true,
-      user: { select: { name: true, profile: { select: { name: true } } } },
-    },
-    orderBy: { paidAt: 'desc' },
-    take: 5000,
-  });
-  if (collectorPaid.length > 0) {
+  for (let skip = 0; ; skip += LEDGER_BACKFILL_PAGE) {
+    const collectorPaid = await prisma.invoice.findMany({
+      where: {
+        status: 'PAID',
+        paidById: { not: null },
+        paymentMethod: { not: 'discount' },
+      },
+      select: {
+        invoiceNumber: true,
+        amount: true,
+        paidAt: true,
+        paidById: true,
+        paymentMethod: true,
+        customerName: true,
+        customerUsername: true,
+        user: { select: { name: true, profile: { select: { name: true } } } },
+      },
+      orderBy: [{ paidAt: 'asc' }, { id: 'asc' }],
+      skip,
+      take: LEDGER_BACKFILL_PAGE,
+    });
+    if (collectorPaid.length === 0) break;
+
     const refs = collectorPaid.flatMap((i) => [invoiceReference(i.invoiceNumber), i.invoiceNumber]);
     const existing = await prisma.transaction.findMany({
       where: { reference: { in: refs } },
@@ -248,7 +262,9 @@ async function backfillCollectorLedger(issues: ReconciliationIssue[]): Promise<n
         console.error(`[Financial Reconciliation] Ledger backfill failed for ${inv.invoiceNumber}:`, e);
       }
     }
+    if (collectorPaid.length < LEDGER_BACKFILL_PAGE) break;
   }
 
+  await setFlag(LEDGER_BACKFILL_FLAG, new Date().toISOString());
   return ledgerBackfilled;
 }

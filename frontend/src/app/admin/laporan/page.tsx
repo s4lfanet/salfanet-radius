@@ -23,6 +23,8 @@ interface Summary {
   expired?: number;
   totalAmount?: number;
   paidAmount?: number;
+  collectedAmount?: number;
+  outstandingAmount?: number;
 }
 
 // Raw numbers kept for Excel; the PDF and preview show the formatted (Rp) twin.
@@ -365,7 +367,7 @@ export default function LaporanPage() {
           {reportType === 'payment' && (
             <>
               <SummaryCard label={t('laporan.totalTransaction')} value={summary.total} icon={<CreditCard className="w-5 h-5" />} color="cyan" />
-              <SummaryCard label={t('laporan.totalReceived')} value={formatRupiah(summary.totalAmount ?? 0)} icon={<TrendingUp className="w-5 h-5" />} color="green" />
+              <SummaryCard label={t('laporan.totalReceived')} value={formatRupiah(summary.collectedAmount ?? summary.totalAmount ?? 0)} icon={<TrendingUp className="w-5 h-5" />} color="green" />
             </>
           )}
           {reportType === 'customer' && (
@@ -379,15 +381,15 @@ export default function LaporanPage() {
           {reportType === 'installer' && (
             <>
               <SummaryCard label="Jumlah Instalatur" value={summary.total} icon={<HardHat className="w-5 h-5" />} color="cyan" />
-              <SummaryCard label="Pendapatan (Lunas)" value={formatRupiah(summary.totalAmount ?? 0)} icon={<TrendingUp className="w-5 h-5" />} color="green" />
-              <SummaryCard label="Tertunggak" value={formatRupiah(summary.paidAmount ?? 0)} icon={<CreditCard className="w-5 h-5" />} color="yellow" />
+              <SummaryCard label="Pendapatan (Lunas)" value={formatRupiah(summary.collectedAmount ?? summary.totalAmount ?? 0)} icon={<TrendingUp className="w-5 h-5" />} color="green" />
+              <SummaryCard label="Tertunggak" value={formatRupiah(summary.outstandingAmount ?? summary.paidAmount ?? 0)} icon={<CreditCard className="w-5 h-5" />} color="yellow" />
             </>
           )}
           {reportType === 'profile' && (
             <>
               <SummaryCard label="Jumlah Paket" value={summary.total} icon={<BarChart3 className="w-5 h-5" />} color="cyan" />
-              <SummaryCard label="Pendapatan (Lunas)" value={formatRupiah(summary.totalAmount ?? 0)} icon={<TrendingUp className="w-5 h-5" />} color="green" />
-              <SummaryCard label="Tertunggak" value={formatRupiah(summary.paidAmount ?? 0)} icon={<CreditCard className="w-5 h-5" />} color="yellow" />
+              <SummaryCard label="Pendapatan (Lunas)" value={formatRupiah(summary.collectedAmount ?? summary.totalAmount ?? 0)} icon={<TrendingUp className="w-5 h-5" />} color="green" />
+              <SummaryCard label="Tertunggak" value={formatRupiah(summary.outstandingAmount ?? summary.paidAmount ?? 0)} icon={<CreditCard className="w-5 h-5" />} color="yellow" />
             </>
           )}
         </div>

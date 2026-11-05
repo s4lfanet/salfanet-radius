@@ -21,7 +21,9 @@ import { prisma } from '@/server/db/client';
 /**
  * Resolves every row not looked at yet. Cheap when there is nothing new
  * (indexed `customer_linked_at IS NULL`), so callers run it before reading.
- * Returns the number of rows looked at.
+ * A row that finds no customer is only written off (stamped) once it is more
+ * than 10 minutes old, so one written just before its invoice is visible gets
+ * another chance. Returns the number of rows looked at.
  */
 export async function linkTransactionCustomers(): Promise<number> {
   return prisma.$executeRaw`
@@ -41,7 +43,9 @@ export async function linkTransactionCustomers(): Promise<number> {
         END
       )
     SET t.pppoe_user_id = u.id,
-        t.customer_linked_at = NOW(3)
+        t.customer_linked_at = CASE
+          WHEN u.id IS NOT NULL OR t.createdAt < UTC_TIMESTAMP(3) - INTERVAL 10 MINUTE THEN NOW(3)
+        END
     WHERE t.customer_linked_at IS NULL
   `;
 }

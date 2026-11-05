@@ -125,8 +125,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'userIds (string[]) wajib diisi' }, { status: 400 });
     }
 
+    // Only customers the list above flags. Activating any other stopped
+    // customer is the ordinary status change, not this repair.
+    const allowed = new Set((await findCandidates()).map((c) => c.id));
     const results = [];
     for (const id of userIds as string[]) {
+      if (!allowed.has(id)) {
+        results.push({ username: id, restored: false, message: 'Bukan kandidat perbaikan Auto Stop' });
+        continue;
+      }
       try {
         const r = await restoreUserAccess(id, ['stop'], 'REPAIR_AUTO_STOP');
         results.push(r);

@@ -6,6 +6,22 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.36.1] - 2026-11-05 - Perbaikan Temuan Audit Lanjutan
+
+### Perbaikan
+- **[FIX]** Rekonsiliasi Keuangan tidak lagi membuat ulang baris Riwayat Transaksi pembayaran kolektor yang sengaja dihapus admin. Pengisian baris yang hilang kini satu kali saja (ditandai di tabel baru `app_flags`), dijalankan per halaman dari invoice terlama sehingga tidak ada yang terlewat, lalu berhenti. Sebelumnya berjalan tiap hari dan hanya melihat 5000 invoice terbaru
+- **[FIX]** Menghubungkan transaksi ke pelanggan tidak lagi langsung menutup baris yang belum bisa dipetakan: baris baru (kurang dari 10 menit) yang belum menemukan pelanggannya dicoba lagi di pembacaan berikutnya, sehingga tidak hilang dari filter dan pengelompokan instalatur
+- **[FIX]** Hapus Sesuai Filter di Riwayat Transaksi kini berhenti dengan galat bila hubungan transaksi ke pelanggan gagal diperbarui, daripada menghapus berdasarkan hubungan lama
+- **[FIX]** Alat pemulihan Auto Stop (`repair-auto-stop`) hanya memulihkan pelanggan yang memang terdaftar sebagai kandidat; id lain ditolak. Mengaktifkan pelanggan stop yang lain tetap lewat perubahan status biasa
+- **[FIX]** Ringkasan laporan per paket dan per instalatur kini punya bidang bernama jelas, `collectedAmount` (pendapatan lunas) dan `outstandingAmount` (tertunggak). `totalAmount` dan `paidAmount` tetap ada dengan arti lama yang tertukar agar klien lama tidak rusak. Halaman Laporan memakai bidang baru
+
+### Catatan Pembaruan
+- Perubahan skema kecil: tabel baru `app_flags`. "Update Sekarang" menambahkannya tanpa menghapus data
+- Setelah update, rekonsiliasi akan mengisi baris yang hilang satu kali lagi untuk pembayaran kolektor lama, lalu berhenti
+- Naikkan versi: root, backend, frontend ke 5.36.1; aplikasi tidak berubah
+
+---
+
 ## [5.36.0] - 2026-11-05 - Instalatur di Aplikasi Admin dan Perbaikan Hasil Audit
 
 ### Aplikasi

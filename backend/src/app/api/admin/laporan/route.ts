@@ -313,6 +313,10 @@ export async function GET(request: NextRequest) {
 
       const summary = {
         total: rows.length,
+        // collectedAmount / outstandingAmount say what the numbers are. totalAmount and
+        // paidAmount keep their old (swapped) meaning for clients that already read them.
+        collectedAmount: Array.from(byProfile.values()).reduce((s, e) => s + e.paidAmount, 0),
+        outstandingAmount: Array.from(byProfile.values()).reduce((s, e) => s + e.unpaidAmount, 0),
         totalAmount: Array.from(byProfile.values()).reduce((s, e) => s + e.paidAmount, 0),
         paidAmount: Array.from(byProfile.values()).reduce((s, e) => s + e.unpaidAmount, 0),
       };
@@ -371,6 +375,8 @@ export async function GET(request: NextRequest) {
 
       const summary = {
         total: rows.length,
+        collectedAmount: ordered.reduce((s, [, r]) => s + r.paidAmount, 0),
+        outstandingAmount: ordered.reduce((s, [, r]) => s + r.unpaidAmount, 0),
         totalAmount: ordered.reduce((s, [, r]) => s + r.paidAmount, 0),
         paidAmount: ordered.reduce((s, [, r]) => s + r.unpaidAmount, 0),
       };

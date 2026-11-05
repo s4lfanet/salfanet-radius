@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.36.0 - Instalatur di Aplikasi Admin dan Perbaikan Hasil Audit
+> **Version:** 5.36.1 - Perbaikan Temuan Audit Lanjutan
 
 ---
 
@@ -1111,6 +1111,20 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.36.1 — 2026-11-05 - Perbaikan Temuan Audit Lanjutan
+
+### Perbaikan
+- **[FIX]** Rekonsiliasi Keuangan tidak lagi membuat ulang baris Riwayat Transaksi pembayaran kolektor yang sengaja dihapus admin. Pengisian baris yang hilang kini satu kali saja (ditandai di tabel baru `app_flags`), dijalankan per halaman dari invoice terlama sehingga tidak ada yang terlewat, lalu berhenti. Sebelumnya berjalan tiap hari dan hanya melihat 5000 invoice terbaru
+- **[FIX]** Menghubungkan transaksi ke pelanggan tidak lagi langsung menutup baris yang belum bisa dipetakan: baris baru (kurang dari 10 menit) yang belum menemukan pelanggannya dicoba lagi di pembacaan berikutnya, sehingga tidak hilang dari filter dan pengelompokan instalatur
+- **[FIX]** Hapus Sesuai Filter di Riwayat Transaksi kini berhenti dengan galat bila hubungan transaksi ke pelanggan gagal diperbarui, daripada menghapus berdasarkan hubungan lama
+- **[FIX]** Alat pemulihan Auto Stop (`repair-auto-stop`) hanya memulihkan pelanggan yang memang terdaftar sebagai kandidat; id lain ditolak. Mengaktifkan pelanggan stop yang lain tetap lewat perubahan status biasa
+- **[FIX]** Ringkasan laporan per paket dan per instalatur kini punya bidang bernama jelas, `collectedAmount` (pendapatan lunas) dan `outstandingAmount` (tertunggak). `totalAmount` dan `paidAmount` tetap ada dengan arti lama yang tertukar agar klien lama tidak rusak. Halaman Laporan memakai bidang baru
+
+### Catatan Pembaruan
+- Perubahan skema kecil: tabel baru `app_flags`. "Update Sekarang" menambahkannya tanpa menghapus data
+- Setelah update, rekonsiliasi akan mengisi baris yang hilang satu kali lagi untuk pembayaran kolektor lama, lalu berhenti
+- Naikkan versi: root, backend, frontend ke 5.36.1; aplikasi tidak berubah
+
 ### v5.36.0 — 2026-11-05 - Instalatur di Aplikasi Admin dan Perbaikan Hasil Audit
 
 ### Aplikasi
@@ -1177,27 +1191,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 ### Catatan Pembaruan
 - Tidak ada perubahan server. Naikkan versi: root, backend, frontend ke 5.34.1; aplikasi admin 1.0.30+31
-
-### v5.34.0 — 2026-11-05 - Auto Stop, Pelanggan Berhenti, Pembayaran Kolektor di Riwayat Transaksi
-
-### Perbaikan
-- **[FIX]** Auto Stop tidak lagi menghentikan pelanggan yang bukan isolir tunggakan. Sebelumnya semua pelanggan berstatus isolir dengan masa aktif lewat 30 hari ikut di-stop, termasuk pelanggan cuti, pelanggan yang sudah bayar lewat admin, dan pelanggan yang baru beberapa jam diisolir. Kini hanya yang auto-isolirnya aktif, tidak berubah 30 hari, tidak sedang cuti, dan benar-benar menunggak (prabayar expired >30 hari, pascabayar punya tagihan OVERDUE >30 hari). Setiap auto-stop dicatat di log aktivitas
-- **[FIX]** Cuti (suspend) berakhir otomatis di tanggal selesai dan pelanggan dipulihkan ke aktif. Persetujuan cuti tidak lagi menulis status `stopped` yang tidak dikenal sistem
-- **[FIX]** Pembayaran yang dilunasi kolektor (tunai maupun transfer, dari portal web atau aplikasi) kini masuk Riwayat Transaksi. Sebelumnya hanya tercatat di invoice dan Setoran Kolektor
-- **[FIX]** Tandai lunas oleh admin dari detail pelanggan dicatat di kategori Pembayaran PPPoE, sama seperti pembayaran lain
-- **[FIX]** Bukti transfer kolektor yang ditolak ikut menghapus catatan pembayaran dan baris Riwayat Transaksinya
-
-### Fitur
-- **[NEW]** Menu PPPoE → Pelanggan Berhenti dan filter status Stop di daftar pelanggan
-- **[NEW]** Halaman Pelanggan Berhenti didesain ulang mengikuti tampilan halaman lain, dengan peringatan otomatis untuk pelanggan yang kemungkinan salah di-stop oleh Auto Stop dan tombol aktifkan sekaligus
-- **[NEW]** Rekonsiliasi Keuangan mengisi baris Riwayat Transaksi yang hilang untuk pembayaran kolektor lama, sesuai tanggal pembayaran
-
-### Aplikasi
-- **[FIX]** Kolektor 1.4.2: pembayaran transfer wajib melampirkan foto bukti (kamera atau galeri), sama seperti portal web. Versi lama tidak bisa lagi menandai lunas transfer
-
-### Catatan Pembaruan
-- Tidak ada perubahan skema. Naikkan versi: root, backend, frontend ke 5.34.0; aplikasi kolektor 1.4.2+11
-- Setelah update, buka Pelanggan Berhenti untuk memeriksa pelanggan yang salah di-stop, lalu jalankan Rekonsiliasi Keuangan dari halaman Cron agar pembayaran kolektor lama masuk Riwayat Transaksi
 
 <!-- AUTO-CHANGELOG:END -->
 

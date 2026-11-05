@@ -6,7 +6,7 @@ import { prisma } from '@/server/db/client';
 import { z, parseBody } from '@/lib/parse-body';
 import type { Prisma } from '@prisma/client';
 import { buildTransactionFilters } from '@/server/services/billing/transaction-filter.service';
-import { linkTransactionCustomersSafe } from '@/server/services/billing/transaction-customer.service';
+import { linkTransactionCustomers, linkTransactionCustomersSafe } from '@/server/services/billing/transaction-customer.service';
 import { pageAcrossGroups, summarizeTransactionsByInstaller, transactionGroupWhere } from '@/server/services/installer.service';
 
 const createTransactionSchema = z.object({
@@ -302,7 +302,9 @@ export async function DELETE(request: NextRequest) {
     if (filterDelete) {
       // Exactly the rows the list shows for these filters (installer
       // included), so the count in the confirmation is what gets deleted.
-      await linkTransactionCustomersSafe();
+      // Strict here: if the links could not be refreshed, delete nothing
+      // rather than delete by stale links.
+      await linkTransactionCustomers();
       const { list: where } = buildTransactionFilters(searchParams);
 
       const result = await prisma.transaction.deleteMany({ where });

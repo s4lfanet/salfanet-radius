@@ -968,6 +968,16 @@ model customerPushToken {
   @@map("customer_push_tokens")
 }
 
+/// One-time markers and small switches the server keeps for itself, such as
+/// "the collector ledger backfill has run".
+model appFlag {
+  key       String   @id @db.VarChar(100)
+  value     String?  @db.VarChar(255)
+  createdAt DateTime @default(now())
+
+  @@map("app_flags")
+}
+
 /// Copy of every push sent to a customer, so the native app can fetch what
 /// it missed when the server has no Firebase (FCM) configured.
 model customerAppNotice {
