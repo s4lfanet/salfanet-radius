@@ -18,6 +18,7 @@ import 'server-only';
 import { prisma } from '@/server/db/client';
 import { nowWIB } from '@/lib/timezone';
 import { recordInvoiceIncome, invoiceReference } from '@/server/services/billing/invoice-income.service';
+import { remindRegulatoryDeadline } from '@/server/services/billing/regulatory-report.service';
 import { linkTransactionCustomersSafe } from '@/server/services/billing/transaction-customer.service';
 import { hasFlag, setFlag } from '@/server/services/app-flag.service';
 
@@ -44,6 +45,8 @@ export interface ReconciliationResult {
 export async function runFinancialReconciliation(): Promise<ReconciliationResult> {
   const startedAt = nowWIB();
   const issues: ReconciliationIssue[] = [];
+
+  await remindRegulatoryDeadline().catch((e) => console.error('[Financial Reconciliation] Regulatory reminder failed:', e));
 
   // ── Check 1: PAID invoices without payment records ──────────────────────
   const paidInvoicesWithoutPayment = await prisma.invoice.findMany({

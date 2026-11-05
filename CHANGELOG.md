@@ -6,6 +6,25 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.37.0] - 2026-11-06 - Laporan Kewajiban BHP dan USO
+
+### Kewajiban BHP & USO
+- **[NEW]** Halaman **Kewajiban BHP & USO** di menu Keuangan untuk ISP berizin. Menghitung BHP Telekomunikasi 0,5% dan USO 1,25% per tahun buku, dengan rekap bulanan, PPN yang dipungut, serta export Excel dan PDF. Tarif bisa diubah di Pengaturan
+- **[NEW]** Dasar hitung adalah pendapatan tanpa PPN, dikurangi piutang tak tertagih, interkoneksi ke penyelenggara lain, dan pendapatan bukan telekomunikasi. Dasar pendapatan bisa dipilih: tagihan terbit atau pembayaran diterima
+- **[NEW]** Pendapatan dibaca dari tagihan, ditambah voucher, pemasukan manual, dan perpanjangan dari saldo yang tidak punya tagihan. Top-up, deposit, tagihan batal, dan tagihan lunas lewat diskon tidak dihitung. Pembayaran tagihan yang juga tercatat di Riwayat Transaksi tidak dihitung dua kali, dan addon tidak dianggap berisi PPN
+- **[NEW]** Penghapusan piutang memakai nomor tagihan dan hanya untuk tagihan belum dibayar. Status tagihan tidak berubah, dan penyesuaiannya otomatis tidak dihitung bila tagihan itu kemudian dibayar atau dibatalkan
+- **[NEW]** Pengingat ke admin pada April, dua kali, menjelang jatuh tempo 30 April. Aktif setelah Pengaturan disimpan sekali, supaya ISP mitra tidak menerimanya
+- **[NEW]** Kolom PPh Final opsional untuk ISP yang memakai tarif UMKM, tersembunyi selama tarifnya 0
+- **[FEATURE]** Export Data jenis Tagihan kini menampilkan DPP dan PPN per pelanggan
+- **[DOCS]** Pusat Panduan menambah panduan Kewajiban BHP & USO
+
+BHP dan USO adalah biaya ISP, jadi tagihan pelanggan tidak berubah. Angkanya perkiraan dan perlu dicocokkan dengan pedoman serta surat tagihan Komdigi.
+
+### Catatan Pembaruan
+- Menambah tabel `regulatory_settings` dan `regulatory_adjustments`, diterapkan otomatis saat pembaruan. Aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.37.0
+
+---
+
 ## [5.36.8] - 2026-11-06 - Halaman Ajak Teman Selesai Diganti
 
 ### Koreksi

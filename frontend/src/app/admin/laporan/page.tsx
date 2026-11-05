@@ -28,7 +28,7 @@ interface Summary {
 }
 
 // Raw numbers kept for Excel; the PDF and preview show the formatted (Rp) twin.
-const RAW_NUMBER_COLUMNS = ['Jumlah', 'Harga', 'Pendapatan', 'Tertunggak'];
+const RAW_NUMBER_COLUMNS = ['Jumlah', 'Harga', 'Pendapatan', 'Tertunggak', 'DPP', 'PPN'];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function formatRupiah(n: number): string {

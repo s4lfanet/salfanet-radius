@@ -1076,6 +1076,40 @@ model transaction {
   @@map("transactions")
 }
 
+/// Rates and identity for the yearly BHP Telekomunikasi and USO report. The row
+/// exists only once an admin has saved the settings, which also turns on the
+/// deadline reminder: an ISP operating as a partner has nothing to pay.
+model regulatorySetting {
+  id                String   @id @default("default")
+  bhpRate           Decimal  @default(0.50) @db.Decimal(5, 2)
+  usoRate           Decimal  @default(1.25) @db.Decimal(5, 2)
+  pphFinalRate      Decimal  @default(0) @db.Decimal(5, 2)
+  revenueBasis      String   @default("ISSUED") @db.VarChar(20) // ISSUED | COLLECTED
+  ledgerCategoryIds Json? // INCOME categories counted as revenue; null = the default set
+  npwp              String?  @db.VarChar(32)
+  licenseNumber     String?  @db.VarChar(100)
+  updatedAt         DateTime @updatedAt
+
+  @@map("regulatory_settings")
+}
+
+/// What the report cannot read from billing: bad debts written off, interconnection
+/// owed to other operators, revenue that is not telecom, revenue outside this panel.
+model regulatoryAdjustment {
+  id            String   @id
+  year          Int
+  month         Int
+  type          String   @db.VarChar(20) // WRITE_OFF | INTERCONNECTION | NON_TELECOM | OTHER_REVENUE
+  amount        Int
+  description   String   @db.VarChar(255)
+  invoiceNumber String?  @unique @db.VarChar(191) // WRITE_OFF only: one write-off per invoice
+  createdBy     String?
+  createdAt     DateTime @default(now())
+
+  @@index([year])
+  @@map("regulatory_adjustments")
+}
+
 model cronHistory {
   id          String    @id
   jobType     String // voucher_sync, agent_sales, invoice_generate, invoice_reminder, notification_check

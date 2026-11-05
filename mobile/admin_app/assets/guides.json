@@ -718,6 +718,35 @@
    ]
   },
   {
+   "path": "/admin/keuangan/kewajiban",
+   "title": "Kewajiban BHP & USO",
+   "section": "Tagihan & Transaksi",
+   "summary": "Menghitung BHP Telekomunikasi dan USO satu tahun buku untuk ISP berizin, dari pendapatan tanpa PPN dikurangi piutang tak tertagih dan interkoneksi.",
+   "steps": [
+    "Buka Pengaturan, periksa tarif BHP 0,5% dan USO 1,25%, pilih dasar pendapatan sesuai pembukuan, isi NPWP dan nomor izin, lalu simpan. Menyimpan juga menyalakan pengingat setiap April.",
+    "Periksa kategori pemasukan yang dihitung. Deposit, top-up, dan reward tidak dihitung sebagai pendapatan.",
+    "Klik Tambah di Penyesuaian untuk mencatat tagihan yang tidak akan tertagih, biaya interkoneksi ke penyelenggara lain, pendapatan bukan telekomunikasi, dan pendapatan di luar panel.",
+    "Pilih tahun buku, cocokkan rekap bulanan dengan pembukuan, lalu export ke Excel atau PDF."
+   ],
+   "notes": [
+    "BHP dan USO adalah biaya ISP, jadi tidak ditambahkan ke tagihan pelanggan.",
+    "Angkanya perkiraan. Cocokkan dengan pedoman dan surat tagihan Komdigi sebelum membayar.",
+    "Biaya pemasangan ikut dihitung. Bila akuntan menganggapnya bukan pendapatan telekomunikasi, catat sebagai Pendapatan bukan telekomunikasi.",
+    "Penghapusan tagihan tidak mengubah status tagihan. Bila tagihan itu kemudian dibayar, penyesuaiannya otomatis tidak dihitung.",
+    "Export Data jenis Tagihan kini menampilkan DPP dan PPN per pelanggan."
+   ],
+   "related": [
+    {
+     "label": "Export Data",
+     "href": "/admin/laporan"
+    },
+    {
+     "label": "Riwayat Transaksi",
+     "href": "/admin/keuangan"
+    }
+   ]
+  },
+  {
    "path": "/admin/hotspot/agent/deposits",
    "title": "Deposit Agen",
    "section": "Tagihan & Transaksi",

@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.36.8 - Halaman Ajak Teman Selesai Diganti
+> **Version:** 5.37.0 - Laporan Kewajiban BHP dan USO
 
 ---
 
@@ -1111,6 +1111,23 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.37.0 — 2026-11-06 - Laporan Kewajiban BHP dan USO
+
+### Kewajiban BHP & USO
+- **[NEW]** Halaman **Kewajiban BHP & USO** di menu Keuangan untuk ISP berizin. Menghitung BHP Telekomunikasi 0,5% dan USO 1,25% per tahun buku, dengan rekap bulanan, PPN yang dipungut, serta export Excel dan PDF. Tarif bisa diubah di Pengaturan
+- **[NEW]** Dasar hitung adalah pendapatan tanpa PPN, dikurangi piutang tak tertagih, interkoneksi ke penyelenggara lain, dan pendapatan bukan telekomunikasi. Dasar pendapatan bisa dipilih: tagihan terbit atau pembayaran diterima
+- **[NEW]** Pendapatan dibaca dari tagihan, ditambah voucher, pemasukan manual, dan perpanjangan dari saldo yang tidak punya tagihan. Top-up, deposit, tagihan batal, dan tagihan lunas lewat diskon tidak dihitung. Pembayaran tagihan yang juga tercatat di Riwayat Transaksi tidak dihitung dua kali, dan addon tidak dianggap berisi PPN
+- **[NEW]** Penghapusan piutang memakai nomor tagihan dan hanya untuk tagihan belum dibayar. Status tagihan tidak berubah, dan penyesuaiannya otomatis tidak dihitung bila tagihan itu kemudian dibayar atau dibatalkan
+- **[NEW]** Pengingat ke admin pada April, dua kali, menjelang jatuh tempo 30 April. Aktif setelah Pengaturan disimpan sekali, supaya ISP mitra tidak menerimanya
+- **[NEW]** Kolom PPh Final opsional untuk ISP yang memakai tarif UMKM, tersembunyi selama tarifnya 0
+- **[FEATURE]** Export Data jenis Tagihan kini menampilkan DPP dan PPN per pelanggan
+- **[DOCS]** Pusat Panduan menambah panduan Kewajiban BHP & USO
+
+BHP dan USO adalah biaya ISP, jadi tagihan pelanggan tidak berubah. Angkanya perkiraan dan perlu dicocokkan dengan pedoman serta surat tagihan Komdigi.
+
+### Catatan Pembaruan
+- Menambah tabel `regulatory_settings` dan `regulatory_adjustments`, diterapkan otomatis saat pembaruan. Aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.37.0
+
 ### v5.36.8 — 2026-11-06 - Halaman Ajak Teman Selesai Diganti
 
 ### Koreksi
@@ -1168,26 +1185,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 ### Catatan Pembaruan
 - Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.36.5
-
-### v5.36.4 — 2026-11-05 - WiFi 5GHz FiberHome: Penentuan Band Ditulis Ulang
-
-### Penyebab
-- ONT FiberHome HG6045F3 punya 16 slot WLAN: 1-8 untuk 2.4GHz, 9-16 untuk 5GHz. Jaringan aslinya slot 1 dan 9 dengan nama SSID yang sama, Channel 0, dan Standard yang sama di semua slot. Bila Standard di semua slot memuat `b` atau `g`, setiap slot dianggap pasti 2.4GHz, termasuk slot bernama `fh_5G_*`, karena Standard diperiksa sebelum nama SSID. Tidak ada slot berlabel 5GHz, dan pemilihan satu SSID per band hanya menyisakan satu jaringan
-
-### Koreksi rilis sebelumnya
-- **5.36.2 membawa regresi:** pada tabel slot HG6045F3, slot 9 terdorong ke 2.4GHz sehingga kartu 5GHz menunjuk slot 10 (`fh_5G_ssid2`), bukan jaringan aslinya. Aturan "Channel di atas 14 selalu 5GHz" juga tidak lagi mengalahkan Standard, padahal catatan rilis menyebut aturan lama tetap sama
-- **Diagnosis 5.36.3 keliru:** "1 WLAN" di halaman dihitung setelah pemilihan satu SSID per band, jadi tidak membuktikan GenieACS hanya punya satu slot. Permintaan baca ulang tetap ada karena tidak merugikan, tetapi bukan perbaikan masalah ini
-
-### Perbaikan
-- **[FIX]** Penentuan band ditulis ulang di `lib/genieacs/wlan-band.ts`, dipakai halaman WiFi pelanggan dan detail perangkat admin. Urutannya: yang dinyatakan radio (frekuensi, Channel, `PossibleChannels`), nama SSID "5G", SSID yang sama aktif di dua slot (slot lebih kecil 2.4GHz, lebih besar 5GHz), Standard, lalu posisi
-- **[FIX]** Standard yang sama di semua slot tidak dianggap petunjuk pada ONT yang terbukti punya radio 5GHz. Pada ONT satu band, nilai yang sama tetap dipercaya sehingga tidak muncul kartu 5GHz palsu
-- **[FIX]** Slot tanpa petunjuk memakai blok sama besar per radio bila cocok dengan slot yang sudah jelas, jadi slot 9 dari 16 masuk 5GHz
-
-### Pengujian
-- Diuji dengan tabel slot asli HG6045F3 hasil pembacaan September dan variasinya, serta ONT dual band dan satu band lain, membandingkan 5.36.1, 5.36.3, dan versi ini. Semua varian HG6045F3 menampilkan slot 1 dan 9, dan ONT satu band tetap satu kartu. Data ONT saat ini belum dibaca ulang
-
-### Catatan Pembaruan
-- Aplikasi tidak berubah. Naikkan versi: root, backend, frontend ke 5.36.4
 
 <!-- AUTO-CHANGELOG:END -->
 

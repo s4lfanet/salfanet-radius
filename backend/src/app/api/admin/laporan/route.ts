@@ -5,6 +5,7 @@ import { prisma } from '@/server/db/client';
 import {
   installerInvoiceWhere, installerLabel, installerUserWhere, parseInstallerFilter, INSTALLER_UNSET_LABEL,
 } from '@/server/services/installer.service';
+import { splitInvoiceTax } from '@/lib/regulatory/levy';
 
 // ── Format Rupiah ────────────────────────────────────────────────────────────
 function formatRupiah(amount: number): string {
@@ -97,6 +98,8 @@ export async function GET(request: NextRequest) {
           customerUsername: true,
           customerPhone: true,
           amount: true,
+          taxRate: true,
+          addonAmount: true,
           status: true,
           dueDate: true,
           paidAt: true,
@@ -107,21 +110,28 @@ export async function GET(request: NextRequest) {
         take: 5000,
       });
 
-      const rows = invoices.map((inv) => ({
-        'No. Invoice': inv.invoiceNumber,
-        'Nama Pelanggan': inv.customerName || '-',
-        'Username': inv.customerUsername || '-',
-        'Telepon': inv.customerPhone || '-',
-        'Instalatur': installerLabel(inv.user?.installer),
-        'Jumlah': inv.amount,
-        'Jumlah (Rp)': formatRupiah(inv.amount),
-        'Status': inv.status,
-        'Jenis': translateInvoiceType(inv.invoiceType),
-        'Jatuh Tempo': formatDate(inv.dueDate),
-        'Dibayar': formatDate(inv.paidAt),
-        'Dibuat': formatDate(inv.createdAt),
-        'Catatan': inv.notes || '-',
-      }));
+      const rows = invoices.map((inv) => {
+        const { revenue, ppn } = splitInvoiceTax(inv);
+        return {
+          'No. Invoice': inv.invoiceNumber,
+          'Nama Pelanggan': inv.customerName || '-',
+          'Username': inv.customerUsername || '-',
+          'Telepon': inv.customerPhone || '-',
+          'Instalatur': installerLabel(inv.user?.installer),
+          'Jumlah': inv.amount,
+          'Jumlah (Rp)': formatRupiah(inv.amount),
+          'DPP': revenue,
+          'DPP (Rp)': formatRupiah(revenue),
+          'PPN': ppn,
+          'PPN (Rp)': formatRupiah(ppn),
+          'Status': inv.status,
+          'Jenis': translateInvoiceType(inv.invoiceType),
+          'Jatuh Tempo': formatDate(inv.dueDate),
+          'Dibayar': formatDate(inv.paidAt),
+          'Dibuat': formatDate(inv.createdAt),
+          'Catatan': inv.notes || '-',
+        };
+      });
 
       const summary = {
         total: invoices.length,
