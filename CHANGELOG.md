@@ -6,6 +6,16 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.36.8] - 2026-11-06 - Halaman Ajak Teman Selesai Diganti
+
+### Koreksi
+- **[FIX]** Rilis 5.36.7 baru mengganti nama di menu samping dan menu cepat Beranda, karena skrip penggantiannya gagal di tengah jalan, padahal catatannya menyebut seluruh portal. Rilis ini menyelesaikan sisanya: halaman Ajak Teman, teks bagikan, pesan galat, dan isian kode di halaman Daftar
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.36.8
+
+---
+
 ## [5.36.7] - 2026-11-06 - Kartu 5GHz Palsu Hilang, Referral Menjadi Ajak Teman
 
 ### WiFi pelanggan

@@ -114,14 +114,14 @@ export default function CustomerReferralPage() {
       });
 
       if (data.success) {
-        addToast({ type: 'success', title: 'Berhasil!', description: 'Kode referral berhasil dibuat' });
+        addToast({ type: 'success', title: 'Berhasil!', description: 'Kode Ajak Teman berhasil dibuat' });
         loadReferralData();
       } else {
-        addToast({ type: 'error', title: 'Error', description: data.error || 'Gagal membuat kode referral' });
+        addToast({ type: 'error', title: 'Error', description: data.error || 'Gagal membuat kode Ajak Teman' });
       }
     } catch (error) {
-      if (error instanceof ApiError) addToast({ type: 'error', title: 'Error', description: error.message || 'Gagal membuat kode referral' });
-      else addToast({ type: 'error', title: 'Error', description: 'Gagal membuat kode referral' });
+      if (error instanceof ApiError) addToast({ type: 'error', title: 'Error', description: error.message || 'Gagal membuat kode Ajak Teman' });
+      else addToast({ type: 'error', title: 'Error', description: 'Gagal membuat kode Ajak Teman' });
     } finally {
       setGenerating(false);
     }
@@ -147,8 +147,8 @@ export default function CustomerReferralPage() {
     if (!referral?.shareUrl) return;
 
     const shareData = {
-      title: 'Referral Internet',
-      text: `Daftar internet menggunakan kode referral saya: ${referral.code}\nDapatkan bonus saldo!`,
+      title: 'Ajak Teman',
+      text: `Daftar internet menggunakan kode Ajak Teman saya: ${referral.code}\nDapatkan bonus saldo!`,
       url: referral.shareUrl,
     };
 
@@ -181,15 +181,15 @@ export default function CustomerReferralPage() {
   if (!config?.enabled) {
     return (
       <div className="p-4 space-y-4 w-full">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white">Referral</h1>
+        <h1 className="text-xl font-bold text-gray-900 dark:text-white">Ajak Teman</h1>
         <CyberCard>
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <AlertCircle className="w-12 h-12 text-gray-400 mb-4" />
             <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-400">
-              Sistem Referral Belum Aktif
+              Program Ajak Teman Belum Aktif
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-500 mt-2 max-w-sm">
-              Program referral saat ini belum diaktifkan oleh admin. Silakan cek kembali nanti.
+              Program Ajak Teman saat ini belum diaktifkan oleh admin. Silakan cek kembali nanti.
             </p>
           </div>
         </CyberCard>
@@ -201,14 +201,14 @@ export default function CustomerReferralPage() {
     <div className="p-4 space-y-4 w-full">
       <h1 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
         <Gift className="w-5 h-5 text-cyan-500" />
-        Program Referral
+        Program Ajak Teman
       </h1>
 
       {/* Referral Code Card */}
       <CyberCard>
         <div className="space-y-4">
           <div className="text-center">
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Kode Referral Anda</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Kode Ajak Teman Anda</p>
             {referral?.code ? (
               <>
                 <div className="flex items-center justify-center gap-3">
@@ -246,7 +246,7 @@ export default function CustomerReferralPage() {
                 <div className="mt-4">
                   <CyberButton onClick={shareReferral} className="w-full">
                     <Share2 className="w-4 h-4 mr-2" />
-                    Bagikan Kode Referral
+                    Bagikan Kode Ajak Teman
                   </CyberButton>
                 </div>
               </>
@@ -261,7 +261,7 @@ export default function CustomerReferralPage() {
                   ) : (
                     <QrCode className="w-4 h-4 mr-2" />
                   )}
-                  {generating ? 'Membuat...' : 'Buat Kode Referral'}
+                  {generating ? 'Membuat...' : 'Buat Kode Ajak Teman'}
                 </CyberButton>
               </div>
             )}
@@ -277,13 +277,13 @@ export default function CustomerReferralPage() {
               <Gift className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white text-sm">Bonus Referral</h3>
+              <h3 className="font-semibold text-gray-900 dark:text-white text-sm">Bonus Ajak Teman</h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 Ajak teman untuk berlangganan dan dapatkan bonus{' '}
                 <span className="font-bold text-emerald-600 dark:text-emerald-400">
                   {formatCurrency(config.rewardAmount)}
                 </span>
-                {' '}per referral
+                {' '}per teman
                 {config.rewardType === 'FIRST_PAYMENT' ? ' (setelah pembayaran pertama teman)' : ' (saat pendaftaran disetujui)'}.
               </p>
             </div>
@@ -295,7 +295,7 @@ export default function CustomerReferralPage() {
             <div className="flex gap-3">
               <div className="flex-shrink-0 w-6 h-6 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center text-xs font-bold text-cyan-600 dark:text-cyan-400">1</div>
               <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">Bagikan kode referral</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Bagikan kode Ajak Teman</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Kirim kode atau link pendaftaran ke teman Anda</p>
               </div>
             </div>
@@ -303,7 +303,7 @@ export default function CustomerReferralPage() {
               <div className="flex-shrink-0 w-6 h-6 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center text-xs font-bold text-cyan-600 dark:text-cyan-400">2</div>
               <div>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">Teman mendaftar dengan kode Anda</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Teman membuka link atau memasukkan kode referral saat daftar</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Teman membuka link atau memasukkan kode Ajak Teman saat daftar</p>
               </div>
             </div>
             <div className="flex gap-3">
@@ -385,7 +385,7 @@ export default function CustomerReferralPage() {
               </span>
             </div>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Hubungi admin untuk mencairkan reward referral Anda. Admin akan memproses pembayaran secara manual.
+              Hubungi admin untuk mencairkan bonus Ajak Teman Anda. Admin akan memproses pembayaran secara manual.
             </p>
             {config.adminPhone ? (
               <a
@@ -442,7 +442,7 @@ export default function CustomerReferralPage() {
                   <div className="text-center py-8">
                     <Users className="w-10 h-10 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      Belum ada teman yang mendaftar dari referral Anda
+                      Belum ada teman yang mendaftar dari kode Ajak Teman Anda
                     </p>
                   </div>
                 </CyberCard>

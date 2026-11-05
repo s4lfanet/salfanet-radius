@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
       select: { referralEnabled: true, baseUrl: true },
     });
     if (!company?.referralEnabled) {
-      return NextResponse.json({ success: false, error: 'Sistem referral belum diaktifkan' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Program Ajak Teman belum diaktifkan' }, { status: 400 });
     }
 
     const user = await prisma.pppoeUser.findUnique({
@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!code) {
-      return NextResponse.json({ success: false, error: 'Gagal generate kode referral' }, { status: 500 });
+      return NextResponse.json({ success: false, error: 'Gagal membuat kode Ajak Teman' }, { status: 500 });
     }
 
     // Update user with referral code

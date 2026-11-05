@@ -521,11 +521,11 @@ function DaftarPageInner() {
             <div>
               <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1.5">
                 <Gift className="w-3.5 h-3.5 text-brand-500" />
-                Kode Referral (Opsional)
+                Kode Ajak Teman (Opsional)
               </label>
               <input
                 type="text"
-                placeholder="Masukkan kode referral (jika ada)"
+                placeholder="Masukkan kode Ajak Teman (jika ada)"
                 value={formData.referralCode}
                 onChange={(e) => setFormData({ ...formData, referralCode: e.target.value.toUpperCase() })}
                 maxLength={10}
