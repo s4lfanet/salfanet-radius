@@ -95,7 +95,7 @@ export function classifyWlanSlots(input: WlanSlot[]): Map<number, Band> {
     const low = pair[0].index;
     const high = pair[pair.length - 1].index;
     if (!bands.get(low) && bands.get(high) !== '2.4GHz') bands.set(low, '2.4GHz');
-    if (!bands.get(high) && bands.get(low) !== '5GHz') bands.set(high, '5GHz');
+    if (!bands.get(high) && bands.get(low) !== '5GHz' && high >= 5) bands.set(high, '5GHz');
   }
 
   // Half of the slots, for ONTs that give each radio an equal block.
@@ -133,8 +133,14 @@ function resolveUndeterminedBands(items: BandItem[]): void {
   const unknown = items.filter((i) => !i.band).sort((a, b) => a.index - b.index);
   if (unknown.length === 0) return;
 
-  // Nothing is determined: split the slots in half, 2.4GHz first.
+  // Nothing is determined. Slots numbered 1-4 only is a single radio: on a
+  // live fleet every such ONT with a readable channel is 2.4GHz, and dual-band
+  // models number their second radio from 5 up. Otherwise split in half.
   if (known.length === 0) {
+    if (unknown[unknown.length - 1].index <= 4) {
+      for (const item of unknown) item.band = '2.4GHz';
+      return;
+    }
     const mid = Math.ceil(unknown.length / 2);
     unknown.forEach((item, i) => {
       item.band = i < mid ? '2.4GHz' : '5GHz';
@@ -161,10 +167,9 @@ function resolveUndeterminedBands(items: BandItem[]): void {
     else if (prev?.band === '5GHz') item.band = '5GHz';
     else if (next?.band === '2.4GHz') item.band = '2.4GHz';
     else if (next?.band === '5GHz') item.band = '2.4GHz';
-    else if (prev?.band === '2.4GHz' && !has5 && (item.enabled || item.index >= 5)) {
-      // Only 2.4GHz slots are known and this one comes after them: the 5GHz
-      // radio of a dual-band ONT. A disabled guest slot right after the main
-      // 2.4GHz one (index < 5) is not taken for 5GHz.
+    else if (prev?.band === '2.4GHz' && !has5 && item.index >= 5) {
+      // Only 2.4GHz slots are known and this one comes after them, numbered
+      // where a second radio starts: the 5GHz radio of a dual-band ONT.
       item.band = '5GHz';
     } else item.band = '2.4GHz';
 

@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.36.6 - Hasil Uji 635 ONT: Koreksi Tampilan WiFi Pelanggan
+> **Version:** 5.36.7 - Kartu 5GHz Palsu Hilang, Referral Menjadi Ajak Teman
 
 ---
 
@@ -1111,6 +1111,19 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.36.7 — 2026-11-06 - Kartu 5GHz Palsu Hilang, Referral Menjadi Ajak Teman
+
+### WiFi pelanggan
+- **[FIX]** ONT satu band dengan 4 slot (ZTE F663NV3A dan F609, CDTC FD512XW-R460) tidak lagi mendapat kartu 5GHz palsu. Slot yang tidak punya petunjuk band dibagi dua, sehingga slot 3 dan 4 dianggap 5GHz. Slot bernomor 1-4 saja kini dianggap satu radio, karena di data asli semua ONT seperti itu yang channelnya terbaca adalah 2.4GHz, dan model dual band memakai slot 5 ke atas untuk radio kedua
+- Diuji pada 635 ONT asli: kartu 5GHz palsu turun dari 31 pada 5.36.1 menjadi 0, label band salah 0, tidak ada ONT dengan 5GHz atau 2.4GHz aktif yang kehilangan kartunya. 86 dari 86 ONT dual band ZTE F679D dan F670L serta FiberHome HG6145D2 dan HG6045F3 tampil dengan dua kartu
+- Parameter tulis SSID dan password ada dan bisa ditulis di semua slot yang tampil, untuk semua model ZTE. Pengiriman ubah SSID ke perangkat belum dicoba
+
+### Ajak Teman
+- **[CHANGE]** Portal pelanggan memakai nama **Ajak Teman**, bukan Referral: menu samping, menu cepat Beranda, halaman Ajak Teman, pesan galat, teks bagikan, dan isian kode di halaman Daftar. Aplikasi pelanggan sudah memakai nama ini. Alamat `/customer/referral` dan panel admin tidak berubah
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.36.7
+
 ### v5.36.6 — 2026-11-05 - Hasil Uji 635 ONT: Koreksi Tampilan WiFi Pelanggan
 
 ### Hasil pengecekan langsung ke GenieACS
@@ -1180,22 +1193,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Catatan
 - Bila ONT memang satu band (atau tidak mengekspos 5GHz di model data TR-098 `LANDevice.1`), 5GHz tetap tidak muncul dan permintaan ulang hanya terkirim satu kali per 6 jam
 - Aplikasi tidak berubah. Naikkan versi: root, backend, frontend ke 5.36.3
-
-### v5.36.2 — 2026-11-05 - WiFi 5GHz Tidak Muncul di Halaman Pelanggan
-
-### Penyebab
-- Halaman WiFi pelanggan (web dan aplikasi memakai API yang sama) menampilkan satu SSID per band. Penentuan band tiap slot WLANConfiguration memakai Standard, nama SSID, dan Channel. Pada ONT dual band yang melaporkan Channel 0 (auto) untuk 5GHz dan Standard yang sama dengan 2.4GHz (misalnya `ax` atau `n`) dengan nama SSID yang sama, slot 5GHz tidak punya petunjuk band. Satu slot tanpa petunjuk selalu dianggap 2.4GHz, sehingga kedua slot menjadi 2.4GHz dan pemilihan satu SSID per band membuang slot 5GHz
-- Pada ONT bergaya Huawei (slot 1-4 untuk 2.4GHz dan 5-8 untuk 5GHz), kartu 5GHz yang tampil bisa berupa SSID tamu, bukan SSID utama
-
-### Perbaikan
-- **[FIX]** Slot tanpa petunjuk band kini ditempatkan berdasarkan posisinya di antara slot yang sudah jelas bandnya (slot 2.4GHz selalu sebelum slot 5GHz), bukan otomatis 2.4GHz. Slot tamu yang nonaktif tepat setelah slot 2.4GHz utama tidak dianggap 5GHz, jadi ONT satu band tidak mendapat kartu 5GHz palsu
-- **[FIX]** Petunjuk band tambahan dibaca: `OperatingFrequencyBand` dan `X_HW_OperatingFrequencyBand`, serta Standard seperti `a,n` (5GHz). Aturan yang sudah ada tetap sama, jadi slot yang sebelumnya terdeteksi benar tidak berubah
-- **[FIX]** Detail perangkat di panel admin memakai penempatan yang sama untuk slot yang tidak jelas bandnya (sebelumnya satu slot semacam itu selalu berlabel 2.4GHz)
-- Diuji dengan data ONT buatan untuk 7 kasus: kasus 5GHz hilang kini muncul, sedangkan kasus kontrol (5GHz bernama "5G", band dilaporkan lengkap, ONT satu band dengan SSID tamu) tidak berubah
-
-### Catatan
-- Perbaikan ini mengatasi penentuan band. Bila slot 5GHz memang belum punya nilai SSID di GenieACS (belum pernah di-refresh dari ONT), SSID-nya tetap tidak muncul; jalankan refresh parameter WLAN dari halaman perangkat di panel admin
-- Aplikasi tidak berubah. Naikkan versi: root, backend, frontend ke 5.36.2
 
 <!-- AUTO-CHANGELOG:END -->
 

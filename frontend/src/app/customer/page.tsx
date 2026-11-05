@@ -493,7 +493,7 @@ export default function CustomerDashboard() {
             { name: 'Speed Test',   href: '/customer/speedtest',     icon: Gauge,         color: 'text-cyan-300',    bg: 'bg-cyan-500/10 border-cyan-500/30' },
             { name: 'Bantuan',      href: '/customer/tickets',       icon: MessageSquare, color: 'text-yellow-400',  bg: 'bg-yellow-500/10 border-yellow-500/30' },
             { name: 'Upgrade',      href: '/customer/upgrade',       icon: Package,       color: 'text-orange-400',  bg: 'bg-orange-500/10 border-orange-500/30' },
-            { name: 'Referral',     href: '/customer/referral',      icon: Gift,          color: 'text-pink-400',    bg: 'bg-pink-500/10 border-pink-500/30' },
+            { name: 'Ajak Teman',   href: '/customer/referral',      icon: Gift,          color: 'text-pink-400',    bg: 'bg-pink-500/10 border-pink-500/30' },
             { name: 'Profil',       href: '/customer/profile',       icon: User,          color: 'text-slate-400',   bg: 'bg-slate-500/10 border-slate-500/30' },
           ] as const).map(({ name, href, icon: Icon, color, bg }) => (
             <button

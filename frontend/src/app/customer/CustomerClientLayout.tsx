@@ -31,7 +31,7 @@ const menuItems: MenuItem[] = [
   { name: 'WiFi',               href: '/customer/wifi',      icon: Wifi },
   { name: 'Speed Test',         href: '/customer/speedtest', icon: Gauge },
   { name: 'Bantuan',            href: '/customer/tickets',   icon: MessageSquare },
-  { name: 'Referral',           href: '/customer/referral',  icon: Gift },
+  { name: 'Ajak Teman',         href: '/customer/referral',  icon: Gift },
   { name: 'Berhenti Langganan', href: '/customer/suspend',   icon: PauseCircle },
   { name: 'Akun',        href: '/customer/profile',   icon: User },
 ];
