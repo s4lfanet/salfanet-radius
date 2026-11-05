@@ -24,6 +24,7 @@ export interface CreatePppoeUserPayload {
   profileId?: string;
   routerId?: string;
   areaId?: string;
+  installerId?: string;
   registeredAt?: string;
   name?: string;
   phone?: string;

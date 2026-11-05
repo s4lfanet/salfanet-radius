@@ -1,14 +1,16 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Loader2, Download, FileText, Users, CreditCard, Filter, RefreshCw, FileSpreadsheet, BarChart3, TrendingUp, Calendar } from 'lucide-react';
+import { Loader2, Download, FileText, Users, CreditCard, Filter, RefreshCw, FileSpreadsheet, BarChart3, TrendingUp, Calendar, HardHat } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB, todayWIBStr, firstOfMonthWIBStr } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api';
 import { showError } from '@/lib/sweetalert';
+import { InstallerFilter } from '@/components/InstallerFilter';
+import { INSTALLER_NONE, INSTALLER_UNSET_LABEL, installerApi } from '@/lib/api/installers';
 
 // ── Types ────────────────────────────────────────────────────────────────────
-type ReportType = 'invoice' | 'payment' | 'customer' | 'profile';
+type ReportType = 'invoice' | 'payment' | 'customer' | 'profile' | 'installer';
 
 interface Summary {
   total: number;
@@ -22,6 +24,9 @@ interface Summary {
   totalAmount?: number;
   paidAmount?: number;
 }
+
+// Raw numbers kept for Excel; the PDF and preview show the formatted (Rp) twin.
+const RAW_NUMBER_COLUMNS = ['Jumlah', 'Harga', 'Pendapatan', 'Tertunggak'];
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function formatRupiah(n: number): string {
@@ -45,6 +50,7 @@ export default function LaporanPage() {
     payment: t('laporan.typePayment'),
     customer: t('laporan.typeCustomer'),
     profile: t('laporan.typeProfile') || 'Pendapatan per Paket',
+    installer: 'Pendapatan per Instalatur',
   };
 
   const INVOICE_STATUSES = [
@@ -59,7 +65,7 @@ export default function LaporanPage() {
     { value: 'all', label: t('laporan.statusAll') },
     { value: 'active', label: t('laporan.statusActive') },
     { value: 'isolated', label: t('laporan.statusIsolated') },
-    { value: 'stopped', label: t('laporan.statusStopped') },
+    { value: 'stop', label: t('laporan.statusStopped') },
     { value: 'expired', label: t('laporan.statusExpired') },
   ];
 
@@ -67,6 +73,8 @@ export default function LaporanPage() {
   const [dateFrom, setDateFrom] = useState(firstOfMonthStr());
   const [dateTo, setDateTo] = useState(todayStr());
   const [status, setStatus] = useState('all');
+  // '' = semua instalatur, 'none' = belum ditentukan, else installer id
+  const [installerId, setInstallerId] = useState('');
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState<'excel' | 'pdf' | null>(null);
   const [rows, setRows] = useState<Record<string, unknown>[]>([]);
@@ -89,6 +97,7 @@ export default function LaporanPage() {
         dateTo,
         status,
       });
+      if (installerId) params.set('installerId', installerId);
       const data = await apiAdmin<{ rows: Record<string, unknown>[]; summary: Summary | null; error?: string }>(`/api/admin/laporan?${params}`);
 
       setRows(data.rows || []);
@@ -99,7 +108,20 @@ export default function LaporanPage() {
     } finally {
       setLoading(false);
     }
-  }, [reportType, dateFrom, dateTo, status]);
+  }, [reportType, dateFrom, dateTo, status, installerId]);
+
+  // Installer name for file names and the PDF header
+  const installerName = async (): Promise<string | null> => {
+    if (!installerId) return null;
+    if (installerId === INSTALLER_NONE) return INSTALLER_UNSET_LABEL;
+    try {
+      const { installers } = await installerApi.list();
+      return installers.find((i) => i.id === installerId)?.name ?? null;
+    } catch {
+      return null;
+    }
+  };
+  const fileSuffix = (name: string | null) => (name ? `_${name.replace(/[^\p{L}\p{N}]+/gu, '-')}` : '');
 
   // ── Export Excel ─────────────────────────────────────────────────────────
   const exportExcel = async () => {
@@ -117,7 +139,7 @@ export default function LaporanPage() {
       }));
       ws['!cols'] = colWidths;
 
-      const filename = `Laporan_${TYPE_LABELS[reportType]}_${dateFrom}_${dateTo}.xlsx`;
+      const filename = `Laporan_${TYPE_LABELS[reportType]}${fileSuffix(await installerName())}_${dateFrom}_${dateTo}.xlsx`;
       XLSX.writeFile(wb, filename);
     } catch (err: unknown) {
       showError('Gagal export Excel: ' + (err instanceof Error ? err.message : String(err)));
@@ -143,7 +165,8 @@ export default function LaporanPage() {
 
       doc.setFontSize(10);
       doc.setTextColor(80, 80, 80);
-      doc.text(`Periode: ${dateFrom} s/d ${dateTo}`, 15, 26);
+      const instName = await installerName();
+      doc.text(`Periode: ${dateFrom} s/d ${dateTo}${instName ? `   Instalatur: ${instName}` : ''}`, 15, 26);
       doc.text(`Dicetak: ${formatWIB(new Date())}`, 15, 32);
       doc.text(`Total data: ${rows.length} baris`, 15, 38);
 
@@ -156,7 +179,7 @@ export default function LaporanPage() {
       }
 
       // Exclude raw amount column (keep formatted version)
-      const headers = Object.keys(rows[0]).filter(k => k !== 'Jumlah' && k !== 'Harga');
+      const headers = Object.keys(rows[0]).filter(k => !RAW_NUMBER_COLUMNS.includes(k));
       const tableData = rows.map(row => headers.map(h => String(row[h] ?? '-')));
 
       autoTable(doc, {
@@ -169,7 +192,7 @@ export default function LaporanPage() {
         margin: { left: 15, right: 15 },
       });
 
-      const filename = `Laporan_${TYPE_LABELS[reportType]}_${dateFrom}_${dateTo}.pdf`;
+      const filename = `Laporan_${TYPE_LABELS[reportType]}${fileSuffix(instName)}_${dateFrom}_${dateTo}.pdf`;
       doc.save(filename);
     } catch (err: unknown) {
       showError('Gagal export PDF: ' + (err instanceof Error ? err.message : String(err)));
@@ -180,7 +203,7 @@ export default function LaporanPage() {
 
   // ── Column keys to display in preview table ──────────────────────────────
   const previewColumns = rows.length
-    ? Object.keys(rows[0]).filter(k => k !== 'Jumlah' && k !== 'Harga')
+    ? Object.keys(rows[0]).filter(k => !RAW_NUMBER_COLUMNS.includes(k))
     : [];
 
   const statusOptions = reportType === 'customer' ? CUSTOMER_STATUSES : INVOICE_STATUSES;
@@ -210,7 +233,7 @@ export default function LaporanPage() {
           <div>
             <label className="block text-xs font-bold text-brand-500 mb-2 uppercase tracking-wider">{t('laporan.reportType')}</label>
             <div className="flex gap-2 flex-wrap">
-              {(['invoice', 'payment', 'customer', 'profile'] as ReportType[]).map((t) => (
+              {(['invoice', 'payment', 'customer', 'profile', 'installer'] as ReportType[]).map((t) => (
                 <button
                   key={t}
                   onClick={() => { setReportType(t); setStatus('all'); setLoaded(false); }}
@@ -224,6 +247,7 @@ export default function LaporanPage() {
                   {t === 'payment' && <CreditCard className="w-3.5 h-3.5 inline mr-1" />}
                   {t === 'customer' && <Users className="w-3.5 h-3.5 inline mr-1" />}
                   {t === 'profile' && <BarChart3 className="w-3.5 h-3.5 inline mr-1" />}
+                  {t === 'installer' && <HardHat className="w-3.5 h-3.5 inline mr-1" />}
                   {TYPE_LABELS[t]}
                 </button>
               ))}
@@ -257,7 +281,13 @@ export default function LaporanPage() {
           </div>
 
           {/* Status filter (invoice & customer only) */}
-          {reportType !== 'payment' && reportType !== 'profile' && (
+          {/* Installer filter (every report) */}
+          <div>
+            <label htmlFor="laporan-installer" className="block text-xs font-bold text-brand-500 mb-2 uppercase tracking-wider">Instalatur</label>
+            <InstallerFilter id="laporan-installer" value={installerId} onChange={(v) => { setInstallerId(v); setLoaded(false); }} />
+          </div>
+
+          {reportType !== 'payment' && reportType !== 'profile' && reportType !== 'installer' && (
             <div>
               <label className="block text-xs font-bold text-brand-500 mb-2 uppercase tracking-wider">{t('laporan.statusLabel')}</label>
               <select
@@ -344,6 +374,13 @@ export default function LaporanPage() {
               <SummaryCard label={t('laporan.active')} value={summary.active ?? 0} icon={<TrendingUp className="w-5 h-5" />} color="green" />
               <SummaryCard label={t('laporan.isolated')} value={summary.isolated ?? 0} icon={<Users className="w-5 h-5" />} color="yellow" />
               <SummaryCard label={t('laporan.stoppedExpired')} value={(summary.stopped ?? 0) + (summary.expired ?? 0)} icon={<Users className="w-5 h-5" />} color="red" />
+            </>
+          )}
+          {reportType === 'installer' && (
+            <>
+              <SummaryCard label="Jumlah Instalatur" value={summary.total} icon={<HardHat className="w-5 h-5" />} color="cyan" />
+              <SummaryCard label="Pendapatan (Lunas)" value={formatRupiah(summary.totalAmount ?? 0)} icon={<TrendingUp className="w-5 h-5" />} color="green" />
+              <SummaryCard label="Tertunggak" value={formatRupiah(summary.paidAmount ?? 0)} icon={<CreditCard className="w-5 h-5" />} color="yellow" />
             </>
           )}
           {reportType === 'profile' && (

@@ -1,10 +1,13 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { nanoid } from "nanoid";
-import { startOfDayWIBtoUTC, endOfDayWIBtoUTC } from "@/lib/timezone";
 import { logActivity } from "@/server/services/activity-log.service";
 import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { z, parseBody } from '@/lib/parse-body';
+import type { Prisma } from '@prisma/client';
+import { buildTransactionFilters } from '@/server/services/billing/transaction-filter.service';
+import { linkTransactionCustomersSafe } from '@/server/services/billing/transaction-customer.service';
+import { pageAcrossGroups, summarizeTransactionsByInstaller, transactionGroupWhere } from '@/server/services/installer.service';
 
 const createTransactionSchema = z.object({
   categoryId: z.string().min(1, 'Category is required'),
@@ -23,176 +26,66 @@ export async function GET(request: NextRequest) {
   if (!authCheck.authorized) return authCheck.response;
   try {
     const { searchParams } = new URL(request.url);
-    const type = searchParams.get("type"); // INCOME, EXPENSE, or all
-    const categoryId = searchParams.get("categoryId");
-    const startDate = searchParams.get("startDate");
-    const endDate = searchParams.get("endDate");
-    const search = searchParams.get("search");
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "50");
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+    const limit = Math.max(1, parseInt(searchParams.get("limit") || "50"));
     const skip = (page - 1) * limit;
+    // groupBy=installer: list group by group (Belum ditentukan, installers
+    // A–Z, then non-customer rows) with per-group totals.
+    const groupByInstaller = searchParams.get("groupBy") === "installer";
 
-    // Prepare date filters
-    // User input is in WIB (YYYY-MM-DD format), convert to UTC for DB query
-    let startFilter: Date | undefined;
-    let endFilter: Date | undefined;
-    if (startDate && endDate) {
-      // Convert WIB date string to WIB-as-UTC Date for database query
-      startFilter = startOfDayWIBtoUTC(startDate);
-      endFilter = endOfDayWIBtoUTC(endDate);
-    }
+    // Resolve the customer of rows written since the last read, so the
+    // installer filter and grouping see them.
+    await linkTransactionCustomersSafe();
 
-    // Build where clause
-    const where: any = {};
-    if (type && type !== "all") {
-      where.type = type;
-    }
-    if (categoryId) {
-      where.categoryId = categoryId;
-    }
-    if (startFilter && endFilter) {
-      where.date = {
-        gte: startFilter,
-        lte: endFilter,
-      };
-    }
-    if (search) {
-      where.OR = [
-        { description: { contains: search } },
-        { reference: { contains: search } },
-        { notes: { contains: search } }
-      ];
-    }
+    const { list: where, stats: statsWhere } = buildTransactionFilters(searchParams);
+    const include = {
+      category: true,
+      pppoeUser: { select: { id: true, name: true, username: true, installer: { select: { id: true, name: true } } } },
+    } as const;
 
-    // Get transactions
-    const transactions = await prisma.transaction.findMany({
-      where,
-      include: {
-        category: true,
-      },
-      orderBy: {
-        date: "desc",
-      },
-      skip,
-      take: limit,
-    });
+    const [total, installerSummary] = await Promise.all([
+      prisma.transaction.count({ where }),
+      groupByInstaller ? summarizeTransactionsByInstaller(where) : Promise.resolve(undefined),
+    ]);
 
-    const total = await prisma.transaction.count({ where });
+    const transactions = installerSummary
+      ? await pageAcrossGroups(installerSummary, skip, limit, (g, gSkip, take) =>
+          prisma.transaction.findMany({
+            where: { AND: [where, transactionGroupWhere(g)] },
+            include,
+            orderBy: [{ date: "desc" }, { id: "desc" }],
+            skip: gSkip,
+            take,
+          }),
+        )
+      : await prisma.transaction.findMany({
+          where,
+          include,
+          orderBy: { date: "desc" },
+          skip,
+          take: limit,
+        });
 
-    // Get stats - Total Income & Expense
-    const incomeTotal = await prisma.transaction.aggregate({
-      where: {
-        type: "INCOME",
-        ...(startFilter && endFilter
-          ? {
-              date: {
-                gte: startFilter,
-                lte: endFilter,
-              },
-            }
-          : {}),
-      },
-      _sum: {
-        amount: true,
-      },
-    });
-
-    const expenseTotal = await prisma.transaction.aggregate({
-      where: {
-        type: "EXPENSE",
-        ...(startFilter && endFilter
-          ? {
-              date: {
-                gte: startFilter,
-                lte: endFilter,
-              },
-            }
-          : {}),
-      },
-      _sum: {
-        amount: true,
-      },
-    });
+    // Totals cards: date range + installer (not type/category/search).
+    const sw = (extra: Prisma.transactionWhereInput) => ({ AND: [statsWhere, extra] });
+    const [pppoeCategory, hotspotCategory, installCategory] = await Promise.all([
+      prisma.transactionCategory.findFirst({ where: { name: "Pembayaran PPPoE", type: "INCOME" } }),
+      prisma.transactionCategory.findFirst({ where: { name: "Pembayaran Hotspot", type: "INCOME" } }),
+      prisma.transactionCategory.findFirst({ where: { name: "Biaya Instalasi", type: "INCOME" } }),
+    ]);
+    const [incomeTotal, expenseTotal, incomeCount, expenseCount, pppoeIncome, hotspotIncome, installIncome] = await Promise.all([
+      prisma.transaction.aggregate({ where: sw({ type: "INCOME" }), _sum: { amount: true } }),
+      prisma.transaction.aggregate({ where: sw({ type: "EXPENSE" }), _sum: { amount: true } }),
+      prisma.transaction.count({ where: sw({ type: "INCOME" }) }),
+      prisma.transaction.count({ where: sw({ type: "EXPENSE" }) }),
+      prisma.transaction.aggregate({ where: sw({ type: "INCOME", categoryId: pppoeCategory?.id ?? '__none__' }), _sum: { amount: true }, _count: true }),
+      prisma.transaction.aggregate({ where: sw({ type: "INCOME", categoryId: hotspotCategory?.id ?? '__none__' }), _sum: { amount: true }, _count: true }),
+      prisma.transaction.aggregate({ where: sw({ type: "INCOME", categoryId: installCategory?.id ?? '__none__' }), _sum: { amount: true }, _count: true }),
+    ]);
 
     const totalIncome = incomeTotal._sum.amount || 0;
     const totalExpense = expenseTotal._sum.amount || 0;
     const balance = Number(totalIncome) - Number(totalExpense);
-
-    // Get count by type — scoped to current date filter
-    const incomeCount = await prisma.transaction.count({
-      where: {
-        type: "INCOME",
-        ...(startFilter && endFilter ? { date: { gte: startFilter, lte: endFilter } } : {}),
-      },
-    });
-    const expenseCount = await prisma.transaction.count({
-      where: {
-        type: "EXPENSE",
-        ...(startFilter && endFilter ? { date: { gte: startFilter, lte: endFilter } } : {}),
-      },
-    });
-
-    // Get income breakdown by category
-    const pppoeCategory = await prisma.transactionCategory.findFirst({
-      where: { name: "Pembayaran PPPoE", type: "INCOME" },
-    });
-    const hotspotCategory = await prisma.transactionCategory.findFirst({
-      where: { name: "Pembayaran Hotspot", type: "INCOME" },
-    });
-    const installCategory = await prisma.transactionCategory.findFirst({
-      where: { name: "Biaya Instalasi", type: "INCOME" },
-    });
-
-    const pppoeIncome = await prisma.transaction.aggregate({
-      where: {
-        type: "INCOME",
-        categoryId: pppoeCategory?.id ?? '__none__',
-        ...(startFilter && endFilter
-          ? {
-              date: {
-                gte: startFilter,
-                lte: endFilter,
-              },
-            }
-          : {}),
-      },
-      _sum: { amount: true },
-      _count: true,
-    });
-
-    const hotspotIncome = await prisma.transaction.aggregate({
-      where: {
-        type: "INCOME",
-        categoryId: hotspotCategory?.id ?? '__none__',
-        ...(startFilter && endFilter
-          ? {
-              date: {
-                gte: startFilter,
-                lte: endFilter,
-              },
-            }
-          : {}),
-      },
-      _sum: { amount: true },
-      _count: true,
-    });
-
-    const installIncome = await prisma.transaction.aggregate({
-      where: {
-        type: "INCOME",
-        categoryId: installCategory?.id ?? '__none__',
-        ...(startFilter && endFilter
-          ? {
-              date: {
-                gte: startFilter,
-                lte: endFilter,
-              },
-            }
-          : {}),
-      },
-      _sum: { amount: true },
-      _count: true,
-    });
 
     return NextResponse.json({
       success: true,
@@ -204,6 +97,7 @@ export async function GET(request: NextRequest) {
         limit,
         totalPages: Math.ceil(total / limit),
       },
+      ...(installerSummary ? { installerSummary } : {}),
       stats: {
         totalIncome: Number(totalIncome),
         totalExpense: Number(totalExpense),
@@ -406,28 +300,10 @@ export async function DELETE(request: NextRequest) {
 
     // ── Delete by filter ─────────────────────────────────────────────────
     if (filterDelete) {
-      const type = searchParams.get("type");
-      const categoryId = searchParams.get("categoryId");
-      const startDate = searchParams.get("startDate");
-      const endDate = searchParams.get("endDate");
-      const search = searchParams.get("search");
-
-      const where: any = {};
-      if (type && type !== "all") where.type = type;
-      if (categoryId && categoryId !== "all") where.categoryId = categoryId;
-      if (startDate && endDate) {
-        where.date = {
-          gte: startOfDayWIBtoUTC(startDate),
-          lte: endOfDayWIBtoUTC(endDate),
-        };
-      }
-      if (search) {
-        where.OR = [
-          { description: { contains: search } },
-          { reference: { contains: search } },
-          { notes: { contains: search } },
-        ];
-      }
+      // Exactly the rows the list shows for these filters (installer
+      // included), so the count in the confirmation is what gets deleted.
+      await linkTransactionCustomersSafe();
+      const { list: where } = buildTransactionFilters(searchParams);
 
       const result = await prisma.transaction.deleteMany({ where });
       return NextResponse.json({ success: true, message: `${result.count} transaksi dihapus`, count: result.count });

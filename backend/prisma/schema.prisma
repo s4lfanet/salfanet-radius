@@ -606,6 +606,9 @@ model pppoeUser {
   // Technician who registered this customer (PSB)
   registeredByTechnicianId String? @map("registered_by_technician_id")
 
+  // Installer (instalatur) who installed this customer. Null = "Belum ditentukan".
+  installerId String? @map("installer_id")
+
   // Approval workflow: technician registrations require admin approval
   approvalStatus String?  @db.VarChar(20) // null = direct (admin), 'pending', 'approved', 'rejected'
   approvedBy     String?  @map("approved_by") // admin user ID who approved
@@ -630,8 +633,10 @@ model pppoeUser {
   appNotices              customerAppNotice[]
   oltOnuStatuses          oltOnuStatus[]
   registeredByTechnician  technician?            @relation(fields: [registeredByTechnicianId], references: [id], onDelete: SetNull)
+  installer               installer?             @relation(fields: [installerId], references: [id], onDelete: Restrict)
   customerAddons          customerAddon[]
   paymentPromises         paymentPromise[]
+  transactions            transaction[]
 
   @@index([profileId], map: "pppoe_users_profileId_fkey")
   @@index([routerId], map: "pppoe_users_routerId_fkey")
@@ -645,6 +650,7 @@ model pppoeUser {
   @@index([referredById])
   @@index([pppoeCustomerId])
   @@index([registeredByTechnicianId])
+  @@index([installerId])
   @@index([approvalStatus])
   // Performance indexes: common lookup patterns
   @@index([phone]) // customer login by phone number
@@ -1043,10 +1049,20 @@ model transaction {
   updatedAt   DateTime            @updatedAt
   category    transactionCategory @relation(fields: [categoryId], references: [id])
 
+  // Customer behind this row, resolved from `reference` (INV-…, TOPUP-…,
+  // AUTO-RENEW-…) by linkTransactionCustomers(). Null = not a customer row
+  // (expense, voucher, agent deposit) or the customer was deleted.
+  pppoeUserId      String?    @map("pppoe_user_id")
+  pppoeUser        pppoeUser? @relation(fields: [pppoeUserId], references: [id], onDelete: SetNull)
+  // When the link was resolved; null = not looked at yet.
+  customerLinkedAt DateTime?  @map("customer_linked_at")
+
   @@index([categoryId])
   @@index([type])
   @@index([date])
   @@index([reference])
+  @@index([pppoeUserId])
+  @@index([customerLinkedAt])
   @@map("transactions")
 }
 
@@ -2315,11 +2331,31 @@ model technician {
   workOrders          workOrder[]
   pushSubscriptions   technicianPushSubscription[]
   registeredCustomers pppoeUser[]
+  installer           installer?
 
   @@index([phoneNumber])
   @@index([username])
   @@index([isActive])
   @@map("technicians")
+}
+
+// Instalatur: who installed a customer. Name + active only, so it also fits
+// freelancers without a technician account. Never deleted, only deactivated,
+// so customers keep their installer history (relation is onDelete: Restrict).
+model installer {
+  id           String      @id @default(cuid())
+  name         String      @unique @db.VarChar(100)
+  isActive     Boolean     @default(true)
+  // Set when the installer was made from a technician account, so customers
+  // a technician registers (PSB) get this installer automatically.
+  technicianId String?     @unique @map("technician_id")
+  technician   technician? @relation(fields: [technicianId], references: [id], onDelete: SetNull)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  users        pppoeUser[]
+
+  @@index([isActive])
+  @@map("installers")
 }
 
 model technicianOtp {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { showSuccess, showError, showConfirm, showToast } from '@/lib/sweetalert';
@@ -24,6 +24,8 @@ import {
 } from '@/components/ui/table';
 import { Loader2, DollarSign, FileText, CheckCircle, CheckCircle2, Clock, Eye, AlertCircle, Copy, Check, ExternalLink, MessageCircle, Trash2, Search, Download, Printer, Upload, ChevronLeft, ChevronRight, PlusSquare, Users, User as UserIcon } from 'lucide-react';
 import { Pagination } from '@/components/Pagination';
+import { InstallerFilter, InstallerSummaryBar, groupHeading, type InstallerGroup } from '@/components/InstallerFilter';
+import { INSTALLER_UNSET_LABEL } from '@/lib/api/installers';
 import Link from 'next/link';
 import { invoiceApi, pppoeApi, apiAdmin, buildUrl } from '@/lib/api';
 import { useApiQuery, useApiMutation, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
@@ -57,6 +59,7 @@ interface Invoice {
       id: string;
       name: string;
     } | null;
+    installer?: { id: string; name: string } | null;
   } | null;
 }
 
@@ -145,6 +148,17 @@ export default function InvoicesPage() {
   const [exportDateFrom, setExportDateFrom] = useState('');
   const [exportDateTo, setExportDateTo] = useState('');
   const [invoiceMonth, setInvoiceMonth] = useState<string>(''); // '' = all-time, 'YYYY-MM' = filtered
+  // '' = semua instalatur, 'none' = belum ditentukan, else installer id
+  const [filterInstaller, setFilterInstaller] = useState('');
+  // Sort by installer with group headings + per-installer totals. Remembered per browser.
+  const [groupByInstaller, setGroupByInstaller] = useState(true);
+  useEffect(() => {
+    try { if (localStorage.getItem('invoices.groupByInstaller') === '0') setGroupByInstaller(false); } catch { /* storage unavailable */ }
+  }, []);
+  const toggleGrouping = (on: boolean) => {
+    setGroupByInstaller(on);
+    try { localStorage.setItem('invoices.groupByInstaller', on ? '1' : '0'); } catch { /* storage unavailable */ }
+  };
 
   // Generate Invoice dialog
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
@@ -160,11 +174,21 @@ export default function InvoicesPage() {
 
   // ─── React Query: Invoice list (auto-refetches on tab/month/page/search change) ──────────
   const invoiceStatus = activeTab === 'unpaid' ? 'PENDING' : activeTab === 'paid' ? 'PAID' : 'all';
-  const invoicesQueryKey = buildQueryKey('/api/invoices', { status: invoiceStatus, month: invoiceMonth, page: currentPage, limit: pageSize, search: debouncedSearch });
-  const { data: invoicesData, isLoading: loading } = useApiQuery<InvoiceListResponse>('/api/invoices', {
-    params: { status: invoiceStatus, month: invoiceMonth, page: currentPage, limit: pageSize, search: debouncedSearch },
+  const invoiceParams = {
+    status: invoiceStatus,
+    month: invoiceMonth,
+    page: currentPage,
+    limit: pageSize,
+    search: debouncedSearch,
+    installerId: filterInstaller,
+    groupBy: groupByInstaller ? 'installer' : '',
+  };
+  const invoicesQueryKey = buildQueryKey('/api/invoices', invoiceParams);
+  const { data: invoicesData, isLoading: loading } = useApiQuery<InvoiceListResponse & { installerSummary?: InstallerGroup[] }>('/api/invoices', {
+    params: invoiceParams,
     placeholderData: 'keepPreviousData',
   });
+  const installerSummary = invoicesData?.installerSummary;
   // API Invoice type lacks nested `user` relation; local Invoice includes it
   const invoices = (invoicesData?.invoices as unknown as Invoice[]) || [];
   const totalCount = invoicesData?.total || 0;
@@ -220,7 +244,7 @@ export default function InvoicesPage() {
   }, [searchQuery]);
 
   // Reset to first page when tab or month changes
-  useEffect(() => { setCurrentPage(1); }, [activeTab, invoiceMonth]);
+  useEffect(() => { setCurrentPage(1); }, [activeTab, invoiceMonth, filterInstaller, groupByInstaller]);
 
   const getFilteredInvoices = () => {
     return invoices;
@@ -366,13 +390,22 @@ export default function InvoicesPage() {
     }
   };
 
-  // Export functions
+  // Export functions — same filters as the list (tab, month, search,
+  // installer), plus the optional date range from the export dialog.
+  const exportQuery = (format: 'excel' | 'pdf') => {
+    const q = new URLSearchParams({ format, status: invoiceStatus });
+    if (invoiceMonth) q.set('month', invoiceMonth);
+    if (debouncedSearch) q.set('search', debouncedSearch);
+    if (filterInstaller) q.set('installerId', filterInstaller);
+    if (groupByInstaller) q.set('groupBy', 'installer');
+    if (exportDateFrom) q.set('startDate', exportDateFrom);
+    if (exportDateTo) q.set('endDate', exportDateTo);
+    return q.toString();
+  };
+
   const handleExportExcel = async () => {
     try {
-      const status = activeTab === 'unpaid' ? 'PENDING' : activeTab === 'paid' ? 'PAID' : 'all';
-      let url = `/api/invoices/export?format=excel&status=${status}`;
-      if (exportDateFrom) url += `&startDate=${exportDateFrom}`;
-      if (exportDateTo) url += `&endDate=${exportDateTo}`;
+      const url = `/api/invoices/export?${exportQuery('excel')}`;
       const res = await fetch(buildUrl(url), { credentials: 'include' });
       const blob = await res.blob();
       const a = document.createElement('a'); a.href = window.URL.createObjectURL(blob);
@@ -384,10 +417,7 @@ export default function InvoicesPage() {
 
   const handleExportPDF = async () => {
     try {
-      const status = activeTab === 'unpaid' ? 'PENDING' : activeTab === 'paid' ? 'PAID' : 'all';
-      let url = `/api/invoices/export?format=pdf&status=${status}`;
-      if (exportDateFrom) url += `&startDate=${exportDateFrom}`;
-      if (exportDateTo) url += `&endDate=${exportDateTo}`;
+      const url = `/api/invoices/export?${exportQuery('pdf')}`;
       const data = await apiAdmin<PdfExportResponse>(url);
       if (data.pdfData) {
         const jsPDF = (await import('jspdf')).default;
@@ -807,6 +837,22 @@ export default function InvoicesPage() {
 
   const filteredInvoices = invoices;
 
+  // Grouped list: a heading wherever the installer changes. The server sorts
+  // by installer, so a group continues across pages and its heading repeats
+  // at the top of the next page with the same totals.
+  const installerKey = (i: Invoice) => i.user?.installer?.id ?? null;
+  const isGroupStart = (idx: number) =>
+    groupByInstaller && (idx === 0 || installerKey(filteredInvoices[idx]) !== installerKey(filteredInvoices[idx - 1]));
+  const renderGroupHeading = (installerId: string | null) => {
+    const h = groupHeading(installerSummary, { installerId });
+    return (
+      <div className="flex items-baseline justify-between gap-2">
+        <span className={`text-[11px] font-semibold ${installerId ? 'text-foreground' : 'text-muted-foreground'}`}>{h.name}</span>
+        <span className="text-[10px] text-muted-foreground tabular-nums">{h.detail}</span>
+      </div>
+    );
+  };
+
   if (loading && invoices.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -979,6 +1025,23 @@ export default function InvoicesPage() {
             </div>
           </div>
 
+          {/* Installer filter + grouping */}
+          <div className="px-3 py-2 border-b border-border flex flex-col sm:flex-row gap-2 sm:items-center">
+            <InstallerFilter value={filterInstaller} onChange={setFilterInstaller} className="sm:w-56" />
+            <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={groupByInstaller}
+                onChange={(e) => toggleGrouping(e.target.checked)}
+                className="w-3.5 h-3.5 rounded border-border accent-primary"
+              />
+              Kelompokkan per instalatur
+            </label>
+          </div>
+          {groupByInstaller && installerSummary && (
+            <InstallerSummaryBar groups={installerSummary} selected={filterInstaller} onSelect={setFilterInstaller} unit="tagihan" />
+          )}
+
           {/* Table */}
           <div className="overflow-x-auto hidden md:block">
             <Table>
@@ -998,6 +1061,7 @@ export default function InvoicesPage() {
                   <TableHead className="text-[10px] py-2 hidden lg:table-cell">{t('common.email')}</TableHead>
                   <TableHead className="text-[10px] py-2 hidden lg:table-cell">{t('nav.profile')}</TableHead>
                   <TableHead className="text-[10px] py-2 hidden xl:table-cell">{t('common.area')}</TableHead>
+                  {!groupByInstaller && <TableHead className="text-[10px] py-2 hidden lg:table-cell">Instalatur</TableHead>}
                   <TableHead className="text-[10px] py-2 text-right">{t('invoices.amount')}</TableHead>
                   <TableHead className="text-[10px] py-2">{t('invoices.status')}</TableHead>
                   <TableHead className="text-[10px] py-2 hidden sm:table-cell">{t('invoices.dueDate')}</TableHead>
@@ -1013,8 +1077,16 @@ export default function InvoicesPage() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredInvoices.map((invoice) => (
-                    <TableRow key={invoice.id} className="text-xs">
+                  filteredInvoices.map((invoice, idx) => (
+                    <Fragment key={invoice.id}>
+                    {isGroupStart(idx) && (
+                      <TableRow className="bg-muted/40 hover:bg-muted/40">
+                        <TableCell colSpan={11} className="py-1.5">
+                          {renderGroupHeading(invoice.user?.installer?.id ?? null)}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    <TableRow className="text-xs">
                       <TableCell className="py-2">
                         <input
                           type="checkbox"
@@ -1038,6 +1110,11 @@ export default function InvoicesPage() {
                       <TableCell className="py-2 hidden xl:table-cell text-[10px] text-muted-foreground">
                         {invoice.user?.area?.name || '-'}
                       </TableCell>
+                      {!groupByInstaller && (
+                        <TableCell className="py-2 hidden lg:table-cell text-[10px] text-muted-foreground">
+                          {invoice.user?.installer?.name || INSTALLER_UNSET_LABEL}
+                        </TableCell>
+                      )}
                       <TableCell className="py-2 text-right font-medium text-xs">{formatCurrency(Number(invoice.amount))}</TableCell>
                       <TableCell className="py-2">{getStatusBadge(invoice.status)}</TableCell>
                       <TableCell className="py-2 hidden sm:table-cell text-[10px] text-muted-foreground">{formatDate(invoice.dueDate)}</TableCell>
@@ -1070,6 +1147,7 @@ export default function InvoicesPage() {
                         </div>
                       </TableCell>
                     </TableRow>
+                    </Fragment>
                   ))
                 )}
               </TableBody>
@@ -1084,8 +1162,14 @@ export default function InvoicesPage() {
                 <p className="text-xs">{t('common.noData')}</p>
               </div>
             ) : (
-              filteredInvoices.map((invoice) => (
-                <div key={invoice.id} className="p-3 hover:bg-muted/50 transition-colors">
+              filteredInvoices.map((invoice, idx) => (
+                <Fragment key={invoice.id}>
+                {isGroupStart(idx) && (
+                  <div className="px-3 py-1.5 bg-muted/40">
+                    {renderGroupHeading(invoice.user?.installer?.id ?? null)}
+                  </div>
+                )}
+                <div className="p-3 hover:bg-muted/50 transition-colors">
                   <div className="flex items-start justify-between gap-2 min-w-0 mb-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <input
@@ -1130,6 +1214,12 @@ export default function InvoicesPage() {
                         <span className="text-muted-foreground">{invoice.user.area.name}</span>
                       </div>
                     )}
+                    {!groupByInstaller && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Instalatur:</span>
+                        <span className="text-muted-foreground">{invoice.user?.installer?.name || INSTALLER_UNSET_LABEL}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{t('invoices.dueDate')}:</span>
                       <span className="text-muted-foreground">{formatDate(invoice.dueDate)}</span>
@@ -1162,6 +1252,7 @@ export default function InvoicesPage() {
                     </button>
                   </div>
                 </div>
+                </Fragment>
               ))
             )}
           </div>

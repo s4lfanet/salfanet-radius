@@ -18,6 +18,7 @@ import 'server-only';
 import { prisma } from '@/server/db/client';
 import { nowWIB } from '@/lib/timezone';
 import { recordInvoiceIncome, invoiceReference } from '@/server/services/billing/invoice-income.service';
+import { linkTransactionCustomersSafe } from '@/server/services/billing/transaction-customer.service';
 
 export interface ReconciliationIssue {
   type: 'paid_without_payment' | 'amount_mismatch' | 'orphan_payment' | 'duplicate_payment' | 'negative_balance' | 'ledger_backfilled';
@@ -146,6 +147,9 @@ export async function runFinancialReconciliation(): Promise<ReconciliationResult
 
   // ── Check 6: collector payments without a Riwayat Transaksi row ────────
   const ledgerBackfilled = await backfillCollectorLedger(issues);
+
+  // Link new Riwayat Transaksi rows to their customer (installer grouping)
+  await linkTransactionCustomersSafe();
 
   const completedAt = nowWIB();
   const durationMs = completedAt.getTime() - startedAt.getTime();

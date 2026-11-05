@@ -6,6 +6,31 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.35.0] - 2026-11-05 - Instalatur: pengelompokan pelanggan per pemasang
+
+### Fitur
+- **[NEW]** Menu **PPPoE → Instalatur**: tambah, ubah nama, nonaktifkan, dan aktifkan kembali instalatur. Instalatur tidak bisa dihapus, jadi pelanggan yang sudah terhubung tetap menyimpan riwayatnya. Jumlah pelanggan per instalatur langsung membuka Data Pelanggan dengan filter itu
+- **[NEW]** Field **Instalatur** di form tambah pelanggan (modal dan wizard) dan form edit. Pilihan hanya instalatur aktif; instalatur yang dinonaktifkan tetap tersimpan pada pelanggan lamanya. Pelanggan tanpa instalatur tampil sebagai "Belum ditentukan"
+- **[NEW]** Pelanggan yang didaftarkan teknisi lewat portal (PSB) otomatis diberi instalatur dari teknisi tersebut. Pelanggan PSB lama bisa diisi sekaligus dengan tombol "Isi dari data PSB" di halaman Instalatur
+- **[NEW]** Filter instalatur (Semua / satu instalatur / Belum ditentukan) di **Data Pelanggan**, **Tagihan**, **Riwayat Transaksi**, dan **Export Data**. Filter dijalankan di server dan bekerja bersama pencarian, tanggal, status, dan pagination; angka di tab dan kartu total ikut menyesuaikan
+- **[NEW]** Tagihan dan Riwayat Transaksi dapat **dikelompokkan per instalatur**: ringkasan jumlah dan total per instalatur di atas daftar (klik untuk memfilter) dan judul kelompok di dalam daftar. Di Riwayat Transaksi, transaksi tanpa pelanggan (pengeluaran, voucher, deposit agen) masuk kelompok "Bukan transaksi pelanggan"
+- **[NEW]** Semua export (Excel/PDF Data Pelanggan, Tagihan, Riwayat Transaksi, Export Data) mengikuti filter instalatur dan menyertakan kolom **Instalatur**
+- **[NEW]** Export Data: jenis laporan baru **Pendapatan per Instalatur** (jumlah pelanggan, invoice, lunas, pendapatan, tertunggak)
+
+### Perbaikan
+- **[FIX]** Export Tagihan kini memakai filter yang sama dengan daftar (bulan, tab, pencarian). Sebelumnya tab "Belum Bayar" hanya mengekspor PENDING tanpa OVERDUE, dan bulan serta pencarian diabaikan
+- **[FIX]** Export Data Pelanggan ikut pencarian yang aktif
+- **[FIX]** "Hapus Sesuai Filter" di Riwayat Transaksi menghapus persis transaksi yang tampil (termasuk filter instalatur)
+- **[FIX]** Export Data jenis Pelanggan: filter dan hitungan status "Berhenti" kini benar (status `stop`)
+- **[CHANGE]** Field "Teknisi Pemasang" di detail pelanggan diganti nama menjadi "Didaftarkan oleh", karena isinya akun yang mendaftarkan (PSB), bukan pemasangnya
+
+### Catatan Pembaruan
+- Skema bertambah: tabel `installers`, kolom `pppoe_users.installer_id`, dan kolom `transactions.pppoe_user_id` + `transactions.customer_linked_at`. Semua kolom boleh kosong; "Update Sekarang" menambahkannya tanpa menghapus data
+- Riwayat Transaksi menghubungkan setiap transaksi ke pelanggannya dari nomor referensi (INV-…, TOPUP-…, AUTO-RENEW-…) saat halaman pertama kali dibuka dan setiap Rekonsiliasi Keuangan berjalan
+- Naikkan versi: root, backend, frontend ke 5.35.0
+
+---
+
 ## [5.34.1] - 2026-11-05 - Aplikasi Admin 1.0.30: Riwayat Transaksi
 
 ### Aplikasi

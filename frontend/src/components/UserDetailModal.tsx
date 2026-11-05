@@ -11,6 +11,7 @@ import { CameraPhotoInput } from '@/components/CameraPhotoInput';
 import { CameraViewfinder } from '@/components/CameraViewfinder';
 import type { PppoeProfile, PppoeArea, Router } from '@/types/api/pppoe';
 import { NumberInput } from '@/components/ui/number-input';
+import { InstallerOptions } from '@/components/InstallerFilter';
 
 interface User {
   id: string;
@@ -43,6 +44,8 @@ interface User {
   connectionType?: 'PPPOE' | 'STATIC_IP' | 'HOTSPOT' | null;
   registeredByTechnicianId?: string | null;
   registeredByTechnician?: { id: string; name: string } | null;
+  installerId?: string | null;
+  installer?: { id: string; name: string; isActive: boolean } | null;
 }
 
 interface Session {
@@ -119,6 +122,7 @@ export default function UserDetailModal({
     password: '',
     profileId: '',
     areaId: '',
+    installerId: '',
     routerId: '',
     name: '',
     phone: '',
@@ -149,6 +153,7 @@ export default function UserDetailModal({
         username: user.username,
         password: '',
         areaId: user.area?.id || '',
+        installerId: user.installer?.id || user.installerId || '',
         profileId: user.profile?.id || '',
         routerId: user.router?.id || '',
         name: user.name,
@@ -422,6 +427,15 @@ export default function UserDetailModal({
                       <option value="">Pilih Area</option>
                       {areas.map((a) => (<option key={a.id} value={a.id}>{a.name}</option>))}
                     </select>
+                  </div>
+                  <div>
+                    <label htmlFor="user-installer" className={labelCls}>Instalatur</label>
+                    <select id="user-installer" value={formData.installerId} onChange={(e) => setFormData({ ...formData, installerId: e.target.value })} className={selectCls}>
+                      <InstallerOptions currentId={user?.installer?.id || user?.installerId} />
+                    </select>
+                    {user?.installer && !user.installer.isActive && formData.installerId === user.installer.id && (
+                      <p className={hintCls}>Instalatur ini sudah nonaktif. Tetap tersimpan selama tidak diganti.</p>
+                    )}
                   </div>
                   <div>
                     <label className={labelCls}>{t('userModal.ipAddress')}</label>
@@ -747,11 +761,11 @@ export default function UserDetailModal({
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className={labelCls}>Teknisi Pemasang</label>
+                    <label className={labelCls}>Didaftarkan oleh</label>
                     <div className="px-3 py-2 text-sm rounded-lg border border-dashed border-border bg-muted/30 text-foreground">
                       {user?.registeredByTechnician?.name || 'System / Admin'}
                     </div>
-                    <p className={hintCls}>Teknisi yang melakukan pendaftaran pelanggan ini.</p>
+                    <p className={hintCls}>Akun yang mendaftarkan pelanggan ini (PSB). Pemasangnya diatur di field Instalatur.</p>
                   </div>
                   <div>
                     <label className={labelCls}>Tanggal Register</label>

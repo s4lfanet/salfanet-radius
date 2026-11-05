@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
       profileId: searchParams.get('profileId'),
       routerId: searchParams.get('routerId'),
       areaId: searchParams.get('areaId'),
+      installerId: searchParams.get('installerId'),
       page: searchParams.get('page') ? parseInt(searchParams.get('page')!, 10) : null,
       limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!, 10) : null,
       sortBy: searchParams.get('sortBy'),
@@ -61,6 +62,7 @@ export async function POST(request: NextRequest) {
     const err = error as { code?: string; message?: string };
     if (err.code === 'DUPLICATE_USERNAME') return conflict(err.message!);
     if (err.code === 'NOT_FOUND') return notFound(err.message);
+    if (err.code === 'VALIDATION') return badRequest(err.message!);
     console.error('Create PPPoE user error:', error);
     return serverError();
   }
@@ -82,6 +84,7 @@ export async function PUT(request: NextRequest) {
     const err = error as { code?: string; message?: string };
     if (err.code === 'NOT_FOUND') return notFound(err.message);
     if (err.code === 'DUPLICATE_USERNAME') return conflict(err.message!);
+    if (err.code === 'VALIDATION') return badRequest(err.message!);
     console.error('Update PPPoE user error:', error);
     return serverError();
   }

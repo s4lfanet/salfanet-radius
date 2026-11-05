@@ -3,6 +3,7 @@
  * All DB mutations, RADIUS sync, notifications and activity logging live here.
  */
 
+import { installerIdForTechnician, installerUserWhere, parseInstallerFilter, validateInstallerId } from '@/server/services/installer.service';
 import { prisma } from '@/server/db/client';
 import { logActivity } from '@/server/services/activity-log.service';
 import { shouldCreatePppSecret, getMikrotikProfileName } from '@/server/services/mikrotik/ppp-secret.service';
@@ -83,6 +84,8 @@ export interface CreatePppoeUserInput {
   connectionType?: string;
   createPppSecret?: boolean;
   registeredByTechnicianId?: string;
+  /** Instalatur; empty = "Belum ditentukan". Defaults to the PSB technician's installer. */
+  installerId?: string | null;
 }
 
 export interface UpdatePppoeUserInput {
@@ -93,6 +96,7 @@ export interface UpdatePppoeUserInput {
   pppoeCustomerId?: string | null;
   routerId?: string | null;
   areaId?: string | null;
+  installerId?: string | null;
   name?: string;
   phone?: string;
   email?: string | null;
@@ -127,6 +131,8 @@ export interface ListPppoeUsersParams {
   profileId?: string | null;
   routerId?: string | null;
   areaId?: string | null;
+  /** '' | 'all' | 'none' | installer id — see installer.service */
+  installerId?: string | null;
   page?: number | null;
   limit?: number | null;
   sortBy?: string | null;
@@ -165,6 +171,7 @@ export async function listPppoeUsers(params: ListPppoeUsersParams) {
   if (params.areaId) {
     whereClause.areaId = params.areaId;
   }
+  Object.assign(whereClause, installerUserWhere(parseInstallerFilter(params.installerId)));
 
   // Pagination
   const page = Math.max(1, params.page || 1);
@@ -195,6 +202,7 @@ export async function listPppoeUsers(params: ListPppoeUsersParams) {
         odpAssignment: { include: { odp: true } },
         pppoeCustomer: { select: { id: true, customerId: true, name: true, phone: true, email: true } },
         registeredByTechnician: { select: { id: true, name: true } },
+        installer: { select: { id: true, name: true, isActive: true } },
       },
       orderBy: { [sortField]: sortDir },
       skip,
@@ -229,6 +237,7 @@ export async function getPppoeUserById(id: string) {
       profile: true,
       router: true,
       area: { select: { id: true, name: true } },
+      installer: { select: { id: true, name: true, isActive: true } },
     },
   });
 
@@ -284,6 +293,13 @@ export async function createPppoeUser(
     odp, discount, discountNote, installDate, connectionType,
     registeredByTechnicianId,
   } = data;
+
+  // Instalatur: chosen in the form, else the installer of the technician who
+  // registered this customer (PSB), else "Belum ditentukan".
+  const installerError = await validateInstallerId(data.installerId);
+  if (installerError) throw Object.assign(new Error(installerError), { code: 'VALIDATION' });
+  const installerId = data.installerId || (await installerIdForTechnician(registeredByTechnicianId));
+
   const noPppoeAccount = !!(data as any).noPppoeAccount;
   const pendingApproval = !!(data as any).pendingApproval;
 
@@ -422,6 +438,7 @@ export async function createPppoeUser(
       ...(installDate ? { installDate: new Date(installDate) } : {}),
       ...(connectionType ? { connectionType: connectionType as any } : {}),
       ...(registeredByTechnicianId ? { registeredByTechnicianId } : {}),
+      installerId: installerId || null,
       // Approval workflow
       ...(pendingApproval ? { approvalStatus: 'pending' } : {}),
     } as never,
@@ -876,6 +893,12 @@ export async function updatePppoeUser(
     newProfile = profile;
   }
 
+  // Validate installer if changed (keeping a since-deactivated one is allowed)
+  if (data.installerId !== undefined) {
+    const installerError = await validateInstallerId(data.installerId, currentUser.installerId);
+    if (installerError) throw Object.assign(new Error(installerError), { code: 'VALIDATION' });
+  }
+
   // Validate router if changed
   if (data.routerId) {
     const router = await prisma.router.findUnique({ where: { id: data.routerId } });
@@ -891,6 +914,7 @@ export async function updatePppoeUser(
       ...(data.profileId && { profileId: data.profileId }),
       ...(data.routerId !== undefined && { routerId: data.routerId || null }),
       ...(data.areaId !== undefined && { areaId: data.areaId || null }),
+      ...(data.installerId !== undefined && { installerId: data.installerId || null }),
       ...(data.name && { name: data.name }),
       ...(data.phone && { phone: data.phone }),
       ...(data.email !== undefined && { email: data.email }),

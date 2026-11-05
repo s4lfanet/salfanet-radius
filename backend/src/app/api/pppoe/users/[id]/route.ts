@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { ok, notFound, serverError, conflict } from '@/lib/api-response';
+import { ok, notFound, serverError, conflict, badRequest } from '@/lib/api-response';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { getPppoeUserById, updatePppoeUser } from '@/server/services/pppoe.service';
 
@@ -41,6 +41,7 @@ export async function PUT(
     const err = error as { code?: string; message?: string };
     if (err.code === 'NOT_FOUND') return notFound(err.message);
     if (err.code === 'DUPLICATE_USERNAME') return conflict(err.message!);
+    if (err.code === 'VALIDATION') return badRequest(err.message!);
     console.error('Update PPPoE user error:', error);
     return serverError();
   }
