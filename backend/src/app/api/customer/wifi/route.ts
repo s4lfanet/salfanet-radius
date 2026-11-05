@@ -2,7 +2,7 @@
 import { prisma } from '@/server/db/client';
 import { getGenieACSCredentials } from '@/app/api/settings/genieacs/route';
 import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
-import { classifyWlanSlots, isEnabledValue } from '@/lib/genieacs/wlan-band';
+import { classifyWlanSlots, extractTr181Wlans, isSlotActive, pickVisibleWlans, tr181AccessPointOf } from '@/lib/genieacs/wlan-band';
 
 // Helper to verify customer token using CustomerSession
 async function verifyCustomerToken(request: NextRequest) {
@@ -46,7 +46,7 @@ async function verifyCustomerToken(request: NextRequest) {
 const WLAN_REFRESH_EVERY_MS = 6 * 60 * 60 * 1000;
 const lastWlanRefresh = new Map<string, number>();
 
-function requestWlanRefresh(host: string, authHeader: string, deviceId: string): boolean {
+function requestWlanRefresh(host: string, authHeader: string, deviceId: string, objectName: string): boolean {
   const last = lastWlanRefresh.get(deviceId) ?? 0;
   if (Date.now() - last < WLAN_REFRESH_EVERY_MS) return false;
   lastWlanRefresh.set(deviceId, Date.now());
@@ -57,7 +57,7 @@ function requestWlanRefresh(host: string, authHeader: string, deviceId: string):
   fetch(`${host}/devices/${encodeURIComponent(deviceId)}/tasks?connection_request`, {
     method: 'POST',
     headers: { Authorization: `Basic ${authHeader}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: 'refreshObject', objectName: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration' }),
+    body: JSON.stringify({ name: 'refreshObject', objectName }),
     signal: ctrl.signal,
   })
     .catch((e) => console.warn('[Customer WiFi] WLAN refresh request failed:', e?.message || e))
@@ -165,20 +165,27 @@ export async function GET(request: NextRequest) {
     }
 
     // Extract WLAN configurations and connected devices
-    const processedDevice = extractDeviceInfo(device);
+    const { wlanSlots, ...processedDevice } = extractDeviceInfo(device);
 
     // No 5GHz network found: have the ONT re-read its WLAN slots (see above).
-    const slots = Object.keys(device?.InternetGatewayDevice?.LANDevice?.['1']?.WLANConfiguration || {}).filter((k) => !isNaN(parseInt(k))).length;
     const has5G = processedDevice.wlanConfigs.some((w: any) => w.band === '5GHz');
-    const wlanRefreshRequested = !has5G && requestWlanRefresh(host, authHeader, String(device._id));
+    const refreshTarget = device?.InternetGatewayDevice ? 'InternetGatewayDevice.LANDevice.1.WLANConfiguration' : 'Device.WiFi';
+    const wlanRefreshRequested = !has5G && requestWlanRefresh(host, authHeader, String(device._id), refreshTarget);
     if (!has5G) {
-      console.log(`[Customer WiFi] ${user.username}: no 5GHz network in GenieACS data (${slots} WLAN slot(s) present, ${processedDevice.wlanConfigs.length} shown)${wlanRefreshRequested ? ', refresh requested' : ''}`);
+      console.log(`[Customer WiFi] ${user.username}: no 5GHz network (${wlanSlots.length} WLAN slot(s) seen, ${processedDevice.wlanConfigs.length} shown)${wlanRefreshRequested ? ', refresh requested' : ''}`);
     }
 
     return NextResponse.json({
       success: true,
       device: processedDevice,
       wlanRefreshRequested,
+      // ?debug=1: every slot as this server sees it, passwords left out. Only
+      // ever this customer's own ONT.
+      ...(request.nextUrl.searchParams.get('debug') === '1' && {
+        wlanSlots,
+        lanDevices: Object.keys(device?.InternetGatewayDevice?.LANDevice ?? {}).filter((k) => !k.startsWith('_')),
+        dataModel: device?.InternetGatewayDevice ? 'TR-098' : device?.Device ? 'TR-181' : 'unknown',
+      }),
     });
 
   } catch (error: any) {
@@ -220,17 +227,9 @@ function extractDeviceInfo(device: any) {
     return value;
   };
 
-  const isTruthyValue = (val: any): boolean => {
-    if (val === null || val === undefined) return false;
-    if (typeof val === 'object' && '_value' in val) val = val._value;
-    if (typeof val === 'boolean') return val;
-    if (typeof val === 'string') return val.toLowerCase() === 'true' || val === '1';
-    if (typeof val === 'number') return val === 1;
-    return false;
-  };
-
   // Extract WLAN configurations
   const wlanConfigs: any[] = [];
+  const wlanSlots: Array<Record<string, unknown>> = [];
   const lanDevice = getNestedValue(device, 'InternetGatewayDevice.LANDevice.1');
 
   if (lanDevice && lanDevice.WLANConfiguration) {
@@ -241,8 +240,19 @@ function extractDeviceInfo(device: any) {
         rawEntries.push({ index: parseInt(key), wlanObj: wlan, ssid: safeString((wlan as any).SSID), band: '' });
       }
     }
-    const bands = classifyWlanSlots(rawEntries.map((e) => ({ index: e.index, wlan: e.wlanObj, enabled: isEnabledValue(e.wlanObj.Enable) })));
+    const bands = classifyWlanSlots(rawEntries.map((e) => ({ index: e.index, wlan: e.wlanObj, enabled: isSlotActive(e.wlanObj) })));
     for (const entry of rawEntries) entry.band = bands.get(entry.index) ?? '2.4GHz';
+    wlanSlots.push(
+      ...rawEntries.map((e) => ({
+        index: e.index,
+        ssid: e.ssid,
+        enable: safeString(e.wlanObj.Enable),
+        status: safeString(e.wlanObj.Status),
+        standard: safeString(e.wlanObj.Standard),
+        channel: safeString(e.wlanObj.Channel),
+        band: e.band,
+      })),
+    );
 
     for (const { index, wlanObj, ssid, band } of rawEntries) {
       // Count actual AssociatedDevice entries (more reliable than TotalAssociations field)
@@ -259,7 +269,7 @@ function extractDeviceInfo(device: any) {
       // Include WLAN if it has an SSID name OR has connected devices
       const hasValidSsid = ssid && ssid !== '-' && ssid !== '';
       if (hasValidSsid || assocCount > 0) {
-        const enabled = isTruthyValue(wlanObj.Enable) || assocCount > 0;
+        const enabled = isSlotActive(wlanObj, assocCount);
 
         wlanConfigs.push({
           index,
@@ -474,27 +484,15 @@ function extractDeviceInfo(device: any) {
     return t;
   };
 
-  // Show only the ACTIVE WLAN per band (2.4GHz / 5GHz) — ONTs often expose
-  // multiple WLANConfiguration slots per band (main + guest + disabled
-  // presets) which would otherwise clutter the customer UI with duplicate
-  // or dead SSID cards. Pick the enabled entry with the most associated
-  // devices per band (tie-break: lowest index = primary SSID).
-  const activeWlanConfigs: any[] = [];
-  for (const band of ['2.4GHz', '5GHz']) {
-    let candidates = wlanConfigs.filter(w => w.band === band && w.enabled);
-    if (candidates.length === 0) {
-      // Many ONT firmwares never report a usable `Enable` value (missing,
-      // stale, or not refreshed by GenieACS), which made `enabled` false
-      // even for a radio that's actually broadcasting — silently dropping
-      // the whole band (this is what hid 2.4GHz on the customer WiFi page
-      // whenever nothing happened to be connected to it at the time).
-      // Fall back to any config for this band that at least has a real SSID.
-      candidates = wlanConfigs.filter(w => w.band === band && w.ssid);
-    }
-    if (candidates.length === 0) continue;
-    candidates.sort((a, b) => (b.totalAssociations - a.totalAssociations) || (a.index - b.index));
-    activeWlanConfigs.push(candidates[0]);
+  // ONTs on the newer TR-181 data model have no WLANConfiguration at all.
+  if (wlanConfigs.length === 0) {
+    const tr181 = extractTr181Wlans(device);
+    wlanConfigs.push(...tr181);
+    wlanSlots.push(...tr181.map(({ password: _password, ...slot }) => slot));
   }
+
+  // ONTs expose many preset slots (main, guest, disabled) across both radios.
+  const visibleWlans = pickVisibleWlans(wlanConfigs);
 
   return {
     _id: device._id,
@@ -514,7 +512,8 @@ function extractDeviceInfo(device: any) {
     status: device._lastInform ? 
       (Date.now() - new Date(device._lastInform).getTime() < 3600000 ? 'Online' : 'Offline') : 
       'Unknown',
-    wlanConfigs: activeWlanConfigs.sort((a, b) => a.index - b.index),
+    wlanConfigs: visibleWlans,
+    wlanSlots,
     connectedHosts,
     signalStrength: {
       rxPower: formatRxPower(rxPower),
@@ -672,7 +671,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Build parameter path
-    const basePath = `InternetGatewayDevice.LANDevice.1.WLANConfiguration.${wlanIndex}`;
+    const isTr181 = !device?.InternetGatewayDevice && !!device?.Device?.WiFi;
+    const basePath = isTr181 ? `Device.WiFi.SSID.${wlanIndex}` : `InternetGatewayDevice.LANDevice.1.WLANConfiguration.${wlanIndex}`;
+    const accessPoint = isTr181 ? tr181AccessPointOf(device, Number(wlanIndex)) : null;
 
     // Like gembok-bill: Send SEPARATE tasks for SSID and password
     const _tasks = [];
@@ -717,10 +718,12 @@ export async function POST(request: NextRequest) {
     if (password && password.trim()) {
       const passwordTask = {
         name: 'setParameterValues',
-        parameterValues: [
-          [`${basePath}.KeyPassphrase`, password, 'xsd:string'],
-          [`${basePath}.PreSharedKey.1.KeyPassphrase`, password, 'xsd:string']
-        ]
+        parameterValues: isTr181
+          ? [[`Device.WiFi.AccessPoint.${accessPoint ?? wlanIndex}.Security.KeyPassphrase`, password, 'xsd:string']]
+          : [
+              [`${basePath}.KeyPassphrase`, password, 'xsd:string'],
+              [`${basePath}.PreSharedKey.1.KeyPassphrase`, password, 'xsd:string'],
+            ],
       };
 
       const passwordUrl = `${host}/devices/${encodeURIComponent(deviceId)}/tasks?timeout=3000&connection_request`;

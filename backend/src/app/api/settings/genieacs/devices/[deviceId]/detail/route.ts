@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getGenieACSCredentials } from '../../../route';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { normalizeRxPower, normalizeUptime } from '@/lib/genieacs/tr069-parser';
-import { classifyWlanSlots, isEnabledValue } from '@/lib/genieacs/wlan-band';
+import { classifyWlanSlots, isSlotActive } from '@/lib/genieacs/wlan-band';
 
 // Helper to extract raw value from GenieACS format (handles {_value: x} format)
 function extractRawValue(val: unknown): unknown {
@@ -406,7 +406,7 @@ function extractWLANConfigs(device: Record<string, unknown>): WLANConfig[] {
         .map(([key, wlan]) => ({
           index: parseInt(key),
           wlan: wlan as Record<string, unknown>,
-          enabled: isEnabledValue((wlan as Record<string, unknown>)['Enable']),
+          enabled: isSlotActive(wlan as Record<string, unknown>),
         })),
     );
     for (const entry of wlanConfigs) entry.band = bands.get(entry.index) ?? entry.band;

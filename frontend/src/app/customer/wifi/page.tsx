@@ -30,6 +30,12 @@ interface ConnectedHost {
   signalStrength: string;
 }
 
+interface WlanDebug {
+  wlanSlots: Array<{ index: number; ssid: string; enable?: string; status?: string; standard: string; channel: string; band: string }>;
+  lanDevices: string[];
+  dataModel: string;
+}
+
 interface DeviceInfo {
   _id: string;
   pppUsername: string;
@@ -62,6 +68,7 @@ export default function CustomerWiFiPage() {
 
   const [device, setDevice] = useState<DeviceInfo | null>(null);
   const [wlanRefreshRequested, setWlanRefreshRequested] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<WlanDebug | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [noGenieACS, setNoGenieACS] = useState(false);
@@ -82,7 +89,8 @@ export default function CustomerWiFiPage() {
     }
 
     try {
-      const data = await apiCustomer<{ success: boolean; reason?: string; device?: DeviceInfo; error?: string; wlanRefreshRequested?: boolean }>('/api/customer/wifi');
+      const debug = new URLSearchParams(window.location.search).get('debug') === '1';
+      const data = await apiCustomer<{ success: boolean; reason?: string; device?: DeviceInfo; error?: string; wlanRefreshRequested?: boolean } & Partial<WlanDebug>>(`/api/customer/wifi${debug ? '?debug=1' : ''}`);
 
       if (!data.success) {
         if (data.reason === 'not_configured') {
@@ -94,6 +102,7 @@ export default function CustomerWiFiPage() {
       } else {
         setDevice(data.device || null);
         setWlanRefreshRequested(!!data.wlanRefreshRequested);
+        setDebugInfo(debug && data.wlanSlots ? { wlanSlots: data.wlanSlots, lanDevices: data.lanDevices ?? [], dataModel: data.dataModel ?? '-' } : null);
         setNoGenieACS(false);
         setNoDevice(false);
       }
@@ -343,6 +352,32 @@ export default function CustomerWiFiPage() {
           )}
         </div>
       </CyberCard>
+
+      {debugInfo && (
+        <CyberCard className="p-4 overflow-x-auto">
+          <p className="text-xs text-slate-400 mb-2">Diagnostik: {debugInfo.dataModel}, LANDevice {debugInfo.lanDevices.join(', ') || '-'}, {debugInfo.wlanSlots.length} slot</p>
+          <table className="w-full text-xs text-slate-300">
+            <thead>
+              <tr className="text-left text-slate-500">
+                {['Slot', 'SSID', 'Enable', 'Status', 'Standard', 'Channel', 'Band'].map((h) => <th key={h} className="pr-3 py-1 font-medium">{h}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {debugInfo.wlanSlots.map((s) => (
+                <tr key={s.index}>
+                  <td className="pr-3 py-0.5">{s.index}</td>
+                  <td className="pr-3 py-0.5">{s.ssid}</td>
+                  <td className="pr-3 py-0.5">{s.enable ?? '-'}</td>
+                  <td className="pr-3 py-0.5">{s.status ?? '-'}</td>
+                  <td className="pr-3 py-0.5">{s.standard}</td>
+                  <td className="pr-3 py-0.5">{s.channel}</td>
+                  <td className="pr-3 py-0.5">{s.band}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </CyberCard>
+      )}
 
       {/* WLAN Cards */}
       {device.wlanConfigs.map((wlan) => {

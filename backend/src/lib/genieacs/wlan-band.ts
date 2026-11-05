@@ -36,6 +36,18 @@ export const isEnabledValue = (val: unknown): boolean => {
   return false;
 };
 
+/**
+ * Whether a slot is really broadcasting. Status ("Up", "Disabled") is the
+ * ONT's own answer; many firmwares leave Enable empty on idle slots, so it is
+ * only used when Status is missing. A slot with clients is up either way.
+ */
+export function isSlotActive(wlan: Record<string, unknown>, associated = 0): boolean {
+  if (associated > 0) return true;
+  const status = str(wlan['Status']).toLowerCase();
+  if (status) return status === 'up';
+  return isEnabledValue(wlan['Enable']);
+}
+
 /** What the radio itself states, or the ONT's own 5GHz naming. */
 function statedBand(wlan: Record<string, unknown>): Band | null {
   for (const key of ['OperatingFrequencyBand', 'X_HW_OperatingFrequencyBand']) {
@@ -159,4 +171,82 @@ function resolveUndeterminedBands(items: BandItem[]): void {
     known.push(item);
     known.sort((a, b) => a.index - b.index);
   }
+}
+
+// More active slots than this means the ONT marks every preset as active, so
+// "active" says nothing and one network per band is shown instead.
+const MAX_ACTIVE_SLOTS = 4;
+
+interface VisibleWlan {
+  index: number;
+  band: string;
+  enabled: boolean;
+  ssid: string;
+  totalAssociations: number;
+}
+
+/**
+ * The networks a customer sees: every active slot, whatever band it was given,
+ * so a wrong guess can mislabel a network but never hide it. A band with
+ * nothing active still gets its best slot, for firmwares that report neither
+ * Status nor Enable.
+ */
+export function pickVisibleWlans<T extends VisibleWlan>(configs: T[]): T[] {
+  const best = (list: T[]) => [...list].sort((a, b) => b.totalAssociations - a.totalAssociations || a.index - b.index)[0];
+  const active = configs.filter((c) => c.enabled);
+  const shown = active.length <= MAX_ACTIVE_SLOTS ? [...active] : [];
+
+  for (const band of ['2.4GHz', '5GHz']) {
+    if (shown.some((c) => c.band === band)) continue;
+    const pick = best(active.filter((c) => c.band === band)) ?? best(configs.filter((c) => c.band === band && c.ssid));
+    if (pick) shown.push(pick);
+  }
+  return shown.sort((a, b) => a.index - b.index);
+}
+
+/** WiFi of a TR-181 ONT (Device.WiFi.*), in the same shape as the TR-098 slots. */
+export function extractTr181Wlans(device: any) {
+  const wifi = device?.Device?.WiFi;
+  const numbered = (obj: unknown): Array<[string, any]> =>
+    Object.entries((obj ?? {}) as Record<string, any>).filter(([k, v]) => !isNaN(parseInt(k)) && v && typeof v === 'object');
+
+  const entries = numbered(wifi?.SSID).map(([key, ssidObj]) => {
+    const radioId = /Radio\.(\d+)/.exec(str(ssidObj.LowerLayers))?.[1];
+    const radio = radioId ? wifi?.Radio?.[radioId] : undefined;
+    const accessPoint = numbered(wifi?.AccessPoint).find(([, ap]) => new RegExp(`SSID\\.${key}\\.?$`).test(str(ap.SSIDReference)))?.[1];
+    const associated = parseInt(str(accessPoint?.AssociatedDeviceNumberOfEntries)) || 0;
+    const wlan: Record<string, unknown> = {
+      SSID: ssidObj.SSID,
+      Enable: ssidObj.Enable,
+      Status: ssidObj.Status,
+      OperatingFrequencyBand: radio?.OperatingFrequencyBand,
+      Channel: radio?.Channel,
+      PossibleChannels: radio?.PossibleChannels,
+      Standard: radio?.OperatingStandards,
+    };
+    return { index: parseInt(key), wlan, ssidObj, accessPoint, associated };
+  });
+
+  const bands = classifyWlanSlots(entries.map((e) => ({ index: e.index, wlan: e.wlan, enabled: isSlotActive(e.wlan, e.associated) })));
+  return entries
+    .filter((e) => str(e.wlan.SSID) !== '' || e.associated > 0)
+    .map((e) => ({
+      index: e.index,
+      ssid: str(e.wlan.SSID),
+      enabled: isSlotActive(e.wlan, e.associated),
+      channel: str(e.wlan.Channel) || '-',
+      standard: str(e.wlan.Standard) || '-',
+      security: str(e.accessPoint?.Security?.ModeEnabled) || '-',
+      password: '-',
+      band: bands.get(e.index) ?? '2.4GHz',
+      totalAssociations: e.associated,
+      bssid: str(e.ssidObj.BSSID) || '-',
+    }));
+}
+
+/** The AccessPoint instance serving a TR-181 SSID, which is where its password lives. */
+export function tr181AccessPointOf(device: any, ssidIndex: number): string | null {
+  const points = Object.entries((device?.Device?.WiFi?.AccessPoint ?? {}) as Record<string, any>);
+  const match = points.find(([k, ap]) => !isNaN(parseInt(k)) && new RegExp(`SSID\\.${ssidIndex}\\.?$`).test(str(ap?.SSIDReference)));
+  return match?.[0] ?? null;
 }

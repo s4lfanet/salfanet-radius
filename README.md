@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.36.4 - WiFi 5GHz FiberHome: Penentuan Band Ditulis Ulang
+> **Version:** 5.36.5 - Semua SSID Aktif Tampil, ONT TR-181, dan Diagnostik WiFi
 
 ---
 
@@ -1111,6 +1111,23 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.36.5 — 2026-11-05 - Semua SSID Aktif Tampil, ONT TR-181, dan Diagnostik WiFi
+
+### Perbaikan
+- **[FIX]** Halaman WiFi pelanggan (web dan aplikasi) kini menampilkan **semua slot yang aktif**, apa pun label band-nya, jadi salah menebak band tidak bisa lagi menyembunyikan jaringan. Sebelumnya hanya satu SSID per band. SSID tamu yang aktif ikut tampil. Bila sebuah ONT mengaku lebih dari 4 slot aktif, tampilan kembali ke satu SSID per band
+- **[FIX]** Status aktif memakai parameter `Status` (Up atau Disabled) dari ONT. `Enable` hanya dipakai bila `Status` tidak ada, karena banyak firmware mengosongkannya
+- **[NEW]** ONT model data TR-181 (`Device.WiFi.*`) kini terbaca di halaman WiFi pelanggan, termasuk band dari Radio, dan ubah SSID serta password menulis ke jalur TR-181. Sebelumnya halaman kosong untuk ONT seperti ini
+- **[NEW]** Diagnostik: `/customer/wifi?debug=1` menampilkan semua slot yang dilihat server (Enable, Status, Standard, Channel, band, model data) tanpa password, hanya untuk ONT pelanggan yang login
+
+### Belum terjawab
+- Tabel slot HG6045F3 dari GenieACS, bila dijalankan ke kode 5.36.1 sampai versi ini, selalu menghasilkan slot 1 dan 9. Halaman pelanggan di 5.36.3 tetap satu jaringan, jadi data yang diterima server saat itu berbeda dari tabel tersebut, atau ada sebab lain yang belum ditemukan. Diagnostik di atas dibuat untuk menjawabnya
+
+### Pengujian
+- 15 kasus: tabel HG6045F3 dari GenieACS, pola slot umum ONT lain, ONT satu band, radio 5GHz mati, firmware tanpa Status dan Enable, dan TR-181. Pola ONT selain HG6045F3 adalah data buatan, belum diuji pada perangkat
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.36.5
+
 ### v5.36.4 — 2026-11-05 - WiFi 5GHz FiberHome: Penentuan Band Ditulis Ulang
 
 ### Penyebab
@@ -1173,22 +1190,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - Perubahan skema kecil: tabel baru `app_flags`. "Update Sekarang" menambahkannya tanpa menghapus data
 - Setelah update, rekonsiliasi akan mengisi baris yang hilang satu kali lagi untuk pembayaran kolektor lama, lalu berhenti
 - Naikkan versi: root, backend, frontend ke 5.36.1; aplikasi tidak berubah
-
-### v5.36.0 — 2026-11-05 - Instalatur di Aplikasi Admin dan Perbaikan Hasil Audit
-
-### Aplikasi
-- **[NEW]** Admin 1.0.32: menu **Instalatur** (Lainnya, Pelanggan dan Layanan, PPPoE): tambah, ubah nama, aktif atau nonaktif, jumlah pelanggan per instalatur, dan tombol Isi dari data PSB. Sama dengan halaman web
-- **[NEW]** Form tambah dan ubah pelanggan punya isian **Instalatur (pemasang)**. Saat mengubah pelanggan yang instalaturnya sudah dinonaktifkan, pilihannya tetap ada (bertanda nonaktif) sehingga tidak terhapus tanpa sengaja
-- **[NEW]** Daftar pelanggan punya filter **Instalatur** (semua, belum ditentukan, atau satu instalatur, dengan jumlahnya), dan detail pelanggan menampilkan baris Instalatur
-- Filter dan pengelompokan instalatur di Tagihan dan Riwayat Transaksi belum ada di aplikasi, hanya di panel web
-
-### Perbaikan hasil audit
-- **[FIX]** Saat cuti (suspend) berakhir, pelanggan yang masih punya tagihan lewat jatuh tempo tidak lagi dipulihkan: tetap diisolir sampai membayar. Sebelumnya semua pelanggan berstatus isolir ikut dipulihkan, sehingga mendapat layanan gratis sampai job auto-isolir berikutnya
-- **[FIX]** Menyetujui cuti tidak lagi menunggu seluruh pengecekan suspend (yang menghubungi router untuk pelanggan lain juga) selesai. Persetujuan langsung tersimpan dan penerapan isolir berjalan di latar belakang; job tiap jam mengulangnya bila gagal
-
-### Catatan Pembaruan
-- Tidak ada perubahan skema. Naikkan versi: root, backend, frontend ke 5.36.0; aplikasi admin 1.0.32+33
-- Temuan audit yang sengaja belum diubah: rekonsiliasi harian membuat ulang baris Riwayat Transaksi pembayaran kolektor yang dihapus admin; alat pemulihan Auto Stop menerima id pelanggan mana pun (mengaktifkan pelanggan stop memang aksi admin yang sah); nama bidang ringkasan laporan membingungkan
 
 <!-- AUTO-CHANGELOG:END -->
 

@@ -6,6 +6,25 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.36.5] - 2026-11-05 - Semua SSID Aktif Tampil, ONT TR-181, dan Diagnostik WiFi
+
+### Perbaikan
+- **[FIX]** Halaman WiFi pelanggan (web dan aplikasi) kini menampilkan **semua slot yang aktif**, apa pun label band-nya, jadi salah menebak band tidak bisa lagi menyembunyikan jaringan. Sebelumnya hanya satu SSID per band. SSID tamu yang aktif ikut tampil. Bila sebuah ONT mengaku lebih dari 4 slot aktif, tampilan kembali ke satu SSID per band
+- **[FIX]** Status aktif memakai parameter `Status` (Up atau Disabled) dari ONT. `Enable` hanya dipakai bila `Status` tidak ada, karena banyak firmware mengosongkannya
+- **[NEW]** ONT model data TR-181 (`Device.WiFi.*`) kini terbaca di halaman WiFi pelanggan, termasuk band dari Radio, dan ubah SSID serta password menulis ke jalur TR-181. Sebelumnya halaman kosong untuk ONT seperti ini
+- **[NEW]** Diagnostik: `/customer/wifi?debug=1` menampilkan semua slot yang dilihat server (Enable, Status, Standard, Channel, band, model data) tanpa password, hanya untuk ONT pelanggan yang login
+
+### Belum terjawab
+- Tabel slot HG6045F3 dari GenieACS, bila dijalankan ke kode 5.36.1 sampai versi ini, selalu menghasilkan slot 1 dan 9. Halaman pelanggan di 5.36.3 tetap satu jaringan, jadi data yang diterima server saat itu berbeda dari tabel tersebut, atau ada sebab lain yang belum ditemukan. Diagnostik di atas dibuat untuk menjawabnya
+
+### Pengujian
+- 15 kasus: tabel HG6045F3 dari GenieACS, pola slot umum ONT lain, ONT satu band, radio 5GHz mati, firmware tanpa Status dan Enable, dan TR-181. Pola ONT selain HG6045F3 adalah data buatan, belum diuji pada perangkat
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.36.5
+
+---
+
 ## [5.36.4] - 2026-11-05 - WiFi 5GHz FiberHome: Penentuan Band Ditulis Ulang
 
 ### Penyebab
