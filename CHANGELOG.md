@@ -6,6 +6,28 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.36.6] - 2026-11-05 - Hasil Uji 635 ONT: Koreksi Tampilan WiFi Pelanggan
+
+### Hasil pengecekan langsung ke GenieACS
+- Data WLAN 635 ONT dibaca dari GenieACS produksi (hanya baca, nama SSID disamarkan, password tidak diambil) lalu dijalankan ke kode 5.36.1, 5.36.3, dan versi ini
+- HG6045F3 pelanggan `server3`: data GenieACS kini benar (slot 1 2.4GHz, slot 9 5GHz). Stempel waktu semua parameter WLAN-nya adalah 15:27:24 UTC, detik yang sama dengan refresh dari 5.36.3. Jadi data ONT yang basi adalah penyebab paling mungkin, dan refresh itulah yang memperbarui datanya. Nilai sebelum refresh tidak tercatat, sehingga ini tidak bisa dibuktikan penuh. Pernyataan di catatan 5.36.4 bahwa refresh "bukan perbaikan masalah ini" keliru
+- Dari 458 ONT dengan 5GHz aktif, tidak ada yang kehilangan kartu 5GHz, di ketiga versi. Dari 590 ONT dengan 2.4GHz aktif, juga tidak ada. Tidak ada slot tanpa nilai SSID
+
+### Perbaikan
+- **[FIX]** Membatalkan "semua slot aktif tampil" dari 5.36.5. Satu SSID aktif di 271 ONT, umumnya di slot 2 dan 3, sehingga pelanggan akan melihat dan bisa mengubah SSID yang kemungkinan milik ISP. Tampilan kembali ke satu SSID per band (slot aktif dengan perangkat terhubung terbanyak, lalu slot terkecil). Versi 5.36.5 jangan dipakai
+- **[FIX]** Penentuan band kini benar di semua data uji: label band yang terbukti salah turun dari 8 menjadi 0, dan kartu 5GHz palsu pada ONT satu band (HG8245H5, HS8145C5, EG8141A5, HS8145C) turun dari 8 menjadi 0
+
+### Tetap dari 5.36.5
+- Status aktif membaca `Status` dari ONT, dukungan ONT TR-181 (tidak ada ONT TR-181 di data saat ini, jadi belum teruji pada perangkat), dan diagnostik `/customer/wifi?debug=1`
+
+### Temuan untuk diputuskan
+- Sekitar 63 ONT menampilkan SSID yang sama dengan 271 ONT tadi sebagai kartu WiFi pelanggan, sehingga pelanggan bisa mengubahnya. Ini sudah terjadi sebelum rilis ini (62 di 5.36.1)
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.36.6
+
+---
+
 ## [5.36.5] - 2026-11-05 - Semua SSID Aktif Tampil, ONT TR-181, dan Diagnostik WiFi
 
 ### Perbaikan

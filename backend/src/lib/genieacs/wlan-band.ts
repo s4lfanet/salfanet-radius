@@ -173,10 +173,6 @@ function resolveUndeterminedBands(items: BandItem[]): void {
   }
 }
 
-// More active slots than this means the ONT marks every preset as active, so
-// "active" says nothing and one network per band is shown instead.
-const MAX_ACTIVE_SLOTS = 4;
-
 interface VisibleWlan {
   index: number;
   band: string;
@@ -186,19 +182,18 @@ interface VisibleWlan {
 }
 
 /**
- * The networks a customer sees: every active slot, whatever band it was given,
- * so a wrong guess can mislabel a network but never hide it. A band with
- * nothing active still gets its best slot, for firmwares that report neither
- * Status nor Enable.
+ * The networks a customer manages: one per band, the active slot with the most
+ * clients, then the lowest. Not every active slot: on a live fleet one operator
+ * SSID is active on slots 2 and 3 of 271 ONTs, and a customer must not rename
+ * that. A band with nothing active still gets a slot, for firmwares that report
+ * neither Status nor Enable.
  */
 export function pickVisibleWlans<T extends VisibleWlan>(configs: T[]): T[] {
   const best = (list: T[]) => [...list].sort((a, b) => b.totalAssociations - a.totalAssociations || a.index - b.index)[0];
-  const active = configs.filter((c) => c.enabled);
-  const shown = active.length <= MAX_ACTIVE_SLOTS ? [...active] : [];
-
+  const shown: T[] = [];
   for (const band of ['2.4GHz', '5GHz']) {
-    if (shown.some((c) => c.band === band)) continue;
-    const pick = best(active.filter((c) => c.band === band)) ?? best(configs.filter((c) => c.band === band && c.ssid));
+    const inBand = configs.filter((c) => c.band === band);
+    const pick = best(inBand.filter((c) => c.enabled)) ?? best(inBand.filter((c) => c.ssid));
     if (pick) shown.push(pick);
   }
   return shown.sort((a, b) => a.index - b.index);

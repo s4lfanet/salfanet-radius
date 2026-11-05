@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.36.5 - Semua SSID Aktif Tampil, ONT TR-181, dan Diagnostik WiFi
+> **Version:** 5.36.6 - Hasil Uji 635 ONT: Koreksi Tampilan WiFi Pelanggan
 
 ---
 
@@ -1111,6 +1111,26 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.36.6 — 2026-11-05 - Hasil Uji 635 ONT: Koreksi Tampilan WiFi Pelanggan
+
+### Hasil pengecekan langsung ke GenieACS
+- Data WLAN 635 ONT dibaca dari GenieACS produksi (hanya baca, nama SSID disamarkan, password tidak diambil) lalu dijalankan ke kode 5.36.1, 5.36.3, dan versi ini
+- HG6045F3 pelanggan `server3`: data GenieACS kini benar (slot 1 2.4GHz, slot 9 5GHz). Stempel waktu semua parameter WLAN-nya adalah 15:27:24 UTC, detik yang sama dengan refresh dari 5.36.3. Jadi data ONT yang basi adalah penyebab paling mungkin, dan refresh itulah yang memperbarui datanya. Nilai sebelum refresh tidak tercatat, sehingga ini tidak bisa dibuktikan penuh. Pernyataan di catatan 5.36.4 bahwa refresh "bukan perbaikan masalah ini" keliru
+- Dari 458 ONT dengan 5GHz aktif, tidak ada yang kehilangan kartu 5GHz, di ketiga versi. Dari 590 ONT dengan 2.4GHz aktif, juga tidak ada. Tidak ada slot tanpa nilai SSID
+
+### Perbaikan
+- **[FIX]** Membatalkan "semua slot aktif tampil" dari 5.36.5. Satu SSID aktif di 271 ONT, umumnya di slot 2 dan 3, sehingga pelanggan akan melihat dan bisa mengubah SSID yang kemungkinan milik ISP. Tampilan kembali ke satu SSID per band (slot aktif dengan perangkat terhubung terbanyak, lalu slot terkecil). Versi 5.36.5 jangan dipakai
+- **[FIX]** Penentuan band kini benar di semua data uji: label band yang terbukti salah turun dari 8 menjadi 0, dan kartu 5GHz palsu pada ONT satu band (HG8245H5, HS8145C5, EG8141A5, HS8145C) turun dari 8 menjadi 0
+
+### Tetap dari 5.36.5
+- Status aktif membaca `Status` dari ONT, dukungan ONT TR-181 (tidak ada ONT TR-181 di data saat ini, jadi belum teruji pada perangkat), dan diagnostik `/customer/wifi?debug=1`
+
+### Temuan untuk diputuskan
+- Sekitar 63 ONT menampilkan SSID yang sama dengan 271 ONT tadi sebagai kartu WiFi pelanggan, sehingga pelanggan bisa mengubahnya. Ini sudah terjadi sebelum rilis ini (62 di 5.36.1)
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.36.6
+
 ### v5.36.5 — 2026-11-05 - Semua SSID Aktif Tampil, ONT TR-181, dan Diagnostik WiFi
 
 ### Perbaikan
@@ -1176,20 +1196,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Catatan
 - Perbaikan ini mengatasi penentuan band. Bila slot 5GHz memang belum punya nilai SSID di GenieACS (belum pernah di-refresh dari ONT), SSID-nya tetap tidak muncul; jalankan refresh parameter WLAN dari halaman perangkat di panel admin
 - Aplikasi tidak berubah. Naikkan versi: root, backend, frontend ke 5.36.2
-
-### v5.36.1 — 2026-11-05 - Perbaikan Temuan Audit Lanjutan
-
-### Perbaikan
-- **[FIX]** Rekonsiliasi Keuangan tidak lagi membuat ulang baris Riwayat Transaksi pembayaran kolektor yang sengaja dihapus admin. Pengisian baris yang hilang kini satu kali saja (ditandai di tabel baru `app_flags`), dijalankan per halaman dari invoice terlama sehingga tidak ada yang terlewat, lalu berhenti. Sebelumnya berjalan tiap hari dan hanya melihat 5000 invoice terbaru
-- **[FIX]** Menghubungkan transaksi ke pelanggan tidak lagi langsung menutup baris yang belum bisa dipetakan: baris baru (kurang dari 10 menit) yang belum menemukan pelanggannya dicoba lagi di pembacaan berikutnya, sehingga tidak hilang dari filter dan pengelompokan instalatur
-- **[FIX]** Hapus Sesuai Filter di Riwayat Transaksi kini berhenti dengan galat bila hubungan transaksi ke pelanggan gagal diperbarui, daripada menghapus berdasarkan hubungan lama
-- **[FIX]** Alat pemulihan Auto Stop (`repair-auto-stop`) hanya memulihkan pelanggan yang memang terdaftar sebagai kandidat; id lain ditolak. Mengaktifkan pelanggan stop yang lain tetap lewat perubahan status biasa
-- **[FIX]** Ringkasan laporan per paket dan per instalatur kini punya bidang bernama jelas, `collectedAmount` (pendapatan lunas) dan `outstandingAmount` (tertunggak). `totalAmount` dan `paidAmount` tetap ada dengan arti lama yang tertukar agar klien lama tidak rusak. Halaman Laporan memakai bidang baru
-
-### Catatan Pembaruan
-- Perubahan skema kecil: tabel baru `app_flags`. "Update Sekarang" menambahkannya tanpa menghapus data
-- Setelah update, rekonsiliasi akan mengisi baris yang hilang satu kali lagi untuk pembayaran kolektor lama, lalu berhenti
-- Naikkan versi: root, backend, frontend ke 5.36.1; aplikasi tidak berubah
 
 <!-- AUTO-CHANGELOG:END -->
 
