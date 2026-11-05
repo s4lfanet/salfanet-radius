@@ -1111,6 +1111,14 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.34.1 — 2026-11-05 - Aplikasi Admin 1.0.30: Riwayat Transaksi
+
+### Aplikasi
+- **[CHANGE]** Admin 1.0.30: menu Lainnya → Keuangan → "Keuangan" berganti nama menjadi **Riwayat Transaksi**, sama dengan web. Isinya tetap: semua pemasukan dan pengeluaran (pembayaran gateway, kolektor, admin, top up, biaya) beserta saldo kas. Judul layar dan tombol di grafik Kas 6 Bulan di Dashboard ikut berganti
+
+### Catatan Pembaruan
+- Tidak ada perubahan server. Naikkan versi: root, backend, frontend ke 5.34.1; aplikasi admin 1.0.30+31
+
 ### v5.34.0 — 2026-11-05 - Auto Stop, Pelanggan Berhenti, Pembayaran Kolektor di Riwayat Transaksi
 
 ### Perbaikan
@@ -1166,17 +1174,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 ### Catatan Pembaruan
 - Tidak ada perubahan skema. Naikkan versi: root, backend, frontend ke 5.33.2; aplikasi tidak berubah
-
-### v5.33.1 — 2026-11-02 - Kolektor Diberi Tahu Saat Pelanggan Sudah Membayar
-
-### Notifikasi baru
-- **[FEATURE]** Pelanggan ke kolektor: saat pelanggan melunasi tagihan lewat transfer yang disetujui admin, payment gateway, QRIS, atau dicatat admin, kolektor yang area atau router/NAS-nya mencakup pelanggan itu mendapat notifikasi (lonceng, web push, dan FCM): "Pelanggan Sudah Membayar, tidak perlu ditagih lagi". Kolektor yang memang menerima pembayaran itu tidak diberi tahu, dan kolektor tanpa area dan router tidak pernah menerimanya
-
-### Aplikasi
-- **[FEATURE]** Kolektor 1.4.1: notifikasi baru memakai ikon pembayaran di layar Notifikasi
-
-### Catatan Pembaruan
-- Naikkan versi: root, backend, frontend ke 5.33.1; aplikasi kolektor 1.4.1+10
 
 <!-- AUTO-CHANGELOG:END -->
 
