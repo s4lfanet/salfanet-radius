@@ -6,6 +6,16 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.34.1] - 2026-11-05 - Aplikasi Admin 1.0.30: Riwayat Transaksi
+
+### Aplikasi
+- **[CHANGE]** Admin 1.0.30: menu Lainnya → Keuangan → "Keuangan" berganti nama menjadi **Riwayat Transaksi**, sama dengan web. Isinya tetap: semua pemasukan dan pengeluaran (pembayaran gateway, kolektor, admin, top up, biaya) beserta saldo kas. Judul layar dan tombol di grafik Kas 6 Bulan di Dashboard ikut berganti
+
+### Catatan Pembaruan
+- Tidak ada perubahan server. Naikkan versi: root, backend, frontend ke 5.34.1; aplikasi admin 1.0.30+31
+
+---
+
 ## [5.34.0] - 2026-11-05 - Auto Stop, Pelanggan Berhenti, Pembayaran Kolektor di Riwayat Transaksi
 
 ### Perbaikan

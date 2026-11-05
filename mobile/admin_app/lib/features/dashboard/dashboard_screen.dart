@@ -344,7 +344,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
         if (dash.incomeExpense.any((m) => numOf(m, 'income') != 0 || numOf(m, 'expense') != 0)) ...[
           const SizedBox(height: Gap.xl),
-          SectionHeader('Kas 6 Bulan', action: 'Keuangan', onAction: () => _open(const KeuanganScreen())),
+          SectionHeader('Kas 6 Bulan', action: 'Riwayat Transaksi', onAction: () => _open(const KeuanganScreen())),
           _RowsCard(children: [for (final m in dash.incomeExpense.reversed) _LedgerRow(month: m)]),
         ],
 
