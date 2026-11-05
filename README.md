@@ -1111,6 +1111,29 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.35.0 — 2026-11-05 - Instalatur: pengelompokan pelanggan per pemasang
+
+### Fitur
+- **[NEW]** Menu **PPPoE → Instalatur**: tambah, ubah nama, nonaktifkan, dan aktifkan kembali instalatur. Instalatur tidak bisa dihapus, jadi pelanggan yang sudah terhubung tetap menyimpan riwayatnya. Jumlah pelanggan per instalatur langsung membuka Data Pelanggan dengan filter itu
+- **[NEW]** Field **Instalatur** di form tambah pelanggan (modal dan wizard) dan form edit. Pilihan hanya instalatur aktif; instalatur yang dinonaktifkan tetap tersimpan pada pelanggan lamanya. Pelanggan tanpa instalatur tampil sebagai "Belum ditentukan"
+- **[NEW]** Pelanggan yang didaftarkan teknisi lewat portal (PSB) otomatis diberi instalatur dari teknisi tersebut. Pelanggan PSB lama bisa diisi sekaligus dengan tombol "Isi dari data PSB" di halaman Instalatur
+- **[NEW]** Filter instalatur (Semua / satu instalatur / Belum ditentukan) di **Data Pelanggan**, **Tagihan**, **Riwayat Transaksi**, dan **Export Data**. Filter dijalankan di server dan bekerja bersama pencarian, tanggal, status, dan pagination; angka di tab dan kartu total ikut menyesuaikan
+- **[NEW]** Tagihan dan Riwayat Transaksi dapat **dikelompokkan per instalatur**: ringkasan jumlah dan total per instalatur di atas daftar (klik untuk memfilter) dan judul kelompok di dalam daftar. Di Riwayat Transaksi, transaksi tanpa pelanggan (pengeluaran, voucher, deposit agen) masuk kelompok "Bukan transaksi pelanggan"
+- **[NEW]** Semua export (Excel/PDF Data Pelanggan, Tagihan, Riwayat Transaksi, Export Data) mengikuti filter instalatur dan menyertakan kolom **Instalatur**
+- **[NEW]** Export Data: jenis laporan baru **Pendapatan per Instalatur** (jumlah pelanggan, invoice, lunas, pendapatan, tertunggak)
+
+### Perbaikan
+- **[FIX]** Export Tagihan kini memakai filter yang sama dengan daftar (bulan, tab, pencarian). Sebelumnya tab "Belum Bayar" hanya mengekspor PENDING tanpa OVERDUE, dan bulan serta pencarian diabaikan
+- **[FIX]** Export Data Pelanggan ikut pencarian yang aktif
+- **[FIX]** "Hapus Sesuai Filter" di Riwayat Transaksi menghapus persis transaksi yang tampil (termasuk filter instalatur)
+- **[FIX]** Export Data jenis Pelanggan: filter dan hitungan status "Berhenti" kini benar (status `stop`)
+- **[CHANGE]** Field "Teknisi Pemasang" di detail pelanggan diganti nama menjadi "Didaftarkan oleh", karena isinya akun yang mendaftarkan (PSB), bukan pemasangnya
+
+### Catatan Pembaruan
+- Skema bertambah: tabel `installers`, kolom `pppoe_users.installer_id`, dan kolom `transactions.pppoe_user_id` + `transactions.customer_linked_at`. Semua kolom boleh kosong; "Update Sekarang" menambahkannya tanpa menghapus data
+- Riwayat Transaksi menghubungkan setiap transaksi ke pelanggannya dari nomor referensi (INV-…, TOPUP-…, AUTO-RENEW-…) saat halaman pertama kali dibuka dan setiap Rekonsiliasi Keuangan berjalan
+- Naikkan versi: root, backend, frontend ke 5.35.0
+
 ### v5.34.1 — 2026-11-05 - Aplikasi Admin 1.0.30: Riwayat Transaksi
 
 ### Aplikasi
@@ -1156,24 +1179,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 ### Catatan Pembaruan
 - Naikkan versi: root, backend, frontend ke 5.33.3; aplikasi admin 1.0.29+30
-
-### v5.33.2 — 2026-11-03 - Audit Telegram Auto-Backup
-
-### Hasil audit
-- Jalur backup otomatis (job `telegram_backup` di cron, `/api/cron`, `runTelegramBackup`, `createBackup`, pengiriman ke Telegram) dan perhitungan jadwal diperiksa dan tidak diubah untuk kasus yang berhasil. Perhitungan jadwal (harian, 12 jam, 6 jam, mingguan) diuji dan benar
-- Panggilan ke Telegram dari mesin pengembangan berhasil dan galatnya terbaca dengan benar
-
-### Perbaikan
-- **[FIX]** Menyimpan pengaturan Telegram selalu berakhir dengan pesan galat: halaman memanggil `/api/cron/telegram` dengan aksi `restart` yang ditolak (400) padahal pengaturan sudah tersimpan. Aksi `restart` kini diterima (tidak ada yang perlu direstart karena runner membaca pengaturan pada tiap jalan)
-- **[FIX]** Backup otomatis yang gagal sekali (galat Telegram, jaringan, atau topic) dilewati sampai jadwal berikutnya, sehingga satu gangguan sesaat menghilangkan backup hari itu. Kini dicoba lagi sampai 3 kali per jadwal, berjarak minimal 10 menit. Backup yang sudah terkirim tetap dihitung selesai seperti sebelumnya
-- **[FIX]** Panggilan ke Telegram tidak punya batas waktu dan galat jaringan tampil sebagai pesan teknis. Kini ada batas waktu (60 detik untuk pesan, 5 menit untuk file) dan pesan yang menunjuk penyebab: timeout, DNS, api.telegram.org diblokir, atau balasan bukan JSON dari proxy atau pemblokiran ISP
-
-### Tambahan
-- **[FEATURE]** Kartu Status Backup Otomatis di halaman Telegram Backup: apakah backup bisa berjalan (dan alasannya bila tidak, misalnya belum diaktifkan atau job dimatikan di Cron Jobs), jadwal berikutnya, hasil 5 backup otomatis terakhir dengan pesan galatnya, dan pengecekan runner terakhir. Catatan bahwa pengaturan yang baru disimpan baru dipakai pada jadwal berikutnya
-- **[DOCS]** Panduan Telegram Backup diperbarui
-
-### Catatan Pembaruan
-- Tidak ada perubahan skema. Naikkan versi: root, backend, frontend ke 5.33.2; aplikasi tidak berubah
 
 <!-- AUTO-CHANGELOG:END -->
 
