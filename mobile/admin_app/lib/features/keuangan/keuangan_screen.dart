@@ -183,7 +183,7 @@ class _KeuanganScreenState extends State<KeuanganScreen> {
     final s = _stats;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Keuangan'),
+        title: const Text('Riwayat Transaksi'),
         actions: [
           const GuideAction(),
           PopupMenuButton<String>(
