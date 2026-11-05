@@ -38,6 +38,33 @@ async function verifyCustomerToken(request: NextRequest) {
   }
 }
 
+// GenieACS only holds the parameters it has read from the ONT. When the
+// customer's ONT shows no 5GHz network, the usual reason is that the WLAN
+// slots of that radio were never read (or went stale), not that the ONT has
+// none. Ask the ONT for the whole WLANConfiguration subtree, at most once a
+// few hours per device, so the next visit has them. It is a read, not a change.
+const WLAN_REFRESH_EVERY_MS = 6 * 60 * 60 * 1000;
+const lastWlanRefresh = new Map<string, number>();
+
+function requestWlanRefresh(host: string, authHeader: string, deviceId: string): boolean {
+  const last = lastWlanRefresh.get(deviceId) ?? 0;
+  if (Date.now() - last < WLAN_REFRESH_EVERY_MS) return false;
+  lastWlanRefresh.set(deviceId, Date.now());
+  if (lastWlanRefresh.size > 5000) lastWlanRefresh.clear();
+
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 5000);
+  fetch(`${host}/devices/${encodeURIComponent(deviceId)}/tasks?connection_request`, {
+    method: 'POST',
+    headers: { Authorization: `Basic ${authHeader}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'refreshObject', objectName: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration' }),
+    signal: ctrl.signal,
+  })
+    .catch((e) => console.warn('[Customer WiFi] WLAN refresh request failed:', e?.message || e))
+    .finally(() => clearTimeout(timer));
+  return true;
+}
+
 // GET - Get customer WiFi/ONT device information
 export async function GET(request: NextRequest) {
   try {
@@ -140,9 +167,18 @@ export async function GET(request: NextRequest) {
     // Extract WLAN configurations and connected devices
     const processedDevice = extractDeviceInfo(device);
 
+    // No 5GHz network found: have the ONT re-read its WLAN slots (see above).
+    const slots = Object.keys(device?.InternetGatewayDevice?.LANDevice?.['1']?.WLANConfiguration || {}).filter((k) => !isNaN(parseInt(k))).length;
+    const has5G = processedDevice.wlanConfigs.some((w: any) => w.band === '5GHz');
+    const wlanRefreshRequested = !has5G && requestWlanRefresh(host, authHeader, String(device._id));
+    if (!has5G) {
+      console.log(`[Customer WiFi] ${user.username}: no 5GHz network in GenieACS data (${slots} WLAN slot(s) present, ${processedDevice.wlanConfigs.length} shown)${wlanRefreshRequested ? ', refresh requested' : ''}`);
+    }
+
     return NextResponse.json({
       success: true,
-      device: processedDevice
+      device: processedDevice,
+      wlanRefreshRequested,
     });
 
   } catch (error: any) {

@@ -61,6 +61,7 @@ export default function CustomerWiFiPage() {
   const { addToast } = useToast();
 
   const [device, setDevice] = useState<DeviceInfo | null>(null);
+  const [wlanRefreshRequested, setWlanRefreshRequested] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [noGenieACS, setNoGenieACS] = useState(false);
@@ -81,7 +82,7 @@ export default function CustomerWiFiPage() {
     }
 
     try {
-      const data = await apiCustomer<{ success: boolean; reason?: string; device?: DeviceInfo; error?: string }>('/api/customer/wifi');
+      const data = await apiCustomer<{ success: boolean; reason?: string; device?: DeviceInfo; error?: string; wlanRefreshRequested?: boolean }>('/api/customer/wifi');
 
       if (!data.success) {
         if (data.reason === 'not_configured') {
@@ -92,6 +93,7 @@ export default function CustomerWiFiPage() {
         setDevice(null);
       } else {
         setDevice(data.device || null);
+        setWlanRefreshRequested(!!data.wlanRefreshRequested);
         setNoGenieACS(false);
         setNoDevice(false);
       }
@@ -329,6 +331,9 @@ export default function CustomerWiFiPage() {
           <div>
             <span className="text-slate-500">Jaringan WiFi</span>
             <p className="text-slate-300">{device.wlanConfigs.length} WLAN</p>
+            {wlanRefreshRequested && !device.wlanConfigs.some((w) => w.band === '5GHz') && (
+              <p className="text-xs text-amber-400 mt-1">WiFi 5 GHz belum terbaca. Data WiFi sedang diminta dari perangkat; muat ulang halaman ini dalam 1-2 menit.</p>
+            )}
           </div>
           {device.connectedHosts.length > 0 && (
             <div>

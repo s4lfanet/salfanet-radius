@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.36.2 - WiFi 5GHz Tidak Muncul di Halaman Pelanggan
+> **Version:** 5.36.3 - Data WiFi 5GHz Diminta Ulang dari ONT
 
 ---
 
@@ -1111,6 +1111,19 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.36.3 — 2026-11-05 - Data WiFi 5GHz Diminta Ulang dari ONT
+
+### Penyebab
+- Pada ONT yang halaman WiFi-nya hanya menampilkan satu jaringan (satu WLAN), API hanya menemukan satu slot WLAN dengan SSID di GenieACS. GenieACS hanya menyimpan parameter yang pernah dibacanya dari ONT. Bila slot WLAN untuk 5GHz belum pernah dibaca atau datanya basi, SSID 5GHz tidak ada untuk ditampilkan, berapa pun logika penentuan band-nya. Penyegaran WiFi yang ada hanya membaca satu slot yang sedang diubah, dan penyegaran admin hanya membaca parameter dasar, jadi slot 5GHz tidak ikut
+
+### Perbaikan
+- **[FIX]** Bila halaman WiFi pelanggan tidak menemukan jaringan 5GHz, server meminta ONT membaca ulang seluruh `InternetGatewayDevice.LANDevice.1.WLANConfiguration` (tugas `refreshObject`, hanya membaca), paling sering sekali tiap 6 jam per perangkat dan tanpa menunda halaman. Kunjungan berikutnya memuat slot yang terbaca
+- **[NEW]** Halaman WiFi web menampilkan catatan "WiFi 5 GHz belum terbaca, data sedang diminta dari perangkat" saat permintaan itu dikirim. Server mencatat di log berapa slot WLAN ada dan berapa yang tampil untuk tiap pelanggan tanpa 5GHz
+
+### Catatan
+- Bila ONT memang satu band (atau tidak mengekspos 5GHz di model data TR-098 `LANDevice.1`), 5GHz tetap tidak muncul dan permintaan ulang hanya terkirim satu kali per 6 jam
+- Aplikasi tidak berubah. Naikkan versi: root, backend, frontend ke 5.36.3
+
 ### v5.36.2 — 2026-11-05 - WiFi 5GHz Tidak Muncul di Halaman Pelanggan
 
 ### Penyebab
@@ -1176,29 +1189,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 ### Catatan Pembaruan
 - Tidak ada perubahan skema. Naikkan versi: root, backend, frontend ke 5.35.1; aplikasi admin 1.0.31+32
-
-### v5.35.0 — 2026-11-05 - Instalatur: pengelompokan pelanggan per pemasang
-
-### Fitur
-- **[NEW]** Menu **PPPoE → Instalatur**: tambah, ubah nama, nonaktifkan, dan aktifkan kembali instalatur. Instalatur tidak bisa dihapus, jadi pelanggan yang sudah terhubung tetap menyimpan riwayatnya. Jumlah pelanggan per instalatur langsung membuka Data Pelanggan dengan filter itu
-- **[NEW]** Field **Instalatur** di form tambah pelanggan (modal dan wizard) dan form edit. Pilihan hanya instalatur aktif; instalatur yang dinonaktifkan tetap tersimpan pada pelanggan lamanya. Pelanggan tanpa instalatur tampil sebagai "Belum ditentukan"
-- **[NEW]** Pelanggan yang didaftarkan teknisi lewat portal (PSB) otomatis diberi instalatur dari teknisi tersebut. Pelanggan PSB lama bisa diisi sekaligus dengan tombol "Isi dari data PSB" di halaman Instalatur
-- **[NEW]** Filter instalatur (Semua / satu instalatur / Belum ditentukan) di **Data Pelanggan**, **Tagihan**, **Riwayat Transaksi**, dan **Export Data**. Filter dijalankan di server dan bekerja bersama pencarian, tanggal, status, dan pagination; angka di tab dan kartu total ikut menyesuaikan
-- **[NEW]** Tagihan dan Riwayat Transaksi dapat **dikelompokkan per instalatur**: ringkasan jumlah dan total per instalatur di atas daftar (klik untuk memfilter) dan judul kelompok di dalam daftar. Di Riwayat Transaksi, transaksi tanpa pelanggan (pengeluaran, voucher, deposit agen) masuk kelompok "Bukan transaksi pelanggan"
-- **[NEW]** Semua export (Excel/PDF Data Pelanggan, Tagihan, Riwayat Transaksi, Export Data) mengikuti filter instalatur dan menyertakan kolom **Instalatur**
-- **[NEW]** Export Data: jenis laporan baru **Pendapatan per Instalatur** (jumlah pelanggan, invoice, lunas, pendapatan, tertunggak)
-
-### Perbaikan
-- **[FIX]** Export Tagihan kini memakai filter yang sama dengan daftar (bulan, tab, pencarian). Sebelumnya tab "Belum Bayar" hanya mengekspor PENDING tanpa OVERDUE, dan bulan serta pencarian diabaikan
-- **[FIX]** Export Data Pelanggan ikut pencarian yang aktif
-- **[FIX]** "Hapus Sesuai Filter" di Riwayat Transaksi menghapus persis transaksi yang tampil (termasuk filter instalatur)
-- **[FIX]** Export Data jenis Pelanggan: filter dan hitungan status "Berhenti" kini benar (status `stop`)
-- **[CHANGE]** Field "Teknisi Pemasang" di detail pelanggan diganti nama menjadi "Didaftarkan oleh", karena isinya akun yang mendaftarkan (PSB), bukan pemasangnya
-
-### Catatan Pembaruan
-- Skema bertambah: tabel `installers`, kolom `pppoe_users.installer_id`, dan kolom `transactions.pppoe_user_id` + `transactions.customer_linked_at`. Semua kolom boleh kosong; "Update Sekarang" menambahkannya tanpa menghapus data
-- Riwayat Transaksi menghubungkan setiap transaksi ke pelanggannya dari nomor referensi (INV-…, TOPUP-…, AUTO-RENEW-…) saat halaman pertama kali dibuka dan setiap Rekonsiliasi Keuangan berjalan
-- Naikkan versi: root, backend, frontend ke 5.35.0
 
 <!-- AUTO-CHANGELOG:END -->
 

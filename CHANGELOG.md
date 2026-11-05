@@ -6,6 +6,21 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.36.3] - 2026-11-05 - Data WiFi 5GHz Diminta Ulang dari ONT
+
+### Penyebab
+- Pada ONT yang halaman WiFi-nya hanya menampilkan satu jaringan (satu WLAN), API hanya menemukan satu slot WLAN dengan SSID di GenieACS. GenieACS hanya menyimpan parameter yang pernah dibacanya dari ONT. Bila slot WLAN untuk 5GHz belum pernah dibaca atau datanya basi, SSID 5GHz tidak ada untuk ditampilkan, berapa pun logika penentuan band-nya. Penyegaran WiFi yang ada hanya membaca satu slot yang sedang diubah, dan penyegaran admin hanya membaca parameter dasar, jadi slot 5GHz tidak ikut
+
+### Perbaikan
+- **[FIX]** Bila halaman WiFi pelanggan tidak menemukan jaringan 5GHz, server meminta ONT membaca ulang seluruh `InternetGatewayDevice.LANDevice.1.WLANConfiguration` (tugas `refreshObject`, hanya membaca), paling sering sekali tiap 6 jam per perangkat dan tanpa menunda halaman. Kunjungan berikutnya memuat slot yang terbaca
+- **[NEW]** Halaman WiFi web menampilkan catatan "WiFi 5 GHz belum terbaca, data sedang diminta dari perangkat" saat permintaan itu dikirim. Server mencatat di log berapa slot WLAN ada dan berapa yang tampil untuk tiap pelanggan tanpa 5GHz
+
+### Catatan
+- Bila ONT memang satu band (atau tidak mengekspos 5GHz di model data TR-098 `LANDevice.1`), 5GHz tetap tidak muncul dan permintaan ulang hanya terkirim satu kali per 6 jam
+- Aplikasi tidak berubah. Naikkan versi: root, backend, frontend ke 5.36.3
+
+---
+
 ## [5.36.2] - 2026-11-05 - WiFi 5GHz Tidak Muncul di Halaman Pelanggan
 
 ### Penyebab
