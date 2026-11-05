@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getGenieACSCredentials } from '../../../route';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { normalizeRxPower, normalizeUptime } from '@/lib/genieacs/tr069-parser';
-import { resolveUndeterminedBands, type Band } from '@/lib/genieacs/wlan-band';
+import { classifyWlanSlots, isEnabledValue } from '@/lib/genieacs/wlan-band';
 
 // Helper to extract raw value from GenieACS format (handles {_value: x} format)
 function extractRawValue(val: unknown): unknown {
@@ -294,50 +294,9 @@ function isTruthyValue(val: unknown): boolean {
   return str === 'true' || str === '1' || str === 'yes' || str === 'on' || str === 'enabled';
 }
 
-// Helper to detect band from an UNAMBIGUOUS per-instance signal only.
-// Returns null when nothing conclusive is available — the caller resolves
-// those via extractWLANConfigs' cross-instance fallback.
-//
-// 802.11ax and 802.11n are NOT band-exclusive — WiFi 6 (ax) and n both run
-// on either 2.4GHz or 5GHz radios, so `Standard` alone can't tell them
-// apart. Treating "ax" as a definite 5GHz signal previously misclassified
-// EVERY SSID slot as 5GHz on WiFi 6 ONTs that report Standard="ax"
-// uniformly across both radios, hiding 2.4GHz whenever the two bands
-// share an SSID name with no "5G" hint and Channel isn't populated.
-function detectBand(wlan: Record<string, unknown>, _index: number): string | null {
-  // Check OperatingFrequencyBand first
-  const freqBand = safeString(getNestedValue(wlan, 'OperatingFrequencyBand') as unknown);
-  if (freqBand.includes('5')) return '5GHz';
-  if (freqBand.includes('2.4') || freqBand.includes('2G')) return '2.4GHz';
-
-  // Check Standard — only 802.11ac and bare "a" are 5GHz-exclusive
-  const standard = safeString(getNestedValue(wlan, 'Standard') as unknown).toLowerCase();
-  if (standard.includes('ac') || standard === 'a') return '5GHz';
-  if (standard.includes('b') || standard.includes('g')) return '2.4GHz';
-
-  // Check X_HW_OperatingFrequencyBand (Huawei specific)
-  const hwFreq = safeString(getNestedValue(wlan, 'X_HW_OperatingFrequencyBand') as unknown);
-  if (hwFreq.includes('5')) return '5GHz';
-  if (hwFreq.includes('2')) return '2.4GHz';
-
-  // Check SSID name for hints
-  const ssid = safeString(getNestedValue(wlan, 'SSID') as unknown).toLowerCase();
-  if (ssid.includes('5g') || ssid.includes('_5g') || ssid.includes('-5g') || ssid.includes(' 5g')) return '5GHz';
-
-  // Channel is a reliable signal when populated (many ONTs report 0/none)
-  const channel = parseInt(safeString(getNestedValue(wlan, 'Channel') as unknown)) || 0;
-  if (channel > 14) return '5GHz';
-  if (channel >= 1 && channel <= 14) return '2.4GHz';
-
-  return null;
-}
-
 // Extract all WLAN configurations
 function extractWLANConfigs(device: Record<string, unknown>): WLANConfig[] {
   const wlanConfigs: WLANConfig[] = [];
-  // Entries whose band couldn't be determined from a per-instance signal —
-  // resolved via a cross-instance fallback after the main loop (see below).
-  const pendingBand: Array<{ index: number; entry: WLANConfig }> = [];
 
   // Try InternetGatewayDevice.LANDevice.1.WLANConfiguration
   const lanDevice = getNestedValue(device, 'InternetGatewayDevice.LANDevice.1') as Record<string, unknown>;
@@ -369,7 +328,6 @@ function extractWLANConfigs(device: Record<string, unknown>): WLANConfig[] {
                 enabled = isTruthyValue(enableRaw);
               }
               
-              const band = detectBand(wlan, index);
               
               // Get TotalAssociations - also handle _value format
               const totalAssocRaw = wlan['TotalAssociations'];
@@ -426,13 +384,12 @@ function extractWLANConfigs(device: Record<string, unknown>): WLANConfig[] {
                 password: safeString(getNestedValue(wlan, 'PreSharedKey.1.PreSharedKey') as unknown) ||
                           safeString(wlan['KeyPassphrase']) ||
                           safeString(wlan['X_HW_WPAKey']),
-                band: band || '2.4GHz', // placeholder, replaced below if band is null
+                band: '2.4GHz', // set below, once every slot has been seen
                 totalAssociations: totalAssoc,
                 bssid
               };
 
               wlanConfigs.push(entry);
-              if (band === null) pendingBand.push({ index, entry });
             }
           }
         }
@@ -440,18 +397,19 @@ function extractWLANConfigs(device: Record<string, unknown>): WLANConfig[] {
     }
   }
 
-  // Fallback for instances with no unambiguous band signal: most dual-band
-  // multi-SSID ONTs list every 2.4GHz slot contiguously before every 5GHz
-  // slot, so split the undecided ones in half by index order as a last
-  // resort (entries already resolved above, e.g. via an SSID "5G" hint or
-  // Channel, are left untouched).
-  if (pendingBand.length > 0) {
-    const pending = new Set(pendingBand.map((p) => p.entry));
-    const items = wlanConfigs.map((e) => ({ index: e.index, band: pending.has(e) ? null : (e.band as Band), enabled: e.enabled }));
-    resolveUndeterminedBands(items);
-    items.forEach((item, i) => {
-      if (pending.has(wlanConfigs[i]) && item.band) wlanConfigs[i].band = item.band;
-    });
+  // Bands are decided across all slots at once, also those without an SSID.
+  const allSlots = getNestedValue(device, 'InternetGatewayDevice.LANDevice.1.WLANConfiguration') as Record<string, unknown> | null;
+  if (allSlots && typeof allSlots === 'object') {
+    const bands = classifyWlanSlots(
+      Object.entries(allSlots)
+        .filter(([key, wlan]) => !isNaN(parseInt(key)) && wlan && typeof wlan === 'object')
+        .map(([key, wlan]) => ({
+          index: parseInt(key),
+          wlan: wlan as Record<string, unknown>,
+          enabled: isEnabledValue((wlan as Record<string, unknown>)['Enable']),
+        })),
+    );
+    for (const entry of wlanConfigs) entry.band = bands.get(entry.index) ?? entry.band;
   }
 
   // Try Device.WiFi.SSID for newer TR-181 devices

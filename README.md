@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.36.3 - Data WiFi 5GHz Diminta Ulang dari ONT
+> **Version:** 5.36.4 - WiFi 5GHz FiberHome: Penentuan Band Ditulis Ulang
 
 ---
 
@@ -1111,6 +1111,26 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.36.4 — 2026-11-05 - WiFi 5GHz FiberHome: Penentuan Band Ditulis Ulang
+
+### Penyebab
+- ONT FiberHome HG6045F3 punya 16 slot WLAN: 1-8 untuk 2.4GHz, 9-16 untuk 5GHz. Jaringan aslinya slot 1 dan 9 dengan nama SSID yang sama, Channel 0, dan Standard yang sama di semua slot. Bila Standard di semua slot memuat `b` atau `g`, setiap slot dianggap pasti 2.4GHz, termasuk slot bernama `fh_5G_*`, karena Standard diperiksa sebelum nama SSID. Tidak ada slot berlabel 5GHz, dan pemilihan satu SSID per band hanya menyisakan satu jaringan
+
+### Koreksi rilis sebelumnya
+- **5.36.2 membawa regresi:** pada tabel slot HG6045F3, slot 9 terdorong ke 2.4GHz sehingga kartu 5GHz menunjuk slot 10 (`fh_5G_ssid2`), bukan jaringan aslinya. Aturan "Channel di atas 14 selalu 5GHz" juga tidak lagi mengalahkan Standard, padahal catatan rilis menyebut aturan lama tetap sama
+- **Diagnosis 5.36.3 keliru:** "1 WLAN" di halaman dihitung setelah pemilihan satu SSID per band, jadi tidak membuktikan GenieACS hanya punya satu slot. Permintaan baca ulang tetap ada karena tidak merugikan, tetapi bukan perbaikan masalah ini
+
+### Perbaikan
+- **[FIX]** Penentuan band ditulis ulang di `lib/genieacs/wlan-band.ts`, dipakai halaman WiFi pelanggan dan detail perangkat admin. Urutannya: yang dinyatakan radio (frekuensi, Channel, `PossibleChannels`), nama SSID "5G", SSID yang sama aktif di dua slot (slot lebih kecil 2.4GHz, lebih besar 5GHz), Standard, lalu posisi
+- **[FIX]** Standard yang sama di semua slot tidak dianggap petunjuk pada ONT yang terbukti punya radio 5GHz. Pada ONT satu band, nilai yang sama tetap dipercaya sehingga tidak muncul kartu 5GHz palsu
+- **[FIX]** Slot tanpa petunjuk memakai blok sama besar per radio bila cocok dengan slot yang sudah jelas, jadi slot 9 dari 16 masuk 5GHz
+
+### Pengujian
+- Diuji dengan tabel slot asli HG6045F3 hasil pembacaan September dan variasinya, serta ONT dual band dan satu band lain, membandingkan 5.36.1, 5.36.3, dan versi ini. Semua varian HG6045F3 menampilkan slot 1 dan 9, dan ONT satu band tetap satu kartu. Data ONT saat ini belum dibaca ulang
+
+### Catatan Pembaruan
+- Aplikasi tidak berubah. Naikkan versi: root, backend, frontend ke 5.36.4
+
 ### v5.36.3 — 2026-11-05 - Data WiFi 5GHz Diminta Ulang dari ONT
 
 ### Penyebab
@@ -1169,26 +1189,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Catatan Pembaruan
 - Tidak ada perubahan skema. Naikkan versi: root, backend, frontend ke 5.36.0; aplikasi admin 1.0.32+33
 - Temuan audit yang sengaja belum diubah: rekonsiliasi harian membuat ulang baris Riwayat Transaksi pembayaran kolektor yang dihapus admin; alat pemulihan Auto Stop menerima id pelanggan mana pun (mengaktifkan pelanggan stop memang aksi admin yang sah); nama bidang ringkasan laporan membingungkan
-
-### v5.35.1 — 2026-11-05 - Audit Rilis 5.34 dan 5.35, Panduan Dilengkapi
-
-### Audit
-- Rilis 5.34.0 sampai 5.35.0 (auto stop, pelanggan berhenti, pembayaran kolektor, Instalatur) ditinjau dengan code review. Tiga perbaikan kecil dibuat di sini. Temuan lain dicatat untuk keputusan terpisah (lihat laporan audit)
-
-### Perbaikan
-- **[FIX]** Pembuatan kategori Pembayaran PPPoE untuk Riwayat Transaksi memakai upsert pada id tetap, sehingga dua pembayaran yang datang bersamaan saat kategori belum ada tidak lagi saling menabrak dan menggagalkan pembayaran
-- **[FIX]** Daftar Riwayat Transaksi: parameter `page` atau `limit` yang bukan angka tidak lagi menyebabkan error 500, dan kembali ke nilai bawaan
-- **[FIX]** Daftar Tagihan yang dikelompokkan per instalatur kini punya urutan tetap (tambahan id), agar halaman berikutnya tidak mengulang atau melewatkan baris
-
-### Panduan (web dan APK admin)
-- Panduan baru: **Instalatur** dan **Pelanggan Berhenti**
-- Diperbarui: Pelanggan PPPoE (field dan filter Instalatur, status Stop), Permintaan Suspend (cuti kini diisolir lalu dipulihkan otomatis, bukan stop), Tagihan, Riwayat Transaksi (pembayaran kolektor, kelompok per instalatur, Hapus Sesuai Filter), Laporan dan Export (Pendapatan per Instalatur), dan Cron Jobs (Auto Stop nonaktif secara bawaan, Rekonsiliasi Keuangan)
-
-### Aplikasi
-- Admin 1.0.31: Pusat Panduan memuat panduan di atas
-
-### Catatan Pembaruan
-- Tidak ada perubahan skema. Naikkan versi: root, backend, frontend ke 5.35.1; aplikasi admin 1.0.31+32
 
 <!-- AUTO-CHANGELOG:END -->
 

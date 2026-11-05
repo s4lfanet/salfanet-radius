@@ -2,7 +2,7 @@
 import { prisma } from '@/server/db/client';
 import { getGenieACSCredentials } from '@/app/api/settings/genieacs/route';
 import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
-import { detectBandSignal, resolveUndeterminedBands, isEnabledValue, type Band } from '@/lib/genieacs/wlan-band';
+import { classifyWlanSlots, isEnabledValue } from '@/lib/genieacs/wlan-band';
 
 // Helper to verify customer token using CustomerSession
 async function verifyCustomerToken(request: NextRequest) {
@@ -234,37 +234,15 @@ function extractDeviceInfo(device: any) {
   const lanDevice = getNestedValue(device, 'InternetGatewayDevice.LANDevice.1');
 
   if (lanDevice && lanDevice.WLANConfiguration) {
-    // Two passes: first collect every instance's raw fields plus a band
-    // guess wherever a signal is UNAMBIGUOUS, then fill in anything still
-    // undetermined using each entry's position among all instances.
-    //
-    // 802.11ax and 802.11n are NOT band-exclusive — WiFi 6 (ax) and n both
-    // run on either 2.4GHz or 5GHz radios, so `Standard` alone cannot tell
-    // them apart. Only 802.11ac (and bare "a") are 5GHz-only. Treating "ax"
-    // as a definite 5GHz signal (the previous logic) misclassified EVERY
-    // SSID slot as 5GHz on WiFi 6 ONTs that report Standard="ax" uniformly
-    // across both radios — which silently made 2.4GHz disappear entirely
-    // whenever the two bands share the same SSID name (no "5G" hint) and
-    // Channel isn't populated either.
-    const rawEntries: Array<{ index: number; wlanObj: any; ssid: string; band: Band | null }> = [];
+    // Every slot goes in, also those without an SSID: see wlan-band.ts.
+    const rawEntries: Array<{ index: number; wlanObj: any; ssid: string; band: string }> = [];
     for (const [key, wlan] of Object.entries(lanDevice.WLANConfiguration)) {
       if (!isNaN(parseInt(key)) && wlan && typeof wlan === 'object') {
-        const wlanObj = wlan as any;
-        rawEntries.push({ index: parseInt(key), wlanObj, ssid: safeString(wlanObj.SSID), band: detectBandSignal(wlanObj) });
+        rawEntries.push({ index: parseInt(key), wlanObj: wlan, ssid: safeString((wlan as any).SSID), band: '' });
       }
     }
-
-    // Anything still undetermined is placed by its position among the slots
-    // that are determined (2.4GHz slots come before 5GHz ones). A lone
-    // undetermined slot used to be called 2.4GHz outright; on an ONT whose
-    // 5GHz radio reports Channel 0 (auto) and a Standard shared with 2.4GHz,
-    // that put both slots in 2.4GHz and the per-band pick below then dropped
-    // the 5GHz network from the customer's page.
-    const bandItems = rawEntries.map((e) => ({ index: e.index, band: e.band, enabled: isEnabledValue(e.wlanObj.Enable) }));
-    resolveUndeterminedBands(bandItems);
-    bandItems.forEach((item, i) => {
-      rawEntries[i].band = item.band;
-    });
+    const bands = classifyWlanSlots(rawEntries.map((e) => ({ index: e.index, wlan: e.wlanObj, enabled: isEnabledValue(e.wlanObj.Enable) })));
+    for (const entry of rawEntries) entry.band = bands.get(entry.index) ?? '2.4GHz';
 
     for (const { index, wlanObj, ssid, band } of rawEntries) {
       // Count actual AssociatedDevice entries (more reliable than TotalAssociations field)
