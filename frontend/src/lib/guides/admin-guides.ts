@@ -174,7 +174,9 @@ export const GUIDES: PageGuide[] = [
       'Klik Tambah Pengguna, isi username dan password PPPoE yang sama dengan yang dipasang di ONT/router pelanggan.',
       'Pilih paket dan area. Isi nomor WhatsApp agar tagihan dan pengingat terkirim.',
       'Pilih tipe langganan: Postpaid (jatuh tempo tanggal tetap tiap bulan) atau Prepaid (masa aktif bertambah sejak tanggal bayar).',
+      'Pilih Instalatur (pemasang) bila ada. Hanya instalatur aktif yang bisa dipilih; pelanggan yang didaftarkan teknisi lewat PSB otomatis diberi instalatur dari teknisinya.',
       'Isi lokasi GPS bila ingin pelanggan tampil di peta jaringan.',
+      'Saring daftar per status (termasuk Stop) dan per Instalatur: Semua, satu instalatur, atau Belum ditentukan. Tabel punya kolom Instalatur.',
       'Dari menu aksi di daftar: ubah data dan paket, atau perpanjang langganan secara manual.',
       'Klik nama pelanggan untuk membuka detailnya: tagihan, add-on, janji bayar, dan foto.',
     ],
@@ -183,6 +185,8 @@ export const GUIDES: PageGuide[] = [
       'Tanggal Isolir boleh dikosongkan, sistem menghitungnya dari tanggal tagihan dan masa tenggang.',
     ],
     related: [
+      { label: 'Instalatur', href: '/admin/pppoe/installers' },
+      { label: 'Pelanggan Berhenti', href: '/admin/pppoe/stopped' },
       { label: 'Paket PPPoE', href: '/admin/pppoe/profiles' },
       { label: 'Sesi PPPoE', href: '/admin/sessions/pppoe' },
       { label: 'Tagihan', href: '/admin/invoices' },
@@ -210,6 +214,31 @@ export const GUIDES: PageGuide[] = [
     steps: ['Klik Tambah Area dan beri nama yang dikenali tim lapangan.', 'Pilih area saat menambah pelanggan.', 'Tugaskan area ke kolektor di Kelola Kolektor.'],
     notes: ['Area hanya bisa dihapus bila tidak ada pelanggan di dalamnya.'],
     related: [{ label: 'Kelola Kolektor', href: '/admin/collectors' }],
+  },
+  {
+    path: '/admin/pppoe/installers',
+    title: 'Instalatur',
+    section: S.customers,
+    summary: 'Daftar pemasang (instalatur) untuk mengelompokkan pelanggan, tagihan, dan pendapatan per pemasang.',
+    steps: [
+      'Klik Tambah instalatur, isi nama, dan simpan. Bisa dihubungkan ke akun teknisi.',
+      'Pilih instalatur di form tambah dan ubah pelanggan. Pelanggan PSB yang didaftarkan teknisi otomatis mendapat instalatur dari teknisinya.',
+      'Klik Isi dari data PSB untuk mengisi pelanggan PSB lama sekaligus.',
+      'Klik jumlah pelanggan pada sebuah instalatur untuk membuka Data Pelanggan dengan filter itu. Tautan Pelanggan tanpa instalatur menampilkan yang belum ditentukan.',
+      'Pakai filter Instalatur di Data Pelanggan, Tagihan, Riwayat Transaksi, dan Export Data. Tagihan dan Riwayat Transaksi juga bisa dikelompokkan per instalatur, dengan ringkasan jumlah dan total di atas daftar.',
+      'Export Data punya jenis laporan Pendapatan per Instalatur.',
+    ],
+    notes: [
+      'Instalatur tidak bisa dihapus, hanya dinonaktifkan, agar riwayat pelanggan yang sudah terhubung tetap utuh. Instalatur nonaktif tetap tersimpan pada pelanggan lamanya tetapi tidak muncul sebagai pilihan baru.',
+      'Di Riwayat Transaksi, transaksi tanpa pelanggan (pengeluaran, voucher, deposit agen) masuk kelompok Bukan transaksi pelanggan.',
+      'Fitur ini ada di panel web. Aplikasi Android admin belum memilikinya.',
+    ],
+    related: [
+      { label: 'Pelanggan PPPoE', href: '/admin/pppoe/users' },
+      { label: 'Tagihan', href: '/admin/invoices' },
+      { label: 'Riwayat Transaksi', href: '/admin/keuangan' },
+      { label: 'Laporan & Export', href: '/admin/laporan' },
+    ],
   },
   {
     path: '/admin/pppoe/addons',
@@ -248,8 +277,32 @@ export const GUIDES: PageGuide[] = [
     summary: 'Pelanggan bisa minta cuti langganan sementara (misalnya mudik). Permintaan masuk ke sini untuk disetujui.',
     steps: [
       'Cek periode dan alasan yang diajukan.',
-      'Setujui: status pelanggan menjadi stop pada tanggal mulai dan aktif kembali otomatis pada tanggal selesai.',
-      'Tolak dengan catatan bila tidak bisa dipenuhi.',
+      'Setujui: pada tanggal mulai pelanggan diisolir (tidak bisa internetan), dan pada tanggal selesai permintaan ditandai selesai dan pelanggan dipulihkan ke aktif secara otomatis.',
+      'Tolak dengan catatan bila tidak bisa dipenuhi. Pelanggan mendapat pemberitahuan atas keputusan ini.',
+    ],
+    notes: ['Pelanggan yang sedang cuti tidak ikut dihentikan oleh Auto Stop. Penerapan dan pemulihan cuti dijalankan oleh job Suspend Check tiap jam.'],
+    related: [{ label: 'Pelanggan Berhenti', href: '/admin/pppoe/stopped' }],
+  },
+  {
+    path: '/admin/pppoe/stopped',
+    title: 'Pelanggan Berhenti',
+    section: S.customers,
+    summary: 'Pelanggan berstatus stop: berhenti berlangganan, atau dihentikan otomatis oleh Auto Stop karena menunggak lebih dari 30 hari.',
+    steps: [
+      'Cari berdasarkan nama, username, ID, telepon, paket, atau area. Kolom Berhenti menunjukkan sudah berapa lama pelanggan berhenti.',
+      'Bila muncul peringatan Auto Stop, daftar di dalamnya adalah pelanggan yang kemungkinan salah dihentikan, lengkap dengan alasannya. Periksa lalu aktifkan kembali.',
+      'Klik Aktifkan pada satu pelanggan, atau centang beberapa (atau Pilih semua di halaman ini) lalu aktifkan sekaligus. Akses RADIUS, MikroTik, dan sesi dipulihkan.',
+      'Hapus permanen hanya untuk pelanggan yang memang sudah tidak akan kembali, dan meminta password admin.',
+    ],
+    notes: [
+      'Auto Stop hanya menghentikan pelanggan yang auto-isolirnya aktif, tidak berubah 30 hari, tidak sedang cuti, dan menunggak lebih dari 30 hari (prabayar lewat masa aktif, postpaid tagihan lewat jatuh tempo). Setiap penghentian otomatis tercatat di Log Aktivitas.',
+      'Job Auto Stop bawaannya nonaktif. Aktifkan di Cron Jobs bila ingin dipakai.',
+      'Alat Cek Salah Auto-Stop menampilkan pelanggan yang dihentikan padahal tidak memenuhi syarat itu, supaya bisa dipulihkan.',
+    ],
+    related: [
+      { label: 'Cron Jobs', href: '/admin/settings/cron' },
+      { label: 'Permintaan Suspend', href: '/admin/suspend-requests' },
+      { label: 'Log Aktivitas', href: '/admin/logs/activity' },
     ],
   },
   {
@@ -408,7 +461,8 @@ export const GUIDES: PageGuide[] = [
       'Kirim pengingat satu pelanggan lewat WhatsApp, atau pilih beberapa invoice lalu Broadcast Tagihan.',
       'Salin link bayar untuk dikirim manual.',
       'Klik Tandai Lunas untuk pembayaran yang diterima di luar sistem. Pilih Diterima oleh (kantor atau kolektor) dan metodenya, Tunai atau Transfer. Bila diterima kolektor, pembayarannya masuk ke Setoran Kolektor.',
-      'Cetak invoice atau export ke Excel/PDF.',
+      'Cetak invoice atau export ke Excel/PDF. Export mengikuti filter yang aktif (bulan, tab, pencarian, instalatur) dan memuat kolom Instalatur.',
+      'Saring per Instalatur, atau aktifkan pengelompokan per instalatur untuk melihat jumlah dan total tiap pemasang di atas daftar.',
     ],
     notes: [
       'Pembayaran lewat payment gateway dan QRIS Mandiri melunasi invoice otomatis; tidak perlu ditandai manual.',
@@ -456,15 +510,24 @@ export const GUIDES: PageGuide[] = [
   },
   {
     path: '/admin/keuangan',
-    title: 'Transaksi',
+    title: 'Riwayat Transaksi',
     section: S.billing,
     summary: 'Buku kas: pemasukan otomatis dari tagihan dan voucher, ditambah pemasukan dan pengeluaran yang dicatat manual.',
     steps: [
       'Pilih periode (bulan ini, bulan lalu, tahun ini) untuk melihat pendapatan, pengeluaran, dan saldo.',
       'Klik Tambah Transaksi untuk mencatat pemasukan lain atau pengeluaran.',
       'Atur kategori di tab Kategori, lalu export ke Excel atau PDF.',
+      'Saring per Instalatur atau kelompokkan per instalatur untuk melihat pemasukan tiap pemasang. Transaksi dihubungkan ke pelanggannya dari nomor referensi.',
+      'Hapus Sesuai Filter menghapus persis transaksi yang tampil, termasuk filter instalatur.',
     ],
-    related: [{ label: 'Biaya Operasional', href: '/admin/keuangan/pengeluaran' }],
+    notes: [
+      'Pembayaran yang dilunasi kolektor (tunai atau transfer, dari portal web atau aplikasi) dan tandai lunas oleh admin dicatat di kategori Pembayaran PPPoE. Pembayaran lama yang belum tercatat diisi oleh Rekonsiliasi Keuangan.',
+      'Bukti transfer kolektor yang ditolak menghapus catatan pembayaran dan barisnya di sini.',
+    ],
+    related: [
+      { label: 'Biaya Operasional', href: '/admin/keuangan/pengeluaran' },
+      { label: 'Instalatur', href: '/admin/pppoe/installers' },
+    ],
   },
   {
     path: '/admin/keuangan/pengeluaran',
@@ -520,8 +583,8 @@ export const GUIDES: PageGuide[] = [
     path: '/admin/laporan',
     title: 'Laporan & Export',
     section: S.billing,
-    summary: 'Laporan invoice, pembayaran, pelanggan, dan pendapatan per paket, siap diekspor ke Excel atau PDF.',
-    steps: ['Pilih jenis laporan, rentang tanggal, dan status.', 'Klik Tampilkan Data untuk melihat ringkasan.', 'Klik Export Excel atau Export PDF.'],
+    summary: 'Laporan invoice, pembayaran, pelanggan, pendapatan per paket, dan pendapatan per instalatur, siap diekspor ke Excel atau PDF.',
+    steps: ['Pilih jenis laporan, rentang tanggal, status, dan Instalatur bila perlu.', 'Jenis Pendapatan per Instalatur memuat jumlah pelanggan, invoice, lunas, pendapatan, dan tertunggak tiap pemasang.', 'Klik Tampilkan Data untuk melihat ringkasan.', 'Klik Export Excel atau Export PDF.'],
   },
 
   // Jaringan
@@ -1027,7 +1090,10 @@ export const GUIDES: PageGuide[] = [
       'Edit Schedule untuk mengubah jam; pakai preset atau ekspresi cron.',
       'Jalankan job secara manual untuk menguji, lalu cek riwayatnya.',
     ],
-    notes: ['Bila semua job berhenti, cek proses salfanet-cron di server.'],
+    notes: [
+      'Bila semua job berhenti, cek proses salfanet-cron di server.',
+      'Auto Stop bawaannya nonaktif. Rekonsiliasi Keuangan mengisi baris Riwayat Transaksi yang hilang untuk pembayaran kolektor lama.',
+    ],
   },
   {
     path: '/admin/system',

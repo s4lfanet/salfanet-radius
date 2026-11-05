@@ -131,7 +131,7 @@ export async function GET(request: NextRequest) {
           },
         },
         orderBy: groupByInstaller
-          ? [{ user: { installer: { name: 'asc' } } }, { createdAt: 'desc' }]
+          ? [{ user: { installer: { name: 'asc' } } }, { createdAt: 'desc' }, { id: 'asc' }]
           : { createdAt: 'desc' },
         skip,
         take: limit,

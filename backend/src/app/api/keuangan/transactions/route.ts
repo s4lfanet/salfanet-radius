@@ -26,8 +26,8 @@ export async function GET(request: NextRequest) {
   if (!authCheck.authorized) return authCheck.response;
   try {
     const { searchParams } = new URL(request.url);
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
-    const limit = Math.max(1, parseInt(searchParams.get("limit") || "50"));
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1") || 1);
+    const limit = Math.max(1, parseInt(searchParams.get("limit") || "50") || 50);
     const skip = (page - 1) * limit;
     // groupBy=installer: list group by group (Belum ditentukan, installers
     // A–Z, then non-customer rows) with per-group totals.

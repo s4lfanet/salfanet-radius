@@ -27,8 +27,12 @@ async function pppoeIncomeCategoryId(db: Db): Promise<string> {
     select: { id: true },
   });
   if (found) return found.id;
-  const created = await db.transactionCategory.create({
-    data: {
+  // Upsert on the fixed id: two payments arriving together when the category does not
+  // exist yet must not both try to create it (the loser would fail the whole payment).
+  const created = await db.transactionCategory.upsert({
+    where: { id: 'cat-income-pppoe' },
+    update: {},
+    create: {
       id: 'cat-income-pppoe',
       name: PPPOE_INCOME_CATEGORY,
       type: 'INCOME',

@@ -6,6 +6,28 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.35.1] - 2026-11-05 - Audit Rilis 5.34 dan 5.35, Panduan Dilengkapi
+
+### Audit
+- Rilis 5.34.0 sampai 5.35.0 (auto stop, pelanggan berhenti, pembayaran kolektor, Instalatur) ditinjau dengan code review. Tiga perbaikan kecil dibuat di sini. Temuan lain dicatat untuk keputusan terpisah (lihat laporan audit)
+
+### Perbaikan
+- **[FIX]** Pembuatan kategori Pembayaran PPPoE untuk Riwayat Transaksi memakai upsert pada id tetap, sehingga dua pembayaran yang datang bersamaan saat kategori belum ada tidak lagi saling menabrak dan menggagalkan pembayaran
+- **[FIX]** Daftar Riwayat Transaksi: parameter `page` atau `limit` yang bukan angka tidak lagi menyebabkan error 500, dan kembali ke nilai bawaan
+- **[FIX]** Daftar Tagihan yang dikelompokkan per instalatur kini punya urutan tetap (tambahan id), agar halaman berikutnya tidak mengulang atau melewatkan baris
+
+### Panduan (web dan APK admin)
+- Panduan baru: **Instalatur** dan **Pelanggan Berhenti**
+- Diperbarui: Pelanggan PPPoE (field dan filter Instalatur, status Stop), Permintaan Suspend (cuti kini diisolir lalu dipulihkan otomatis, bukan stop), Tagihan, Riwayat Transaksi (pembayaran kolektor, kelompok per instalatur, Hapus Sesuai Filter), Laporan dan Export (Pendapatan per Instalatur), dan Cron Jobs (Auto Stop nonaktif secara bawaan, Rekonsiliasi Keuangan)
+
+### Aplikasi
+- Admin 1.0.31: Pusat Panduan memuat panduan di atas
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema. Naikkan versi: root, backend, frontend ke 5.35.1; aplikasi admin 1.0.31+32
+
+---
+
 ## [5.35.0] - 2026-11-05 - Instalatur: pengelompokan pelanggan per pemasang
 
 ### Fitur

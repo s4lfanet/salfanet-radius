@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.33.4 - Test Auto Backup Telegram Tanpa Simpan Dulu
+> **Version:** 5.35.1 - Audit Rilis 5.34 dan 5.35, Panduan Dilengkapi
 
 ---
 
@@ -1111,6 +1111,26 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.35.1 — 2026-11-05 - Audit Rilis 5.34 dan 5.35, Panduan Dilengkapi
+
+### Audit
+- Rilis 5.34.0 sampai 5.35.0 (auto stop, pelanggan berhenti, pembayaran kolektor, Instalatur) ditinjau dengan code review. Tiga perbaikan kecil dibuat di sini. Temuan lain dicatat untuk keputusan terpisah (lihat laporan audit)
+
+### Perbaikan
+- **[FIX]** Pembuatan kategori Pembayaran PPPoE untuk Riwayat Transaksi memakai upsert pada id tetap, sehingga dua pembayaran yang datang bersamaan saat kategori belum ada tidak lagi saling menabrak dan menggagalkan pembayaran
+- **[FIX]** Daftar Riwayat Transaksi: parameter `page` atau `limit` yang bukan angka tidak lagi menyebabkan error 500, dan kembali ke nilai bawaan
+- **[FIX]** Daftar Tagihan yang dikelompokkan per instalatur kini punya urutan tetap (tambahan id), agar halaman berikutnya tidak mengulang atau melewatkan baris
+
+### Panduan (web dan APK admin)
+- Panduan baru: **Instalatur** dan **Pelanggan Berhenti**
+- Diperbarui: Pelanggan PPPoE (field dan filter Instalatur, status Stop), Permintaan Suspend (cuti kini diisolir lalu dipulihkan otomatis, bukan stop), Tagihan, Riwayat Transaksi (pembayaran kolektor, kelompok per instalatur, Hapus Sesuai Filter), Laporan dan Export (Pendapatan per Instalatur), dan Cron Jobs (Auto Stop nonaktif secara bawaan, Rekonsiliasi Keuangan)
+
+### Aplikasi
+- Admin 1.0.31: Pusat Panduan memuat panduan di atas
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema. Naikkan versi: root, backend, frontend ke 5.35.1; aplikasi admin 1.0.31+32
+
 ### v5.35.0 — 2026-11-05 - Instalatur: pengelompokan pelanggan per pemasang
 
 ### Fitur
@@ -1171,14 +1191,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 ### Catatan Pembaruan
 - Tidak ada perubahan skema atau aplikasi. Naikkan versi: root, backend, frontend ke 5.33.4
-
-### v5.33.3 — 2026-11-03 - Aplikasi Admin 1.0.29
-
-### Aplikasi
-- **[DOCS]** Admin 1.0.29: Pusat Panduan memuat panduan Telegram Backup yang diperbarui (kartu Status Backup Otomatis, percobaan ulang, dan petunjuk galat koneksi)
-
-### Catatan Pembaruan
-- Naikkan versi: root, backend, frontend ke 5.33.3; aplikasi admin 1.0.29+30
 
 <!-- AUTO-CHANGELOG:END -->
 
