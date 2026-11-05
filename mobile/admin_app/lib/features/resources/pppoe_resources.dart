@@ -7,6 +7,7 @@ import '../../core/formatters.dart';
 import '../../core/forms/field_spec.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/detail.dart';
+import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/entity_tile.dart';
 
 final _api = ApiClient.instance;
@@ -160,6 +161,41 @@ CrudConfig pppoeAreasConfig() => CrudConfig(
   update: CrudRoutes.putWithBodyId('/api/pppoe/areas'),
   delete: CrudRoutes.deleteWithQueryId('/api/pppoe/areas'),
   deleteMessage: (a) => 'Area "${a['name']}" akan dihapus. Area yang masih punya pelanggan tidak bisa dihapus.',
+);
+
+/// Instalatur (pemasang) — mirrors /admin/pppoe/installers. There is no
+/// delete: an installer is deactivated so its customers keep the history.
+CrudConfig installersConfig() => CrudConfig(
+  title: 'Instalatur',
+  noun: 'Instalatur',
+  icon: Icons.engineering_rounded,
+  tone: Tone.accent,
+  fetch: (_) => _api.get('/api/pppoe/installers'),
+  listKey: 'installers',
+  titleOf: (i) => str(i, 'name') ?? '-',
+  subtitleOf: (i) => '${i['customerCount'] ?? 0} pelanggan',
+  statusOf: (i) => _activePill(i),
+  filters: const [('', 'Semua'), ('active', 'Aktif'), ('inactive', 'Nonaktif')],
+  filterOf: (i) => i['isActive'] == false ? 'inactive' : 'active',
+  fields: (item) => [
+    const FieldSpec('name', 'Nama instalatur', required: true),
+    if (item != null) const FieldSpec('isActive', 'Aktif', type: FieldType.toggle, initial: true, helper: 'Instalatur nonaktif tidak muncul sebagai pilihan baru, pelanggan lamanya tetap tersimpan.'),
+  ],
+  create: CrudRoutes.postTo('/api/pppoe/installers'),
+  update: (i, v) => _api.patch('/api/pppoe/installers/${i['id']}', data: {'name': v['name'], if (v['isActive'] != null) 'isActive': v['isActive']}),
+  toolbar: [
+    CrudAction('Isi dari data PSB', Icons.auto_fix_high_rounded, (ctx, _) async {
+      final ok = await confirmAction(
+        ctx,
+        title: 'Isi dari data PSB?',
+        message: 'Pelanggan PSB yang belum punya instalatur diberi instalatur dari teknisi yang mendaftarkannya. Yang sudah punya instalatur tidak diubah.',
+        confirmLabel: 'Isi',
+      );
+      if (!ok || !ctx.mounted) return false;
+      final done = await runAction(ctx, () => _api.post('/api/pppoe/installers/import-technicians'), success: 'Instalatur dari data PSB diisi.');
+      return done;
+    }),
+  ],
 );
 
 /// Add-on layanan — mirrors /admin/pppoe/addons.

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/api/api_client.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
@@ -197,6 +198,7 @@ class _PppoeListScreenState extends State<PppoeListScreen> {
           children: [
             SearchField(hint: 'Cari nama, username, HP, ID pelanggan', onChanged: _onSearchChanged),
             FilterChipRow(options: _filters, selected: p.statusFilter ?? '', onSelected: (v) => p.setStatusFilter(v.isEmpty ? null : v)),
+            _InstallerFilterBar(value: p.installerFilter, onChanged: p.setInstallerFilter),
             Expanded(
               child: DataStateView(
                 loading: p.loading && p.users.isEmpty,
@@ -267,6 +269,62 @@ class _UserTile extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Instalatur filter for the customer list (all, one installer, or none yet),
+/// the same choices as the web list. Hidden until at least one installer exists.
+class _InstallerFilterBar extends StatefulWidget {
+  const _InstallerFilterBar({required this.value, required this.onChanged});
+  final String? value;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  State<_InstallerFilterBar> createState() => _InstallerFilterBarState();
+}
+
+class _InstallerFilterBarState extends State<_InstallerFilterBar> {
+  List<Map<String, dynamic>> _installers = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final res = await ApiClient.instance.get('/api/pppoe/installers');
+      final list = res is Map ? res['installers'] : null;
+      if (mounted && list is List) setState(() => _installers = [for (final i in list) Map<String, dynamic>.from(i as Map)]);
+    } on ApiException {
+      // The list works without the filter.
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_installers.isEmpty) return const SizedBox.shrink();
+    final value = widget.value ?? '';
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(Gap.page, 0, Gap.page, Gap.sm),
+      child: DropdownButtonFormField<String>(
+        key: ValueKey('installer-$value'),
+        initialValue: _installers.any((i) => i['id'] == value) || value == 'none' ? value : '',
+        isExpanded: true,
+        decoration: const InputDecoration(prefixIcon: Icon(Icons.engineering_outlined, size: 20), isDense: true),
+        items: [
+          const DropdownMenuItem(value: '', child: Text('Semua instalatur')),
+          const DropdownMenuItem(value: 'none', child: Text('Belum ditentukan')),
+          for (final i in _installers)
+            DropdownMenuItem(
+              value: '${i['id']}',
+              child: Text('${i['name']}${i['isActive'] == false ? ' (nonaktif)' : ''} · ${i['customerCount'] ?? 0}', overflow: TextOverflow.ellipsis),
+            ),
+        ],
+        onChanged: (v) => widget.onChanged(v == null || v.isEmpty ? null : v),
       ),
     );
   }

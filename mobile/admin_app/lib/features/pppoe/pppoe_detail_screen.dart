@@ -351,6 +351,7 @@ class _PppoeDetailScreenState extends State<PppoeDetailScreen> {
             title: 'Jaringan',
             rows: [
               InfoRow('Area', u.areaName),
+              InfoRow('Instalatur', u.installerName == null ? null : (u.installerActive ? u.installerName : '${u.installerName} (nonaktif)')),
               InfoRow('Router', u.routerName),
               InfoRow('ODP', u.odp),
               InfoRow('IP Statis', u.ipAddress, copyable: true),

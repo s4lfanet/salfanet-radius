@@ -231,7 +231,7 @@ export const GUIDES: PageGuide[] = [
     notes: [
       'Instalatur tidak bisa dihapus, hanya dinonaktifkan, agar riwayat pelanggan yang sudah terhubung tetap utuh. Instalatur nonaktif tetap tersimpan pada pelanggan lamanya tetapi tidak muncul sebagai pilihan baru.',
       'Di Riwayat Transaksi, transaksi tanpa pelanggan (pengeluaran, voucher, deposit agen) masuk kelompok Bukan transaksi pelanggan.',
-      'Fitur ini ada di panel web. Aplikasi Android admin belum memilikinya.',
+      'Aplikasi Android admin punya menu Instalatur (tambah, ubah, aktif atau nonaktif, Isi dari data PSB), isian Instalatur di form pelanggan, filter instalatur di daftar pelanggan, dan baris Instalatur di detail. Filter dan pengelompokan di Tagihan dan Riwayat Transaksi hanya ada di panel web.',
     ],
     related: [
       { label: 'Pelanggan PPPoE', href: '/admin/pppoe/users' },
@@ -280,7 +280,10 @@ export const GUIDES: PageGuide[] = [
       'Setujui: pada tanggal mulai pelanggan diisolir (tidak bisa internetan), dan pada tanggal selesai permintaan ditandai selesai dan pelanggan dipulihkan ke aktif secara otomatis.',
       'Tolak dengan catatan bila tidak bisa dipenuhi. Pelanggan mendapat pemberitahuan atas keputusan ini.',
     ],
-    notes: ['Pelanggan yang sedang cuti tidak ikut dihentikan oleh Auto Stop. Penerapan dan pemulihan cuti dijalankan oleh job Suspend Check tiap jam.'],
+    notes: [
+      'Pelanggan yang sedang cuti tidak ikut dihentikan oleh Auto Stop. Penerapan dan pemulihan cuti dijalankan oleh job Suspend Check tiap jam.',
+      'Bila cuti berakhir sementara pelanggan masih punya tagihan lewat jatuh tempo, pelanggan tidak dipulihkan dan tetap diisolir sampai tagihannya dibayar.',
+    ],
     related: [{ label: 'Pelanggan Berhenti', href: '/admin/pppoe/stopped' }],
   },
   {

@@ -932,6 +932,16 @@ export async function runSuspendCheck(): Promise<{ suspended: number; restored: 
         data: { status: 'COMPLETED' },
       });
       if (done.count === 0) continue;
+      // A customer who owes past due when the cuti ends stays isolated until
+      // they pay (restoring would hand out free service until the next
+      // auto-isolir pass, with RADIUS and MikroTik flapping in between).
+      const owing = await prisma.invoice.count({
+        where: { userId: req.userId, status: { in: ['PENDING', 'OVERDUE'] }, dueDate: { lt: now } },
+      });
+      if (owing > 0) {
+        console.log(`[SUSPEND] Cuti ended for ${req.userId} but ${owing} invoice(s) are overdue: left isolated`);
+        continue;
+      }
       // Only users still held by the suspend; 'stop'/'blocked' set by an
       // admin are left alone.
       const r = await restoreUserAccess(req.userId, ['isolated', 'stopped'], 'SUSPEND_END');

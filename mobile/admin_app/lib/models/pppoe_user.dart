@@ -30,6 +30,8 @@ class PppoeUser {
     this.latitude,
     this.longitude,
     this.odp,
+    this.installerName,
+    this.installerActive = true,
   });
 
   final String id;
@@ -63,6 +65,10 @@ class PppoeUser {
   final double? longitude;
   final String? odp;
 
+  /// The installer (pemasang) recorded for this customer, when there is one.
+  final String? installerName;
+  final bool installerActive;
+
   bool get hasLocation => latitude != null && longitude != null && (latitude != 0 || longitude != 0);
 
   static DateTime? _d(dynamic v) => v == null ? null : DateTime.tryParse(v.toString());
@@ -77,6 +83,7 @@ class PppoeUser {
     final profile = (json['profile'] as Map?)?.cast<String, dynamic>();
     final area = (json['area'] as Map?)?.cast<String, dynamic>();
     final router = (json['router'] as Map?)?.cast<String, dynamic>();
+    final installer = (json['installer'] as Map?)?.cast<String, dynamic>();
     return PppoeUser(
       id: (json['id'] ?? '').toString(),
       username: (json['username'] ?? '').toString(),
@@ -105,6 +112,8 @@ class PppoeUser {
       latitude: _f(json['latitude']),
       longitude: _f(json['longitude']),
       odp: _s(json['odp']),
+      installerName: _s(installer?['name']),
+      installerActive: installer?['isActive'] != false,
     );
   }
 }

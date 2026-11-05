@@ -11,6 +11,7 @@ class PppoeProvider extends ChangeNotifier {
   String? error;
   String search = '';
   String? statusFilter; // null = default (excludes stop/pending/rejected)
+  String? installerFilter; // null = all, 'none' = no installer yet, else an installer id
   int page = 1;
   int totalPages = 1;
   int total = 0;
@@ -27,7 +28,7 @@ class PppoeProvider extends ChangeNotifier {
     try {
       final res = await ApiClient.instance.get(
         '/api/pppoe/users',
-        query: {'page': page, 'limit': 30, if (search.isNotEmpty) 'search': search, if (statusFilter != null) 'status': statusFilter},
+        query: {'page': page, 'limit': 30, if (search.isNotEmpty) 'search': search, if (statusFilter != null) 'status': statusFilter, if (installerFilter != null) 'installerId': installerFilter},
       );
       if (res is Map<String, dynamic>) {
         final list = (res['users'] as List? ?? []).map((e) => PppoeUser.fromJson(e as Map<String, dynamic>)).toList();
@@ -72,6 +73,11 @@ class PppoeProvider extends ChangeNotifier {
 
   void setSearch(String q) {
     search = q;
+    load();
+  }
+
+  void setInstallerFilter(String? installerId) {
+    installerFilter = installerId;
     load();
   }
 

@@ -6,6 +6,24 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.36.0] - 2026-11-05 - Instalatur di Aplikasi Admin dan Perbaikan Hasil Audit
+
+### Aplikasi
+- **[NEW]** Admin 1.0.32: menu **Instalatur** (Lainnya, Pelanggan dan Layanan, PPPoE): tambah, ubah nama, aktif atau nonaktif, jumlah pelanggan per instalatur, dan tombol Isi dari data PSB. Sama dengan halaman web
+- **[NEW]** Form tambah dan ubah pelanggan punya isian **Instalatur (pemasang)**. Saat mengubah pelanggan yang instalaturnya sudah dinonaktifkan, pilihannya tetap ada (bertanda nonaktif) sehingga tidak terhapus tanpa sengaja
+- **[NEW]** Daftar pelanggan punya filter **Instalatur** (semua, belum ditentukan, atau satu instalatur, dengan jumlahnya), dan detail pelanggan menampilkan baris Instalatur
+- Filter dan pengelompokan instalatur di Tagihan dan Riwayat Transaksi belum ada di aplikasi, hanya di panel web
+
+### Perbaikan hasil audit
+- **[FIX]** Saat cuti (suspend) berakhir, pelanggan yang masih punya tagihan lewat jatuh tempo tidak lagi dipulihkan: tetap diisolir sampai membayar. Sebelumnya semua pelanggan berstatus isolir ikut dipulihkan, sehingga mendapat layanan gratis sampai job auto-isolir berikutnya
+- **[FIX]** Menyetujui cuti tidak lagi menunggu seluruh pengecekan suspend (yang menghubungi router untuk pelanggan lain juga) selesai. Persetujuan langsung tersimpan dan penerapan isolir berjalan di latar belakang; job tiap jam mengulangnya bila gagal
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema. Naikkan versi: root, backend, frontend ke 5.36.0; aplikasi admin 1.0.32+33
+- Temuan audit yang sengaja belum diubah: rekonsiliasi harian membuat ulang baris Riwayat Transaksi pembayaran kolektor yang dihapus admin; alat pemulihan Auto Stop menerima id pelanggan mana pun (mengaktifkan pelanggan stop memang aksi admin yang sah); nama bidang ringkasan laporan membingungkan
+
+---
+
 ## [5.35.1] - 2026-11-05 - Audit Rilis 5.34 dan 5.35, Panduan Dilengkapi
 
 ### Audit

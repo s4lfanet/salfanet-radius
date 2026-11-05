@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.35.1 - Audit Rilis 5.34 dan 5.35, Panduan Dilengkapi
+> **Version:** 5.36.0 - Instalatur di Aplikasi Admin dan Perbaikan Hasil Audit
 
 ---
 
@@ -1111,6 +1111,22 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.36.0 — 2026-11-05 - Instalatur di Aplikasi Admin dan Perbaikan Hasil Audit
+
+### Aplikasi
+- **[NEW]** Admin 1.0.32: menu **Instalatur** (Lainnya, Pelanggan dan Layanan, PPPoE): tambah, ubah nama, aktif atau nonaktif, jumlah pelanggan per instalatur, dan tombol Isi dari data PSB. Sama dengan halaman web
+- **[NEW]** Form tambah dan ubah pelanggan punya isian **Instalatur (pemasang)**. Saat mengubah pelanggan yang instalaturnya sudah dinonaktifkan, pilihannya tetap ada (bertanda nonaktif) sehingga tidak terhapus tanpa sengaja
+- **[NEW]** Daftar pelanggan punya filter **Instalatur** (semua, belum ditentukan, atau satu instalatur, dengan jumlahnya), dan detail pelanggan menampilkan baris Instalatur
+- Filter dan pengelompokan instalatur di Tagihan dan Riwayat Transaksi belum ada di aplikasi, hanya di panel web
+
+### Perbaikan hasil audit
+- **[FIX]** Saat cuti (suspend) berakhir, pelanggan yang masih punya tagihan lewat jatuh tempo tidak lagi dipulihkan: tetap diisolir sampai membayar. Sebelumnya semua pelanggan berstatus isolir ikut dipulihkan, sehingga mendapat layanan gratis sampai job auto-isolir berikutnya
+- **[FIX]** Menyetujui cuti tidak lagi menunggu seluruh pengecekan suspend (yang menghubungi router untuk pelanggan lain juga) selesai. Persetujuan langsung tersimpan dan penerapan isolir berjalan di latar belakang; job tiap jam mengulangnya bila gagal
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema. Naikkan versi: root, backend, frontend ke 5.36.0; aplikasi admin 1.0.32+33
+- Temuan audit yang sengaja belum diubah: rekonsiliasi harian membuat ulang baris Riwayat Transaksi pembayaran kolektor yang dihapus admin; alat pemulihan Auto Stop menerima id pelanggan mana pun (mengaktifkan pelanggan stop memang aksi admin yang sah); nama bidang ringkasan laporan membingungkan
+
 ### v5.35.1 — 2026-11-05 - Audit Rilis 5.34 dan 5.35, Panduan Dilengkapi
 
 ### Audit
@@ -1182,15 +1198,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Catatan Pembaruan
 - Tidak ada perubahan skema. Naikkan versi: root, backend, frontend ke 5.34.0; aplikasi kolektor 1.4.2+11
 - Setelah update, buka Pelanggan Berhenti untuk memeriksa pelanggan yang salah di-stop, lalu jalankan Rekonsiliasi Keuangan dari halaman Cron agar pembayaran kolektor lama masuk Riwayat Transaksi
-
-### v5.33.4 — 2026-11-03 - Test Auto Backup Telegram Tanpa Simpan Dulu
-
-### Perbaikan
-- **[FIX]** Test Auto Backup di Pengaturan Telegram ditolak (400) walau Test Connection berhasil, karena tombol itu membaca pengaturan yang tersimpan dan aktif di database, sedangkan Test Connection memakai isian form. Kini Test Auto Backup juga memakai isian form (Bot Token, Chat ID, Topic Backup), jadi bisa dicoba sebelum menyimpan atau mengaktifkan. Bila form kosong, dipakai pengaturan tersimpan, aktif atau tidak. Pesan galatnya kini jelas: "Isi Bot Token dan Chat ID dulu."
-- Backup otomatis terjadwal tidak berubah: tetap hanya berjalan bila diaktifkan dan disimpan
-
-### Catatan Pembaruan
-- Tidak ada perubahan skema atau aplikasi. Naikkan versi: root, backend, frontend ke 5.33.4
 
 <!-- AUTO-CHANGELOG:END -->
 

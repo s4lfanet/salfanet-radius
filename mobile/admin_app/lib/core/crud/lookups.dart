@@ -23,6 +23,18 @@ class Lookups {
   static Future<FieldOptions> routers() =>
       _get('/api/network/routers', listKey: 'routers', label: (r) => '${r['name']}${r['nasname'] != null ? ' (${r['nasname']})' : ''}');
   static Future<FieldOptions> areas() => _get('/api/pppoe/areas', listKey: 'areas');
+
+  /// Active installers for a customer form. [keep] is the customer's current
+  /// installer: kept in the list even when deactivated, so editing a customer
+  /// never blanks it out.
+  static Future<FieldOptions> installers({Map<String, dynamic>? keep}) async {
+    final options = await _get('/api/pppoe/installers', listKey: 'installers', query: {'active': 1});
+    final id = keep?['id']?.toString();
+    if (id != null && !options.any((o) => o.$1 == id)) {
+      options.add((id, '${keep?['name']} (nonaktif)'));
+    }
+    return options;
+  }
   static Future<FieldOptions> pppoeProfiles() => _get('/api/pppoe/profiles', listKey: 'profiles', label: (p) => '${p['name']} · ${_rp(p['price'])}');
   static Future<FieldOptions> hotspotProfiles() =>
       _get('/api/hotspot/profiles', listKey: 'profiles', label: (p) => '${p['name']} · ${_rp(p['sellingPrice'] ?? p['costPrice'])}');

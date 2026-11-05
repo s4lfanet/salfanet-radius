@@ -62,12 +62,11 @@ export async function PUT(
   // knows; the hourly job then turned it into 'isolated' and the request
   // was never ended. Ending + restore is handled by runSuspendCheck too.
   if (action === 'APPROVE' && req.startDate <= now) {
-    try {
-      const { runSuspendCheck } = await import('@/server/cron/invoice-jobs');
-      await runSuspendCheck();
-    } catch (e: any) {
-      console.error('[SuspendRequest] Immediate suspend apply failed (cron will retry):', e?.message || e);
-    }
+    // Runs in the background: the pass also touches other customers' routers,
+    // and the approval itself is already saved. The hourly job retries a miss.
+    void import('@/server/cron/invoice-jobs')
+      .then(({ runSuspendCheck }) => runSuspendCheck())
+      .catch((e: any) => console.error('[SuspendRequest] Immediate suspend apply failed (cron will retry):', e?.message || e));
   }
 
   await pushToCustomer(

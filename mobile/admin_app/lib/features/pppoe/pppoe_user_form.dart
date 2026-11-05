@@ -26,13 +26,14 @@ const _subscriptionTypes = [('POSTPAID', 'Pascabayar'), ('PREPAID', 'Prabayar')]
 
 bool _needsIp(Map<String, dynamic> v) => v['connectionType'] == 'STATIC_IP' || v['connectionType'] == 'HOTSPOT';
 
-List<FieldSpec> _fields({required bool editing}) => [
+List<FieldSpec> _fields({required bool editing, Map<String, dynamic>? installer}) => [
   const FieldSpec.section('Data pelanggan'),
   const FieldSpec('name', 'Nama lengkap', required: true),
   const FieldSpec('phone', 'No. HP / WhatsApp', type: FieldType.phone, required: true, hint: '08xxxxxxxxxx'),
   const FieldSpec('email', 'Email', type: FieldType.email),
   const FieldSpec('address', 'Alamat', type: FieldType.multiline),
   FieldSpec('areaId', 'Area', type: FieldType.select, loadOptions: Lookups.areas),
+  FieldSpec('installerId', 'Instalatur (pemasang)', type: FieldType.select, loadOptions: () => Lookups.installers(keep: installer), helper: 'Opsional. Dipakai untuk mengelompokkan pelanggan dan pendapatan per pemasang.'),
   const FieldSpec('idCardNumber', 'No. KTP / NIK', type: FieldType.phone),
   FieldSpec('idCardPhoto', 'Foto KTP', type: FieldType.image, required: !editing, uploader: customerPhotoUploader('idCard')),
   FieldSpec('latitude', 'Lokasi rumah (GPS)', type: FieldType.location, pairKey: 'longitude', required: !editing),
@@ -139,6 +140,7 @@ Future<bool> openEditCustomer(BuildContext context, Map<String, dynamic> user) {
   final initial = <String, dynamic>{
     ...user,
     'areaId': mapOf(user, 'area')?['id'] ?? user['areaId'],
+    'installerId': mapOf(user, 'installer')?['id'] ?? user['installerId'],
     'profileId': mapOf(user, 'profile')?['id'] ?? user['profileId'],
     'routerId': mapOf(user, 'router')?['id'] ?? user['routerId'],
     'password': null,
@@ -150,7 +152,7 @@ Future<bool> openEditCustomer(BuildContext context, Map<String, dynamic> user) {
   return openForm(
     context,
     title: 'Edit Pelanggan',
-    fields: _fields(editing: true),
+    fields: _fields(editing: true, installer: mapOf(user, 'installer')),
     initial: initial,
     success: 'Data pelanggan disimpan.',
     onSubmit: (v) async {
