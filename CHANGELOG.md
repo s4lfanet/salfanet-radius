@@ -6,6 +6,24 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.43.0] - 2026-11-06 - Community SNMP Baca dan Tulis di Data OLT
+
+### Data OLT
+- **[NEW]** Form tambah dan ubah OLT punya **Community (Baca)** dan **Community (Tulis)** terpisah, begitu pula pengaturan SNMP di halaman detail OLT, impor Excel (kolom `snmpWriteCommunity`, dengan templat yang diperbarui), dan aplikasi admin. Sebelumnya hanya ada satu isian
+- **[CHANGE]** Community tulis tidak pernah dikirim ke browser. Klien database menyembunyikan kolomnya dari semua hasil, termasuk baris OLT yang terbawa lewat relasi seperti ODP, uplink router, dan penugasan pelanggan. Form hanya menerima penanda sudah tersimpan atau belum. Kosong berarti tidak diubah, dan ada kotak centang untuk menghapus
+- **[FIX]** Impor Excel mengubah merek C-Data, HSGQ, V-SOL, Hioso, dan Otomatis menjadi ZTE secara diam-diam, karena daftar merek yang diterima hanya lima. Kini semuanya dikenali
+- **[FIX]** Pilihan merek di aplikasi admin kini sama dengan web: Otomatis, C-Data, HSGQ, V-SOL
+- **[DOCS]** Penjelasan community baca dan tulis di `docs/features/OLT-SNMP-REFERENCE.md` dan Pusat Panduan
+
+### Hal yang perlu diketahui
+- **Belum ada fitur yang memakai community tulis.** Tidak ada kode yang melakukan SNMP SET; pemantauan tetap memakai community baca. Isian ini disiapkan untuk fitur berikutnya, misalnya mengganti nama ONU Hioso HA7302
+- Penyembunyian kolom diuji pada tipe dan konfigurasi klien, belum terhadap database sungguhan
+
+### Catatan Pembaruan
+- Menambah kolom `snmpWriteCommunity` (boleh kosong) pada tabel OLT, diterapkan otomatis saat pembaruan. Aplikasi admin 1.0.36. Naikkan versi: root, backend, frontend ke 5.43.0
+
+---
+
 ## [5.42.0] - 2026-11-06 - Halaman Web Hioso sebagai Sumber Data
 
 ### Hioso

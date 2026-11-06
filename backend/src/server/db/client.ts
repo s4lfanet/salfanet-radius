@@ -17,9 +17,12 @@ const globalForPrisma = globalThis as unknown as {
   processGuardsRegistered: boolean | undefined
 }
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient({
+export const prisma = globalForPrisma.prisma ?? (new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
-})
+  // The SNMP write community is left out of every result, relations included, so no route can send
+  // it to a browser by returning a whole row. See lib/olt/write-community.ts to read it on purpose.
+  omit: { networkOLT: { snmpWriteCommunity: true } },
+}) as unknown as PrismaClient)
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 

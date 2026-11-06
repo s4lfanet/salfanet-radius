@@ -68,6 +68,7 @@ interface OLTDetail {
   monitoringEnabled: boolean;
   snmpEnabled: boolean;
   snmpCommunity: string;
+  hasSnmpWriteCommunity?: boolean;
   snmpPort: number;
   sshEnabled: boolean;
   sshPort: number;
@@ -1957,6 +1958,8 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
     monitoringEnabled: false,
     snmpEnabled: true,
     snmpCommunity: 'public',
+    snmpWriteCommunity: '',
+    clearSnmpWriteCommunity: false,
     snmpPort: 161,
     sshEnabled: false,
     sshPort: 22,
@@ -1983,6 +1986,8 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
           monitoringEnabled: o.monitoringEnabled,
           snmpEnabled: o.snmpEnabled,
           snmpCommunity: o.snmpCommunity,
+          snmpWriteCommunity: '',
+          clearSnmpWriteCommunity: false,
           snmpPort: o.snmpPort,
           sshEnabled: o.sshEnabled,
           sshPort: o.sshPort,
@@ -2024,7 +2029,12 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
       const res = await fetch(`/api/olt/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
+        // The saved write community is never sent to the browser: blank keeps it, null removes it.
+        body: JSON.stringify({
+          ...settings,
+          clearSnmpWriteCommunity: undefined,
+          snmpWriteCommunity: settings.clearSnmpWriteCommunity ? null : settings.snmpWriteCommunity,
+        }),
       });
       if (res.ok) {
         await fetchOLT();
@@ -2754,12 +2764,34 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                 {settings.snmpEnabled && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <Label>Community String</Label>
+                      <Label>Community (Baca)</Label>
                       <Input
                         value={settings.snmpCommunity}
                         onChange={(e) => setSettings((s) => ({ ...s, snmpCommunity: e.target.value }))}
                         placeholder="public"
                       />
+                    </div>
+                    <div>
+                      <Label>Community (Tulis)</Label>
+                      <Input
+                        type="password"
+                        autoComplete="new-password"
+                        value={settings.snmpWriteCommunity}
+                        disabled={settings.clearSnmpWriteCommunity}
+                        onChange={(e) => setSettings((s) => ({ ...s, snmpWriteCommunity: e.target.value }))}
+                        placeholder={olt?.hasSnmpWriteCommunity ? 'Tersimpan. Kosongkan bila tidak diubah.' : '••••••••'}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Opsional. Hanya untuk perintah SNMP SET. Pemantauan memakai community baca.</p>
+                      {olt?.hasSnmpWriteCommunity && (
+                        <label className="mt-1 flex items-center gap-2 text-xs cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={settings.clearSnmpWriteCommunity}
+                            onChange={(e) => setSettings((s) => ({ ...s, clearSnmpWriteCommunity: e.target.checked, snmpWriteCommunity: '' }))}
+                          />
+                          Hapus community tulis yang tersimpan
+                        </label>
+                      )}
                     </div>
                     <div>
                       <Label>Port</Label>

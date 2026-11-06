@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'File is empty or invalid format' }, { status: 400 });
     }
 
-    const validVendors = ['zte', 'huawei', 'fiberhome', 'bdcom', 'raisecom'];
+    const validVendors = ['zte', 'huawei', 'fiberhome', 'bdcom', 'raisecom', 'hioso', 'cdata', 'hsgq', 'vsol', 'auto'];
     const errors: Array<{ row: number; error: string }> = [];
     const imported: string[] = [];
 
@@ -70,6 +70,7 @@ export async function POST(request: NextRequest) {
             vendor,
             model: (row.model || row.Model || null)?.toString().trim() || null,
             snmpCommunity: (row.snmpCommunity || row['SNMP Community'] || 'public').toString().trim(),
+            snmpWriteCommunity: (row.snmpWriteCommunity || row['SNMP Write Community'] || '').toString().trim().slice(0, 100) || null,
             snmpPort: parseInt(String(row.snmpPort ?? row['SNMP Port'] ?? 161)) || 161,
             telnetPort: parseInt(String(row.telnetPort ?? row['Telnet Port'] ?? 23)) || 23,
             username: (row.username || row.Username || null)?.toString().trim() || null,

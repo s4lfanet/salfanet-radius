@@ -71,6 +71,7 @@ interface OLT {
   username?: string;
   password?: string;
   snmpCommunity?: string;
+  hasSnmpWriteCommunity?: boolean;
   snmp_community?: string;
   sshEnabled?: boolean;
   telnetEnabled?: boolean;
@@ -205,6 +206,8 @@ export default function OLTsPage() {
     username: '',
     password: '',
     snmpCommunity: 'public',
+    snmpWriteCommunity: '',
+    clearSnmpWriteCommunity: false,
     sshEnabled: true,
     telnetEnabled: false,
     sshPort: '22',
@@ -260,6 +263,8 @@ export default function OLTsPage() {
       password: '',
       firmwareVersion: '',
       snmpCommunity: 'public',
+      snmpWriteCommunity: '',
+      clearSnmpWriteCommunity: false,
       sshEnabled: true,
       telnetEnabled: false,
       sshPort: '22',
@@ -343,6 +348,8 @@ export default function OLTsPage() {
       username: olt.username || '',
       password: olt.password || '',
       snmpCommunity: community,
+      snmpWriteCommunity: '',
+      clearSnmpWriteCommunity: false,
       sshEnabled: olt.sshEnabled !== undefined ? olt.sshEnabled : true,
       telnetEnabled: olt.telnetEnabled !== undefined ? olt.telnetEnabled : false,
       sshPort: String(olt.sshPort || 22),
@@ -360,8 +367,11 @@ export default function OLTsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // The saved write community is never sent to the browser: blank keeps it, null removes it.
+      const { clearSnmpWriteCommunity, ...fields } = formData;
       const payload = {
-        ...formData,
+        ...fields,
+        snmpWriteCommunity: clearSnmpWriteCommunity ? null : formData.snmpWriteCommunity,
         ...(editingOlt && { id: editingOlt.id }),
       };
 
@@ -1158,16 +1168,42 @@ export default function OLTsPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[10px] font-medium mb-1">{t('olt.snmpCommunity')}</label>
-                <input
-                  type="text"
-                  autoComplete="off"
-                  value={formData.snmpCommunity}
-                  onChange={(e) => setFormData({ ...formData, snmpCommunity: e.target.value })}
-                  placeholder="public"
-                  className="w-full px-2 py-1.5 text-xs border dark:border-gray-700 rounded dark:bg-gray-800"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-medium mb-1">{t('olt.snmpCommunityRead')}</label>
+                  <input
+                    type="text"
+                    autoComplete="off"
+                    value={formData.snmpCommunity}
+                    onChange={(e) => setFormData({ ...formData, snmpCommunity: e.target.value })}
+                    placeholder="public"
+                    className="w-full px-2 py-1.5 text-xs border dark:border-gray-700 rounded dark:bg-gray-800"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-medium mb-1">{t('olt.snmpCommunityWrite')}</label>
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    value={formData.snmpWriteCommunity}
+                    disabled={formData.clearSnmpWriteCommunity}
+                    onChange={(e) => setFormData({ ...formData, snmpWriteCommunity: e.target.value })}
+                    placeholder={editingOlt?.hasSnmpWriteCommunity ? t('olt.snmpWriteSaved') : '••••••••'}
+                    className="w-full px-2 py-1.5 text-xs border dark:border-gray-700 rounded dark:bg-gray-800 disabled:opacity-50"
+                  />
+                  <p className="text-[9px] text-muted-foreground mt-0.5">{t('olt.snmpWriteHint')}</p>
+                  {editingOlt?.hasSnmpWriteCommunity && (
+                    <label className="mt-1 flex items-center gap-1.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.clearSnmpWriteCommunity}
+                        onChange={(e) => setFormData({ ...formData, clearSnmpWriteCommunity: e.target.checked, snmpWriteCommunity: '' })}
+                        className="w-3 h-3 rounded"
+                      />
+                      <span className="text-[10px]">{t('olt.snmpWriteClear')}</span>
+                    </label>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

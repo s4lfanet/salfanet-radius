@@ -292,7 +292,11 @@ CrudConfig oltsConfig() => CrudConfig(
         ('huawei', 'Huawei'),
         ('zte', 'ZTE'),
         ('fiberhome', 'FiberHome'),
+        ('auto', 'Otomatis (deteksi dari OLT)'),
         ('hioso', 'Hioso / C-Data'),
+        ('cdata', 'C-Data FD11xx / FD16xx'),
+        ('hsgq', 'HSGQ'),
+        ('vsol', 'V-SOL'),
         ('bdcom', 'BDCOM'),
         ('raisecom', 'Raisecom'),
         ('other', 'Lainnya'),
@@ -307,7 +311,14 @@ CrudConfig oltsConfig() => CrudConfig(
     const FieldSpec('sshPort', 'Port SSH', type: FieldType.integer, initial: 22),
     const FieldSpec('telnetEnabled', 'Telnet aktif', type: FieldType.toggle),
     const FieldSpec('telnetPort', 'Port Telnet', type: FieldType.integer, initial: 23),
-    const FieldSpec('snmpCommunity', 'SNMP community', initial: 'public'),
+    const FieldSpec('snmpCommunity', 'SNMP community (baca)', initial: 'public'),
+    FieldSpec(
+      'snmpWriteCommunity',
+      o == null ? 'SNMP community (tulis)' : 'SNMP community (tulis) baru',
+      type: FieldType.password,
+      omitWhenEmpty: true,
+      helper: 'Opsional. Hanya untuk perintah SNMP SET; pemantauan memakai community baca. Kosongkan bila tidak diubah.',
+    ),
     const FieldSpec('snmpPort', 'Port SNMP', type: FieldType.integer, initial: 161),
     const FieldSpec.section('Lainnya'),
     FieldSpec('routerIds', 'Router terhubung', type: FieldType.multiSelect, loadOptions: Lookups.routers),
@@ -324,6 +335,7 @@ CrudConfig oltsConfig() => CrudConfig(
   initialOf: (o) => {
     ...o,
     'password': null,
+    'snmpWriteCommunity': null,
     'routerIds':
         (o['routers'] as List?)?.whereType<Map>().map((r) => '${r['routerId'] ?? mapOf(r.cast<String, dynamic>(), 'router')?['id'] ?? r['id']}').toList() ??
         o['routerIds'],

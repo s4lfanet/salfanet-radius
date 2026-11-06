@@ -15,6 +15,7 @@ export async function GET(_request: NextRequest) {
       vendor: 'zte',
       model: 'C320',
       snmpCommunity: 'public',
+      snmpWriteCommunity: '',
       snmpPort: 161,
       telnetPort: 23,
       username: 'admin',
@@ -29,6 +30,7 @@ export async function GET(_request: NextRequest) {
       vendor: 'huawei',
       model: 'MA5800',
       snmpCommunity: 'public',
+      snmpWriteCommunity: '',
       snmpPort: 161,
       telnetPort: 23,
       username: 'admin',
@@ -49,6 +51,7 @@ export async function GET(_request: NextRequest) {
     { wch: 12 }, // vendor
     { wch: 12 }, // model
     { wch: 16 }, // snmpCommunity
+    { wch: 18 }, // snmpWriteCommunity
     { wch: 10 }, // snmpPort
     { wch: 12 }, // telnetPort
     { wch: 12 }, // username

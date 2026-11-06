@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
+import { writeCommunityData, writeCommunityFlags } from '@/lib/olt/write-community';
 
 export async function GET() {
   const authCheck = await requirePermission('network.view');
@@ -49,10 +50,12 @@ export async function GET() {
       onuStatsByOlt.set(g.oltId, stats);
     }
 
+    const flagged = await writeCommunityFlags();
     return NextResponse.json({
       success: true,
       olts: olts.map(olt => ({
         ...olt,
+        hasSnmpWriteCommunity: flagged.has(olt.id),
         uptime: Number(olt.uptime),
         _count: {
           ...olt._count,
@@ -83,7 +86,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       name, ipAddress, latitude, longitude, status, routerIds, followRoad,
-      vendor, model, firmwareVersion, username, password, snmpCommunity,
+      vendor, model, firmwareVersion, username, password, snmpCommunity, snmpWriteCommunity,
       sshEnabled, telnetEnabled,
       sshPort, telnetPort, snmpPort,
     } = body;
@@ -113,6 +116,7 @@ export async function POST(request: NextRequest) {
         ...(username && { username }),
         ...(password && { password }),
         snmpCommunity: snmpCommunity || 'public',
+        ...writeCommunityData(snmpWriteCommunity),
         ...(sshEnabled !== undefined && { sshEnabled }),
         ...(telnetEnabled !== undefined && { telnetEnabled }),
         ...(sshPort !== undefined && sshPort !== '' && { sshPort: parseInt(String(sshPort)) || 22 }),
@@ -155,7 +159,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      olt: { ...olt, uptime: Number(olt.uptime) },
+      olt: { ...olt, hasSnmpWriteCommunity: (await writeCommunityFlags([olt.id])).has(olt.id), uptime: Number(olt.uptime) },
     });
   } catch (error: any) {
     console.error('Create OLT error:', error);
@@ -173,7 +177,7 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const {
       id, name, ipAddress, latitude, longitude, status, routerIds, followRoad,
-      vendor, model, firmwareVersion, username, password, snmpCommunity,
+      vendor, model, firmwareVersion, username, password, snmpCommunity, snmpWriteCommunity,
       sshEnabled, telnetEnabled,
       sshPort, telnetPort, snmpPort,
     } = body;
@@ -201,6 +205,7 @@ export async function PUT(request: NextRequest) {
         ...(username !== undefined && { username }),
         ...(password !== undefined && { password }),
         ...(snmpCommunity !== undefined && { snmpCommunity }),
+        ...writeCommunityData(snmpWriteCommunity),
         ...(sshEnabled !== undefined && { sshEnabled }),
         ...(telnetEnabled !== undefined && { telnetEnabled }),
         ...(sshPort !== undefined && sshPort !== '' && { sshPort: parseInt(String(sshPort)) || 22 }),
@@ -232,7 +237,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      olt: { ...olt, uptime: Number(olt.uptime) },
+      olt: { ...olt, hasSnmpWriteCommunity: (await writeCommunityFlags([olt.id])).has(olt.id), uptime: Number(olt.uptime) },
     });
   } catch (error: any) {
     console.error('Update OLT error:', error);

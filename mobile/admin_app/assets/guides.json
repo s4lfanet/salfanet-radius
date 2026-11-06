@@ -914,6 +914,7 @@
     "Klik Tambah OLT, pilih model yang sesuai, isi IP, community SNMP, dan akses Telnet bila diminta.",
     "Isi koordinat agar OLT tampil di peta.",
     "Hubungkan OLT ke router uplink-nya bila dipakai untuk ping dan peta jalur.",
+    "SNMP punya dua community: Baca (dipakai pemantauan) dan Tulis (opsional, untuk perintah SNMP SET yang belum dipakai fitur apa pun). Community tulis tidak ditampilkan lagi setelah disimpan; kosongkan bila tidak diubah, atau centang hapus.",
     "Tombol Uji Koneksi memakai isian form. Saat mengubah OLT, kolom password yang dikosongkan berarti memakai password tersimpan.",
     "Pilih merek sesuai OLT. Bila ragu, pilih Otomatis: merek dikenali dari OLT-nya. Uji Koneksi SNMP lalu menyebut merek, profil, dan jumlah ONU yang terbaca.",
     "Impor dari Excel atau CSV langsung mengaktifkan pemantauan; pastikan username dan password terisi agar login ke OLT berhasil."

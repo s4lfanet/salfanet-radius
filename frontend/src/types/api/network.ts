@@ -29,6 +29,7 @@ export interface OLT {
   firmwareVersion: string | null;
   snmpEnabled: boolean;
   snmpCommunity: string;
+  hasSnmpWriteCommunity?: boolean;
   snmpPort: number;
   telnetEnabled: boolean;
   telnetPort: number;

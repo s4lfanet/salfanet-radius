@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
+import { writeCommunityFlags } from '@/lib/olt/write-community';
 import { PUT as putByQuery, DELETE as deleteByQuery } from '../route';
 
 /**
@@ -62,6 +63,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     success: true,
     olt: {
       ...rest,
+      hasSnmpWriteCommunity: (await writeCommunityFlags([id])).has(id),
       brand: rest.vendor,
       network_odcs: odcs,
       _count: {

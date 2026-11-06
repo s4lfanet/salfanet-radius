@@ -57,6 +57,16 @@ Pilihan lama yang sudah tersimpan (`hioso`, `cdata`, `c-data`) tetap valid. Sebe
 | 37950 | V-SOL |
 | 50224 | HSGQ |
 
+## Community SNMP baca dan tulis
+
+Data OLT punya dua isian: **Community (Baca)** dan **Community (Tulis)**. Pemantauan hanya membaca, jadi memakai community baca. Community tulis tersedia untuk perintah SNMP SET, misalnya mengganti nama ONU Hioso HA7302 yang tidak punya perintah tersebut di CLI. **Saat ini belum ada fitur yang memakainya**; nilainya disimpan untuk fitur berikutnya.
+
+Karena community tulis memungkinkan pemegangnya mengubah OLT, ia diperlakukan lebih ketat daripada community baca:
+- **Tidak pernah dikirim ke browser.** Klien database menyembunyikan kolomnya dari setiap hasil, termasuk baris OLT yang ikut terbawa lewat relasi. Form hanya tahu apakah sudah ada yang tersimpan.
+- **Kosong berarti tidak diubah**, karena form tidak bisa menampilkan nilai tersimpan. Untuk menghapus, centang "Hapus community tulis yang tersimpan".
+- Kode yang benar-benar membutuhkannya meminta secara eksplisit: `prisma.networkOLT.findUnique({ where: { id }, omit: { snmpWriteCommunity: false } })`.
+- Impor Excel punya kolom `snmpWriteCommunity` (boleh kosong).
+
 ## Membaca hasil Uji Koneksi
 
 Setelah SNMP tersambung, Uji Koneksi menampilkan merek, jumlah ONU, dan satu baris per profil yang menjawab, misalnya:

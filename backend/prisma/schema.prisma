@@ -1300,6 +1300,7 @@ model networkOLT {
   firmwareVersion   String?
   snmpEnabled       Boolean   @default(true)
   snmpCommunity     String    @default("public")
+  snmpWriteCommunity String?  @db.VarChar(100) // SNMP SET only; never returned by the API, monitoring reads
   snmpPort          Int       @default(161)
   telnetEnabled     Boolean   @default(false)
   telnetPort        Int       @default(23)

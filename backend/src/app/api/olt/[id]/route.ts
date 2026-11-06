@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
+import { writeCommunityData, writeCommunityFlags } from '@/lib/olt/write-community';
 
 // GET - OLT detail + ONU list
 export async function GET(
@@ -53,6 +54,7 @@ export async function GET(
       success: true,
       olt: {
         ...olt,
+        hasSnmpWriteCommunity: (await writeCommunityFlags([id])).has(id),
         uptime: Number(olt.uptime),
         performanceMetrics: olt.performanceMetrics.map(m => ({
           ...m,
@@ -89,7 +91,7 @@ export async function PUT(
 
     const {
       vendor, model, firmwareVersion,
-      snmpEnabled, snmpCommunity, snmpPort,
+      snmpEnabled, snmpCommunity, snmpWriteCommunity, snmpPort,
       telnetEnabled, telnetPort,
       sshEnabled, sshPort,
       username, password,
@@ -105,6 +107,7 @@ export async function PUT(
         ...(firmwareVersion !== undefined && { firmwareVersion }),
         ...(snmpEnabled !== undefined && { snmpEnabled }),
         ...(snmpCommunity !== undefined && { snmpCommunity }),
+        ...writeCommunityData(snmpWriteCommunity),
         ...(snmpPort !== undefined && { snmpPort }),
         ...(telnetEnabled !== undefined && { telnetEnabled }),
         ...(telnetPort !== undefined && { telnetPort }),
@@ -133,7 +136,7 @@ export async function PUT(
       }
     }
 
-    return NextResponse.json({ success: true, olt: { ...olt, uptime: Number(olt.uptime) } });
+    return NextResponse.json({ success: true, olt: { ...olt, hasSnmpWriteCommunity: (await writeCommunityFlags([id])).has(id), uptime: Number(olt.uptime) } });
   } catch (error: any) {
     console.error('[OLT Detail PUT]', error);
     return NextResponse.json({ error: 'Failed to update OLT', details: error.message }, { status: 500 });
