@@ -6,6 +6,30 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.40.0] - 2026-11-06 - Monitoring OLT Multi Merek
+
+### Monitoring OLT
+- **[NEW]** Pilihan merek **C-Data FD11xx / FD16xx**, **HSGQ**, dan **V-SOL** di Data OLT, ditambah **Otomatis** yang mengenali merek dari `sysDescr` dan nomor enterprise `sysObjectID`. Bila tidak dikenali, dicoba C-Data, HSGQ, V-SOL, lalu Hioso. Hasil deteksi diingat satu jam
+- **[NEW]** C-Data dibaca dari tiga cabang MIB: standar NSCRTV (17409, EPON dan GPON), FD-ONU (34592.1.3, dua revisi MIB), dan GPON C-Data (34592.1.5). Suhu dan CPU dibaca dari OID chassis C-Data. Sumber: sheet OID C-Data dari operator, dicocokkan dengan MIB resmi
+- **[NEW]** V-SOL V1600D membaca daftar ONU dan tabel optik yang terpisah, lalu menggabungkannya per PON dan nomor ONU
+- **[NEW]** Uji Koneksi SNMP kini menyebut merek yang terdeteksi, profil yang terbaca, dan jumlah ONU (online dan total), supaya merek salah atau tabel kosong terlihat saat itu juga
+- **[CHANGE]** `cdata` dulu hanya nama lain untuk Hioso. Kini modul C-Data membaca seperti Hioso dulu, supaya OLT yang sudah berjalan tidak berubah, dan baru mencoba cabang C-Data bila Hioso kosong. Pilihan Hioso tidak berubah
+- **[FIX]** Poller tidak lagi gagal menyimpan ONU bila Telnet aktif dan modul merek tidak punya pembacaan optik per ONU. Sebelumnya ONU itu dilewati dengan galat
+- **[DOCS]** `docs/features/OLT-SNMP-REFERENCE.md` mencatat OID, sumber, dan status verifikasi tiap merek
+
+### Hal yang perlu diketahui
+- **Belum diuji pada OLT sungguhan.** Logika pembacaan diuji dengan data SNMP tiruan yang meniru MIB, tetapi OID berasal dari berkas MIB dan sumber komunitas. Nomor kolom berbeda antar revisi firmware, sehingga pembaca mencoba beberapa kandidat dan menolak kolom yang jelas salah. Periksa hasil Uji Koneksi dan bandingkan beberapa ONU dengan tampilan OLT
+- Status online C-Data FD adalah nilai 3 sampai 5 (online, normal, abnormal), bukan 1
+- HSGQ paling sedikit terdokumentasi. OID-nya dari proyek komunitas, dan sebagian proyek lain membaca API web OLT, bukan SNMP
+
+### Aplikasi admin
+- **[UI]** Tautan **Dukung Salfanet** di menu Lainnya, di bawah semua kategori, hanya untuk akun yang boleh melihat pengaturan. Aplikasi admin 1.0.35
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema. Naikkan versi: root, backend, frontend ke 5.40.0, aplikasi admin ke 1.0.35
+
+---
+
 ## [5.39.6] - 2026-11-06 - Tautan Dukung Salfanet di Panel Admin
 
 ### Panel admin

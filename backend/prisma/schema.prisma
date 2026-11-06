@@ -1295,7 +1295,7 @@ model networkOLT {
   updatedAt            DateTime @updatedAt
 
   // Monitoring fields
-  vendor            String?   @default("huawei") // huawei|zte|fiberhome|bdcom|raisecom
+  vendor            String?   @default("huawei") // huawei|zte|fiberhome|bdcom|raisecom|hioso|cdata|hsgq|vsol|auto
   model             String?
   firmwareVersion   String?
   snmpEnabled       Boolean   @default(true)

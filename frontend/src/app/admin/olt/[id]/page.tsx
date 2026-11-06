@@ -2660,10 +2660,14 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="auto">Otomatis (deteksi dari OLT)</SelectItem>
                       <SelectItem value="huawei">Huawei</SelectItem>
                       <SelectItem value="zte">ZTE</SelectItem>
                       <SelectItem value="fiberhome">FiberHome</SelectItem>
                       <SelectItem value="hioso">Hioso / C-Data</SelectItem>
+                      <SelectItem value="cdata">C-Data FD11xx / FD16xx</SelectItem>
+                      <SelectItem value="hsgq">HSGQ</SelectItem>
+                      <SelectItem value="vsol">V-SOL</SelectItem>
                       <SelectItem value="bdcom">BDCOM</SelectItem>
                       <SelectItem value="raisecom">Raisecom</SelectItem>
                     </SelectContent>

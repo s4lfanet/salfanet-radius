@@ -149,6 +149,7 @@ Folder `docs/mobile-app/` (`MOBILE_APP_NATIVE_DEVELOPMENT_GUIDE.md`, `MOBILE_BAC
 | [IMPORT_PPPOE_USERS.md](features/IMPORT_PPPOE_USERS.md) | Import bulk PPPoE users dari MikroTik | PPPoE → Import |
 | [DYNAMIC_VIRTUAL_PARAMETERS.md](features/DYNAMIC_VIRTUAL_PARAMETERS.md) | Virtual parameters GenieACS | GenieACS → Devices |
 | [GENIEACS-GUIDE.md](features/GENIEACS-GUIDE.md) | Panduan lengkap GenieACS TR-069 | GenieACS |
+| [OLT-SNMP-REFERENCE.md](features/OLT-SNMP-REFERENCE.md) | OID SNMP OLT C-Data, HSGQ, V-SOL, sumber, dan status verifikasi | Network |
 | [TOAST_NOTIFICATIONS_GUIDE.md](features/TOAST_NOTIFICATIONS_GUIDE.md) | UI toast notification system | Semua halaman admin |
 | [FIBER_NETWORK_TOPOLOGY.md](features/FIBER_NETWORK_TOPOLOGY.md) | Infrastruktur fiber: OTB/ODC/ODP/JC/splice/peta/trace | Network → Infrastruktur |
 | [LAPORAN_EXPORT.md](features/LAPORAN_EXPORT.md) | Laporan & ekspor: invoice, pembayaran, pelanggan | Laporan → Data & Export |

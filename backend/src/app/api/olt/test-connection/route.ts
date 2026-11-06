@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { testSNMP } from '@/lib/olt/snmp';
+import { scanOlt, describeScan } from '@/lib/olt/scan';
 import { testSSH } from '@/lib/olt/ssh';
 import { testTelnet } from '@/lib/olt/telnet';
 
@@ -79,6 +80,16 @@ export async function POST(request: NextRequest) {
         message = success
           ? 'SNMP connection successful'
           : `SNMP connection failed: ${snmpResult.error ?? 'unknown error'}`;
+
+        // Say which brand answered and how many ONUs were read, so a wrong brand or an
+        // empty table shows up now instead of as a blank monitoring page later.
+        if (success) {
+          const scan = await Promise.race([
+            scanOlt({ host: ipAddress, community: snmpCommunity ?? 'public', port: snmpPort ?? undefined }),
+            new Promise<null>((resolve) => setTimeout(() => resolve(null), 45_000)),
+          ]).catch(() => null);
+          if (scan) message += `. ${describeScan(scan)}`;
+        }
       } else if (protocol === 'ssh') {
         if (!username) {
           return NextResponse.json({ error: 'Username required for SSH' }, { status: 400 });

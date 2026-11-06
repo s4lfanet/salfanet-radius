@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/crud/crud_list_screen.dart';
 import '../../core/guides/guides.dart';
@@ -267,10 +268,38 @@ class _MoreMenuScreenState extends State<MoreMenuScreen> {
                         ),
                         const SizedBox(height: Gap.sm),
                       ],
+                      if (user?.can('settings.view') ?? true) const _SupportLink(),
                     ],
                   ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// A plain link to the project's donation page. Optional, shown only to accounts that
+/// can see settings, and never in search results or as a prompt.
+class _SupportLink extends StatelessWidget {
+  const _SupportLink();
+
+  static final _uri = Uri.parse('https://saweria.co/salfanetradius');
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: ListTile(
+        leading: RoleIconTile(icon: Icons.favorite_border_rounded, color: context.tone(Tone.accent), size: 40),
+        title: const Text('Dukung Salfanet', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700)),
+        subtitle: const Text('Donasi sukarela lewat Saweria'),
+        trailing: Icon(Icons.open_in_new_rounded, size: 18, color: context.colors.onSurfaceVariant),
+        onTap: () async {
+          final messenger = ScaffoldMessenger.of(context);
+          if (!await launchUrl(_uri, mode: LaunchMode.externalApplication)) {
+            messenger.showSnackBar(const SnackBar(content: Text('Tautan tidak bisa dibuka.')));
+          }
+        },
       ),
     );
   }

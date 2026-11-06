@@ -8,26 +8,12 @@ import { getSystemInfo } from './snmp';
 import { evaluateCustomRules, createRuleContext, type RuleCondition, type RuleAction, type RuleSchedule } from './rule-engine';
 
 // Vendor modules
-import * as huawei from './vendors/huawei';
-import * as zte from './vendors/zte';
-import * as fiberhome from './vendors/fiberhome';
-import * as bdcom from './vendors/bdcom';
-import * as raisecom from './vendors/raisecom';
-import * as hioso from './vendors/hioso';
+import * as auto from './vendors/auto';
+import { getVendorModule as getSavedVendorModule, type VendorModule } from './vendors/modules';
 
-type VendorModule = typeof huawei;
-
+/** "auto" works the brand out from the OLT; every other value is a saved brand name. */
 function getVendorModule(vendor: string | null | undefined): VendorModule {
-  switch (vendor?.toLowerCase()) {
-    case 'zte':       return zte as any as VendorModule;
-    case 'fiberhome': return fiberhome as any as VendorModule;
-    case 'bdcom':     return bdcom as any as VendorModule;
-    case 'raisecom':  return raisecom as any as VendorModule;
-    case 'hioso':
-    case 'cdata':
-    case 'c-data':    return hioso as any as VendorModule;
-    default:          return huawei;
-  }
+  return vendor?.toLowerCase() === 'auto' ? (auto as any as VendorModule) : getSavedVendorModule(vendor);
 }
 
 /**
@@ -329,7 +315,7 @@ async function upsertONU(
     if (!options.skipOpticalInfo && !snmpHasOptical) {
       // Only fallback to Telnet optical info when SNMP could not supply rxPower.
       // Do NOT use SSH path for ZTE C320 (only Telnet CLI is supported).
-      if (telnetConfig) {
+      if (telnetConfig && typeof (vendor as any).getOnuOpticalInfo === 'function') {
         opticalInfo = await vendor.getOnuOpticalInfo(telnetConfig, onu.frame, onu.slot, onu.port, onu.onuId).catch(() => null);
       }
     }

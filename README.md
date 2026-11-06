@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.39.6 - Tautan Dukung Salfanet di Panel Admin
+> **Version:** 5.40.0 - Monitoring OLT Multi Merek
 
 ---
 
@@ -21,7 +21,7 @@ Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with Free
 | **Notifications** | WhatsApp (Fonnte/WAHA/GOWA/MPWA/Wablas/WABlast/**Kirimi.id**/**Baileys native**), Email SMTP, broadcast (outage/invoice/payment), webhook pesan masuk, **Telegram** (backup DB terjadwal + bot 2-arah untuk teknisi: cek redaman/pelanggan) |
 | **Agent/Reseller** | Balance-based voucher generation, commission tracking, sales stats |
 | **Financial** | Income/expense tracking with categories, keuangan reconciliation, **Kewajiban BHP & USO** for licensed ISPs (revenue base without PPN, write-offs and interconnection deductions, monthly recap, Excel/PDF, April reminder), DPP and PPN per invoice in Export Data |
-| **Network (FTTH)** | OLT multi-vendor (ZTE/Huawei/FiberHome/BDCOM/Hioso/Raisecom) via SNMP+Telnet+SSH, ONU discovery/register/reboot/config (dry-run preview + commit), ODC/ODP/fiber inventory & trace, network map, **OLT poll + low-signal & mass-outage alert per PON**, **ACS RX/offline alert via GenieACS** |
+| **Network (FTTH)** | OLT multi-vendor (ZTE/Huawei/FiberHome/BDCOM/Hioso/Raisecom/**C-Data/HSGQ/V-SOL**, plus mode **Otomatis** yang mengenali merek dari OLT) via SNMP+Telnet+SSH, ONU discovery/register/reboot/config (dry-run preview + commit), ODC/ODP/fiber inventory & trace, network map, **OLT poll + low-signal & mass-outage alert per PON**, **ACS RX/offline alert via GenieACS** |
 | **GenieACS TR-069** | CPE/ONT management, WiFi config (SSID/password), device status & uptime |
 | **Isolation** | Auto-isolate expired customers, customizable WhatsApp/Email/HTML landing page templates, **fallback MikroTik API kick saat radacct kosong**, **HOTSPOT local mode isolation/reactivation** (manageHotspotUser enable/disable + kick), **connectionType-aware reactivation** (PPPoE & Hotspot) di semua route (webhook, mark-paid, status, bulk-status, extend) |
 | **Cron Jobs** | 27 automated background jobs (tsx runner via PM2 fork), history, distributed locking, manual trigger, **auto-close orphaned/stale sessions** |
@@ -1111,6 +1111,28 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.40.0 — 2026-11-06 - Monitoring OLT Multi Merek
+
+### Monitoring OLT
+- **[NEW]** Pilihan merek **C-Data FD11xx / FD16xx**, **HSGQ**, dan **V-SOL** di Data OLT, ditambah **Otomatis** yang mengenali merek dari `sysDescr` dan nomor enterprise `sysObjectID`. Bila tidak dikenali, dicoba C-Data, HSGQ, V-SOL, lalu Hioso. Hasil deteksi diingat satu jam
+- **[NEW]** C-Data dibaca dari tiga cabang MIB: standar NSCRTV (17409, EPON dan GPON), FD-ONU (34592.1.3, dua revisi MIB), dan GPON C-Data (34592.1.5). Suhu dan CPU dibaca dari OID chassis C-Data. Sumber: sheet OID C-Data dari operator, dicocokkan dengan MIB resmi
+- **[NEW]** V-SOL V1600D membaca daftar ONU dan tabel optik yang terpisah, lalu menggabungkannya per PON dan nomor ONU
+- **[NEW]** Uji Koneksi SNMP kini menyebut merek yang terdeteksi, profil yang terbaca, dan jumlah ONU (online dan total), supaya merek salah atau tabel kosong terlihat saat itu juga
+- **[CHANGE]** `cdata` dulu hanya nama lain untuk Hioso. Kini modul C-Data membaca seperti Hioso dulu, supaya OLT yang sudah berjalan tidak berubah, dan baru mencoba cabang C-Data bila Hioso kosong. Pilihan Hioso tidak berubah
+- **[FIX]** Poller tidak lagi gagal menyimpan ONU bila Telnet aktif dan modul merek tidak punya pembacaan optik per ONU. Sebelumnya ONU itu dilewati dengan galat
+- **[DOCS]** `docs/features/OLT-SNMP-REFERENCE.md` mencatat OID, sumber, dan status verifikasi tiap merek
+
+### Hal yang perlu diketahui
+- **Belum diuji pada OLT sungguhan.** Logika pembacaan diuji dengan data SNMP tiruan yang meniru MIB, tetapi OID berasal dari berkas MIB dan sumber komunitas. Nomor kolom berbeda antar revisi firmware, sehingga pembaca mencoba beberapa kandidat dan menolak kolom yang jelas salah. Periksa hasil Uji Koneksi dan bandingkan beberapa ONU dengan tampilan OLT
+- Status online C-Data FD adalah nilai 3 sampai 5 (online, normal, abnormal), bukan 1
+- HSGQ paling sedikit terdokumentasi. OID-nya dari proyek komunitas, dan sebagian proyek lain membaca API web OLT, bukan SNMP
+
+### Aplikasi admin
+- **[UI]** Tautan **Dukung Salfanet** di menu Lainnya, di bawah semua kategori, hanya untuk akun yang boleh melihat pengaturan. Aplikasi admin 1.0.35
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema. Naikkan versi: root, backend, frontend ke 5.40.0, aplikasi admin ke 1.0.35
+
 ### v5.39.6 — 2026-11-06 - Tautan Dukung Salfanet di Panel Admin
 
 ### Panel admin
@@ -1152,14 +1174,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - Semua jalur pembayaran kini memakai satu perhitungan masa aktif. Aturan prabayar tidak berubah: bayar sebelum atau pada hari kadaluarsa tanggalnya tetap, bayar setelahnya mengikuti tanggal bayar
 - Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.39.3
 
-### v5.39.2 — 2026-11-06 - Perbaikan Build Rilis 5.39.1
-
-### Koreksi
-- **[FIX]** Rilis 5.39.1 berisi koma ganda di `invoice-jobs.ts`, sehingga backend tidak bisa dibangun. Jangan memakai 5.39.1. Rilis ini memperbaikinya, dan seluruh isi 5.39.1 berlaku di sini
-
-### Catatan Pembaruan
-- Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.39.2
-
 <!-- AUTO-CHANGELOG:END -->
 
 See full changelog: [CHANGELOG.md](CHANGELOG.md)
@@ -1175,6 +1189,7 @@ See full changelog: [CHANGELOG.md](CHANGELOG.md)
 | [docs/features/CRON-SYSTEM.md](./docs/features/CRON-SYSTEM.md) | Cron jobs: runner, job list, history, manual runs |
 | [docs/setup/FREERADIUS-SETUP.md](./docs/setup/FREERADIUS-SETUP.md) | FreeRADIUS configuration guide |
 | [docs/features/GENIEACS-GUIDE.md](./docs/features/GENIEACS-GUIDE.md) | GenieACS TR-069 setup & WiFi management |
+| [docs/features/OLT-SNMP-REFERENCE.md](./docs/features/OLT-SNMP-REFERENCE.md) | OID SNMP OLT C-Data, HSGQ, V-SOL dan status verifikasinya |
 | [docs/billing/AGENT_DEPOSIT_SYSTEM.md](./docs/billing/AGENT_DEPOSIT_SYSTEM.md) | Agent balance & deposit |
 
 ## ☕ Dukung Proyek

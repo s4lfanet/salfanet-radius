@@ -1076,10 +1076,14 @@ export default function OLTsPage() {
                     className="w-full px-2 py-1.5 text-xs border dark:border-gray-700 rounded dark:bg-gray-800"
                   >
                     <option value="">-- Select Vendor --</option>
+                    <option value="auto">Otomatis (deteksi dari OLT)</option>
                     <option value="huawei">Huawei</option>
                     <option value="zte">ZTE</option>
                     <option value="fiberhome">FiberHome</option>
                     <option value="hioso">Hioso / C-Data</option>
+                    <option value="cdata">C-Data FD11xx / FD16xx</option>
+                    <option value="hsgq">HSGQ</option>
+                    <option value="vsol">V-SOL</option>
                     <option value="bdcom">BDCOM</option>
                     <option value="raisecom">Raisecom</option>
                     <option value="other">Other</option>
