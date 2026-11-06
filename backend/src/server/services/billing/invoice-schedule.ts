@@ -81,7 +81,7 @@ export function isolirDateAfterPayment(
 }
 
 /** A package's validity counted from `from`. Months keep the day, clamped: 31 Jan + 1 month is 28 Feb. */
-function afterValidity(from: Date, validity: { validityUnit: string; validityValue: number }): Date {
+export function afterValidity(from: Date, validity: { validityUnit: string; validityValue: number }): Date {
   const { validityUnit: unit, validityValue: value } = validity;
   if (unit === 'MONTHS') {
     const c = companyDate(from);
@@ -107,6 +107,29 @@ export function postpaidIsolirAfterPayment(
 ): Date | null {
   if (user.subscriptionType !== 'POSTPAID') return null;
   return user.postpaidIsolirMode === 'PAYMENT_DATE' ? afterValidity(now, validity) : isolirDateAfterPayment(user, invoiceDueDate, now);
+}
+
+/**
+ * Paid before expiry the remaining days are kept, so the date stays; paid after it the
+ * new period starts on the day of payment.
+ */
+export function extendedExpiry(expiredAt: Date | null | undefined, validity: { validityUnit: string; validityValue: number }, now: Date): Date {
+  return afterValidity(expiredAt && expiredAt > now ? expiredAt : now, validity);
+}
+
+/** The expiry a paid invoice gives a customer. Every payment path uses this, so they cannot disagree. */
+export function expiryAfterPayment(
+  user: { subscriptionType: string; postpaidIsolirMode: string; billingDay: number | null; expiredAt: Date | null },
+  validity: { validityUnit: string; validityValue: number },
+  invoiceDueDate: Date | null | undefined,
+  now: Date,
+): Date {
+  return postpaidIsolirAfterPayment(user, validity, invoiceDueDate, now) ?? extendedExpiry(user.expiredAt, validity, now);
+}
+
+/** Expiry of a brand new customer: the end of the day their first period runs out. */
+export function firstExpiry(validity: { validityUnit: string; validityValue: number }, now: Date): Date {
+  return endOfCompanyDay(companyDate(afterValidity(now, validity)));
 }
 
 /**

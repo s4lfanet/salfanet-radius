@@ -13,6 +13,7 @@ import {
   prepaidDueDate,
   prepaidIsDue,
   postpaidShouldIsolate,
+  extendedExpiry,
 } from '@/server/services/billing/invoice-schedule';
 
 /**
@@ -676,16 +677,7 @@ export async function runAutoRenewal(): Promise<{ renewed: number; skipped: numb
       // stay consistent. If any step fails, everything rolls back.
       const validityValue = (user.profile as any).validityValue || 1;
       const validityUnit = (user.profile as any).validityUnit || 'MONTHS';
-      let validityMs: number;
-      switch (validityUnit) {
-        case 'MINUTES': validityMs = validityValue * 60 * 1000; break;
-        case 'HOURS':   validityMs = validityValue * 60 * 60 * 1000; break
-        case 'DAYS':    validityMs = validityValue * 24 * 60 * 60 * 1000; break;
-        case 'MONTHS':  validityMs = validityValue * 30 * 24 * 60 * 60 * 1000; break;
-        default:        validityMs = 30 * 24 * 60 * 60 * 1000;
-      }
-      const baseDate = user.expiredAt && user.expiredAt > now ? user.expiredAt : now;
-      const newExpiredAt = new Date(baseDate.getTime() + validityMs);
+      const newExpiredAt = extendedExpiry(user.expiredAt, { validityUnit, validityValue }, now);
 
       try {
         await prisma.$transaction(async (tx) => {

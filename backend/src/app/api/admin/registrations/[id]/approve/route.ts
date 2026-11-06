@@ -8,6 +8,7 @@ import { toUTC, nowWIB } from '@/lib/timezone';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { defaultPostpaidIsolirMode } from '@/server/services/billing/postpaid-isolir.service';
 import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
+import { firstExpiry } from '@/server/services/billing/invoice-schedule';
 
 // Helper to generate username from name and phone
 function generateUsername(name: string, phone: string): string {
@@ -132,15 +133,7 @@ export async function POST(
       expiredAt.setHours(23, 59, 59, 999);
       expiredAt = toUTC(expiredAt); // Convert local WIB → WIB-as-UTC for Prisma/MySQL
     } else {
-      // PREPAID: expiredAt = now + validity dari profile
-      expiredAt = new Date(now);
-      if (registration.profile.validityUnit === 'MONTHS') {
-        expiredAt.setMonth(expiredAt.getMonth() + registration.profile.validityValue);
-      } else {
-        expiredAt.setDate(expiredAt.getDate() + registration.profile.validityValue);
-      }
-      expiredAt.setHours(23, 59, 59, 999);
-      expiredAt = toUTC(expiredAt); // Convert local WIB → WIB-as-UTC for Prisma/MySQL
+      expiredAt = firstExpiry(registration.profile, now);
     }
 
     // Resolve referral code to referrer ID

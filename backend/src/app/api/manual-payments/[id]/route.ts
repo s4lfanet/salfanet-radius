@@ -3,13 +3,12 @@ import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { WhatsAppService } from '@/server/services/notifications/whatsapp.service';
 import { EmailService } from '@/server/services/notifications/email.service';
-import { addMonths } from 'date-fns';
 import { generateTransactionId } from '@/server/services/billing/invoice.service';
 import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service';
 import { sendPushToUser } from '@/server/services/notifications/push-templates.service';
 import { toUTC, nowWIB, getCurrentTimezone } from '@/lib/timezone';
 import { createAdminNotification } from '@/server/services/notifications/admin-notification.service';
-import { postpaidIsolirAfterPayment } from '@/server/services/billing/invoice-schedule';
+import { expiryAfterPayment } from '@/server/services/billing/invoice-schedule';
 
 function formatBankAccountsWA(bankAccounts: any): string {
   if (!bankAccounts) return '';
@@ -148,24 +147,7 @@ export async function PATCH(
       const validityValue = manualPayment.user.profile?.validityValue ?? 1;
       const validityUnit = manualPayment.user.profile?.validityUnit ?? 'MONTHS';
 
-      let newExpiry = new Date(currentExpiry);
-
-      switch (validityUnit) {
-        case 'MONTHS':
-          newExpiry = addMonths(newExpiry, validityValue);
-          break;
-        case 'DAYS':
-          newExpiry.setDate(newExpiry.getDate() + validityValue);
-          break;
-        case 'HOURS':
-          newExpiry.setHours(newExpiry.getHours() + validityValue);
-          break;
-        case 'MINUTES':
-          newExpiry.setMinutes(newExpiry.getMinutes() + validityValue);
-          break;
-      }
-
-      newExpiry = postpaidIsolirAfterPayment(manualPayment.user, { validityUnit, validityValue }, manualPayment.invoice?.dueDate, now) ?? newExpiry;
+      const newExpiry = expiryAfterPayment(manualPayment.user, { validityUnit, validityValue }, manualPayment.invoice?.dueDate, now);
 
       // ============================================
       // CHECK FOR PACKAGE CHANGE IN INVOICE METADATA

@@ -1,14 +1,14 @@
 import 'server-only'
 import { prisma } from '@/server/db/client';
 import { sendPaymentSuccess } from '@/server/services/notifications/whatsapp-templates.service';
-import { toUTC, nowWIB, getCurrentTimezone } from '@/lib/timezone';
+import { nowWIB, getCurrentTimezone } from '@/lib/timezone';
 import { logActivity } from '@/server/services/activity-log.service';
 import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service';
 import { managePppSecret, shouldManagePppSecretForSuspend, kickPppoeSession } from '@/server/services/mikrotik/ppp-secret.service';
 import { settlePaymentAttempt } from '@/server/services/payment/payment-attempt.service';
 import crypto from 'crypto';
 import { nanoid } from 'nanoid';
-import { postpaidIsolirAfterPayment } from '@/server/services/billing/invoice-schedule';
+import { expiryAfterPayment } from '@/server/services/billing/invoice-schedule';
 
 /**
  * Settles a PPPoE invoice paid through any channel: marks it PAID, records
@@ -169,33 +169,7 @@ export async function handleInvoicePayment(
         const now = nowWIB();
         const normalizedStatus = (user.status || '').toLowerCase();
 
-        // PREPAID vs POSTPAID logic
-        let newExpiredAt: Date | null = null;
-
-        // Both PREPAID and POSTPAID: Extend expiredAt by validity period
-        {
-          let baseDate = user.expiredAt ? new Date(user.expiredAt) : now;
-          if (baseDate < now) {
-            baseDate = now;
-          }
-
-          newExpiredAt = new Date(baseDate);
-
-          switch (profile.validityUnit) {
-            case 'DAYS':
-              newExpiredAt.setDate(newExpiredAt.getDate() + profile.validityValue);
-              break;
-            case 'MONTHS':
-              newExpiredAt.setMonth(newExpiredAt.getMonth() + profile.validityValue);
-              break;
-            case 'HOURS':
-              newExpiredAt.setHours(newExpiredAt.getHours() + profile.validityValue);
-              break;
-            case 'MINUTES':
-              newExpiredAt.setMinutes(newExpiredAt.getMinutes() + profile.validityValue);
-              break;
-          }
-        }
+        const newExpiredAt = expiryAfterPayment(user, profile, invoice.dueDate, now);
 
         // Determine if user should be activated (include blocked/stop status)
         wasDisabled = ['isolated', 'suspended', 'blocked', 'stop'].includes(normalizedStatus);
@@ -220,7 +194,7 @@ export async function handleInvoicePayment(
         }
 
         // For package change: keep existing expiredAt, do NOT extend
-        const finalExpiredAt = isPackageChange ? user.expiredAt : postpaidIsolirAfterPayment(user, profile, invoice.dueDate, now) ?? toUTC(newExpiredAt);
+        const finalExpiredAt = isPackageChange ? user.expiredAt : newExpiredAt;
 
         // Update user inside the transaction
         await tx.pppoeUser.update({

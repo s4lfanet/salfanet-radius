@@ -15,7 +15,7 @@ import { generateInvoiceNumber } from '@/server/services/billing/invoice.service
 import { randomBytes } from 'crypto';
 import type { NextRequest } from 'next/server';
 import type { Session } from 'next-auth';
-import { isolirDateAfterPayment } from '@/server/services/billing/invoice-schedule';
+import { firstExpiry, isolirDateAfterPayment } from '@/server/services/billing/invoice-schedule';
 import { defaultPostpaidIsolirMode, isIsolirMode } from '@/server/services/billing/postpaid-isolir.service';
 
 // ─── MAC address validation ──────────────────────────────────────────────────
@@ -365,14 +365,7 @@ export async function createPppoeUser(
     if (expiredAt) {
       finalExpiredAt = new Date(expiredAt);
     } else {
-      finalExpiredAt = new Date(now);
-      if (profile.validityUnit === 'MONTHS') {
-        finalExpiredAt.setMonth(finalExpiredAt.getMonth() + profile.validityValue);
-      } else {
-        finalExpiredAt.setDate(finalExpiredAt.getDate() + profile.validityValue);
-      }
-      finalExpiredAt.setHours(23, 59, 59, 999);
-      finalExpiredAt = toUTC(finalExpiredAt); // Convert local WIB â†’ WIB-as-UTC for Prisma/MySQL
+      finalExpiredAt = firstExpiry(profile, now);
     }
   }
 

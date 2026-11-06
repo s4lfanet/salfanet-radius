@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.39.2 - Perbaikan Build Rilis 5.39.1
+> **Version:** 5.39.3 - Masa Aktif Prabayar Konsisten di Semua Jalur
 
 ---
 
@@ -1111,6 +1111,21 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.39.3 — 2026-11-06 - Masa Aktif Prabayar Konsisten di Semua Jalur
+
+### Prabayar
+- **[FIX]** Persetujuan pembayaran manual kini mengikuti tanggal bayar saat pelanggan bayar setelah kadaluarsa. Sebelumnya masa aktif ditambah dari tanggal lama, sehingga bisa tetap lewat dan pelanggan terisolir lagi walau sudah bayar
+- **[FIX]** Bayar di akhir bulan tidak lagi melompat: 31 Januari ditambah satu bulan menjadi 28 Februari, bukan awal Maret. Berlaku di semua jalur pembayaran, perpanjang manual, dan pelanggan baru
+- **[CHANGE]** Perpanjang otomatis dari saldo memakai bulan kalender, bukan 30 hari, sama seperti jalur lain
+- **[CHANGE]** Paket bulanan kini berakhir di ujung hari. Paket harian, per jam, dan per menit tetap dihitung dari waktu tepatnya
+
+### Pascabayar
+- **[FIX]** Perpanjang manual admin kini mengikuti pilihan Tanggal Isolir pelanggan
+
+### Catatan Pembaruan
+- Semua jalur pembayaran kini memakai satu perhitungan masa aktif. Aturan prabayar tidak berubah: bayar sebelum atau pada hari kadaluarsa tanggalnya tetap, bayar setelahnya mengikuti tanggal bayar
+- Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.39.3
+
 ### v5.39.2 — 2026-11-06 - Perbaikan Build Rilis 5.39.1
 
 ### Koreksi
@@ -1158,23 +1173,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Catatan Pembaruan
 - Menambah kolom `postpaidIsolirMode` pada pelanggan, diterapkan otomatis saat pembaruan. Semua pelanggan lama memakai Sesuai tanggal jatuh tempo, jadi jadwal isolir mereka tidak berubah. Tanggal Isolir yang tampil pada pelanggan lama baru terkoreksi saat pembayaran berikutnya
 - Naikkan versi: root, backend, frontend ke 5.38.0, aplikasi admin ke 1.0.33
-
-### v5.37.0 — 2026-11-06 - Laporan Kewajiban BHP dan USO
-
-### Kewajiban BHP & USO
-- **[NEW]** Halaman **Kewajiban BHP & USO** di menu Keuangan untuk ISP berizin. Menghitung BHP Telekomunikasi 0,5% dan USO 1,25% per tahun buku, dengan rekap bulanan, PPN yang dipungut, serta export Excel dan PDF. Tarif bisa diubah di Pengaturan
-- **[NEW]** Dasar hitung adalah pendapatan tanpa PPN, dikurangi piutang tak tertagih, interkoneksi ke penyelenggara lain, dan pendapatan bukan telekomunikasi. Dasar pendapatan bisa dipilih: tagihan terbit atau pembayaran diterima
-- **[NEW]** Pendapatan dibaca dari tagihan, ditambah voucher, pemasukan manual, dan perpanjangan dari saldo yang tidak punya tagihan. Top-up, deposit, tagihan batal, dan tagihan lunas lewat diskon tidak dihitung. Pembayaran tagihan yang juga tercatat di Riwayat Transaksi tidak dihitung dua kali, dan addon tidak dianggap berisi PPN
-- **[NEW]** Penghapusan piutang memakai nomor tagihan dan hanya untuk tagihan belum dibayar. Status tagihan tidak berubah, dan penyesuaiannya otomatis tidak dihitung bila tagihan itu kemudian dibayar atau dibatalkan
-- **[NEW]** Pengingat ke admin pada April, dua kali, menjelang jatuh tempo 30 April. Aktif setelah Pengaturan disimpan sekali, supaya ISP mitra tidak menerimanya
-- **[NEW]** Kolom PPh Final opsional untuk ISP yang memakai tarif UMKM, tersembunyi selama tarifnya 0
-- **[FEATURE]** Export Data jenis Tagihan kini menampilkan DPP dan PPN per pelanggan
-- **[DOCS]** Pusat Panduan menambah panduan Kewajiban BHP & USO
-
-BHP dan USO adalah biaya ISP, jadi tagihan pelanggan tidak berubah. Angkanya perkiraan dan perlu dicocokkan dengan pedoman serta surat tagihan Komdigi.
-
-### Catatan Pembaruan
-- Menambah tabel `regulatory_settings` dan `regulatory_adjustments`, diterapkan otomatis saat pembaruan. Aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.37.0
 
 <!-- AUTO-CHANGELOG:END -->
 

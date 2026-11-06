@@ -3,8 +3,9 @@ import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { generateInvoiceNumber, generateInvoiceId, generateTransactionId, generateCategoryId } from '@/server/services/billing/invoice.service';
 import { managePppSecret, shouldManagePppSecretForSuspend, kickPppoeSession } from '@/server/services/mikrotik/ppp-secret.service';
-import { toUTC, nowWIB } from '@/lib/timezone';
+import { nowWIB } from '@/lib/timezone';
 import crypto from 'crypto';
+import { expiryAfterPayment } from '@/server/services/billing/invoice-schedule';
 
 export async function POST(
   request: NextRequest,
@@ -40,11 +41,8 @@ export async function POST(
     const now = nowWIB();
     const currentExpired = user.expiredAt ? new Date(user.expiredAt) : now;
     
-    // Calculate new expiry date (extend from current expiry or now, whichever is later)
-    const baseDate = currentExpired > now ? currentExpired : now;
-    const newExpiredAt = new Date(baseDate);
-    newExpiredAt.setMonth(newExpiredAt.getMonth() + 1); // Extend by 1 month
-    const finalExpiredAt = toUTC(newExpiredAt);
+    const newExpiredAt = expiryAfterPayment(user, { validityUnit: 'MONTHS', validityValue: 1 }, null, now);
+    const finalExpiredAt = newExpiredAt;
 
     // Update user
     const updatedUser = await prisma.pppoeUser.update({

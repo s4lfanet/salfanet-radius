@@ -3,11 +3,11 @@ import { prisma } from '@/server/db/client';
 import { verifyCollector } from '@/server/auth/collector-auth';
 import { getCollectorScope, inScope } from '@/server/auth/collector-scope';
 import { cancelPendingOntTasksForPaidUser } from '@/server/services/ont-removal-task.service';
-import { nowWIB, toUTC, getCurrentTimezone } from '@/lib/timezone';
+import { nowWIB, getCurrentTimezone } from '@/lib/timezone';
 import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service';
 import { managePppSecret, shouldManagePppSecretForSuspend, kickPppoeSession } from '@/server/services/mikrotik/ppp-secret.service';
 import { recordInvoiceIncome } from '@/server/services/billing/invoice-income.service';
-import { postpaidIsolirAfterPayment } from '@/server/services/billing/invoice-schedule';
+import { expiryAfterPayment } from '@/server/services/billing/invoice-schedule';
 
 // POST - mark invoice as paid by collector
 // Mirrors the payment webhook flow: records payment, extends expiry,
@@ -102,29 +102,7 @@ export async function POST(req: NextRequest) {
 
     // Extend expiry by profile validity
     let newExpiredAt: Date | null = user.expiredAt;
-    if (user.profile) {
-      const now = nowWIB();
-      let baseDate = user.expiredAt ? new Date(user.expiredAt) : now;
-      if (baseDate < now) {
-        baseDate = now;
-      }
-      newExpiredAt = new Date(baseDate);
-      switch (user.profile.validityUnit) {
-        case 'DAYS':
-          newExpiredAt.setDate(newExpiredAt.getDate() + user.profile.validityValue);
-          break;
-        case 'MONTHS':
-          newExpiredAt.setMonth(newExpiredAt.getMonth() + user.profile.validityValue);
-          break;
-        case 'HOURS':
-          newExpiredAt.setHours(newExpiredAt.getHours() + user.profile.validityValue);
-          break;
-        case 'MINUTES':
-          newExpiredAt.setMinutes(newExpiredAt.getMinutes() + user.profile.validityValue);
-          break;
-      }
-      newExpiredAt = postpaidIsolirAfterPayment(user, user.profile, invoice.dueDate, now) ?? toUTC(newExpiredAt);
-    }
+    if (user.profile) newExpiredAt = expiryAfterPayment(user, user.profile, invoice.dueDate, nowWIB());
 
     // Wrap invoice update + proof creation in a transaction so they
     // either both succeed or both roll back — prevents orphaned PAID

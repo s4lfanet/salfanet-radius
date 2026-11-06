@@ -14,7 +14,7 @@ import { generateInvoiceNumber } from '@/server/services/billing/invoice.service
 import { toUTC, nowWIB } from '@/lib/timezone';
 import { ok, created, badRequest, notFound, serverError } from '@/lib/api-response';
 import { notifyCollector, fmtRupiah } from '@/server/services/collector-notification.service';
-import { postpaidIsolirAfterPayment } from '@/server/services/billing/invoice-schedule';
+import { expiryAfterPayment } from '@/server/services/billing/invoice-schedule';
 // Generate secure random token for payment link
 function generatePaymentToken(): string {
   return randomBytes(32).toString('hex');
@@ -373,30 +373,7 @@ export async function PUT(request: NextRequest) {
       const profile = user.profile;
 
       if (profile) {
-        // Calculate new expiredAt
-        // Base: use current expiredAt if still in the future, otherwise use now (payment date)
-        // Both PREPAID and POSTPAID get a full validity period after each payment
         const now = nowWIB();
-        let baseDate = user.expiredAt ? new Date(user.expiredAt) : now;
-        if (baseDate < now) {
-          baseDate = now; // Expired already → start fresh from payment date
-        }
-        let newExpiry = new Date(baseDate);
-
-        switch (profile.validityUnit) {
-          case 'DAYS':
-            newExpiry.setDate(newExpiry.getDate() + profile.validityValue);
-            break;
-          case 'MONTHS':
-            newExpiry.setMonth(newExpiry.getMonth() + profile.validityValue);
-            break;
-          case 'HOURS':
-            newExpiry.setHours(newExpiry.getHours() + profile.validityValue);
-            break;
-          case 'MINUTES':
-            newExpiry.setMinutes(newExpiry.getMinutes() + profile.validityValue);
-            break;
-        }
 
         // Check if this is a package change invoice, update profileId accordingly
         let targetProfileId = user.profileId;
@@ -424,7 +401,7 @@ export async function PUT(request: NextRequest) {
         }
 
         // For package change: preserve existing expiredAt, do NOT extend
-        const finalExpiry = isPackageChange ? (user.expiredAt || now) : postpaidIsolirAfterPayment(user, profile, existingInvoice.dueDate, now) ?? toUTC(newExpiry);
+        const finalExpiry = isPackageChange ? (user.expiredAt || now) : expiryAfterPayment(user, profile, existingInvoice.dueDate, now);
 
         // Update user expiredAt, activate if isolated/suspended/expired, and update profileId if package changed
         const shouldActivate = ['isolated', 'suspended', 'expired'].includes(user.status);

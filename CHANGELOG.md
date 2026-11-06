@@ -6,6 +6,23 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.39.3] - 2026-11-06 - Masa Aktif Prabayar Konsisten di Semua Jalur
+
+### Prabayar
+- **[FIX]** Persetujuan pembayaran manual kini mengikuti tanggal bayar saat pelanggan bayar setelah kadaluarsa. Sebelumnya masa aktif ditambah dari tanggal lama, sehingga bisa tetap lewat dan pelanggan terisolir lagi walau sudah bayar
+- **[FIX]** Bayar di akhir bulan tidak lagi melompat: 31 Januari ditambah satu bulan menjadi 28 Februari, bukan awal Maret. Berlaku di semua jalur pembayaran, perpanjang manual, dan pelanggan baru
+- **[CHANGE]** Perpanjang otomatis dari saldo memakai bulan kalender, bukan 30 hari, sama seperti jalur lain
+- **[CHANGE]** Paket bulanan kini berakhir di ujung hari. Paket harian, per jam, dan per menit tetap dihitung dari waktu tepatnya
+
+### Pascabayar
+- **[FIX]** Perpanjang manual admin kini mengikuti pilihan Tanggal Isolir pelanggan
+
+### Catatan Pembaruan
+- Semua jalur pembayaran kini memakai satu perhitungan masa aktif. Aturan prabayar tidak berubah: bayar sebelum atau pada hari kadaluarsa tanggalnya tetap, bayar setelahnya mengikuti tanggal bayar
+- Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.39.3
+
+---
+
 ## [5.39.2] - 2026-11-06 - Perbaikan Build Rilis 5.39.1
 
 ### Koreksi
