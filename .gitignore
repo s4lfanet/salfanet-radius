@@ -172,6 +172,7 @@ GoogleService-Info.plist
 .codeium/
 .github/*
 !.github/workflows/
+!.github/FUNDING.yml
 CLAUDE.md
 AGENTS.md
 GEMINI.md
