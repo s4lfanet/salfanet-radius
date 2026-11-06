@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.39.1 - Isolir Mengikuti Tanggal Bayar untuk Semua Pembayaran
+> **Version:** 5.39.2 - Perbaikan Build Rilis 5.39.1
 
 ---
 
@@ -1111,6 +1111,14 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.39.2 — 2026-11-06 - Perbaikan Build Rilis 5.39.1
+
+### Koreksi
+- **[FIX]** Rilis 5.39.1 berisi koma ganda di `invoice-jobs.ts`, sehingga backend tidak bisa dibangun. Jangan memakai 5.39.1. Rilis ini memperbaikinya, dan seluruh isi 5.39.1 berlaku di sini
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.39.2
+
 ### v5.39.1 — 2026-11-06 - Isolir Mengikuti Tanggal Bayar untuk Semua Pembayaran
 
 ### Tagihan pascabayar
@@ -1167,14 +1175,6 @@ BHP dan USO adalah biaya ISP, jadi tagihan pelanggan tidak berubah. Angkanya per
 
 ### Catatan Pembaruan
 - Menambah tabel `regulatory_settings` dan `regulatory_adjustments`, diterapkan otomatis saat pembaruan. Aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.37.0
-
-### v5.36.8 — 2026-11-06 - Halaman Ajak Teman Selesai Diganti
-
-### Koreksi
-- **[FIX]** Rilis 5.36.7 baru mengganti nama di menu samping dan menu cepat Beranda, karena skrip penggantiannya gagal di tengah jalan, padahal catatannya menyebut seluruh portal. Rilis ini menyelesaikan sisanya: halaman Ajak Teman, teks bagikan, pesan galat, dan isian kode di halaman Daftar
-
-### Catatan Pembaruan
-- Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.36.8
 
 <!-- AUTO-CHANGELOG:END -->
 

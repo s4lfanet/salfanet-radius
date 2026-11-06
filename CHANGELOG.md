@@ -6,6 +6,16 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.39.2] - 2026-11-06 - Perbaikan Build Rilis 5.39.1
+
+### Koreksi
+- **[FIX]** Rilis 5.39.1 berisi koma ganda di `invoice-jobs.ts`, sehingga backend tidak bisa dibangun. Jangan memakai 5.39.1. Rilis ini memperbaikinya, dan seluruh isi 5.39.1 berlaku di sini
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.39.2
+
+---
+
 ## [5.39.1] - 2026-11-06 - Isolir Mengikuti Tanggal Bayar untuk Semua Pembayaran
 
 ### Tagihan pascabayar

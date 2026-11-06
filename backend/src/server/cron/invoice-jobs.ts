@@ -11,7 +11,7 @@ import {
   companyMonthRange,
   postpaidDueDate,
   prepaidDueDate,
-  prepaidIsDue,,
+  prepaidIsDue,
   postpaidShouldIsolate,
 } from '@/server/services/billing/invoice-schedule';
 
