@@ -1,6 +1,6 @@
 {
   "name": "@salfanet/frontend",
-  "version": "5.39.4",
+  "version": "5.39.5",
   "private": true,
   "scripts": {
     "dev": "next dev",

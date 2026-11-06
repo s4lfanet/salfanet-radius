@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.39.4 - Lisensi MIT dan Pembaruan README
+> **Version:** 5.39.5 - Tautan Donasi
 
 ---
 
@@ -1111,6 +1111,14 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.39.5 — 2026-11-06 - Tautan Donasi
+
+### Dokumentasi
+- **[DOCS]** Tombol Sponsor di GitHub dan bagian Dukung Proyek di README kini mengarah ke Saweria. Donasi bersifat sukarela, dan lisensi tetap MIT
+
+### Catatan Pembaruan
+- Tidak ada perubahan kode aplikasi atau skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.39.5
+
 ### v5.39.4 — 2026-11-06 - Lisensi MIT dan Pembaruan README
 
 ### Dokumentasi
@@ -1154,20 +1162,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Catatan Pembaruan
 - Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.39.1
 
-### v5.39.0 — 2026-11-06 - Tanggal Isolir Pascabayar Serba Otomatis
-
-### Tagihan pascabayar
-- **[NEW]** **Pengaturan Isolir** punya pilihan **Tanggal isolir pascabayar**: Sama dengan tanggal tagihan, atau Otomatis mengikuti tanggal bayar. Pelanggan baru dari form, pendaftaran, dan import memakai pilihan ini
-- **[NEW]** Tombol **Terapkan ke semua pelanggan pascabayar** mengubah semua pelanggan sekaligus, tanpa edit satu per satu. Bila memilih tanggal tagihan, Tanggal Isolir yang sudah bergeser ikut dikembalikan ke tanggal tagihan berikutnya
-- **[NEW]** **Edit Massal** bisa mengubah pilihan ini untuk pelanggan terpilih
-- **[CHANGE]** Pada pilihan Sama dengan tanggal tagihan, Tanggal Isolir di form edit terkunci dan dihitung otomatis setiap disimpan, termasuk saat tanggal tagihan diubah lewat form atau Edit Massal
-- **[CHANGE]** Nama pilihan di form dan aplikasi admin diperjelas. Form tambah di web punya opsi Ikuti Pengaturan Isolir, dan form tambah di aplikasi langsung mengikuti pengaturan
-- **[DOCS]** Panduan Pelanggan PPPoE diperbarui
-
-### Catatan Pembaruan
-- Menambah kolom `postpaidIsolirMode` pada pengaturan perusahaan, diterapkan otomatis saat pembaruan. Data pelanggan tidak berubah sampai tombol Terapkan diklik
-- Naikkan versi: root, backend, frontend ke 5.39.0, aplikasi admin ke 1.0.34
-
 <!-- AUTO-CHANGELOG:END -->
 
 See full changelog: [CHANGELOG.md](CHANGELOG.md)
@@ -1185,7 +1179,9 @@ See full changelog: [CHANGELOG.md](CHANGELOG.md)
 | [docs/features/GENIEACS-GUIDE.md](./docs/features/GENIEACS-GUIDE.md) | GenieACS TR-069 setup & WiFi management |
 | [docs/billing/AGENT_DEPOSIT_SYSTEM.md](./docs/billing/AGENT_DEPOSIT_SYSTEM.md) | Agent balance & deposit |
 
-<!-- Donation section: add it here once the donation URL is ready, together with .github/FUNDING.yml. -->
+## ☕ Dukung Proyek
+
+Salfanet Radius gratis dipakai dan akan tetap gratis. Kalau proyek ini membantu ISP Anda, dukungan sukarela lewat [Saweria](https://saweria.co/salfanetradius) membantu pengembangannya terus berjalan.
 
 ## 📝 License
 

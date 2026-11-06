@@ -6,6 +6,16 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.39.5] - 2026-11-06 - Tautan Donasi
+
+### Dokumentasi
+- **[DOCS]** Tombol Sponsor di GitHub dan bagian Dukung Proyek di README kini mengarah ke Saweria. Donasi bersifat sukarela, dan lisensi tetap MIT
+
+### Catatan Pembaruan
+- Tidak ada perubahan kode aplikasi atau skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.39.5
+
+---
+
 ## [5.39.4] - 2026-11-06 - Lisensi MIT dan Pembaruan README
 
 ### Dokumentasi
