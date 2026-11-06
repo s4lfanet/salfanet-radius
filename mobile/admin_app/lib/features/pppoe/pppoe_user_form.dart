@@ -23,7 +23,7 @@ Future<String> Function(XFile) customerPhotoUploader(String type) => (file) asyn
 
 const _connectionTypes = [('PPPOE', 'PPPoE'), ('STATIC_IP', 'Static IP (ARP)'), ('HOTSPOT', 'Static IP (Hotspot binding)')];
 const _subscriptionTypes = [('POSTPAID', 'Pascabayar'), ('PREPAID', 'Prabayar')];
-const _isolirModes = [('DUE_DATE', 'Sesuai tanggal jatuh tempo'), ('PAYMENT_DATE', 'Mengikuti tanggal bayar')];
+const _isolirModes = [('DUE_DATE', 'Sama dengan tanggal tagihan'), ('PAYMENT_DATE', 'Otomatis mengikuti tanggal bayar')];
 
 bool _needsIp(Map<String, dynamic> v) => v['connectionType'] == 'STATIC_IP' || v['connectionType'] == 'HOTSPOT';
 
@@ -51,14 +51,15 @@ List<FieldSpec> _fields({required bool editing, Map<String, dynamic>? installer}
     max: 28,
     visibleIf: (v) => v['subscriptionType'] == 'POSTPAID',
   ),
-  FieldSpec(
-    'postpaidIsolirMode',
-    'Setelah bayar, isolir berikutnya',
-    type: FieldType.select,
-    options: _isolirModes,
-    initial: 'DUE_DATE',
-    visibleIf: (v) => v['subscriptionType'] == 'POSTPAID',
-  ),
+  if (editing)
+    FieldSpec(
+      'postpaidIsolirMode',
+      'Tanggal isolir mengikuti',
+      type: FieldType.select,
+      options: _isolirModes,
+      initial: 'DUE_DATE',
+      visibleIf: (v) => v['subscriptionType'] == 'POSTPAID',
+    ),
   if (!editing)
     const FieldSpec(
       'firstInvoice',

@@ -638,28 +638,34 @@ export default function UserDetailModal({
 
                 {formData.subscriptionType === 'POSTPAID' && (
                   <div>
-                    <label className={labelCls}>Setelah Bayar, Isolir Berikutnya</label>
+                    <label className={labelCls}>Tanggal Isolir Mengikuti</label>
                     <select
                       value={formData.postpaidIsolirMode}
                       onChange={(e) => setFormData({ ...formData, postpaidIsolirMode: e.target.value as 'DUE_DATE' | 'PAYMENT_DATE' })}
                       className={selectCls}
                     >
-                      <option value="DUE_DATE">Sesuai tanggal jatuh tempo</option>
-                      <option value="PAYMENT_DATE">Mengikuti tanggal bayar</option>
+                      <option value="DUE_DATE">Sama dengan tanggal tagihan</option>
+                      <option value="PAYMENT_DATE">Otomatis mengikuti tanggal bayar</option>
                     </select>
-                    <p className={hintCls}>Jatuh tempo tagihan tetap sama setiap bulan. Pilihan ini hanya mengatur tanggal isolir.</p>
+                    <p className={hintCls}>Dihitung otomatis. Jatuh tempo tagihan tetap sama setiap bulan.</p>
                   </div>
                 )}
 
                 {/* Expired At - Shows for both PREPAID and POSTPAID */}
                 <div className={formData.subscriptionType === 'POSTPAID' ? '' : 'sm:col-span-2'}>
                   <label className={labelCls}>Tanggal Isolir</label>
-                  <input type="date" value={formData.expiredAt} onChange={(e) => setFormData({ ...formData, expiredAt: e.target.value })} className={inputCls} />
+                  <input
+                    type="date"
+                    value={formData.expiredAt}
+                    disabled={formData.subscriptionType === 'POSTPAID' && formData.postpaidIsolirMode === 'DUE_DATE'}
+                    onChange={(e) => setFormData({ ...formData, expiredAt: e.target.value })}
+                    className={`${inputCls} disabled:cursor-not-allowed disabled:opacity-60`}
+                  />
                   <p className={hintCls}>
                     {formData.subscriptionType === 'POSTPAID'
                       ? formData.postpaidIsolirMode === 'PAYMENT_DATE'
                         ? 'Pelanggan diisolir setelah tanggal ini bila tagihannya belum dibayar. Bergeser mengikuti tanggal bayar.'
-                        : 'Diperbarui ke jatuh tempo berikutnya setiap pelanggan membayar.'
+                        : 'Otomatis mengikuti tanggal tagihan berikutnya, diperbarui saat disimpan.'
                       : 'Tanggal kedaluwarsa paket. Kosongkan untuk mengikuti profil.'}
                   </p>
                 </div>

@@ -183,8 +183,9 @@ export const GUIDES: PageGuide[] = [
     notes: [
       'Mengubah username atau password di sini langsung berlaku di RADIUS; pelanggan perlu reconnect.',
       'Tanggal Isolir boleh dikosongkan, sistem menghitungnya dari tanggal tagihan dan masa tenggang.',
-      'Pelanggan pascabayar punya pilihan Setelah Bayar, Isolir Berikutnya. Jatuh tempo tagihan tetap sama setiap bulan. Sesuai tanggal jatuh tempo: isolir berikutnya kembali ke jatuh tempo, walau pelanggan bayar terlambat. Mengikuti tanggal bayar: bayar tanggal 10 berarti isolir berikutnya tanggal 10 bulan depan.',
-      'Pada pilihan Mengikuti tanggal bayar, pelanggan yang punya dua tagihan lewat jatuh tempo tetap diisolir walau Tanggal Isolirnya belum lewat.',
+      'Tanggal isolir pascabayar dihitung otomatis, dan jatuh tempo tagihan tetap sama setiap bulan. Sama dengan tanggal tagihan: isolir selalu kembali ke tanggal tagihan, walau pelanggan bayar terlambat. Otomatis mengikuti tanggal bayar: bayar tanggal 10 berarti isolir berikutnya tanggal 10 bulan depan.',
+      'Atur pilihan untuk semua pelanggan di Pengaturan Isolir, lalu klik Terapkan ke semua pelanggan pascabayar. Pelanggan baru mengikuti pengaturan itu. Untuk sebagian pelanggan, pakai Edit Massal.',
+      'Pada pilihan Otomatis mengikuti tanggal bayar, pelanggan yang punya dua tagihan lewat jatuh tempo tetap diisolir walau Tanggal Isolirnya belum lewat.',
     ],
     related: [
       { label: 'Instalatur', href: '/admin/pppoe/installers' },

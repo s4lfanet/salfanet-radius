@@ -487,6 +487,7 @@ export default function PppoeUsersPage() {
   const [bulkEditRouter, setBulkEditRouter] = useState<string>('__unchanged__');
   const [bulkEditBillingDay, setBulkEditBillingDay] = useState<string>('__unchanged__');
   const [bulkEditAutoIsolation, setBulkEditAutoIsolation] = useState<string>('__unchanged__');
+  const [bulkEditIsolirMode, setBulkEditIsolirMode] = useState<string>('__unchanged__');
 
   // Broadcast notification states
   const [isBroadcastDialogOpen, setIsBroadcastDialogOpen] = useState(false);
@@ -1061,7 +1062,7 @@ export default function PppoeUsersPage() {
 
   const confirmBulkEdit = async () => {
     if (selectedUsers.size === 0) return;
-    const fields: { routerId?: string | null; billingDay?: number; autoIsolationEnabled?: boolean } = {};
+    const fields: { routerId?: string | null; billingDay?: number; autoIsolationEnabled?: boolean; postpaidIsolirMode?: string } = {};
     const changes: string[] = [];
     if (bulkEditRouter !== '__unchanged__') {
       fields.routerId = bulkEditRouter === '' ? null : bulkEditRouter;
@@ -1074,6 +1075,10 @@ export default function PppoeUsersPage() {
     if (bulkEditAutoIsolation !== '__unchanged__') {
       fields.autoIsolationEnabled = bulkEditAutoIsolation === 'true';
       changes.push('Auto Isolasi');
+    }
+    if (bulkEditIsolirMode !== '__unchanged__') {
+      fields.postpaidIsolirMode = bulkEditIsolirMode;
+      changes.push('Tanggal Isolir');
     }
     if (changes.length === 0) {
       await showError('Pilih minimal satu field untuk diubah.');
@@ -2357,7 +2362,7 @@ export default function PppoeUsersPage() {
         <SimpleModal isOpen={bulkEditModalOpen} onClose={() => setBulkEditModalOpen(false)} size="md">
           <ModalHeader>
             <ModalTitle className="flex items-center gap-2"><Pencil className="h-4 w-4 text-blue-500" />Edit Massal Pelanggan</ModalTitle>
-            <ModalDescription>Ubah Router, Hari Tagihan, atau Auto Isolasi untuk {selectedUsers.size} pelanggan terpilih sekaligus.</ModalDescription>
+            <ModalDescription>Ubah Router, Hari Tagihan, Auto Isolasi, atau Tanggal Isolir untuk {selectedUsers.size} pelanggan terpilih sekaligus.</ModalDescription>
           </ModalHeader>
           <ModalBody className="space-y-4">
             {/* Router */}
@@ -2406,6 +2411,21 @@ export default function PppoeUsersPage() {
                 <option value="false">Nonaktif (tidak auto isolir)</option>
               </select>
               <p className="text-[10px] text-muted-foreground mt-1">Jika aktif, pelanggan akan diisolir otomatis saat tagihan jatuh tempo.</p>
+            </div>
+
+            {/* Postpaid isolir date */}
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground mb-1">Tanggal Isolir Mengikuti</label>
+              <select
+                value={bulkEditIsolirMode}
+                onChange={(e) => setBulkEditIsolirMode(e.target.value)}
+                className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-card dark:border-border"
+              >
+                <option value="__unchanged__">— Tidak berubah —</option>
+                <option value="DUE_DATE">Sama dengan tanggal tagihan</option>
+                <option value="PAYMENT_DATE">Otomatis mengikuti tanggal bayar</option>
+              </select>
+              <p className="text-[10px] text-muted-foreground mt-1">Hanya berlaku untuk pelanggan pascabayar yang terpilih.</p>
             </div>
           </ModalBody>
           <ModalFooter>

@@ -6,6 +6,7 @@ import crypto from 'crypto';
 import { generateUniqueReferralCode } from '@/server/services/referral.service';
 import { toUTC, nowWIB } from '@/lib/timezone';
 import { requirePermission } from '@/server/middleware/api-auth';
+import { defaultPostpaidIsolirMode } from '@/server/services/billing/postpaid-isolir.service';
 import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
 
 // Helper to generate username from name and phone
@@ -172,6 +173,7 @@ export async function POST(
         syncedToRadius: false,
         subscriptionType: subscriptionType as 'POSTPAID' | 'PREPAID',
         billingDay: validBillingDay,
+        postpaidIsolirMode: await defaultPostpaidIsolirMode(),
         expiredAt: expiredAt,
         referredById: referredById,
         referralCode: await generateUniqueReferralCode(),

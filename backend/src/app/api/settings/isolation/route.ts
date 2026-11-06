@@ -80,6 +80,7 @@ export async function GET(_request: NextRequest) {
         isolationNotifyWhatsapp: true,
         isolationNotifyEmail: true,
         gracePeriodDays: true,
+        postpaidIsolirMode: true,
         baseUrl: true,
       }
     });
@@ -124,7 +125,8 @@ export async function PUT(request: NextRequest) {
       isolationAllowPayment,
       isolationNotifyWhatsapp,
       isolationNotifyEmail,
-      gracePeriodDays
+      gracePeriodDays,
+      postpaidIsolirMode
     } = body;
 
     // Validate IP pool format (basic validation)
@@ -182,6 +184,7 @@ export async function PUT(request: NextRequest) {
         isolationNotifyWhatsapp: isolationNotifyWhatsapp ?? company.isolationNotifyWhatsapp,
         isolationNotifyEmail: isolationNotifyEmail ?? company.isolationNotifyEmail,
         gracePeriodDays: gracePeriodDays ?? company.gracePeriodDays,
+        ...((postpaidIsolirMode === 'DUE_DATE' || postpaidIsolirMode === 'PAYMENT_DATE') && { postpaidIsolirMode }),
       }
     });
 

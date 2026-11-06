@@ -6,6 +6,22 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.39.0] - 2026-11-06 - Tanggal Isolir Pascabayar Serba Otomatis
+
+### Tagihan pascabayar
+- **[NEW]** **Pengaturan Isolir** punya pilihan **Tanggal isolir pascabayar**: Sama dengan tanggal tagihan, atau Otomatis mengikuti tanggal bayar. Pelanggan baru dari form, pendaftaran, dan import memakai pilihan ini
+- **[NEW]** Tombol **Terapkan ke semua pelanggan pascabayar** mengubah semua pelanggan sekaligus, tanpa edit satu per satu. Bila memilih tanggal tagihan, Tanggal Isolir yang sudah bergeser ikut dikembalikan ke tanggal tagihan berikutnya
+- **[NEW]** **Edit Massal** bisa mengubah pilihan ini untuk pelanggan terpilih
+- **[CHANGE]** Pada pilihan Sama dengan tanggal tagihan, Tanggal Isolir di form edit terkunci dan dihitung otomatis setiap disimpan, termasuk saat tanggal tagihan diubah lewat form atau Edit Massal
+- **[CHANGE]** Nama pilihan di form dan aplikasi admin diperjelas. Form tambah di web punya opsi Ikuti Pengaturan Isolir, dan form tambah di aplikasi langsung mengikuti pengaturan
+- **[DOCS]** Panduan Pelanggan PPPoE diperbarui
+
+### Catatan Pembaruan
+- Menambah kolom `postpaidIsolirMode` pada pengaturan perusahaan, diterapkan otomatis saat pembaruan. Data pelanggan tidak berubah sampai tombol Terapkan diklik
+- Naikkan versi: root, backend, frontend ke 5.39.0, aplikasi admin ke 1.0.34
+
+---
+
 ## [5.38.0] - 2026-11-06 - Pilihan Tanggal Isolir Pascabayar
 
 ### Tagihan pascabayar

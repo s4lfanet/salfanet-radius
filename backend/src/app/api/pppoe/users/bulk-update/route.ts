@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requirePermission } from '@/server/middleware/api-auth';
+import { applyPostpaidIsolirMode, isIsolirMode, syncDueDateIsolir } from '@/server/services/billing/postpaid-isolir.service';
 import { prisma } from '@/server/db/client';
 import { managePppSecret } from '@/server/services/mikrotik/ppp-secret.service';
 import { disconnectMultiplePPPoEUsers } from '@/server/services/radius/coa-handler.service';
@@ -20,7 +21,7 @@ export async function PUT(request: Request) {
     const authCheck = await requirePermission('customers.edit');
     if (!authCheck.authorized) return authCheck.response;
     const body = await request.json();
-    const { userIds, routerId, billingDay, autoIsolationEnabled } = body;
+    const { userIds, routerId, billingDay, autoIsolationEnabled, postpaidIsolirMode } = body;
 
     if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
       return NextResponse.json(
@@ -34,7 +35,9 @@ export async function PUT(request: Request) {
     const hasBillingDayChange = billingDay !== undefined;
     const hasAutoIsolationChange = autoIsolationEnabled !== undefined;
 
-    if (!hasRouterChange && !hasBillingDayChange && !hasAutoIsolationChange) {
+    const hasIsolirModeChange = isIsolirMode(postpaidIsolirMode);
+
+    if (!hasRouterChange && !hasBillingDayChange && !hasAutoIsolationChange && !hasIsolirModeChange) {
       return NextResponse.json(
         { error: 'No fields to update. Provide routerId, billingDay, or autoIsolationEnabled.' },
         { status: 400 }
@@ -92,10 +95,14 @@ export async function PUT(request: Request) {
     }
 
     // Update all users in bulk
-    await prisma.pppoeUser.updateMany({
-      where: { id: { in: userIds } },
-      data: updateData,
-    });
+    if (Object.keys(updateData).length > 0) {
+      await prisma.pppoeUser.updateMany({
+        where: { id: { in: userIds } },
+        data: updateData,
+      });
+    }
+    if (hasIsolirModeChange) await applyPostpaidIsolirMode(postpaidIsolirMode, { id: { in: userIds } });
+    if (hasBillingDayChange) await syncDueDateIsolir({ id: { in: userIds } });
 
     // If router changed, sync RADIUS and MikroTik for affected users
     if (hasRouterChange) {
@@ -221,6 +228,7 @@ export async function PUT(request: Request) {
     const updatedFields: string[] = [];
     if (hasRouterChange) updatedFields.push('routerId');
     if (hasBillingDayChange) updatedFields.push('billingDay');
+    if (hasIsolirModeChange) updatedFields.push('postpaidIsolirMode');
     if (hasAutoIsolationChange) updatedFields.push('autoIsolationEnabled');
 
     return NextResponse.json({

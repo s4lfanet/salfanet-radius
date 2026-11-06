@@ -15,6 +15,8 @@ import { generateInvoiceNumber } from '@/server/services/billing/invoice.service
 import { randomBytes } from 'crypto';
 import type { NextRequest } from 'next/server';
 import type { Session } from 'next-auth';
+import { isolirDateAfterPayment } from '@/server/services/billing/invoice-schedule';
+import { defaultPostpaidIsolirMode, isIsolirMode } from '@/server/services/billing/postpaid-isolir.service';
 
 // ─── MAC address validation ──────────────────────────────────────────────────
 /**
@@ -425,7 +427,7 @@ export async function createPppoeUser(
       status: pendingApproval ? 'pending_approval' : 'active',
       subscriptionType: subscriptionType || 'POSTPAID',
       billingDay: billingDay ? Math.min(Math.max(parseInt(String(billingDay)), 1), 28) : 1,
-      postpaidIsolirMode: postpaidIsolirMode === 'PAYMENT_DATE' ? 'PAYMENT_DATE' : 'DUE_DATE',
+      postpaidIsolirMode: isIsolirMode(postpaidIsolirMode) ? postpaidIsolirMode : await defaultPostpaidIsolirMode(),
       idCardNumber: idCardNumber || null,
       idCardPhoto: idCardPhoto || null,
       installationPhotos: installationPhotos ?? null,
@@ -908,6 +910,18 @@ export async function updatePppoeUser(
     if (!router) throw Object.assign(new Error('Router not found'), { code: 'NOT_FOUND' });
   }
 
+  // On DUE_DATE the isolir date is always the next billing day, so saving also
+  // corrects a date that drifted and a manual entry cannot take it off schedule.
+  const dueDateIsolir = isolirDateAfterPayment(
+    {
+      subscriptionType: data.subscriptionType || currentUser.subscriptionType,
+      postpaidIsolirMode: isIsolirMode(data.postpaidIsolirMode) ? data.postpaidIsolirMode : currentUser.postpaidIsolirMode,
+      billingDay: data.billingDay !== undefined ? Math.min(Math.max(parseInt(String(data.billingDay)), 1), 28) : currentUser.billingDay,
+    },
+    null,
+    new Date(),
+  );
+
   // Apply update
   const user = await prisma.pppoeUser.update({
     where: { id },
@@ -943,6 +957,7 @@ export async function updatePppoeUser(
         }
         return { expiredAt: new Date(expStr) };
       })()),
+      ...(dueDateIsolir && { expiredAt: dueDateIsolir }),
       ...(data.autoRenewal !== undefined && { autoRenewal: data.autoRenewal }),
       ...(data.autoIsolationEnabled !== undefined && { autoIsolationEnabled: data.autoIsolationEnabled }),
       ...(data.idCardNumber !== undefined && { idCardNumber: data.idCardNumber }),

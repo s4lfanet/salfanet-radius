@@ -38,6 +38,7 @@ interface IsolationSettings {
   isolationNotifyWhatsapp: boolean;
   isolationNotifyEmail: boolean;
   gracePeriodDays: number;
+  postpaidIsolirMode: 'DUE_DATE' | 'PAYMENT_DATE';
   baseUrl: string;
 }
 
@@ -60,8 +61,10 @@ export default function IsolationSettingsPage() {
     isolationNotifyWhatsapp: true,
     isolationNotifyEmail: false,
     gracePeriodDays: 0,
+    postpaidIsolirMode: 'DUE_DATE',
     baseUrl: '',
   });
+  const [applying, setApplying] = useState(false);
 
   useEffect(() => {
     if (queryData?.success) {
@@ -77,6 +80,7 @@ export default function IsolationSettingsPage() {
         isolationNotifyWhatsapp: queryData.data.isolationNotifyWhatsapp ?? true,
         isolationNotifyEmail: queryData.data.isolationNotifyEmail ?? false,
         gracePeriodDays: queryData.data.gracePeriodDays || 0,
+        postpaidIsolirMode: queryData.data.postpaidIsolirMode ?? 'DUE_DATE',
         baseUrl: queryData.data.baseUrl || '',
       });
     }
@@ -103,6 +107,31 @@ export default function IsolationSettingsPage() {
     }
   };
 
+  const applyToAllPostpaid = async () => {
+    const label = settings.postpaidIsolirMode === 'DUE_DATE' ? 'Sama dengan tanggal tagihan' : 'Otomatis mengikuti tanggal bayar';
+    setApplying(true);
+    try {
+      const counts = await apiAdmin<{ dueDate: number; paymentDate: number }>('/api/settings/isolation/postpaid-mode');
+      const ok = await confirm({
+        title: 'Terapkan ke semua pelanggan pascabayar?',
+        message: `${counts.dueDate + counts.paymentDate} pelanggan akan memakai "${label}". Saat ini ${counts.dueDate} mengikuti tanggal tagihan dan ${counts.paymentDate} mengikuti tanggal bayar.`,
+        confirmText: 'Terapkan',
+        cancelText: t('common.cancel'),
+        variant: 'warning',
+      });
+      if (!ok) return;
+      const result = await apiAdmin<{ updated: number }>('/api/settings/isolation/postpaid-mode', {
+        method: 'POST',
+        body: JSON.stringify({ mode: settings.postpaidIsolirMode }),
+      });
+      addToast({ type: 'success', title: t('common.success'), description: `${result.updated} pelanggan diperbarui.`, duration: 3000 });
+    } catch (error: unknown) {
+      addToast({ type: 'error', title: t('common.failed'), description: error instanceof Error ? error.message : String(error) });
+    } finally {
+      setApplying(false);
+    }
+  };
+
   const handleReset = async () => {
     if (!await confirm({
       title: t('isolation.resetToDefault') + '?',
@@ -123,6 +152,7 @@ export default function IsolationSettingsPage() {
       isolationNotifyWhatsapp: true,
       isolationNotifyEmail: false,
       gracePeriodDays: 0,
+      postpaidIsolirMode: 'DUE_DATE',
       baseUrl: settings.baseUrl,
     });
   };
@@ -207,6 +237,33 @@ export default function IsolationSettingsPage() {
               <p className="text-[10px] text-muted-foreground mt-0.5">
                 {t('isolation.gracePeriodHint')}
               </p>
+            </div>
+
+            <div>
+              <label htmlFor="postpaid-isolir-mode" className="block text-xs font-medium text-foreground mb-1">
+                Tanggal isolir pascabayar
+              </label>
+              <select
+                id="postpaid-isolir-mode"
+                value={settings.postpaidIsolirMode}
+                onChange={(e) => setSettings({ ...settings, postpaidIsolirMode: e.target.value as IsolationSettings['postpaidIsolirMode'] })}
+                className="w-full px-2.5 py-1.5 text-sm border border-border rounded-lg focus:ring-2 focus:ring-primary bg-background dark:bg-input dark:text-foreground"
+              >
+                <option value="DUE_DATE">Sama dengan tanggal tagihan</option>
+                <option value="PAYMENT_DATE">Otomatis mengikuti tanggal bayar</option>
+              </select>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                Dipakai pelanggan baru, termasuk dari pendaftaran dan import, setelah pengaturan disimpan. Jatuh tempo tagihan tidak berubah.
+              </p>
+              <button
+                type="button"
+                onClick={applyToAllPostpaid}
+                disabled={applying}
+                className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-border rounded-lg text-foreground hover:bg-muted disabled:opacity-60"
+              >
+                {applying && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                Terapkan ke semua pelanggan pascabayar
+              </button>
             </div>
           </div>
         </div>

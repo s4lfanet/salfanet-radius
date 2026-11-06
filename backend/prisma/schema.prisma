@@ -106,6 +106,7 @@ model company {
 
   invoiceGenerateDays Int? @default(7) // Days before expiry to generate invoice
   gracePeriodDays     Int? @default(0) // Grace period days after expiry user can still online
+  postpaidIsolirMode  PostpaidIsolirMode @default(DUE_DATE) // Default for new POSTPAID customers
 
   // Isolation settings
   isolationEnabled            Boolean? @default(true) // Enable/disable auto isolation

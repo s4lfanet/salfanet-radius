@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { requirePermission } from '@/server/middleware/api-auth';
+import { defaultPostpaidIsolirMode } from '@/server/services/billing/postpaid-isolir.service';
 import { prisma } from '@/server/db/client';
 import { randomUUID } from 'crypto';
 import { generateExcelBuffer } from '@/lib/utils/export';
@@ -428,6 +429,7 @@ export async function POST(request: NextRequest) {
     // Fetch company prefix once for all rows
     const co = await prisma.company.findFirst({ select: { customerIdPrefix: true } });
     const idPrefix = (co as any)?.customerIdPrefix?.trim() || '';
+    const isolirMode = await defaultPostpaidIsolirMode();
 
     // Process data rows inside a transaction for atomicity
     const results = await prisma.$transaction(async (tx) => {
@@ -577,6 +579,7 @@ export async function POST(request: NextRequest) {
             routerId: rowRouterId,
             status: 'active',
             subscriptionType,
+            postpaidIsolirMode: isolirMode,
           };
 
           // billingDay — only meaningful for POSTPAID

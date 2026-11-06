@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.38.0 - Pilihan Tanggal Isolir Pascabayar
+> **Version:** 5.39.0 - Tanggal Isolir Pascabayar Serba Otomatis
 
 ---
 
@@ -1111,6 +1111,20 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.39.0 — 2026-11-06 - Tanggal Isolir Pascabayar Serba Otomatis
+
+### Tagihan pascabayar
+- **[NEW]** **Pengaturan Isolir** punya pilihan **Tanggal isolir pascabayar**: Sama dengan tanggal tagihan, atau Otomatis mengikuti tanggal bayar. Pelanggan baru dari form, pendaftaran, dan import memakai pilihan ini
+- **[NEW]** Tombol **Terapkan ke semua pelanggan pascabayar** mengubah semua pelanggan sekaligus, tanpa edit satu per satu. Bila memilih tanggal tagihan, Tanggal Isolir yang sudah bergeser ikut dikembalikan ke tanggal tagihan berikutnya
+- **[NEW]** **Edit Massal** bisa mengubah pilihan ini untuk pelanggan terpilih
+- **[CHANGE]** Pada pilihan Sama dengan tanggal tagihan, Tanggal Isolir di form edit terkunci dan dihitung otomatis setiap disimpan, termasuk saat tanggal tagihan diubah lewat form atau Edit Massal
+- **[CHANGE]** Nama pilihan di form dan aplikasi admin diperjelas. Form tambah di web punya opsi Ikuti Pengaturan Isolir, dan form tambah di aplikasi langsung mengikuti pengaturan
+- **[DOCS]** Panduan Pelanggan PPPoE diperbarui
+
+### Catatan Pembaruan
+- Menambah kolom `postpaidIsolirMode` pada pengaturan perusahaan, diterapkan otomatis saat pembaruan. Data pelanggan tidak berubah sampai tombol Terapkan diklik
+- Naikkan versi: root, backend, frontend ke 5.39.0, aplikasi admin ke 1.0.34
+
 ### v5.38.0 — 2026-11-06 - Pilihan Tanggal Isolir Pascabayar
 
 ### Tagihan pascabayar
@@ -1164,26 +1178,6 @@ BHP dan USO adalah biaya ISP, jadi tagihan pelanggan tidak berubah. Angkanya per
 
 ### Catatan Pembaruan
 - Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.36.7
-
-### v5.36.6 — 2026-11-05 - Hasil Uji 635 ONT: Koreksi Tampilan WiFi Pelanggan
-
-### Hasil pengecekan langsung ke GenieACS
-- Data WLAN 635 ONT dibaca dari GenieACS produksi (hanya baca, nama SSID disamarkan, password tidak diambil) lalu dijalankan ke kode 5.36.1, 5.36.3, dan versi ini
-- HG6045F3 pelanggan `server3`: data GenieACS kini benar (slot 1 2.4GHz, slot 9 5GHz). Stempel waktu semua parameter WLAN-nya adalah 15:27:24 UTC, detik yang sama dengan refresh dari 5.36.3. Jadi data ONT yang basi adalah penyebab paling mungkin, dan refresh itulah yang memperbarui datanya. Nilai sebelum refresh tidak tercatat, sehingga ini tidak bisa dibuktikan penuh. Pernyataan di catatan 5.36.4 bahwa refresh "bukan perbaikan masalah ini" keliru
-- Dari 458 ONT dengan 5GHz aktif, tidak ada yang kehilangan kartu 5GHz, di ketiga versi. Dari 590 ONT dengan 2.4GHz aktif, juga tidak ada. Tidak ada slot tanpa nilai SSID
-
-### Perbaikan
-- **[FIX]** Membatalkan "semua slot aktif tampil" dari 5.36.5. Satu SSID aktif di 271 ONT, umumnya di slot 2 dan 3, sehingga pelanggan akan melihat dan bisa mengubah SSID yang kemungkinan milik ISP. Tampilan kembali ke satu SSID per band (slot aktif dengan perangkat terhubung terbanyak, lalu slot terkecil). Versi 5.36.5 jangan dipakai
-- **[FIX]** Penentuan band kini benar di semua data uji: label band yang terbukti salah turun dari 8 menjadi 0, dan kartu 5GHz palsu pada ONT satu band (HG8245H5, HS8145C5, EG8141A5, HS8145C) turun dari 8 menjadi 0
-
-### Tetap dari 5.36.5
-- Status aktif membaca `Status` dari ONT, dukungan ONT TR-181 (tidak ada ONT TR-181 di data saat ini, jadi belum teruji pada perangkat), dan diagnostik `/customer/wifi?debug=1`
-
-### Temuan untuk diputuskan
-- Sekitar 63 ONT menampilkan SSID yang sama dengan 271 ONT tadi sebagai kartu WiFi pelanggan, sehingga pelanggan bisa mengubahnya. Ini sudah terjadi sebelum rilis ini (62 di 5.36.1)
-
-### Catatan Pembaruan
-- Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.36.6
 
 <!-- AUTO-CHANGELOG:END -->
 
