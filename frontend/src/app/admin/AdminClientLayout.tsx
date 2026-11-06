@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useSession, signOut, SessionProvider } from 'next-auth/react';
 import { useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
-import { LayoutDashboard, BookOpen, Users, Wrench, Wifi, Receipt, CreditCard, Wallet, Clock, MessageSquare, Settings, Menu, X, ChevronDown, Shield, LogOut, Router, AlertTriangle, Timer, Server, Bell, UserCheck, Sun, Moon, Gift, Globe, BarChart3, FileText, Activity, Cable, GitBranch, Mail, MessageCircle, Send, Inbox, TrendingDown, Landmark } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Users, Wrench, Wifi, Receipt, CreditCard, Wallet, Clock, MessageSquare, Settings, Menu, X, ChevronDown, Shield, LogOut, Router, AlertTriangle, Timer, Server, Bell, UserCheck, Sun, Moon, Gift, Globe, BarChart3, FileText, Activity, Cable, GitBranch, Mail, MessageCircle, Send, Inbox, TrendingDown, Landmark, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiAdmin, onUnauthorized } from '@/lib/api';
 import { useAppStore } from '@/lib/store';
@@ -1243,6 +1243,7 @@ function AppVersionBadge({ systemAccess }: { systemAccess: boolean }) {
   }
 
   return (
+    <>
     <Link
       href="/admin/system"
       className="flex items-center justify-between w-full px-2.5 py-1.5 rounded-lg bg-sidebar-accent/50 hover:bg-sidebar-accent border border-sidebar-border/50 hover:border-sidebar-border group transition duration-200"
@@ -1259,6 +1260,16 @@ function AppVersionBadge({ systemAccess }: { systemAccess: boolean }) {
         </span>
       )}
     </Link>
+    <a
+      href="https://saweria.co/salfanetradius"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="mt-1 flex items-center gap-1.5 w-full px-2.5 py-1.5 rounded-lg text-[10px] text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-sidebar-ring"
+    >
+      <Heart className="w-3 h-3" aria-hidden />
+      Dukung Salfanet
+    </a>
+    </>
   );
 }
 

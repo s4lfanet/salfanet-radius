@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.39.5 - Tautan Donasi
+> **Version:** 5.39.6 - Tautan Dukung Salfanet di Panel Admin
 
 ---
 
@@ -1111,6 +1111,14 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.39.6 — 2026-11-06 - Tautan Dukung Salfanet di Panel Admin
+
+### Panel admin
+- **[UI]** Tautan kecil **Dukung Salfanet** di bawah versi pada sidebar, mengarah ke Saweria di tab baru. Hanya tampil untuk akun yang boleh melihat pengaturan, jadi tidak tampil untuk staf lain, pelanggan, atau di aplikasi
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.39.6
+
 ### v5.39.5 — 2026-11-06 - Tautan Donasi
 
 ### Dokumentasi
@@ -1151,16 +1159,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 ### Catatan Pembaruan
 - Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.39.2
-
-### v5.39.1 — 2026-11-06 - Isolir Mengikuti Tanggal Bayar untuk Semua Pembayaran
-
-### Tagihan pascabayar
-- **[CHANGE]** Pada pilihan Otomatis mengikuti tanggal bayar, Tanggal Isolir kini selalu dihitung dari tanggal bayar, juga untuk pelanggan yang tidak terisolir. Sebelumnya pembayaran sebelum Tanggal Isolir menambah sebulan dari tanggal lama. Jatuh tempo tagihan tetap sama, dan pelanggan tidak diisolir sebelum tagihannya lewat jatuh tempo
-- **[FIX]** Saat cuti selesai, pelanggan dengan pilihan itu tidak lagi tertahan terisolir selama Tanggal Isolirnya belum lewat, kecuali punya dua tagihan lewat jatuh tempo. Aturannya sama dengan cron isolir
-- **[FIX]** Perhitungan bulan untuk pilihan itu tidak melompat di akhir bulan: bayar 31 Januari menjadi 28 Februari
-
-### Catatan Pembaruan
-- Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.39.1
 
 <!-- AUTO-CHANGELOG:END -->
 

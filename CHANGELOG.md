@@ -6,6 +6,16 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.39.6] - 2026-11-06 - Tautan Dukung Salfanet di Panel Admin
+
+### Panel admin
+- **[UI]** Tautan kecil **Dukung Salfanet** di bawah versi pada sidebar, mengarah ke Saweria di tab baru. Hanya tampil untuk akun yang boleh melihat pengaturan, jadi tidak tampil untuk staf lain, pelanggan, atau di aplikasi
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.39.6
+
+---
+
 ## [5.39.5] - 2026-11-06 - Tautan Donasi
 
 ### Dokumentasi
