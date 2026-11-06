@@ -34,6 +34,8 @@ const COLUMN_LABEL: Record<string, string> = {
   rx: 'Rx',
   tx: 'Tx',
   oltRx: 'Rx sisi OLT',
+  downCause: 'penyebab mati',
+  dyingGasp: 'dying gasp',
 };
 
 export async function scanOlt(config: SNMPConfig): Promise<OltScan> {

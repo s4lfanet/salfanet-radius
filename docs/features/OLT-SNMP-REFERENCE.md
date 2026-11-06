@@ -8,13 +8,15 @@ Tidak satu pun profil di bawah sudah dijalankan pada OLT sungguhan oleh penulisn
 
 | Merek | Sumber OID | Diperiksa pada perangkat? |
 |---|---|---|
-| NSCRTV EPON / GPON (17409) | MIB NSCRTV-FTTX-EPON/GPON, sheet OID C-Data dari operator; tabel EPON juga dipakai driver Hioso komunitas pada HA7304 | Tidak |
-| C-Data FD-ONU (34592.1.3.4) | MIB FD-ONU-MIB revisi 2014 dan 2017 | Tidak |
-| C-Data GPON (34592.1.5) | MIB CDATA-GPON-MIB | Tidak |
-| HSGQ (50224) | Tabel OID proyek OLT_MGMT | Tidak |
+| NSCRTV GPON (17409.2.8.4) | MIB NSCRTV-FTTX-GPON, dan catatan lapangan FD1608S (V3.3.86) dan FD1601S (V3.2.5) di KusumaVision NMS | Oleh pihak lain, pada dua OLT GPON C-Data. Belum oleh proyek ini |
+| NSCRTV EPON (17409.2.3.4) | MIB NSCRTV-FTTX-EPON, catatan lapangan C-Data EPON 258 ONU di KusumaVision NMS | Oleh pihak lain. Belum oleh proyek ini |
+| C-Data FD-ONU (34592.1.3.4) | MIB FD-ONU-MIB revisi 2014 dan 2017 | Tidak. Tabel ini tidak ada di dua OLT GPON uji pihak lain |
+| C-Data GPON (34592.1.5) | MIB CDATA-GPON-MIB | Dinilai tidak andal oleh pihak lain (FD1601S terbaca 0 ONU, FD1608S melaporkan 3 ONU online sebagai offline). Hanya pilihan terakhir |
+| HSGQ (50224) | Tiga sumber komunitas yang tidak sepakat soal kolom status | Tidak, juga oleh sumbernya. Dipilih otomatis lewat penghitung ONU per PON |
 | V-SOL V1600D (37950.1.1.5) | MIB V1600D | Tidak |
 | V-SOL cabang 37950.1.1.6 | Tiket Observium OBS-4553 | Tidak |
-| Hioso (25355) | Modul lama proyek ini; OID yang sama muncul di dua proyek komunitas | Dikatakan terverifikasi di produksi oleh modul lama |
+| Hioso EPON (25355.3.2.6) | Modul lama proyek ini, NMS operator, dan KusumaVision NMS | Ya, pada HA7304, HA7304C, HA7304V, dan HA7302 oleh NMS operator dan KusumaVision. Belum oleh proyek ini |
+| Hioso Telnet | NMS operator dan KusumaVision NMS | Ya, oleh keduanya. Sesi di proyek ini diuji dengan server Telnet tiruan |
 
 ## Cara memastikan di OLT Anda
 
@@ -36,7 +38,7 @@ snmpwalk -On -v2c -c <community> <ip> 1.3.6.1.4.1.34592.1.3.4.1.1.11
 | C-Data FD11xx / FD16xx | Membaca seperti Hioso dan juga dari cabang C-Data (NSCRTV, FD-ONU, GPON C-Data), lalu memakai yang mendaftarkan lebih banyak ONU. Seri sama, tetap Hioso, sehingga OLT yang sudah terbaca lengkap tidak berubah. EPON dan GPON dibaca terpisah lalu digabung, untuk OLT XPON |
 | HSGQ | Profil HSGQ |
 | V-SOL | V1600D, lalu cabang 37950.1.1.6 |
-| Hioso / C-Data | Tidak berubah |
+| Hioso / C-Data | Pembacaan SNMP seperti sebelumnya, dengan perbaikan di bawah. Telnet kini memakai sesi khusus Hioso |
 
 Pilihan lama yang sudah tersimpan (`hioso`, `cdata`, `c-data`) tetap valid. Sebelumnya `cdata` hanya nama lain untuk Hioso.
 
@@ -69,7 +71,44 @@ Angka setelah nama kolom adalah jumlah baris yang dikembalikan OLT. ONU 24 denga
 
 Daya dibaca dari ONU (arah turun) bila ada. Bila ONU tidak melaporkannya, EPON NSCRTV memakai daya yang diukur OLT dari ONU itu (`ponOpRxPowerOfOnu`, arah naik, centi-dBm). Keduanya "Rx" di panel, tetapi bukan besaran yang sama. Nilai arah naik biasanya mirip, sehingga cukup untuk melihat ONU yang melemah, tetapi jangan dibandingkan langsung dengan angka dari ONU. Sumber tiap pembacaan dicatat di data ONU.
 
+## Hioso
+
+OID EPON (`25355.3.2.6`, indeks `{papan}.{PON}.{ONU}`): nama `.3.2.1.37`, MAC `.3.2.1.11` (12 digit heksa; `.12` cadangan), status link `.3.2.1.39` (1 = Up, 2 = Down), dying gasp `.3.2.1.41`, Rx `.14.2.1.8`, Tx `.14.2.1.4`, keduanya berupa teks dBm.
+
+Yang dipelajari dari NMS yang sudah berjalan, dan kini dipakai:
+- **Status dari link-state `.39`, bukan dari Rx.** Sebagian ONU tidak dilaporkan DDM-nya (Rx `na`) padahal link-nya Up. Menyimpulkan offline dari Rx menimbulkan alarm palsu.
+- **Nama kosong datang sebagai octet string berisi nol**, dan nama yang tidak diisi adalah `NA`. Keduanya dianggap tidak ada nama.
+- **Slot tak terdaftar muncul sebagai baris dengan MAC nol**, dan dilewati.
+- **Dying gasp** dibaca dari `.41` dan hanya berlaku untuk ONU yang Down.
+- **Suhu chassis** dari OID chassis (`25355.3.2.1.1.1.2.0` atau `25355.3.1.8.1.1.9` dalam seperseratus derajat), bukan suhu modul optik ONU pertama. Nilai 85 diabaikan karena itu konstanta sensor yang belum terpasang. Bila tidak ada, suhu modul optik dipakai seperti sebelumnya.
+- **Keluarga tidak ditebak dari `sysDescr`.** Field itu sering kosong, jadi bila profil yang terdeteksi tidak menghasilkan ONU, EPON, GPON, lalu clone BDCOM dicoba.
+- Jangan walk `25355.3.2.6.2.1`: puluhan ribu baris.
+- HA7302 memakai satu ruang LLID datar (indeks `1.{ONU}`) dan tidak punya `Pon-Nni` di IF-MIB. `ifOperStatus` HA7304 tidak mewakili PON fisik, jadi tidak dipakai.
+
+Belum dipakai karena sumbernya tidak sepakat: **jarak**. KusumaVision menyebut `.3.2.1.25` sudah dalam meter (contoh 1935), sedangkan NMS operator menghitungnya dari counter RTT dengan rumus `rtt × 1,6393 − 157`. Salah satunya keliru; bandingkan satu ONU dengan halaman web OLT sebelum jarak diisi.
+
+### Telnet
+
+Urutan yang dipakai (sesi `backend/src/lib/olt/hioso-telnet.ts`, tanpa `expect` atau biner `telnet`):
+1. Sambung, jawab negosiasi opsi Telnet (HA7302 menahan banner sampai dijawab).
+2. Tunggu `Username:` (sampai 15 detik), kirim username dengan **CRLF** (LF saja tidak dianggap Enter).
+3. Jawab setiap `Password:` dengan password yang sama (login, Access, Enable). Saat prompt `EPON>`, kirim `enable` sampai prompt `EPON#`.
+4. `show onu info epon <basis>/<PON> all`, dengan basis 0 pada firmware baru dan 1 pada firmware "V" lama. Bila basis 0 ditolak, basis 1 dicoba. Pindai berhenti di PON pertama yang ditolak.
+5. Halaman panjang diberi `--- Enter Key To Continue ----`; dijawab dengan Enter, dan backspace penghapusnya dibuang.
+
+Kolom keluaran: OnuId, MacAddress, Status (Up/Down), Firmware, ChipId, Ge, Fe, Pots, CtcStatus, CtcVer, Activate, Uptime, Name. Telnet memberi identitas dan status link, tidak ada daya optik; daya tetap dari SNMP. Klien Telnet bersama (`telnet.ts`) tidak bisa dipakai untuk Hioso: ia tidak mengirim `enable`, tidak mengenal pager ini, dan perintahnya berbeda.
+
 ## Hal yang menjebak
+
+**Posisi ONU C-Data ada di namanya.** Pada GPON C-Data, indeks ONU adalah nomor urut global yang dimulai dari `0x480001`, jadi posisi dan label pelanggan dibaca dari nama `gpon 0/0/3 onu 5 label`. EPON C-Data juga memakai nama (`epon 0/1/3 onu 5 label`), dengan cadangan decode indeks: byte atas = slot, **nibble atas byte ketiga + 1 = port**, byte bawah = nomor ONU. Rilis 5.40.x menerjemahkan indeks GPON seperti EPON, sehingga alamat ONU-nya tidak bermakna; 5.41.0 memperbaikinya.
+
+**Nama C-Data bisa berupa heksa berpadding NUL.** Firmware FD1608S mengirim sebagian nama sebagai Hex-STRING yang diakhiri byte nol. Dipotong di NUL pertama.
+
+**Rx -1 berarti offline** pada GPON C-Data, bukan -0,01 dBm. Pembacaan di atas -1 dBm tidak pernah dianggap Rx ONU.
+
+**`sysObjectID` 17409 dipakai GPON maupun EPON C-Data.** Jenisnya ditentukan dari tabel mana yang berisi ONU, bukan dari sysObjectID. Kolom `.103` di tabel GPON berisi penyebab mati (`LOS`, `dying-gasp`).
+
+**Kolom "serial" EPON C-Data berisi MAC.** Kolom `.28` sama dengan `.7` pada 258 ONU, jadi tidak dipakai sebagai serial.
 
 **Nomor kolom berbeda antar revisi MIB.** FD-ONU-MIB revisi 2017 menaruh daya Rx di kolom `.36`, revisi 2014 di `.35`. Kolom Tx yang berdekatan juga berisi angka yang masuk akal. Karena itu pembaca menolak profil yang daya Rx-nya mayoritas positif (itu Tx), dan profil tanpa satu pun pembacaan daya hanya dipakai bila tidak ada yang lebih baik.
 
@@ -85,7 +124,7 @@ Daya dibaca dari ONU (arah turun) bila ada. Bila ONU tidak melaporkannya, EPON N
 
 ## HSGQ dan jalur lain
 
-HSGQ adalah merek yang paling sedikit terdokumentasi. Beberapa proyek komunitas tidak memakai SNMP untuk HSGQ, tetapi membaca API web bawaan OLT (login sesi lalu JSON) atau Telnet. Itu menandakan sebagian model atau firmware HSGQ menyediakan sedikit data lewat SNMP. Jika Uji Koneksi tidak menemukan ONU pada HSGQ Anda, jalur API web atau Telnet bisa menjadi langkah berikutnya. Proyek-proyek itu tidak berlisensi, jadi kodenya tidak dipakai; yang dipelajari hanya cara kerja perangkatnya.
+HSGQ adalah merek yang paling sedikit terdokumentasi. Ada dua skema tabel (`50224.3.12` dan `50224.3.3`), indeksnya `0x01000000 | PON << 8 | ONU`, dan tiga sumber menyebut kolom status yang berbeda. Keempat kombinasi dicoba dan dipilih yang jumlah ONU online-nya sama dengan penghitung OLT sendiri (`50224.3.2.3.1.4`). CPU dan memori dibaca dengan GET persis (`50224.3.1.1.17` dan `.18`); subtree sistem di sekitarnya menyimpan kredensial yang bisa dibaca dengan community baca, jadi tidak pernah di-walk. Beberapa proyek komunitas tidak memakai SNMP untuk HSGQ, tetapi membaca API web bawaan OLT (login sesi lalu JSON) atau Telnet. Itu menandakan sebagian model atau firmware HSGQ menyediakan sedikit data lewat SNMP. Jika Uji Koneksi tidak menemukan ONU pada HSGQ Anda, jalur API web atau Telnet bisa menjadi langkah berikutnya. Proyek-proyek itu tidak berlisensi, jadi kodenya tidak dipakai; yang dipelajari hanya cara kerja perangkatnya.
 
 ## Sumber
 
@@ -94,3 +133,5 @@ HSGQ adalah merek yang paling sedikit terdokumentasi. Beberapa proyek komunitas 
 - [Tiket Observium OBS-4553](https://jira.observium.org/browse/OBS-4553) (OID V-SOL)
 - [OLT_MGMT](https://github.com/Kim-puL/OLT_MGMT) (tabel OID HSGQ dan Hioso)
 - [olt-redaman-api](https://github.com/ukhin101/olt-redaman-api) (cara kerja HSGQ dan Hioso, dipelajari saja)
+- [nms-ztec320](https://github.com/s4lfanet/nms-ztec320) (NMS operator, MIT): adapter Hioso, C-Data GPON, dan tabel OID
+- [KusumaVision NMS](https://github.com/Masamune21-dev/KusumaVisionNMS) (MIT): panduan Hioso, C-Data, dan HSGQ, serta catatan snmpwalk C-Data GPON

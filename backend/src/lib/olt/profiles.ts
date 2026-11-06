@@ -3,10 +3,11 @@
  * has been checked, is in docs/features/OLT-SNMP-REFERENCE.md.
  *
  * Sources: vendor MIB files (C-Data FD-ONU / CDATA-GPON, NSCRTV EPON and GPON, V-SOL V1600D,
- * all from the LibreNMS MIB set), a C-Data OID sheet supplied by the operator, and the OID
- * table of the open source OLT_MGMT project for HSGQ. None of these was run against live
- * hardware by the author of this file, so every profile is a candidate that discovery
- * validates, not a promise.
+ * all from the LibreNMS MIB set); field notes from a C-Data GPON walk on an FD1608S (V3.3.86)
+ * and an FD1601S (V3.2.5) and a C-Data EPON OLT with 258 ONUs, in the KusumaVision NMS (MIT) and
+ * the operator's own NMS; the OID table of the open source OLT_MGMT project for HSGQ.
+ * None of these was run against live hardware by the author of this file, so every profile is a
+ * candidate that discovery validates, not a promise.
  */
 import type { PonProfile } from './pon-snmp';
 
@@ -17,12 +18,17 @@ const NSCRTV_GPON_OPTICS = '1.3.6.1.4.1.17409.2.8.4.4.1';
 const CDATA_GPON = '1.3.6.1.4.1.34592.1.5.1.1.2.18';
 const FD_ONU = '1.3.6.1.4.1.34592.1.3.4.1.1';
 
-/** The China broadcast-industry EPON standard; C-Data, Hioso and others implement it. */
+/**
+ * The China broadcast-industry EPON standard; C-Data, Hioso and others implement it.
+ * The position is in the name ("epon 0/1/3 onu 5 label"), the index is a fallback.
+ * Column .28 is not listed: on C-Data firmware it repeats the MAC (.7) for every ONU.
+ */
 export const NSCRTV_EPON: PonProfile = {
   id: 'nscrtv-epon',
   label: 'NSCRTV EPON (17409)',
   tech: 'EPON',
-  index: 'nscrtv',
+  index: 'epon-device',
+  positionFromName: true,
   online: [1],
   scale: 'centi',
   columns: {
@@ -37,11 +43,17 @@ export const NSCRTV_EPON: PonProfile = {
   },
 };
 
+/**
+ * C-Data GPON as verified on FD1608S and FD1601S. The index is a global sequence from
+ * 0x480001, so the position and customer label come from the name ("gpon 0/0/3 onu 5 label").
+ * Rx is centi-dBm with -1 for an offline ONU; the cause column says LOS or dying-gasp.
+ */
 export const NSCRTV_GPON: PonProfile = {
   id: 'nscrtv-gpon',
   label: 'NSCRTV GPON (17409)',
   tech: 'GPON',
-  index: 'nscrtv',
+  index: 'gpon-sequence',
+  positionFromName: true,
   online: [1],
   scale: 'centi',
   columns: {
@@ -52,15 +64,21 @@ export const NSCRTV_GPON: PonProfile = {
     // The operator's sheet lists Rx as column 3; the MIB makes column 3 the port index.
     rx: `${NSCRTV_GPON_OPTICS}.4`,
     tx: `${NSCRTV_GPON_OPTICS}.5`,
+    mac: '1.3.6.1.4.1.17409.2.3.4.7.1.3',
+    downCause: `${NSCRTV_GPON_ONU}.103`,
   },
 };
 
-/** C-Data's own GPON tree. Power is a DisplayString, so units come with the text. */
+/**
+ * C-Data's own GPON tree. Field notes: not reliable on current firmware (an FD1601S lists no
+ * ONUs there and an FD1608S reports three online ONUs as offline), so it is a last resort.
+ */
 export const CDATA_GPON_PROFILE: PonProfile = {
   id: 'cdata-gpon',
   label: 'C-Data GPON (34592.1.5)',
   tech: 'GPON',
   index: 'dotted',
+  lastResort: true,
   online: [1],
   scale: 'auto',
   columns: {
@@ -76,7 +94,8 @@ export const CDATA_GPON_PROFILE: PonProfile = {
 /**
  * C-Data FD-ONU-MIB. DeviceStatus is notPresent(1) offline(2) online(3) normal(4)
  * abnormal(5): online is 3 to 5, not 1. The 2017 revision of the MIB has Rx at .36;
- * the 2014 revision has it at .35, so both are listed.
+ * the 2014 revision has it at .35, so both are listed. Neither table exists on the two
+ * current GPON models, so this is for older firmware.
  */
 export const FD_ONU_2017: PonProfile = {
   id: 'fd-onu-2017',
@@ -111,29 +130,73 @@ export const FD_ONU_2014: PonProfile = {
   },
 };
 
-export const CDATA_PROFILES: PonProfile[] = [NSCRTV_EPON, NSCRTV_GPON, CDATA_GPON_PROFILE, FD_ONU_2017, FD_ONU_2014];
-
-/**
- * HSGQ. Taken from the OID table of the OLT_MGMT project (name, status, Rx, Tx under
- * 50224.3.12), where values are divided by 100. How the two tables are indexed is not
- * documented, so the profile joins on whatever the status table's index looks like.
- */
-export const HSGQ: PonProfile = {
-  id: 'hsgq',
-  label: 'HSGQ (50224)',
+/** The C-Data EPON table used by the operator's own NMS. Not checked against the MIB. */
+export const CDATA_EPON_NMS: PonProfile = {
+  id: 'cdata-epon-nms',
+  label: 'C-Data EPON (34592.1.3.4.1.2)',
   tech: 'EPON',
   index: 'dotted',
+  lastResort: true,
   online: [1],
-  scale: 'centi',
+  scale: 'auto',
   columns: {
-    status: '1.3.6.1.4.1.50224.3.12.2.1.5',
-    name: '1.3.6.1.4.1.50224.3.12.2.1.2',
-    rx: '1.3.6.1.4.1.50224.3.12.3.1.4',
-    tx: '1.3.6.1.4.1.50224.3.12.3.1.5',
+    status: '1.3.6.1.4.1.34592.1.3.4.1.2.1.1.10',
+    serial: '1.3.6.1.4.1.34592.1.3.4.1.2.1.1.3',
+    name: '1.3.6.1.4.1.34592.1.3.4.1.2.1.1.7',
+    rx: '1.3.6.1.4.1.34592.1.3.4.1.5.1.1.2',
   },
 };
 
-export const HSGQ_PROFILES: PonProfile[] = [HSGQ];
+export const CDATA_PROFILES: PonProfile[] = [NSCRTV_EPON, NSCRTV_GPON, FD_ONU_2017, FD_ONU_2014, CDATA_GPON_PROFILE, CDATA_EPON_NMS];
+
+/**
+ * HSGQ (Shenzhen HS Fiber, 50224). Two table schemes exist and the model does not say which:
+ * 50224.3.12 (firmware "ID", GPON) and 50224.3.3 (older EPON). The meaning of the status column is
+ * claimed differently by three sources (3.12: column 3 or 5; 3.3: column 8 or 9) and was never seen
+ * with an offline ONU, so every combination is a candidate and hsgq.ts picks the one whose online
+ * count matches the OLT's own per-PON counters. Values are hundredths of a dBm / metre.
+ */
+const HSGQ_BASE: Pick<PonProfile, 'online' | 'scale' | 'index' | 'tech'> = { online: [1], scale: 'centi', index: 'hsgq', tech: 'EPON' };
+const HSGQ_ID_TABLE = '1.3.6.1.4.1.50224.3.12.2.1';
+const HSGQ_ID_OPTIC = '1.3.6.1.4.1.50224.3.12.3.1';
+const HSGQ_OLD_TABLE = '1.3.6.1.4.1.50224.3.3.2.1';
+const HSGQ_OLD_OPTIC = '1.3.6.1.4.1.50224.3.3.3.1';
+
+const hsgqId = (id: string, statusColumn: number): PonProfile => ({
+  ...HSGQ_BASE,
+  id,
+  label: `HSGQ 50224.3.12 (status kolom ${statusColumn})`,
+  columns: {
+    status: `${HSGQ_ID_TABLE}.${statusColumn}`,
+    name: `${HSGQ_ID_TABLE}.2`,
+    distance: `${HSGQ_ID_TABLE}.19`,
+    downCause: `${HSGQ_ID_TABLE}.22`,
+    rx: `${HSGQ_ID_OPTIC}.4`,
+    tx: `${HSGQ_ID_OPTIC}.5`,
+  },
+});
+
+const hsgqOld = (id: string, statusColumn: number): PonProfile => ({
+  ...HSGQ_BASE,
+  id,
+  label: `HSGQ 50224.3.3 (status kolom ${statusColumn})`,
+  columns: {
+    status: `${HSGQ_OLD_TABLE}.${statusColumn}`,
+    name: `${HSGQ_OLD_TABLE}.2`,
+    mac: `${HSGQ_OLD_TABLE}.7`,
+    distance: `${HSGQ_OLD_TABLE}.15`,
+    rx: `${HSGQ_OLD_OPTIC}.4`,
+    tx: `${HSGQ_OLD_OPTIC}.5`,
+  },
+});
+
+export const HSGQ_PROFILES: PonProfile[] = [hsgqId('hsgq-id-3', 3), hsgqId('hsgq-id-5', 5), hsgqOld('hsgq-old-9', 9), hsgqOld('hsgq-old-8', 8)];
+
+/** Per-PON ONU counters of the OLT itself (registered, online, offline), indexed by PON. */
+export const HSGQ_PON_ONLINE = '1.3.6.1.4.1.50224.3.2.3.1.4';
+/** Scalars: read with an exact GET. The system subtrees around them hold credentials. */
+export const HSGQ_CPU = '1.3.6.1.4.1.50224.3.1.1.17';
+export const HSGQ_MEMORY = '1.3.6.1.4.1.50224.3.1.1.18';
 
 /** V-SOL branch seen on newer models (reported for a V1600G in an Observium ticket). */
 export const VSOL_G: PonProfile = {

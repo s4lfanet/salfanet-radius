@@ -16,7 +16,9 @@
  */
 
 import { SNMPConfig, snmpGet, snmpWalk } from '../snmp';
-import { TelnetConfig, executeCommand } from '../telnet';
+import { TelnetConfig } from '../telnet';
+import { decodeSnmpText, normalizeMac, parsePowerDbm, parseRxDbm } from '../pon-snmp';
+import { readHiosoOnus } from '../hioso-telnet';
 
 // ─── OID Definitions ─────────────────────────────────────────────────────────
 
@@ -27,12 +29,20 @@ const HIOSO_EPON_OIDS = {
   onuSn:        '1.3.6.1.4.1.25355.3.2.6.3.2.1.11', // Hex serial number
   onuMac:       '1.3.6.1.4.1.25355.3.2.6.3.2.1.12', // MAC address (alt SN candidate)
   onuStatus:    '1.3.6.1.4.1.25355.3.2.6.3.2.1.39', // 1=online, 2=offline
+  onuDyingGasp: '1.3.6.1.4.1.25355.3.2.6.3.2.1.41', // 1 = powered off (only on firmware that has the table)
   onuDistance:  '1.3.6.1.4.1.25355.3.2.6.3.2.1.25', // Integer, meters
   // Optical readings (index format: board.pon.onu_id)
   onuTxPower:   '1.3.6.1.4.1.25355.3.2.6.14.2.1.4', // Float string dBm (already in dBm, divider=1)
   onuRxPower:   '1.3.6.1.4.1.25355.3.2.6.14.2.1.8', // Float string dBm (already in dBm, divider=1)
   onuOptTemp:   '1.3.6.1.4.1.25355.3.2.6.14.2.1.7', // Integer, °C
 };
+
+// Chassis temperature, as read by a working NMS on HA7304C and GPON models. The second is in hundredths of a degree.
+const CHASSIS_TEMP_OIDS = [
+  '1.3.6.1.4.1.25355.3.2.1.1.1.2.0',
+  '1.3.6.1.4.1.25355.3.1.8.1.1.9',
+  '1.3.6.1.4.1.25355.3.3.1.2.1.1.2.0',
+];
 
 // HIOSO_B profile — BDCOM/Huawei clone MIB (.3320.101.10)
 const HIOSO_B_OIDS = {
@@ -70,7 +80,7 @@ const STD_OIDS = {
 
 // ─── Profile Detection ───────────────────────────────────────────────────────
 
-type HiosoProfile = 'HIOSO_C' | 'HIOSO_B2' | 'HIOSO_VX' | 'HIOSO_B' | 'HIOSO_GPON';
+export type HiosoProfile = 'HIOSO_C' | 'HIOSO_B2' | 'HIOSO_VX' | 'HIOSO_B' | 'HIOSO_GPON';
 
 /**
  * Auto-detect Hioso profile from sysDescr and model string.
@@ -100,20 +110,11 @@ function getProfileOids(profile: HiosoProfile) {
  * - HIOSO_C/B2/VX: SNMP already returns float dBm string (e.g. "-12.22")
  * - HIOSO_B/GPON:  SNMP returns raw integer, auto-scale by magnitude
  */
-function parsePower(rawValue: string, profile: HiosoProfile): number | null {
-  const num = parseFloat(rawValue);
-  if (isNaN(num)) return null;
-
-  if (profile === 'HIOSO_C' || profile === 'HIOSO_B2' || profile === 'HIOSO_VX') {
-    // Already in dBm — just round to 2 dp
-    return Math.round(num * 100) / 100;
-  }
-
-  // Auto-scale by magnitude (HIOSO_B, HIOSO_GPON)
-  const abs = Math.abs(num);
-  if (abs > 500) return Math.round(num / 100 * 100) / 100; // e.g. -1227 → -12.27
-  if (abs > 50)  return Math.round(num / 10  * 100) / 100; // e.g. -122  → -12.20
-  return Math.round(num * 100) / 100;                       // e.g. -12   → -12.00
+function parsePower(rawValue: string, _profile: HiosoProfile, kind: 'rx' | 'tx' = 'rx'): number | null {
+  // EPON returns a float string in dBm ("-20.36", or "na" when the ONU reports no DDM); the others
+  // return scaled integers. Both go through the shared reader, which also drops 0 and the -1 / 65535
+  // sentinels and keeps an Rx reading above -1 dBm out.
+  return kind === 'rx' ? parseRxDbm(rawValue, 'auto') : parsePowerDbm(rawValue, 'auto');
 }
 
 /**
@@ -172,7 +173,22 @@ function parseOnuStatusWalk(
  * Falls back to null if unavailable.
  */
 export async function getTemperature(config: SNMPConfig): Promise<number | null> {
-  // Try EPON optical temperature for first ONU on board 1, PON 1, ONU 1
+  for (const oid of CHASSIS_TEMP_OIDS) {
+    const direct = await snmpGet(config, oid);
+    let raw = direct.success ? direct.value : undefined;
+    if (raw === undefined) {
+      const walked = await snmpWalk(config, oid);
+      raw = walked.success && walked.results ? Object.values(walked.results)[0] : undefined;
+    }
+    const match = raw?.match(/-?\d+(?:\.\d+)?/);
+    if (!match) continue;
+    let value = Number(match[0]);
+    if (value > 200) value /= 100;
+    // 85 is the power-on constant of a temperature sensor that is not fitted.
+    if (value >= 5 && value <= 110 && Math.round(value) !== 85) return Math.round(value);
+  }
+
+  // No chassis reading: the optical module of the first ONU, as before.
   const eponTempOid = `${HIOSO_EPON_OIDS.onuOptTemp}.1.1.1`;
   const result = await snmpGet(config, eponTempOid);
   if (result.success && result.value) {
@@ -224,31 +240,53 @@ export async function discoverONUsSNMP(
   config: SNMPConfig,
   model?: string | null,
 ): Promise<any[]> {
-  // First get sysDescr to detect profile
+  // sysDescr is often blank on these OLTs, so a wrong guess at the family must not end the search:
+  // the detected profile goes first, then the others (EPON, GPON, BDCOM clone), as a working NMS does.
   const descResult = await snmpGet(config, STD_OIDS.sysDescr);
   const sysDescr = descResult.success ? (descResult.value ?? '') : '';
-  const profile = detectProfile(sysDescr, model);
+  const detected = detectProfile(sysDescr, model);
+
+  const tried = new Set<unknown>();
+  for (const profile of [detected, 'HIOSO_B2', 'HIOSO_GPON', 'HIOSO_B'] as HiosoProfile[]) {
+    const oids = getProfileOids(profile);
+    if (tried.has(oids)) continue;
+    tried.add(oids);
+    const onus = await readProfile(config, profile);
+    if (onus.length > 0) return onus;
+  }
+  return [];
+}
+
+const ZERO_MAC = '00:00:00:00:00:00';
+
+export async function readProfile(config: SNMPConfig, profile: HiosoProfile, walk: typeof snmpWalk = snmpWalk): Promise<any[]> {
   const oids = getProfileOids(profile);
+  const isEpon = oids === HIOSO_EPON_OIDS;
 
   // Walk ONU status OID to enumerate all ONUs
-  const statusWalk = await snmpWalk(config, oids.onuStatus);
+  const statusWalk = await walk(config, oids.onuStatus);
   if (!statusWalk.success || !statusWalk.results) return [];
 
   const baseOnus = parseOnuStatusWalk(statusWalk.results, oids.onuStatus, profile);
   if (baseOnus.length === 0) return [];
 
-  // Walk serial numbers and names in parallel
-  const [snWalk, nameWalk, rxWalk, txWalk] = await Promise.all([
-    snmpWalk(config, oids.onuSn),
-    snmpWalk(config, oids.onuName),
-    snmpWalk(config, oids.onuRxPower),
-    snmpWalk(config, oids.onuTxPower),
+  // Walk serial numbers, names, power and (on EPON) the MAC and dying-gasp tables in parallel
+  const none = Promise.resolve({ success: false } as { success: boolean; results?: Record<string, string> });
+  const [snWalk, nameWalk, rxWalk, txWalk, macWalk, dygWalk] = await Promise.all([
+    walk(config, oids.onuSn),
+    walk(config, oids.onuName),
+    walk(config, oids.onuRxPower),
+    walk(config, oids.onuTxPower),
+    isEpon ? walk(config, HIOSO_EPON_OIDS.onuMac) : none,
+    isEpon ? walk(config, HIOSO_EPON_OIDS.onuDyingGasp) : none,
   ]);
 
   const snMap    = snWalk.results    ?? {};
   const nameMap  = nameWalk.results  ?? {};
   const rxMap    = rxWalk.results    ?? {};
   const txMap    = txWalk.results    ?? {};
+  const macMap   = macWalk.results   ?? {};
+  const dygMap   = dygWalk.results   ?? {};
 
   const onus: any[] = [];
 
@@ -260,18 +298,34 @@ export async function discoverONUsSNMP(
     const namRaw = nameMap[`${oids.onuName}.${suffix}`] ?? findBySuffix(nameMap, suffix);
     const rxRaw  = rxMap[`${oids.onuRxPower}.${suffix}`]  ?? findBySuffix(rxMap, suffix);
     const txRaw  = txMap[`${oids.onuTxPower}.${suffix}`]  ?? findBySuffix(txMap, suffix);
+    const macRaw = macMap[`${HIOSO_EPON_OIDS.onuMac}.${suffix}`] ?? findBySuffix(macMap, suffix);
+    const dygRaw = dygMap[`${HIOSO_EPON_OIDS.onuDyingGasp}.${suffix}`] ?? findBySuffix(dygMap, suffix);
 
-    const rxPower = rxRaw != null ? parsePower(rxRaw, profile) : null;
-    const txPower = txRaw != null ? parsePower(txRaw, profile) : null;
+    // The MAC is the ONU's identity on EPON; the second column is the fallback.
+    const mac = normalizeMac(snRaw) ?? normalizeMac(macRaw);
+    // An unregistered slot shows up as a row with an all-zero MAC.
+    if (isEpon && onu.status !== 'online' && mac === ZERO_MAC) continue;
+
+    // Unset names arrive as zero-filled octet strings; "NA" is the OLT's own placeholder.
+    const label = decodeSnmpText(namRaw);
+    const description = label && label.toUpperCase() !== 'NA' ? label : null;
+
+    const rxPower = onu.status === 'online' && rxRaw != null ? parsePower(rxRaw, profile, 'rx') : null;
+    const txPower = onu.status === 'online' && txRaw != null ? parsePower(txRaw, profile, 'tx') : null;
+
+    // Down because it lost power, if the OLT says so. Not inferred from missing Rx.
+    const status = onu.status !== 'online' && dygRaw != null && parseInt(dygRaw) === 1 ? 'dying_gasp' : onu.status;
 
     onus.push({
       frame:        onu.board,
       slot:         onu.pon,
       port:         onu.pon,    // PON port = slot for Hioso
       onuId:        onu.onuId,
-      serialNumber: snRaw  ? snRaw.trim()  : null,
-      name:         namRaw ? namRaw.trim() : null,
-      status:       onu.status,
+      serialNumber: (snRaw ?? '').trim() || (macRaw ?? '').trim() || null,
+      macAddress:   mac && mac !== ZERO_MAC ? mac : null,
+      name:         description,
+      description,
+      status,
       rxPower,
       txPower,
       signalLevel:  signalLevel(rxPower),
@@ -304,39 +358,33 @@ export async function getOnuDistances(
 
 // ─── ONU Discovery via Telnet ─────────────────────────────────────────────────
 
-function parseOnuTelnet(output: string, board: number, pon: number): any[] {
-  const onus: any[] = [];
-  for (const line of output.split('\n')) {
-    // Hioso Telnet format: "  1   CDATA123456   online   -18.50  ..."
-    const m = line.match(/^\s*(\d+)\s+(\S+)\s+(online|offline|dying.gasp)/i);
-    if (m) {
-      const [, onuId, sn, status] = m;
-      onus.push({
-        frame:        board,
-        slot:         pon,
-        port:         pon,
-        onuId:        parseInt(onuId),
-        serialNumber: sn.trim(),
-        status:       status.toLowerCase().replace(/[-_]gasp/, '_gasp'),
-      });
-    }
-  }
-  return onus;
-}
-
 /**
- * Discover ONUs via Telnet — used as fallback when SNMP is insufficient
- * (e.g. HIOSO_C PON3/PON4 which are merged in SNMP).
+ * Discover ONUs via Telnet — the fallback when SNMP lists none (or on firmware where SNMP merges
+ * PON ports). Reads `show onu info epon <base>/<pon> all`; the session is in hioso-telnet.ts.
+ * Telnet gives identity and link state but no optical power.
  */
 export async function discoverONUs(config: TelnetConfig): Promise<any[]> {
-  const onus: any[] = [];
-  for (let pon = 1; pon <= 4; pon++) {
-    const result = await executeCommand(config, `show epon onu state pon ${pon}`);
-    if (result.success && result.output) {
-      onus.push(...parseOnuTelnet(result.output, 1, pon));
-    }
+  try {
+    const rows = await readHiosoOnus({ host: config.host, port: config.port, username: config.username, password: config.password });
+    return rows.map((row) => ({
+      frame:        1,
+      slot:         row.pon,
+      port:         row.pon,
+      onuId:        row.onuId,
+      serialNumber: row.mac,
+      macAddress:   row.mac,
+      description:  row.name && row.name.toUpperCase() !== 'NA' ? row.name : null,
+      status:       row.up ? 'online' : 'offline',
+    }));
+  } catch (error: any) {
+    console.warn(`[Hioso] Telnet discovery failed for ${config.host}: ${error?.message ?? error}`);
+    return [];
   }
-  return onus;
+}
+
+/** Per-ONU optical detail is not available from the Hioso CLI; power comes from SNMP. */
+export async function getOnuOpticalInfo(): Promise<null> {
+  return null;
 }
 
 // Telnet SSH stub — Hioso uses Telnet CLI, no SSH in practice

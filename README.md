@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.40.1 - Data OLT C-Data Lebih Lengkap
+> **Version:** 5.41.0 - Hioso Telnet dan Perbaikan Alamat ONU C-Data
 
 ---
 
@@ -1111,6 +1111,33 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.41.0 — 2026-11-06 - Hioso Telnet dan Perbaikan Alamat ONU C-Data
+
+### Hioso
+- **[NEW]** Telnet Hioso diganti sesi khusus yang bekerja: jawaban negosiasi Telnet, CRLF, login berlapis (Access dan Enable), `enable`, pager `Enter Key To Continue`, dan penomoran PON dari 0 atau 1. Memakai `show onu info epon <basis>/<PON> all`. Telnet sebelumnya memakai perintah yang salah dan tidak mengirim `enable`, sehingga tidak pernah menghasilkan ONU
+- **[FIX]** Nama ONU Hioso tidak pernah tersimpan: modul mengisi `name`, sedangkan poller membaca `description`. Kini keduanya diisi, dan MAC tersimpan
+- **[FIX]** Nama kosong (octet string berisi nol) dan `NA` tidak lagi tampil sebagai nama. Slot tak terdaftar (MAC nol) tidak lagi terhitung sebagai ONU
+- **[FIX]** Bila profil yang terdeteksi dari `sysDescr` tidak menghasilkan ONU, EPON, GPON, dan clone BDCOM dicoba. Sebelumnya pembacaan berhenti
+- **[NEW]** Dying gasp dibaca dari OLT untuk ONU yang Down. Suhu chassis dibaca dari OID chassis, bukan suhu modul optik ONU pertama
+- **[CHANGE]** Daya Rx di atas -1 dBm, 0, dan nilai sentinel tidak lagi dianggap pembacaan
+
+### C-Data
+- **[FIX]** Alamat ONU GPON C-Data salah di 5.40.x: indeks GPON adalah nomor urut global, bukan penyandian 4 byte seperti EPON. Posisi dan label pelanggan kini dibaca dari nama (`gpon 0/0/3 onu 5 label`), sesuai catatan lapangan FD1608S dan FD1601S. Nama berpadding NUL di-decode
+- **[FIX]** Rx `-1` pada GPON C-Data berarti offline dan dibuang, bukan dibaca sebagai -0,01 dBm
+- **[FIX]** Penyebab mati (`LOS`, `dying-gasp`) kini menjadi status ONU. Tabel GPON `34592`, yang terbukti tidak andal pada FD1601S dan FD1608S, hanya dipakai bila tabel utama kosong
+- **[FIX]** Port EPON pada cadangan decode indeks mengikuti perangkat asli (nibble atas byte ketiga + 1). Kolom serial EPON yang berisi MAC tidak lagi dipakai sebagai serial
+
+### HSGQ
+- **[CHANGE]** Empat kombinasi tabel dan kolom status dicoba, dan dipilih yang jumlah ONU online-nya sama dengan penghitung OLT sendiri. CPU dan memori dibaca. Indeks HSGQ didekode menjadi PON dan ONU
+
+### Hal yang perlu diketahui
+- Alamat ONU C-Data berubah. Pada poll pertama setelah pembaruan, ONU C-Data dibuat ulang dengan posisi yang benar dan baris lama dihapus. Alamat ONU Hioso tidak berubah
+- Jarak ONU Hioso belum diisi: dua sumber lapangan tidak sepakat apakah `.3.2.1.25` sudah meter atau counter RTT. Bandingkan satu ONU dengan halaman web OLT
+- Telnet dan SNMP Hioso diuji dengan server Telnet tiruan dan data SNMP tiruan yang meniru catatan lapangan, belum pada OLT sungguhan oleh proyek ini
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.41.0
+
 ### v5.40.1 — 2026-11-06 - Data OLT C-Data Lebih Lengkap
 
 ### Monitoring OLT C-Data
@@ -1165,16 +1192,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 ### Catatan Pembaruan
 - Tidak ada perubahan kode aplikasi atau skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.39.5
-
-### v5.39.4 — 2026-11-06 - Lisensi MIT dan Pembaruan README
-
-### Dokumentasi
-- **[DOCS]** Menambahkan file `LICENSE` berisi lisensi MIT, sesuai yang sudah tertulis di README, supaya GitHub menampilkan lisensinya
-- **[DOCS]** README memuat fitur Kewajiban BHP & USO, pilihan Tanggal Isolir pascabayar, dan perilaku terbaru Auto Isolir
-- **[CHORE]** Menyiapkan `.github/FUNDING.yml` untuk tombol Sponsor. Tombol belum tampil sampai URL donasi diisi
-
-### Catatan Pembaruan
-- Tidak ada perubahan kode aplikasi atau skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.39.4
 
 <!-- AUTO-CHANGELOG:END -->
 
