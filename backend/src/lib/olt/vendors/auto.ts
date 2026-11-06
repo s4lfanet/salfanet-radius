@@ -74,9 +74,14 @@ export async function getMemoryUsage(config: SNMPConfig) {
   return (await readerFor(config)).getMemoryUsage(config);
 }
 
-export async function discoverONUsSNMP(config: SNMPConfig, firmwareVersion?: string | null, telnetConfig?: unknown): Promise<any[]> {
+export async function discoverONUsSNMP(
+  config: SNMPConfig,
+  firmwareVersion?: string | null,
+  telnetConfig?: unknown,
+  credentials?: unknown,
+): Promise<any[]> {
   const reader = await readerFor(config);
-  return typeof reader.discoverONUsSNMP === 'function' ? reader.discoverONUsSNMP(config, firmwareVersion, telnetConfig) : [];
+  return typeof reader.discoverONUsSNMP === 'function' ? reader.discoverONUsSNMP(config, firmwareVersion, telnetConfig, credentials) : [];
 }
 
 export async function discoverONUs(config: { host: string }): Promise<any[]> {

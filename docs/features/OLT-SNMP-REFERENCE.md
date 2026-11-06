@@ -85,7 +85,20 @@ Yang dipelajari dari NMS yang sudah berjalan, dan kini dipakai:
 - Jangan walk `25355.3.2.6.2.1`: puluhan ribu baris.
 - HA7302 memakai satu ruang LLID datar (indeks `1.{ONU}`) dan tidak punya `Pon-Nni` di IF-MIB. `ifOperStatus` HA7304 tidak mewakili PON fisik, jadi tidak dipakai.
 
-Belum dipakai karena sumbernya tidak sepakat: **jarak**. KusumaVision menyebut `.3.2.1.25` sudah dalam meter (contoh 1935), sedangkan NMS operator menghitungnya dari counter RTT dengan rumus `rtt × 1,6393 − 157`. Salah satunya keliru; bandingkan satu ONU dengan halaman web OLT sebelum jarak diisi.
+### Halaman web
+
+Hioso punya antarmuka web (GoAhead). Halaman `/onuAllPonOnuList.asp` memuat semua ONU dari semua PON dalam satu permintaan sebagai larik JavaScript berisi kutipan tunggal, 22 kolom per ONU: id (`0/1:1`), nama, MAC, Up/Down, firmware, chip, port, RTT, suhu, Tx, Rx, alasan offline, dan penanda dying gasp. Autentikasi Basic dengan login OLT; permintaan pertama ke `/` membuka sesi.
+
+Halaman ini dibaca bila username OLT diisi, lalu digabung dengan SNMP:
+- Bila halaman memuat **lebih banyak** ONU daripada SNMP, SNMP dianggap parsial (HA7304V menggabungkan PON 2 sampai 4) dan halaman dipakai utuh.
+- Bila jumlahnya sama atau lebih sedikit, **SNMP tetap dasar**, karena status link-nya acuan. Halaman hanya melengkapi yang kosong: nama, MAC, daya, dan jarak.
+- Halaman tidak terbaca (kata sandi salah, port bukan 80, atau bukan Hioso): SNMP dipakai apa adanya dan satu peringatan dicatat.
+
+**Jarak** dihitung dari kolom RTT halaman dengan rumus `rtt × 1,6393 − 157`, dikurangi 157 lagi bila hasilnya di atas 157. Itu rumus JavaScript firmware sebagaimana disalin NMS operator. Bandingkan satu ONU dengan halaman web OLT. Jarak dari SNMP (`.3.2.1.25`) tetap tidak diisi, karena KusumaVision menyebutnya sudah meter sedangkan NMS operator memperlakukannya sebagai RTT.
+
+Port web tetap 80. Alasan offline `0` atau `1` dibaca sebagai LOS, dan penanda dying gasp `1` sebagai dying gasp.
+
+Belum dipakai karena sumbernya tidak sepakat: **jarak dari SNMP**. KusumaVision menyebut `.3.2.1.25` sudah dalam meter (contoh 1935), sedangkan NMS operator menghitungnya dari counter RTT dengan rumus `rtt × 1,6393 − 157`. Salah satunya keliru; bandingkan satu ONU dengan halaman web OLT sebelum jarak diisi.
 
 ### Telnet
 

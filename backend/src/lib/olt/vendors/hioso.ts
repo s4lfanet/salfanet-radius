@@ -19,6 +19,7 @@ import { SNMPConfig, snmpGet, snmpWalk } from '../snmp';
 import { TelnetConfig } from '../telnet';
 import { decodeSnmpText, normalizeMac, parsePowerDbm, parseRxDbm } from '../pon-snmp';
 import { readHiosoOnus } from '../hioso-telnet';
+import { readHiosoWeb, type HiosoWebOnu } from '../hioso-web';
 
 // ─── OID Definitions ─────────────────────────────────────────────────────────
 
@@ -236,7 +237,82 @@ export async function getMemoryUsage(config: SNMPConfig): Promise<number | null>
  * Discover all ONUs via SNMP walk.
  * Returns array of ONU objects with status, serial, and optical data if available.
  */
+export interface OltCredentials {
+  host: string;
+  username: string;
+  password: string;
+}
+
+/**
+ * SNMP first, then the OLT's web page when the login is known. The page lists every PON, which
+ * SNMP does not on firmware that merges them, and adds distance and the reason an ONU is down.
+ * See mergeWithWeb for how the two are combined.
+ */
 export async function discoverONUsSNMP(
+  config: SNMPConfig,
+  model?: string | null,
+  _telnet?: unknown,
+  credentials?: OltCredentials | null,
+): Promise<any[]> {
+  const snmp = await discoverViaSnmp(config, model);
+  if (!credentials?.username) return snmp;
+  try {
+    const web = await readHiosoWeb({ host: credentials.host, username: credentials.username, password: credentials.password });
+    return mergeWithWeb(snmp, web);
+  } catch (error: any) {
+    console.warn(`[Hioso] web page not read for ${credentials.host}: ${error?.message ?? error}`);
+    return snmp;
+  }
+}
+
+function fromWeb(onu: HiosoWebOnu): any {
+  return {
+    frame:        1,
+    slot:         onu.pon,
+    port:         onu.pon,
+    onuId:        onu.onuId,
+    serialNumber: onu.mac,
+    macAddress:   onu.mac,
+    name:         onu.name,
+    description:  onu.name,
+    status:       onu.status,
+    rxPower:      onu.rxPower,
+    txPower:      onu.txPower,
+    distance:     onu.distance,
+    signalLevel:  signalLevel(onu.rxPower),
+  };
+}
+
+/**
+ * When the web page lists more ONUs than SNMP, SNMP is partial (some firmware folds PON 2 to 4
+ * together) and the page is used whole. Otherwise SNMP stays the base, since its link state is the
+ * reference, and the page only fills what SNMP left empty: name, MAC, power and distance.
+ */
+export function mergeWithWeb(snmp: any[], web: HiosoWebOnu[]): any[] {
+  if (web.length === 0) return snmp;
+  if (snmp.length === 0 || web.length > snmp.length) return web.map(fromWeb);
+
+  const byPosition = new Map(web.map((onu) => [`${onu.pon}:${onu.onuId}`, onu]));
+  return snmp.map((onu) => {
+    const page = byPosition.get(`${onu.slot}:${onu.onuId}`);
+    if (!page) return onu;
+    const online = onu.status === 'online';
+    const rxPower = onu.rxPower ?? (online ? page.rxPower : null);
+    return {
+      ...onu,
+      description:  onu.description ?? page.name,
+      name:         onu.name ?? page.name,
+      macAddress:   onu.macAddress ?? page.mac,
+      serialNumber: onu.serialNumber ?? page.mac,
+      rxPower,
+      txPower:      onu.txPower ?? (online ? page.txPower : null),
+      distance:     onu.distance ?? page.distance,
+      signalLevel:  signalLevel(rxPower),
+    };
+  });
+}
+
+async function discoverViaSnmp(
   config: SNMPConfig,
   model?: string | null,
 ): Promise<any[]> {

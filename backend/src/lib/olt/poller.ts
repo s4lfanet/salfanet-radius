@@ -106,7 +106,9 @@ export async function pollOLTWithOptions(
     // Discover ONUs — try SNMP first (ZTE C320 supports SNMP-based ONU discovery)
     if (snmpConfig && isOnline && typeof (vendor as any).discoverONUsSNMP === 'function') {
       try {
-        discoveredOnus = await (vendor as any).discoverONUsSNMP(snmpConfig, olt.firmwareVersion, telnetConfig);
+        // The login is also passed on, for brands that read a web page (Hioso).
+        const credentials = olt.username ? { host: olt.ipAddress, username: olt.username, password: olt.password ?? '' } : null;
+        discoveredOnus = await (vendor as any).discoverONUsSNMP(snmpConfig, olt.firmwareVersion, telnetConfig, credentials);
       } catch { /* fallback to SSH/Telnet */ }
     }
     if (discoveredOnus.length === 0 && sshConfig && isOnline) {

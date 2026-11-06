@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.41.0 - Hioso Telnet dan Perbaikan Alamat ONU C-Data
+> **Version:** 5.42.0 - Halaman Web Hioso sebagai Sumber Data
 
 ---
 
@@ -1111,6 +1111,22 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.42.0 — 2026-11-06 - Halaman Web Hioso sebagai Sumber Data
+
+### Hioso
+- **[NEW]** Halaman web OLT (`/onuAllPonOnuList.asp`) kini dibaca sebagai sumber ketiga bila username OLT diisi. Halaman itu memuat semua ONU dari semua PON dalam satu permintaan: nama, MAC, status, daya Rx dan Tx, jarak, alasan offline, dan dying gasp
+- **[NEW]** Penggabungan dengan SNMP: bila halaman memuat lebih banyak ONU, SNMP dianggap parsial (HA7304V menggabungkan PON 2 sampai 4) dan halaman dipakai utuh. Bila tidak, SNMP tetap dasar dan halaman hanya mengisi nama, MAC, daya, dan jarak yang kosong. Halaman yang tidak terbaca tidak mengubah hasil SNMP
+- **[NEW]** Jarak ONU Hioso terisi, dari kolom RTT halaman dengan rumus firmware. Alamat ONU sama dengan jalur SNMP dan Telnet, jadi tidak ada baris ganda
+- **[DOCS]** Format halaman, aturan penggabungan, dan rumus jarak di `docs/features/OLT-SNMP-REFERENCE.md`
+
+### Hal yang perlu diketahui
+- Jarak memakai rumus yang disalin NMS operator dari JavaScript firmware. Bandingkan satu ONU dengan halaman web OLT; bila selisih, beri tahu agar rumusnya dikoreksi
+- Port web dianggap 80, dan login yang dipakai adalah username dan password OLT di Data OLT
+- Diuji dengan server HTTP tiruan, belum pada OLT sungguhan
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.42.0
+
 ### v5.41.0 — 2026-11-06 - Hioso Telnet dan Perbaikan Alamat ONU C-Data
 
 ### Hioso
@@ -1184,14 +1200,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 ### Catatan Pembaruan
 - Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.39.6
-
-### v5.39.5 — 2026-11-06 - Tautan Donasi
-
-### Dokumentasi
-- **[DOCS]** Tombol Sponsor di GitHub dan bagian Dukung Proyek di README kini mengarah ke Saweria. Donasi bersifat sukarela, dan lisensi tetap MIT
-
-### Catatan Pembaruan
-- Tidak ada perubahan kode aplikasi atau skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.39.5
 
 <!-- AUTO-CHANGELOG:END -->
 

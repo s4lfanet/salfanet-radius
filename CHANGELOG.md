@@ -6,6 +6,24 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.42.0] - 2026-11-06 - Halaman Web Hioso sebagai Sumber Data
+
+### Hioso
+- **[NEW]** Halaman web OLT (`/onuAllPonOnuList.asp`) kini dibaca sebagai sumber ketiga bila username OLT diisi. Halaman itu memuat semua ONU dari semua PON dalam satu permintaan: nama, MAC, status, daya Rx dan Tx, jarak, alasan offline, dan dying gasp
+- **[NEW]** Penggabungan dengan SNMP: bila halaman memuat lebih banyak ONU, SNMP dianggap parsial (HA7304V menggabungkan PON 2 sampai 4) dan halaman dipakai utuh. Bila tidak, SNMP tetap dasar dan halaman hanya mengisi nama, MAC, daya, dan jarak yang kosong. Halaman yang tidak terbaca tidak mengubah hasil SNMP
+- **[NEW]** Jarak ONU Hioso terisi, dari kolom RTT halaman dengan rumus firmware. Alamat ONU sama dengan jalur SNMP dan Telnet, jadi tidak ada baris ganda
+- **[DOCS]** Format halaman, aturan penggabungan, dan rumus jarak di `docs/features/OLT-SNMP-REFERENCE.md`
+
+### Hal yang perlu diketahui
+- Jarak memakai rumus yang disalin NMS operator dari JavaScript firmware. Bandingkan satu ONU dengan halaman web OLT; bila selisih, beri tahu agar rumusnya dikoreksi
+- Port web dianggap 80, dan login yang dipakai adalah username dan password OLT di Data OLT
+- Diuji dengan server HTTP tiruan, belum pada OLT sungguhan
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.42.0
+
+---
+
 ## [5.41.0] - 2026-11-06 - Hioso Telnet dan Perbaikan Alamat ONU C-Data
 
 ### Hioso
