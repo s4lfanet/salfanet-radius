@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.39.3 - Masa Aktif Prabayar Konsisten di Semua Jalur
+> **Version:** 5.39.4 - Lisensi MIT dan Pembaruan README
 
 ---
 
@@ -16,11 +16,11 @@ Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with Free
 | **PPPoE Management** | Customer accounts, profile-based bandwidth, isolation, IP assignment, MikroTik auto-sync, foto KTP+instalasi via kamera HP, GPS otomatis, **realtime online/offline status (polling 10s)**, **realtime status isolir/aktif (polling 10s)**, **PSB wizard 3-step (adopt dari home.pmynet.id)**, **true optimistic update (reactivate/delete instant)**, **placeholder MAC rejection** |
 | **IP Pool** | RADIUS ippool module — dynamic IP allocation per speed tier, pool create/expand/delete, Pool-Name → group mapping, utilization stats |
 | **Hotspot Voucher** | 8 code types, batch up to 25,000, agent distribution, auto-sync with RADIUS, print templates, **MikroTik local-only mode** (voucher sync via RouterOS API, `salfanet:` comment marker, batch cleanup, cron status sync), **Rekap Voucher** (laporan penjualan per hari/minggu/bulan, filter by agent & profile, export Excel, rincian per hari, pendapatan per agent — support both RADIUS & local NAS via `firstLoginAt`) |
-| **Billing** | Postpaid/prepaid invoices, auto-generation, payment reminders, balance/deposit, auto-renewal |
+| **Billing** | Postpaid/prepaid invoices, auto-generation, payment reminders, balance/deposit, auto-renewal, **postpaid isolir date per customer or for all at once** (same as the billing date, or following the payment date, with the due date fixed), one expiry calculation shared by every payment path |
 | **Payment** | Manual upload (bukti transfer), **QRIS Mandiri** (QR dinamis + listener), Midtrans/Xendit/Duitku/**Tripay** gateway, approval workflow, 0–5 bank accounts, halaman bayar publik `/pay/[token]` |
 | **Notifications** | WhatsApp (Fonnte/WAHA/GOWA/MPWA/Wablas/WABlast/**Kirimi.id**/**Baileys native**), Email SMTP, broadcast (outage/invoice/payment), webhook pesan masuk, **Telegram** (backup DB terjadwal + bot 2-arah untuk teknisi: cek redaman/pelanggan) |
 | **Agent/Reseller** | Balance-based voucher generation, commission tracking, sales stats |
-| **Financial** | Income/expense tracking with categories, keuangan reconciliation |
+| **Financial** | Income/expense tracking with categories, keuangan reconciliation, **Kewajiban BHP & USO** for licensed ISPs (revenue base without PPN, write-offs and interconnection deductions, monthly recap, Excel/PDF, April reminder), DPP and PPN per invoice in Export Data |
 | **Network (FTTH)** | OLT multi-vendor (ZTE/Huawei/FiberHome/BDCOM/Hioso/Raisecom) via SNMP+Telnet+SSH, ONU discovery/register/reboot/config (dry-run preview + commit), ODC/ODP/fiber inventory & trace, network map, **OLT poll + low-signal & mass-outage alert per PON**, **ACS RX/offline alert via GenieACS** |
 | **GenieACS TR-069** | CPE/ONT management, WiFi config (SSID/password), device status & uptime |
 | **Isolation** | Auto-isolate expired customers, customizable WhatsApp/Email/HTML landing page templates, **fallback MikroTik API kick saat radacct kosong**, **HOTSPOT local mode isolation/reactivation** (manageHotspotUser enable/disable + kick), **connectionType-aware reactivation** (PPPoE & Hotspot) di semua route (webhook, mark-paid, status, bulk-status, extend) |
@@ -827,7 +827,7 @@ Dijalankan oleh `cron-runner.ts` (PM2 `salfanet-cron`). Jadwal bawaan bisa diuba
 | Telegram Backup | Every 5 min | Backup DB ke Telegram sesuai jadwal pengaturan |
 | ACS Alert | Every 3 min | RX degradation & ONU offline via GenieACS |
 | Session Monitor | Every 15 min | Security session monitoring |
-| Auto Isolir (PPPoE) | Every hour | Isolir pelanggan prepaid kedaluwarsa |
+| Auto Isolir (PPPoE) | Every hour | Isolir pelanggan prepaid kedaluwarsa dan postpaid sesuai pilihan Tanggal Isolir |
 | Invoice Reminder | Every hour | Reminder invoice (kirim sesuai jam di pengaturan) |
 | Invoice Status | Every hour | PENDING → OVERDUE setelah jatuh tempo |
 | Suspend Check | Every hour | Activate/restore suspend requests |
@@ -1111,6 +1111,16 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.39.4 — 2026-11-06 - Lisensi MIT dan Pembaruan README
+
+### Dokumentasi
+- **[DOCS]** Menambahkan file `LICENSE` berisi lisensi MIT, sesuai yang sudah tertulis di README, supaya GitHub menampilkan lisensinya
+- **[DOCS]** README memuat fitur Kewajiban BHP & USO, pilihan Tanggal Isolir pascabayar, dan perilaku terbaru Auto Isolir
+- **[CHORE]** Menyiapkan `.github/FUNDING.yml` untuk tombol Sponsor. Tombol belum tampil sampai URL donasi diisi
+
+### Catatan Pembaruan
+- Tidak ada perubahan kode aplikasi atau skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.39.4
+
 ### v5.39.3 — 2026-11-06 - Masa Aktif Prabayar Konsisten di Semua Jalur
 
 ### Prabayar
@@ -1158,22 +1168,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - Menambah kolom `postpaidIsolirMode` pada pengaturan perusahaan, diterapkan otomatis saat pembaruan. Data pelanggan tidak berubah sampai tombol Terapkan diklik
 - Naikkan versi: root, backend, frontend ke 5.39.0, aplikasi admin ke 1.0.34
 
-### v5.38.0 — 2026-11-06 - Pilihan Tanggal Isolir Pascabayar
-
-### Tagihan pascabayar
-- **[NEW]** Form tambah dan edit pelanggan pascabayar, di web dan aplikasi admin, punya pilihan **Setelah Bayar, Isolir Berikutnya**. Jatuh tempo tagihan tetap sama setiap bulan pada kedua pilihan
-  - **Sesuai tanggal jatuh tempo:** jatuh tempo tanggal 5, bayar tanggal 10, isolir berikutnya tetap setelah tanggal 5 bulan depan
-  - **Mengikuti tanggal bayar:** jatuh tempo tanggal 5, bayar tanggal 10, isolir berikutnya setelah tanggal 10 bulan depan
-- **[FIX]** Isolir otomatis kini benar-benar bisa mengikuti Tanggal Isolir. Sebelumnya Tanggal Isolir bergeser mengikuti tanggal bayar, tetapi pelanggan tetap diisolir sehari setelah jatuh tempo tagihan
-- **[CHANGE]** Pada pilihan Mengikuti tanggal bayar, pelanggan dengan dua tagihan lewat jatuh tempo tetap diisolir walau Tanggal Isolirnya belum lewat, supaya membayar satu tagihan tidak menutup tunggakan lain
-- **[FIX]** Persetujuan pembayaran manual untuk pascabayar yang terlambat kini menghitung dari tanggal bayar, sama seperti jalur pembayaran lain
-- **[FIX]** Form edit pelanggan hanya menawarkan tanggal tagihan 1 sampai 28. Pilihan 29 sampai 31 sebelumnya diam-diam tersimpan sebagai 28
-- **[DOCS]** Panduan Pelanggan PPPoE menjelaskan kedua pilihan
-
-### Catatan Pembaruan
-- Menambah kolom `postpaidIsolirMode` pada pelanggan, diterapkan otomatis saat pembaruan. Semua pelanggan lama memakai Sesuai tanggal jatuh tempo, jadi jadwal isolir mereka tidak berubah. Tanggal Isolir yang tampil pada pelanggan lama baru terkoreksi saat pembayaran berikutnya
-- Naikkan versi: root, backend, frontend ke 5.38.0, aplikasi admin ke 1.0.33
-
 <!-- AUTO-CHANGELOG:END -->
 
 See full changelog: [CHANGELOG.md](CHANGELOG.md)
@@ -1191,9 +1185,11 @@ See full changelog: [CHANGELOG.md](CHANGELOG.md)
 | [docs/features/GENIEACS-GUIDE.md](./docs/features/GENIEACS-GUIDE.md) | GenieACS TR-069 setup & WiFi management |
 | [docs/billing/AGENT_DEPOSIT_SYSTEM.md](./docs/billing/AGENT_DEPOSIT_SYSTEM.md) | Agent balance & deposit |
 
+<!-- Donation section: add it here once the donation URL is ready, together with .github/FUNDING.yml. -->
+
 ## 📝 License
 
-MIT License - Free for commercial and personal use
+Released under the [MIT License](./LICENSE). Free for commercial and personal use.
 
 ## 👨‍💻 Development
 

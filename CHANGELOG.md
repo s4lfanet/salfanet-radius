@@ -6,6 +6,18 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.39.4] - 2026-11-06 - Lisensi MIT dan Pembaruan README
+
+### Dokumentasi
+- **[DOCS]** Menambahkan file `LICENSE` berisi lisensi MIT, sesuai yang sudah tertulis di README, supaya GitHub menampilkan lisensinya
+- **[DOCS]** README memuat fitur Kewajiban BHP & USO, pilihan Tanggal Isolir pascabayar, dan perilaku terbaru Auto Isolir
+- **[CHORE]** Menyiapkan `.github/FUNDING.yml` untuk tombol Sponsor. Tombol belum tampil sampai URL donasi diisi
+
+### Catatan Pembaruan
+- Tidak ada perubahan kode aplikasi atau skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.39.4
+
+---
+
 ## [5.39.3] - 2026-11-06 - Masa Aktif Prabayar Konsisten di Semua Jalur
 
 ### Prabayar
