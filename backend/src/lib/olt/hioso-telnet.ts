@@ -235,6 +235,32 @@ async function run(session: Session, command: string, timeoutMs = 20000): Promis
 }
 
 /**
+ * Whether the login works, for the connection test: null when it does, else why it did not.
+ * The shared expect-based test sends a bare CR and gives up after 15 seconds in total, which this
+ * kind of OLT does not accept; here the Telnet options are answered and lines end with CRLF.
+ */
+export async function checkHiosoLogin(config: HiosoTelnetConfig): Promise<string | null> {
+  let socket: net.Socket;
+  try {
+    socket = await connect(config);
+  } catch (error: any) {
+    return error?.message ?? 'tidak bisa tersambung';
+  }
+  const session = new Session(socket);
+  const deadline = setTimeout(() => session.close(), 60_000);
+  try {
+    await login(session, config);
+    session.send('exit');
+    return null;
+  } catch (error: any) {
+    return error?.message ?? 'login gagal';
+  } finally {
+    clearTimeout(deadline);
+    session.close();
+  }
+}
+
+/**
  * Every ONU the OLT lists. PON numbering is probed once ("epon 0/1" then "epon 1/1") and the
  * scan stops after the first port the OLT rejects.
  */

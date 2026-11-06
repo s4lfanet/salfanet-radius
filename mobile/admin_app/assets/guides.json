@@ -923,7 +923,7 @@
     "OLT baru dibuat di sini. Peta Jaringan hanya menempatkan OLT yang sudah ada.",
     "C-Data, HSGQ, dan V-SOL dibaca lewat SNMP dengan beberapa kemungkinan nomor OID, karena nomor kolom berbeda antar firmware. Belum semua teruji pada OLT sungguhan, jadi periksa hasil Uji Koneksi dan bandingkan satu dua ONU dengan tampilan OLT.",
     "Bila Uji Koneksi menyebut tabel ONU belum terbaca, periksa community dan versi SNMP, atau pilih merek manual.",
-    "Hioso: isi username dan password OLT agar halaman web OLT (port 80) ikut dibaca. Halaman itu memuat semua PON, jarak, dan alasan offline, dan melengkapi data SNMP. Bila SNMP tidak mengisi daftar ONU, Telnet dipakai (aktifkan Telnet): nama, MAC, dan status link tanpa daya optik.",
+    "Hioso: isi username dan password OLT agar halaman web OLT (port 80) ikut dibaca. Halaman itu memuat semua PON, jarak, dan alasan offline, dan melengkapi data SNMP. Bila SNMP tidak mengisi daftar ONU, Telnet dipakai (aktifkan Telnet): nama, MAC, dan status link tanpa daya optik. Uji Koneksi Telnet untuk Hioso menyebut alasan bila gagal.",
     "Uji Koneksi juga menampilkan jumlah baris data per kolom. Angka 0 pada nama, serial, atau Rx berarti OLT tidak mengisi kolom itu lewat profil tersebut. Kirim tampilan itu bila ada data yang tidak muncul."
    ],
    "related": [

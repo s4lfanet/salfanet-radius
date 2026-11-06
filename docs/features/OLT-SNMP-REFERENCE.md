@@ -119,6 +119,8 @@ Urutan yang dipakai (sesi `backend/src/lib/olt/hioso-telnet.ts`, tanpa `expect` 
 4. `show onu info epon <basis>/<PON> all`, dengan basis 0 pada firmware baru dan 1 pada firmware "V" lama. Bila basis 0 ditolak, basis 1 dicoba. Pindai berhenti di PON pertama yang ditolak.
 5. Halaman panjang diberi `--- Enter Key To Continue ----`; dijawab dengan Enter, dan backspace penghapusnya dibuang.
 
+**Uji Koneksi Telnet untuk merek Hioso memakai sesi ini**, bukan tes `expect` bawaan, dan menampilkan alasan bila gagal (misalnya "username atau password ditolak OLT"). Tes bawaan mengirim CR saja, menunggu paling lama 15 detik, dan tidak menyebut penyebab. Pada satu OLT Hioso produksi (web `GoAhead-Webs`, realm `Epon-System`), OLT diam sampai opsi Telnet dijawab, lalu mengirim prompt Username dalam beberapa milidetik.
+
 Kolom keluaran: OnuId, MacAddress, Status (Up/Down), Firmware, ChipId, Ge, Fe, Pots, CtcStatus, CtcVer, Activate, Uptime, Name. Telnet memberi identitas dan status link, tidak ada daya optik; daya tetap dari SNMP. Klien Telnet bersama (`telnet.ts`) tidak bisa dipakai untuk Hioso: ia tidak mengirim `enable`, tidak mengenal pager ini, dan perintahnya berbeda.
 
 ## Hal yang menjebak

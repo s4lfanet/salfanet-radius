@@ -6,6 +6,21 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.43.1] - 2026-11-07 - Uji Koneksi Telnet untuk OLT Hioso
+
+### Data OLT
+- **[FIX]** Uji Koneksi Telnet untuk OLT bermerek Hioso kini memakai sesi Telnet khusus: jawaban negosiasi opsi Telnet, baris berakhir CRLF, dan login berlapis sampai prompt `EPON#`. Tes bawaan berbasis `expect` mengirim CR saja dan menyerah setelah 15 detik, sehingga berakhir seperti timeout padahal jaringan dan port 23 baik-baik saja
+- **[NEW]** Tes itu menyebut alasan bila gagal: username atau password ditolak OLT, tidak ada prompt Username, atau tidak bisa tersambung. Sebelumnya hanya "Failed"
+
+### Hal yang perlu diketahui
+- Penyebab timeout di OLT yang dicek belum terbukti pasti: jaringan, port 23, banner, dan prompt Username sudah diperiksa dan semuanya baik, tetapi login dengan kredensial tidak dicoba. Dugaan terkuat adalah CR yang tidak dianggap Enter oleh OLT. Bila Uji Koneksi tetap gagal setelah pembaruan, alasan yang tampil menunjukkan tahap mana
+- Merek lain tetap memakai tes lama
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.43.1
+
+---
+
 ## [5.43.0] - 2026-11-06 - Community SNMP Baca dan Tulis di Data OLT
 
 ### Data OLT

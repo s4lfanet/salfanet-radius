@@ -5,6 +5,7 @@ import { testSNMP } from '@/lib/olt/snmp';
 import { snmpDiagnosis } from '@/lib/olt/scan';
 import { testSSH } from '@/lib/olt/ssh';
 import { testTelnet } from '@/lib/olt/telnet';
+import { checkHiosoLogin } from '@/lib/olt/hioso-telnet';
 
 /** Brand, ONU count and per-column rows after SNMP connects; null if it takes too long. */
 async function snmpDiagnosisWithin(host: string, community: string | null | undefined, port: number | null | undefined): Promise<string | null> {
@@ -12,6 +13,21 @@ async function snmpDiagnosisWithin(host: string, community: string | null | unde
     snmpDiagnosis({ host, community: community ?? 'public', port: port ?? undefined }),
     new Promise<null>((resolve) => setTimeout(() => resolve(null), 60_000)),
   ]).catch(() => null);
+}
+
+/**
+ * Telnet login test. A Hioso OLT needs its own session (option negotiation, CRLF, enable) and
+ * says why it failed; the other brands keep the shared expect-based test.
+ */
+async function telnetLogin(
+  config: { host: string; port: number; username: string; password: string },
+  vendor: string | null | undefined,
+): Promise<{ ok: boolean; reason?: string }> {
+  if (vendor?.toLowerCase() === 'hioso') {
+    const reason = await checkHiosoLogin(config);
+    return reason === null ? { ok: true } : { ok: false, reason };
+  }
+  return { ok: await testTelnet(config) };
 }
 
 // POST - Test OLT connection (SNMP / SSH / Telnet)
@@ -36,6 +52,7 @@ export async function POST(request: NextRequest) {
     let snmpPort: number | null | undefined;
     let sshEnabled: boolean;
     let telnetEnabled: boolean;
+    let vendor: string | null | undefined;
 
     if (oltId && !body.ipAddress) {
       // Load from DB (no direct params supplied)
@@ -52,6 +69,7 @@ export async function POST(request: NextRequest) {
       snmpPort = olt.snmpPort;
       sshEnabled = olt.sshEnabled ?? true;
       telnetEnabled = olt.telnetEnabled ?? false;
+      vendor = olt.vendor;
     } else {
       // Use direct params from request body — also when editing, so the
       // test targets the credentials currently typed into the form rather
@@ -71,6 +89,7 @@ export async function POST(request: NextRequest) {
       snmpPort = body.snmpPort ? parseInt(String(body.snmpPort)) : 161;
       sshEnabled = body.sshEnabled !== false;
       telnetEnabled = body.telnetEnabled === true;
+      vendor = body.vendor || saved?.vendor;
     }
 
     // If protocol is specified, test only that protocol
@@ -110,13 +129,12 @@ export async function POST(request: NextRequest) {
         if (!username) {
           return NextResponse.json({ error: 'Username required for Telnet' }, { status: 400 });
         }
-        success = await testTelnet({
-          host: ipAddress,
-          port: telnetPort,
-          username: username as string,
-          password: password ?? '',
-        });
-        message = success ? 'Telnet connection successful' : 'Telnet connection failed';
+        const login = await telnetLogin(
+          { host: ipAddress, port: telnetPort ?? 23, username: username as string, password: password ?? '' },
+          vendor,
+        );
+        success = login.ok;
+        message = success ? 'Telnet connection successful' : `Telnet connection failed${login.reason ? `: ${login.reason}` : ''}`;
       } else {
         return NextResponse.json({ error: 'Invalid protocol. Use snmp, ssh, or telnet' }, { status: 400 });
       }
@@ -158,8 +176,13 @@ export async function POST(request: NextRequest) {
     if (telnetEnabled && username) {
       const telStart = Date.now();
       try {
-        const telOk = await testTelnet({ host: ipAddress, port: telnetPort, username, password: password ?? '' });
-        results.push({ method: 'Telnet', success: telOk, message: telOk ? 'Connected' : 'Failed', time: Date.now() - telStart });
+        const login = await telnetLogin({ host: ipAddress, port: telnetPort ?? 23, username, password: password ?? '' }, vendor);
+        results.push({
+          method: 'Telnet',
+          success: login.ok,
+          message: login.ok ? 'Connected' : `Failed${login.reason ? `: ${login.reason}` : ''}`,
+          time: Date.now() - telStart,
+        });
       } catch (e: any) {
         results.push({ method: 'Telnet', success: false, message: e.message, time: Date.now() - telStart });
       }
