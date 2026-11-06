@@ -33,7 +33,7 @@ snmpwalk -On -v2c -c <community> <ip> 1.3.6.1.4.1.34592.1.3.4.1.1.11
 | Pilihan | Perilaku |
 |---|---|
 | Otomatis | Mengenali merek dari `sysDescr` dan nomor enterprise `sysObjectID`. Bila tidak dikenali, mencoba C-Data, HSGQ, V-SOL, lalu Hioso. Hasilnya diingat satu jam |
-| C-Data FD11xx / FD16xx | Membaca seperti Hioso dulu, supaya OLT yang sudah berjalan tidak berubah. Bila kosong, mencoba NSCRTV, FD-ONU, dan GPON C-Data |
+| C-Data FD11xx / FD16xx | Membaca seperti Hioso dan juga dari cabang C-Data (NSCRTV, FD-ONU, GPON C-Data), lalu memakai yang mendaftarkan lebih banyak ONU. Seri sama, tetap Hioso, sehingga OLT yang sudah terbaca lengkap tidak berubah. EPON dan GPON dibaca terpisah lalu digabung, untuk OLT XPON |
 | HSGQ | Profil HSGQ |
 | V-SOL | V1600D, lalu cabang 37950.1.1.6 |
 | Hioso / C-Data | Tidak berubah |
@@ -55,6 +55,20 @@ Pilihan lama yang sudah tersimpan (`hioso`, `cdata`, `c-data`) tetap valid. Sebe
 | 37950 | V-SOL |
 | 50224 | HSGQ |
 
+## Membaca hasil Uji Koneksi
+
+Setelah SNMP tersambung, Uji Koneksi menampilkan merek, jumlah ONU, dan satu baris per profil yang menjawab, misalnya:
+
+```
+- nscrtv-epon (EPON): 24 ONU; nama 24, serial 0, MAC 24, jarak 24, Rx 0, Tx 0, Rx sisi OLT 24
+```
+
+Angka setelah nama kolom adalah jumlah baris yang dikembalikan OLT. ONU 24 dengan Rx 0 berarti OLT tidak memberi daya sisi ONU lewat OID itu. Kolom yang kosong di sini bukan kesalahan tampilan: OLT memang tidak mengisinya lewat profil tersebut, atau nomor OID-nya berbeda di firmware itu.
+
+## Daya Rx: dua sumber
+
+Daya dibaca dari ONU (arah turun) bila ada. Bila ONU tidak melaporkannya, EPON NSCRTV memakai daya yang diukur OLT dari ONU itu (`ponOpRxPowerOfOnu`, arah naik, centi-dBm). Keduanya "Rx" di panel, tetapi bukan besaran yang sama. Nilai arah naik biasanya mirip, sehingga cukup untuk melihat ONU yang melemah, tetapi jangan dibandingkan langsung dengan angka dari ONU. Sumber tiap pembacaan dicatat di data ONU.
+
 ## Hal yang menjebak
 
 **Nomor kolom berbeda antar revisi MIB.** FD-ONU-MIB revisi 2017 menaruh daya Rx di kolom `.36`, revisi 2014 di `.35`. Kolom Tx yang berdekatan juga berisi angka yang masuk akal. Karena itu pembaca menolak profil yang daya Rx-nya mayoritas positif (itu Tx), dan profil tanpa satu pun pembacaan daya hanya dipakai bila tidak ada yang lebih baik.
@@ -64,6 +78,8 @@ Pilihan lama yang sudah tersimpan (`hioso`, `cdata`, `c-data`) tetap valid. Sebe
 **Indeks NSCRTV adalah satu angka 32-bit.** Satu byte tiap untuk perangkat OLT, kartu, port PON, dan nomor ONU. Tabel daya NSCRTV memakai tiga bagian indeks (perangkat, kartu, port) sedangkan tabel ONU satu, jadi keduanya digabung lewat bagian pertama.
 
 **Kolom Rx GPON di sheet berbeda dari MIB.** Sheet OID C-Data menulis Rx GPON di `...2.8.4.4.1.3`. Pada NSCRTV-FTTX-GPON-MIB, kolom 3 adalah indeks port, dan Rx ada di kolom 4.
+
+**OLT XPON memuat EPON dan GPON sekaligus.** Satu chassis bisa menjawab di pohon EPON dan GPON. Pembaca memilih profil terbaik per teknologi lalu menggabungkan hasilnya, bukan berhenti pada teknologi pertama yang menjawab.
 
 **Satuan daya.** NSCRTV memakai sepersepuluh puluhan dBm (centi-dBm): `-1234` berarti -12,34 dBm. Kolom yang berupa teks (C-Data GPON, V-SOL) membawa satuannya. Pembacaan di luar -50 sampai +10 dBm dianggap tidak ada sinyal.
 

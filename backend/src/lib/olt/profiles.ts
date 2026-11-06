@@ -32,6 +32,8 @@ export const NSCRTV_EPON: PonProfile = {
     distance: `${NSCRTV_EPON_ONU}.15`,
     rx: `${NSCRTV_EPON_OPTICS}.4`,
     tx: `${NSCRTV_EPON_OPTICS}.5`,
+    // ponOpRxPowerOfOnu: "OLT pon port received onu optical power", centi-dBm, one index per ONU.
+    oltRx: '1.3.6.1.4.1.17409.2.3.3.6.1.2',
   },
 };
 
@@ -63,6 +65,7 @@ export const CDATA_GPON_PROFILE: PonProfile = {
   scale: 'auto',
   columns: {
     status: `${CDATA_GPON}.2.1.1`,
+    serial: `${CDATA_GPON}.1.1.4`,
     name: `${CDATA_GPON}.1.1.8`,
     distance: `${CDATA_GPON}.2.1.4`,
     rx: `${CDATA_GPON}.6.1.4`,

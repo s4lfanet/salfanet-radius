@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.40.0 - Monitoring OLT Multi Merek
+> **Version:** 5.40.1 - Data OLT C-Data Lebih Lengkap
 
 ---
 
@@ -1111,6 +1111,23 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.40.1 — 2026-11-06 - Data OLT C-Data Lebih Lengkap
+
+### Monitoring OLT C-Data
+- **[FIX]** Uji Koneksi di form Data OLT kini menampilkan merek, jumlah ONU, dan baris data per kolom. Rilis 5.40.0 menambahkannya hanya pada jalur yang dipakai API langsung, bukan tombol di form, sehingga informasinya tidak pernah tampil
+- **[FIX]** Pembaca lama (Hioso) tidak lagi menang hanya karena menjawab. Pada C-Data, kini dipakai pembaca yang mendaftarkan lebih banyak ONU. Sebelumnya daftar parsial dari pohon lama bisa menutup daftar lengkap dari pohon C-Data
+- **[FIX]** OLT XPON yang memuat kartu EPON dan GPON kini terbaca keduanya. Sebelumnya hanya teknologi pertama yang menjawab
+- **[FIX]** ONU GPON C-Data kini membawa nomor seri. Kolomnya (`gponOnuSn`) belum dibaca di 5.40.0, sehingga ONU GPON muncul tanpa serial
+- **[NEW]** EPON NSCRTV memakai daya yang diukur OLT dari ONU (`ponOpRxPowerOfOnu`) bila ONU tidak melaporkan daya sendiri. Sumbernya dicatat, dan perbedaannya dijelaskan di `docs/features/OLT-SNMP-REFERENCE.md`
+- **[DOCS]** Cara membaca hasil Uji Koneksi, dua sumber daya Rx, dan OLT XPON
+
+### Hal yang perlu diketahui
+- Masih belum diuji pada OLT sungguhan. Logika diuji dengan data SNMP tiruan, termasuk OLT XPON, kolom kosong, dan revisi MIB yang tertukar
+- Bila masih ada data yang tidak muncul, buka Data OLT, klik Uji Koneksi, lalu kirim tampilan barisnya. Angka per kolom menunjukkan bagian mana yang kosong di OLT itu
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.40.1
+
 ### v5.40.0 — 2026-11-06 - Monitoring OLT Multi Merek
 
 ### Monitoring OLT
@@ -1158,21 +1175,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 ### Catatan Pembaruan
 - Tidak ada perubahan kode aplikasi atau skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.39.4
-
-### v5.39.3 — 2026-11-06 - Masa Aktif Prabayar Konsisten di Semua Jalur
-
-### Prabayar
-- **[FIX]** Persetujuan pembayaran manual kini mengikuti tanggal bayar saat pelanggan bayar setelah kadaluarsa. Sebelumnya masa aktif ditambah dari tanggal lama, sehingga bisa tetap lewat dan pelanggan terisolir lagi walau sudah bayar
-- **[FIX]** Bayar di akhir bulan tidak lagi melompat: 31 Januari ditambah satu bulan menjadi 28 Februari, bukan awal Maret. Berlaku di semua jalur pembayaran, perpanjang manual, dan pelanggan baru
-- **[CHANGE]** Perpanjang otomatis dari saldo memakai bulan kalender, bukan 30 hari, sama seperti jalur lain
-- **[CHANGE]** Paket bulanan kini berakhir di ujung hari. Paket harian, per jam, dan per menit tetap dihitung dari waktu tepatnya
-
-### Pascabayar
-- **[FIX]** Perpanjang manual admin kini mengikuti pilihan Tanggal Isolir pelanggan
-
-### Catatan Pembaruan
-- Semua jalur pembayaran kini memakai satu perhitungan masa aktif. Aturan prabayar tidak berubah: bayar sebelum atau pada hari kadaluarsa tanggalnya tetap, bayar setelahnya mengikuti tanggal bayar
-- Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.39.3
 
 <!-- AUTO-CHANGELOG:END -->
 

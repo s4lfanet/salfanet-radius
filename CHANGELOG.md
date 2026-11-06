@@ -6,6 +6,25 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.40.1] - 2026-11-06 - Data OLT C-Data Lebih Lengkap
+
+### Monitoring OLT C-Data
+- **[FIX]** Uji Koneksi di form Data OLT kini menampilkan merek, jumlah ONU, dan baris data per kolom. Rilis 5.40.0 menambahkannya hanya pada jalur yang dipakai API langsung, bukan tombol di form, sehingga informasinya tidak pernah tampil
+- **[FIX]** Pembaca lama (Hioso) tidak lagi menang hanya karena menjawab. Pada C-Data, kini dipakai pembaca yang mendaftarkan lebih banyak ONU. Sebelumnya daftar parsial dari pohon lama bisa menutup daftar lengkap dari pohon C-Data
+- **[FIX]** OLT XPON yang memuat kartu EPON dan GPON kini terbaca keduanya. Sebelumnya hanya teknologi pertama yang menjawab
+- **[FIX]** ONU GPON C-Data kini membawa nomor seri. Kolomnya (`gponOnuSn`) belum dibaca di 5.40.0, sehingga ONU GPON muncul tanpa serial
+- **[NEW]** EPON NSCRTV memakai daya yang diukur OLT dari ONU (`ponOpRxPowerOfOnu`) bila ONU tidak melaporkan daya sendiri. Sumbernya dicatat, dan perbedaannya dijelaskan di `docs/features/OLT-SNMP-REFERENCE.md`
+- **[DOCS]** Cara membaca hasil Uji Koneksi, dua sumber daya Rx, dan OLT XPON
+
+### Hal yang perlu diketahui
+- Masih belum diuji pada OLT sungguhan. Logika diuji dengan data SNMP tiruan, termasuk OLT XPON, kolom kosong, dan revisi MIB yang tertukar
+- Bila masih ada data yang tidak muncul, buka Data OLT, klik Uji Koneksi, lalu kirim tampilan barisnya. Angka per kolom menunjukkan bagian mana yang kosong di OLT itu
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.40.1
+
+---
+
 ## [5.40.0] - 2026-11-06 - Monitoring OLT Multi Merek
 
 ### Monitoring OLT

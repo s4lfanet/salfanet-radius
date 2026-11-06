@@ -699,6 +699,7 @@ export const GUIDES: PageGuide[] = [
       'OLT baru dibuat di sini. Peta Jaringan hanya menempatkan OLT yang sudah ada.',
       'C-Data, HSGQ, dan V-SOL dibaca lewat SNMP dengan beberapa kemungkinan nomor OID, karena nomor kolom berbeda antar firmware. Belum semua teruji pada OLT sungguhan, jadi periksa hasil Uji Koneksi dan bandingkan satu dua ONU dengan tampilan OLT.',
       'Bila Uji Koneksi menyebut tabel ONU belum terbaca, periksa community dan versi SNMP, atau pilih merek manual.',
+      'Uji Koneksi juga menampilkan jumlah baris data per kolom. Angka 0 pada nama, serial, atau Rx berarti OLT tidak mengisi kolom itu lewat profil tersebut. Kirim tampilan itu bila ada data yang tidak muncul.',
     ],
     related: [{ label: 'Monitoring OLT', href: '/admin/olt/monitoring' }],
   },

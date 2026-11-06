@@ -35,6 +35,8 @@ export interface PonProfile {
     serial?: string;
     mac?: string;
     distance?: string;
+    /** Power the OLT measures from this ONU (upstream). Used only when the ONU reports none. */
+    oltRx?: string;
   };
 }
 
@@ -50,6 +52,8 @@ export interface DiscoveredOnu {
   rxPower: number | null;
   txPower: number | null;
   distance: number | null;
+  /** Where rxPower came from: the ONU's own reading, or the OLT's measurement of it. */
+  rxSource: 'onu' | 'olt' | null;
   /** Which profile produced this row, for diagnostics. */
   profile: string;
 }
@@ -200,6 +204,7 @@ export interface ProfileRows {
   serial: Map<string, string>;
   mac: Map<string, string>;
   distance: Map<string, string>;
+  oltRx?: Map<string, string>;
 }
 
 /** Builds the ONU list from already-read columns. No network, so it can be tested. */
@@ -214,6 +219,7 @@ export function assembleOnus(profile: PonProfile, rows: ProfileRows): Discovered
   const serial = alignTo(rows.serial, width);
   const mac = alignTo(rows.mac, width);
   const distance = alignTo(rows.distance, width);
+  const oltRx = alignTo(rows.oltRx ?? new Map<string, string>(), width);
 
   const onus: DiscoveredOnu[] = [];
   for (const [suffix, rawStatus] of rows.status) {
@@ -223,6 +229,9 @@ export function assembleOnus(profile: PonProfile, rows: ProfileRows): Discovered
     const code = parseEnumInt(rawStatus);
     const online = code !== null && profile.online.includes(code);
     const macAddress = normalizeMac(mac.get(suffix));
+    // An offline ONU keeps its last reading on some firmware; that is not a signal.
+    const onuRx = online ? parsePowerDbm(rx.get(suffix), profile.scale) : null;
+    const oltSide = online && onuRx === null ? parsePowerDbm(oltRx.get(suffix), 'centi') : null;
 
     onus.push({
       ...address,
@@ -230,8 +239,8 @@ export function assembleOnus(profile: PonProfile, rows: ProfileRows): Discovered
       description: cleanText(name.get(suffix)),
       serialNumber: normalizeSerial(serial.get(suffix)) ?? macAddress,
       macAddress,
-      // An offline ONU keeps its last reading on some firmware; that is not a signal.
-      rxPower: online ? parsePowerDbm(rx.get(suffix), profile.scale) : null,
+      rxPower: onuRx ?? oltSide,
+      rxSource: onuRx !== null ? 'onu' : oltSide !== null ? 'olt' : null,
       txPower: online ? parsePowerDbm(tx.get(suffix), profile.scale) : null,
       distance: toDistance(distance.get(suffix)),
       profile: profile.id,
@@ -274,29 +283,35 @@ export async function discoverByProfile(config: SNMPConfig, profile: PonProfile,
   if (statusRows.size === 0) return [];
 
   const optional = async (oid: string | undefined) => (oid ? rowsOf(await walk(config, oid), oid) : new Map<string, string>());
-  const [rx, tx, name, serial, mac, distance] = await Promise.all([
+  const [rx, tx, name, serial, mac, distance, oltRx] = await Promise.all([
     optional(columns.rx),
     optional(columns.tx),
     optional(columns.name),
     optional(columns.serial),
     optional(columns.mac),
     optional(columns.distance),
+    optional(columns.oltRx),
   ]);
 
-  return assembleOnus(profile, { status: statusRows, rx, tx, name, serial, mac, distance });
+  return assembleOnus(profile, { status: statusRows, rx, tx, name, serial, mac, distance, oltRx });
 }
 
 /** Which profile answered last, per OLT, so a poll does not probe every candidate again. */
 const workingProfile = new Map<string, { id: string; weak: boolean; at: number }>();
 const WEAK_RECHECK_MS = 60 * 60 * 1000;
-const cacheKey = (config: SNMPConfig) => `${config.host}:${config.port ?? 161}`;
+const cacheKey = (config: SNMPConfig, group: string) => `${config.host}:${config.port ?? 161}:${group}`;
 
 export function forgetWorkingProfile(config: SNMPConfig): void {
-  workingProfile.delete(cacheKey(config));
+  for (const key of [...workingProfile.keys()]) if (key.startsWith(`${config.host}:${config.port ?? 161}:`)) workingProfile.delete(key);
 }
 
-export async function discoverFirstWorking(config: SNMPConfig, profiles: PonProfile[], walk: Walk = snmpWalk): Promise<DiscoveredOnu[]> {
-  const key = cacheKey(config);
+export async function discoverFirstWorking(
+  config: SNMPConfig,
+  profiles: PonProfile[],
+  walk: Walk = snmpWalk,
+  group = 'default',
+): Promise<DiscoveredOnu[]> {
+  const key = cacheKey(config, group);
   const remembered = workingProfile.get(key);
   const known = profiles.find((p) => p.id === remembered?.id);
   const ordered = known ? [known, ...profiles.filter((p) => p !== known)] : profiles;
@@ -319,6 +334,42 @@ export async function discoverFirstWorking(config: SNMPConfig, profiles: PonProf
   }
   workingProfile.delete(key);
   return [];
+}
+
+/**
+ * One OLT can carry EPON and GPON cards (XPON chassis), and each technology answers on
+ * its own tree. So the first working profile is chosen per technology and the results are
+ * joined; stopping at the first technology that answers would hide the other one.
+ */
+export async function discoverGroups(config: SNMPConfig, profiles: PonProfile[], walk: Walk = snmpWalk): Promise<DiscoveredOnu[]> {
+  const seen = new Set<string>();
+  const merged: DiscoveredOnu[] = [];
+  for (const tech of [...new Set(profiles.map((p) => p.tech))]) {
+    const onus = await discoverFirstWorking(config, profiles.filter((p) => p.tech === tech), walk, tech);
+    for (const onu of onus) {
+      const address = `${onu.frame}:${onu.slot}:${onu.port}:${onu.onuId}`;
+      if (seen.has(address)) continue;
+      seen.add(address);
+      merged.push(onu);
+    }
+  }
+  return merged;
+}
+
+export interface ProfileCoverage {
+  profile: string;
+  tech: string;
+  /** Rows each column returned, by column name. A 0 next to a full status column is the gap to look at. */
+  counts: Record<string, number>;
+}
+
+/** How many rows every column of a profile returns, or null when the profile's tree does not answer. */
+export async function profileCoverage(config: SNMPConfig, profile: PonProfile, walk: Walk = snmpWalk): Promise<ProfileCoverage | null> {
+  const entries = Object.entries(profile.columns).filter((entry): entry is [string, string] => typeof entry[1] === 'string');
+  const counts: Record<string, number> = {};
+  const sizes = await Promise.all(entries.map(async ([name, oid]) => [name, rowsOf(await walk(config, oid), oid).size] as const));
+  for (const [name, size] of sizes) counts[name] = size;
+  return counts.status > 0 ? { profile: profile.id, tech: profile.tech, counts } : null;
 }
 
 /** First numeric scalar among candidate OIDs, trying the .0 instance and the bare OID. */

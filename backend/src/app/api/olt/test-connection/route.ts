@@ -2,9 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { testSNMP } from '@/lib/olt/snmp';
-import { scanOlt, describeScan } from '@/lib/olt/scan';
+import { snmpDiagnosis } from '@/lib/olt/scan';
 import { testSSH } from '@/lib/olt/ssh';
 import { testTelnet } from '@/lib/olt/telnet';
+
+/** Brand, ONU count and per-column rows after SNMP connects; null if it takes too long. */
+async function snmpDiagnosisWithin(host: string, community: string | null | undefined, port: number | null | undefined): Promise<string | null> {
+  return Promise.race([
+    snmpDiagnosis({ host, community: community ?? 'public', port: port ?? undefined }),
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), 60_000)),
+  ]).catch(() => null);
+}
 
 // POST - Test OLT connection (SNMP / SSH / Telnet)
 // Accepts either:
@@ -84,11 +92,8 @@ export async function POST(request: NextRequest) {
         // Say which brand answered and how many ONUs were read, so a wrong brand or an
         // empty table shows up now instead of as a blank monitoring page later.
         if (success) {
-          const scan = await Promise.race([
-            scanOlt({ host: ipAddress, community: snmpCommunity ?? 'public', port: snmpPort ?? undefined }),
-            new Promise<null>((resolve) => setTimeout(() => resolve(null), 45_000)),
-          ]).catch(() => null);
-          if (scan) message += `. ${describeScan(scan)}`;
+          const diagnosis = await snmpDiagnosisWithin(ipAddress, snmpCommunity, snmpPort);
+          if (diagnosis) message += `\n${diagnosis}`;
         }
       } else if (protocol === 'ssh') {
         if (!username) {
@@ -126,11 +131,13 @@ export async function POST(request: NextRequest) {
     const snmpStart = Date.now();
     try {
       const snmpResult = await testSNMP({ host: ipAddress, community: snmpCommunity ?? 'public', port: snmpPort });
+      const snmpMs = Date.now() - snmpStart;
+      const diagnosis = snmpResult.success ? await snmpDiagnosisWithin(ipAddress, snmpCommunity, snmpPort) : null;
       results.push({
         method: 'SNMP',
         success: snmpResult.success,
-        message: snmpResult.success ? 'Connected' : (snmpResult.error ?? 'Failed'),
-        time: Date.now() - snmpStart,
+        message: snmpResult.success ? 'Connected' + (diagnosis ? '\n' + diagnosis : '') : (snmpResult.error ?? 'Failed'),
+        time: snmpMs,
       });
     } catch (e: any) {
       results.push({ method: 'SNMP', success: false, message: e.message, time: Date.now() - snmpStart });

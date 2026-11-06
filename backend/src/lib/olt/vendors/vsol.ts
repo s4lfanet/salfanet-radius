@@ -69,6 +69,7 @@ export async function discoverV1600D(config: SNMPConfig, walk: Walk = snmpWalk):
     const key = `${port}.${onuId}`;
     const description = (nameOf.get(index) ?? '').trim();
     const macAddress = normalizeMac(macOf.get(index));
+    const rxPower = online ? parsePowerDbm(rxOf.get(key), 'auto') : null;
     onus.push({
       frame: 0,
       slot: 0,
@@ -78,7 +79,8 @@ export async function discoverV1600D(config: SNMPConfig, walk: Walk = snmpWalk):
       description: description || null,
       serialNumber: macAddress,
       macAddress,
-      rxPower: online ? parsePowerDbm(rxOf.get(key), 'auto') : null,
+      rxPower,
+      rxSource: rxPower !== null ? 'onu' : null,
       txPower: online ? parsePowerDbm(txOf.get(key), 'auto') : null,
       distance: null,
       profile: 'vsol-v1600d',
