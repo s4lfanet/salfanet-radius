@@ -69,6 +69,7 @@ export interface CreatePppoeUserInput {
   expiredAt?: string;
   subscriptionType?: string;
   billingDay?: string | number;
+  postpaidIsolirMode?: string;
   idCardNumber?: string;
   idCardPhoto?: string;
   installationPhotos?: unknown;
@@ -110,6 +111,7 @@ export interface UpdatePppoeUserInput {
   status?: string;
   subscriptionType?: string;
   billingDay?: string | number;
+  postpaidIsolirMode?: string;
   autoRenewal?: boolean;
   autoIsolationEnabled?: boolean;
   idCardNumber?: string | null;
@@ -288,7 +290,7 @@ export async function createPppoeUser(
   const {
     password, profileId, pppoeCustomerId, routerId, areaId,
     email, address, latitude, longitude, ipAddress, macAddress, comment,
-    expiredAt, subscriptionType, billingDay, idCardNumber, idCardPhoto,
+    expiredAt, subscriptionType, billingDay, postpaidIsolirMode, idCardNumber, idCardPhoto,
     installationPhotos, followRoad, registeredAt,
     odp, discount, discountNote, installDate, connectionType,
     registeredByTechnicianId,
@@ -423,6 +425,7 @@ export async function createPppoeUser(
       status: pendingApproval ? 'pending_approval' : 'active',
       subscriptionType: subscriptionType || 'POSTPAID',
       billingDay: billingDay ? Math.min(Math.max(parseInt(String(billingDay)), 1), 28) : 1,
+      postpaidIsolirMode: postpaidIsolirMode === 'PAYMENT_DATE' ? 'PAYMENT_DATE' : 'DUE_DATE',
       idCardNumber: idCardNumber || null,
       idCardPhoto: idCardPhoto || null,
       installationPhotos: installationPhotos ?? null,
@@ -927,6 +930,7 @@ export async function updatePppoeUser(
       ...(data.status && { status: data.status }),
       ...(data.subscriptionType && { subscriptionType: data.subscriptionType }),
       ...(data.billingDay !== undefined && { billingDay: Math.min(Math.max(parseInt(String(data.billingDay)), 1), 28) }),
+      ...((data.postpaidIsolirMode === 'DUE_DATE' || data.postpaidIsolirMode === 'PAYMENT_DATE') && { postpaidIsolirMode: data.postpaidIsolirMode }),
       // expiredAt: if explicitly provided, save it directly with correct timezone handling.
       // Date-only string (YYYY-MM-DD) ? end of day WIB (23:59:59 WIB = 16:59:59 UTC).
       // No longer auto-recalculate expiredAt from billingDay on every edit ï¿½

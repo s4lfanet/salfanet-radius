@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.37.0 - Laporan Kewajiban BHP dan USO
+> **Version:** 5.38.0 - Pilihan Tanggal Isolir Pascabayar
 
 ---
 
@@ -1111,6 +1111,22 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.38.0 — 2026-11-06 - Pilihan Tanggal Isolir Pascabayar
+
+### Tagihan pascabayar
+- **[NEW]** Form tambah dan edit pelanggan pascabayar, di web dan aplikasi admin, punya pilihan **Setelah Bayar, Isolir Berikutnya**. Jatuh tempo tagihan tetap sama setiap bulan pada kedua pilihan
+  - **Sesuai tanggal jatuh tempo:** jatuh tempo tanggal 5, bayar tanggal 10, isolir berikutnya tetap setelah tanggal 5 bulan depan
+  - **Mengikuti tanggal bayar:** jatuh tempo tanggal 5, bayar tanggal 10, isolir berikutnya setelah tanggal 10 bulan depan
+- **[FIX]** Isolir otomatis kini benar-benar bisa mengikuti Tanggal Isolir. Sebelumnya Tanggal Isolir bergeser mengikuti tanggal bayar, tetapi pelanggan tetap diisolir sehari setelah jatuh tempo tagihan
+- **[CHANGE]** Pada pilihan Mengikuti tanggal bayar, pelanggan dengan dua tagihan lewat jatuh tempo tetap diisolir walau Tanggal Isolirnya belum lewat, supaya membayar satu tagihan tidak menutup tunggakan lain
+- **[FIX]** Persetujuan pembayaran manual untuk pascabayar yang terlambat kini menghitung dari tanggal bayar, sama seperti jalur pembayaran lain
+- **[FIX]** Form edit pelanggan hanya menawarkan tanggal tagihan 1 sampai 28. Pilihan 29 sampai 31 sebelumnya diam-diam tersimpan sebagai 28
+- **[DOCS]** Panduan Pelanggan PPPoE menjelaskan kedua pilihan
+
+### Catatan Pembaruan
+- Menambah kolom `postpaidIsolirMode` pada pelanggan, diterapkan otomatis saat pembaruan. Semua pelanggan lama memakai Sesuai tanggal jatuh tempo, jadi jadwal isolir mereka tidak berubah. Tanggal Isolir yang tampil pada pelanggan lama baru terkoreksi saat pembayaran berikutnya
+- Naikkan versi: root, backend, frontend ke 5.38.0, aplikasi admin ke 1.0.33
+
 ### v5.37.0 — 2026-11-06 - Laporan Kewajiban BHP dan USO
 
 ### Kewajiban BHP & USO
@@ -1168,23 +1184,6 @@ BHP dan USO adalah biaya ISP, jadi tagihan pelanggan tidak berubah. Angkanya per
 
 ### Catatan Pembaruan
 - Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.36.6
-
-### v5.36.5 — 2026-11-05 - Semua SSID Aktif Tampil, ONT TR-181, dan Diagnostik WiFi
-
-### Perbaikan
-- **[FIX]** Halaman WiFi pelanggan (web dan aplikasi) kini menampilkan **semua slot yang aktif**, apa pun label band-nya, jadi salah menebak band tidak bisa lagi menyembunyikan jaringan. Sebelumnya hanya satu SSID per band. SSID tamu yang aktif ikut tampil. Bila sebuah ONT mengaku lebih dari 4 slot aktif, tampilan kembali ke satu SSID per band
-- **[FIX]** Status aktif memakai parameter `Status` (Up atau Disabled) dari ONT. `Enable` hanya dipakai bila `Status` tidak ada, karena banyak firmware mengosongkannya
-- **[NEW]** ONT model data TR-181 (`Device.WiFi.*`) kini terbaca di halaman WiFi pelanggan, termasuk band dari Radio, dan ubah SSID serta password menulis ke jalur TR-181. Sebelumnya halaman kosong untuk ONT seperti ini
-- **[NEW]** Diagnostik: `/customer/wifi?debug=1` menampilkan semua slot yang dilihat server (Enable, Status, Standard, Channel, band, model data) tanpa password, hanya untuk ONT pelanggan yang login
-
-### Belum terjawab
-- Tabel slot HG6045F3 dari GenieACS, bila dijalankan ke kode 5.36.1 sampai versi ini, selalu menghasilkan slot 1 dan 9. Halaman pelanggan di 5.36.3 tetap satu jaringan, jadi data yang diterima server saat itu berbeda dari tabel tersebut, atau ada sebab lain yang belum ditemukan. Diagnostik di atas dibuat untuk menjawabnya
-
-### Pengujian
-- 15 kasus: tabel HG6045F3 dari GenieACS, pola slot umum ONT lain, ONT satu band, radio 5GHz mati, firmware tanpa Status dan Enable, dan TR-181. Pola ONT selain HG6045F3 adalah data buatan, belum diuji pada perangkat
-
-### Catatan Pembaruan
-- Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.36.5
 
 <!-- AUTO-CHANGELOG:END -->
 

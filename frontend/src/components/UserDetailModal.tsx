@@ -30,6 +30,7 @@ interface User {
   longitude: number | null;
   subscriptionType?: 'PREPAID' | 'POSTPAID';
   billingDay?: number | null;
+  postpaidIsolirMode?: 'DUE_DATE' | 'PAYMENT_DATE';
   balance?: number;
   autoRenewal?: boolean;
   autoIsolationEnabled?: boolean;
@@ -131,6 +132,7 @@ export default function UserDetailModal({
     ipAddress: '',
     expiredAt: '',
     billingDay: 1,
+    postpaidIsolirMode: 'DUE_DATE' as 'DUE_DATE' | 'PAYMENT_DATE',
     latitude: '',
     longitude: '',
     subscriptionType: 'PREPAID' as 'PREPAID' | 'POSTPAID',
@@ -166,6 +168,7 @@ export default function UserDetailModal({
         latitude: user.latitude?.toString() || '',
         longitude: user.longitude?.toString() || '',
         subscriptionType: user.subscriptionType ?? 'POSTPAID',
+        postpaidIsolirMode: user.postpaidIsolirMode ?? 'DUE_DATE',
         macAddress: user.macAddress || '',
         comment: user.comment || '',
         idCardNumber: user.idCardNumber || '',
@@ -625,11 +628,26 @@ export default function UserDetailModal({
                       }}
                       className={selectCls}
                     >
-                      {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                      {Array.from({ length: 28 }, (_, i) => i + 1).map((day) => (
                         <option key={day} value={day}>Tanggal {day}</option>
                       ))}
                     </select>
                     <p className={hintCls}>Jatuh tempo bulanan. Mengubah tanggal akan menggeser tanggal isolir ke bulan depan.</p>
+                  </div>
+                )}
+
+                {formData.subscriptionType === 'POSTPAID' && (
+                  <div>
+                    <label className={labelCls}>Setelah Bayar, Isolir Berikutnya</label>
+                    <select
+                      value={formData.postpaidIsolirMode}
+                      onChange={(e) => setFormData({ ...formData, postpaidIsolirMode: e.target.value as 'DUE_DATE' | 'PAYMENT_DATE' })}
+                      className={selectCls}
+                    >
+                      <option value="DUE_DATE">Sesuai tanggal jatuh tempo</option>
+                      <option value="PAYMENT_DATE">Mengikuti tanggal bayar</option>
+                    </select>
+                    <p className={hintCls}>Jatuh tempo tagihan tetap sama setiap bulan. Pilihan ini hanya mengatur tanggal isolir.</p>
                   </div>
                 )}
 
@@ -639,7 +657,9 @@ export default function UserDetailModal({
                   <input type="date" value={formData.expiredAt} onChange={(e) => setFormData({ ...formData, expiredAt: e.target.value })} className={inputCls} />
                   <p className={hintCls}>
                     {formData.subscriptionType === 'POSTPAID'
-                      ? 'Dihitung otomatis dari tanggal tagihan bulan depan.'
+                      ? formData.postpaidIsolirMode === 'PAYMENT_DATE'
+                        ? 'Pelanggan diisolir setelah tanggal ini bila tagihannya belum dibayar. Bergeser mengikuti tanggal bayar.'
+                        : 'Diperbarui ke jatuh tempo berikutnya setiap pelanggan membayar.'
                       : 'Tanggal kedaluwarsa paket. Kosongkan untuk mengikuti profil.'}
                   </p>
                 </div>

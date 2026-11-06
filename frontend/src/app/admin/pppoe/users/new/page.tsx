@@ -47,6 +47,7 @@ export default function NewPppoeUserPage() {
     ipAddress: '',
     subscriptionType: 'POSTPAID' as 'POSTPAID' | 'PREPAID',
     billingDay: '1',
+    postpaidIsolirMode: 'DUE_DATE',
     expiredAt: '',
     name: '',
     phone: '',
@@ -445,6 +446,16 @@ export default function NewPppoeUserPage() {
                     <ModalSelect value={formData.billingDay} onChange={(e) => field('billingDay', e.target.value)}>
                       {Array.from({ length: 28 }, (_, i) => i + 1).map(day => <option key={day} value={day}>Tanggal {day}</option>)}
                     </ModalSelect>
+                  </div>
+                )}
+                {formData.subscriptionType === 'POSTPAID' && (
+                  <div>
+                    <ModalLabel>Setelah Bayar, Isolir Berikutnya</ModalLabel>
+                    <ModalSelect value={formData.postpaidIsolirMode} onChange={(e) => field('postpaidIsolirMode', e.target.value)}>
+                      <option value="DUE_DATE">Sesuai tanggal jatuh tempo</option>
+                      <option value="PAYMENT_DATE">Mengikuti tanggal bayar</option>
+                    </ModalSelect>
+                    <p className="text-[10px] text-muted-foreground mt-1">Jatuh tempo tagihan tetap sama setiap bulan. Pilihan ini hanya mengatur tanggal isolir.</p>
                   </div>
                 )}
                 {formData.subscriptionType === 'PREPAID' && (

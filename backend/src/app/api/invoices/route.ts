@@ -14,6 +14,7 @@ import { generateInvoiceNumber } from '@/server/services/billing/invoice.service
 import { toUTC, nowWIB } from '@/lib/timezone';
 import { ok, created, badRequest, notFound, serverError } from '@/lib/api-response';
 import { notifyCollector, fmtRupiah } from '@/server/services/collector-notification.service';
+import { isolirDateAfterPayment } from '@/server/services/billing/invoice-schedule';
 // Generate secure random token for payment link
 function generatePaymentToken(): string {
   return randomBytes(32).toString('hex');
@@ -423,7 +424,7 @@ export async function PUT(request: NextRequest) {
         }
 
         // For package change: preserve existing expiredAt, do NOT extend
-        const finalExpiry = isPackageChange ? (user.expiredAt || now) : toUTC(newExpiry);
+        const finalExpiry = isPackageChange ? (user.expiredAt || now) : isolirDateAfterPayment(user, existingInvoice.dueDate, now) ?? toUTC(newExpiry);
 
         // Update user expiredAt, activate if isolated/suspended/expired, and update profileId if package changed
         const shouldActivate = ['isolated', 'suspended', 'expired'].includes(user.status);

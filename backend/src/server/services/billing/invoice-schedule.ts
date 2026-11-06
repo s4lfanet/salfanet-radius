@@ -62,6 +62,39 @@ export function prepaidIsDue(expiredAt: Date, now: Date, leadDays: number): bool
   return daysBetween(companyDate(now), companyDate(expiredAt)) <= leadDays;
 }
 
+/**
+ * POSTPAID customer on DUE_DATE: the isolir date after a payment is the next billing
+ * day, whenever they paid. Counted from the invoice's due date when it is paid early,
+ * so paying the 5 Nov bill on 1 Nov gives 5 Dec, not 5 Nov. Returns null for everyone
+ * else, whose expiry keeps being extended by the package validity.
+ */
+export function isolirDateAfterPayment(
+  user: { subscriptionType?: string | null; postpaidIsolirMode?: string | null; billingDay?: number | null },
+  invoiceDueDate: Date | null | undefined,
+  now: Date,
+): Date | null {
+  if (user.subscriptionType !== 'POSTPAID' || user.postpaidIsolirMode !== 'DUE_DATE') return null;
+  const from = companyDate(invoiceDueDate && invoiceDueDate > now ? invoiceDueDate : now);
+  const thisMonth = postpaidDueDate(from.year, from.month, user.billingDay);
+  if (companyDate(thisMonth).day > from.day) return thisMonth;
+  return from.month === 12 ? postpaidDueDate(from.year + 1, 1, user.billingDay) : postpaidDueDate(from.year, from.month + 1, user.billingDay);
+}
+
+/**
+ * Whether a POSTPAID customer with an overdue bill is isolated now. On PAYMENT_DATE the
+ * last payment protects them until their isolir date, but only for the bill of the
+ * current cycle: a second overdue bill means they are still in arrears.
+ */
+export function postpaidShouldIsolate(
+  user: { postpaidIsolirMode?: string | null; expiredAt?: Date | null },
+  overdueBills: number,
+  cutoff: Date,
+): boolean {
+  if (overdueBills === 0) return false;
+  if (user.postpaidIsolirMode !== 'PAYMENT_DATE' || overdueBills > 1 || !user.expiredAt) return true;
+  return user.expiredAt < cutoff;
+}
+
 /** POSTPAID: billing day of the given month, clamped to the month's length. */
 export function postpaidDueDate(year: number, month: number, billingDay: number | null | undefined): Date {
   const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();

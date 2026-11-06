@@ -6,6 +6,24 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.38.0] - 2026-11-06 - Pilihan Tanggal Isolir Pascabayar
+
+### Tagihan pascabayar
+- **[NEW]** Form tambah dan edit pelanggan pascabayar, di web dan aplikasi admin, punya pilihan **Setelah Bayar, Isolir Berikutnya**. Jatuh tempo tagihan tetap sama setiap bulan pada kedua pilihan
+  - **Sesuai tanggal jatuh tempo:** jatuh tempo tanggal 5, bayar tanggal 10, isolir berikutnya tetap setelah tanggal 5 bulan depan
+  - **Mengikuti tanggal bayar:** jatuh tempo tanggal 5, bayar tanggal 10, isolir berikutnya setelah tanggal 10 bulan depan
+- **[FIX]** Isolir otomatis kini benar-benar bisa mengikuti Tanggal Isolir. Sebelumnya Tanggal Isolir bergeser mengikuti tanggal bayar, tetapi pelanggan tetap diisolir sehari setelah jatuh tempo tagihan
+- **[CHANGE]** Pada pilihan Mengikuti tanggal bayar, pelanggan dengan dua tagihan lewat jatuh tempo tetap diisolir walau Tanggal Isolirnya belum lewat, supaya membayar satu tagihan tidak menutup tunggakan lain
+- **[FIX]** Persetujuan pembayaran manual untuk pascabayar yang terlambat kini menghitung dari tanggal bayar, sama seperti jalur pembayaran lain
+- **[FIX]** Form edit pelanggan hanya menawarkan tanggal tagihan 1 sampai 28. Pilihan 29 sampai 31 sebelumnya diam-diam tersimpan sebagai 28
+- **[DOCS]** Panduan Pelanggan PPPoE menjelaskan kedua pilihan
+
+### Catatan Pembaruan
+- Menambah kolom `postpaidIsolirMode` pada pelanggan, diterapkan otomatis saat pembaruan. Semua pelanggan lama memakai Sesuai tanggal jatuh tempo, jadi jadwal isolir mereka tidak berubah. Tanggal Isolir yang tampil pada pelanggan lama baru terkoreksi saat pembayaran berikutnya
+- Naikkan versi: root, backend, frontend ke 5.38.0, aplikasi admin ke 1.0.33
+
+---
+
 ## [5.37.0] - 2026-11-06 - Laporan Kewajiban BHP dan USO
 
 ### Kewajiban BHP & USO

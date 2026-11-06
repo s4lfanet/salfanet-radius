@@ -302,6 +302,11 @@ model invoice {
   @@map("invoices")
 }
 
+enum PostpaidIsolirMode {
+  DUE_DATE // Isolir mengikuti tanggal jatuh tempo tagihan
+  PAYMENT_DATE // Isolir mengikuti tanggal bayar terakhir
+}
+
 enum InvoiceType {
   MONTHLY // Tagihan bulanan regular
   INSTALLATION // Biaya pemasangan
@@ -582,6 +587,8 @@ model pppoeUser {
   // NEW: Billing configuration fields
   billingDay           Int?           @default(1) // 1-31, untuk POSTPAID (default: tanggal 1)
   autoIsolationEnabled Boolean        @default(true) // Allow auto isolation
+  // POSTPAID: which date isolation runs on. The bill is due on billingDay either way.
+  postpaidIsolirMode   PostpaidIsolirMode @default(DUE_DATE)
   balance              Int            @default(0) // Saldo deposit (prepaid)
   autoRenewal          Boolean        @default(false) // Auto renew from balance
   connectionType       ConnectionType @default(PPPOE)

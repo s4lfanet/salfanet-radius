@@ -209,7 +209,9 @@
    ],
    "notes": [
     "Mengubah username atau password di sini langsung berlaku di RADIUS; pelanggan perlu reconnect.",
-    "Tanggal Isolir boleh dikosongkan, sistem menghitungnya dari tanggal tagihan dan masa tenggang."
+    "Tanggal Isolir boleh dikosongkan, sistem menghitungnya dari tanggal tagihan dan masa tenggang.",
+    "Pelanggan pascabayar punya pilihan Setelah Bayar, Isolir Berikutnya. Jatuh tempo tagihan tetap sama setiap bulan. Sesuai tanggal jatuh tempo: isolir berikutnya kembali ke jatuh tempo, walau pelanggan bayar terlambat. Mengikuti tanggal bayar: bayar tanggal 10 berarti isolir berikutnya tanggal 10 bulan depan.",
+    "Pada pilihan Mengikuti tanggal bayar, pelanggan yang punya dua tagihan lewat jatuh tempo tetap diisolir walau Tanggal Isolirnya belum lewat."
    ],
    "related": [
     {

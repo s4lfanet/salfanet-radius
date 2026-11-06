@@ -22,6 +22,7 @@ export const createPppoeUserSchema = z.object({
   ipAddress: z.string().regex(/^(\d{1,3}\.){3}\d{1,3}$/, 'IP address tidak valid').optional().or(z.literal('')),
   subscriptionType: z.enum(['PREPAID', 'POSTPAID']).default('POSTPAID'),
   billingDay: z.number().int().min(1).max(31).optional(),
+  postpaidIsolirMode: z.enum(['DUE_DATE', 'PAYMENT_DATE']).optional(),
   comment: z.string().max(500).optional(),
   // PSB wizard fields
   odp: z.string().max(100).optional(),

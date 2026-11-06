@@ -7,6 +7,7 @@ import { nowWIB, toUTC, getCurrentTimezone } from '@/lib/timezone';
 import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service';
 import { managePppSecret, shouldManagePppSecretForSuspend, kickPppoeSession } from '@/server/services/mikrotik/ppp-secret.service';
 import { recordInvoiceIncome } from '@/server/services/billing/invoice-income.service';
+import { isolirDateAfterPayment } from '@/server/services/billing/invoice-schedule';
 
 // POST - mark invoice as paid by collector
 // Mirrors the payment webhook flow: records payment, extends expiry,
@@ -33,6 +34,7 @@ export async function POST(req: NextRequest) {
         status: true,
         amount: true,
         userId: true,
+        dueDate: true,
         customerUsername: true,
         user: {
           select: {
@@ -41,6 +43,9 @@ export async function POST(req: NextRequest) {
             password: true,
             status: true,
             expiredAt: true,
+            subscriptionType: true,
+            postpaidIsolirMode: true,
+            billingDay: true,
             ipAddress: true,
             connectionType: true,
             areaId: true,
@@ -118,7 +123,7 @@ export async function POST(req: NextRequest) {
           newExpiredAt.setMinutes(newExpiredAt.getMinutes() + user.profile.validityValue);
           break;
       }
-      newExpiredAt = toUTC(newExpiredAt);
+      newExpiredAt = isolirDateAfterPayment(user, invoice.dueDate, now) ?? toUTC(newExpiredAt);
     }
 
     // Wrap invoice update + proof creation in a transaction so they

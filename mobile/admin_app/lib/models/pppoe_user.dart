@@ -25,6 +25,7 @@ class PppoeUser {
     this.subscriptionType,
     this.connectionType,
     this.billingDay,
+    this.postpaidIsolirMode,
     this.balance,
     this.comment,
     this.latitude,
@@ -59,6 +60,7 @@ class PppoeUser {
   final String? subscriptionType;
   final String? connectionType;
   final int? billingDay;
+  final String? postpaidIsolirMode;
   final int? balance;
   final String? comment;
   final double? latitude;
@@ -107,6 +109,7 @@ class PppoeUser {
       subscriptionType: _s(json['subscriptionType']),
       connectionType: _s(json['connectionType']),
       billingDay: _i(json['billingDay']),
+      postpaidIsolirMode: _s(json['postpaidIsolirMode']),
       balance: _i(json['balance']),
       comment: _s(json['comment']),
       latitude: _f(json['latitude']),

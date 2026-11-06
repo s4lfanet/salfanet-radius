@@ -9,6 +9,7 @@ import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.servic
 import { sendPushToUser } from '@/server/services/notifications/push-templates.service';
 import { toUTC, nowWIB, getCurrentTimezone } from '@/lib/timezone';
 import { createAdminNotification } from '@/server/services/notifications/admin-notification.service';
+import { isolirDateAfterPayment } from '@/server/services/billing/invoice-schedule';
 
 function formatBankAccountsWA(bankAccounts: any): string {
   if (!bankAccounts) return '';
@@ -142,11 +143,14 @@ export async function PATCH(
       const company = await prisma.company.findFirst();
 
       // Compute expiry before transaction (reads)
-      const currentExpiry = manualPayment.user.expiredAt || new Date();
+      const now = nowWIB();
+      const currentExpiry = manualPayment.user.expiredAt || now;
       const validityValue = manualPayment.user.profile?.validityValue ?? 1;
       const validityUnit = manualPayment.user.profile?.validityUnit ?? 'MONTHS';
 
-      let newExpiry = new Date(currentExpiry);
+      // A late POSTPAID payment counts from the day it was paid, as every other payment path does.
+      const lapsed = manualPayment.user.subscriptionType === 'POSTPAID' && currentExpiry < now;
+      let newExpiry = new Date(lapsed ? now : currentExpiry);
 
       switch (validityUnit) {
         case 'MONTHS':
@@ -162,6 +166,8 @@ export async function PATCH(
           newExpiry.setMinutes(newExpiry.getMinutes() + validityValue);
           break;
       }
+
+      newExpiry = isolirDateAfterPayment(manualPayment.user, manualPayment.invoice?.dueDate, now) ?? newExpiry;
 
       // ============================================
       // CHECK FOR PACKAGE CHANGE IN INVOICE METADATA

@@ -325,6 +325,7 @@ class _PppoeDetailScreenState extends State<PppoeDetailScreen> {
               InfoRow('Paket', u.profilePrice != null ? '${u.profileName ?? '-'} · ${formatCurrency(u.profilePrice!)}' : u.profileName),
               InfoRow('Tipe', u.subscriptionType == 'PREPAID' ? 'Prabayar' : (u.subscriptionType == 'POSTPAID' ? 'Pascabayar' : u.subscriptionType)),
               InfoRow('Tanggal Tagihan', u.subscriptionType == 'POSTPAID' && u.billingDay != null ? 'Setiap tanggal ${u.billingDay}' : null),
+              InfoRow('Isolir Setelah Bayar', u.subscriptionType != 'POSTPAID' ? null : (u.postpaidIsolirMode == 'PAYMENT_DATE' ? 'Mengikuti tanggal bayar' : 'Sesuai jatuh tempo')),
               InfoRow('Jatuh Tempo', formatDateOrNull(u.expiredAt)),
               InfoRow('Saldo', u.balance != null && u.balance! > 0 ? formatCurrency(u.balance!) : null),
             ],

@@ -15,6 +15,7 @@ import { disconnectPPPoEUser, addToMikrotikAddressList } from '@/server/services
 import { managePppSecret, shouldManagePppSecretForSuspend, kickPppoeSession } from '@/server/services/mikrotik/ppp-secret.service';
 import { sendIsolationNotice } from '@/server/services/notifications/isolation-notice.service';
 import { logActivity } from '@/server/services/activity-log.service';
+import { postpaidShouldIsolate } from '@/server/services/billing/invoice-schedule';
 
 export async function runAutoIsolir(): Promise<{ isolated: number; total: number; errors: string[] }> {
   const errors: string[] = [];
@@ -66,19 +67,17 @@ export async function runAutoIsolir(): Promise<{ isolated: number; total: number
   });
 
   // POSTPAID: has OVERDUE invoice past dueDate + graceDays
-  const postpaidOverdue = await prisma.pppoeUser.findMany({
+  const overdueBill = { status: 'OVERDUE' as const, dueDate: { lt: cutoff } };
+  const postpaidCandidates = await prisma.pppoeUser.findMany({
     where: {
       status: 'active',
       autoIsolationEnabled: true,
       subscriptionType: 'POSTPAID',
-      invoices: {
-        some: {
-          status: 'OVERDUE',
-          dueDate: { lt: cutoff },
-        },
-      },
+      invoices: { some: overdueBill },
     },
     select: {
+      invoices: { where: overdueBill, select: { id: true } },
+      postpaidIsolirMode: true,
       id: true,
       username: true,
       name: true,
@@ -98,6 +97,8 @@ export async function runAutoIsolir(): Promise<{ isolated: number; total: number
       router: { select: { id: true, authMode: true } },
     },
   });
+
+  const postpaidOverdue = postpaidCandidates.filter((u) => postpaidShouldIsolate(u, u.invoices.length, cutoff));
 
   const expiredUsers = [...prepaidExpired, ...postpaidOverdue];
   console.log(`[AUTO_ISOLIR] Found ${prepaidExpired.length} prepaid + ${postpaidOverdue.length} postpaid = ${expiredUsers.length} users (grace: ${graceDays}d)`);
