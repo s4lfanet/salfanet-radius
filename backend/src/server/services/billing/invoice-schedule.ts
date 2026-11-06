@@ -80,6 +80,35 @@ export function isolirDateAfterPayment(
   return from.month === 12 ? postpaidDueDate(from.year + 1, 1, user.billingDay) : postpaidDueDate(from.year, from.month + 1, user.billingDay);
 }
 
+/** A package's validity counted from `from`. Months keep the day, clamped: 31 Jan + 1 month is 28 Feb. */
+function afterValidity(from: Date, validity: { validityUnit: string; validityValue: number }): Date {
+  const { validityUnit: unit, validityValue: value } = validity;
+  if (unit === 'MONTHS') {
+    const c = companyDate(from);
+    const index = c.month - 1 + value;
+    const year = c.year + Math.floor(index / 12);
+    const month = (index % 12) + 1;
+    return endOfCompanyDay({ year, month, day: Math.min(c.day, new Date(Date.UTC(year, month, 0)).getUTCDate()) });
+  }
+  const unitMs = unit === 'DAYS' ? 86_400_000 : unit === 'HOURS' ? 3_600_000 : 60_000;
+  return new Date(from.getTime() + value * unitMs);
+}
+
+/**
+ * The isolir date a POSTPAID customer gets from a payment. On PAYMENT_DATE it counts
+ * from the day they paid, isolated or not; the bill stays due on billingDay, so an
+ * early payer is never isolated before that bill is overdue. Null for PREPAID.
+ */
+export function postpaidIsolirAfterPayment(
+  user: { subscriptionType: string; postpaidIsolirMode: string; billingDay: number | null },
+  validity: { validityUnit: string; validityValue: number },
+  invoiceDueDate: Date | null | undefined,
+  now: Date,
+): Date | null {
+  if (user.subscriptionType !== 'POSTPAID') return null;
+  return user.postpaidIsolirMode === 'PAYMENT_DATE' ? afterValidity(now, validity) : isolirDateAfterPayment(user, invoiceDueDate, now);
+}
+
 /**
  * Whether a POSTPAID customer with an overdue bill is isolated now. On PAYMENT_DATE the
  * last payment protects them until their isolir date, but only for the bill of the

@@ -210,7 +210,7 @@
    "notes": [
     "Mengubah username atau password di sini langsung berlaku di RADIUS; pelanggan perlu reconnect.",
     "Tanggal Isolir boleh dikosongkan, sistem menghitungnya dari tanggal tagihan dan masa tenggang.",
-    "Tanggal isolir pascabayar dihitung otomatis, dan jatuh tempo tagihan tetap sama setiap bulan. Sama dengan tanggal tagihan: isolir selalu kembali ke tanggal tagihan, walau pelanggan bayar terlambat. Otomatis mengikuti tanggal bayar: bayar tanggal 10 berarti isolir berikutnya tanggal 10 bulan depan.",
+    "Tanggal isolir pascabayar dihitung otomatis, dan jatuh tempo tagihan tetap sama setiap bulan. Sama dengan tanggal tagihan: isolir selalu kembali ke tanggal tagihan, walau pelanggan bayar terlambat. Otomatis mengikuti tanggal bayar: bayar tanggal 10 berarti isolir berikutnya tanggal 10 bulan depan, baik pelanggan sedang terisolir maupun tidak. Pelanggan tidak diisolir sebelum tagihannya lewat jatuh tempo.",
     "Atur pilihan untuk semua pelanggan di Pengaturan Isolir, lalu klik Terapkan ke semua pelanggan pascabayar. Pelanggan baru mengikuti pengaturan itu. Untuk sebagian pelanggan, pakai Edit Massal.",
     "Pada pilihan Otomatis mengikuti tanggal bayar, pelanggan yang punya dua tagihan lewat jatuh tempo tetap diisolir walau Tanggal Isolirnya belum lewat."
    ],

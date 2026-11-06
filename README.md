@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.39.0 - Tanggal Isolir Pascabayar Serba Otomatis
+> **Version:** 5.39.1 - Isolir Mengikuti Tanggal Bayar untuk Semua Pembayaran
 
 ---
 
@@ -1111,6 +1111,16 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.39.1 — 2026-11-06 - Isolir Mengikuti Tanggal Bayar untuk Semua Pembayaran
+
+### Tagihan pascabayar
+- **[CHANGE]** Pada pilihan Otomatis mengikuti tanggal bayar, Tanggal Isolir kini selalu dihitung dari tanggal bayar, juga untuk pelanggan yang tidak terisolir. Sebelumnya pembayaran sebelum Tanggal Isolir menambah sebulan dari tanggal lama. Jatuh tempo tagihan tetap sama, dan pelanggan tidak diisolir sebelum tagihannya lewat jatuh tempo
+- **[FIX]** Saat cuti selesai, pelanggan dengan pilihan itu tidak lagi tertahan terisolir selama Tanggal Isolirnya belum lewat, kecuali punya dua tagihan lewat jatuh tempo. Aturannya sama dengan cron isolir
+- **[FIX]** Perhitungan bulan untuk pilihan itu tidak melompat di akhir bulan: bayar 31 Januari menjadi 28 Februari
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.39.1
+
 ### v5.39.0 — 2026-11-06 - Tanggal Isolir Pascabayar Serba Otomatis
 
 ### Tagihan pascabayar
@@ -1165,19 +1175,6 @@ BHP dan USO adalah biaya ISP, jadi tagihan pelanggan tidak berubah. Angkanya per
 
 ### Catatan Pembaruan
 - Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.36.8
-
-### v5.36.7 — 2026-11-06 - Kartu 5GHz Palsu Hilang, Referral Menjadi Ajak Teman
-
-### WiFi pelanggan
-- **[FIX]** ONT satu band dengan 4 slot (ZTE F663NV3A dan F609, CDTC FD512XW-R460) tidak lagi mendapat kartu 5GHz palsu. Slot yang tidak punya petunjuk band dibagi dua, sehingga slot 3 dan 4 dianggap 5GHz. Slot bernomor 1-4 saja kini dianggap satu radio, karena di data asli semua ONT seperti itu yang channelnya terbaca adalah 2.4GHz, dan model dual band memakai slot 5 ke atas untuk radio kedua
-- Diuji pada 635 ONT asli: kartu 5GHz palsu turun dari 31 pada 5.36.1 menjadi 0, label band salah 0, tidak ada ONT dengan 5GHz atau 2.4GHz aktif yang kehilangan kartunya. 86 dari 86 ONT dual band ZTE F679D dan F670L serta FiberHome HG6145D2 dan HG6045F3 tampil dengan dua kartu
-- Parameter tulis SSID dan password ada dan bisa ditulis di semua slot yang tampil, untuk semua model ZTE. Pengiriman ubah SSID ke perangkat belum dicoba
-
-### Ajak Teman
-- **[CHANGE]** Portal pelanggan memakai nama **Ajak Teman**, bukan Referral: menu samping, menu cepat Beranda, halaman Ajak Teman, pesan galat, teks bagikan, dan isian kode di halaman Daftar. Aplikasi pelanggan sudah memakai nama ini. Alamat `/customer/referral` dan panel admin tidak berubah
-
-### Catatan Pembaruan
-- Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.36.7
 
 <!-- AUTO-CHANGELOG:END -->
 

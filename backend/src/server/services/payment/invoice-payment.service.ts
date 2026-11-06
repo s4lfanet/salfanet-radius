@@ -8,7 +8,7 @@ import { managePppSecret, shouldManagePppSecretForSuspend, kickPppoeSession } fr
 import { settlePaymentAttempt } from '@/server/services/payment/payment-attempt.service';
 import crypto from 'crypto';
 import { nanoid } from 'nanoid';
-import { isolirDateAfterPayment } from '@/server/services/billing/invoice-schedule';
+import { postpaidIsolirAfterPayment } from '@/server/services/billing/invoice-schedule';
 
 /**
  * Settles a PPPoE invoice paid through any channel: marks it PAID, records
@@ -220,7 +220,7 @@ export async function handleInvoicePayment(
         }
 
         // For package change: keep existing expiredAt, do NOT extend
-        const finalExpiredAt = isPackageChange ? user.expiredAt : isolirDateAfterPayment(user, invoice.dueDate, now) ?? toUTC(newExpiredAt);
+        const finalExpiredAt = isPackageChange ? user.expiredAt : postpaidIsolirAfterPayment(user, profile, invoice.dueDate, now) ?? toUTC(newExpiredAt);
 
         // Update user inside the transaction
         await tx.pppoeUser.update({

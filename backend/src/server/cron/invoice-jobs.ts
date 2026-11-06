@@ -11,7 +11,8 @@ import {
   companyMonthRange,
   postpaidDueDate,
   prepaidDueDate,
-  prepaidIsDue,
+  prepaidIsDue,,
+  postpaidShouldIsolate,
 } from '@/server/services/billing/invoice-schedule';
 
 /**
@@ -923,8 +924,10 @@ export async function runSuspendCheck(): Promise<{ suspended: number; restored: 
   // or a manual reactivation), and auto-stop later stopped them.
   const finished = await prisma.suspendRequest.findMany({
     where: { status: 'APPROVED', endDate: { lte: now } },
-    select: { id: true, userId: true },
+    select: { id: true, userId: true, user: { select: { subscriptionType: true, postpaidIsolirMode: true, expiredAt: true } } },
   });
+  const company = await prisma.company.findFirst({ select: { gracePeriodDays: true } });
+  const isolirCutoff = new Date(now.getTime() - (company?.gracePeriodDays || 0) * 86_400_000);
   for (const req of finished) {
     try {
       const done = await prisma.suspendRequest.updateMany({
@@ -938,7 +941,8 @@ export async function runSuspendCheck(): Promise<{ suspended: number; restored: 
       const owing = await prisma.invoice.count({
         where: { userId: req.userId, status: { in: ['PENDING', 'OVERDUE'] }, dueDate: { lt: now } },
       });
-      if (owing > 0) {
+      const followsPayment = req.user?.subscriptionType === 'POSTPAID' && req.user.postpaidIsolirMode === 'PAYMENT_DATE';
+      if (followsPayment ? postpaidShouldIsolate(req.user!, owing, isolirCutoff) : owing > 0) {
         console.log(`[SUSPEND] Cuti ended for ${req.userId} but ${owing} invoice(s) are overdue: left isolated`);
         continue;
       }

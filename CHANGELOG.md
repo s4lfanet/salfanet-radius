@@ -6,6 +6,18 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.39.1] - 2026-11-06 - Isolir Mengikuti Tanggal Bayar untuk Semua Pembayaran
+
+### Tagihan pascabayar
+- **[CHANGE]** Pada pilihan Otomatis mengikuti tanggal bayar, Tanggal Isolir kini selalu dihitung dari tanggal bayar, juga untuk pelanggan yang tidak terisolir. Sebelumnya pembayaran sebelum Tanggal Isolir menambah sebulan dari tanggal lama. Jatuh tempo tagihan tetap sama, dan pelanggan tidak diisolir sebelum tagihannya lewat jatuh tempo
+- **[FIX]** Saat cuti selesai, pelanggan dengan pilihan itu tidak lagi tertahan terisolir selama Tanggal Isolirnya belum lewat, kecuali punya dua tagihan lewat jatuh tempo. Aturannya sama dengan cron isolir
+- **[FIX]** Perhitungan bulan untuk pilihan itu tidak melompat di akhir bulan: bayar 31 Januari menjadi 28 Februari
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.39.1
+
+---
+
 ## [5.39.0] - 2026-11-06 - Tanggal Isolir Pascabayar Serba Otomatis
 
 ### Tagihan pascabayar
