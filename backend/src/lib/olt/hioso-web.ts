@@ -11,6 +11,7 @@
  * /system.asp gives the model, firmware and CPU and memory load the same way.
  */
 import { normalizeMac, parsePowerDbm, parseRxDbm } from './pon-snmp';
+import { isUnsetOnuName } from './hioso-telnet';
 
 export interface HiosoWebConfig {
   host: string;
@@ -78,7 +79,7 @@ export function parseOnuTable(html: string): HiosoWebOnu[] {
     onus.push({
       pon: Number(id[2]),
       onuId: Number(id[3]),
-      name: name && name.toUpperCase() !== 'NA' ? name : null,
+      name: isUnsetOnuName(name) ? null : name,
       mac: mac && mac !== '00:00:00:00:00:00' ? mac : null,
       up,
       chip: r[5].trim() || null,

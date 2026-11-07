@@ -18,7 +18,7 @@
 import { SNMPConfig, snmpGet, snmpWalk } from '../snmp';
 import { TelnetConfig } from '../telnet';
 import { decodeSnmpText, normalizeMac, parseEnumInt, parsePowerDbm, parseRxDbm } from '../pon-snmp';
-import { cleanHiosoName, hiosoNameCommands, hiosoPonBase, hiosoRebootCommands, readHiosoCli, readHiosoOnus, runHiosoCommands, type HiosoCliOnu, type HiosoCliReport } from '../hioso-telnet';
+import { cleanHiosoName, isUnsetOnuName, hiosoNameCommands, hiosoPonBase, hiosoRebootCommands, readHiosoCli, readHiosoOnus, runHiosoCommands, type HiosoCliOnu, type HiosoCliReport } from '../hioso-telnet';
 import { distanceFromRtt, formatHiosoOnuType, readHiosoWeb, setHiosoWebName, type HiosoSystemInfo, type HiosoWebOnu } from '../hioso-web';
 import { defaultPonCount } from '../rack';
 
@@ -342,7 +342,7 @@ function fromCli(row: HiosoCliOnu): any {
     onuId:        row.onuId,
     serialNumber: row.mac,
     macAddress:   row.mac,
-    description:  row.name && row.name.toUpperCase() !== 'NA' ? row.name : null,
+    description:  isUnsetOnuName(row.name) ? null : row.name,
     onuType:      cliType(row),
     status:       row.up ? 'online' : 'offline',
   };
@@ -510,7 +510,7 @@ export async function readProfile(config: SNMPConfig, profile: HiosoProfile, wal
 
     // Unset names arrive as zero-filled octet strings; "NA" is the OLT's own placeholder.
     const label = decodeSnmpText(namRaw);
-    const description = label && label.toUpperCase() !== 'NA' ? label : null;
+    const description = isUnsetOnuName(label) ? null : label;
 
     const rxPower = online && rxRaw != null ? parsePower(rxRaw, profile, 'rx') : null;
     const txPower = online && txRaw != null ? parsePower(txRaw, profile, 'tx') : null;
