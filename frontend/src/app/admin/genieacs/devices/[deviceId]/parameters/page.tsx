@@ -241,7 +241,7 @@ export default function DeviceParametersPage({ params }: { params: Promise<{ dev
           <button
             onClick={openVpModal}
             disabled={selected.size === 0}
-            className="flex items-center gap-1.5 rounded-md bg-purple-600 px-3 py-1.5 text-sm text-white hover:bg-purple-700 disabled:opacity-40"
+            className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
           >
             <Zap className="h-4 w-4" />
             Generate VP
@@ -249,7 +249,7 @@ export default function DeviceParametersPage({ params }: { params: Promise<{ dev
           <button
             onClick={openProvisionModal}
             disabled={selected.size === 0}
-            className="flex items-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700 disabled:opacity-40"
+            className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-40"
           >
             <Code2 className="h-4 w-4" />
             Generate Provision
@@ -421,7 +421,7 @@ export default function DeviceParametersPage({ params }: { params: Promise<{ dev
               <button
                 onClick={saveModal}
                 disabled={modal.saving}
-                className="flex items-center gap-1.5 rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
               >
                 {modal.saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 Save to GenieACS

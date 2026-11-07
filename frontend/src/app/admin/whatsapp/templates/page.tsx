@@ -512,7 +512,7 @@ export default function WhatsAppTemplatesPage() {
                 onClick={() => setActiveTab(type)}
                 className={`px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs font-medium rounded transition-colors ${
                   activeTab === type
-                    ? 'bg-teal-600 text-white'
+                    ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground dark:text-muted-foreground hover:bg-accent'
                 }`}
               >

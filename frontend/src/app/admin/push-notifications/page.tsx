@@ -110,40 +110,40 @@ type RecipientRole = 'customer' | 'agent' | 'technician' | 'admin' | 'all';
 
 const NOTIFICATION_TYPES_BY_ROLE: Record<RecipientRole, Array<{ value: string; label: string; icon: React.ComponentType<{ className?: string }>; color: string; activeColor: string }>> = {
   customer: [
-    { value: 'broadcast', label: 'Pengumuman', icon: RadioTower, color: 'bg-blue-500/10 text-blue-600 border-blue-500/30', activeColor: 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/25' },
-    { value: 'tagihan', label: 'Tagihan', icon: ReceiptText, color: 'bg-orange-500/10 text-orange-600 border-orange-500/30', activeColor: 'bg-orange-500 text-white border-orange-500 shadow-lg shadow-orange-500/25' },
+    { value: 'broadcast', label: 'Pengumuman', icon: RadioTower, color: 'bg-primary/10 text-blue-600 border-blue-500/30', activeColor: 'bg-primary text-primary-foreground border-blue-500 shadow-lg shadow-blue-500/25' },
+    { value: 'tagihan', label: 'Tagihan', icon: ReceiptText, color: 'bg-primary/10 text-orange-600 border-orange-500/30', activeColor: 'bg-primary text-primary-foreground border-orange-500 shadow-lg shadow-orange-500/25' },
     { value: 'gangguan', label: 'Gangguan', icon: AlertTriangle, color: 'bg-red-500/10 text-red-600 border-red-500/30', activeColor: 'bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/25' },
     { value: 'promo', label: 'Promo', icon: Gift, color: 'bg-pink-500/10 text-pink-600 border-pink-500/30', activeColor: 'bg-pink-500 text-white border-pink-500 shadow-lg shadow-pink-500/25' },
-    { value: 'info', label: 'Info', icon: Info, color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30', activeColor: 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/25' },
-    { value: 'custom', label: 'Kustom', icon: MessageSquare, color: 'bg-primary/10 text-purple-600 border-border', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25' },
+    { value: 'info', label: 'Info', icon: Info, color: 'bg-success/10 text-emerald-600 border-emerald-500/30', activeColor: 'bg-success text-success-foreground border-emerald-500 shadow-lg shadow-emerald-500/25' },
+    { value: 'custom', label: 'Kustom', icon: MessageSquare, color: 'bg-primary/10 text-purple-600 border-border', activeColor: 'bg-primary text-primary-foreground border-purple-500 shadow-lg shadow-purple-500/25' },
   ],
   technician: [
-    { value: 'broadcast', label: 'Pengumuman', icon: RadioTower, color: 'bg-blue-500/10 text-blue-600 border-blue-500/30', activeColor: 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/25' },
+    { value: 'broadcast', label: 'Pengumuman', icon: RadioTower, color: 'bg-primary/10 text-blue-600 border-blue-500/30', activeColor: 'bg-primary text-primary-foreground border-blue-500 shadow-lg shadow-blue-500/25' },
     { value: 'tugas_baru', label: 'Tugas Baru', icon: Wrench, color: 'bg-amber-500/10 text-amber-600 border-amber-500/30', activeColor: 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/25' },
-    { value: 'jadwal', label: 'Jadwal', icon: Zap, color: 'bg-cyan-500/10 text-cyan-600 border-cyan-500/30', activeColor: 'bg-cyan-500 text-white border-cyan-500 shadow-lg shadow-cyan-500/25' },
-    { value: 'info_teknis', label: 'Info Teknis', icon: Info, color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30', activeColor: 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/25' },
+    { value: 'jadwal', label: 'Jadwal', icon: Zap, color: 'bg-primary/10 text-cyan-600 border-cyan-500/30', activeColor: 'bg-primary text-primary-foreground border-cyan-500 shadow-lg shadow-cyan-500/25' },
+    { value: 'info_teknis', label: 'Info Teknis', icon: Info, color: 'bg-success/10 text-emerald-600 border-emerald-500/30', activeColor: 'bg-success text-success-foreground border-emerald-500 shadow-lg shadow-emerald-500/25' },
     { value: 'darurat', label: 'Darurat', icon: AlertTriangle, color: 'bg-red-500/10 text-red-600 border-red-500/30', activeColor: 'bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/25' },
-    { value: 'custom', label: 'Kustom', icon: MessageSquare, color: 'bg-primary/10 text-purple-600 border-border', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25' },
+    { value: 'custom', label: 'Kustom', icon: MessageSquare, color: 'bg-primary/10 text-purple-600 border-border', activeColor: 'bg-primary text-primary-foreground border-purple-500 shadow-lg shadow-purple-500/25' },
   ],
   agent: [
-    { value: 'broadcast', label: 'Pengumuman', icon: RadioTower, color: 'bg-blue-500/10 text-blue-600 border-blue-500/30', activeColor: 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/25' },
-    { value: 'komisi', label: 'Komisi', icon: ReceiptText, color: 'bg-orange-500/10 text-orange-600 border-orange-500/30', activeColor: 'bg-orange-500 text-white border-orange-500 shadow-lg shadow-orange-500/25' },
-    { value: 'registrasi_baru', label: 'Registrasi Baru', icon: Users, color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30', activeColor: 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/25' },
+    { value: 'broadcast', label: 'Pengumuman', icon: RadioTower, color: 'bg-primary/10 text-blue-600 border-blue-500/30', activeColor: 'bg-primary text-primary-foreground border-blue-500 shadow-lg shadow-blue-500/25' },
+    { value: 'komisi', label: 'Komisi', icon: ReceiptText, color: 'bg-primary/10 text-orange-600 border-orange-500/30', activeColor: 'bg-primary text-primary-foreground border-orange-500 shadow-lg shadow-orange-500/25' },
+    { value: 'registrasi_baru', label: 'Registrasi Baru', icon: Users, color: 'bg-success/10 text-emerald-600 border-emerald-500/30', activeColor: 'bg-success text-success-foreground border-emerald-500 shadow-lg shadow-emerald-500/25' },
     { value: 'target', label: 'Target', icon: Zap, color: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/30', activeColor: 'bg-yellow-500 text-white border-yellow-500 shadow-lg shadow-yellow-500/25' },
     { value: 'promo_agen', label: 'Promo Agen', icon: Gift, color: 'bg-pink-500/10 text-pink-600 border-pink-500/30', activeColor: 'bg-pink-500 text-white border-pink-500 shadow-lg shadow-pink-500/25' },
-    { value: 'custom', label: 'Kustom', icon: MessageSquare, color: 'bg-primary/10 text-purple-600 border-border', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25' },
+    { value: 'custom', label: 'Kustom', icon: MessageSquare, color: 'bg-primary/10 text-purple-600 border-border', activeColor: 'bg-primary text-primary-foreground border-purple-500 shadow-lg shadow-purple-500/25' },
   ],
   admin: [
-    { value: 'broadcast', label: 'Pengumuman', icon: RadioTower, color: 'bg-blue-500/10 text-blue-600 border-blue-500/30', activeColor: 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/25' },
+    { value: 'broadcast', label: 'Pengumuman', icon: RadioTower, color: 'bg-primary/10 text-blue-600 border-blue-500/30', activeColor: 'bg-primary text-primary-foreground border-blue-500 shadow-lg shadow-blue-500/25' },
     { value: 'alert', label: 'Alert Sistem', icon: AlertTriangle, color: 'bg-red-500/10 text-red-600 border-red-500/30', activeColor: 'bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/25' },
-    { value: 'info', label: 'Info', icon: Info, color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30', activeColor: 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/25' },
-    { value: 'custom', label: 'Kustom', icon: MessageSquare, color: 'bg-primary/10 text-purple-600 border-border', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25' },
+    { value: 'info', label: 'Info', icon: Info, color: 'bg-success/10 text-emerald-600 border-emerald-500/30', activeColor: 'bg-success text-success-foreground border-emerald-500 shadow-lg shadow-emerald-500/25' },
+    { value: 'custom', label: 'Kustom', icon: MessageSquare, color: 'bg-primary/10 text-purple-600 border-border', activeColor: 'bg-primary text-primary-foreground border-purple-500 shadow-lg shadow-purple-500/25' },
   ],
   all: [
-    { value: 'broadcast', label: 'Pengumuman', icon: RadioTower, color: 'bg-blue-500/10 text-blue-600 border-blue-500/30', activeColor: 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/25' },
+    { value: 'broadcast', label: 'Pengumuman', icon: RadioTower, color: 'bg-primary/10 text-blue-600 border-blue-500/30', activeColor: 'bg-primary text-primary-foreground border-blue-500 shadow-lg shadow-blue-500/25' },
     { value: 'gangguan', label: 'Gangguan Jaringan', icon: AlertTriangle, color: 'bg-red-500/10 text-red-600 border-red-500/30', activeColor: 'bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/25' },
     { value: 'maintenance', label: 'Maintenance', icon: Wrench, color: 'bg-amber-500/10 text-amber-600 border-amber-500/30', activeColor: 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/25' },
-    { value: 'custom', label: 'Kustom', icon: MessageSquare, color: 'bg-primary/10 text-purple-600 border-border', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25' },
+    { value: 'custom', label: 'Kustom', icon: MessageSquare, color: 'bg-primary/10 text-purple-600 border-border', activeColor: 'bg-primary text-primary-foreground border-purple-500 shadow-lg shadow-purple-500/25' },
   ],
 };
 
@@ -481,11 +481,11 @@ export default function PushNotificationsPage() {
             <CardContent className="px-5 pt-0 pb-5">
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                 {([
-                  { value: 'customer' as RecipientRole, label: 'Pelanggan', icon: Users, color: 'bg-blue-500/10 text-blue-600 border-blue-500/30', activeColor: 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/25', count: stats?.customersReachable ?? stats?.usersWithTokens ?? 0, unit: 'push' },
+                  { value: 'customer' as RecipientRole, label: 'Pelanggan', icon: Users, color: 'bg-primary/10 text-blue-600 border-blue-500/30', activeColor: 'bg-primary text-primary-foreground border-blue-500 shadow-lg shadow-blue-500/25', count: stats?.customersReachable ?? stats?.usersWithTokens ?? 0, unit: 'push' },
                   { value: 'technician' as RecipientRole, label: 'Teknisi', icon: Wrench, color: 'bg-amber-500/10 text-amber-600 border-amber-500/30', activeColor: 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/25', count: stats?.technicianSubscribers ?? 0, unit: 'terdaftar' },
-                  { value: 'agent' as RecipientRole, label: 'Agen', icon: Megaphone, color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30', activeColor: 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/25', count: stats?.agentSubscribers ?? 0, unit: 'terdaftar' },
+                  { value: 'agent' as RecipientRole, label: 'Agen', icon: Megaphone, color: 'bg-success/10 text-emerald-600 border-emerald-500/30', activeColor: 'bg-success text-success-foreground border-emerald-500 shadow-lg shadow-emerald-500/25', count: stats?.agentSubscribers ?? 0, unit: 'terdaftar' },
                   { value: 'admin' as RecipientRole, label: 'Admin', icon: Shield, color: 'bg-red-500/10 text-red-600 border-red-500/30', activeColor: 'bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/25', count: stats?.adminSubscribers ?? 0, unit: 'terdaftar' },
-                  { value: 'all' as RecipientRole, label: 'Semua', icon: RadioTower, color: 'bg-primary/10 text-purple-600 border-border', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25', count: (stats?.customersReachable ?? stats?.usersWithTokens ?? 0) + (stats?.agentSubscribers ?? 0) + (stats?.technicianSubscribers ?? 0) + (stats?.adminSubscribers ?? 0), unit: 'total' },
+                  { value: 'all' as RecipientRole, label: 'Semua', icon: RadioTower, color: 'bg-primary/10 text-purple-600 border-border', activeColor: 'bg-primary text-primary-foreground border-purple-500 shadow-lg shadow-purple-500/25', count: (stats?.customersReachable ?? stats?.usersWithTokens ?? 0) + (stats?.agentSubscribers ?? 0) + (stats?.technicianSubscribers ?? 0) + (stats?.adminSubscribers ?? 0), unit: 'total' },
                 ] as Array<{ value: RecipientRole; label: string; icon: React.ComponentType<{ className?: string }>; color: string; activeColor: string; count: number; unit: string }>).map((role) => {
                   const RoleIcon = role.icon;
                   const active = recipientRole === role.value;

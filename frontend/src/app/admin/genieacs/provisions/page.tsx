@@ -129,7 +129,7 @@ export default function GenieACSProvisionsPage() {
             Restore
           </button>
           <button onClick={() => setEditing({ _id: '', script: sampleScript })}
-            className="px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md flex items-center gap-2">
+            className="px-3 py-2 text-sm bg-primary hover:bg-primary/90 text-primary-foreground rounded-md flex items-center gap-2">
             <Plus className="w-4 h-4" /> New Provision
           </button>
         </div>
@@ -206,7 +206,7 @@ export default function GenieACSProvisionsPage() {
               <button onClick={() => setEditing(null)}
                 className="px-3 py-2 text-sm border rounded-md hover:bg-accent">Cancel</button>
               <button onClick={save} disabled={saving}
-                className="px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md flex items-center gap-2 disabled:opacity-60">
+                className="px-3 py-2 text-sm bg-primary hover:bg-primary/90 text-primary-foreground rounded-md flex items-center gap-2 disabled:opacity-60">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Save
               </button>

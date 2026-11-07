@@ -241,7 +241,7 @@ export default function LaporanPage() {
                   onClick={() => { setReportType(t); setStatus('all'); setLoaded(false); }}
                   className={`px-3 py-2 rounded-lg text-xs font-bold transition border ${
                     reportType === t
-                      ? 'bg-violet-500 border-violet-500 text-white '
+                      ? 'bg-primary border-violet-500 text-primary-foreground '
                       : 'bg-muted/80 dark:bg-slate-900/80 border-border dark:border-slate-600 text-muted-foreground dark:text-slate-400 hover:border-border'
                   }`}
                 >

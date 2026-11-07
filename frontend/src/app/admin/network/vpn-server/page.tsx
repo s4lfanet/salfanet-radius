@@ -679,7 +679,7 @@ export default function VpnServerPage() {
     setSettingUpId(server.id);
 
     const formatStep = (s: string) => {
-      const cls = s.startsWith('') ? 'text-green-400' : s.startsWith('') ? 'text-red-400' : s.startsWith('') ? 'text-yellow-400' : 'text-gray-300';
+      const cls = s.startsWith('') ? 'text-green-600 dark:text-green-400' : s.startsWith('') ? 'text-red-600 dark:text-red-400' : s.startsWith('') ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-300';
       return `<p class="text-xs ${cls}">${s}</p>`;
     };
 
@@ -747,7 +747,7 @@ export default function VpnServerPage() {
       }
     } catch (error: unknown) {
       const msg = (error instanceof Error ? error.message : undefined) || t('network.failedSetupVpnServer') || 'Setup VPN gagal';
-      const stepsHtml = liveSteps.map(formatStep).join('') + `<p class="text-xs text-red-400">Error: ${msg}</p>`;
+      const stepsHtml = liveSteps.map(formatStep).join('') + `<p class="text-xs text-red-600 dark:text-red-400">Error: ${msg}</p>`;
       addToast({ type: 'error', title: 'Setup VPN Gagal', description: msg });
       setSetupResultModal({ success: false, title: 'Setup Gagal', message: msg, stepsHtml });
     } finally {
@@ -827,7 +827,7 @@ export default function VpnServerPage() {
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={() => setupResultModal?.success !== null && setSetupResultModal(null)}>
           <div className="bg-[#1e1b2e] border border-border rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto mx-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b border-border">
-              <h2 className={`font-bold ${setupResultModal.success === false ? 'text-red-400' : 'text-brand-500'}`}>{setupResultModal.title}</h2>
+              <h2 className={`font-bold ${setupResultModal.success === false ? 'text-red-600 dark:text-red-400' : 'text-brand-500'}`}>{setupResultModal.title}</h2>
               <button onClick={() => setupResultModal.success !== null && setSetupResultModal(null)} disabled={setupResultModal.success === null}>
                 <X className={`w-5 h-5 ${setupResultModal.success === null ? 'text-muted-foreground/30' : 'text-muted-foreground hover:text-foreground'}`} />
               </button>
@@ -855,14 +855,14 @@ export default function VpnServerPage() {
               <p className="text-xs text-muted-foreground mb-3">Copy & paste script ke Terminal/Winbox MikroTik.</p>
               <div className="flex gap-2 mb-3">
                 <button id="vpnbtn-ros7" className="px-3 py-1.5 bg-teal-500/30 border border-teal-500/50 text-teal-300 rounded-lg text-xs font-bold ring-2 ring-teal-400" onClick={() => { document.getElementById('vpnscript-ros7')?.classList.remove('hidden'); document.getElementById('vpnscript-ros6')?.classList.add('hidden'); }}>RouterOS 7 (CHR)</button>
-                <button id="vpnbtn-ros6" className="px-3 py-1.5 bg-orange-500/30 border border-orange-500/50 text-orange-300 rounded-lg text-xs font-bold" onClick={() => { document.getElementById('vpnscript-ros6')?.classList.remove('hidden'); document.getElementById('vpnscript-ros7')?.classList.add('hidden'); }}>RouterOS 6</button>
+                <button id="vpnbtn-ros6" className="px-3 py-1.5 bg-orange-500/30 border border-orange-500/50 text-orange-700 dark:text-orange-300 rounded-lg text-xs font-bold" onClick={() => { document.getElementById('vpnscript-ros6')?.classList.remove('hidden'); document.getElementById('vpnscript-ros7')?.classList.add('hidden'); }}>RouterOS 6</button>
               </div>
               <div id="vpnscript-ros7">
                 <div className="flex justify-between items-center mb-1"><span className="text-xs text-teal-400 font-bold">RouterOS 7</span><button className="text-xs text-brand-500 bg-muted dark:bg-slate-800 px-2 py-1 rounded" onClick={() => { navigator.clipboard.writeText(vpnScriptData.ros7); addToast({ type: 'success', title: 'Script ROS7 disalin!' }); }}>Copy</button></div>
                 <pre className="bg-gray-100 dark:bg-slate-900 text-green-700 dark:text-green-300 p-3 rounded-lg text-xs overflow-auto max-h-64 whitespace-pre font-mono border border-teal-500/20">{vpnScriptData.ros7}</pre>
               </div>
               <div id="vpnscript-ros6" className="hidden">
-                <div className="flex justify-between items-center mb-1"><span className="text-xs text-orange-400 font-bold">RouterOS 6</span><button className="text-xs text-brand-500 bg-muted dark:bg-slate-800 px-2 py-1 rounded" onClick={() => { navigator.clipboard.writeText(vpnScriptData.ros6); addToast({ type: 'success', title: 'Script ROS6 disalin!' }); }}>Copy</button></div>
+                <div className="flex justify-between items-center mb-1"><span className="text-xs text-orange-600 dark:text-orange-400 font-bold">RouterOS 6</span><button className="text-xs text-brand-500 bg-muted dark:bg-slate-800 px-2 py-1 rounded" onClick={() => { navigator.clipboard.writeText(vpnScriptData.ros6); addToast({ type: 'success', title: 'Script ROS6 disalin!' }); }}>Copy</button></div>
                 <pre className="bg-gray-100 dark:bg-slate-900 text-yellow-700 dark:text-yellow-300 p-3 rounded-lg text-xs overflow-auto max-h-64 whitespace-pre font-mono border border-orange-500/20">{vpnScriptData.ros6}</pre>
               </div>
             </div>
@@ -979,7 +979,7 @@ export default function VpnServerPage() {
             <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-green-500/30 p-5 hover:border-green-500/50 transition group">
               <div className="flex items-center justify-between mb-3 min-w-0">
                 <div className="p-2 bg-green-500/20 rounded-lg group-hover:bg-green-500/30 transition-colors flex items-center justify-center">
-                  <Activity className="w-5 h-5 text-green-400" />
+                  <Activity className="w-5 h-5 text-green-600 dark:text-green-400" />
                 </div>
               </div>
               <p className="text-lg sm:text-2xl font-bold text-foreground">{activeServers}</p>
@@ -989,7 +989,7 @@ export default function VpnServerPage() {
             <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-green-500/30 p-5 hover:border-green-500/50 transition group">
               <div className="flex items-center justify-between mb-3 min-w-0">
                 <div className="p-2 bg-green-500/20 rounded-lg group-hover:bg-green-500/30 transition-colors flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-green-400" />
+                  <Shield className="w-5 h-5 text-green-600 dark:text-green-400" />
                 </div>
               </div>
               <p className="text-lg sm:text-2xl font-bold text-foreground">{l2tpServers}</p>
@@ -999,7 +999,7 @@ export default function VpnServerPage() {
             <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 rounded-2xl border border-cyan-500/30 p-5 hover:border-cyan-500/50 transition group">
               <div className="flex items-center justify-between mb-3 min-w-0">
                 <div className="p-2 bg-cyan-500/20 rounded-lg group-hover:bg-cyan-500/30 transition-colors flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-cyan-400" />
+                  <Shield className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
                 </div>
               </div>
               <p className="text-lg sm:text-2xl font-bold text-foreground">{sstpServers}</p>
@@ -1048,12 +1048,12 @@ export default function VpnServerPage() {
                       {/* Protocol Badges */}
                       <div className="flex flex-wrap gap-2">
                         {server.l2tpEnabled && (
-                          <span className="px-3 py-1.5 bg-green-500/20 text-green-400 border border-green-500/40 text-xs font-bold rounded-lg ">
+                          <span className="px-3 py-1.5 bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/40 text-xs font-bold rounded-lg ">
                             L2TP/IPSec
                           </span>
                         )}
                         {server.sstpEnabled && (
-                          <span className="px-3 py-1.5 bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 text-xs font-bold rounded-lg ">
+                          <span className="px-3 py-1.5 bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-500/40 text-xs font-bold rounded-lg ">
                             SSTP
                           </span>
                         )}
@@ -1186,7 +1186,7 @@ export default function VpnServerPage() {
 
                       <button
                         onClick={() => handleDelete(server.id, server.name)}
-                        className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl hover:bg-red-500/20 hover:border-red-500/50 transition ml-auto"
+                        className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-500/20 hover:border-red-500/50 transition ml-auto"
                       >
                         <Trash2 className="w-4 h-4" />
                         <span className="text-sm font-medium">{t('common.delete')}</span>
@@ -1361,11 +1361,11 @@ export default function VpnServerPage() {
                     <div className={`p-4 rounded-xl border ${testResult.success ? 'bg-green-500/10 border-green-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
                       <div className="flex items-center gap-2">
                         {testResult.success ? (
-                          <CheckCircle className="w-5 h-5 text-green-400" />
+                          <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
                         ) : (
-                          <XCircle className="w-5 h-5 text-red-400" />
+                          <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
                         )}
-                        <span className={testResult.success ? 'text-green-400' : 'text-red-400'}>
+                        <span className={testResult.success ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
                           {testResult.success ? `Connected: ${testResult.identity}` : testResult.message}
                         </span>
                       </div>
@@ -1424,7 +1424,7 @@ export default function VpnServerPage() {
                   <p className="text-sm text-amber-400 font-bold mb-1">WireGuard server belum di-install</p>
                   <p className="text-xs text-muted-foreground mb-3">{wgServerInfo.message}</p>
                   <p className="text-xs text-muted-foreground">Jalankan di VPS:</p>
-                  <pre className="text-xs font-mono bg-slate-900 text-green-300 p-3 rounded-lg mt-1 overflow-x-auto">bash /var/www/salfanet-radius/vps-install/install-wg-server.sh</pre>
+                  <pre className="text-xs font-mono bg-slate-900 text-green-700 dark:text-green-300 p-3 rounded-lg mt-1 overflow-x-auto">bash /var/www/salfanet-radius/vps-install/install-wg-server.sh</pre>
                 </div>
               )}
 
@@ -1449,7 +1449,7 @@ export default function VpnServerPage() {
                   <div className="mb-5 p-3 rounded-xl bg-slate-900 border border-teal-500/20">
                     <p className="text-xs text-teal-400 mb-1">Server Public Key (untuk config NAS)</p>
                     <div className="flex items-center gap-2">
-                      <code className="text-xs font-mono text-green-300 flex-1 break-all">{wgServerInfo.publicKey}</code>
+                      <code className="text-xs font-mono text-green-700 dark:text-green-300 flex-1 break-all">{wgServerInfo.publicKey}</code>
                       <button onClick={() => { navigator.clipboard.writeText(wgServerInfo.publicKey || ''); addToast({ type: 'success', title: 'Public key disalin' }); }} className="text-xs text-brand-500 bg-muted px-2 py-1 rounded shrink-0">Copy</button>
                     </div>
                   </div>
@@ -1470,7 +1470,7 @@ export default function VpnServerPage() {
                               <p className="text-xs text-muted-foreground truncate max-w-[200px]">{peer.publicKey}</p>
                               {peer.lastHandshake && <p className="text-xs text-teal-400">Handshake: {formatWIB(peer.lastHandshake, 'dd MMM HH:mm')}</p>}
                             </div>
-                            <button onClick={() => handleWgRemovePeer(peer.publicKey)} className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors" title="Hapus peer">
+                            <button onClick={() => handleWgRemovePeer(peer.publicKey)} className="p-1.5 text-red-600 dark:text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors" title="Hapus peer">
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
@@ -1493,7 +1493,7 @@ export default function VpnServerPage() {
                       <button
                         onClick={handleWgAddPeer}
                         disabled={wgAddingPeer || !wgNewPeerName.trim()}
-                        className="px-4 py-2 bg-teal-500 text-white text-sm font-bold rounded-lg hover:bg-teal-400 transition-colors disabled:opacity-50"
+                        className="px-4 py-2 bg-primary text-primary-foreground text-sm font-bold rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
                       >
                         {wgAddingPeer ? '...' : '+ Tambah'}
                       </button>
@@ -1508,7 +1508,7 @@ export default function VpnServerPage() {
                         <p className="text-sm font-bold text-teal-300">Script RouterOS 7 - Copy ke Winbox Terminal</p>
                         <button onClick={() => { navigator.clipboard.writeText(wgGeneratedScript); addToast({ type: 'success', title: 'Script disalin!' }); }} className="text-xs text-brand-500 bg-muted px-2 py-1 rounded">Copy</button>
                       </div>
-                      <pre className="text-xs font-mono text-green-300 whitespace-pre overflow-x-auto max-h-64">{wgGeneratedScript}</pre>
+                      <pre className="text-xs font-mono text-green-700 dark:text-green-300 whitespace-pre overflow-x-auto max-h-64">{wgGeneratedScript}</pre>
                     </div>
                   )}
                 </>
@@ -1596,7 +1596,7 @@ export default function VpnServerPage() {
                 </div>
               ) : (
                 <div className="mb-4 flex items-center justify-between p-3 rounded-xl bg-green-500/10 border border-green-500/30">
-                  <p className="text-sm text-green-400">SSH: <span className="font-mono text-foreground">{savedSshCredentials.username}@{savedSshCredentials.host}</span></p>
+                  <p className="text-sm text-green-600 dark:text-green-400">SSH: <span className="font-mono text-foreground">{savedSshCredentials.username}@{savedSshCredentials.host}</span></p>
                   <button onClick={() => { setSavedSshCredentials(null); setL2tpStatus(null); setL2tpLogs([]); try { localStorage.removeItem('l2tp_ssh_credentials'); localStorage.removeItem('l2tp_config'); } catch {} }} className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 bg-muted dark:bg-slate-700 rounded-lg transition-colors">Ubah</button>
                 </div>
               )}
@@ -1606,10 +1606,10 @@ export default function VpnServerPage() {
                 <div className="mb-6">
                   <div className={`p-4 rounded-xl border ${l2tpStatus.connected ? 'bg-green-500/10 border-green-500/40' : 'bg-muted/80 dark:bg-slate-900/80 border-border/40 dark:border-slate-600/40'}`}>
                     <div className="flex items-center gap-3">
-                      {l2tpStatus.connected ? <CheckCircle className="w-6 h-6 text-green-400" /> : <XCircle className="w-6 h-6 text-red-400" />}
+                      {l2tpStatus.connected ? <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" /> : <XCircle className="w-6 h-6 text-red-600 dark:text-red-400" />}
                       <div>
                         <p className="text-xs text-muted-foreground uppercase mb-0.5">VPN Tunnel</p>
-                        <p className={`font-semibold ${l2tpStatus.connected ? 'text-green-400' : 'text-red-400'}`}>
+                        <p className={`font-semibold ${l2tpStatus.connected ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                           {l2tpStatus.connected ? 'Connected' : 'Disconnected'}
                         </p>
                       </div>
@@ -1641,10 +1641,10 @@ export default function VpnServerPage() {
                 <button onClick={() => handleL2tpAction('status', editingServer)} disabled={l2tpLoading} className="px-4 py-2 bg-muted border border-border text-foreground rounded-xl hover:bg-accent transition disabled:opacity-50">
                   {l2tpLoading ? 'Loading...' : 'Refresh Status'}
                 </button>
-                <button onClick={() => handleL2tpAction('start', editingServer)} disabled={l2tpLoading} className="px-4 py-2 bg-green-500/20 border border-green-500/40 text-green-400 rounded-xl hover:bg-green-500/30 transition disabled:opacity-50">
+                <button onClick={() => handleL2tpAction('start', editingServer)} disabled={l2tpLoading} className="px-4 py-2 bg-green-500/20 border border-green-500/40 text-green-600 dark:text-green-400 rounded-xl hover:bg-green-500/30 transition disabled:opacity-50">
                   Start Services
                 </button>
-                <button onClick={() => handleL2tpAction('stop', editingServer)} disabled={l2tpLoading} className="px-4 py-2 bg-red-500/20 border border-red-500/40 text-red-400 rounded-xl hover:bg-red-500/30 transition disabled:opacity-50">
+                <button onClick={() => handleL2tpAction('stop', editingServer)} disabled={l2tpLoading} className="px-4 py-2 bg-red-500/20 border border-red-500/40 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-500/30 transition disabled:opacity-50">
                   Stop Services
                 </button>
                 <button onClick={() => handleL2tpAction('restart', editingServer)} disabled={l2tpLoading} className="px-4 py-2 bg-amber-500/20 border border-amber-500/40 text-amber-400 rounded-xl hover:bg-amber-500/30 transition disabled:opacity-50">

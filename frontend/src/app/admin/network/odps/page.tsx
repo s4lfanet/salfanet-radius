@@ -285,7 +285,7 @@ export default function ODPsPage() {
           </div>
           <button
             onClick={() => setShowAssignDialog(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors"
           >
             <Users className="h-4 w-4" />
             Tempatkan Pelanggan

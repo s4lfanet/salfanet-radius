@@ -217,7 +217,7 @@ export default function FiberJointClosuresPage() {
         </div>
         <button
           onClick={openCreateDialog}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors"
         >
           <Plus className="h-4 w-4" />
           {t('network.jointClosure.add') || 'Add Joint Closure'}
@@ -294,7 +294,7 @@ export default function FiberJointClosuresPage() {
             {jointClosures.length === 0 && (
               <button
                 onClick={openCreateDialog}
-                className="mt-4 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                className="mt-4 px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-colors"
               >
                 {t('network.jointClosure.add') || 'Add Joint Closure'}
               </button>

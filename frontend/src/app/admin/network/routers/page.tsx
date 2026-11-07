@@ -467,7 +467,7 @@ export default function RouterPage() {
                   >RouterOS 7.x</button>
                 </div>
               )}
-              <pre className="bg-[#0f0a1e] border border-[#334155] rounded-lg p-4 text-green-400 text-xs font-mono overflow-auto max-h-64 whitespace-pre-wrap break-words">{
+              <pre className="bg-[#0f0a1e] border border-[#334155] rounded-lg p-4 text-green-600 dark:text-green-400 text-xs font-mono overflow-auto max-h-64 whitespace-pre-wrap break-words">{
                 scriptRosTab === 6 && scriptModalData.scriptRos6
                   ? scriptModalData.scriptRos6
                   : (scriptModalData.scriptRos7 || scriptModalData.script)
@@ -580,7 +580,7 @@ export default function RouterPage() {
                     <ol className="text-xs text-muted-foreground space-y-1.5 list-decimal list-inside">
                       <li>Pastikan NAS sudah ditambahkan lewat halaman ini (bukan langsung ke database). Jika baru saja di-INSERT manual ke DB, hapus dan tambah ulang via UI.</li>
                       <li>Cek IP di kolom <span className="text-foreground font-medium">IP NAS</span> sesuai dengan IP yang dikirim router ke FreeRADIUS (bisa berupa IP VPN atau IP LAN).</li>
-                      <li>Klik <span className="text-amber-400 font-medium">RADIUS Script</span> → copy script → paste di terminal MikroTik NAS. Pastikan <code className="bg-slate-800 px-1 rounded text-green-400">src-address</code> pada script sama dengan IP NAS yang terdaftar.</li>
+                      <li>Klik <span className="text-amber-400 font-medium">RADIUS Script</span> → copy script → paste di terminal MikroTik NAS. Pastikan <code className="bg-slate-800 px-1 rounded text-green-600 dark:text-green-400">src-address</code> pada script sama dengan IP NAS yang terdaftar.</li>
                       <li>Cek Log FreeRADIUS di menu <a href="/admin/freeradius/logs" className="text-brand-500 underline">FreeRADIUS → Log Langsung</a>. Error &quot;unknown client&quot; berarti IP pengirim tidak cocok dengan nasname di DB.</li>
                       <li>Jika NAS menggunakan VPN, pastikan VPN Client sudah terhubung dan IP VPN-nya terdaftar. Cek di menu <a href="/admin/network/vpn-client" className="text-brand-500 underline">VPN Client</a>.</li>
                     </ol>
@@ -611,10 +611,10 @@ export default function RouterPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-muted-foreground text-sm mb-1">{t('network.online')}</p>
-                  <p className="text-3xl font-bold text-green-400">{onlineRouters}</p>
+                  <p className="text-3xl font-bold text-green-600 dark:text-green-400">{onlineRouters}</p>
                 </div>
                 <div className="p-3 bg-green-500/20 rounded-xl group-hover:bg-green-500/30 transition-colors flex items-center justify-center">
-                  <Wifi className="w-6 h-6 text-green-400" />
+                  <Wifi className="w-6 h-6 text-green-600 dark:text-green-400" />
                 </div>
               </div>
             </div>
@@ -682,11 +682,11 @@ export default function RouterPage() {
                             <div className="flex items-center gap-3">
                               <h3 className="text-xl font-bold text-foreground group-hover:text-brand-500 transition-colors">{routerData.name}</h3>
                               {status?.online ? (
-                                <span className="px-3 py-1 text-xs font-bold rounded-lg bg-green-500/20 border border-green-500/40 text-green-400 ">
+                                <span className="px-3 py-1 text-xs font-bold rounded-lg bg-green-500/20 border border-green-500/40 text-green-600 dark:text-green-400 ">
                                   {t('network.online')}
                                 </span>
                               ) : (
-                                <span className="px-3 py-1 text-xs font-bold rounded-lg bg-red-500/20 border border-red-500/40 text-red-400">
+                                <span className="px-3 py-1 text-xs font-bold rounded-lg bg-red-500/20 border border-red-500/40 text-red-600 dark:text-red-400">
                                   {t('network.offline')}
                                 </span>
                               )}
@@ -737,7 +737,7 @@ export default function RouterPage() {
                           </button>
                           <button
                             onClick={() => handleDelete(routerData.id, routerData.name)}
-                            className="p-2.5 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl hover:bg-red-500/20 transition"
+                            className="p-2.5 bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-500/20 transition"
                             title="Hapus Router"
                           >
                             <Trash2 className="w-5 h-5" />
@@ -1078,12 +1078,12 @@ export default function RouterPage() {
                     {testResult && (
                       <div className={`p-3 rounded-lg ${testResult.success ? 'bg-green-500/10 border border-green-500/30' : 'bg-red-500/10 border border-red-500/30'}`}>
                         <div className="flex items-center gap-2">
-                          {testResult.success ? <CheckCircle className="w-5 h-5 text-green-400" /> : <XCircle className="w-5 h-5 text-red-400" />}
+                          {testResult.success ? <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" /> : <XCircle className="w-5 h-5 text-red-600 dark:text-red-400" />}
                           <div>
-                            <p className={`text-sm font-medium ${testResult.success ? 'text-green-400' : 'text-red-400'}`}>
+                            <p className={`text-sm font-medium ${testResult.success ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                               {testResult.message}
                             </p>
-                            {testResult.identity && <p className="text-xs text-green-400 mt-1">{t('network.routerPrefix')}: {testResult.identity}</p>}
+                            {testResult.identity && <p className="text-xs text-green-600 dark:text-green-400 mt-1">{t('network.routerPrefix')}: {testResult.identity}</p>}
                           </div>
                         </div>
                       </div>
