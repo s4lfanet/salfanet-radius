@@ -2293,33 +2293,33 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
   return (
     <div className="space-y-5 p-1">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/admin/olt/monitoring">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <Link href="/admin/olt/monitoring" className="shrink-0">
             <Button variant="outline" size="sm">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <div>
-            <h1 className="text-lg font-semibold flex items-center gap-2">
+          <div className="min-w-0">
+            <h1 className="text-lg font-semibold flex items-center gap-2 min-w-0">
               {olt.isOnline
-                ? <Wifi className="h-5 w-5 text-green-500" />
-                : <WifiOff className="h-5 w-5 text-red-500" />}
-              {olt.name}
+                ? <Wifi className="h-5 w-5 text-green-500 shrink-0" />
+                : <WifiOff className="h-5 w-5 text-red-500 shrink-0" />}
+              <span className="truncate">{olt.name}</span>
               {olt.vendor && (
-                <span className="text-xs font-normal bg-muted text-muted-foreground px-2 py-0.5 rounded-full uppercase">
+                <span className="shrink-0 text-xs font-normal bg-muted text-muted-foreground px-2 py-0.5 rounded-full uppercase">
                   {olt.vendor}
                 </span>
               )}
             </h1>
-            <p className="text-muted-foreground font-mono text-xs mt-0.5">
+            <p className="text-muted-foreground font-mono text-xs mt-0.5 break-words">
               {olt.ipAddress}
               {olt.model && <span className="ml-2 text-gray-400">· {olt.model}</span>}
               {olt.firmwareVersion && <span className="ml-2 text-gray-400">· {olt.firmwareVersion}</span>}
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="grid grid-cols-2 sm:flex gap-2 shrink-0">
           <Button onClick={handleExportCSV} variant="outline" size="sm">
             <Download className="h-4 w-4 mr-1" />
             Export CSV
@@ -2358,7 +2358,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
             </div>
           </CardContent>
         </Card>
-        <Card className="border-l-4 border-l-teal-500">
+        <Card className="border-l-4 border-l-teal-500 col-span-2 md:col-span-1">
           <CardContent className="px-4 pt-4 pb-4">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
               <Activity className="h-3 w-3" /> ONUs
@@ -2375,24 +2375,26 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
       </div>
 
       <Tabs defaultValue="onus">
-        <TabsList>
-          <TabsTrigger value="onus">ONU List ({olt.totalOnu})</TabsTrigger>
-          <TabsTrigger value="portmap">Port Map</TabsTrigger>
-          <TabsTrigger value="alerts">
-            Alerts
-            {olt.alerts.length > 0 && (
-              <Badge variant="destructive" className="ml-2">{olt.alerts.length}</Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
-          <TabsTrigger value="logs">Logs</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-1 px-1 pb-1">
+          <TabsList className="w-max min-w-full justify-start">
+            <TabsTrigger value="onus" className="flex-none px-3 sm:px-4">ONU List ({olt.totalOnu})</TabsTrigger>
+            <TabsTrigger value="portmap" className="flex-none px-3 sm:px-4">Port Map</TabsTrigger>
+            <TabsTrigger value="alerts" className="flex-none px-3 sm:px-4">
+              Alerts
+              {olt.alerts.length > 0 && (
+                <Badge variant="destructive" className="ml-1">{olt.alerts.length}</Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex-none px-3 sm:px-4">Settings</TabsTrigger>
+            <TabsTrigger value="logs" className="flex-none px-3 sm:px-4">Logs</TabsTrigger>
+          </TabsList>
+        </div>
 
         {/* ONU List Tab */}
         <TabsContent value="onus" className="space-y-4">
           <div className="flex flex-wrap items-center gap-3">
             <Select value={onuStatusFilter} onValueChange={setOnuStatusFilter}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Filter status" />
               </SelectTrigger>
               <SelectContent>
@@ -2446,7 +2448,152 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
             </div>
           )}
 
-          <div className="overflow-x-auto rounded-lg border border-border">
+          {/* Mobile: kartu per ONU */}
+          <div className="md:hidden space-y-2.5">
+            {filteredOnus.length > 0 && (
+              <label className="flex items-center gap-2 px-1 text-xs text-muted-foreground">
+                <input
+                  type="checkbox"
+                  checked={selectedOnus.size === filteredOnus.length}
+                  onChange={handleSelectAll}
+                  className="w-5 h-5 text-blue-600 rounded"
+                />
+                Pilih semua ({filteredOnus.length})
+              </label>
+            )}
+            {filteredOnus.length === 0 && (
+              <div className="rounded-lg border border-border bg-card py-8 text-center text-sm text-gray-400">No ONUs found</div>
+            )}
+            {filteredOnus.map((onu) => {
+              const signalQuality = getSignalQuality(onu.rxPower);
+              const unregistered = onu.status === 'auth_failed';
+              const busy = deletingOnu === onu.id || rebootingOnu !== null || batchRebooting;
+              const btn = 'inline-flex items-center justify-center gap-1.5 min-h-9 px-2 py-1.5 text-xs font-medium text-white rounded-md disabled:opacity-50 transition-colors';
+              return (
+                <div key={onu.id} className="rounded-lg border border-border bg-card p-3">
+                  <div className="flex items-start gap-2.5">
+                    <input
+                      type="checkbox"
+                      checked={selectedOnus.has(onu.id)}
+                      onChange={() => handleSelectOnu(onu.id)}
+                      className="mt-0.5 w-5 h-5 shrink-0 text-blue-600 rounded"
+                      aria-label="Pilih ONU"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="font-mono text-xs font-semibold text-foreground break-all">
+                            {onu.serialNumber ?? onu.macAddress ?? <span className="text-yellow-600 dark:text-yellow-400">N/A</span>}
+                          </div>
+                          <div className="font-mono text-[11px] text-muted-foreground">
+                            {onu.frame}/{onu.slot}/{onu.port}:{onu.onuId}{onu.onuType ? ` · ${onu.onuType}` : ''}
+                          </div>
+                        </div>
+                        <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${
+                          onu.status === 'online' ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400' :
+                          unregistered ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-400' :
+                          onu.status === 'dying_gasp' ? 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-400' :
+                          onu.status === 'los' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-400' :
+                          'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                        }`}>
+                          {unregistered ? 'Unregistered' : onu.status.replace(/_/g, ' ')}
+                        </span>
+                      </div>
+
+                      <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+                        <div>
+                          <div className="text-[10px] uppercase text-muted-foreground">RX</div>
+                          {onu.rxPower !== null ? (
+                            <div className={`font-mono font-medium ${onu.rxPower < -27 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
+                              {onu.rxPower.toFixed(1)} dBm
+                            </div>
+                          ) : <div className="text-gray-400">-</div>}
+                        </div>
+                        <div>
+                          <div className="text-[10px] uppercase text-muted-foreground">Sinyal</div>
+                          <div className={`font-medium ${signalQuality.color}`}>{signalQuality.label}</div>
+                        </div>
+                        <div>
+                          <div className="text-[10px] uppercase text-muted-foreground">Jarak</div>
+                          <div className="font-mono text-muted-foreground">{onu.distance !== null ? `${onu.distance} m` : '-'}</div>
+                        </div>
+                      </div>
+
+                      <div className="mt-2 text-xs min-w-0">
+                        {onu.customer ? (
+                          <span className="font-medium text-foreground">{onu.customer.name}
+                            <span className="ml-1 font-normal text-muted-foreground">({onu.customer.username})</span>
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">Unassigned</span>
+                        )}
+                        {onu.description && <div className="text-muted-foreground truncate">{onu.description}</div>}
+                        <div className="text-[11px] text-muted-foreground mt-0.5">
+                          {onu.lastSeenAt ? new Date(onu.lastSeenAt).toLocaleString('id-ID') : '-'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 pt-3 border-t border-border">
+                    {confirmReboot === onu.id && !unregistered ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => handleRebootOnu(onu.id)}
+                          disabled={rebootingOnu === onu.id}
+                          className={`${btn} bg-red-600 hover:bg-red-700`}
+                        >
+                          {rebootingOnu === onu.id ? 'Rebooting...' : 'Konfirmasi reboot'}
+                        </button>
+                        <button
+                          onClick={() => setConfirmReboot(null)}
+                          className="inline-flex items-center justify-center min-h-9 px-2 py-1.5 text-xs font-medium bg-gray-200 dark:bg-gray-700 text-muted-foreground rounded-md"
+                        >
+                          Batal
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-3 gap-2">
+                        <button onClick={() => setDetailOnu(onu)} className={`${btn} bg-blue-600 hover:bg-blue-700`}>
+                          <Eye className="w-3.5 h-3.5" />Detail
+                        </button>
+                        {unregistered ? (
+                          <button onClick={() => setRegisteringOnu(onu)} className={`${btn} bg-green-600 hover:bg-green-700`}>
+                            <Plus className="w-3.5 h-3.5" />Register
+                          </button>
+                        ) : (
+                          <button onClick={() => setAssigningOnu(onu)} disabled={deletingOnu === onu.id} className={`${btn} bg-indigo-600 hover:bg-indigo-700`}>
+                            <UserPlus className="w-3.5 h-3.5" />Assign
+                          </button>
+                        )}
+                        {unregistered ? (
+                          <button onClick={() => handleDeleteOnu(onu)} disabled={deletingOnu === onu.id} className={`${btn} bg-red-600 hover:bg-red-700`}>
+                            {deletingOnu === onu.id ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}Hapus
+                          </button>
+                        ) : (
+                          <button onClick={() => setEditingConfigOnu(onu)} disabled={busy} className={`${btn} bg-cyan-600 hover:bg-cyan-700`}>
+                            <Settings className="w-3.5 h-3.5" />Config
+                          </button>
+                        )}
+                        {!unregistered && (
+                          <>
+                            <button onClick={() => setConfirmReboot(onu.id)} disabled={busy} className={`${btn} bg-orange-500 hover:bg-orange-600 col-span-2`}>
+                              <Power className="w-3.5 h-3.5" />Reboot
+                            </button>
+                            <button onClick={() => handleDeleteOnu(onu)} disabled={busy} className={`${btn} bg-red-600 hover:bg-red-700`}>
+                              {deletingOnu === onu.id ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}Hapus
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="hidden md:block overflow-x-auto rounded-lg border border-border">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b dark:border-gray-700 text-left text-muted-foreground bg-gray-50 dark:bg-gray-900/60">

@@ -167,11 +167,11 @@ export default function OLTMonitoringPage() {
             <span className={countdown <= 5 ? 'text-amber-500 font-semibold' : ''}>{countdown}d</span>
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-3 sm:flex gap-2 w-full sm:w-auto">
           <button
             onClick={() => { countdownRef.current = REFRESH_INTERVAL; setCountdown(REFRESH_INTERVAL); refetchOLTs(); }}
             disabled={refreshing && !loading}
-            className="inline-flex items-center px-3 py-1.5 text-xs border border-border bg-card hover:bg-accent rounded text-muted-foreground disabled:opacity-60"
+            className="inline-flex items-center justify-center min-h-9 px-3 py-1.5 text-xs border border-border bg-card hover:bg-accent rounded text-muted-foreground disabled:opacity-60"
           >
             <RefreshCw className={`h-3 w-3 mr-1 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
@@ -180,21 +180,22 @@ export default function OLTMonitoringPage() {
             <button
               onClick={handlePollAll}
               disabled={pollingAll}
-              className="inline-flex items-center px-3 py-1.5 text-xs bg-teal-600 hover:bg-teal-700 text-white rounded disabled:opacity-60"
+              className="inline-flex items-center justify-center min-h-9 px-3 py-1.5 text-xs bg-teal-600 hover:bg-teal-700 text-white rounded disabled:opacity-60"
             >
               <Zap className={`h-3 w-3 mr-1 ${pollingAll ? 'animate-pulse' : ''}`} />
               Poll Semua
             </button>
           )}
-          <Link href="/admin/olt/alerts">
-            <button className={`inline-flex items-center px-3 py-1.5 text-xs rounded ${
+          <Link
+            href="/admin/olt/alerts"
+            className={`inline-flex items-center justify-center min-h-9 px-3 py-1.5 text-xs rounded ${
               totalAlerts > 0
                 ? 'bg-red-600 hover:bg-red-700 text-white'
                 : 'border border-border bg-card hover:bg-accent text-muted-foreground'
-            }`}>
-              <AlertCircle className="h-3 w-3 mr-1" />
-              Alerts {totalAlerts > 0 && `(${totalAlerts})`}
-            </button>
+            }`}
+          >
+            <AlertCircle className="h-3 w-3 mr-1" />
+            Alerts {totalAlerts > 0 && `(${totalAlerts})`}
           </Link>
         </div>
       </div>
@@ -204,7 +205,7 @@ export default function OLTMonitoringPage() {
         {/* OLT Status */}
         <div className="bg-card rounded-lg border border-slate-200 dark:border-slate-800 p-3">
           <div className="flex items-center justify-between mb-1">
-            <p className="text-[10px] text-slate-500 uppercase font-medium tracking-wide">OLT</p>
+            <p className="text-[11px] text-slate-500 uppercase font-medium tracking-wide">OLT</p>
             <Server className="h-4 w-4 text-teal-500" />
           </div>
           <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">{olts.length}</p>
@@ -227,7 +228,7 @@ export default function OLTMonitoringPage() {
             : 'bg-card border-slate-200 dark:border-slate-800'
         }`}>
           <div className="flex items-center justify-between mb-1">
-            <p className="text-[10px] text-slate-500 uppercase font-medium tracking-wide">Alert Aktif</p>
+            <p className="text-[11px] text-slate-500 uppercase font-medium tracking-wide">Alert Aktif</p>
             <AlertCircle className={`h-4 w-4 ${totalAlerts > 0 ? 'text-red-500' : 'text-slate-400'}`} />
           </div>
           <p className={`text-2xl font-bold ${totalAlerts > 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-800 dark:text-slate-100'}`}>
@@ -239,7 +240,7 @@ export default function OLTMonitoringPage() {
         {/* ONU Total */}
         <div className="bg-card rounded-lg border border-slate-200 dark:border-slate-800 p-3">
           <div className="flex items-center justify-between mb-1">
-            <p className="text-[10px] text-slate-500 uppercase font-medium tracking-wide">Total ONU</p>
+            <p className="text-[11px] text-slate-500 uppercase font-medium tracking-wide">Total ONU</p>
             <Users className="h-4 w-4 text-blue-500" />
           </div>
           <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">{totalOnu}</p>
@@ -261,7 +262,7 @@ export default function OLTMonitoringPage() {
             : 'bg-card border-slate-200 dark:border-slate-800'
         }`}>
           <div className="flex items-center justify-between mb-1">
-            <p className="text-[10px] text-slate-500 uppercase font-medium tracking-wide">ONU Offline</p>
+            <p className="text-[11px] text-slate-500 uppercase font-medium tracking-wide">ONU Offline</p>
             <WifiOff className={`h-4 w-4 ${totalOnuOffline > 0 ? 'text-amber-500' : 'text-slate-400'}`} />
           </div>
           <p className={`text-2xl font-bold ${totalOnuOffline > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-800 dark:text-slate-100'}`}>
@@ -275,38 +276,38 @@ export default function OLTMonitoringPage() {
       <div className="bg-card rounded-lg border border-slate-200 dark:border-slate-800 p-3">
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="flex-1 relative">
-            <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
+            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
             <input
               type="text"
               placeholder="Cari nama atau IP..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 text-xs border border-border rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+              className="w-full min-h-9 pl-8 pr-3 py-1.5 text-xs border border-border rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
             />
           </div>
-          <div className="flex gap-2">
+          <div className="grid grid-cols-2 sm:flex gap-2">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-2 py-1.5 text-xs border border-border rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+              className="w-full min-h-9 px-2 py-1.5 text-xs border border-border rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
             >
               <option value="all">Semua Status</option>
               <option value="online">Online Only</option>
               <option value="offline">Offline Only</option>
             </select>
-            <div className="relative">
+            <div className="relative min-w-0">
               <select
                 value={sortKey}
                 onChange={(e) => setSortKey(e.target.value as SortKey)}
-                className="pl-7 pr-2 py-1.5 text-xs border border-border rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none"
+                className="w-full min-h-9 pl-7 pr-6 py-1.5 text-xs border border-border rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none"
               >
                 <option value="status">Urutkan: Status</option>
                 <option value="name">Urutkan: Nama</option>
                 <option value="alerts">Urutkan: Alert</option>
                 <option value="offline">Urutkan: Offline ONU</option>
               </select>
-              <ArrowUpDown className="absolute left-2 top-2 h-3 w-3 text-slate-400 pointer-events-none" />
-              <ChevronDown className="absolute right-1.5 top-2 h-3 w-3 text-slate-400 pointer-events-none" />
+              <ArrowUpDown className="absolute left-2 top-3 h-3 w-3 text-slate-400 pointer-events-none" />
+              <ChevronDown className="absolute right-1.5 top-3 h-3 w-3 text-slate-400 pointer-events-none" />
             </div>
           </div>
         </div>
@@ -406,66 +407,71 @@ export default function OLTMonitoringPage() {
                 </div>
 
                 {/* Device Info */}
-                <div className="px-3 py-2 grid grid-cols-3 sm:grid-cols-5 gap-x-2 gap-y-1.5 border-b border-slate-100 dark:border-slate-800 text-center">
-                  <div>
-                    <div className="text-[9px] text-slate-400 uppercase">Model</div>
-                    <div className="text-[10px] font-medium text-muted-foreground truncate">{olt.model ?? '-'}</div>
+                <div className="px-3 py-2.5 grid grid-cols-2 sm:grid-cols-5 gap-x-3 gap-y-2 border-b border-slate-100 dark:border-slate-800 text-center">
+                  <div className="col-span-2 sm:col-span-1">
+                    <div className="text-[10px] text-slate-400 uppercase">Model</div>
+                    <div className="text-xs font-medium text-muted-foreground truncate">{olt.model ?? '-'}</div>
                   </div>
                   <div>
-                    <div className="flex items-center justify-center gap-0.5 text-[9px] text-slate-400 uppercase">
+                    <div className="flex items-center justify-center gap-0.5 text-[10px] text-slate-400 uppercase">
                       <Thermometer className="h-2.5 w-2.5" />Suhu
                     </div>
-                    <div className={`text-[10px] font-semibold ${tempColor(olt.temperature)}`}>
+                    <div className={`text-xs font-semibold ${tempColor(olt.temperature)}`}>
                       {olt.temperature !== null ? `${olt.temperature}°C` : 'N/A'}
                     </div>
                   </div>
                   <div>
-                    <div className="flex items-center justify-center gap-0.5 text-[9px] text-slate-400 uppercase">
+                    <div className="flex items-center justify-center gap-0.5 text-[10px] text-slate-400 uppercase">
                       <Cpu className="h-2.5 w-2.5" />CPU
                     </div>
-                    <div className={`text-[10px] font-semibold ${usageColor(olt.cpuUsage)}`}>
+                    <div className={`text-xs font-semibold ${usageColor(olt.cpuUsage)}`}>
                       {olt.cpuUsage !== null ? `${olt.cpuUsage}%` : 'N/A'}
                     </div>
                   </div>
                   <div>
-                    <div className="flex items-center justify-center gap-0.5 text-[9px] text-slate-400 uppercase">
+                    <div className="flex items-center justify-center gap-0.5 text-[10px] text-slate-400 uppercase">
                       <MemoryStick className="h-2.5 w-2.5" />Mem
                     </div>
-                    <div className={`text-[10px] font-semibold ${usageColor(olt.memoryUsage)}`}>
+                    <div className={`text-xs font-semibold ${usageColor(olt.memoryUsage)}`}>
                       {olt.memoryUsage !== null ? `${olt.memoryUsage}%` : 'N/A'}
                     </div>
                   </div>
                   <div>
-                    <div className="flex items-center justify-center gap-0.5 text-[9px] text-slate-400 uppercase">
+                    <div className="flex items-center justify-center gap-0.5 text-[10px] text-slate-400 uppercase">
                       <Clock className="h-2.5 w-2.5" />Uptime
                     </div>
-                    <div className="text-[10px] font-medium text-muted-foreground">{uptimeStr(olt.uptime)}</div>
+                    <div className="text-xs font-medium text-muted-foreground">{uptimeStr(olt.uptime)}</div>
                   </div>
                 </div>
 
                 {/* Actions + Timestamp */}
-                <div className="px-3 py-2 flex items-center gap-1">
-                  <Link href={`/admin/olt/${olt.id}`} className="flex-1">
-                    <button className="w-full inline-flex items-center justify-center px-2 py-1 text-[10px] bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800 hover:bg-teal-100 dark:hover:bg-teal-900/50 rounded text-teal-700 dark:text-teal-400 font-medium">
-                      Detail
-                    </button>
+                <div className="px-3 py-2.5 flex flex-wrap items-center gap-2">
+                  <Link
+                    href={`/admin/olt/${olt.id}`}
+                    className="flex-1 min-w-[6rem] inline-flex items-center justify-center min-h-9 px-2 py-1 text-xs bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800 hover:bg-teal-100 dark:hover:bg-teal-900/50 rounded text-teal-700 dark:text-teal-400 font-medium"
+                  >
+                    Detail
                   </Link>
-                  <Link href="/admin/network/olts">
-                    <button className="inline-flex items-center px-2 py-1 text-[10px] border border-border hover:bg-accent rounded text-muted-foreground" title="Pengaturan OLT">
-                      <Settings className="h-3 w-3" />
-                    </button>
+                  <Link
+                    href="/admin/network/olts"
+                    className="inline-flex items-center justify-center h-9 w-9 border border-border hover:bg-accent rounded text-muted-foreground"
+                    title="Pengaturan OLT"
+                    aria-label="Pengaturan OLT"
+                  >
+                    <Settings className="h-4 w-4" />
                   </Link>
                   {olt.monitoringEnabled && (
                     <button
                       onClick={() => handleManualPoll(olt.id)}
                       disabled={isPollActive || pollingAll}
-                      className="inline-flex items-center px-2 py-1 text-[10px] border border-border hover:bg-accent rounded text-muted-foreground disabled:opacity-50"
+                      className="inline-flex items-center justify-center h-9 w-9 border border-border hover:bg-accent rounded text-muted-foreground disabled:opacity-50"
                       title="Poll Manual"
+                      aria-label="Poll Manual"
                     >
-                      <RefreshCw className={`h-3 w-3 ${isPollActive ? 'animate-spin' : ''}`} />
+                      <RefreshCw className={`h-4 w-4 ${isPollActive ? 'animate-spin' : ''}`} />
                     </button>
                   )}
-                  <span className="ml-auto text-[9px] text-slate-400 shrink-0">
+                  <span className="ml-auto text-[10px] text-slate-400 shrink-0">
                     {relativeTime(olt.lastPollAt)}
                   </span>
                 </div>

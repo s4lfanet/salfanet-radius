@@ -508,17 +508,17 @@ export default function OLTsPage() {
             {t('olt.subtitle')}
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="grid grid-cols-2 sm:flex gap-2 w-full sm:w-auto">
           <button
             onClick={() => setIsImportDialogOpen(true)}
-            className="inline-flex items-center px-3 py-1.5 text-xs bg-green-600 hover:bg-green-700 text-white rounded"
+            className="inline-flex items-center justify-center min-h-9 px-3 py-1.5 text-xs bg-green-600 hover:bg-green-700 text-white rounded"
           >
             <Upload className="h-3 w-3 mr-1" />
             {t('olt.import')}
           </button>
           <button
             onClick={() => { resetForm(); setEditingOlt(null); setIsDialogOpen(true); }}
-            className="inline-flex items-center px-3 py-1.5 text-xs bg-teal-600 hover:bg-teal-700 text-white rounded"
+            className="inline-flex items-center justify-center min-h-9 px-3 py-1.5 text-xs bg-teal-600 hover:bg-teal-700 text-white rounded"
           >
             <Plus className="h-3 w-3 mr-1" />
             {t('olt.add')}
@@ -527,31 +527,31 @@ export default function OLTsPage() {
       </div>
 
       {/* Overall Network Stats Card */}{/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-card rounded-lg border border-border p-4">
-          <div className="flex items-center justify-between">
+      <div className="grid grid-cols-3 gap-2 sm:gap-4">
+        <div className="bg-card rounded-lg border border-border p-3 sm:p-4 min-w-0">
+          <div className="flex flex-col-reverse sm:flex-row items-start sm:items-center justify-between gap-1">
             <div>
-              <p className="text-xs text-gray-500 uppercase">{t('common.total')} {t('nav.olt')}</p>
+              <p className="text-[10px] sm:text-xs text-gray-500 uppercase leading-tight">{t('common.total')} {t('nav.olt')}</p>
               <p className="text-xl font-bold text-teal-600">{olts.length}</p>
             </div>
-            <Server className="h-6 w-6 text-teal-600" />
+            <Server className="h-5 w-5 text-teal-600" />
           </div>
         </div>
-        <div className="bg-card rounded-lg border border-border p-4">
-          <div className="flex items-center justify-between">
+        <div className="bg-card rounded-lg border border-border p-3 sm:p-4 min-w-0">
+          <div className="flex flex-col-reverse sm:flex-row items-start sm:items-center justify-between gap-1">
             <div>
-              <p className="text-xs text-gray-500 uppercase">{t('common.active')}</p>
+              <p className="text-[10px] sm:text-xs text-gray-500 uppercase leading-tight">{t('common.active')}</p>
               <p className="text-xl font-bold text-green-600">
                 {olts.filter(o => o.status === 'active').length}
               </p>
             </div>
-            <Activity className="h-6 w-6 text-green-600" />
+            <Activity className="h-5 w-5 text-green-600" />
           </div>
         </div>
-        <div className="bg-card rounded-lg border border-border p-4">
-          <div className="flex items-center justify-between">
+        <div className="bg-card rounded-lg border border-border p-3 sm:p-4 min-w-0">
+          <div className="flex flex-col-reverse sm:flex-row items-start sm:items-center justify-between gap-1">
             <div>
-              <p className="text-xs text-gray-500 uppercase">{t('common.total')} {t('nav.odp')}</p>
+              <p className="text-[10px] sm:text-xs text-gray-500 uppercase leading-tight">{t('common.total')} {t('nav.odp')}</p>
               <p className="text-xl font-bold text-blue-600">
                 {olts.reduce((sum, o) => sum + (o._count?.odps || 0), 0)}
               </p>
@@ -829,26 +829,26 @@ export default function OLTsPage() {
           olts.map((olt) => (
             <div key={olt.id} className="bg-card rounded-lg border border-border p-3">
               {/* Header */}
-              <div className="flex items-start justify-between mb-2 min-w-0">
-                <div className="flex items-center gap-2 flex-1">
+              <div className="flex items-start justify-between gap-2 mb-3 min-w-0">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
                   <Server className="h-4 w-4 text-teal-600 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium text-sm text-foreground truncate">{olt.name}</h3>
-                    <p className="text-[10px] font-mono text-gray-500 truncate">{olt.ipAddress}</p>
+                    <p className="text-xs font-mono text-gray-500 truncate">{olt.ipAddress}</p>
                   </div>
                 </div>
-                <div className="flex gap-1 flex-shrink-0">
+                <div className="flex flex-col items-end gap-1 flex-shrink-0">
                   {oltStatusMap[olt.id] ? (
                     oltStatusMap[olt.id].online ? (
-                      <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">🟢</span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Online</span>
                     ) : (
-                      <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">🔴</span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">Offline</span>
                     )
                   ) : (
-                    <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-gray-100 text-gray-600">⚪</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600">Cek…</span>
                   )}
                   <span
-                    className={`px-1.5 py-0.5 text-[9px] rounded font-medium ${
+                    className={`px-2 py-0.5 text-[10px] rounded font-medium ${
                       olt.status === 'active'
                         ? 'bg-green-100 text-green-700 dark:bg-green-900/30'
                         : 'bg-red-100 text-red-700 dark:bg-red-900/30'
@@ -860,44 +860,37 @@ export default function OLTsPage() {
               </div>
 
               {/* Info Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2 pb-2 border-b border-border">
-                <div>
-                  <div className="text-[9px] text-gray-400 uppercase mb-0.5">{t('common.location')}</div>
-                  <a
-                    href={`https://www.google.com/maps?q=${olt.latitude},${olt.longitude}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-[10px] text-blue-600 hover:underline"
-                  >
-                    <MapPin className="h-2.5 w-2.5" />
-                    <span className="truncate">{olt.latitude.toFixed(4)}, {olt.longitude.toFixed(4)}</span>
-                  </a>
-                </div>
-                <div>
-                  <div className="text-[9px] text-gray-400 uppercase mb-0.5">ONUs</div>
-                  <span className="px-1.5 py-0.5 text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/30 rounded inline-block">
-                    {olt._count?.olt_onu_status || 0}
-                  </span>
-                </div>
-                <div>
-                  <div className="text-[9px] text-gray-400 uppercase mb-0.5">ODC</div>
-                  <span className="px-1.5 py-0.5 text-[10px] bg-orange-100 text-orange-700 dark:bg-orange-900/30 rounded inline-block">
-                    {olt._count?.odcs || 0}
-                  </span>
-                </div>
-                <div>
-                  <div className="text-[9px] text-gray-400 uppercase mb-0.5">{t('nav.odp')}</div>
-                  <span className="px-1.5 py-0.5 text-[10px] bg-purple-100 text-purple-700 dark:bg-purple-900/30 rounded inline-block">
-                    {olt._count?.odps || 0}
-                  </span>
+              <div className="mb-3 pb-3 border-b border-border space-y-2">
+                <a
+                  href={`https://www.google.com/maps?q=${olt.latitude},${olt.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs text-blue-600 hover:underline min-w-0"
+                >
+                  <MapPin className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">{olt.latitude.toFixed(5)}, {olt.longitude.toFixed(5)}</span>
+                </a>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="rounded bg-blue-50 dark:bg-blue-900/20 py-1.5">
+                    <div className="text-sm font-semibold text-blue-700 dark:text-blue-400">{olt._count?.olt_onu_status || 0}</div>
+                    <div className="text-[10px] uppercase text-gray-500">ONU</div>
+                  </div>
+                  <div className="rounded bg-orange-50 dark:bg-orange-900/20 py-1.5">
+                    <div className="text-sm font-semibold text-orange-700 dark:text-orange-400">{olt._count?.odcs || 0}</div>
+                    <div className="text-[10px] uppercase text-gray-500">ODC</div>
+                  </div>
+                  <div className="rounded bg-purple-50 dark:bg-purple-900/20 py-1.5">
+                    <div className="text-sm font-semibold text-purple-700 dark:text-purple-400">{olt._count?.odps || 0}</div>
+                    <div className="text-[10px] uppercase text-gray-500">{t('nav.odp')}</div>
+                  </div>
                 </div>
               </div>
 
               {/* Credentials */}
               {(olt.username || olt.password || olt.snmpCommunity || olt.snmp_community) && (
-                <div className="mb-2 pb-2 border-b border-border">
-                  <div className="text-[9px] text-gray-400 uppercase mb-1">Credentials</div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px]">
+                <div className="mb-3 pb-3 border-b border-border">
+                  <div className="text-[10px] text-gray-400 uppercase mb-1">Credentials</div>
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
                     {olt.username && (
                       <div>
                         <span className="text-muted-foreground">Username:</span>
@@ -911,7 +904,7 @@ export default function OLTsPage() {
                       </div>
                     )}
                     {(olt.snmpCommunity || olt.snmp_community) && (
-                      <div className="col-span-2">
+                      <div className="col-span-2 min-w-0">
                         <span className="text-muted-foreground">SNMP:</span>
                         <span className="ml-1 font-mono text-muted-foreground">{olt.snmpCommunity || olt.snmp_community}</span>
                       </div>
@@ -922,28 +915,24 @@ export default function OLTsPage() {
 
               {/* Model / Vendor */}
               {(olt.vendor || olt.model) && (
-              <div className="mb-2 pb-2 border-b border-border">
-                <div className="text-[9px] text-gray-400 uppercase mb-1">Vendor / Model</div>
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-[10px] font-medium text-muted-foreground">
-                      {olt.vendor?.toUpperCase()}
-                    </span>
-                    <span className="text-[9px] text-muted-foreground">
-                      {olt.model}
-                    </span>
+              <div className="mb-3 pb-3 border-b border-border">
+                <div className="text-[10px] text-gray-400 uppercase mb-1">Vendor / Model</div>
+                  <div className="text-xs text-muted-foreground">
+                    <span className="font-medium">{olt.vendor?.toUpperCase()}</span>
+                    {olt.model && <span> · {olt.model}</span>}
                   </div>
               </div>
               )}
 
               {/* ONU Status - Clickable badges */}
               {olt.onu_stats && (olt.onu_stats.online > 0 || olt.onu_stats.dying_gasp > 0 || olt.onu_stats.los > 0 || olt.onu_stats.unconfig > 0 || olt.onu_stats.offline > 0) && (
-                <div className="mb-2 pb-2 border-b border-border">
-                  <div className="text-[9px] text-gray-400 uppercase mb-1">ONU Status</div>
-                  <div className="flex flex-wrap gap-1">
+                <div className="mb-3 pb-3 border-b border-border">
+                  <div className="text-[10px] text-gray-400 uppercase mb-1">ONU Status</div>
+                  <div className="flex flex-wrap gap-1.5">
                     {olt.onu_stats.online > 0 && (
                       <Link
                         href={`/admin/network/onus?olt_id=${olt.id}&filter=online`}
-                        className="text-[9px] px-1.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded font-medium hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors cursor-pointer"
+                        className="text-[11px] px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded font-medium hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors cursor-pointer"
                         title="View online ONUs"
                       >
                         🟢 {olt.onu_stats.online} Online
@@ -952,7 +941,7 @@ export default function OLTsPage() {
                     {olt.onu_stats.dying_gasp > 0 && (
                       <Link
                         href={`/admin/network/onus?olt_id=${olt.id}&filter=dying_gasp`}
-                        className="text-[9px] px-1.5 py-0.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded font-medium hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition-colors cursor-pointer"
+                        className="text-[11px] px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded font-medium hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition-colors cursor-pointer"
                         title="View dying gasp ONUs"
                       >
                         {olt.onu_stats.dying_gasp} Dying Gasp
@@ -961,7 +950,7 @@ export default function OLTsPage() {
                     {olt.onu_stats.los > 0 && (
                       <Link
                         href={`/admin/network/onus?olt_id=${olt.id}&filter=los`}
-                        className="text-[9px] px-1.5 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded font-medium hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors cursor-pointer"
+                        className="text-[11px] px-2 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded font-medium hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors cursor-pointer"
                         title="View LOS ONUs"
                       >
                         {olt.onu_stats.los} LOS
@@ -970,7 +959,7 @@ export default function OLTsPage() {
                     {olt.onu_stats.unconfig > 0 && (
                       <Link
                         href={`/admin/network/onus?olt_id=${olt.id}&filter=unconfig`}
-                        className="text-[9px] px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-primary rounded font-medium hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors cursor-pointer"
+                        className="text-[11px] px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-primary rounded font-medium hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors cursor-pointer"
                         title="View unconfigured ONUs"
                       >
                         {olt.onu_stats.unconfig} Unconfig
@@ -979,7 +968,7 @@ export default function OLTsPage() {
                     {olt.onu_stats.offline > 0 && (
                       <Link
                         href={`/admin/network/onus?olt_id=${olt.id}&filter=all`}
-                        className="text-[9px] px-1.5 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded font-medium hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors cursor-pointer"
+                        className="text-[11px] px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded font-medium hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors cursor-pointer"
                         title="View all ONUs"
                       >
                         🔴 {olt.onu_stats.offline} Offline
@@ -991,13 +980,13 @@ export default function OLTsPage() {
 
               {/* Routers */}
               {olt.routers && olt.routers.length > 0 && (
-                <div className="mb-2 pb-2 border-b border-border">
-                  <div className="text-[9px] text-gray-400 uppercase mb-1">{t('nav.routers')}</div>
+                <div className="mb-3 pb-3 border-b border-border">
+                  <div className="text-[10px] text-gray-400 uppercase mb-1">{t('nav.routers')}</div>
                   <div className="flex flex-wrap gap-1">
                     {olt.routers.map((r, idx) => (
                       <span
                         key={r.id}
-                        className={`px-1.5 py-0.5 text-[9px] rounded ${
+                        className={`px-2 py-0.5 text-[11px] rounded ${
                           idx === 0
                             ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30'
                             : 'bg-gray-100 text-gray-600 dark:bg-gray-800'
@@ -1011,27 +1000,27 @@ export default function OLTsPage() {
               )}
 
               {/* Actions */}
-              <div className="flex justify-end gap-1">
+              <div className="grid grid-cols-3 gap-2">
                 <Link
                   href={`/admin/olt/${olt.id}`}
-                  className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
+                  className="inline-flex items-center justify-center gap-1.5 min-h-9 text-xs text-blue-600 border border-blue-200 dark:border-blue-900/50 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
                   title={t('olt.monitoring.title')}
                 >
-                  <Eye className="h-3.5 w-3.5" />
+                  <Eye className="h-3.5 w-3.5" />Detail
                 </Link>
                 <button
                   onClick={() => handleEdit(olt)}
-                  className="p-1.5 text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                  className="inline-flex items-center justify-center gap-1.5 min-h-9 text-xs text-gray-600 dark:text-gray-300 border border-border hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
                   title="Edit OLT"
                 >
-                  <Pencil className="h-3.5 w-3.5" />
+                  <Pencil className="h-3.5 w-3.5" />Edit
                 </button>
                 <button
                   onClick={() => handleDelete(olt)}
-                  className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                  className="inline-flex items-center justify-center gap-1.5 min-h-9 text-xs text-red-600 border border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
                   title="Hapus OLT"
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
+                  <Trash2 className="h-3.5 w-3.5" />Hapus
                 </button>
               </div>
             </div>
