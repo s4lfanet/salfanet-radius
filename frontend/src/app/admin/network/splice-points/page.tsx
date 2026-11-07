@@ -384,7 +384,7 @@ export default function SplicePointsPage() {
           </button>
           <button
             onClick={() => { resetForm(); setIsCreateDialogOpen(true); }}
-            className="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded flex items-center gap-1"
+            className="px-3 py-1.5 text-xs bg-primary hover:bg-primary/90 text-primary-foreground rounded flex items-center gap-1"
           >
             <Plus className="h-3 w-3" />
             {t('splicePoint.createNew')}
@@ -852,7 +852,7 @@ export default function SplicePointsPage() {
                 <button
                   type="submit"
                   disabled={submitting || !formData.coreAId || !formData.coreBId}
-                  className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50"
+                  className="px-4 py-2 text-sm bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg disabled:opacity-50"
                 >
                   {submitting ? '...' : t('splicePoint.createBtn')}
                 </button>

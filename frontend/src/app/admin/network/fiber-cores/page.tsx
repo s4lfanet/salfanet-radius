@@ -406,7 +406,7 @@ export default function FiberCoresPage() {
             <button
               onClick={() => openActionDialog('assign')}
               disabled={selectedCores.size !== 1}
-              className="px-2 py-1 text-[10px] bg-blue-600 hover:bg-blue-700 text-white rounded disabled:opacity-50"
+              className="px-2 py-1 text-[10px] bg-primary hover:bg-primary/90 text-primary-foreground rounded disabled:opacity-50"
             >
               Assign
             </button>

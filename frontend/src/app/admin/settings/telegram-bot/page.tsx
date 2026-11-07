@@ -355,7 +355,7 @@ export default function TelegramBotSettingsPage() {
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full px-4 py-2.5 text-sm font-semibold rounded-lg bg-teal-600 text-white hover:bg-teal-700 disabled:opacity-50 inline-flex items-center justify-center gap-2"
+          className="w-full px-4 py-2.5 text-sm font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 inline-flex items-center justify-center gap-2"
         >
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
           Simpan Pengaturan

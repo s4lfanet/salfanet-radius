@@ -180,7 +180,7 @@ export default function AdminOntRemovalTasksPage() {
               setCustomerSearch('');
               setShowCreate(true);
             }}
-            className="flex items-center gap-1 px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold rounded-xl transition"
+            className="flex items-center gap-1 px-3 py-2 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold rounded-xl transition"
           >
             <Plus className="w-4 h-4" /> Buat Tugas
           </button>
@@ -199,7 +199,7 @@ export default function AdminOntRemovalTasksPage() {
             { key: 'CANCELLED', label: 'Dibatalkan' },
             { key: '', label: 'Semua' },
           ] as const).map((f) => (
-            <button key={f.key} onClick={() => setStatus(f.key)} className={`px-3 py-2 text-xs font-bold rounded-xl transition ${status === f.key ? 'bg-orange-600 text-white' : 'bg-muted border border-border text-muted-foreground hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
+            <button key={f.key} onClick={() => setStatus(f.key)} className={`px-3 py-2 text-xs font-bold rounded-xl transition ${status === f.key ? 'bg-primary text-primary-foreground' : 'bg-muted border border-border text-muted-foreground hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
               {f.label}
             </button>
           ))}
@@ -359,7 +359,7 @@ export default function AdminOntRemovalTasksPage() {
               <button onClick={() => setShowCreate(false)} className="flex-1 px-3 py-2 bg-muted text-muted-foreground text-sm font-bold rounded-lg transition">
                 Batal
               </button>
-              <button disabled={creating} onClick={createTask} className="flex-1 px-3 py-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white text-sm font-bold rounded-lg transition">
+              <button disabled={creating} onClick={createTask} className="flex-1 px-3 py-2 bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground text-sm font-bold rounded-lg transition">
                 {creating ? 'Menyimpan...' : 'Buat Tugas'}
               </button>
             </div>

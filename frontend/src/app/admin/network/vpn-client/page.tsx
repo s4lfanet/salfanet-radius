@@ -966,10 +966,10 @@ ${vpnCmd}
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-muted-foreground text-sm mb-1">{t('common.activeClients')}</p>
-                  <p className="text-3xl font-bold text-green-400">{activeClients}</p>
+                  <p className="text-3xl font-bold text-green-600 dark:text-green-400">{activeClients}</p>
                 </div>
                 <div className="p-3 bg-green-500/20 rounded-xl group-hover:bg-green-500/30 transition-colors flex items-center justify-center">
-                  <Wifi className="w-6 h-6 text-green-400" />
+                  <Wifi className="w-6 h-6 text-green-600 dark:text-green-400" />
                 </div>
               </div>
             </div>
@@ -1118,7 +1118,7 @@ ${vpnCmd}
                             <input type="text" value={wgPoolForm.gatewayIp} onChange={(e) => setWgPoolForm(p => ({...p, gatewayIp: e.target.value}))} className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground font-mono text-sm focus:border-teal-400 focus:ring-1 focus:ring-teal-400/30" placeholder={`${wgServerInfo.subnet?.split('/')[0].split('.').slice(0,3).join('.')}.1`} />
                           </div>
                           <div className="flex gap-2 pt-1">
-                            <button onClick={handleWgSavePoolConfig} disabled={wgPoolSaving} className="flex-1 py-2 bg-teal-500 text-white text-sm font-bold rounded-lg hover:bg-teal-400 disabled:opacity-50 transition-colors">{wgPoolSaving ? 'Menyimpan...' : 'Simpan'}</button>
+                            <button onClick={handleWgSavePoolConfig} disabled={wgPoolSaving} className="flex-1 py-2 bg-primary text-primary-foreground text-sm font-bold rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors">{wgPoolSaving ? 'Menyimpan...' : 'Simpan'}</button>
                             <button onClick={() => setWgPoolEdit(false)} className="flex-1 py-2 bg-muted border border-border text-foreground text-sm rounded-lg hover:bg-accent transition-colors">Batal</button>
                           </div>
                         </div>
@@ -1201,7 +1201,7 @@ ${vpnCmd}
                             <input type="text" value={l2tpPoolForm.gateway} onChange={(e) => setL2tpPoolForm(p => ({...p, gateway: e.target.value}))} className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground font-mono text-sm" placeholder="mis. 10.201.0.1" />
                           </div>
                           <div className="flex gap-2 pt-1">
-                            <button onClick={handleL2tpSavePoolConfig} disabled={l2tpPoolSaving} className="flex-1 py-2 bg-violet-500 text-white text-sm font-bold rounded-lg hover:bg-[#d060ff] disabled:opacity-50 transition-colors">{l2tpPoolSaving ? 'Menyimpan...' : 'Simpan'}</button>
+                            <button onClick={handleL2tpSavePoolConfig} disabled={l2tpPoolSaving} className="flex-1 py-2 bg-primary text-primary-foreground text-sm font-bold rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors">{l2tpPoolSaving ? 'Menyimpan...' : 'Simpan'}</button>
                             <button onClick={() => setL2tpPoolEdit(false)} className="flex-1 py-2 bg-muted border border-border text-foreground text-sm rounded-lg hover:bg-accent transition-colors">Batal</button>
                           </div>
                         </div>
@@ -1286,14 +1286,14 @@ ${vpnCmd}
                                 <button
                                   onClick={() => handleEditIpSave(client.id)}
                                   disabled={editingIpLoading}
-                                  className="p-1 bg-green-500/20 border border-green-500/40 text-green-400 rounded-lg hover:bg-green-500/30 transition"
+                                  className="p-1 bg-green-500/20 border border-green-500/40 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-500/30 transition"
                                   title="Simpan"
                                 >
                                   {editingIpLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
                                 </button>
                                 <button
                                   onClick={() => setEditingIpClientId(null)}
-                                  className="p-1 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg hover:bg-red-500/20 transition"
+                                  className="p-1 bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-500/20 transition"
                                   title="Batal"
                                 >
                                   <XCircle className="w-3 h-3" />
@@ -1416,7 +1416,7 @@ ${vpnCmd}
                         </button>
                         <button
                           onClick={() => handleDelete(client.id, client.name)}
-                          className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl hover:bg-red-500/20 transition"
+                          className="flex items-center gap-2 px-4 py-2.5 bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-500/20 transition"
                           title="Hapus"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -1445,7 +1445,7 @@ ${vpnCmd}
               <form onSubmit={handleCreate} className="space-y-5">
                 <div>
                   <label className="block text-sm font-medium text-brand-500 mb-2">
-                    {t('network.vpnServer')} <span className="text-red-400">*</span>
+                    {t('network.vpnServer')} <span className="text-red-600 dark:text-red-400">*</span>
                   </label>
                   <select
                     value={formData.vpnServerId}
@@ -1513,7 +1513,7 @@ ${vpnCmd}
 
                 <div>
                   <label className="block text-sm font-medium text-brand-500 mb-2">
-                    VPN Protocol <span className="text-red-400">*</span>
+                    VPN Protocol <span className="text-red-600 dark:text-red-400">*</span>
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {(['wireguard', 'l2tp', 'pptp', 'sstp'] as const).map((type) => (
@@ -1540,7 +1540,7 @@ ${vpnCmd}
 
                 <div>
                   <label className="block text-sm font-medium text-brand-500 mb-2">
-                    {t('network.clientName')} <span className="text-red-400">*</span>
+                    {t('network.clientName')} <span className="text-red-600 dark:text-red-400">*</span>
                   </label>
                   <input
                     type="text"
@@ -1667,13 +1667,13 @@ ${vpnCmd}
                   {credentials.apiUsername && (
                     <div>
                       <p className="text-brand-500 text-xs uppercase tracking-wider mb-1">{t('network.apiUsername')}</p>
-                      <p className="font-mono text-sm text-green-400">{credentials.apiUsername}</p>
+                      <p className="font-mono text-sm text-green-600 dark:text-green-400">{credentials.apiUsername}</p>
                     </div>
                   )}
                   {credentials.apiPassword && (
                     <div>
                       <p className="text-brand-500 text-xs uppercase tracking-wider mb-1">{t('network.apiPassword')}</p>
-                      <p className="font-mono text-sm text-green-400">{credentials.apiPassword}</p>
+                      <p className="font-mono text-sm text-green-600 dark:text-green-400">{credentials.apiPassword}</p>
                     </div>
                   )}
                   {credentials.radiusServerIp && (
@@ -1722,7 +1722,7 @@ ${vpnCmd}
                             <div className="space-y-1">
                               <div className="flex items-center gap-2">
                                 <span className="text-xs text-muted-foreground w-20 shrink-0">Private Key:</span>
-                                <code className="text-xs font-mono text-green-400 truncate">{credentials.clientPrivateKey.substring(0, 20)}...</code>
+                                <code className="text-xs font-mono text-green-600 dark:text-green-400 truncate">{credentials.clientPrivateKey.substring(0, 20)}...</code>
                                 <button onClick={() => copyToClipboard(credentials.clientPrivateKey!)} className="text-xs text-brand-500 hover:underline shrink-0"><Copy className="w-3 h-3" /></button>
                               </div>
                               {credentials.serverPublicKey && (
@@ -1850,7 +1850,7 @@ ${vpnCmd}
               {applyRoutingOutput && (
                 <div className="mb-4 p-3 bg-gray-100 dark:bg-slate-950 rounded-xl border border-brand-500/20 max-h-52 overflow-y-auto">
                   <p className="text-brand-500 text-xs uppercase mb-1 font-bold">Output:</p>
-                  <pre className="text-xs text-green-300 font-mono whitespace-pre-wrap">{applyRoutingOutput}</pre>
+                  <pre className="text-xs text-green-700 dark:text-green-300 font-mono whitespace-pre-wrap">{applyRoutingOutput}</pre>
                 </div>
               )}
 

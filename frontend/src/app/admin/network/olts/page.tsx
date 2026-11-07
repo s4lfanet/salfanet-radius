@@ -1304,7 +1304,7 @@ export default function OLTsPage() {
                           { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
                         );
                       }}
-                      className="inline-flex items-center px-2 py-0.5 text-[10px] bg-green-600 text-white rounded"
+                      className="inline-flex items-center px-2 py-0.5 text-[10px] bg-success text-success-foreground rounded"
                     >
                       <MapPin className="h-2.5 w-2.5 mr-1" />
                       {t('common.autoGPS')}

@@ -1247,9 +1247,9 @@ export default function GenieACSDevicesPage() {
                                     <div>
                                       <div className="flex items-center gap-2 flex-wrap">
                                         <p className="text-xs font-medium text-foreground">{wan.name}</p>
-                                        <span className={`px-1.5 py-0.5 text-[9px] font-semibold rounded ${wan.connectionType === 'PPPoE' ? 'bg-primary/10 text-primary' : 'bg-blue-500/20 text-blue-400'}`}>{wan.connectionType}</span>
-                                        {wan.serviceList && wan.serviceList !== '-' && <span className="px-1.5 py-0.5 text-[9px] font-semibold rounded bg-orange-500/20 text-orange-400">{wan.serviceList}</span>}
-                                        {wan.vlanId && wan.vlanId !== '-' && <span className="px-1.5 py-0.5 text-[9px] font-semibold rounded bg-cyan-500/20 text-cyan-400">VLAN {wan.vlanId}</span>}
+                                        <span className={`px-1.5 py-0.5 text-[9px] font-semibold rounded ${wan.connectionType === 'PPPoE' ? 'bg-primary/10 text-primary' : 'bg-blue-500/20 text-blue-600 dark:text-blue-400'}`}>{wan.connectionType}</span>
+                                        {wan.serviceList && wan.serviceList !== '-' && <span className="px-1.5 py-0.5 text-[9px] font-semibold rounded bg-orange-500/20 text-orange-600 dark:text-orange-400">{wan.serviceList}</span>}
+                                        {wan.vlanId && wan.vlanId !== '-' && <span className="px-1.5 py-0.5 text-[9px] font-semibold rounded bg-cyan-500/20 text-cyan-600 dark:text-cyan-400">VLAN {wan.vlanId}</span>}
                                       </div>
                                       <p className="text-[10px] text-muted-foreground mt-0.5">
                                         {wan.username && wan.username !== '-' ? `User: ${wan.username}` : ''}
@@ -1603,7 +1603,7 @@ export default function GenieACSDevicesPage() {
                         setGenName(`vp-${selectedDevice?._id?.slice(0,8) ?? 'device'}`);
                         setShowGenModal(true);
                       }}
-                      className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium bg-purple-600 hover:bg-purple-700 text-white rounded"
+                      className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium bg-primary hover:bg-primary/90 text-primary-foreground rounded"
                     >
                       <Zap className="w-3 h-3" />
                       Generate VP
@@ -1625,7 +1625,7 @@ export default function GenieACSDevicesPage() {
                         setGenName(`provision-${selectedDevice?._id?.slice(0,8) ?? 'device'}`);
                         setShowGenModal(true);
                       }}
-                      className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium bg-blue-600 hover:bg-blue-700 text-white rounded"
+                      className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium bg-primary hover:bg-primary/90 text-primary-foreground rounded"
                     >
                       <Code2 className="w-3 h-3" />
                       Generate Provision
@@ -1856,7 +1856,7 @@ export default function GenieACSDevicesPage() {
                     setGenSaving(false);
                   }
                 }}
-                className="px-4 py-2 text-sm rounded-md text-white flex items-center gap-2 disabled:opacity-60 bg-purple-600 hover:bg-purple-700"
+                className="px-4 py-2 text-sm rounded-md text-primary-foreground flex items-center gap-2 disabled:opacity-60 bg-primary hover:bg-primary/90"
               >
                 {genSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Simpan & Sync ke GenieACS

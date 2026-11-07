@@ -188,21 +188,21 @@ export default function TemplatesPage() {
           <div className="flex items-center gap-2 p-3 border-b border-border bg-muted">
             <button
               onClick={() => setViewMode('desktop')}
-              className={`p-2 rounded ${viewMode === 'desktop' ? 'bg-teal-600 text-white' : 'bg-muted text-muted-foreground dark:text-muted-foreground'}`}
+              className={`p-2 rounded ${viewMode === 'desktop' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground dark:text-muted-foreground'}`}
               title="Desktop view"
             >
               <Monitor className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode('tablet')}
-              className={`p-2 rounded ${viewMode === 'tablet' ? 'bg-teal-600 text-white' : 'bg-muted text-muted-foreground dark:text-muted-foreground'}`}
+              className={`p-2 rounded ${viewMode === 'tablet' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground dark:text-muted-foreground'}`}
               title="Tablet view"
             >
               <Tablet className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode('mobile')}
-              className={`p-2 rounded ${viewMode === 'mobile' ? 'bg-teal-600 text-white' : 'bg-muted text-muted-foreground dark:text-muted-foreground'}`}
+              className={`p-2 rounded ${viewMode === 'mobile' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground dark:text-muted-foreground'}`}
               title="Mobile view"
             >
               <Smartphone className="w-4 h-4" />

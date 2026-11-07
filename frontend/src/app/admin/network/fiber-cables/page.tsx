@@ -248,7 +248,7 @@ export default function FiberCablesPage() {
           </button>
           <button
             onClick={() => { resetForm(); setIsDialogOpen(true); }}
-            className="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded flex items-center gap-1"
+            className="px-3 py-1.5 text-xs bg-primary hover:bg-primary/90 text-primary-foreground rounded flex items-center gap-1"
           >
             <Plus className="h-3 w-3" />
             {t('fiberCable.add')}
@@ -576,7 +576,7 @@ export default function FiberCablesPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                  className="px-4 py-2 text-sm bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg"
                 >
                   {editingCable ? t('common.update') : t('common.create')}
                 </button>

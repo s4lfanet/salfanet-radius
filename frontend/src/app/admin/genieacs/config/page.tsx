@@ -156,7 +156,7 @@ export default function GenieACSConfigPage() {
               setNewId('');
               setNewValue('');
             }}
-            className="px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+            className="px-3 py-2 text-sm bg-primary hover:bg-primary/90 text-primary-foreground rounded-md"
           >
             Add
           </button>

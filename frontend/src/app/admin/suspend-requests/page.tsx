@@ -148,7 +148,7 @@ export default function AdminSuspendRequestsPage() {
             onClick={() => setFilter(s)}
             className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
               filter === s
-                ? 'bg-violet-500 text-white border-violet-500'
+                ? 'bg-primary text-primary-foreground border-violet-500'
                 : 'border-gray-300 text-gray-600 hover:border-border'
             }`}
           >

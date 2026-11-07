@@ -1368,7 +1368,7 @@ export default function InvoicesPage() {
               <div className="flex flex-col gap-3">
                 <button
                   onClick={() => { if (printDialogInvoice) { setPrintDialogInvoice(null); handlePrintStandard(printDialogInvoice); } }}
-                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground transition-colors"
                 >
                   <FileText className="w-5 h-5 flex-shrink-0" />
                   <div className="text-left">
@@ -1378,7 +1378,7 @@ export default function InvoicesPage() {
                 </button>
                 <button
                   onClick={() => { if (printDialogInvoice) { setPrintDialogInvoice(null); handlePrintThermal(printDialogInvoice); } }}
-                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
+                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-success hover:bg-success/90 text-success-foreground transition-colors"
                 >
                   <Printer className="w-5 h-5 flex-shrink-0" />
                   <div className="text-left">
@@ -1650,7 +1650,7 @@ export default function InvoicesPage() {
                     <Button
                       type="button"
                       size="sm"
-                      className="flex-1 h-9 text-xs bg-blue-600 hover:bg-blue-700 text-white"
+                      className="flex-1 h-9 text-xs bg-primary hover:bg-primary/90 text-primary-foreground"
                       onClick={handleGenerate}
                       disabled={generateMutation.isPending || (genScope === 'single' && !genUserId)}
                     >

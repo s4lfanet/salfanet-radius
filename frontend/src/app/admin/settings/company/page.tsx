@@ -542,7 +542,7 @@ export default function CompanySettingsPage() {
                     type="button"
                     onClick={handleSaveAndRestart}
                     disabled={saving || restarting}
-                    className="flex items-center justify-center gap-1.5 px-4 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+                    className="flex items-center justify-center gap-1.5 px-4 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
                   >
                     {restarting ? (
                       <>

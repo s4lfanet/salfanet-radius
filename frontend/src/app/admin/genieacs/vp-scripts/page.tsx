@@ -265,7 +265,7 @@ export default function VpScriptsPage() {
           </button>
           <button
             onClick={() => setEditing({ _id: '', script: SAMPLE_SCRIPT, description: '' })}
-            className="px-3 py-2 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-md flex items-center gap-2"
+            className="px-3 py-2 text-sm bg-primary hover:bg-primary/90 text-primary-foreground rounded-md flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
             New VP Script
@@ -500,7 +500,7 @@ export default function VpScriptsPage() {
                 <button
                   onClick={save}
                   disabled={saving}
-                  className="px-4 py-2 text-sm bg-purple-600 hover:bg-purple-700 text-white rounded-md flex items-center gap-2 disabled:opacity-60"
+                  className="px-4 py-2 text-sm bg-primary hover:bg-primary/90 text-primary-foreground rounded-md flex items-center gap-2 disabled:opacity-60"
                 >
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                   Simpan & Sync ke GenieACS

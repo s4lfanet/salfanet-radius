@@ -231,7 +231,7 @@ export default function SendMessagePage() {
           <button
             onClick={() => setActiveTab('single')}
             className={`px-3 py-1.5 text-xs font-medium rounded transition-colors flex items-center gap-1.5 ${
-              activeTab === 'single' ? 'bg-teal-600 text-white' : 'text-muted-foreground dark:text-muted-foreground hover:bg-accent'
+              activeTab === 'single' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground dark:text-muted-foreground hover:bg-accent'
             }`}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -242,7 +242,7 @@ export default function SendMessagePage() {
           <button
             onClick={() => setActiveTab('broadcast')}
             className={`px-3 py-1.5 text-xs font-medium rounded transition-colors flex items-center gap-1.5 ${
-              activeTab === 'broadcast' ? 'bg-teal-600 text-white' : 'text-muted-foreground dark:text-muted-foreground hover:bg-accent'
+              activeTab === 'broadcast' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground dark:text-muted-foreground hover:bg-accent'
             }`}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

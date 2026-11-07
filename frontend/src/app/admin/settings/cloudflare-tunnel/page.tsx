@@ -271,7 +271,7 @@ export default function CloudflareTunnelPage() {
               <button
                 onClick={() => doAction('start')}
                 disabled={actionLoading === 'start'}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-success hover:bg-success/90 text-success-foreground rounded-lg transition-colors disabled:opacity-50"
               >
                 {actionLoading === 'start' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
                 Start Service
@@ -291,7 +291,7 @@ export default function CloudflareTunnelPage() {
               className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 ${
                 isAutoStart
                   ? 'bg-muted hover:bg-muted/80 text-foreground'
-                  : 'bg-blue-500 hover:bg-blue-600 text-white'
+                  : 'bg-primary hover:bg-primary/90 text-primary-foreground'
               }`}
             >
               {actionLoading === 'enable' || actionLoading === 'disable' ? <Loader2 className="w-4 h-4 animate-spin" /> :
@@ -425,7 +425,7 @@ export default function CloudflareTunnelPage() {
               <button
                 onClick={() => doAction('install_service', { tunnelToken: tunnelToken.trim() })}
                 disabled={actionLoading === 'install_service' || !tunnelToken.trim()}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-success hover:bg-success/90 text-success-foreground rounded-lg transition-colors disabled:opacity-50"
               >
                 {actionLoading === 'install_service' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Power className="w-4 h-4" />}
                 Install Service

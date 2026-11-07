@@ -198,7 +198,7 @@ export default function WhatsAppHistoryPage() {
                     key={status}
                     onClick={() => { setStatusFilter(status); setPage(1); }}
                     className={`h-7 px-2.5 text-[10px] font-medium rounded transition-colors ${statusFilter === status
-                        ? status === 'sent' ? 'bg-success text-white' : status === 'failed' ? 'bg-destructive text-destructive-foreground' : 'bg-teal-600 text-white'
+                        ? status === 'sent' ? 'bg-success text-primary-foreground' : status === 'failed' ? 'bg-destructive text-destructive-foreground' : 'bg-primary text-white'
                         : 'bg-muted text-foreground hover:bg-muted'
                       }`}
                   >

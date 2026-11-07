@@ -450,19 +450,19 @@ export default function NetworkDiagramsPage() {
               <div className="flex gap-4 justify-center">
                 <Link
                   href="/admin/network/fiber-joint-closures"
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                 >
                   {t('network.diagram.addJointClosure')}
                 </Link>
                 <Link
                   href="/admin/network/fiber-odcs"
-                  className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors"
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
                 >
                   {t('network.diagram.addODC')}
                 </Link>
                 <Link
                   href="/admin/network/fiber-odps"
-                  className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+                  className="px-4 py-2 bg-success text-success-foreground rounded-lg hover:bg-success/90 transition-colors"
                 >
                   {t('network.diagram.addODP')}
                 </Link>
@@ -530,7 +530,7 @@ export default function NetworkDiagramsPage() {
                       <p className="text-muted-foreground mb-4">Belum ada OTB yang terdaftar.</p>
                       <Link
                         href="/admin/network/unified-map"
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors inline-block"
+                        className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors inline-block"
                       >
                         Tambah OTB di Peta
                       </Link>
@@ -661,7 +661,7 @@ export default function NetworkDiagramsPage() {
                                     <td className="py-1.5 text-right">
                                       <button
                                         onClick={() => handleRemoveSegment(seg.id)}
-                                        className="text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors"
+                                        className="text-red-600 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors"
                                         title="Hapus penugasan"
                                       >✕</button>
                                     </td>
@@ -709,7 +709,7 @@ export default function NetworkDiagramsPage() {
                           <button
                             onClick={handleAssignTube}
                             disabled={!assignTube || !assignJc || assignSaving}
-                            className="w-full py-1.5 text-xs bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded transition-colors"
+                            className="w-full py-1.5 text-xs bg-primary hover:bg-primary/90 disabled:bg-gray-400 text-primary-foreground rounded transition-colors"
                           >
                             {assignSaving ? 'Menyimpan...' : 'Simpan Penugasan'}
                           </button>
@@ -728,7 +728,7 @@ export default function NetworkDiagramsPage() {
                       <p className="text-muted-foreground mb-4">{t('network.diagram.noJointClosures')}</p>
                       <Link
                         href="/admin/network/fiber-joint-closures"
-                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors inline-block"
+                        className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors inline-block"
                       >
                         {t('network.diagram.addJointClosure')}
                       </Link>
@@ -939,7 +939,7 @@ export default function NetworkDiagramsPage() {
                       <p className="text-muted-foreground mb-4">{t('network.diagram.noODCs')}</p>
                       <Link
                         href="/admin/network/fiber-odcs"
-                        className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors inline-block"
+                        className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors inline-block"
                       >
                         {t('network.diagram.addODC')}
                       </Link>
@@ -985,7 +985,7 @@ export default function NetworkDiagramsPage() {
                       <p className="text-muted-foreground mb-4">{t('network.diagram.noODPs')}</p>
                       <Link
                         href="/admin/network/fiber-odps"
-                        className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors inline-block"
+                        className="px-4 py-2 bg-success text-success-foreground rounded-lg hover:bg-success/90 transition-colors inline-block"
                       >
                         {t('network.diagram.addODP')}
                       </Link>

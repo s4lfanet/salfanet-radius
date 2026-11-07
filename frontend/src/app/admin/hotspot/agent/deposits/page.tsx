@@ -190,7 +190,7 @@ export default function AgentDepositsPage() {
                       <button
                         onClick={() => handleAction(deposit, 'approve')}
                         disabled={actionLoadingId === deposit.id}
-                        className="flex-1 py-1.5 text-xs rounded bg-green-600 hover:bg-green-500 text-white disabled:opacity-60"
+                        className="flex-1 py-1.5 text-xs rounded bg-success hover:bg-success/90 text-success-foreground disabled:opacity-60"
                       >
                         Setujui
                       </button>
@@ -287,7 +287,7 @@ export default function AgentDepositsPage() {
                           <button
                             onClick={() => handleAction(deposit, 'approve')}
                             disabled={actionLoadingId === deposit.id}
-                            className="px-3 py-1.5 text-xs rounded bg-green-600 hover:bg-green-500 text-white disabled:opacity-60"
+                            className="px-3 py-1.5 text-xs rounded bg-success hover:bg-success/90 text-success-foreground disabled:opacity-60"
                           >
                             Setujui
                           </button>
