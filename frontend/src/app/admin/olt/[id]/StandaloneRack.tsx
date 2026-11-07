@@ -265,7 +265,7 @@ export function StandaloneRack({ olt }: { olt: RackOlt }) {
                   {portOnus.map((onu) => (
                     <tr key={onu.id} className="border-b border-border/60 last:border-0">
                       <td className="py-1.5 pr-3 font-mono tabular-nums">{onu.onuId}</td>
-                      <td className="max-w-[12rem] truncate py-1.5 pr-3">{onu.description || '-'}</td>
+                      <td className="max-w-[12rem] truncate py-1.5 pr-3">{onu.description || <span className="text-yellow-600 dark:text-yellow-400">N/A</span>}</td>
                       <td className="py-1.5 pr-3 font-mono">{onu.serialNumber || onu.macAddress || '-'}</td>
                       <td className="py-1.5 pr-3">{onu.onuType || '-'}</td>
                       <td className="py-1.5 pr-3">{STATUS_LABEL[onu.status] ?? onu.status}</td>
