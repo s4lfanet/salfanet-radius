@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.44.0 - Peta Port Semua Merek OLT dan Alur Baca dari NMS
+> **Version:** 5.45.0 - Tipe ONU, Kipas ZTE, Modul Optik, Ganti Nama dan Reboot ONU, Dasan
 
 ---
 
@@ -1111,6 +1111,34 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.45.0 — 2026-11-07 - Tipe ONU, Kipas ZTE, Modul Optik, Ganti Nama dan Reboot ONU, Dasan
+
+### Reboot ONU
+- **[FIX]** Reboot ONU ZTE kini menjawab pertanyaan `Confirm to reboot? [yes/no]`. Sebelumnya tidak dijawab, sehingga perintah habis waktu dan ONU tidak pernah reboot. Temuan ini dari NMS, yang mengujinya di OLT produksi
+- **[CHANGE]** ONU bukan merek ZTE di OLT ZTE di-reboot dengan `shutdown`, jeda 2 detik, lalu `no shutdown` pada interface-nya, sama seperti NMS, karena merek lain tidak bereaksi pada `reboot`
+- **[FIX]** Reboot ONU Hioso tidak lagi mengirim perintah Huawei (`ont reset`). Kini lewat Telnet, dan berhenti bila OLT menolak salah satu perintah
+- **[FIX]** Batch reboot ZTE lewat SSH salah satu nomor port: nomor port di database dihitung dari 0, di CLI dari 1
+
+### Ganti nama ONU
+- **[NEW]** Tombol Config kini berlaku untuk Hioso: lewat form web OLT, dibaca ulang untuk memastikan, lalu Telnet bila belum berubah. Nama baru langsung tersimpan
+
+### Data baru
+- **[NEW]** Tipe ONU tampil di daftar ONU dan Port Map, untuk Hioso, ZTE C320 V2.1, ZTE C300, C-Data GPON, dan HSGQ tabel lama
+- **[NEW]** Kolom FAN diagram ZTE membaca `show fan`: jumlah aktif dan RPM. Sebelumnya hanya mengikuti status OLT. Tanpa Telnet tertulis "Tidak terbaca"
+- **[NEW]** Tombol **Baca modul optik** per port PON untuk ZTE dan Hioso. Klik port pada diagram ZTE atau Port Map Hioso
+- **[NEW]** Merek **Dasan** di form, impor Excel, deteksi otomatis, dan aplikasi admin, lewat SNMP
+- **[NEW]** Isian **Port Web** untuk Hioso di form OLT, pengaturan detail OLT, dan aplikasi admin
+
+### Hal yang perlu diketahui
+- **Belum diuji pada OLT sungguhan.** Sesi Telnet Hioso dan parser diuji dengan server dan data tiruan. Jawaban `yes` pada ZTE berjalan lewat `expect`, yang tidak bisa dijalankan di mesin pengembangan, jadi belum pernah dijalankan sama sekali. Halaman baru hanya diperiksa tipenya
+- **Reboot ONU Hioso paling tidak pasti.** Sintaks `epon onu <id> reset` hanya templat di NMS dan tidak pernah dipakai di sana. Coba pada satu ONU uji dulu. Bila ditolak, pesan OLT tampil dan tidak ada yang berubah
+- **Reboot ONU non-ZTE memutus ONU sebentar**, dan cara ini berlaku juga bila serial ONU tersimpan tanpa awalan ZTE. Coba pada satu ONU dulu
+- Kolom diagram ZTE kini memakai satu perintah Telnet tambahan, `show fan`, jadi diagram bisa sedikit lebih lambat terbuka. Pembacaan ZTE C320 juga bertambah satu walk SNMP per port untuk tipe ONU
+- Tipe ONU terisi setelah poll berikutnya, tidak mundur untuk data lama
+
+### Catatan Pembaruan
+- Menambah kolom `onuType` pada tabel ONU dan `webPort` pada tabel OLT, diterapkan otomatis saat pembaruan. Aplikasi admin 1.0.37. Naikkan versi: root, backend, frontend ke 5.45.0
+
 ### v5.44.0 — 2026-11-07 - Peta Port Semua Merek OLT dan Alur Baca dari NMS
 
 ### Peta port
@@ -1191,33 +1219,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 ### Catatan Pembaruan
 - Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.42.0
-
-### v5.41.0 — 2026-11-06 - Hioso Telnet dan Perbaikan Alamat ONU C-Data
-
-### Hioso
-- **[NEW]** Telnet Hioso diganti sesi khusus yang bekerja: jawaban negosiasi Telnet, CRLF, login berlapis (Access dan Enable), `enable`, pager `Enter Key To Continue`, dan penomoran PON dari 0 atau 1. Memakai `show onu info epon <basis>/<PON> all`. Telnet sebelumnya memakai perintah yang salah dan tidak mengirim `enable`, sehingga tidak pernah menghasilkan ONU
-- **[FIX]** Nama ONU Hioso tidak pernah tersimpan: modul mengisi `name`, sedangkan poller membaca `description`. Kini keduanya diisi, dan MAC tersimpan
-- **[FIX]** Nama kosong (octet string berisi nol) dan `NA` tidak lagi tampil sebagai nama. Slot tak terdaftar (MAC nol) tidak lagi terhitung sebagai ONU
-- **[FIX]** Bila profil yang terdeteksi dari `sysDescr` tidak menghasilkan ONU, EPON, GPON, dan clone BDCOM dicoba. Sebelumnya pembacaan berhenti
-- **[NEW]** Dying gasp dibaca dari OLT untuk ONU yang Down. Suhu chassis dibaca dari OID chassis, bukan suhu modul optik ONU pertama
-- **[CHANGE]** Daya Rx di atas -1 dBm, 0, dan nilai sentinel tidak lagi dianggap pembacaan
-
-### C-Data
-- **[FIX]** Alamat ONU GPON C-Data salah di 5.40.x: indeks GPON adalah nomor urut global, bukan penyandian 4 byte seperti EPON. Posisi dan label pelanggan kini dibaca dari nama (`gpon 0/0/3 onu 5 label`), sesuai catatan lapangan FD1608S dan FD1601S. Nama berpadding NUL di-decode
-- **[FIX]** Rx `-1` pada GPON C-Data berarti offline dan dibuang, bukan dibaca sebagai -0,01 dBm
-- **[FIX]** Penyebab mati (`LOS`, `dying-gasp`) kini menjadi status ONU. Tabel GPON `34592`, yang terbukti tidak andal pada FD1601S dan FD1608S, hanya dipakai bila tabel utama kosong
-- **[FIX]** Port EPON pada cadangan decode indeks mengikuti perangkat asli (nibble atas byte ketiga + 1). Kolom serial EPON yang berisi MAC tidak lagi dipakai sebagai serial
-
-### HSGQ
-- **[CHANGE]** Empat kombinasi tabel dan kolom status dicoba, dan dipilih yang jumlah ONU online-nya sama dengan penghitung OLT sendiri. CPU dan memori dibaca. Indeks HSGQ didekode menjadi PON dan ONU
-
-### Hal yang perlu diketahui
-- Alamat ONU C-Data berubah. Pada poll pertama setelah pembaruan, ONU C-Data dibuat ulang dengan posisi yang benar dan baris lama dihapus. Alamat ONU Hioso tidak berubah
-- Jarak ONU Hioso belum diisi: dua sumber lapangan tidak sepakat apakah `.3.2.1.25` sudah meter atau counter RTT. Bandingkan satu ONU dengan halaman web OLT
-- Telnet dan SNMP Hioso diuji dengan server Telnet tiruan dan data SNMP tiruan yang meniru catatan lapangan, belum pada OLT sungguhan oleh proyek ini
-
-### Catatan Pembaruan
-- Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.41.0
 
 <!-- AUTO-CHANGELOG:END -->
 

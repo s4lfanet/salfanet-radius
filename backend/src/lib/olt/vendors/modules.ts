@@ -7,6 +7,7 @@ import * as hioso from './hioso';
 import * as cdata from './cdata';
 import * as hsgq from './hsgq';
 import * as vsol from './vsol';
+import * as dasan from './dasan';
 
 export type VendorModule = typeof huawei;
 
@@ -23,6 +24,7 @@ export function getVendorModule(vendor: string | null | undefined): VendorModule
     case 'hsgq':      return hsgq as any as VendorModule;
     case 'vsol':
     case 'v-sol':     return vsol as any as VendorModule;
+    case 'dasan':     return dasan as any as VendorModule;
     default:          return huawei;
   }
 }

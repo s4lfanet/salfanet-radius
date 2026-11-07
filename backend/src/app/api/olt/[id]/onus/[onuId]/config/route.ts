@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { executeMultipleCommands } from '@/lib/olt/telnet';
+import { cleanHiosoName } from '@/lib/olt/hioso-telnet';
+import { renameOnu } from '@/lib/olt/vendors/hioso';
 
 /**
  * POST /api/olt/[id]/onus/[onuId]/config
@@ -19,7 +21,8 @@ import { executeMultipleCommands } from '@/lib/olt/telnet';
  *   - Interface name dibangun dari DB record (frame/slot/port/onuId), bukan dari client.
  *   - Default dry-run: mengembalikan commands tanpa eksekusi.
  *   - commit:true baru eksekusi ke OLT.
- *   - Hanya untuk vendor ZTE (vendor lain butuh adapter sendiri).
+ *   - ZTE lewat Telnet. Hioso lewat form web OLT lalu Telnet, dan hanya punya satu nama.
+ *     Vendor lain butuh adapter sendiri.
  *   - Semua eksekusi dicatat ke oltMonitoringLog.
  */
 export async function POST(
@@ -62,11 +65,43 @@ export async function POST(
       return NextResponse.json({ error: 'ONU tidak ditemukan' }, { status: 404 });
     }
 
-    // ZTE-only guard
     const vendor = (olt.vendor ?? '').toLowerCase();
+    if (vendor === 'hioso') {
+      if (!olt.username) return NextResponse.json({ error: 'Isi login OLT terlebih dahulu' }, { status: 400 });
+      const label = cleanHiosoName(name || description || '');
+      const interfaceName = `PON ${onu.port} ONU ${onu.onuId}`;
+      if (!commit) {
+        return NextResponse.json({
+          success: true,
+          dryRun: true,
+          interfaceName,
+          commands: [`Ganti nama ${interfaceName} menjadi "${label}" lewat halaman web OLT, atau Telnet bila gagal`],
+        });
+      }
+
+      const reason = await renameOnu(
+        { host: olt.ipAddress, username: olt.username, password: olt.password ?? '', webPort: olt.webPort, telnetPort: olt.telnetPort, telnetEnabled: olt.telnetEnabled, model: olt.model },
+        onu.port,
+        onu.onuId,
+        label,
+      );
+      await prisma.oltMonitoringLog.create({
+        data: {
+          id: crypto.randomUUID(),
+          oltId,
+          logType: 'command',
+          severity: reason ? 'error' : 'info',
+          message: `ONU rename: ${onu.serialNumber ?? interfaceName} ke "${label}": ${reason ?? 'OK'}`,
+        },
+      });
+      if (reason) return NextResponse.json({ success: false, error: reason }, { status: 500 });
+      await prisma.oltOnuStatus.update({ where: { id: onu.id }, data: { description: label } });
+      return NextResponse.json({ success: true, dryRun: false, interfaceName, commands: [] });
+    }
+
     if (vendor !== 'zte') {
       return NextResponse.json(
-        { error: `Edit config ONU saat ini hanya didukung untuk ZTE. Vendor terdeteksi: ${olt.vendor ?? 'unknown'}` },
+        { error: `Edit config ONU saat ini hanya didukung untuk ZTE dan Hioso. Vendor terdeteksi: ${olt.vendor ?? 'unknown'}` },
         { status: 400 }
       );
     }

@@ -26,6 +26,8 @@ export interface HiosoWebOnu {
   name: string | null;
   mac: string | null;
   up: boolean;
+  chip: string | null;
+  ports: string | null;
   rxPower: number | null;
   txPower: number | null;
   distance: number | null;
@@ -79,6 +81,8 @@ export function parseOnuTable(html: string): HiosoWebOnu[] {
       name: name && name.toUpperCase() !== 'NA' ? name : null,
       mac: mac && mac !== '00:00:00:00:00:00' ? mac : null,
       up,
+      chip: r[5].trim() || null,
+      ports: r[6].trim() || null,
       rxPower: up ? parseRxDbm(r[15], 'auto') : null,
       txPower: up ? parsePowerDbm(r[14], 'auto') : null,
       distance: distanceFromRtt(r[10]),
@@ -86,6 +90,21 @@ export function parseOnuTable(html: string): HiosoWebOnu[] {
     });
   }
   return onus;
+}
+
+/** "6301 (4GE+1POTS)" from the chip id and port counts, or null when none of them is known. */
+export function formatHiosoOnuType(chip: string | null | undefined, counts: { ge?: number | null; fe?: number | null; pots?: number | null; total?: string | null } = {}): string | null {
+  const id = (chip ?? '').trim();
+  const usableChip = ['', '0', '0000', '--'].includes(id) ? '' : id;
+  const parts = [
+    counts.ge ? `${counts.ge}GE` : null,
+    counts.fe ? `${counts.fe}FE` : null,
+    counts.pots ? `${counts.pots}POTS` : null,
+  ].filter(Boolean);
+  const total = Number(counts.total);
+  const ports = parts.join('+') || (Number.isInteger(total) && total > 0 ? `${total}P` : '');
+  if (usableChip && ports) return `${usableChip} (${ports})`;
+  return usableChip || ports || null;
 }
 
 const percent = (raw: string | undefined): number | null => {
@@ -107,11 +126,16 @@ export function parseSystemInfo(html: string): HiosoSystemInfo | null {
   };
 }
 
-async function fetchText(url: string, authorization: string, timeoutMs: number): Promise<string> {
+async function fetchText(url: string, authorization: string, timeoutMs: number, form?: URLSearchParams): Promise<string> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetch(url, { headers: { Authorization: authorization, Connection: 'close' }, signal: controller.signal });
+    const response = await fetch(url, {
+      method: form ? 'POST' : 'GET',
+      headers: { Authorization: authorization, Connection: 'close', ...(form ? { 'Content-Type': 'application/x-www-form-urlencoded' } : {}) },
+      body: form?.toString(),
+      signal: controller.signal,
+    });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     return await response.text();
   } finally {
@@ -119,11 +143,24 @@ async function fetchText(url: string, authorization: string, timeoutMs: number):
   }
 }
 
+function endpoint(config: HiosoWebConfig) {
+  return {
+    base: `http://${config.host}${config.port && config.port !== 80 ? `:${config.port}` : ''}`,
+    authorization: `Basic ${Buffer.from(`${config.username}:${config.password}`).toString('base64')}`,
+    timeout: config.timeoutMs ?? 8000,
+  };
+}
+
+/** Sets an ONU's name through the form the OLT's own page uses. Spaces are not accepted there. */
+export async function setHiosoWebName(config: HiosoWebConfig, onuAddress: string, name: string): Promise<void> {
+  const { base, authorization, timeout } = endpoint(config);
+  await fetchText(`${base}/`, authorization, timeout);
+  await fetchText(`${base}/goform/setOnu`, authorization, timeout, new URLSearchParams({ onuId: onuAddress, onuName: name, onuOperation: 'nonOp' }));
+}
+
 /** Every ONU the OLT's web page lists, plus its system page when that one answers too. */
 export async function readHiosoWeb(config: HiosoWebConfig): Promise<{ onus: HiosoWebOnu[]; system: HiosoSystemInfo | null }> {
-  const base = `http://${config.host}${config.port && config.port !== 80 ? `:${config.port}` : ''}`;
-  const authorization = `Basic ${Buffer.from(`${config.username}:${config.password}`).toString('base64')}`;
-  const timeout = config.timeoutMs ?? 8000;
+  const { base, authorization, timeout } = endpoint(config);
 
   await fetchText(`${base}/`, authorization, timeout);
   const onus = parseOnuTable(await fetchText(`${base}/onuAllPonOnuList.asp`, authorization, timeout));

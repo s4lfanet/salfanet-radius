@@ -75,7 +75,7 @@ export async function pollOLTWithOptions(
 
     // The login also goes along for brands that read a web page (Hioso), the model for readers that
     // depend on it (ZTE C300).
-    const device = { host: olt.ipAddress, username: olt.username ?? '', password: olt.password ?? '', model: olt.model };
+    const device = { host: olt.ipAddress, username: olt.username ?? '', password: olt.password ?? '', model: olt.model, webPort: olt.webPort };
 
     // A brand with its own poll (Hioso) decides reachability, metrics and ONUs itself.
     const ownPoll = (vendor as any).pollDevice as undefined | ((context: unknown) => Promise<any>);
@@ -374,6 +374,7 @@ async function upsertONU(
         onuId: onu.onuId,
         serialNumber,
         macAddress: onu.macAddress ?? null,
+        onuType: onu.onuType ?? null,
         status,
         description: onu.description ?? null,
         rxPower,
@@ -387,6 +388,7 @@ async function upsertONU(
       },
       update: {
         ...(serialNumber != null ? { serialNumber } : {}),
+        ...(onu.onuType ? { onuType: onu.onuType } : {}),
         status,
         description: onu.description ?? undefined,
         rxPower,

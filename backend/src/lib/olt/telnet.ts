@@ -26,6 +26,10 @@ export interface TelnetResult {
 
 interface ExecuteMultipleCommandsOptions {
   sendEnd?: boolean;
+  /** Answers "Confirm ... [yes/no]" with yes. */
+  answerConfirm?: boolean;
+  /** Seconds to wait after the command at that index. */
+  pauseAfter?: Record<number, number>;
 }
 
 function escapeExpectString(value: string): string {
@@ -118,15 +122,17 @@ export async function executeMultipleCommands(
   // Build the commands section of the expect script
   const cmdLines = commands.map((cmd, index) => {
     const escaped = escapeExpectString(cmd);
+    const confirm = options.answerConfirm ? '\n  -re {[Cc]onfirm.*[Yy]es} { send "yes\\r"; exp_continue }' : '';
+    const pause = options.pauseAfter?.[index] ? `\nsleep ${options.pauseAfter[index]}` : '';
     return `
 send_user "\\n__COPILOT_CMD_${index}_START__\\n"
 send "${escaped}\\r"
 expect {
-  -re {--More--} { send " "; exp_continue }
+  -re {--More--} { send " "; exp_continue }${confirm}
   -re {[>#]} { send_user "\\n__COPILOT_CMD_${index}_END__\\n" }
   timeout { exit 1 }
   eof { exit 1 }
-}`;
+}${pause}`;
   }).join('\n');
 
   try {

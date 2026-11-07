@@ -18,8 +18,8 @@
 import { SNMPConfig, snmpGet, snmpWalk } from '../snmp';
 import { TelnetConfig } from '../telnet';
 import { decodeSnmpText, normalizeMac, parseEnumInt, parsePowerDbm, parseRxDbm } from '../pon-snmp';
-import { readHiosoCli, readHiosoOnus, type HiosoCliOnu, type HiosoCliReport } from '../hioso-telnet';
-import { distanceFromRtt, readHiosoWeb, type HiosoSystemInfo, type HiosoWebOnu } from '../hioso-web';
+import { cleanHiosoName, hiosoNameCommands, hiosoPonBase, hiosoRebootCommands, readHiosoCli, readHiosoOnus, runHiosoCommands, type HiosoCliOnu, type HiosoCliReport } from '../hioso-telnet';
+import { distanceFromRtt, formatHiosoOnuType, readHiosoWeb, setHiosoWebName, type HiosoSystemInfo, type HiosoWebOnu } from '../hioso-web';
 import { defaultPonCount } from '../rack';
 
 // ─── OID Definitions ─────────────────────────────────────────────────────────
@@ -33,6 +33,8 @@ const HIOSO_EPON_OIDS = {
   onuStatus:    '1.3.6.1.4.1.25355.3.2.6.3.2.1.39', // 1=online, 2=LOS
   onuDyingGasp: '1.3.6.1.4.1.25355.3.2.6.3.2.1.41', // 1 = powered off (only on firmware that has the table)
   onuDistance:  '1.3.6.1.4.1.25355.3.2.6.3.2.1.25', // Round-trip counter, see distanceFromRtt
+  onuChip:      '1.3.6.1.4.1.25355.3.2.6.3.2.1.15', // Chip id
+  onuPorts:     '1.3.6.1.4.1.25355.3.2.6.3.2.1.13', // LAN port count or type code, not a down reason
   // Optical readings (index format: board.pon.onu_id)
   onuTxPower:   '1.3.6.1.4.1.25355.3.2.6.14.2.1.4', // Float string dBm (already in dBm, divider=1)
   onuRxPower:   '1.3.6.1.4.1.25355.3.2.6.14.2.1.8', // Float string dBm (already in dBm, divider=1)
@@ -250,12 +252,13 @@ export interface OltCredentials {
   host: string;
   username: string;
   password: string;
+  webPort?: number | null;
 }
 
 async function tryWeb(credentials: OltCredentials | null | undefined): Promise<{ onus: HiosoWebOnu[]; system: HiosoSystemInfo | null } | null> {
   if (!credentials?.username) return null;
   try {
-    return await readHiosoWeb({ host: credentials.host, username: credentials.username, password: credentials.password });
+    return await readHiosoWeb({ host: credentials.host, port: credentials.webPort ?? 80, username: credentials.username, password: credentials.password });
   } catch (error: any) {
     console.warn(`[Hioso] web page not read for ${credentials.host}: ${error?.message ?? error}`);
     return null;
@@ -329,6 +332,8 @@ export async function pollDevice(context: HiosoPollContext) {
   };
 }
 
+const cliType = (row: HiosoCliOnu) => formatHiosoOnuType(row.chip, { ge: row.ge, fe: row.fe, pots: row.pots });
+
 function fromCli(row: HiosoCliOnu): any {
   return {
     frame:        1,
@@ -338,11 +343,12 @@ function fromCli(row: HiosoCliOnu): any {
     serialNumber: row.mac,
     macAddress:   row.mac,
     description:  row.name && row.name.toUpperCase() !== 'NA' ? row.name : null,
+    onuType:      cliType(row),
     status:       row.up ? 'online' : 'offline',
   };
 }
 
-/** The CLI fills the name and MAC that the other source left empty, never its status or power. */
+/** The CLI fills the name and MAC that the other source left empty, never its status or power. Its port counts make the better type. */
 export function fillFromCli(onus: any[], cli: HiosoCliOnu[]): any[] {
   if (cli.length === 0) return onus;
   const byPosition = new Map(cli.map((row) => [`${row.pon}:${row.onuId}`, fromCli(row)]));
@@ -354,12 +360,57 @@ export function fillFromCli(onus: any[], cli: HiosoCliOnu[]): any[] {
       description:  onu.description ?? row.description,
       macAddress:   onu.macAddress ?? row.macAddress,
       serialNumber: onu.serialNumber ?? row.serialNumber,
+      onuType:      row.onuType ?? onu.onuType,
     };
   });
 }
 
+export interface HiosoAccess {
+  host: string;
+  username: string;
+  password: string;
+  webPort?: number | null;
+  telnetPort?: number | null;
+  telnetEnabled: boolean;
+  model?: string | null;
+}
+
+/**
+ * Sets an ONU's name: the web form first, then the CLI. The form answers the same whether or not it
+ * took the name, so the page is read back. Null when it is set, else why not.
+ */
+export async function renameOnu(access: HiosoAccess, pon: number, onuId: number, rawName: string): Promise<string | null> {
+  const name = cleanHiosoName(rawName);
+  if (!name) return 'Nama hanya boleh huruf, angka, spasi, titik, garis bawah, dan tanda hubung';
+  const base = hiosoPonBase(access.model);
+  const web = { host: access.host, port: access.webPort ?? 80, username: access.username, password: access.password };
+
+  try {
+    await setHiosoWebName(web, `${base}/${pon}:${onuId}`, name);
+    const { onus } = await readHiosoWeb(web);
+    if (onus.find((onu) => onu.pon === pon && onu.onuId === onuId)?.name === name) return null;
+  } catch (error: any) {
+    console.warn(`[Hioso] web rename failed for ${access.host}: ${error?.message ?? error}`);
+  }
+
+  if (!access.telnetEnabled) return 'Halaman web OLT tidak menerima nama itu, dan Telnet tidak aktif';
+  return runHiosoCommands(
+    { host: access.host, port: access.telnetPort ?? 23, username: access.username, password: access.password },
+    hiosoNameCommands(base, pon, onuId, name),
+  );
+}
+
+/** Null when the OLT accepted the reset, else what it said. */
+export function rebootOnu(access: HiosoAccess, pon: number, onuId: number): Promise<string | null> {
+  return runHiosoCommands(
+    { host: access.host, port: access.telnetPort ?? 23, username: access.username, password: access.password },
+    hiosoRebootCommands(hiosoPonBase(access.model), pon, onuId),
+  );
+}
+
 function fromWeb(onu: HiosoWebOnu): any {
   return {
+    onuType:      formatHiosoOnuType(onu.chip, { total: onu.ports }),
     frame:        1,
     slot:         onu.pon,
     port:         onu.pon,
@@ -413,7 +464,7 @@ export async function readProfile(config: SNMPConfig, profile: HiosoProfile, wal
 
   // Walk serial numbers, names, power and (on EPON) the MAC and dying-gasp tables in parallel
   const none = Promise.resolve({ success: false } as { success: boolean; results?: Record<string, string> });
-  const [snWalk, nameWalk, rxWalk, txWalk, distanceWalk, macWalk, dygWalk] = await Promise.all([
+  const [snWalk, nameWalk, rxWalk, txWalk, distanceWalk, macWalk, dygWalk, chipWalk, portsWalk] = await Promise.all([
     walk(config, oids.onuSn),
     walk(config, oids.onuName),
     walk(config, oids.onuRxPower),
@@ -421,6 +472,8 @@ export async function readProfile(config: SNMPConfig, profile: HiosoProfile, wal
     walk(config, oids.onuDistance),
     isEpon ? walk(config, HIOSO_EPON_OIDS.onuMac) : none,
     isEpon ? walk(config, HIOSO_EPON_OIDS.onuDyingGasp) : none,
+    isEpon ? walk(config, HIOSO_EPON_OIDS.onuChip) : none,
+    isEpon ? walk(config, HIOSO_EPON_OIDS.onuPorts) : none,
   ]);
 
   const snMap    = snWalk.results    ?? {};
@@ -430,6 +483,8 @@ export async function readProfile(config: SNMPConfig, profile: HiosoProfile, wal
   const distanceMap = distanceWalk.results ?? {};
   const macMap   = macWalk.results   ?? {};
   const dygMap   = dygWalk.results   ?? {};
+  const chipMap  = chipWalk.results  ?? {};
+  const portsMap = portsWalk.results ?? {};
 
   const onus: any[] = [];
 
@@ -468,6 +523,7 @@ export async function readProfile(config: SNMPConfig, profile: HiosoProfile, wal
       onuId:        onu.onuId,
       serialNumber: usableMac ?? ((snRaw ?? '').trim() || (macRaw ?? '').trim() || null),
       macAddress:   usableMac,
+      onuType:      formatHiosoOnuType(decodeSnmpText(findBySuffix(chipMap, suffix)), { total: findBySuffix(portsMap, suffix) }),
       name:         description,
       description,
       status,

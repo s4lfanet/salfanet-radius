@@ -173,6 +173,7 @@ Future<bool> editOltSettings(BuildContext context, Json olt) => openForm(
         ('vsol', 'V-SOL'),
         ('bdcom', 'BDCOM'),
         ('raisecom', 'Raisecom'),
+        ('dasan', 'Dasan'),
         ('other', 'Lainnya'),
       ],
     ),
@@ -197,6 +198,7 @@ Future<bool> editOltSettings(BuildContext context, Json olt) => openForm(
       helper: 'Opsional. Hanya untuk perintah SNMP SET. Kosongkan bila tidak diubah.',
     ),
     const FieldSpec('snmpPort', 'Port SNMP', type: FieldType.integer),
+    const FieldSpec('webPort', 'Port web (Hioso)', type: FieldType.integer),
     FieldSpec('routerIds', 'Router terhubung', type: FieldType.multiSelect, loadOptions: Lookups.routers),
   ],
   initial: {

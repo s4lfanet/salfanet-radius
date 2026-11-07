@@ -30,6 +30,9 @@ export interface HiosoCliOnu {
   up: boolean;
   firmware: string | null;
   chip: string | null;
+  ge: number | null;
+  fe: number | null;
+  pots: number | null;
   name: string | null;
 }
 
@@ -67,6 +70,9 @@ export function parseOnuInfo(output: string): HiosoCliOnu[] {
       up: head[4].toLowerCase() === 'up',
       firmware: hasColumns ? rest[0] : null,
       chip: hasColumns ? rest[1] : null,
+      ge: hasColumns ? Number(rest[2]) : null,
+      fe: hasColumns ? Number(rest[3]) : null,
+      pots: hasColumns ? Number(rest[4]) : null,
       // After Uptime comes the ONU name; it may contain spaces, or be absent or "NA".
       name: hasColumns ? rest.slice(9).join(' ').trim() || null : null,
     });
@@ -88,6 +94,30 @@ export function parseDdmTemperature(output: string): number | null {
   if (isCliError(output)) return null;
   const match = output.match(/Temperature\s*:\s*([-+]?\d+(?:\.\d+)?)/i);
   return match ? Math.round(Number(match[1])) : null;
+}
+
+/** "Key : value" lines of a module readout, for showing as they are. */
+export function parseKeyValues(output: string): Array<{ label: string; value: string }> {
+  if (isCliError(output)) return [];
+  const fields: Array<{ label: string; value: string }> = [];
+  for (const line of output.split('\n')) {
+    const match = line.match(/^\s*([A-Za-z][\w ()/-]*?)\s*:\s*(\S.*?)\s*$/);
+    if (match) fields.push({ label: match[1], value: match[2] });
+  }
+  return fields;
+}
+
+/** Only what the OLT's name field takes; spaces become underscores. */
+export function cleanHiosoName(name: string): string {
+  return name.replace(/[^a-zA-Z0-9_\-. ]/g, '').trim().slice(0, 30).replace(/ /g, '_');
+}
+
+export function hiosoNameCommands(base: number, pon: number, onuId: number, name: string): string[] {
+  return ['configure terminal', `interface epon ${base}/${pon}`, `onu ${onuId} name ${name}`];
+}
+
+export function hiosoRebootCommands(base: number, pon: number, onuId: number): string[] {
+  return ['configure terminal', `interface epon ${base}/${pon}`, `epon onu ${onuId} reset`];
 }
 
 /** "show memory": "Used 28800 / Total 127616". */
@@ -328,6 +358,65 @@ export async function readHiosoOnus(config: HiosoTelnetConfig, maxPon = 16): Pro
     if (!pages) throw new Error('Telnet: perintah "show onu info epon" tidak dikenali OLT ini');
     logout(session);
     return pages.onus;
+  } finally {
+    clearTimeout(deadline);
+    session.close();
+  }
+}
+
+/** One PON port's optical module; the two command orders are the two firmware generations. */
+export async function readHiosoPonOptical(config: HiosoTelnetConfig, model: string | null | undefined, pon: number): Promise<Array<{ label: string; value: string }>> {
+  const socket = await connect(config);
+  const session = new Session(socket);
+  const deadline = setTimeout(() => session.close(), 30_000);
+  try {
+    await login(session, config);
+    const base = hiosoPonBase(model);
+    for (const command of [`show epon optical-ddm ${base}/${pon}`, `show epon ${Math.max(base, 1)}/${pon} optical-ddm`]) {
+      const fields = parseKeyValues(await run(session, command, 8000));
+      if (fields.length > 0) {
+        logout(session);
+        return fields;
+      }
+    }
+    logout(session);
+    return [];
+  } finally {
+    clearTimeout(deadline);
+    session.close();
+  }
+}
+
+/**
+ * Runs configuration commands in order and stops at the first the OLT rejects, so a command never
+ * lands in the wrong context. Null when all went through, else what the OLT said. A yes/no question
+ * is answered with yes.
+ */
+export async function runHiosoCommands(config: HiosoTelnetConfig, commands: string[]): Promise<string | null> {
+  let socket: net.Socket;
+  try {
+    socket = await connect(config);
+  } catch (error: any) {
+    return error?.message ?? 'tidak bisa tersambung';
+  }
+  const session = new Session(socket);
+  const deadline = setTimeout(() => session.close(), 40_000);
+  const question = /\[?\(?y(?:es)?\/n(?:o)?\)?\]?\s*:?\s*$/i;
+  try {
+    await login(session, config);
+    for (const command of commands) {
+      session.send(command);
+      let output = await session.until((b) => PROMPT_AT_END.test(b) || question.test(b), 10000, `hasil "${command}"`);
+      if (question.test(output)) {
+        session.send('yes');
+        output = await session.until((b) => PROMPT_AT_END.test(b), 10000, `hasil "${command}"`);
+      }
+      if (isCliError(output)) return `OLT menolak "${command}": ${output.split('\n').slice(1, -1).join(' ').trim().slice(0, 120)}`;
+    }
+    logout(session);
+    return null;
+  } catch (error: any) {
+    return error?.message ?? 'perintah gagal';
   } finally {
     clearTimeout(deadline);
     session.close();

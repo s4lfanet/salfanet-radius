@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
       name, ipAddress, latitude, longitude, status, routerIds, followRoad,
       vendor, model, firmwareVersion, username, password, snmpCommunity, snmpWriteCommunity,
       sshEnabled, telnetEnabled,
-      sshPort, telnetPort, snmpPort,
+      sshPort, telnetPort, snmpPort, webPort,
     } = body;
 
     if (!name || !ipAddress || latitude === undefined || longitude === undefined) {
@@ -122,6 +122,7 @@ export async function POST(request: NextRequest) {
         ...(sshPort !== undefined && sshPort !== '' && { sshPort: parseInt(String(sshPort)) || 22 }),
         ...(telnetPort !== undefined && telnetPort !== '' && { telnetPort: parseInt(String(telnetPort)) || 23 }),
         ...(snmpPort !== undefined && snmpPort !== '' && { snmpPort: parseInt(String(snmpPort)) || 161 }),
+        ...(webPort !== undefined && webPort !== '' && { webPort: parseInt(String(webPort)) || 80 }),
         // Monitoring defaults to on for a newly added OLT — the whole point of
         // adding one with credentials is to monitor it, and leaving this at
         // the schema default (off) meant the poller cron silently skipped it
@@ -179,7 +180,7 @@ export async function PUT(request: NextRequest) {
       id, name, ipAddress, latitude, longitude, status, routerIds, followRoad,
       vendor, model, firmwareVersion, username, password, snmpCommunity, snmpWriteCommunity,
       sshEnabled, telnetEnabled,
-      sshPort, telnetPort, snmpPort,
+      sshPort, telnetPort, snmpPort, webPort,
     } = body;
 
     if (!id) {
@@ -211,6 +212,7 @@ export async function PUT(request: NextRequest) {
         ...(sshPort !== undefined && sshPort !== '' && { sshPort: parseInt(String(sshPort)) || 22 }),
         ...(telnetPort !== undefined && telnetPort !== '' && { telnetPort: parseInt(String(telnetPort)) || 23 }),
         ...(snmpPort !== undefined && snmpPort !== '' && { snmpPort: parseInt(String(snmpPort)) || 161 }),
+        ...(webPort !== undefined && webPort !== '' && { webPort: parseInt(String(webPort)) || 80 }),
       },
     });
 

@@ -4,6 +4,7 @@ import { prisma } from '@/server/db/client';
 import { executeMultipleCommands, TelnetConfig } from '@/lib/olt/telnet';
 import { snmpWalk, SNMPConfig } from '@/lib/olt/snmp';
 import { readRack } from '@/lib/olt/rack';
+import { parseShowFan, type ZteFan } from '@/lib/olt/zte-chassis';
 
 // ── ZTE C320 Board/Shelf MIB OIDs ─────────────────────────────────────────────
 const ZTE_BASE        = '1.3.6.1.4.1.3902.1012';
@@ -370,7 +371,7 @@ export async function GET(
       telnetConfig
         ? executeMultipleCommands(
             telnetConfig,
-            ['show card', 'show interface port-status'],
+            ['show card', 'show interface port-status', 'show fan'],
             { sendEnd: false }
           ).catch(() => null)
         : Promise.resolve(null),
@@ -381,8 +382,10 @@ export async function GET(
     let telnetCards: CardInfo[] | null = null;
     let uplinkIfacesBySlot: Map<number, string[]> = new Map();
     let uplinkStatesByIface: Map<string, UplinkPortState> = new Map();
+    let fans: ZteFan[] = [];
 
     if (telnetMultiOut?.success && telnetMultiOut.output) {
+      fans = parseShowFan(extractCmdOutput(telnetMultiOut.output, 2));
       const showCardOut   = extractCmdOutput(telnetMultiOut.output, 0);
       const portStatusOut = extractCmdOutput(telnetMultiOut.output, 1);
 
@@ -532,7 +535,7 @@ export async function GET(
       // Sort by slot index
       chassis.sort((a, b) => a.index - b.index);
 
-      return NextResponse.json({ success: true, chassis, vendor: olt.vendor, model: olt.model, source: 'telnet' });
+      return NextResponse.json({ success: true, chassis, fans, vendor: olt.vendor, model: olt.model, source: 'telnet' });
     }
 
     // ── Fallback: reconstruct from SNMP + DB (no Telnet) ─────────────────────
@@ -572,7 +575,7 @@ export async function GET(
       };
     });
 
-    return NextResponse.json({ success: true, chassis, vendor: olt.vendor, model: olt.model, source: 'snmp' });
+    return NextResponse.json({ success: true, chassis, fans, vendor: olt.vendor, model: olt.model, source: 'snmp' });
   } catch (error: any) {
     console.error('[OLT Chassis GET]', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

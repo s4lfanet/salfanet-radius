@@ -5,11 +5,12 @@
  * sysDescr is checked first because some firmware reports a generic enterprise.
  */
 
-export type OltVendorKey = 'huawei' | 'zte' | 'fiberhome' | 'bdcom' | 'raisecom' | 'hioso' | 'cdata' | 'hsgq' | 'vsol';
+export type OltVendorKey = 'huawei' | 'zte' | 'fiberhome' | 'bdcom' | 'raisecom' | 'hioso' | 'cdata' | 'hsgq' | 'vsol' | 'dasan';
 
 const ENTERPRISE: Record<number, OltVendorKey> = {
   2011: 'huawei',
   3902: 'zte',
+  6296: 'dasan',
   5875: 'fiberhome',
   3320: 'bdcom',
   8886: 'raisecom',
@@ -30,6 +31,7 @@ const DESCRIPTION: Array<[RegExp, OltVendorKey]> = [
   [/fiberhome|an55\d\d/i, 'fiberhome'],
   [/bdcom/i, 'bdcom'],
   [/raisecom/i, 'raisecom'],
+  [/dasan|\bdzs\b/i, 'dasan'],
 ];
 
 export function enterpriseOf(sysObjectId: string | null | undefined): number | null {

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { RefreshCw, Server } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
 import { formatWIB } from '@/lib/timezone';
+import { PonOptical } from './PonOptical';
 
 interface PonPort {
   slot: number;
@@ -41,6 +42,7 @@ interface RackOnu {
   onuId: number;
   serialNumber: string | null;
   macAddress: string | null;
+  onuType?: string | null;
   status: string;
   description: string | null;
   rxPower: number | null;
@@ -50,6 +52,7 @@ interface RackOnu {
 interface RackOlt {
   id: string;
   ipAddress: string;
+  vendor: string | null;
   temperature: number | null;
   lastPollAt: string | null;
   onuStatuses: RackOnu[];
@@ -241,16 +244,18 @@ export function StandaloneRack({ olt }: { olt: RackOlt }) {
               {[portSummary(selectedPort), selectedPort.averageRx !== null ? `rata-rata Rx ${selectedPort.averageRx} dBm` : ''].filter(Boolean).join('. ')}
             </p>
           )}
+          {olt.vendor?.toLowerCase() === 'hioso' && <PonOptical oltId={olt.id} slot={selectedPort.slot} port={selectedPort.port} />}
           {portOnus.length === 0 ? (
             <p className="mt-3 text-sm text-muted-foreground">Tidak ada ONU di port ini.</p>
           ) : (
             <div className="mt-3 overflow-x-auto">
-              <table className="w-full min-w-[34rem] text-left text-xs">
+              <table className="w-full min-w-[40rem] text-left text-xs">
                 <thead className="text-muted-foreground">
                   <tr className="border-b border-border">
                     <th className="py-1.5 pr-3 font-medium">ONU</th>
                     <th className="py-1.5 pr-3 font-medium">Nama</th>
                     <th className="py-1.5 pr-3 font-medium">Serial / MAC</th>
+                    <th className="py-1.5 pr-3 font-medium">Tipe</th>
                     <th className="py-1.5 pr-3 font-medium">Status</th>
                     <th className="py-1.5 pr-3 text-right font-medium">Rx (dBm)</th>
                     <th className="py-1.5 text-right font-medium">Jarak (m)</th>
@@ -262,6 +267,7 @@ export function StandaloneRack({ olt }: { olt: RackOlt }) {
                       <td className="py-1.5 pr-3 font-mono tabular-nums">{onu.onuId}</td>
                       <td className="max-w-[12rem] truncate py-1.5 pr-3">{onu.description || '-'}</td>
                       <td className="py-1.5 pr-3 font-mono">{onu.serialNumber || onu.macAddress || '-'}</td>
+                      <td className="py-1.5 pr-3">{onu.onuType || '-'}</td>
                       <td className="py-1.5 pr-3">{STATUS_LABEL[onu.status] ?? onu.status}</td>
                       <td className="py-1.5 pr-3 text-right font-mono tabular-nums">{onu.rxPower ?? '-'}</td>
                       <td className="py-1.5 text-right font-mono tabular-nums">{onu.distance ?? '-'}</td>

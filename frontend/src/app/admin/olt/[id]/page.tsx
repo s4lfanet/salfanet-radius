@@ -16,6 +16,7 @@ import { formatWIB } from '@/lib/timezone';
 import { showError, showSuccess, showInfo, showWarning, showConfirm } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';
 import { StandaloneRack } from './StandaloneRack';
+import { PonOptical } from './PonOptical';
 
 interface ONU {
   id: string;
@@ -75,6 +76,7 @@ interface OLTDetail {
   sshPort: number;
   telnetEnabled: boolean;
   telnetPort: number;
+  webPort?: number;
   username: string | null;
   pollingInterval: number;
   onuStatuses: ONU[];
@@ -371,12 +373,17 @@ function UplinkPortModal({ oltId, port, onClose }: { oltId: string; port: string
 function ZTEChassisView({ olt }: { olt: OLTDetail }) {
   const [chassisSlots, setChassisSlots] = useState<ApiChassisSlot[]>([]);
   const [selectedUplinkPort, setSelectedUplinkPort] = useState<string | null>(null);
+  const [selectedPon, setSelectedPon] = useState<{ slot: number; port: number } | null>(null);
+  const [fans, setFans] = useState<{ number: number; rpm: number; active: boolean }[]>([]);
   const [loadingChassis, setLoadingChassis] = useState(false);
 
   const fetchChassis = useCallback(() => {
     setLoadingChassis(true);
-    apiAdmin<{ success?: boolean; chassis?: ApiChassisSlot[] }>(`/api/olt/${olt.id}/chassis`)
-      .then(j => { if (j.success && j.chassis) setChassisSlots(j.chassis); })
+    apiAdmin<{ success?: boolean; chassis?: ApiChassisSlot[]; fans?: { number: number; rpm: number; active: boolean }[] }>(`/api/olt/${olt.id}/chassis`)
+      .then(j => {
+        if (j.success && j.chassis) setChassisSlots(j.chassis);
+        if (j.success) setFans(j.fans ?? []);
+      })
       .catch(() => {})
       .finally(() => setLoadingChassis(false));
   }, [olt.id]);
@@ -644,8 +651,10 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
 
                 return (
                   <div key={i} className="flex flex-col items-center gap-0.5 shrink-0">
-                    <div
-                      className="w-[26px] h-[26px] rounded-[5px] border flex items-center justify-center cursor-default transition hover:brightness-150 hover:scale-110 hover:z-10 relative"
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPon({ slot: slot.index, port: i })}
+                      className="w-[26px] h-[26px] rounded-[5px] border flex items-center justify-center transition hover:brightness-150 hover:scale-110 hover:z-10 relative"
                       style={{ background: c.bg, borderColor: c.border }}
                       title={portTooltip(slot.index, i)}>
                       <div className="w-3.5 h-3.5 rounded-full" style={{ background: c.dot }} />
@@ -658,7 +667,7 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
                       {uncfgCount > 0 && losCount === 0 && dgCount === 0 && (
                         <span className="absolute -bottom-1 -right-1 w-2 h-2 rounded-full bg-yellow-400 border border-yellow-600 z-10" title="Unregistered ONU" />
                       )}
-                    </div>
+                    </button>
                     <span className="text-[9px] text-gray-500 font-mono leading-none">{i + 1}</span>
                   </div>
                 );
@@ -714,23 +723,24 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
                 <span className="text-[9px] text-gray-400 font-mono font-bold">FAN</span>
               </div>
               <div className="flex flex-col items-center gap-4 my-2">
-                {[1, 2].map(n => (
-                  <div key={n} className="flex flex-col items-center gap-1">
+                {fans.length === 0 && <span className="text-[9px] text-gray-500 text-center">Tidak terbaca</span>}
+                {fans.map(fan => (
+                  <div key={fan.number} className="flex flex-col items-center gap-1" title={`Kipas ${fan.number}: ${fan.rpm} RPM`}>
                     <div className="relative w-9 h-9 flex items-center justify-center">
-                      <div className="absolute inset-0 rounded-full" style={{ border: '2px solid #16a34a' }} />
-                      <div className="animate-spin" style={{ animationDuration: '2.5s' }}>
+                      <div className="absolute inset-0 rounded-full" style={{ border: `2px solid ${fan.active ? '#16a34a' : '#dc2626'}` }} />
+                      <div className={fan.active ? 'animate-spin' : ''} style={{ animationDuration: '2.5s' }}>
                         <svg width="20" height="20" viewBox="0 0 20 20">
                           <path d="M10 4 Q14 8 10 10 Q14 12 10 16 Q6 12 10 10 Q6 8 10 4Z" fill="#22c55e" opacity="0.8" />
                           <path d="M4 10 Q8 6 10 10 Q8 14 4 10 Q8 14 10 10 Q8 6 4 10 Q8 14 16 10 Q12 14 10 10 Q12 6 16 10Z" fill="#16a34a" opacity="0.5" />
                         </svg>
                       </div>
                     </div>
-                    <span className="text-[8px] text-green-400 font-mono">{n}</span>
+                    <span className={`text-[8px] font-mono ${fan.active ? 'text-green-400' : 'text-red-400'}`}>{fan.rpm}</span>
                   </div>
                 ))}
               </div>
               <div className="text-center">
-                <div className="text-[10px] font-bold text-green-400 font-mono">{olt.isOnline ? '2/2' : '0/2'}</div>
+                <div className="text-[10px] font-bold text-green-400 font-mono">{fans.length > 0 ? `${fans.filter(f => f.active).length}/${fans.length}` : '-'}</div>
                 <div className="text-[8px] text-gray-500">Active</div>
               </div>
             </div>
@@ -784,6 +794,13 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
             ))}
           </div>
         </div>
+
+        {selectedPon && (
+          <div className="bg-card rounded-lg border border-border p-4">
+            <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">PON {selectedPon.slot}/{selectedPon.port + 1}</h3>
+            <PonOptical oltId={olt.id} slot={selectedPon.slot} port={selectedPon.port} />
+          </div>
+        )}
 
         {/* ── Per-port detail table ── */}
         {Object.keys(portStats).length > 0 && (
@@ -1966,6 +1983,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
     sshPort: 22,
     telnetEnabled: false,
     telnetPort: 23,
+    webPort: 80,
     username: '',
     password: '',
     pollingInterval: 300,
@@ -1994,6 +2012,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
           sshPort: o.sshPort,
           telnetEnabled: o.telnetEnabled,
           telnetPort: o.telnetPort,
+          webPort: o.webPort ?? 80,
           username: o.username ?? '',
           password: o.password ?? '',
           pollingInterval: o.pollingInterval,
@@ -2471,6 +2490,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                         <div className="font-mono text-xs text-gray-900 dark:text-gray-100">
                           {onu.serialNumber ?? onu.macAddress ?? <span className="text-yellow-600 dark:text-yellow-400">N/A</span>}
                         </div>
+                        {onu.onuType && <div className="text-[11px] text-muted-foreground">{onu.onuType}</div>}
                       </td>
                       <td className="py-2.5 pr-4">
                         <div className="text-xs text-muted-foreground">{onu.description ?? <span className="text-gray-400">-</span>}</div>
@@ -2681,6 +2701,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                       <SelectItem value="vsol">V-SOL</SelectItem>
                       <SelectItem value="bdcom">BDCOM</SelectItem>
                       <SelectItem value="raisecom">Raisecom</SelectItem>
+                      <SelectItem value="dasan">Dasan</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -2867,6 +2888,18 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                   </Button>
                 )}
               </div>
+
+              {settings.vendor === 'hioso' && (
+                <div className="border rounded-lg p-4 space-y-2">
+                  <Label className="font-semibold">Port web OLT</Label>
+                  <Input
+                    type="number"
+                    value={settings.webPort}
+                    onChange={(e) => setSettings((s) => ({ ...s, webPort: parseInt(e.target.value) || 80 }))}
+                  />
+                  <p className="text-xs text-muted-foreground">Halaman web OLT adalah sumber utama daftar ONU Hioso.</p>
+                </div>
+              )}
 
               {/* Telnet */}
               <div className="border rounded-lg p-4 space-y-3">

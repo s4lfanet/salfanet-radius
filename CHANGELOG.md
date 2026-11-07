@@ -6,6 +6,36 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.45.0] - 2026-11-07 - Tipe ONU, Kipas ZTE, Modul Optik, Ganti Nama dan Reboot ONU, Dasan
+
+### Reboot ONU
+- **[FIX]** Reboot ONU ZTE kini menjawab pertanyaan `Confirm to reboot? [yes/no]`. Sebelumnya tidak dijawab, sehingga perintah habis waktu dan ONU tidak pernah reboot. Temuan ini dari NMS, yang mengujinya di OLT produksi
+- **[CHANGE]** ONU bukan merek ZTE di OLT ZTE di-reboot dengan `shutdown`, jeda 2 detik, lalu `no shutdown` pada interface-nya, sama seperti NMS, karena merek lain tidak bereaksi pada `reboot`
+- **[FIX]** Reboot ONU Hioso tidak lagi mengirim perintah Huawei (`ont reset`). Kini lewat Telnet, dan berhenti bila OLT menolak salah satu perintah
+- **[FIX]** Batch reboot ZTE lewat SSH salah satu nomor port: nomor port di database dihitung dari 0, di CLI dari 1
+
+### Ganti nama ONU
+- **[NEW]** Tombol Config kini berlaku untuk Hioso: lewat form web OLT, dibaca ulang untuk memastikan, lalu Telnet bila belum berubah. Nama baru langsung tersimpan
+
+### Data baru
+- **[NEW]** Tipe ONU tampil di daftar ONU dan Port Map, untuk Hioso, ZTE C320 V2.1, ZTE C300, C-Data GPON, dan HSGQ tabel lama
+- **[NEW]** Kolom FAN diagram ZTE membaca `show fan`: jumlah aktif dan RPM. Sebelumnya hanya mengikuti status OLT. Tanpa Telnet tertulis "Tidak terbaca"
+- **[NEW]** Tombol **Baca modul optik** per port PON untuk ZTE dan Hioso. Klik port pada diagram ZTE atau Port Map Hioso
+- **[NEW]** Merek **Dasan** di form, impor Excel, deteksi otomatis, dan aplikasi admin, lewat SNMP
+- **[NEW]** Isian **Port Web** untuk Hioso di form OLT, pengaturan detail OLT, dan aplikasi admin
+
+### Hal yang perlu diketahui
+- **Belum diuji pada OLT sungguhan.** Sesi Telnet Hioso dan parser diuji dengan server dan data tiruan. Jawaban `yes` pada ZTE berjalan lewat `expect`, yang tidak bisa dijalankan di mesin pengembangan, jadi belum pernah dijalankan sama sekali. Halaman baru hanya diperiksa tipenya
+- **Reboot ONU Hioso paling tidak pasti.** Sintaks `epon onu <id> reset` hanya templat di NMS dan tidak pernah dipakai di sana. Coba pada satu ONU uji dulu. Bila ditolak, pesan OLT tampil dan tidak ada yang berubah
+- **Reboot ONU non-ZTE memutus ONU sebentar**, dan cara ini berlaku juga bila serial ONU tersimpan tanpa awalan ZTE. Coba pada satu ONU dulu
+- Kolom diagram ZTE kini memakai satu perintah Telnet tambahan, `show fan`, jadi diagram bisa sedikit lebih lambat terbuka. Pembacaan ZTE C320 juga bertambah satu walk SNMP per port untuk tipe ONU
+- Tipe ONU terisi setelah poll berikutnya, tidak mundur untuk data lama
+
+### Catatan Pembaruan
+- Menambah kolom `onuType` pada tabel ONU dan `webPort` pada tabel OLT, diterapkan otomatis saat pembaruan. Aplikasi admin 1.0.37. Naikkan versi: root, backend, frontend ke 5.45.0
+
+---
+
 ## [5.44.0] - 2026-11-07 - Peta Port Semua Merek OLT dan Alur Baca dari NMS
 
 ### Peta port

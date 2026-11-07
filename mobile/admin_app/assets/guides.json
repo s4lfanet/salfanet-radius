@@ -909,7 +909,7 @@
    "path": "/admin/network/olts",
    "title": "Data OLT",
    "section": "Jaringan",
-   "summary": "Daftar OLT (ZTE, Huawei, FiberHome, C-Data, HSGQ, V-SOL, Hioso, BDCOM, Raisecom) beserta akses SNMP/Telnet untuk pemantauan ONU.",
+   "summary": "Daftar OLT (ZTE, Huawei, FiberHome, C-Data, HSGQ, V-SOL, Hioso, BDCOM, Raisecom, Dasan) beserta akses SNMP/Telnet untuk pemantauan ONU.",
    "steps": [
     "Klik Tambah OLT, pilih model yang sesuai, isi IP, community SNMP, dan akses Telnet bila diminta.",
     "Isi koordinat agar OLT tampil di peta.",
@@ -923,7 +923,9 @@
     "OLT baru dibuat di sini. Peta Jaringan hanya menempatkan OLT yang sudah ada.",
     "C-Data, HSGQ, dan V-SOL dibaca lewat SNMP dengan beberapa kemungkinan nomor OID, karena nomor kolom berbeda antar firmware. Belum semua teruji pada OLT sungguhan, jadi periksa hasil Uji Koneksi dan bandingkan satu dua ONU dengan tampilan OLT.",
     "Bila Uji Koneksi menyebut tabel ONU belum terbaca, periksa community dan versi SNMP, atau pilih merek manual.",
-    "Hioso: isi username dan password OLT agar halaman web OLT (port 80) ikut dibaca. Halaman itu memuat semua PON, jarak, dan alasan offline, dan melengkapi data SNMP. Bila SNMP tidak mengisi daftar ONU, Telnet dipakai (aktifkan Telnet): nama, MAC, dan status link tanpa daya optik. Uji Koneksi Telnet untuk Hioso menyebut alasan bila gagal.",
+    "Hioso: isi username dan password OLT agar halaman web OLT dibaca (port bawaan 80, bisa diubah di isian Port Web). Halaman itu menjadi sumber utama daftar ONU karena memuat semua PON, daya, jarak, dan alasan offline; SNMP dipakai bila halaman tidak terbaca. Aktifkan Telnet untuk suhu, memori, dan CPU. OLT tetap online bila salah satu dari web, Telnet, atau SNMP menjawab. Uji Koneksi menampilkan hasil Web dan Telnet beserta alasan bila gagal.",
+    "Tab Port Map pada detail OLT: ZTE tampil sebagai diagram kartu, merek lain sebagai daftar port PON dan uplink. Klik port PON untuk melihat ONU di port itu. Tombol Baca modul optik (ZTE dan Hioso, butuh Telnet) membaca modul optik port tersebut.",
+    "Reboot ONU Hioso dan ZTE memakai Telnet. Pada ZTE, ONU merek lain di-reboot dengan mematikan interface-nya sebentar. Tombol Config mengganti nama ONU ZTE dan Hioso; nama Hioso hanya huruf, angka, titik, garis bawah, dan tanda hubung.",
     "Uji Koneksi juga menampilkan jumlah baris data per kolom. Angka 0 pada nama, serial, atau Rx berarti OLT tidak mengisi kolom itu lewat profil tersebut. Kirim tampilan itu bila ada data yang tidak muncul."
    ],
    "related": [

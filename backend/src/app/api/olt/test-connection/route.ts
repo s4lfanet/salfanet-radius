@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
     let sshEnabled: boolean;
     let telnetEnabled: boolean;
     let vendor: string | null | undefined;
+    let webPort: number | undefined;
 
     if (oltId && !body.ipAddress) {
       // Load from DB (no direct params supplied)
@@ -71,6 +72,7 @@ export async function POST(request: NextRequest) {
       sshEnabled = olt.sshEnabled ?? true;
       telnetEnabled = olt.telnetEnabled ?? false;
       vendor = olt.vendor;
+      webPort = olt.webPort;
     } else {
       // Use direct params from request body — also when editing, so the
       // test targets the credentials currently typed into the form rather
@@ -91,6 +93,7 @@ export async function POST(request: NextRequest) {
       sshEnabled = body.sshEnabled !== false;
       telnetEnabled = body.telnetEnabled === true;
       vendor = body.vendor || saved?.vendor;
+      webPort = body.webPort ? parseInt(String(body.webPort)) : saved?.webPort;
     }
 
     // If protocol is specified, test only that protocol
@@ -193,7 +196,7 @@ export async function POST(request: NextRequest) {
     if (vendor?.toLowerCase() === 'hioso' && username) {
       const webStart = Date.now();
       try {
-        const { onus } = await readHiosoWeb({ host: ipAddress, username, password: password ?? '' });
+        const { onus } = await readHiosoWeb({ host: ipAddress, port: webPort, username, password: password ?? '' });
         results.push({
           method: 'Web',
           success: true,

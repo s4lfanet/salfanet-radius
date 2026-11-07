@@ -2,35 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { Client as SSHClient } from 'ssh2';
-import { executeMultipleCommands, TelnetConfig } from '@/lib/olt/telnet';
-
-function normalizeTelnetOutput(output: string): string {
-  return output
-    .replace(/\r/g, '')
-    .replace(/\x08/g, '')
-    .replace(/--More--/g, '')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-}
-
-function extractCommandSection(output: string, index: number, command: string): string {
-  const startToken = `__COPILOT_CMD_${index}_START__`;
-  const endToken = `__COPILOT_CMD_${index}_END__`;
-  const start = output.indexOf(startToken);
-  if (start === -1) return '';
-  const from = start + startToken.length;
-  const end = output.indexOf(endToken, from);
-  const section = end === -1 ? output.slice(from) : output.slice(from, end);
-  const lines = normalizeTelnetOutput(section)
-    .split('\n')
-    .map((line) => line.trimEnd())
-    .filter(Boolean);
-
-  while (lines.length && lines[0].trim() === command.trim()) lines.shift();
-  while (lines.length && /^[A-Za-z0-9_.-]+[>#]/.test(lines[lines.length - 1].trim())) lines.pop();
-
-  return lines.join('\n').trim();
-}
+import type { TelnetConfig } from '@/lib/olt/telnet';
+import { rebootZteOnu } from '@/lib/olt/onu-reboot';
+import { rebootOnu as rebootHiosoOnu } from '@/lib/olt/vendors/hioso';
 
 // POST - Reboot a single ONU via SSH command to the parent OLT
 export async function POST(
@@ -63,8 +37,19 @@ export async function POST(
     let commandLabel = '';
     let failureDetail = '';
 
-    if (vendor === 'zte' && olt.telnetEnabled && olt.username && password) {
-      const iface = `gpon-onu_${onu.frame}/${onu.slot}/${onu.port + 1}:${onu.onuId}`;
+    if (vendor === 'hioso') {
+      if (!olt.telnetEnabled || !olt.username) {
+        return NextResponse.json({ error: 'Reboot ONU Hioso memakai Telnet. Aktifkan Telnet dan isi login OLT' }, { status: 400 });
+      }
+      const reason = await rebootHiosoOnu(
+        { host: olt.ipAddress, username: olt.username, password, telnetPort: olt.telnetPort, telnetEnabled: true, model: olt.model },
+        onu.port,
+        onu.onuId,
+      );
+      success = reason === null;
+      commandLabel = `epon onu ${onu.onuId} reset (PON ${onu.port})`;
+      failureDetail = reason ?? '';
+    } else if (vendor === 'zte' && olt.telnetEnabled && olt.username && password) {
       const telnetConfig: TelnetConfig = {
         host: olt.ipAddress,
         port: olt.telnetPort ?? 23,
@@ -72,18 +57,10 @@ export async function POST(
         password,
         timeout: 20,
       };
-      const result = await executeMultipleCommands(telnetConfig, [
-        'configure terminal',
-        `pon-onu-mng ${iface}`,
-        'reboot',
-        'exit',
-        'end',
-      ], { sendEnd: false });
-      const output = result.output ?? result.error ?? '';
-      const rebootOutput = extractCommandSection(output, 2, 'reboot') || normalizeTelnetOutput(output);
-      success = result.success && !/%Error|invalid input|invalid command|bad password/i.test(rebootOutput);
-      commandLabel = `pon-onu-mng ${iface} -> reboot`;
-      failureDetail = rebootOutput;
+      const reboot = await rebootZteOnu(telnetConfig, onu);
+      success = reboot.ok;
+      commandLabel = reboot.label;
+      failureDetail = reboot.detail;
     } else if (olt.sshEnabled && password) {
       const rebootCmd = buildRebootCommand(vendor, onu.frame, onu.slot, onu.port, onu.onuId);
       success = await sshCommand(

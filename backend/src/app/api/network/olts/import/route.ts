@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'File is empty or invalid format' }, { status: 400 });
     }
 
-    const validVendors = ['zte', 'huawei', 'fiberhome', 'bdcom', 'raisecom', 'hioso', 'cdata', 'hsgq', 'vsol', 'auto'];
+    const validVendors = ['zte', 'huawei', 'fiberhome', 'bdcom', 'raisecom', 'hioso', 'cdata', 'hsgq', 'vsol', 'dasan', 'auto'];
     const errors: Array<{ row: number; error: string }> = [];
     const imported: string[] = [];
 

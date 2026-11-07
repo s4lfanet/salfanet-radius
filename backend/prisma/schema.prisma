@@ -1304,6 +1304,7 @@ model networkOLT {
   snmpPort          Int       @default(161)
   telnetEnabled     Boolean   @default(false)
   telnetPort        Int       @default(23)
+  webPort           Int       @default(80)
   sshEnabled        Boolean   @default(false)
   sshPort           Int       @default(22)
   username          String?
@@ -1345,6 +1346,7 @@ model oltOnuStatus {
   onuId           Int
   macAddress      String?
   serialNumber    String?
+  onuType         String?
   description     String?      @db.Text
   status          OltOnuStatus @default(offline)
   rxPower         Float?

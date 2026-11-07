@@ -78,6 +78,7 @@ interface OLT {
   sshPort?: number;
   telnetPort?: number;
   snmpPort?: number;
+  webPort?: number;
   latitude: number;
   longitude: number;
   status: string;
@@ -213,6 +214,7 @@ export default function OLTsPage() {
     sshPort: '22',
     telnetPort: '23',
     snmpPort: '161',
+    webPort: '80',
     latitude: '',
     longitude: '',
     status: 'active',
@@ -270,6 +272,7 @@ export default function OLTsPage() {
       sshPort: '22',
       telnetPort: '23',
       snmpPort: '161',
+      webPort: '80',
       latitude: '',
       longitude: '',
       status: 'active',
@@ -302,6 +305,7 @@ export default function OLTsPage() {
           sshPort: formData.sshPort,
           telnetPort: formData.telnetPort,
           snmpPort: formData.snmpPort,
+          webPort: formData.webPort,
           oltId: editingOlt?.id,
         }),
       });
@@ -355,6 +359,7 @@ export default function OLTsPage() {
       sshPort: String(olt.sshPort || 22),
       telnetPort: String(olt.telnetPort || 23),
       snmpPort: String(olt.snmpPort || 161),
+      webPort: String(olt.webPort || 80),
       latitude: olt.latitude.toString(),
       longitude: olt.longitude.toString(),
       status: olt.status,
@@ -1096,6 +1101,7 @@ export default function OLTsPage() {
                     <option value="vsol">V-SOL</option>
                     <option value="bdcom">BDCOM</option>
                     <option value="raisecom">Raisecom</option>
+                    <option value="dasan">Dasan</option>
                     <option value="other">Other</option>
                   </select>
                 </div>
@@ -1265,6 +1271,21 @@ export default function OLTsPage() {
                   className="w-full px-2 py-1.5 text-xs border dark:border-gray-700 rounded dark:bg-gray-800"
                 />
               </div>
+
+              {formData.vendor === 'hioso' && (
+                <div>
+                  <label className="block text-[10px] font-medium mb-1">Port Web OLT</label>
+                  <NumberInput
+                    type="number"
+                    min="1"
+                    max="65535"
+                    value={formData.webPort}
+                    onChange={(e) => setFormData({ ...formData, webPort: e.target.value })}
+                    placeholder="80"
+                    className="w-full px-2 py-1.5 text-xs border dark:border-gray-700 rounded dark:bg-gray-800"
+                  />
+                </div>
+              )}
 
               <div>
                 <div className="flex items-center justify-between mb-1">

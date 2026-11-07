@@ -20,6 +20,7 @@ const V21 = {
   base: '1.3.6.1.4.1.3902.1012',
   // zxAnGponOnuCfgTable (3.28.1.1) — indexed by .{col}.{ponIndex}.{onuId}
   // VERIFIED WORKING on ZTE C320 V2.1.0 via live SNMP walk
+  onuType:        '.3.28.1.1.1',    // ONU type/profile string, as read by the operator's NMS
   onuDescription: '.3.28.1.1.2',    // ONU name/description string (e.g. "test-customer")
   onuSerial:      '.3.28.1.1.5',    // Serial (Hex-STRING: 8 bytes = 4 ASCII vendor + 4 hex id)
   // zxAnGponOnuRegTable (3.50.12.1.1) — indexed by .{col}.{ponIndex}.{onuSlot}.{onuId}
@@ -101,6 +102,7 @@ const C300 = {
   name:     '1.3.6.1.4.1.3902.1082.500.10.2.3.3.1.3',
   status:   '1.3.6.1.4.1.3902.1082.500.10.2.3.8.1.4',
   distance: '1.3.6.1.4.1.3902.1082.500.10.2.3.10.1.2',
+  model:    '1.3.6.1.4.1.3902.1082.500.20.2.1.2.1.8',
   onuRx:    '1.3.6.1.4.1.3902.1082.500.20.2.2.2.1.10',  // index ifIndex.onu.1
   onuTx:    '1.3.6.1.4.1.3902.1082.500.20.2.2.2.1.14',  // index ifIndex.onu.1
   oltRx:    '1.3.6.1.4.1.3902.1015.1010.11.2.1.2',      // index ponIndex.onu
@@ -536,15 +538,16 @@ async function discoverPonV21(
   const ponIndex = ponIndexV21(board, pon);
   const base = V21.base;
 
-  // Walk ALL OID subtrees for this PON port in PARALLEL (6 concurrent SNMP walks),
+  // Walk ALL OID subtrees for this PON port in PARALLEL (7 concurrent SNMP walks),
   // plus one Telnet call for real status (see telnetStateMap below) — all run
   // together since none of them depend on each other.
-  const [regWalk, operWalk, serialWalk, rxWalk, descWalk, telnetStateMap] = await Promise.all([
+  const [regWalk, operWalk, serialWalk, rxWalk, descWalk, typeWalk, telnetStateMap] = await Promise.all([
     snmpWalk(config, `${base}${V21.onuRegStatus}.${ponIndex}`),    // reg status  (.ponIndex.slot.onuId)
     snmpWalk(config, `${base}${V21.onuOperState}.${ponIndex}`),    // oper state  (.ponIndex.slot.onuId)
     snmpWalk(config, `${base}${V21.onuSerial}.${ponIndex}`),       // serial      (.ponIndex.onuId)
     snmpWalk(config, `${base}${V21.onuRxPower}.${ponIndex}`),      // rx power    (.ponIndex.slot.onuId)
     snmpWalk(config, `${base}${V21.onuDescription}.${ponIndex}`),  // description (.ponIndex.onuId)
+    snmpWalk(config, `${base}${V21.onuType}.${ponIndex}`),         // ONU type    (.ponIndex.onuId)
     fetchPonStateViaTelnet(telnetConfig, board, pon),
   ]);
 
@@ -556,11 +559,13 @@ async function discoverPonV21(
   const rxMap     = new Map<string, string>();
   const serialMap = new Map<string, string>();
   const descMap   = new Map<string, string>();
+  const typeMap   = new Map<string, string>();
 
   if (operWalk.success && operWalk.results)   for (const [k,v] of Object.entries(operWalk.results))   operMap.set(lastTwoKey(k), v);
   if (rxWalk.success && rxWalk.results)       for (const [k,v] of Object.entries(rxWalk.results))     rxMap.set(lastTwoKey(k), v);
   if (serialWalk.success && serialWalk.results) for (const [k,v] of Object.entries(serialWalk.results)) serialMap.set(lastOneKey(k), v);
   if (descWalk.success && descWalk.results)   for (const [k,v] of Object.entries(descWalk.results))   descMap.set(lastOneKey(k), v);
+  if (typeWalk.success && typeWalk.results)   for (const [k,v] of Object.entries(typeWalk.results))   typeMap.set(lastOneKey(k), v);
 
   const onus: any[] = [];
   const registeredIds = new Set<number>();
@@ -645,7 +650,7 @@ async function discoverPonV21(
         macAddress: null,
         status: onuStatus,
         description: descMap.get(idKey)?.trim() ?? null,
-        onuType: null,
+        onuType: decodeSnmpText(typeMap.get(idKey)) || null,
         rxPower,
         distance,
       });
@@ -814,6 +819,7 @@ export async function discoverC300(config: SNMPConfig, walk: Walk = snmpWalk): P
   const descriptions = await table(C300.descr);
   const names = await table(C300.name);
   const distances = await table(C300.distance);
+  const models = await table(C300.model);
   const onuRx = await table(C300.onuRx);
   const onuTx = await table(C300.onuTx);
   const oltRx = await table(C300.oltRx);
@@ -836,6 +842,7 @@ export async function discoverC300(config: SNMPConfig, walk: Walk = snmpWalk): P
       onuId,
       serialNumber,
       macAddress: null,
+      onuType: decodeSnmpText(models.get(key)) || null,
       status: onuStatus,
       description: decodeSnmpText(descriptions.get(key)) || decodeSnmpText(names.get(key)) || null,
       rxPower: online ? (decodeC300OnuPower(numberOf(onuRx.get(key))) ?? decodeC300OltRx(numberOf(oltRx.get(`${ponIndex}.${onuId}`)))) : null,

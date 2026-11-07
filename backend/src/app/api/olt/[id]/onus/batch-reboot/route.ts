@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { Client as SSHClient } from 'ssh2';
-import { executeMultipleCommands, TelnetConfig } from '@/lib/olt/telnet';
+import type { TelnetConfig } from '@/lib/olt/telnet';
+import { rebootZteOnu } from '@/lib/olt/onu-reboot';
+import { rebootOnu as rebootHiosoOnu } from '@/lib/olt/vendors/hioso';
 
 // POST - Batch reboot multiple ONUs (up to 50 at once)
 export async function POST(
@@ -49,8 +51,13 @@ export async function POST(
       }
       try {
         let ok = false;
-        if (vendor === 'zte' && olt.telnetEnabled) {
-          const iface = `gpon-onu_${onu.frame}/${onu.slot}/${onu.port + 1}:${onu.onuId}`;
+        if (vendor === 'hioso') {
+          ok = olt.telnetEnabled && (await rebootHiosoOnu(
+            { host: olt.ipAddress, username: olt.username, password, telnetPort: olt.telnetPort, telnetEnabled: true, model: olt.model },
+            onu.port,
+            onu.onuId,
+          )) === null;
+        } else if (vendor === 'zte' && olt.telnetEnabled) {
           const telnetConfig: TelnetConfig = {
             host: olt.ipAddress,
             port: olt.telnetPort ?? 23,
@@ -58,15 +65,7 @@ export async function POST(
             password,
             timeout: 20,
           };
-          const result = await executeMultipleCommands(telnetConfig, [
-            'configure terminal',
-            `pon-onu-mng ${iface}`,
-            'reboot',
-            'exit',
-            'end',
-          ]);
-          const output = result.output ?? result.error ?? '';
-          ok = result.success && !/%Error|invalid input|invalid command|bad password/i.test(output);
+          ok = (await rebootZteOnu(telnetConfig, onu)).ok;
         } else if (olt.sshEnabled) {
           const rebootCmd = buildRebootCommand(vendor, onu.frame, onu.slot, onu.port, onu.onuId);
           ok = await sshCommand(olt.ipAddress, olt.sshPort ?? 22, olt.username ?? 'admin', password, rebootCmd);
@@ -97,7 +96,8 @@ export async function POST(
 function buildRebootCommand(vendor: string, frame: number, slot: number, port: number, onuId: number): string {
   switch (vendor) {
     case 'zte':
-      return `pon onu reset gpon-onu_${frame}/${slot}/${port}:${onuId}`;
+      // DB port is zero-based, ZTE CLI is one-based
+      return `pon onu reset gpon-onu_${frame}/${slot}/${port + 1}:${onuId}`;
     case 'fiberhome':
       return `reset onu ${frame}/${slot}/${port}/${onuId}`;
     case 'bdcom':

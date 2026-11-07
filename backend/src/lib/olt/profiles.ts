@@ -60,6 +60,7 @@ export const NSCRTV_GPON: PonProfile = {
     status: `${NSCRTV_GPON_ONU}.7`,
     name: `${NSCRTV_GPON_ONU}.2`,
     serial: `${NSCRTV_GPON_ONU}.3`,
+    type: `${NSCRTV_GPON_ONU}.6`,
     distance: `${NSCRTV_GPON_ONU}.9`,
     // The operator's sheet lists Rx as column 3; the MIB makes column 3 the port index.
     rx: `${NSCRTV_GPON_OPTICS}.4`,
@@ -185,6 +186,7 @@ const hsgqOld = (id: string, statusColumn: number): PonProfile => ({
     name: `${HSGQ_OLD_TABLE}.2`,
     mac: `${HSGQ_OLD_TABLE}.7`,
     distance: `${HSGQ_OLD_TABLE}.15`,
+    type: `${HSGQ_OLD_TABLE}.26`,
     rx: `${HSGQ_OLD_OPTIC}.4`,
     tx: `${HSGQ_OLD_OPTIC}.5`,
   },
@@ -263,6 +265,13 @@ export const RAISECOM_NMS = nmsProfile('raisecom-nms', 'Raisecom (8886.18.3)', {
   distance: '1.3.6.1.4.1.8886.18.3.1.3.1.1.16',
   rx: '1.3.6.1.4.1.8886.18.3.1.3.3.1.1',
 });
+
+export const DASAN_NMS = nmsProfile('dasan-nms', 'Dasan (6296.101.23.3)', {
+  serial: '1.3.6.1.4.1.6296.101.23.3.1.1.4',
+  status: '1.3.6.1.4.1.6296.101.23.3.1.1.12',
+  name: '1.3.6.1.4.1.6296.101.23.3.1.1.8',
+  rx: '1.3.6.1.4.1.6296.101.23.3.5.1.2',
+}, { tech: 'GPON' });
 
 // V-SOL V1600D (EPON): the ONU list and the optical table are different tables, so it is read by vsol.ts.
 export const VSOL_V1600D = {

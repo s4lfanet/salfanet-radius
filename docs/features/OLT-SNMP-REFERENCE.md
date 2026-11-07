@@ -109,7 +109,7 @@ OLT dianggap online bila salah satu dari ketiganya menjawab, jadi OLT yang SNMP-
 
 **Jarak** dihitung dengan rumus `rtt × 1,6393 − 157`, dikurangi 157 lagi bila hasilnya di atas 157, baik dari kolom RTT halaman maupun dari SNMP `.3.2.1.25` (juga `25355.3.3.1.1.1.9` untuk GPON dan `3320.101.10.1.1.38` untuk clone BDCOM). Ini mengikuti NMS operator. KusumaVision menyebut `.3.2.1.25` sudah dalam meter; bila jarak dari SNMP terlihat salah, sumber itulah yang benar untuk firmware tersebut.
 
-Port web tetap 80. Alasan offline `0` atau `1` dibaca sebagai LOS, dan penanda dying gasp `1` sebagai dying gasp.
+Port web diisi di form OLT (bawaan 80). Alasan offline `0` atau `1` dibaca sebagai LOS, dan penanda dying gasp `1` sebagai dying gasp.
 
 ### Telnet
 
@@ -155,7 +155,31 @@ ZTE memakai diagram kartu dari `show card`. Merek lain memakai `GET /api/olt/[id
 | FiberHome | `5765.1.33.1.2` | Sama |
 | Raisecom | `8886.18.3.1.3` | Sama |
 
-HSGQ dan C-Data sudah memuat tabel NMS sebelumnya. Dasan belum, karena merek itu belum ada di daftar pilihan.
+HSGQ dan C-Data sudah memuat tabel NMS sebelumnya. Dasan (`6296.101.23.3`) kini ada di daftar merek dan hanya punya jalur SNMP dari tabel ini; suhu, CPU, dan memori tidak terbaca.
+
+## Tipe ONU
+
+Disimpan di kolom `onuType`, tampil di bawah serial dan di Port Map. Nilai yang sudah tersimpan tidak dihapus bila poll berikutnya tidak membawanya.
+
+| Merek | Sumber |
+|---|---|
+| Hioso | Chip dan jumlah port dari halaman web (`6301 (5P)`). Dengan Telnet aktif, rincian Ge, Fe, Pots (`6301 (4GE+1POTS)`). SNMP `.3.2.1.15` dan `.3.2.1.13` |
+| ZTE C320 V2.1 | `3902.1012.3.28.1.1.1` |
+| ZTE C300 | `3902.1082.500.20.2.1.2.1.8` |
+| C-Data GPON | `17409.2.8.4.1.1.6` |
+| HSGQ tabel lama | `50224.3.3.2.1.26` |
+
+## Perintah ke OLT
+
+**Reboot ONU ZTE.** Mengikuti NMS, yang mengujinya di OLT produksi. ONU berserial ZTE memakai `pon-onu-mng` lalu `reboot`, dan OLT bertanya `Confirm to reboot? [yes/no]:` yang kini dijawab `yes`. Sebelumnya tidak dijawab, sehingga perintah habis waktu dan ONU tidak pernah reboot. ONU merek lain tidak bereaksi pada perintah itu, jadi interface-nya `shutdown`, jeda 2 detik, lalu `no shutdown`. Selama jeda itu ONU putus.
+
+**Reboot ONU Hioso.** Lewat Telnet: `configure terminal`, `interface epon <basis>/<PON>`, `epon onu <id> reset`. Sintaks ini hanya templat di NMS dan tidak pernah dijalankan di sana, jadi **belum terbukti**. Bila OLT menolak salah satu perintah, urutan berhenti dan penolakannya ditampilkan, sehingga reset tidak jatuh ke konteks yang salah.
+
+**Ganti nama ONU Hioso.** Tombol Config: `POST /goform/setOnu` dengan `onuId`, `onuName`, `onuOperation=nonOp`, lalu halaman dibaca ulang karena form menjawab sama walau nama ditolak. Bila nama tidak berubah, Telnet dicoba (`onu <id> name <nama>` di dalam interface). Nama dibatasi huruf, angka, titik, garis bawah, dan tanda hubung, 30 karakter, spasi menjadi garis bawah. Hioso hanya punya satu nama, jadi isian nama dan deskripsi tidak terpisah.
+
+**Modul optik per port.** Tombol "Baca modul optik" membuka satu sesi Telnet: ZTE `show interface optical-module-info gpon-olt_1/<slot>/<port>`, Hioso `show epon optical-ddm <basis>/<PON>` lalu bentuk lamanya. Hasil Hioso ditampilkan apa adanya sebagai pasangan kunci dan nilai.
+
+**Kipas ZTE.** `show fan` dibaca bersama `show card`. Tanpa Telnet, kolom FAN menulis "Tidak terbaca", bukan lagi 2/2.
 
 ## Hal yang menjebak
 

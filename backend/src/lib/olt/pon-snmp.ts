@@ -57,6 +57,8 @@ export interface PonProfile {
     downCause?: string;
     /** 1 when the ONU powered off (dying gasp). */
     dyingGasp?: string;
+    /** Equipment model or chip of the ONU. */
+    type?: string;
   };
 }
 
@@ -71,6 +73,7 @@ export interface DiscoveredOnu {
   description: string | null;
   serialNumber: string | null;
   macAddress: string | null;
+  onuType?: string | null;
   rxPower: number | null;
   txPower: number | null;
   distance: number | null;
@@ -307,6 +310,7 @@ export interface ProfileRows {
   oltRx?: Map<string, string>;
   downCause?: Map<string, string>;
   dyingGasp?: Map<string, string>;
+  type?: Map<string, string>;
 }
 
 /** Why an ONU that is not online is down, from the cause text or the dying-gasp flag. */
@@ -334,6 +338,7 @@ export function assembleOnus(profile: PonProfile, rows: ProfileRows): Discovered
   const oltRx = alignTo(rows.oltRx ?? empty, width);
   const downCause = alignTo(rows.downCause ?? empty, width);
   const dyingGasp = alignTo(rows.dyingGasp ?? empty, width);
+  const type = alignTo(rows.type ?? empty, width);
 
   const seen = new Set<string>();
   const onus: DiscoveredOnu[] = [];
@@ -363,6 +368,7 @@ export function assembleOnus(profile: PonProfile, rows: ProfileRows): Discovered
       description: named ? named.label : cleanLabel(text),
       serialNumber: normalizeSerial(serial.get(suffix)) ?? (macAddress === ZERO_MAC ? null : macAddress),
       macAddress: macAddress === ZERO_MAC ? null : macAddress,
+      onuType: decodeSnmpText(type.get(suffix)) || null,
       rxPower: onuRx ?? oltSide,
       rxSource: onuRx !== null ? 'onu' : oltSide !== null ? 'olt' : null,
       txPower: online ? parsePowerDbm(tx.get(suffix), profile.scale) : null,
@@ -407,7 +413,7 @@ export async function discoverByProfile(config: SNMPConfig, profile: PonProfile,
   if (statusRows.size === 0) return [];
 
   const optional = async (oid: string | undefined) => (oid ? rowsOf(await walk(config, oid), oid) : new Map<string, string>());
-  const [rx, tx, name, serial, mac, distance, oltRx, downCause, dyingGasp] = await Promise.all([
+  const [rx, tx, name, serial, mac, distance, oltRx, downCause, dyingGasp, type] = await Promise.all([
     optional(columns.rx),
     optional(columns.tx),
     optional(columns.name),
@@ -417,9 +423,10 @@ export async function discoverByProfile(config: SNMPConfig, profile: PonProfile,
     optional(columns.oltRx),
     optional(columns.downCause),
     optional(columns.dyingGasp),
+    optional(columns.type),
   ]);
 
-  return assembleOnus(profile, { status: statusRows, rx, tx, name, serial, mac, distance, oltRx, downCause, dyingGasp });
+  return assembleOnus(profile, { status: statusRows, rx, tx, name, serial, mac, distance, oltRx, downCause, dyingGasp, type });
 }
 
 /** Which profile answered last, per OLT, so a poll does not probe every candidate again. */

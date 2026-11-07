@@ -92,7 +92,7 @@ export async function PUT(
     const {
       vendor, model, firmwareVersion,
       snmpEnabled, snmpCommunity, snmpWriteCommunity, snmpPort,
-      telnetEnabled, telnetPort,
+      telnetEnabled, telnetPort, webPort,
       sshEnabled, sshPort,
       username, password,
       monitoringEnabled, pollingInterval,
@@ -111,6 +111,7 @@ export async function PUT(
         ...(snmpPort !== undefined && { snmpPort }),
         ...(telnetEnabled !== undefined && { telnetEnabled }),
         ...(telnetPort !== undefined && { telnetPort }),
+        ...(webPort !== undefined && { webPort: parseInt(String(webPort)) || 80 }),
         ...(sshEnabled !== undefined && { sshEnabled }),
         ...(sshPort !== undefined && { sshPort }),
         ...(username !== undefined && { username }),
