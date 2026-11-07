@@ -337,7 +337,7 @@ export default function FreeRADIUSStatusPage() {
                 {showDebugInfo && (
                   <div className="mt-3 p-3 bg-gray-800 border border-gray-600 rounded text-sm">
                     <p className="mb-2 text-gray-400 text-xs">Debug mode feature coming soon. For now, run manually on your server:</p>
-                    <code className="block bg-gray-900 px-3 py-2 rounded text-green-400 text-xs">systemctl stop freeradius &amp;&amp; freeradius -X</code>
+                    <code className="block bg-gray-900 px-3 py-2 rounded text-green-600 dark:text-green-400 text-xs">systemctl stop freeradius &amp;&amp; freeradius -X</code>
                   </div>
                 )}
             </div>

@@ -238,7 +238,7 @@ export default function SystemPage() {
         </div>
         <div className="flex items-center gap-2">
           {info && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-xs font-mono font-bold text-cyan-400">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-xs font-mono font-bold text-cyan-600 dark:text-cyan-400">
               <Package className="w-3 h-3" />
               v{info.version}
             </div>
@@ -274,7 +274,7 @@ export default function SystemPage() {
       {/* Commit message */}
       {info?.commitMessage && (
         <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card/30 border border-border/40 text-xs text-muted-foreground">
-          <Info className="w-3.5 h-3.5 flex-shrink-0 text-cyan-400" />
+          <Info className="w-3.5 h-3.5 flex-shrink-0 text-cyan-600 dark:text-cyan-400" />
           <span className="font-mono truncate">{info.commitMessage}</span>
         </div>
       )}
@@ -311,7 +311,7 @@ export default function SystemPage() {
 
       {/* Up to date banner */}
       {info && !info.hasUpdate && (
-        <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-green-500/10 border border-green-500/30 text-green-400">
+        <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-green-500/10 border border-green-500/30 text-green-600 dark:text-green-400">
           <div className="flex items-center gap-3">
             <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
             <p className="text-xs font-bold">
@@ -322,7 +322,7 @@ export default function SystemPage() {
             <button
               onClick={fetchChangelog}
               disabled={changelogLoading}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-400 text-xs font-bold transition"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-600 dark:text-green-400 text-xs font-bold transition"
             >
               {changelogLoading ? <RefreshCw className="w-3 h-3 animate-spin" /> : <GitCommit className="w-3 h-3" />}
               Lihat Changelog
@@ -336,7 +336,7 @@ export default function SystemPage() {
         <div className="rounded-xl border border-border/50 bg-card/30 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 bg-white/5 border-b border-border/40">
             <div className="flex items-center gap-2">
-              <GitCommit className="w-4 h-4 text-cyan-400" />
+              <GitCommit className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
               <span className="text-sm font-bold text-foreground">
                 Changelog {changelog?.hasUpdate ? `( ${changelog.commits.length} commit baru )` : '( 20 commit terakhir )'}
               </span>
@@ -375,10 +375,10 @@ export default function SystemPage() {
       {updateStatus && updateStatus.phase !== 'idle' && (
         <div className="rounded-xl border border-border/50 bg-card/30 overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-3 bg-white/5 border-b border-border/40">
-            <Terminal className="w-4 h-4 text-cyan-400" />
+            <Terminal className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
             <span className="text-sm font-bold text-foreground">Update Progress</span>
             {updateStatus.phase === 'running' && (
-              <span className="ml-auto flex items-center gap-1.5 text-[10px] text-cyan-400 font-medium">
+              <span className="ml-auto flex items-center gap-1.5 text-[10px] text-cyan-600 dark:text-cyan-400 font-medium">
                 <RefreshCw className="w-3 h-3 animate-spin" /> Running...
               </span>
             )}
@@ -387,9 +387,9 @@ export default function SystemPage() {
             {/* Current step indicator */}
             {updateStatus.phase === 'running' && (
               <div className="flex items-center gap-3">
-                <RefreshCw className="w-4 h-4 animate-spin text-cyan-400 flex-shrink-0" />
+                <RefreshCw className="w-4 h-4 animate-spin text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
                 <div>
-                  <p className="text-xs font-medium text-cyan-400">{updateStatus.step || 'Processing...'}</p>
+                  <p className="text-xs font-medium text-cyan-600 dark:text-cyan-400">{updateStatus.step || 'Processing...'}</p>
                   <p className="text-[10px] text-muted-foreground">Update berjalan di background. Halaman ini bisa ditutup.</p>
                 </div>
               </div>
@@ -398,9 +398,9 @@ export default function SystemPage() {
             {/* Done state */}
             {updateStatus.phase === 'done' && (
               <div className="flex items-center gap-3">
-                <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
                 <div>
-                  <p className="text-xs font-medium text-green-400">Update selesai!</p>
+                  <p className="text-xs font-medium text-green-600 dark:text-green-400">Update selesai!</p>
                   {updateStatus.newCommit && <p className="text-[10px] font-mono text-muted-foreground">Commit: {updateStatus.newCommit}</p>}
                 </div>
               </div>
@@ -409,9 +409,9 @@ export default function SystemPage() {
             {/* Error state */}
             {updateStatus.phase === 'error' && (
               <div className="flex items-start gap-3">
-                <XCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                <XCircle className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium text-red-400">Update gagal: {updateStatus.step || 'unknown step'}</p>
+                  <p className="text-xs font-medium text-red-600 dark:text-red-400">Update gagal: {updateStatus.step || 'unknown step'}</p>
                   {updateStatus.error && <p className="text-[10px] font-mono text-muted-foreground mt-0.5">{updateStatus.error}</p>}
                   {updateStatus.logTail && (
                     <details className="mt-2" open>
@@ -433,14 +433,14 @@ export default function SystemPage() {
                 const isError = updateStatus.phase === 'error' && updateStatus.step === stepName;
                 return (
                   <div key={stepName} className="flex items-center gap-2 text-[11px]">
-                    {isError ? <XCircle className="w-3 h-3 text-red-400" /> :
-                     isCurrent ? <RefreshCw className="w-3 h-3 animate-spin text-cyan-400" /> :
-                     isPast ? <CheckCircle2 className="w-3 h-3 text-green-400" /> :
+                    {isError ? <XCircle className="w-3 h-3 text-red-600 dark:text-red-400" /> :
+                     isCurrent ? <RefreshCw className="w-3 h-3 animate-spin text-cyan-600 dark:text-cyan-400" /> :
+                     isPast ? <CheckCircle2 className="w-3 h-3 text-green-600 dark:text-green-400" /> :
                      <div className="w-3 h-3 rounded-full border border-muted-foreground/30" />}
                     <span className={cn(
-                      isCurrent && 'text-cyan-400 font-medium',
+                      isCurrent && 'text-cyan-600 dark:text-cyan-400 font-medium',
                       isPast && 'text-green-400/70',
-                      isError && 'text-red-400 font-medium',
+                      isError && 'text-red-600 dark:text-red-400 font-medium',
                       !isCurrent && !isPast && !isError && 'text-muted-foreground',
                     )}>{stepName}</span>
                   </div>
@@ -454,7 +454,7 @@ export default function SystemPage() {
       {/* Manual update guide */}
       <div className="rounded-xl border border-border/50 bg-card/30 overflow-hidden">
         <div className="flex items-center gap-2 px-4 py-3 bg-white/5 border-b border-border/40">
-          <Terminal className="w-4 h-4 text-cyan-400" />
+          <Terminal className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
           <span className="text-sm font-bold text-foreground">Cara Update - via SSH (Manual)</span>
         </div>
         <div className="p-4 space-y-4">

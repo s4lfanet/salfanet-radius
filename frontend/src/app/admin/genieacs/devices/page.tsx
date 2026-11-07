@@ -1247,9 +1247,9 @@ export default function GenieACSDevicesPage() {
                                     <div>
                                       <div className="flex items-center gap-2 flex-wrap">
                                         <p className="text-xs font-medium text-foreground">{wan.name}</p>
-                                        <span className={`px-1.5 py-0.5 text-[9px] font-semibold rounded ${wan.connectionType === 'PPPoE' ? 'bg-primary/10 text-primary' : 'bg-blue-500/20 text-blue-400'}`}>{wan.connectionType}</span>
-                                        {wan.serviceList && wan.serviceList !== '-' && <span className="px-1.5 py-0.5 text-[9px] font-semibold rounded bg-orange-500/20 text-orange-400">{wan.serviceList}</span>}
-                                        {wan.vlanId && wan.vlanId !== '-' && <span className="px-1.5 py-0.5 text-[9px] font-semibold rounded bg-cyan-500/20 text-cyan-400">VLAN {wan.vlanId}</span>}
+                                        <span className={`px-1.5 py-0.5 text-[9px] font-semibold rounded ${wan.connectionType === 'PPPoE' ? 'bg-primary/10 text-primary' : 'bg-blue-500/20 text-blue-600 dark:text-blue-400'}`}>{wan.connectionType}</span>
+                                        {wan.serviceList && wan.serviceList !== '-' && <span className="px-1.5 py-0.5 text-[9px] font-semibold rounded bg-orange-500/20 text-orange-600 dark:text-orange-400">{wan.serviceList}</span>}
+                                        {wan.vlanId && wan.vlanId !== '-' && <span className="px-1.5 py-0.5 text-[9px] font-semibold rounded bg-cyan-500/20 text-cyan-600 dark:text-cyan-400">VLAN {wan.vlanId}</span>}
                                       </div>
                                       <p className="text-[10px] text-muted-foreground mt-0.5">
                                         {wan.username && wan.username !== '-' ? `User: ${wan.username}` : ''}

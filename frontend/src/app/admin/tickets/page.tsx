@@ -344,7 +344,7 @@ export default function AdminTicketsPage() {
                 <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('ticket.urgentTickets')}</p>
                 <p className="text-lg sm:text-xl font-bold text-foreground mt-1">{stats.byPriority.urgent}</p>
               </div>
-              <AlertCircle className="text-red-400 h-5 w-5 sm:h-6 sm:w-6 drop-shadow-md shadow-red-500/40 flex-shrink-0" />
+              <AlertCircle className="text-red-600 dark:text-red-400 h-5 w-5 sm:h-6 sm:w-6 drop-shadow-md shadow-red-500/40 flex-shrink-0" />
             </div>
           </div>
 
@@ -374,7 +374,7 @@ export default function AdminTicketsPage() {
                 <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('ticket.resolved')}</p>
                 <p className="text-lg sm:text-xl font-bold text-foreground mt-1">{stats.byStatus.resolved}</p>
               </div>
-              <CheckCircle className="text-green-400 h-5 w-5 sm:h-6 sm:w-6 drop- flex-shrink-0" />
+              <CheckCircle className="text-green-600 dark:text-green-400 h-5 w-5 sm:h-6 sm:w-6 drop- flex-shrink-0" />
             </div>
           </div>
 
@@ -665,11 +665,11 @@ export default function AdminTicketsPage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">Nama <span className="text-red-400">*</span></label>
+                      <label className="text-xs text-muted-foreground mb-1 block">Nama <span className="text-red-600 dark:text-red-400">*</span></label>
                       <input value={form.customerName} onChange={e => setForm(f => ({ ...f, customerName: e.target.value }))} placeholder="Nama pelanggan" className="w-full px-3 py-2 text-xs bg-background border border-border rounded-lg text-foreground focus:ring-1 focus:ring-primary/40 outline-none" />
                     </div>
                     <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">Telepon <span className="text-red-400">*</span></label>
+                      <label className="text-xs text-muted-foreground mb-1 block">Telepon <span className="text-red-600 dark:text-red-400">*</span></label>
                       <input value={form.customerPhone} onChange={e => setForm(f => ({ ...f, customerPhone: e.target.value }))} placeholder="08xx..." className="w-full px-3 py-2 text-xs bg-background border border-border rounded-lg text-foreground focus:ring-1 focus:ring-primary/40 outline-none" />
                     </div>
                   </div>
@@ -763,7 +763,7 @@ export default function AdminTicketsPage() {
                       {uploadedFiles.map((file, index) => (
                         <div key={index} className="flex items-center gap-2 p-2 rounded-lg bg-background border border-border">
                           {file.type === 'pdf' ? (
-                            <FileText className="w-4 h-4 text-red-400 flex-shrink-0" />
+                            <FileText className="w-4 h-4 text-red-600 dark:text-red-400 flex-shrink-0" />
                           ) : (
                             <img src={file.url} alt={file.name} className="w-8 h-8 object-cover rounded border border-border flex-shrink-0" />
                           )}
@@ -852,11 +852,11 @@ export default function AdminTicketsPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Subjek <span className="text-red-400">*</span></label>
+                    <label className="text-xs text-muted-foreground mb-1 block">Subjek <span className="text-red-600 dark:text-red-400">*</span></label>
                     <input value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))} placeholder="Ringkasan masalah" className="w-full px-3 py-2 text-xs bg-background border border-border rounded-lg text-foreground focus:ring-1 focus:ring-primary/40 outline-none" />
                   </div>
                   <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Deskripsi <span className="text-red-400">*</span></label>
+                    <label className="text-xs text-muted-foreground mb-1 block">Deskripsi <span className="text-red-600 dark:text-red-400">*</span></label>
                     <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Detail masalah yang perlu ditangani teknisi..." rows={4} className="w-full px-3 py-2 text-xs bg-background border border-border rounded-lg text-foreground focus:ring-1 focus:ring-primary/40 outline-none resize-none" />
                   </div>
                 </div>

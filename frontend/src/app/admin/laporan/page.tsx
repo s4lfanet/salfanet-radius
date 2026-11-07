@@ -348,7 +348,7 @@ export default function LaporanPage() {
 
       {/* ── Error ── */}
       {error && (
-        <div className="p-4 bg-red-500/10 border border-red-500/40 rounded-xl text-sm text-red-400">
+        <div className="p-4 bg-red-500/10 border border-red-500/40 rounded-xl text-sm text-red-600 dark:text-red-400">
           {error}
         </div>
       )}
@@ -461,7 +461,7 @@ export default function LaporanPage() {
 function SummaryCard({ label, value, icon, color }: { label: string; value: React.ReactNode; icon: React.ReactNode; color: string }) {
   const colorMap: Record<string, string> = {
     cyan:   'text-brand-500 border-brand-500/30 ',
-    green:  'text-emerald-400 border-emerald-500/30',
+    green:  'text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
     yellow: 'text-amber-400 border-amber-500/30',
     purple: 'text-primary border-border',
     red:    'text-rose-400 border-rose-500/30',
@@ -501,19 +501,19 @@ function translateStatus(val: unknown): string {
 function getStatusClass(_s: string): string { return ''; }
 function getStatusBadge(s: string): string {
   const map: Record<string, string> = {
-    PAID:    'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30',
-    paid:    'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30',
+    PAID:    'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30',
+    paid:    'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30',
     PENDING: 'bg-amber-500/20 text-amber-400 border border-amber-500/30',
     pending: 'bg-amber-500/20 text-amber-400 border border-amber-500/30',
-    OVERDUE: 'bg-red-500/20 text-red-400 border border-red-500/30',
-    overdue: 'bg-red-500/20 text-red-400 border border-red-500/30',
+    OVERDUE: 'bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30',
+    overdue: 'bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30',
     CANCELLED: 'bg-slate-500/20 text-slate-400 border border-slate-500/30',
-    active:  'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30',
-    isolated: 'bg-red-500/20 text-red-400 border border-red-500/30',
+    active:  'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30',
+    isolated: 'bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30',
     stopped: 'bg-slate-500/20 text-slate-400 border border-slate-500/30',
     expired: 'bg-amber-500/20 text-amber-400 border border-amber-500/30',
-    SUCCESS: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30',
-    FAILED:  'bg-red-500/20 text-red-400 border border-red-500/30',
+    SUCCESS: 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30',
+    FAILED:  'bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30',
   };
   return map[s] || 'bg-muted/30 dark:bg-slate-600/30 text-muted-foreground dark:text-slate-300 border border-border/30 dark:border-slate-500/30';
 }

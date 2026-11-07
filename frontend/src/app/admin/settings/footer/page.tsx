@@ -121,7 +121,7 @@ export default function FooterSettingsPage() {
 
       {/* Info Banner */}
       <div className="flex items-start gap-2 p-3 mb-6 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-        <Info className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
+        <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
         <p className="text-xs text-blue-300/80">
           Teks footer ini akan menggantikan teks default. Kosongkan untuk tidak menampilkan footer di halaman login tersebut.
         </p>

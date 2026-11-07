@@ -466,7 +466,7 @@ function GroupRows({
       >
         <td className="px-3 py-2" onClick={(e) => { e.stopPropagation(); onToggleGroup(); }}>
           <button className="text-gray-400 hover:text-blue-600">
-            {allSelected ? <CheckSquare className="h-4 w-4 text-blue-600" /> : someSelected ? <CheckSquare className="h-4 w-4 text-blue-400" /> : <Square className="h-4 w-4" />}
+            {allSelected ? <CheckSquare className="h-4 w-4 text-blue-600" /> : someSelected ? <CheckSquare className="h-4 w-4 text-blue-600 dark:text-blue-400" /> : <Square className="h-4 w-4" />}
           </button>
         </td>
         <td className="px-3 py-2 font-mono text-xs font-semibold text-gray-700 dark:text-gray-200" colSpan={3}>

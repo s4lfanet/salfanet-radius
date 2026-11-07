@@ -37,11 +37,11 @@ export default function RadiusLogsPage() {
     );
 
     const getLogColor = (log: string) => {
-        if (log.includes('Error')) return 'text-red-400';
+        if (log.includes('Error')) return 'text-red-600 dark:text-red-400';
         if (log.includes('Warning')) return 'text-amber-400';
-        if (log.includes('Access-Accept')) return 'text-green-400';
-        if (log.includes('Access-Reject')) return 'text-red-400';
-        if (log.includes('Info')) return 'text-blue-400';
+        if (log.includes('Access-Accept')) return 'text-green-600 dark:text-green-400';
+        if (log.includes('Access-Reject')) return 'text-red-600 dark:text-red-400';
+        if (log.includes('Info')) return 'text-blue-600 dark:text-blue-400';
         if (log.includes('Debug')) return 'text-gray-500';
         return 'text-gray-300';
     };
