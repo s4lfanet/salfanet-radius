@@ -49,7 +49,7 @@ CrudConfig oltDeviceConfig(Json olt) {
     filterParam: 'onuStatus',
     searchHint: 'Cari SN, nama, pelanggan',
     searchTextOf: (o) => '${o['serialNumber']} ${o['name']} ${o['description']} ${mapOf(o, 'customer')?['name']} ${mapOf(o, 'customer')?['username']}',
-    titleOf: (o) => str(mapOf(o, 'customer'), 'name') ?? str(o, 'name') ?? str(o, 'serialNumber') ?? '-',
+    titleOf: (o) => str(mapOf(o, 'customer'), 'name') ?? str(o, 'description') ?? str(o, 'serialNumber') ?? '-',
     subtitleOf: (o) => '${o['frame'] ?? 0}/${o['slot'] ?? 0}/${o['port'] ?? 0}:${o['onuId'] ?? '-'} · ${o['serialNumber'] ?? '-'}',
     metaOf: (o) =>
         [if (o['rxPower'] != null) 'Rx ${o['rxPower']} dBm', str(o, 'onuType'), str(mapOf(o, 'customer'), 'username')].whereType<String>().join(' · '),
@@ -60,8 +60,7 @@ CrudConfig oltDeviceConfig(Json olt) {
         rows: [
           InfoRow('Posisi', '${o['frame'] ?? 0}/${o['slot'] ?? 0}/${o['port'] ?? 0} · ONU ${o['onuId'] ?? '-'}'),
           InfoRow('Serial number', str(o, 'serialNumber'), copyable: true),
-          InfoRow('Nama', str(o, 'name')),
-          InfoRow('Deskripsi', str(o, 'description')),
+          InfoRow('Nama / Deskripsi', str(o, 'description') ?? 'N/A'),
           InfoRow('Tipe', str(o, 'onuType')),
           InfoRow('Rx power', o['rxPower'] == null ? null : '${o['rxPower']} dBm'),
           InfoRow('Tx power', o['txPower'] == null ? null : '${o['txPower']} dBm'),
