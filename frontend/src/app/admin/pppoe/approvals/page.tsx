@@ -239,7 +239,7 @@ export default function ApprovalsPage() {
                 <div className="flex flex-row lg:flex-col gap-2 lg:w-40">
                   <button
                     onClick={() => handleApprove(user)}
-                    className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold bg-success hover:bg-success/90 text-success-foreground rounded-lg transition-colors"
                   >
                     <CheckCircle className="w-4 h-4" />
                     Setujui

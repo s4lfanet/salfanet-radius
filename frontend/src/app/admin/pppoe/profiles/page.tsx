@@ -503,7 +503,7 @@ export default function PPPoEProfilesPage() {
           <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition">
             <div className="flex items-center justify-between">
               <div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('pppoe.active')}</p><p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{profiles.filter(p => p.isActive).length}</p></div>
-              <CheckCircle2 className="h-7 w-7 text-green-400 drop-" />
+              <CheckCircle2 className="h-7 w-7 text-green-600 dark:text-green-400 drop-" />
             </div>
           </div>
           <div className="bg-card rounded-lg border border-border p-3">
@@ -613,18 +613,18 @@ export default function PPPoEProfilesPage() {
                           {profile.hpp != null && (
                             <div className="flex justify-between gap-4">
                               <span className="text-muted-foreground">Fee</span>
-                              <span className="text-green-400">Rp {(profile.price - profile.hpp).toLocaleString('id-ID')}</span>
+                              <span className="text-green-600 dark:text-green-400">Rp {(profile.price - profile.hpp).toLocaleString('id-ID')}</span>
                             </div>
                           )}
                           {profile.ppnActive && (
                             <>
                               <div className="flex justify-between gap-4">
                                 <span className="text-muted-foreground">PPN</span>
-                                <span className="text-yellow-400">{profile.ppnRate ?? 11}%</span>
+                                <span className="text-yellow-600 dark:text-yellow-400">{profile.ppnRate ?? 11}%</span>
                               </div>
                               <div className="flex justify-between gap-4">
                                 <span className="text-muted-foreground">Final</span>
-                                <span className="font-bold text-orange-400">Rp {Math.round(profile.price * (1 + (profile.ppnRate ?? 11) / 100)).toLocaleString('id-ID')}</span>
+                                <span className="font-bold text-orange-600 dark:text-orange-400">Rp {Math.round(profile.price * (1 + (profile.ppnRate ?? 11) / 100)).toLocaleString('id-ID')}</span>
                               </div>
                             </>
                           )}
@@ -636,16 +636,16 @@ export default function PPPoEProfilesPage() {
                       </td>
                       <td className="px-3 py-2.5 text-center">
                         {profile.isActive ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium bg-green-500/10 text-green-400 border border-green-500/20"><CheckCircle2 className="h-2.5 w-2.5 mr-1" />Aktif</span>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20"><CheckCircle2 className="h-2.5 w-2.5 mr-1" />Aktif</span>
                         ) : (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium bg-muted text-muted-foreground border border-border"><XCircle className="h-2.5 w-2.5 mr-1" />Nonaktif</span>
                         )}
                       </td>
                       <td className="px-3 py-2.5 text-center">
                         {profile.syncedToRadius ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20"><CheckCircle2 className="h-2.5 w-2.5 mr-1" />Sync</span>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"><CheckCircle2 className="h-2.5 w-2.5 mr-1" />Sync</span>
                         ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium bg-yellow-500/10 text-yellow-400 border border-yellow-500/20"><XCircle className="h-2.5 w-2.5 mr-1" />Pending</span>
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border border-yellow-500/20"><XCircle className="h-2.5 w-2.5 mr-1" />Pending</span>
                         )}
                       </td>
                       <td className="px-3 py-2.5 text-right">
@@ -865,7 +865,7 @@ export default function PPPoEProfilesPage() {
                 <ModalLabel required>Harga Jual (IDR)</ModalLabel>
                 <ModalInput type="number" min="0" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} placeholder="150000" required className={fieldErrors['price'] ? 'border-red-500' : ''} />
                 {(formData.price && formData.hpp) || (formData.price && formData.ppnActive) ? (
-                  <p className="text-[10px] text-green-400 mt-1">
+                  <p className="text-[10px] text-green-600 dark:text-green-400 mt-1">
                     {formData.hpp && formData.price && parseInt(formData.price) > 0 && parseInt(formData.hpp) > 0 && (
                       <span>Fee reseller: Rp {(parseInt(formData.price) - parseInt(formData.hpp)).toLocaleString('id-ID')}</span>
                     )}
@@ -1021,7 +1021,7 @@ export default function PPPoEProfilesPage() {
                       <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-primary/10 text-primary border border-border">{detailProfile.groupName}</span>
                       <span className="text-[10px] text-muted-foreground">{detailProfile.validityValue} {detailProfile.validityUnit === 'MONTHS' ? 'MONTHS' : 'DAYS'}</span>
                       {detailProfile.isActive
-                        ? <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium bg-green-500/10 text-green-400 border border-green-500/20"><CheckCircle2 className="h-2.5 w-2.5 mr-0.5" />Aktif</span>
+                        ? <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20"><CheckCircle2 className="h-2.5 w-2.5 mr-0.5" />Aktif</span>
                         : <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium bg-muted text-muted-foreground border border-border"><XCircle className="h-2.5 w-2.5 mr-0.5" />Nonaktif</span>
                       }
                     </div>
@@ -1070,14 +1070,14 @@ export default function PPPoEProfilesPage() {
                     {detailProfile.hpp != null && (
                       <div className="flex justify-between items-center px-3 py-2 text-xs">
                         <span className="text-muted-foreground">Fee Reseller</span>
-                        <span className="text-green-400">Rp {(detailProfile.price - detailProfile.hpp).toLocaleString('id-ID')}</span>
+                        <span className="text-green-600 dark:text-green-400">Rp {(detailProfile.price - detailProfile.hpp).toLocaleString('id-ID')}</span>
                       </div>
                     )}
                     {detailProfile.ppnActive && (
                       <>
                         <div className="flex justify-between items-center px-3 py-2 text-xs">
                           <span className="text-muted-foreground">PPN</span>
-                          <span className="text-yellow-400">{detailProfile.ppnRate ?? 11}%</span>
+                          <span className="text-yellow-600 dark:text-yellow-400">{detailProfile.ppnRate ?? 11}%</span>
                         </div>
                         <div className="flex justify-between items-center px-3 py-2 text-xs">
                           <span className="text-muted-foreground">Harga Final (incl. PPN)</span>
@@ -1100,7 +1100,7 @@ export default function PPPoEProfilesPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       {detailProfile.syncedToRadius
-                        ? <CheckCircle2 className="h-3.5 w-3.5 text-blue-400" />
+                        ? <CheckCircle2 className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
                         : <XCircle className="h-3.5 w-3.5 text-muted-foreground" />}
                       <span className="text-muted-foreground">RADIUS Synced</span>
                     </div>
@@ -1120,7 +1120,7 @@ export default function PPPoEProfilesPage() {
                   <button
                     onClick={() => { handleSyncRadius(detailProfile); setDetailProfile(null); }}
                     disabled={syncingRadiusId === detailProfile.id}
-                    className="flex items-center justify-center gap-2 px-3 py-2 text-xs border border-blue-500/30 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
+                    className="flex items-center justify-center gap-2 px-3 py-2 text-xs border border-primary/30 text-primary hover:bg-primary/10 rounded-lg transition-colors"
                   >
                     <Radio className="h-3.5 w-3.5" />Sync FreeRADIUS
                   </button>

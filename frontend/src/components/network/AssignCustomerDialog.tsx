@@ -410,7 +410,7 @@ export default function AssignCustomerDialog({
           <button
             onClick={handleAssign}
             disabled={!selectedCustomer || !selectedODP || !selectedPort || loading}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition-colors disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-6 py-2 bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground rounded-lg transition-colors disabled:cursor-not-allowed flex items-center gap-2"
           >
             {loading ? (
               <>
