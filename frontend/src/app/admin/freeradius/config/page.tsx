@@ -188,7 +188,7 @@ export default function RadiusConfigPage() {
                                     ) : (
                                         <ChevronRight className="w-3 h-3" />
                                     )}
-                                    <Folder className={`w-3.5 h-3.5 ${expandedGroups[group.id] ? 'text-blue-400' : 'text-gray-400'}`} />
+                                    <Folder className={`w-3.5 h-3.5 ${expandedGroups[group.id] ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'}`} />
                                     {group.name}
                                 </button>
 

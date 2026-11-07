@@ -745,11 +745,11 @@ export default function WhatsAppProvidersPage() {
             ) : qrConnected ? (
               <div className="flex flex-col items-center space-y-3 py-6">
                 <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center ">
-                  <svg className="w-10 h-10 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <svg className="w-10 h-10 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <p className="text-base font-semibold text-green-400">WhatsApp Berhasil Terhubung!</p>
+                <p className="text-base font-semibold text-green-600 dark:text-green-400">WhatsApp Berhasil Terhubung!</p>
                 <p className="text-xs text-muted-foreground text-center">Nomor sudah terdaftar dan siap mengirim pesan.</p>
               </div>
             ) : qrImage ? (

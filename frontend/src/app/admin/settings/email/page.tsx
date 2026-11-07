@@ -1431,8 +1431,8 @@ function HistoryTab() {
           </div>
           <div className="p-5 overflow-y-auto flex-1 space-y-3 text-sm">
             <div className="flex gap-2"><span className="font-semibold text-gray-400 min-w-[60px]">To:</span><span className="text-gray-200">{viewingEmail.toEmail}{viewingEmail.toName && <span className="text-primary"> ({viewingEmail.toName})</span>}</span></div>
-            <div className="flex gap-2"><span className="font-semibold text-gray-400 min-w-[60px]">Status:</span><span className={viewingEmail.status === 'sent' ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>{viewingEmail.status.toUpperCase()}</span></div>
-            {viewingEmail.error && <div className="flex gap-2"><span className="font-semibold text-gray-400 min-w-[60px]">Error:</span><span className="text-red-400">{viewingEmail.error}</span></div>}
+            <div className="flex gap-2"><span className="font-semibold text-gray-400 min-w-[60px]">Status:</span><span className={viewingEmail.status === 'sent' ? 'text-green-600 dark:text-green-400 font-medium' : 'text-red-600 dark:text-red-400 font-medium'}>{viewingEmail.status.toUpperCase()}</span></div>
+            {viewingEmail.error && <div className="flex gap-2"><span className="font-semibold text-gray-400 min-w-[60px]">Error:</span><span className="text-red-600 dark:text-red-400">{viewingEmail.error}</span></div>}
             <div className="mt-4 pt-4 border-t border-gray-700">
               <div className="font-semibold text-gray-400 mb-2">Email Content:</div>
               <div className="max-h-96 overflow-y-auto bg-gray-800 border border-gray-700 p-4 rounded text-gray-200" dangerouslySetInnerHTML={{ __html: viewingEmail.body }} />

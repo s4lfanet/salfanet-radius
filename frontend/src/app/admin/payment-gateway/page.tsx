@@ -929,7 +929,7 @@ export default function PaymentGatewayPage() {
               <button
                 onClick={saveQris}
                 disabled={saving || (qrisForm.enabled && !qrisForm.staticCode)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium rounded-lg disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium rounded-lg disabled:opacity-50"
               >
                 {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
                 Save QRIS Mandiri Configuration

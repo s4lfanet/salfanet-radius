@@ -150,8 +150,8 @@ export default function SecuritySettingsPage() {
       {/* Success Banner */}
       {success && (
         <div className="p-4 bg-green-500/10 border border-green-500/40 rounded-xl flex items-center gap-3">
-          <CheckCircle className="w-5 h-5 text-green-400 shrink-0" />
-          <p className="text-sm text-green-400">{success}</p>
+          <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 shrink-0" />
+          <p className="text-sm text-green-600 dark:text-green-400">{success}</p>
         </div>
       )}
 
@@ -160,12 +160,12 @@ export default function SecuritySettingsPage() {
         <div className="bg-card dark:bg-gradient-to-br dark:from-slate-800/60 dark:to-slate-900/60 border border-border rounded-2xl p-6">
           <div className="flex items-start gap-4">
             <div className={`p-3 rounded-xl ${enabled ? 'bg-green-500/20 border border-green-500/30' : 'bg-muted dark:bg-slate-700/50 border border-border dark:border-slate-600/50'}`}>
-              <Shield className={`w-7 h-7 ${enabled ? 'text-green-400' : 'text-muted-foreground dark:text-slate-400'}`} />
+              <Shield className={`w-7 h-7 ${enabled ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground dark:text-slate-400'}`} />
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <h2 className="text-lg font-semibold text-foreground">Two-Factor Authentication</h2>
-                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${enabled ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'}`}>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${enabled ? 'bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30' : 'bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30'}`}>
                   {enabled ? 'ENABLED' : 'DISABLED'}
                 </span>
               </div>
@@ -177,7 +177,7 @@ export default function SecuritySettingsPage() {
               {enabled ? (
                 <button
                   onClick={() => { setPhase('disable-confirm'); setError(''); }}
-                  className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-400 hover:text-red-300 rounded-lg text-sm font-medium transition-colors"
+                  className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-600 dark:text-red-400 hover:text-red-300 rounded-lg text-sm font-medium transition-colors"
                 >
                   Disable 2FA
                 </button>
@@ -267,7 +267,7 @@ export default function SecuritySettingsPage() {
 
           {error && (
             <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-              <p className="text-sm text-red-400">{error}</p>
+              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
             </div>
           )}
 
@@ -312,21 +312,21 @@ export default function SecuritySettingsPage() {
         <div className="bg-card dark:bg-gradient-to-br dark:from-slate-800/60 dark:to-slate-900/60 border border-destructive/30 dark:border-red-500/30 rounded-2xl p-6 space-y-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-red-400" />
+              <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
               <h2 className="text-lg font-semibold text-foreground">Disable Two-Factor Authentication</h2>
             </div>
             <button onClick={cancelPhase} className="text-muted-foreground hover:text-foreground dark:text-slate-400 dark:hover:text-white"><X className="w-5 h-5" /></button>
           </div>
 
           <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-            <p className="text-sm text-red-400">
+            <p className="text-sm text-red-600 dark:text-red-400">
               Disabling 2FA will make your account less secure. You will only need your password to log in.
             </p>
           </div>
 
           {error && (
             <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-              <p className="text-sm text-red-400">{error}</p>
+              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
             </div>
           )}
 

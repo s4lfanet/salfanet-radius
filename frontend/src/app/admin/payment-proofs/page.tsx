@@ -122,7 +122,7 @@ export default function AdminPaymentProofsPage() {
             onClick={() => { setFilter(s); setSearch(''); setVisibleCount(STEP); }}
             className={`px-4 py-1.5 text-xs font-medium rounded-lg transition ${
               filter === s
-                ? 'bg-emerald-600 text-white'
+                ? 'bg-primary text-primary-foreground'
                 : 'border border-border bg-card text-muted-foreground hover:bg-muted'
             }`}
           >
@@ -218,7 +218,7 @@ export default function AdminPaymentProofsPage() {
                               <button
                                 onClick={() => handleApprove(proof)}
                                 disabled={actionLoading === proof.id}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-success text-success-foreground hover:bg-success/90 rounded-lg disabled:opacity-50 transition"
                               >
                                 {actionLoading === proof.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                               </button>

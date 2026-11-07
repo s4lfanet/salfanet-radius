@@ -557,15 +557,15 @@ export default function HotspotVoucherPage() {
             <div className="flex justify-center mb-5">
               {deleteOverlay.phase === 'done' ? (
                 <div className="w-16 h-16 rounded-full bg-green-500/20 border-2 border-green-400 flex items-center justify-center">
-                  <Check className="h-8 w-8 text-green-400" />
+                  <Check className="h-8 w-8 text-green-600 dark:text-green-400" />
                 </div>
               ) : deleteOverlay.phase === 'error' ? (
                 <div className="w-16 h-16 rounded-full bg-red-500/20 border-2 border-red-400 flex items-center justify-center">
-                  <Trash2 className="h-8 w-8 text-red-400" />
+                  <Trash2 className="h-8 w-8 text-red-600 dark:text-red-400" />
                 </div>
               ) : (
                 <div className="w-16 h-16 rounded-full bg-red-500/20 border-2 border-red-500 flex items-center justify-center animate-pulse">
-                  <Loader2 className="h-8 w-8 text-red-400 animate-spin" />
+                  <Loader2 className="h-8 w-8 text-red-600 dark:text-red-400 animate-spin" />
                 </div>
               )}
             </div>
@@ -582,14 +582,14 @@ export default function HotspotVoucherPage() {
             )}
             {deleteOverlay.phase === 'done' && (
               <div className="mt-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-center">
-                <p className="text-sm font-semibold text-green-400">{deleteOverlay.count.toLocaleString()} voucher berhasil dihapus</p>
+                <p className="text-sm font-semibold text-green-600 dark:text-green-400">{deleteOverlay.count.toLocaleString()} voucher berhasil dihapus</p>
                 <p className="text-xs text-muted-foreground mt-0.5">Halaman akan diperbarui otomatis...</p>
               </div>
             )}
             {deleteOverlay.phase === 'error' && (
               <div className="mt-4 space-y-3">
                 <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-center">
-                  <p className="text-sm text-red-400">{deleteOverlay.errorMsg}</p>
+                  <p className="text-sm text-red-600 dark:text-red-400">{deleteOverlay.errorMsg}</p>
                 </div>
                 <Button variant="outline" size="sm" className="w-full" onClick={() => setDeleteOverlay({ open: false, phase: '', count: 0, label: '', errorMsg: '' })}>Tutup</Button>
               </div>
@@ -605,11 +605,11 @@ export default function HotspotVoucherPage() {
             <div className="flex justify-center mb-5">
               {genOverlay.phase === 'done' ? (
                 <div className="w-16 h-16 rounded-full bg-green-500/20 border-2 border-green-400 flex items-center justify-center">
-                  <Check className="h-8 w-8 text-green-400" />
+                  <Check className="h-8 w-8 text-green-600 dark:text-green-400" />
                 </div>
               ) : genOverlay.phase === 'error' ? (
                 <div className="w-16 h-16 rounded-full bg-red-500/20 border-2 border-red-400 flex items-center justify-center">
-                  <Ticket className="h-8 w-8 text-red-400" />
+                  <Ticket className="h-8 w-8 text-red-600 dark:text-red-400" />
                 </div>
               ) : (
                 <div className="w-16 h-16 rounded-full bg-primary/10 border border-primary flex items-center justify-center">
@@ -647,7 +647,7 @@ export default function HotspotVoucherPage() {
             {/* Success info */}
             {genOverlay.phase === 'done' && (
               <div className="mt-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg text-center">
-                <p className="text-sm font-semibold text-green-400">{genOverlay.count.toLocaleString()} voucher berhasil dibuat</p>
+                <p className="text-sm font-semibold text-green-600 dark:text-green-400">{genOverlay.count.toLocaleString()} voucher berhasil dibuat</p>
                 {genOverlay.batchCode && <p className="text-xs text-muted-foreground mt-1">Batch: {genOverlay.batchCode}</p>}
                 <p className="text-xs text-muted-foreground mt-0.5">Halaman akan diperbarui otomatis...</p>
               </div>
@@ -656,7 +656,7 @@ export default function HotspotVoucherPage() {
             {genOverlay.phase === 'error' && (
               <div className="mt-4 space-y-3">
                 <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg text-center">
-                  <p className="text-sm text-red-400">{genOverlay.errorMsg}</p>
+                  <p className="text-sm text-red-600 dark:text-red-400">{genOverlay.errorMsg}</p>
                   {genOverlay.current > 0 && (
                     <p className="text-xs text-muted-foreground mt-1">{genOverlay.current.toLocaleString()} voucher sudah berhasil sebelum error</p>
                   )}
@@ -898,16 +898,16 @@ export default function HotspotVoucherPage() {
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition relative">
           <div className="flex items-center justify-between"><div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('common.total')}</p><p className="text-lg sm:text-2xl font-bold text-foreground drop-shadow-none mt-1">{stats.total}</p></div><Ticket className="h-6 w-6 text-brand-500 drop-" /></div>
-          {isSSEConnected && <div className="absolute top-2 right-2" title="Real-time updates active"><Wifi className="h-3 w-3 text-green-400 animate-pulse" /></div>}
+          {isSSEConnected && <div className="absolute top-2 right-2" title="Real-time updates active"><Wifi className="h-3 w-3 text-green-600 dark:text-green-400 animate-pulse" /></div>}
         </div>
         <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition">
           <div className="flex items-center justify-between"><div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('hotspot.waiting')}</p><p className="text-lg sm:text-2xl font-bold text-foreground drop-shadow-none mt-1">{stats.waiting}</p></div><Ticket className="h-6 w-6 text-amber-400 drop-" /></div>
         </div>
         <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition">
-          <div className="flex items-center justify-between"><div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('hotspot.active')}</p><p className="text-lg sm:text-2xl font-bold text-foreground drop-shadow-none mt-1">{stats.active}</p></div><Ticket className="h-6 w-6 text-green-400 drop-" /></div>
+          <div className="flex items-center justify-between"><div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('hotspot.active')}</p><p className="text-lg sm:text-2xl font-bold text-foreground drop-shadow-none mt-1">{stats.active}</p></div><Ticket className="h-6 w-6 text-green-600 dark:text-green-400 drop-" /></div>
         </div>
         <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition">
-          <div className="flex items-center justify-between"><div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('hotspot.expired')}</p><p className="text-lg sm:text-2xl font-bold text-foreground drop-shadow-none mt-1">{stats.expired}</p></div><Ticket className="h-6 w-6 text-red-400 drop-shadow-md shadow-red-500/40" /></div>
+          <div className="flex items-center justify-between"><div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('hotspot.expired')}</p><p className="text-lg sm:text-2xl font-bold text-foreground drop-shadow-none mt-1">{stats.expired}</p></div><Ticket className="h-6 w-6 text-red-600 dark:text-red-400 drop-shadow-md shadow-red-500/40" /></div>
         </div>
         <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition col-span-2 sm:col-span-1">
           <div className="flex items-center justify-between"><div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('common.total')} {t('common.price')}</p><p className="text-xl font-bold text-foreground drop-shadow-none mt-1">{formatCurrency(stats.totalValue)}</p></div><Ticket className="h-6 w-6 text-pink-500 drop-" /></div>
