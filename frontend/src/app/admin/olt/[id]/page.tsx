@@ -1809,7 +1809,7 @@ function ONUDetailModal({ oltId, onu, onClose }: { oltId: string; onu: ONU; onCl
                   ['Tipe', parsed.Type ?? onu.onuType],
                   ['Vendor', summary.vendor],
                   ['Nama di OLT', present(parsed.Name) ?? present(onu.description) ?? 'N/A'],
-                  ['Deskripsi', parsed.Description ?? summary.description],
+                  ['Deskripsi', present(parsed.Description) ?? present(summary.description) ?? present(onu.description) ?? 'N/A'],
                   ['Admin state', summary.adminState],
                   ['Config state', parsed['Config state']],
                   ['Mode autentikasi', summary.authenticationMode],
