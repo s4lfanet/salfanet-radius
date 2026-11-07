@@ -11,6 +11,7 @@ import { useApiQuery, useApiMutation, useQueryClient, buildQueryKey } from '@/li
 import type { OLTListResponse, RouterListResponse } from '@/types/api';
 import { NumberInput } from '@/components/ui/number-input';
 
+import { ToggleRow } from '@/components/ui/toggle-row';
 // Vendor → available models (aligned with backend vendor libs + OIDs)
 const VENDOR_MODELS: Record<string, Array<{ value: string; label: string; ponType: string }>> = {
   zte: [
@@ -490,7 +491,7 @@ export default function OLTsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <RefreshCcw className="h-6 w-6 animate-spin text-teal-600" />
+        <RefreshCcw className="h-6 w-6 animate-spin text-brand-500" />
       </div>
     );
   }
@@ -501,7 +502,7 @@ export default function OLTsPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-            <Server className="h-5 w-5 text-teal-600" />
+            <Server className="h-5 w-5 text-brand-500" />
             {t('olt.title')}
           </h1>
           <p className="text-xs text-muted-foreground">
@@ -511,14 +512,14 @@ export default function OLTsPage() {
         <div className="grid grid-cols-2 sm:flex gap-2 w-full sm:w-auto">
           <button
             onClick={() => setIsImportDialogOpen(true)}
-            className="inline-flex items-center justify-center min-h-9 px-3 py-1.5 text-xs bg-green-600 hover:bg-green-700 text-white rounded"
+            className="inline-flex items-center justify-center min-h-9 px-3 py-1.5 text-xs border border-border bg-card hover:bg-accent/10 text-foreground rounded"
           >
             <Upload className="h-3 w-3 mr-1" />
             {t('olt.import')}
           </button>
           <button
             onClick={() => { resetForm(); setEditingOlt(null); setIsDialogOpen(true); }}
-            className="inline-flex items-center justify-center min-h-9 px-3 py-1.5 text-xs bg-teal-600 hover:bg-teal-700 text-white rounded"
+            className="inline-flex items-center justify-center min-h-9 px-3 py-1.5 text-xs bg-brand-500 hover:bg-brand-600 text-white rounded"
           >
             <Plus className="h-3 w-3 mr-1" />
             {t('olt.add')}
@@ -532,9 +533,9 @@ export default function OLTsPage() {
           <div className="flex flex-col-reverse sm:flex-row items-start sm:items-center justify-between gap-1">
             <div>
               <p className="text-[10px] sm:text-xs text-gray-500 uppercase leading-tight">{t('common.total')} {t('nav.olt')}</p>
-              <p className="text-xl font-bold text-teal-600">{olts.length}</p>
+              <p className="text-xl font-bold text-brand-500">{olts.length}</p>
             </div>
-            <Server className="h-5 w-5 text-teal-600" />
+            <Server className="h-5 w-5 text-brand-500" />
           </div>
         </div>
         <div className="bg-card rounded-lg border border-border p-3 sm:p-4 min-w-0">
@@ -601,7 +602,7 @@ export default function OLTsPage() {
                     <tr key={olt.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-2">
-                        <Server className="h-4 w-4 text-teal-600" />
+                        <Server className="h-4 w-4 text-brand-500" />
                         <span className="text-xs font-medium">{olt.name}</span>
                       </div>
                     </td>
@@ -831,7 +832,7 @@ export default function OLTsPage() {
               {/* Header */}
               <div className="flex items-start justify-between gap-2 mb-3 min-w-0">
                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <Server className="h-4 w-4 text-teal-600 flex-shrink-0" />
+                  <Server className="h-4 w-4 text-brand-500 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium text-sm text-foreground truncate">{olt.name}</h3>
                     <p className="text-xs font-mono text-gray-500 truncate">{olt.ipAddress}</p>
@@ -1121,7 +1122,7 @@ export default function OLTsPage() {
                     />
                   )}
                   {formData.vendor && formData.model && VENDOR_MODELS[formData.vendor] && (
-                    <p className="text-[9px] text-teal-600 mt-0.5">
+                    <p className="text-[9px] text-brand-500 mt-0.5">
                       PON: {VENDOR_MODELS[formData.vendor].find((m) => m.value === formData.model)?.ponType ?? ''}
                     </p>
                   )}
@@ -1193,7 +1194,7 @@ export default function OLTsPage() {
                         type="checkbox"
                         checked={formData.clearSnmpWriteCommunity}
                         onChange={(e) => setFormData({ ...formData, clearSnmpWriteCommunity: e.target.checked, snmpWriteCommunity: '' })}
-                        className="w-3 h-3 rounded"
+                        className="w-4 h-4 rounded accent-brand-500"
                       />
                       <span className="text-[10px]">{t('olt.snmpWriteClear')}</span>
                     </label>
@@ -1203,15 +1204,7 @@ export default function OLTsPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.sshEnabled}
-                      onChange={(e) => setFormData({ ...formData, sshEnabled: e.target.checked })}
-                      className="w-3 h-3 rounded"
-                    />
-                    <span className="text-xs">{t('olt.sshEnabled')}</span>
-                  </label>
+                  <ToggleRow checked={formData.sshEnabled} onCheckedChange={(v) => setFormData({ ...formData, sshEnabled: v })} label={t('olt.sshEnabled')} />
                   {formData.sshEnabled && (
                     <NumberInput
                       type="number"
@@ -1225,15 +1218,7 @@ export default function OLTsPage() {
                   )}
                 </div>
                 <div className="space-y-1.5">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={formData.telnetEnabled}
-                      onChange={(e) => setFormData({ ...formData, telnetEnabled: e.target.checked })}
-                      className="w-3 h-3 rounded"
-                    />
-                    <span className="text-xs">{t('olt.telnetEnabled')}</span>
-                  </label>
+                  <ToggleRow checked={formData.telnetEnabled} onCheckedChange={(v) => setFormData({ ...formData, telnetEnabled: v })} label={t('olt.telnetEnabled')} />
                   {formData.telnetEnabled && (
                     <NumberInput
                       type="number"
@@ -1283,7 +1268,7 @@ export default function OLTsPage() {
                     <button
                       type="button"
                       onClick={() => setShowMapPicker(true)}
-                      className="inline-flex items-center px-2 py-0.5 text-[10px] bg-teal-600 text-white rounded"
+                      className="inline-flex items-center px-2 py-0.5 text-[10px] bg-brand-500 text-white rounded"
                     >
                       <Map className="h-2.5 w-2.5 mr-1" />
                       {t('common.openMap')}
@@ -1378,7 +1363,7 @@ export default function OLTsPage() {
                           type="checkbox"
                           checked={formData.routerIds.includes(router.id)}
                           onChange={() => toggleRouter(router.id)}
-                          className="w-3 h-3 rounded"
+                          className="w-4 h-4 rounded accent-brand-500"
                         />
                         <RouterIcon className="h-3 w-3 text-gray-500" />
                         <span className="text-xs">{router.name}</span>
@@ -1392,25 +1377,14 @@ export default function OLTsPage() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="followRoad"
-                  checked={formData.followRoad}
-                  onChange={(e) => setFormData({ ...formData, followRoad: e.target.checked })}
-                  className="w-3 h-3 rounded"
-                />
-                <label htmlFor="followRoad" className="text-xs">
-                  Follow road path on map
-                </label>
-              </div>
+              <ToggleRow checked={formData.followRoad} onCheckedChange={(v) => setFormData({ ...formData, followRoad: v })} label="Follow road path on map" />
 
               <div className="flex justify-end gap-2 pt-3 border-t dark:border-gray-800">
                 <button
                   type="button"
                   onClick={handleTestConnection}
                   disabled={testingConnection || !formData.ipAddress}
-                  className="px-3 py-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                  className="px-3 py-1.5 text-xs bg-brand-500 hover:bg-brand-600 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                 >
                   {testingConnection ? (
                     <>
@@ -1438,7 +1412,7 @@ export default function OLTsPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-3 py-1.5 text-xs bg-teal-600 hover:bg-teal-700 text-white rounded"
+                  className="px-3 py-1.5 text-xs bg-brand-500 hover:bg-brand-600 text-white rounded"
                 >
                   {editingOlt ? 'Update' : 'Create'}
                 </button>
@@ -1483,7 +1457,7 @@ export default function OLTsPage() {
                 </p>
                 <button
                   onClick={handleDownloadTemplate}
-                  className="w-full inline-flex items-center justify-center px-3 py-2 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded"
+                  className="w-full inline-flex items-center justify-center px-3 py-2 text-xs bg-brand-500 hover:bg-brand-600 text-white rounded"
                 >
                   <Download className="h-3 w-3 mr-2" />
                   Download Template Excel
