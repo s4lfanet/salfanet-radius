@@ -148,7 +148,7 @@ export default function OLTMonitoringPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <RefreshCw className="h-6 w-6 animate-spin text-teal-600" />
+        <RefreshCw className="h-6 w-6 animate-spin text-brand-500" />
       </div>
     );
   }
@@ -159,7 +159,7 @@ export default function OLTMonitoringPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-lg font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-            <Activity className="h-5 w-5 text-teal-600" />
+            <Activity className="h-5 w-5 text-brand-500" />
             OLT Monitoring
           </h1>
           <p className="text-xs text-muted-foreground">
@@ -180,7 +180,7 @@ export default function OLTMonitoringPage() {
             <button
               onClick={handlePollAll}
               disabled={pollingAll}
-              className="inline-flex items-center justify-center min-h-9 px-3 py-1.5 text-xs bg-teal-600 hover:bg-teal-700 text-white rounded disabled:opacity-60"
+              className="inline-flex items-center justify-center min-h-9 px-3 py-1.5 text-xs bg-brand-500 hover:bg-brand-600 text-white rounded disabled:opacity-60"
             >
               <Zap className={`h-3 w-3 mr-1 ${pollingAll ? 'animate-pulse' : ''}`} />
               Poll Semua
@@ -206,7 +206,7 @@ export default function OLTMonitoringPage() {
         <div className="bg-card rounded-lg border border-slate-200 dark:border-slate-800 p-3">
           <div className="flex items-center justify-between mb-1">
             <p className="text-[11px] text-slate-500 uppercase font-medium tracking-wide">OLT</p>
-            <Server className="h-4 w-4 text-teal-500" />
+            <Server className="h-4 w-4 text-brand-500" />
           </div>
           <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">{olts.length}</p>
           <div className="flex items-center gap-1.5 mt-1">
@@ -282,14 +282,14 @@ export default function OLTMonitoringPage() {
               placeholder="Cari nama atau IP..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full min-h-9 pl-8 pr-3 py-1.5 text-xs border border-border rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+              className="w-full min-h-9 pl-8 pr-3 py-1.5 text-xs border border-border rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
           </div>
           <div className="grid grid-cols-2 sm:flex gap-2">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full min-h-9 px-2 py-1.5 text-xs border border-border rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+              className="w-full min-h-9 px-2 py-1.5 text-xs border border-border rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500"
             >
               <option value="all">Semua Status</option>
               <option value="online">Online Only</option>
@@ -299,7 +299,7 @@ export default function OLTMonitoringPage() {
               <select
                 value={sortKey}
                 onChange={(e) => setSortKey(e.target.value as SortKey)}
-                className="w-full min-h-9 pl-7 pr-6 py-1.5 text-xs border border-border rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none"
+                className="w-full min-h-9 pl-7 pr-6 py-1.5 text-xs border border-border rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500 appearance-none"
               >
                 <option value="status">Urutkan: Status</option>
                 <option value="name">Urutkan: Nama</option>
@@ -323,7 +323,7 @@ export default function OLTMonitoringPage() {
               ? 'Coba ubah filter pencarian'
               : 'Tambah OLT dari menu Network → OLT, lalu aktifkan monitoring'}
           </p>
-          <Link href="/admin/network/olts" className="mt-4 inline-flex items-center px-3 py-1.5 text-xs bg-teal-600 hover:bg-teal-700 text-white rounded">
+          <Link href="/admin/network/olts" className="mt-4 inline-flex items-center px-3 py-1.5 text-xs bg-brand-500 hover:bg-brand-600 text-white rounded">
             <Server className="h-3 w-3 mr-1" />
             Kelola OLT
           </Link>
@@ -448,7 +448,7 @@ export default function OLTMonitoringPage() {
                 <div className="px-3 py-2.5 flex flex-wrap items-center gap-2">
                   <Link
                     href={`/admin/olt/${olt.id}`}
-                    className="flex-1 min-w-[6rem] inline-flex items-center justify-center min-h-9 px-2 py-1 text-xs bg-teal-50 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800 hover:bg-teal-100 dark:hover:bg-teal-900/50 rounded text-teal-700 dark:text-teal-400 font-medium"
+                    className="flex-1 min-w-[6rem] inline-flex items-center justify-center min-h-9 px-2 py-1 text-xs bg-brand-50 dark:bg-brand-900/30 border border-brand-200 dark:border-brand-700 hover:bg-brand-100 dark:hover:bg-brand-900/50 rounded text-brand-600 dark:text-brand-400 font-medium"
                   >
                     Detail
                   </Link>

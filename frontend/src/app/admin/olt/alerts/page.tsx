@@ -100,7 +100,7 @@ export default function OLTAlertsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <RefreshCw className="h-6 w-6 animate-spin text-teal-600" />
+        <RefreshCw className="h-6 w-6 animate-spin text-brand-500" />
       </div>
     );
   }
@@ -136,7 +136,7 @@ export default function OLTAlertsPage() {
             <button
               onClick={handleResolveAll}
               disabled={resolvingAll}
-              className="inline-flex items-center px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white rounded disabled:opacity-60"
+              className="inline-flex items-center px-3 py-1.5 text-xs bg-brand-500 hover:bg-brand-600 text-white rounded disabled:opacity-60"
             >
               <ShieldCheck className={`h-3 w-3 mr-1 ${resolvingAll ? 'animate-pulse' : ''}`} />
               Selesaikan Semua ({unresolvedCount})
@@ -186,7 +186,7 @@ export default function OLTAlertsPage() {
           <select
             value={resolvedFilter}
             onChange={(e) => setResolvedFilter(e.target.value)}
-            className="px-2 py-1.5 text-xs border border-border rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            className="px-2 py-1.5 text-xs border border-border rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500"
           >
             <option value="all">Semua Alert</option>
             <option value="false">Belum Selesai</option>
@@ -195,7 +195,7 @@ export default function OLTAlertsPage() {
           <select
             value={severityFilter}
             onChange={(e) => setSeverityFilter(e.target.value)}
-            className="px-2 py-1.5 text-xs border border-border rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            className="px-2 py-1.5 text-xs border border-border rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500"
           >
             <option value="all">Semua Severity</option>
             <option value="critical">Critical</option>
@@ -205,7 +205,7 @@ export default function OLTAlertsPage() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-2 py-1.5 text-xs border border-border rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            className="px-2 py-1.5 text-xs border border-border rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-brand-500"
           >
             <option value="all">Semua Tipe</option>
             <option value="olt_offline">OLT Offline</option>
@@ -275,7 +275,7 @@ export default function OLTAlertsPage() {
                         {alert.olt && (
                           <span className="flex items-center gap-0.5">
                             <Wifi className="h-2.5 w-2.5" />
-                            <Link href={`/admin/olt/${alert.olt.id}`} className="hover:text-teal-600 dark:hover:text-teal-400">
+                            <Link href={`/admin/olt/${alert.olt.id}`} className="hover:text-brand-500 dark:hover:text-brand-400">
                               {alert.olt.name}
                             </Link>
                             <span className="font-mono">({alert.olt.ipAddress})</span>

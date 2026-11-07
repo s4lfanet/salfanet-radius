@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { ToggleRow } from '@/components/ui/toggle-row';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Server, RefreshCw, AlertCircle, Wifi, WifiOff, Clock, Activity, ArrowLeft, Save, TestTube, Power, Download, Signal, Plus, X, Zap, Eye, UserPlus, Trash2, Settings, Network, HardDrive } from 'lucide-react';
@@ -272,7 +273,7 @@ function UplinkPortModal({ oltId, port, onClose }: { oltId: string; port: string
               setNewVlanId('');
             }}
             disabled={!newVlanId || actionLoading}
-            className="px-3 py-1 text-xs rounded bg-blue-700 hover:bg-blue-600 text-white disabled:opacity-50">
+            className="px-3 py-1 text-xs rounded bg-brand-600 hover:bg-brand-500 text-white disabled:opacity-50">
             {vlanMode === 'access' ? 'Set PVID' : 'Add VLAN'}
           </button>
         </div>
@@ -2358,7 +2359,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
             </div>
           </CardContent>
         </Card>
-        <Card className="border-l-4 border-l-teal-500 col-span-2 md:col-span-1">
+        <Card className="border-l-4 border-l-brand-500 col-span-2 md:col-span-1">
           <CardContent className="px-4 pt-4 pb-4">
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
               <Activity className="h-3 w-3" /> ONUs
@@ -2432,7 +2433,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
               </div>
               <div className="w-full bg-blue-200 rounded-full h-2">
                 <div
-                  className="bg-blue-600 h-2 rounded-full transition duration-300"
+                  className="bg-brand-500 h-2 rounded-full transition duration-300"
                   style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
                 />
               </div>
@@ -2456,7 +2457,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                   type="checkbox"
                   checked={selectedOnus.size === filteredOnus.length}
                   onChange={handleSelectAll}
-                  className="w-5 h-5 text-blue-600 rounded"
+                  className="w-5 h-5 rounded accent-brand-500"
                 />
                 Pilih semua ({filteredOnus.length})
               </label>
@@ -2468,7 +2469,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
               const signalQuality = getSignalQuality(onu.rxPower);
               const unregistered = onu.status === 'auth_failed';
               const busy = deletingOnu === onu.id || rebootingOnu !== null || batchRebooting;
-              const btn = 'inline-flex items-center justify-center gap-1.5 min-h-9 px-2 py-1.5 text-xs font-medium text-white rounded-md disabled:opacity-50 transition-colors';
+              const btn = 'inline-flex items-center justify-center gap-1.5 min-h-9 px-2 py-1.5 text-xs font-medium rounded-md disabled:opacity-50 transition-colors';
               return (
                 <div key={onu.id} className="rounded-lg border border-border bg-card p-3">
                   <div className="flex items-start gap-2.5">
@@ -2476,7 +2477,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                       type="checkbox"
                       checked={selectedOnus.has(onu.id)}
                       onChange={() => handleSelectOnu(onu.id)}
-                      className="mt-0.5 w-5 h-5 shrink-0 text-blue-600 rounded"
+                      className="mt-0.5 w-5 h-5 shrink-0 rounded accent-brand-500"
                       aria-label="Pilih ONU"
                     />
                     <div className="min-w-0 flex-1">
@@ -2541,7 +2542,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                         <button
                           onClick={() => handleRebootOnu(onu.id)}
                           disabled={rebootingOnu === onu.id}
-                          className={`${btn} bg-red-600 hover:bg-red-700`}
+                          className={`${btn} bg-red-600 hover:bg-red-700 text-white border border-red-600`}
                         >
                           {rebootingOnu === onu.id ? 'Rebooting...' : 'Konfirmasi reboot'}
                         </button>
@@ -2554,33 +2555,33 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                       </div>
                     ) : (
                       <div className="grid grid-cols-3 gap-2">
-                        <button onClick={() => setDetailOnu(onu)} className={`${btn} bg-blue-600 hover:bg-blue-700`}>
+                        <button onClick={() => setDetailOnu(onu)} className={`${btn} bg-brand-500 hover:bg-brand-600 text-white`}>
                           <Eye className="w-3.5 h-3.5" />Detail
                         </button>
                         {unregistered ? (
-                          <button onClick={() => setRegisteringOnu(onu)} className={`${btn} bg-green-600 hover:bg-green-700`}>
+                          <button onClick={() => setRegisteringOnu(onu)} className={`${btn} bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/30 dark:hover:bg-emerald-500/20`}>
                             <Plus className="w-3.5 h-3.5" />Register
                           </button>
                         ) : (
-                          <button onClick={() => setAssigningOnu(onu)} disabled={deletingOnu === onu.id} className={`${btn} bg-indigo-600 hover:bg-indigo-700`}>
+                          <button onClick={() => setAssigningOnu(onu)} disabled={deletingOnu === onu.id} className={`${btn} bg-brand-50 text-brand-600 border border-brand-200 hover:bg-brand-100 dark:bg-brand-500/10 dark:text-brand-300 dark:border-brand-500/30 dark:hover:bg-brand-500/20`}>
                             <UserPlus className="w-3.5 h-3.5" />Assign
                           </button>
                         )}
                         {unregistered ? (
-                          <button onClick={() => handleDeleteOnu(onu)} disabled={deletingOnu === onu.id} className={`${btn} bg-red-600 hover:bg-red-700`}>
+                          <button onClick={() => handleDeleteOnu(onu)} disabled={deletingOnu === onu.id} className={`${btn} bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-300 dark:border-red-500/30 dark:hover:bg-red-500/20`}>
                             {deletingOnu === onu.id ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}Hapus
                           </button>
                         ) : (
-                          <button onClick={() => setEditingConfigOnu(onu)} disabled={busy} className={`${btn} bg-cyan-600 hover:bg-cyan-700`}>
+                          <button onClick={() => setEditingConfigOnu(onu)} disabled={busy} className={`${btn} bg-card text-foreground border border-border hover:bg-accent/10`}>
                             <Settings className="w-3.5 h-3.5" />Config
                           </button>
                         )}
                         {!unregistered && (
                           <>
-                            <button onClick={() => setConfirmReboot(onu.id)} disabled={busy} className={`${btn} bg-orange-500 hover:bg-orange-600 col-span-2`}>
+                            <button onClick={() => setConfirmReboot(onu.id)} disabled={busy} className={`${btn} bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/30 dark:hover:bg-amber-500/20 col-span-2`}>
                               <Power className="w-3.5 h-3.5" />Reboot
                             </button>
-                            <button onClick={() => handleDeleteOnu(onu)} disabled={busy} className={`${btn} bg-red-600 hover:bg-red-700`}>
+                            <button onClick={() => handleDeleteOnu(onu)} disabled={busy} className={`${btn} bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-300 dark:border-red-500/30 dark:hover:bg-red-500/20`}>
                               {deletingOnu === onu.id ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}Hapus
                             </button>
                           </>
@@ -2602,7 +2603,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                       type="checkbox"
                       checked={selectedOnus.size === filteredOnus.length && filteredOnus.length > 0}
                       onChange={handleSelectAll}
-                      className="w-4 h-4 text-blue-600 rounded"
+                      className="w-4 h-4 rounded accent-brand-500"
                     />
                   </th>
                   <th className="py-2.5 pr-4 font-medium">Location</th>
@@ -2627,7 +2628,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                           type="checkbox"
                           checked={selectedOnus.has(onu.id)}
                           onChange={() => handleSelectOnu(onu.id)}
-                          className="w-4 h-4 text-blue-600 rounded"
+                          className="w-4 h-4 rounded accent-brand-500"
                         />
                       </td>
                       <td className="py-2.5 pr-4 font-mono text-xs text-muted-foreground">
@@ -2690,14 +2691,14 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                           <div className="flex flex-wrap gap-1">
                             <button
                               onClick={() => setDetailOnu(onu)}
-                              className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                              className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md transition-colors disabled:opacity-50 bg-brand-500 hover:bg-brand-600 text-white"
                             >
                               <Eye className="w-3 h-3" />
                               Detail
                             </button>
                             <button
                               onClick={() => setRegisteringOnu(onu)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                              className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md transition-colors disabled:opacity-50 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/30 dark:hover:bg-emerald-500/20"
                             >
                               <Plus className="w-3 h-3" />
                               Register
@@ -2732,7 +2733,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                           <div className="flex flex-wrap gap-1">
                             <button
                               onClick={() => setDetailOnu(onu)}
-                              className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                              className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md transition-colors disabled:opacity-50 bg-brand-500 hover:bg-brand-600 text-white"
                             >
                               <Eye className="w-3 h-3" />
                               Detail
@@ -2740,7 +2741,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                             <button
                               onClick={() => setAssigningOnu(onu)}
                               disabled={deletingOnu === onu.id}
-                              className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                              className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md transition-colors disabled:opacity-50 bg-brand-50 text-brand-600 border border-brand-200 hover:bg-brand-100 dark:bg-brand-500/10 dark:text-brand-300 dark:border-brand-500/30 dark:hover:bg-brand-500/20"
                             >
                               <UserPlus className="w-3 h-3" />
                               Assign
@@ -2748,7 +2749,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                             <button
                               onClick={() => setEditingConfigOnu(onu)}
                               disabled={deletingOnu === onu.id || rebootingOnu !== null || batchRebooting}
-                              className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-cyan-600 text-white rounded-md hover:bg-cyan-700 disabled:opacity-50 transition-colors"
+                              className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md transition-colors disabled:opacity-50 bg-card text-foreground border border-border hover:bg-accent/10"
                             >
                               <Settings className="w-3 h-3" />
                               Config
@@ -2756,7 +2757,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                             <button
                               onClick={() => setConfirmReboot(onu.id)}
                               disabled={deletingOnu === onu.id || rebootingOnu !== null || batchRebooting}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-orange-500 text-white rounded-md hover:bg-orange-600 disabled:opacity-50 transition-colors"
+                              className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md transition-colors disabled:opacity-50 bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/30 dark:hover:bg-amber-500/20"
                             >
                               <Power className="w-3 h-3" />
                               Reboot
@@ -2901,7 +2902,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                                 : s.routerIds.filter((rid) => rid !== r.id),
                             }));
                           }}
-                          className="w-4 h-4 text-blue-600 rounded"
+                          className="w-4 h-4 rounded accent-brand-500"
                         />
                         <div>
                           <div className="text-sm font-medium">{r.name}</div>
@@ -2913,23 +2914,11 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                 )}
               </div>
 
-              <div className="flex items-center gap-3">
-                <Switch
-                  checked={settings.monitoringEnabled}
-                  onCheckedChange={(v) => setSettings((s) => ({ ...s, monitoringEnabled: v }))}
-                />
-                <Label>Enable Monitoring</Label>
-              </div>
+              <ToggleRow checked={settings.monitoringEnabled} onCheckedChange={(v) => setSettings((s) => ({ ...s, monitoringEnabled: v }))} label="Aktifkan monitoring" />
 
               {/* SNMP */}
               <div className="border rounded-lg p-4 space-y-3">
-                <div className="flex items-center gap-3">
-                  <Switch
-                    checked={settings.snmpEnabled}
-                    onCheckedChange={(v) => setSettings((s) => ({ ...s, snmpEnabled: v }))}
-                  />
-                  <Label className="font-semibold">SNMP</Label>
-                </div>
+                <ToggleRow checked={settings.snmpEnabled} onCheckedChange={(v) => setSettings((s) => ({ ...s, snmpEnabled: v }))} label="SNMP" />
                 {settings.snmpEnabled && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -2987,13 +2976,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
 
               {/* SSH */}
               <div className="border rounded-lg p-4 space-y-3">
-                <div className="flex items-center gap-3">
-                  <Switch
-                    checked={settings.sshEnabled}
-                    onCheckedChange={(v) => setSettings((s) => ({ ...s, sshEnabled: v }))}
-                  />
-                  <Label className="font-semibold">SSH</Label>
-                </div>
+                <ToggleRow checked={settings.sshEnabled} onCheckedChange={(v) => setSettings((s) => ({ ...s, sshEnabled: v }))} label="SSH" />
                 {settings.sshEnabled && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -3050,13 +3033,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
 
               {/* Telnet */}
               <div className="border rounded-lg p-4 space-y-3">
-                <div className="flex items-center gap-3">
-                  <Switch
-                    checked={settings.telnetEnabled}
-                    onCheckedChange={(v) => setSettings((s) => ({ ...s, telnetEnabled: v }))}
-                  />
-                  <Label className="font-semibold">Telnet</Label>
-                </div>
+                <ToggleRow checked={settings.telnetEnabled} onCheckedChange={(v) => setSettings((s) => ({ ...s, telnetEnabled: v }))} label="Telnet" />
                 {settings.telnetEnabled && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
