@@ -1808,7 +1808,7 @@ function ONUDetailModal({ oltId, onu, onClose }: { oltId: string; onu: ONU; onCl
                   ['Serial number', serial, { mono: true }],
                   ['Tipe', parsed.Type ?? onu.onuType],
                   ['Vendor', summary.vendor],
-                  ['Nama di OLT', parsed.Name],
+                  ['Nama di OLT', present(parsed.Name) ?? present(onu.description) ?? 'N/A'],
                   ['Deskripsi', parsed.Description ?? summary.description],
                   ['Admin state', summary.adminState],
                   ['Config state', parsed['Config state']],
@@ -2527,7 +2527,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                         ) : (
                           <span className="text-gray-400">Unassigned</span>
                         )}
-                        {onu.description && <div className="text-muted-foreground truncate">{onu.description}</div>}
+                        <div className="text-muted-foreground truncate">Nama: {onu.description ?? <span className="text-yellow-600 dark:text-yellow-400">N/A</span>}</div>
                         <div className="text-[11px] text-muted-foreground mt-0.5">
                           {onu.lastSeenAt ? new Date(onu.lastSeenAt).toLocaleString('id-ID') : '-'}
                         </div>
@@ -2640,7 +2640,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                         {onu.onuType && <div className="text-[11px] text-muted-foreground">{onu.onuType}</div>}
                       </td>
                       <td className="py-2.5 pr-4">
-                        <div className="text-xs text-muted-foreground">{onu.description ?? <span className="text-gray-400">-</span>}</div>
+                        <div className="text-xs text-muted-foreground">{onu.description ?? <span className="text-yellow-600 dark:text-yellow-400">N/A</span>}</div>
                       </td>
                       <td className="py-2.5 pr-4">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${

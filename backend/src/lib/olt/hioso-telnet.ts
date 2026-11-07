@@ -74,7 +74,7 @@ export function parseOnuInfo(output: string): HiosoCliOnu[] {
       fe: hasColumns ? Number(rest[3]) : null,
       pots: hasColumns ? Number(rest[4]) : null,
       // After Uptime comes the ONU name; it may contain spaces, or be absent or "NA".
-      name: hasColumns ? rest.slice(9).join(' ').trim() || null : null,
+      name: hasColumns && !isUnsetOnuName(rest.slice(9).join(' ')) ? rest.slice(9).join(' ').trim() : null,
     });
   }
   return onus;
@@ -105,6 +105,12 @@ export function parseKeyValues(output: string): Array<{ label: string; value: st
     if (match) fields.push({ label: match[1], value: match[2] });
   }
   return fields;
+}
+
+/** An ONU name the OLT never set: empty, "NA", "N/A", "NULL", "-" and the like. */
+export function isUnsetOnuName(name: string | null | undefined): boolean {
+  const value = (name ?? '').replace(/\0/g, '').trim();
+  return !value || /^(n\/?a|null|none|-+|unknown)$/i.test(value);
 }
 
 /** Only what the OLT's name field takes; spaces become underscores. */
