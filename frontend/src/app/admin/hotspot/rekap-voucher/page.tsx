@@ -271,7 +271,7 @@ export default function RekapVoucherPage() {
           <>
             <Stat label="Terjual" value={totalSold} color="text-orange-500" />
             <Stat label="Aktif" value={totalActive} color="text-green-500" />
-            <Stat label="Expired" value={totalExpired} color="text-red-400" />
+            <Stat label="Expired" value={totalExpired} color="text-red-600 dark:text-red-400" />
           </>
         ) : (
           <>
@@ -279,11 +279,11 @@ export default function RekapVoucherPage() {
             <Stat label="Stok" value={totalStock} color="text-green-500" />
             <Stat label="Terjual" value={totalSold} color="text-orange-500" />
             <Stat label="Aktif" value={totalActive} color="text-green-500" />
-            <Stat label="Expired" value={totalExpired} color="text-red-400" />
+            <Stat label="Expired" value={totalExpired} color="text-red-600 dark:text-red-400" />
           </>
         )}
         <Stat label="Pendapatan" value={formatCurrency(totalRevenue)} color="text-brand-500" />
-        <Stat label="Admin" value={formatCurrency(totalAdminEarnings)} color="text-blue-400" />
+        <Stat label="Admin" value={formatCurrency(totalAdminEarnings)} color="text-blue-600 dark:text-blue-400" />
         {totalAgentProfit > 0 && <Stat label="Profit Agent" value={formatCurrency(totalAgentProfit)} color="text-primary" />}
       </div>
 
@@ -308,7 +308,7 @@ export default function RekapVoucherPage() {
                     <td className="px-3 py-1.5 font-medium text-foreground whitespace-nowrap truncate overflow-hidden">{d.dateLabel}</td>
                     <td className="px-3 py-1.5 text-right text-orange-500 font-medium whitespace-nowrap truncate overflow-hidden">{d.sold}</td>
                     <td className="px-3 py-1.5 text-right text-green-500 whitespace-nowrap">{d.active}</td>
-                    <td className="px-3 py-1.5 text-right text-red-400 whitespace-nowrap">{d.expired}</td>
+                    <td className="px-3 py-1.5 text-right text-red-600 dark:text-red-400 whitespace-nowrap">{d.expired}</td>
                     <td className="px-3 py-1.5 text-right text-brand-500 font-medium whitespace-nowrap truncate overflow-hidden">{formatCurrency(d.revenue)}</td>
                   </tr>
                 ))}
@@ -318,7 +318,7 @@ export default function RekapVoucherPage() {
                   <td className="px-3 py-1.5 whitespace-nowrap">Total</td>
                   <td className="px-3 py-1.5 text-right text-orange-500 whitespace-nowrap">{dailyBreakdown.reduce((s,d) => s+d.sold, 0)}</td>
                   <td className="px-3 py-1.5 text-right text-green-500 whitespace-nowrap">{dailyBreakdown.reduce((s,d) => s+d.active, 0)}</td>
-                  <td className="px-3 py-1.5 text-right text-red-400 whitespace-nowrap">{dailyBreakdown.reduce((s,d) => s+d.expired, 0)}</td>
+                  <td className="px-3 py-1.5 text-right text-red-600 dark:text-red-400 whitespace-nowrap">{dailyBreakdown.reduce((s,d) => s+d.expired, 0)}</td>
                   <td className="px-3 py-1.5 text-right text-brand-500 whitespace-nowrap truncate overflow-hidden">{formatCurrency(dailyBreakdown.reduce((s,d) => s+d.revenue, 0))}</td>
                 </tr>
               </tfoot>
@@ -399,7 +399,7 @@ export default function RekapVoucherPage() {
                     <>
                       <span className="text-orange-500">Terjual: <strong>{item.sold}</strong></span>
                       <span className="text-green-500">Aktif: <strong>{item.active}</strong></span>
-                      <span className="text-red-400">Exp: <strong>{item.expired}</strong></span>
+                      <span className="text-red-600 dark:text-red-400">Exp: <strong>{item.expired}</strong></span>
                     </>
                   ) : (
                     <>
@@ -407,7 +407,7 @@ export default function RekapVoucherPage() {
                       <button onClick={() => openVoucherModal(item.batchCode, 'WAITING')} className="text-green-500 hover:underline">Stok: <strong>{item.stock}</strong></button>
                       <button onClick={() => openVoucherModal(item.batchCode, 'SOLD')} className="text-orange-500 hover:underline">Terjual: <strong>{item.sold}</strong></button>
                       <span className="text-green-500">Aktif: {item.active}</span>
-                      <span className="text-red-400">Exp: {item.expired}</span>
+                      <span className="text-red-600 dark:text-red-400">Exp: {item.expired}</span>
                     </>
                   )}
                   <span className="text-brand-500 ml-auto">Pendapatan: <strong>{formatCurrency(item.totalRevenue)}</strong></span>
@@ -485,7 +485,7 @@ export default function RekapVoucherPage() {
                     {!isPeriodMode && <td className="px-3 py-2 text-right text-green-500 whitespace-nowrap">{totalStock}</td>}
                     <td className="px-3 py-2 text-right text-orange-500 whitespace-nowrap">{totalSold}</td>
                     <td className="px-3 py-2 text-right text-green-500 whitespace-nowrap">{totalActive}</td>
-                    <td className="px-3 py-2 text-right text-red-400 whitespace-nowrap">{totalExpired}</td>
+                    <td className="px-3 py-2 text-right text-red-600 dark:text-red-400 whitespace-nowrap">{totalExpired}</td>
                     <td className="px-3 py-2 text-right text-muted-foreground whitespace-nowrap truncate overflow-hidden">-</td>
                     <td className="px-3 py-2 text-right text-brand-500 whitespace-nowrap truncate overflow-hidden">{formatCurrency(totalRevenue)}</td>
                     <td className="px-3 py-2 text-right text-primary whitespace-nowrap">{formatCurrency(totalAgentProfit)}</td>
@@ -528,7 +528,7 @@ export default function RekapVoucherPage() {
                     <div key={v.id} className={`flex items-start gap-2 py-2 px-1 hover:bg-muted/30 rounded ${idx % 2 === 1 ? 'bg-muted/10' : ''}`}>
                       <div className="flex-1 min-w-0">
                         <button onClick={() => copyCode(v.code)} className="font-mono text-[11px] font-medium hover:underline cursor-pointer flex items-center gap-1 text-left w-full">
-                          <span className={v.status === 'WAITING' ? 'text-green-500' : v.status === 'ACTIVE' ? 'text-green-400' : 'text-muted-foreground'}>{v.code}</span>
+                          <span className={v.status === 'WAITING' ? 'text-green-500' : v.status === 'ACTIVE' ? 'text-green-600 dark:text-green-400' : 'text-muted-foreground'}>{v.code}</span>
                           {voucherModal.copiedCode === v.code ? <CheckCheck className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3 text-muted-foreground/40" />}
                         </button>
                         {v.profile && <div className="text-[10px] text-muted-foreground mt-0.5">{v.profile.name}{v.profile.validityValue ? ` · ${v.profile.validityValue} ${v.profile.validityUnit}` : ''}</div>}
@@ -539,7 +539,7 @@ export default function RekapVoucherPage() {
                           </div>
                         )}
                       </div>
-                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full shrink-0 font-medium ${v.status === 'WAITING' ? 'bg-green-500/10 text-green-500' : v.status === 'ACTIVE' ? 'bg-green-400/10 text-green-400' : 'bg-muted text-muted-foreground'}`}>
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full shrink-0 font-medium ${v.status === 'WAITING' ? 'bg-green-500/10 text-green-500' : v.status === 'ACTIVE' ? 'bg-green-400/10 text-green-600 dark:text-green-400' : 'bg-muted text-muted-foreground'}`}>
                         {v.status === 'WAITING' ? 'STOK' : v.status === 'ACTIVE' ? 'AKTIF' : 'EXP'}
                       </span>
                     </div>

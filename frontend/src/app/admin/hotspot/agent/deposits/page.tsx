@@ -90,9 +90,9 @@ export default function AgentDepositsPage() {
   };
 
   const getStatusClass = (status: string) => {
-    if (status === 'PAID') return 'bg-green-500/20 text-green-400 border border-green-500/30';
+    if (status === 'PAID') return 'bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/30';
     if (status === 'PENDING') return 'bg-amber-500/20 text-amber-300 border border-amber-500/30';
-    return 'bg-red-500/20 text-red-300 border border-red-500/30';
+    return 'bg-red-500/20 text-red-700 dark:text-red-300 border border-red-500/30';
   };
 
   return (
@@ -163,7 +163,7 @@ export default function AgentDepositsPage() {
                   {deposit.senderAccountName && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Pengirim:</span>
-                      <span className="text-cyan-300">{deposit.senderAccountName}{deposit.senderAccountNumber ? ` (${deposit.senderAccountNumber})` : ''}</span>
+                      <span className="text-primary">{deposit.senderAccountName}{deposit.senderAccountNumber ? ` (${deposit.senderAccountNumber})` : ''}</span>
                     </div>
                   )}
                   <div className="flex justify-between">
@@ -180,7 +180,7 @@ export default function AgentDepositsPage() {
                       href={deposit.receiptImage}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex-1 text-center py-1.5 text-xs rounded border border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/10"
+                      className="flex-1 text-center py-1.5 text-xs rounded border border-primary/40 text-primary hover:bg-primary/10"
                     >
                       Lihat Bukti
                     </a>
@@ -190,7 +190,7 @@ export default function AgentDepositsPage() {
                       <button
                         onClick={() => handleAction(deposit, 'approve')}
                         disabled={actionLoadingId === deposit.id}
-                        className="flex-1 py-1.5 text-xs rounded bg-success hover:bg-success/90 text-success-foreground disabled:opacity-60"
+                        className="flex-1 py-1.5 text-xs rounded bg-success text-success-foreground hover:bg-success/90 disabled:opacity-60"
                       >
                         Setujui
                       </button>
@@ -249,7 +249,7 @@ export default function AgentDepositsPage() {
                         <div className="text-muted-foreground">a/n {deposit.targetBankAccountName}</div>
                       )}
                       {deposit.senderAccountName && (
-                        <div className="mt-1 text-[11px] text-cyan-300">
+                        <div className="mt-1 text-[11px] text-primary">
                           Pengirim: {deposit.senderAccountName}
                           {deposit.senderAccountNumber ? ` (${deposit.senderAccountNumber})` : ''}
                         </div>
@@ -273,7 +273,7 @@ export default function AgentDepositsPage() {
                           href={deposit.receiptImage}
                           target="_blank"
                           rel="noreferrer"
-                          className="px-2.5 py-1.5 text-xs rounded border border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/10"
+                          className="px-2.5 py-1.5 text-xs rounded border border-primary/40 text-primary hover:bg-primary/10"
                         >
                           Lihat Bukti
                         </a>
@@ -287,7 +287,7 @@ export default function AgentDepositsPage() {
                           <button
                             onClick={() => handleAction(deposit, 'approve')}
                             disabled={actionLoadingId === deposit.id}
-                            className="px-3 py-1.5 text-xs rounded bg-success hover:bg-success/90 text-success-foreground disabled:opacity-60"
+                            className="px-3 py-1.5 text-xs rounded bg-success text-success-foreground hover:bg-success/90 disabled:opacity-60"
                           >
                             Setujui
                           </button>

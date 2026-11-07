@@ -1086,7 +1086,7 @@ function AdminLayoutContent({
                   </div>
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-2 px-4 py-3 text-xs font-bold text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors tracking-wider"
+                    className="w-full flex items-center gap-2 px-4 py-3 text-xs font-bold text-red-600 dark:text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors tracking-wider"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     {t('auth.signOut')}
@@ -1140,7 +1140,7 @@ function AdminLayoutContent({
                 className="p-2 rounded-lg hover:bg-primary/20 text-muted-foreground hover:text-primary transition-colors border border-transparent hover:border-primary/30"
                 title={t('common.toggleTheme')}
               >
-                {isDark ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4" />}
+                {isDark ? <Sun className="w-4 h-4 text-yellow-600 dark:text-yellow-400" /> : <Moon className="w-4 h-4" />}
               </button>
               <NotificationDropdown />
             </div>

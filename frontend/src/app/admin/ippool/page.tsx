@@ -238,7 +238,7 @@ export default function IPPoolPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <RefreshCw className="w-8 h-8 animate-spin text-cyan-400" />
+        <RefreshCw className="w-8 h-8 animate-spin text-cyan-600 dark:text-cyan-400" />
       </div>
     );
   }
@@ -248,7 +248,7 @@ export default function IPPoolPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-cyan-400 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-cyan-600 dark:text-cyan-400 flex items-center gap-2">
             <Network className="w-6 h-6" />
             IP Pool Management
           </h1>
@@ -261,7 +261,7 @@ export default function IPPoolPage() {
           <button onClick={() => setIsMapOpen(true)} className="px-3 py-2 bg-purple-600/20 text-primary rounded-lg hover:bg-purple-600/30 flex items-center gap-2 text-sm">
             <Link2 className="w-4 h-4" /> Map Group
           </button>
-          <button onClick={() => setIsCreateOpen(true)} className="px-3 py-2 bg-cyan-600/20 text-cyan-400 rounded-lg hover:bg-cyan-600/30 flex items-center gap-2 text-sm">
+          <button onClick={() => setIsCreateOpen(true)} className="px-3 py-2 bg-cyan-600/20 text-cyan-600 dark:text-cyan-400 rounded-lg hover:bg-cyan-600/30 flex items-center gap-2 text-sm">
             <Plus className="w-4 h-4" /> Create Pool
           </button>
         </div>
@@ -272,19 +272,19 @@ export default function IPPoolPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-gray-900/50 border border-cyan-900/50 rounded-lg p-4">
             <div className="text-xs text-gray-500 uppercase">Total Pools</div>
-            <div className="text-2xl font-bold text-cyan-400">{stats.total_pools}</div>
+            <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">{stats.total_pools}</div>
           </div>
           <div className="bg-gray-900/50 border border-cyan-900/50 rounded-lg p-4">
             <div className="text-xs text-gray-500 uppercase">Total IPs</div>
-            <div className="text-2xl font-bold text-blue-400">{stats.total_ips}</div>
+            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.total_ips}</div>
           </div>
           <div className="bg-gray-900/50 border border-cyan-900/50 rounded-lg p-4">
             <div className="text-xs text-gray-500 uppercase">Allocated</div>
-            <div className="text-2xl font-bold text-green-400">{stats.allocated_ips}</div>
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.allocated_ips}</div>
           </div>
           <div className="bg-gray-900/50 border border-cyan-900/50 rounded-lg p-4">
             <div className="text-xs text-gray-500 uppercase">Utilization</div>
-            <div className="text-2xl font-bold text-yellow-400">{stats.utilization}</div>
+            <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats.utilization}</div>
           </div>
         </div>
       )}
@@ -292,7 +292,7 @@ export default function IPPoolPage() {
       {/* Pool List */}
       <div className="bg-gray-900/50 border border-gray-800 rounded-lg overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-800 flex items-center gap-2">
-          <Layers className="w-5 h-5 text-cyan-400" />
+          <Layers className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
           <h2 className="font-semibold text-gray-200">IP Pools</h2>
         </div>
         {pools.length === 0 ? (
@@ -315,17 +315,17 @@ export default function IPPoolPage() {
               <tbody className="divide-y divide-gray-800">
                 {pools.map((pool) => (
                   <tr key={pool.pool_name} className="hover:bg-gray-800/30">
-                    <td className="px-4 py-3 font-mono text-cyan-400">{pool.pool_name}</td>
+                    <td className="px-4 py-3 font-mono text-cyan-600 dark:text-cyan-400">{pool.pool_name}</td>
                     <td className="px-4 py-3 text-right text-gray-300">{pool.total_ips}</td>
                     <td className="px-4 py-3 text-gray-400 font-mono text-xs">{pool.start_ip} → {pool.end_ip}</td>
                     <td className="px-4 py-3 text-right">
-                      <button onClick={() => loadDetails(pool.pool_name)} className="text-blue-400 hover:text-blue-300 px-2" title="Details">
+                      <button onClick={() => loadDetails(pool.pool_name)} className="text-blue-600 dark:text-blue-400 hover:text-blue-300 px-2" title="Details">
                         <Activity className="w-4 h-4 inline" />
                       </button>
-                      <button onClick={() => { setExpandData({ ...expandData, pool_name: pool.pool_name }); setIsExpandOpen(true); }} className="text-green-400 hover:text-green-300 px-2" title="Expand">
+                      <button onClick={() => { setExpandData({ ...expandData, pool_name: pool.pool_name }); setIsExpandOpen(true); }} className="text-green-600 dark:text-green-400 hover:text-green-300 px-2" title="Expand">
                         <Plus className="w-4 h-4 inline" />
                       </button>
-                      <button onClick={() => handleDelete(pool.pool_name)} className="text-red-400 hover:text-red-300 px-2" title="Delete">
+                      <button onClick={() => handleDelete(pool.pool_name)} className="text-red-600 dark:text-red-400 hover:text-red-300 px-2" title="Delete">
                         <Trash2 className="w-4 h-4 inline" />
                       </button>
                     </td>
@@ -362,9 +362,9 @@ export default function IPPoolPage() {
                 {mappings.map((m) => (
                   <tr key={m.id} className="hover:bg-gray-800/30">
                     <td className="px-4 py-3 font-mono text-primary">{m.groupname}</td>
-                    <td className="px-4 py-3 font-mono text-cyan-400">{m.pool_name}</td>
+                    <td className="px-4 py-3 font-mono text-cyan-600 dark:text-cyan-400">{m.pool_name}</td>
                     <td className="px-4 py-3 text-right">
-                      <button onClick={() => handleUnmap(m.id, m.groupname)} className="text-red-400 hover:text-red-300" title="Remove">
+                      <button onClick={() => handleUnmap(m.id, m.groupname)} className="text-red-600 dark:text-red-400 hover:text-red-300" title="Remove">
                         <Unlink className="w-4 h-4 inline" />
                       </button>
                     </td>
@@ -387,15 +387,15 @@ export default function IPPoolPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
               <div className="bg-gray-800/50 rounded p-3">
                 <div className="text-xs text-gray-500">Total</div>
-                <div className="text-xl font-bold text-blue-400">{details.total_ips}</div>
+                <div className="text-xl font-bold text-blue-600 dark:text-blue-400">{details.total_ips}</div>
               </div>
               <div className="bg-gray-800/50 rounded p-3">
                 <div className="text-xs text-gray-500">Allocated</div>
-                <div className="text-xl font-bold text-green-400">{details.allocated}</div>
+                <div className="text-xl font-bold text-green-600 dark:text-green-400">{details.allocated}</div>
               </div>
               <div className="bg-gray-800/50 rounded p-3">
                 <div className="text-xs text-gray-500">Free</div>
-                <div className="text-xl font-bold text-yellow-400">{details.free}</div>
+                <div className="text-xl font-bold text-yellow-600 dark:text-yellow-400">{details.free}</div>
               </div>
             </div>
             {details.recent_allocations.length > 0 && (
@@ -415,7 +415,7 @@ export default function IPPoolPage() {
                     <tbody className="divide-y divide-gray-800">
                       {details.recent_allocations.map((a, i) => (
                         <tr key={i}>
-                          <td className="px-2 py-1 font-mono text-cyan-400">{a.framedipaddress}</td>
+                          <td className="px-2 py-1 font-mono text-cyan-600 dark:text-cyan-400">{a.framedipaddress}</td>
                           <td className="px-2 py-1 text-gray-300">{a.username}</td>
                           <td className="px-2 py-1 font-mono text-gray-500">{a.callingstationid}</td>
                           <td className="px-2 py-1 font-mono text-gray-500">{a.nasipaddress}</td>

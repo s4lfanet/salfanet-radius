@@ -48,11 +48,11 @@ interface SuspendRequest {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  PENDING:   { label: 'Pending',    className: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
-  APPROVED:  { label: 'Approved',   className: 'bg-green-100  text-green-800  border-green-300'  },
-  REJECTED:  { label: 'Rejected',   className: 'bg-red-100    text-red-800    border-red-300'    },
-  CANCELLED: { label: 'Cancelled',  className: 'bg-gray-100   text-gray-600   border-gray-300'   },
-  COMPLETED: { label: 'Completed',  className: 'bg-blue-100   text-blue-800   border-blue-300'   },
+  PENDING:   { label: 'Pending',    className: 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-500/15 dark:text-yellow-300 dark:border-yellow-500/30' },
+  APPROVED:  { label: 'Approved',   className: 'bg-green-100 text-green-800 border-green-300 dark:bg-green-500/15 dark:text-green-300 dark:border-green-500/30'  },
+  REJECTED:  { label: 'Rejected',   className: 'bg-red-100 text-red-800 border-red-300 dark:bg-red-500/15 dark:text-red-300 dark:border-red-500/30'    },
+  CANCELLED: { label: 'Cancelled',  className: 'bg-gray-100 text-gray-600 border-gray-300 dark:bg-gray-500/15 dark:text-gray-300 dark:border-gray-500/30'   },
+  COMPLETED: { label: 'Completed',  className: 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-500/15 dark:text-blue-300 dark:border-blue-500/30'   },
 };
 
 const fmt = (d: string) => formatWIB(d, 'dd MMM yyyy');
@@ -148,8 +148,8 @@ export default function AdminSuspendRequestsPage() {
             onClick={() => setFilter(s)}
             className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
               filter === s
-                ? 'bg-primary text-primary-foreground border-violet-500'
-                : 'border-gray-300 text-gray-600 hover:border-border'
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'border-border text-muted-foreground hover:bg-muted'
             }`}
           >
             {s === 'all' ? t('common.all') : STATUS_LABELS[s] || s}
@@ -207,7 +207,7 @@ export default function AdminSuspendRequestsPage() {
                     <div className="flex gap-2 pt-1">
                       <Button
                         size="sm"
-                        className="h-8 text-xs bg-green-600 hover:bg-green-700 flex-1"
+                        className="h-8 text-xs bg-success text-success-foreground hover:bg-success/90 flex-1"
                         onClick={() => openAction(row, 'APPROVE')}
                       >
                         <CheckCircle2 className="w-3 h-3 mr-1" />{t('suspendRequests.approve')}
@@ -277,7 +277,7 @@ export default function AdminSuspendRequestsPage() {
                         <div className="flex gap-1 justify-end">
                           <Button
                             size="sm"
-                            className="h-7 text-xs bg-green-600 hover:bg-green-700"
+                            className="h-7 text-xs bg-success text-success-foreground hover:bg-success/90"
                             onClick={() => openAction(row, 'APPROVE')}
                           >
                             <CheckCircle2 className="w-3 h-3 mr-1" />{t('suspendRequests.approve')}
@@ -355,7 +355,7 @@ export default function AdminSuspendRequestsPage() {
             <Button
               onClick={handleProcess}
               disabled={processing || (action === 'REJECT' && !adminNotes.trim())}
-              className={action === 'APPROVE' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}
+              className={action === 'APPROVE' ? 'bg-success text-success-foreground hover:bg-success/90' : 'bg-destructive text-destructive-foreground hover:bg-destructive/90'}
             >
               {processing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               {action === 'APPROVE' ? t('suspendRequests.approve') : t('suspendRequests.reject')}

@@ -491,7 +491,7 @@ export default function AdminDashboard() {
                     : isUrgent
                     ? 'bg-amber-400'
                     : 'bg-yellow-400/70';
-                  const labelColor = isOverdue ? 'text-red-400' : isUrgent ? 'text-amber-400' : 'text-yellow-400';
+                  const labelColor = isOverdue ? 'text-red-600 dark:text-red-400' : isUrgent ? 'text-amber-400' : 'text-yellow-600 dark:text-yellow-400';
                   const labelText = isOverdue
                     ? `Terlambat ${Math.abs(inv.daysUntilDue)}h`
                     : inv.daysUntilDue === 0

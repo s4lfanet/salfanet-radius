@@ -911,7 +911,7 @@ export default function PaymentGatewayPage() {
                     type="button"
                     onClick={runQrisTest}
                     disabled={qrisTest.loading || !qrisTest.orderId.trim()}
-                    className="px-3 py-1.5 text-xs font-medium bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg disabled:opacity-50 whitespace-nowrap"
+                    className="px-3 py-1.5 text-xs font-medium bg-orange-500 hover:bg-orange-600 text-white rounded-lg disabled:opacity-50 whitespace-nowrap"
                   >
                     {qrisTest.loading ? ' Testing...' : ' Jalankan'}
                   </button>
@@ -929,7 +929,7 @@ export default function PaymentGatewayPage() {
               <button
                 onClick={saveQris}
                 disabled={saving || (qrisForm.enabled && !qrisForm.staticCode)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium rounded-lg disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-medium rounded-lg disabled:opacity-50"
               >
                 {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
                 Save QRIS Mandiri Configuration

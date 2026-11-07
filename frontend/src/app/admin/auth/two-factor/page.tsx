@@ -107,7 +107,7 @@ function TwoFactorForm() {
 
           {error && (
             <div className="mb-5 p-4 bg-red-500/10 border-2 border-red-500/40 rounded-xl">
-              <p className="text-sm text-red-400 text-center font-medium">{error}</p>
+              <p className="text-sm text-red-600 dark:text-red-400 text-center font-medium">{error}</p>
             </div>
           )}
 

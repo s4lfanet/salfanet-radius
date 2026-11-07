@@ -911,7 +911,7 @@ export default function InvoicesPage() {
             </Link>
             <button
               onClick={() => { setShowGenerateDialog(true); setGenResult(null); }}
-              className="inline-flex items-center px-2 py-1.5 text-xs border border-blue-500 text-blue-400 rounded hover:bg-blue-500/10"
+              className="inline-flex items-center px-2 py-1.5 text-xs border border-primary/50 text-primary rounded hover:bg-primary/10"
             >
               <PlusSquare className="h-3 w-3 mr-1" />Generate Tagihan
             </button>
@@ -940,7 +940,7 @@ export default function InvoicesPage() {
                 <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 truncate">{formatCurrency(Number(stats.totalUnpaidAmount))}</p>
               </div>
               <div className="p-1.5 sm:p-2 rounded-lg shadow-lg bg-red-400/20 flex-shrink-0 flex items-center justify-center">
-                <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-400" />
+                <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-600 dark:text-red-400" />
               </div>
             </div>
           </div>
@@ -952,7 +952,7 @@ export default function InvoicesPage() {
                 <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 truncate">{formatCurrency(Number(stats.totalPaidAmount))}</p>
               </div>
               <div className="p-1.5 sm:p-2 rounded-lg shadow-lg bg-green-400/20 flex-shrink-0 flex items-center justify-center">
-                <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-400" />
+                <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-600 dark:text-green-400" />
               </div>
             </div>
           </div>
@@ -1368,7 +1368,7 @@ export default function InvoicesPage() {
               <div className="flex flex-col gap-3">
                 <button
                   onClick={() => { if (printDialogInvoice) { setPrintDialogInvoice(null); handlePrintStandard(printDialogInvoice); } }}
-                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground transition-colors"
+                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                 >
                   <FileText className="w-5 h-5 flex-shrink-0" />
                   <div className="text-left">
@@ -1378,7 +1378,7 @@ export default function InvoicesPage() {
                 </button>
                 <button
                   onClick={() => { if (printDialogInvoice) { setPrintDialogInvoice(null); handlePrintThermal(printDialogInvoice); } }}
-                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-success hover:bg-success/90 text-success-foreground transition-colors"
+                  className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-card text-foreground border border-border hover:bg-muted transition-colors"
                 >
                   <Printer className="w-5 h-5 flex-shrink-0" />
                   <div className="text-left">
@@ -1490,8 +1490,8 @@ export default function InvoicesPage() {
             <div className="p-5">
               <DialogHeader className="mb-4">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-full bg-blue-500/15 border border-blue-500/30">
-                    <PlusSquare className="w-4 h-4 text-blue-400" />
+                  <div className="p-2 rounded-full bg-primary/15 border border-primary/30">
+                    <PlusSquare className="w-4 h-4 text-primary" />
                   </div>
                   <div>
                     <DialogTitle className="text-sm font-bold">Generate Tagihan Manual</DialogTitle>
@@ -1549,14 +1549,14 @@ export default function InvoicesPage() {
                       <button
                         type="button"
                         onClick={() => { setGenScope('all'); setGenUserId(''); setGenUserSearch(''); setGenUsers([]); }}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs transition ${genScope === 'all' ? 'border-blue-500 bg-blue-500/10 text-blue-400 font-medium' : 'border-border text-muted-foreground hover:border-border/80'}`}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs transition ${genScope === 'all' ? 'border-primary bg-primary/10 text-primary font-medium' : 'border-border text-muted-foreground hover:border-border/80'}`}
                       >
                         <Users className="w-3.5 h-3.5 flex-shrink-0" />Semua Pelanggan
                       </button>
                       <button
                         type="button"
                         onClick={() => setGenScope('single')}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs transition ${genScope === 'single' ? 'border-blue-500 bg-blue-500/10 text-blue-400 font-medium' : 'border-border text-muted-foreground hover:border-border/80'}`}
+                        className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs transition ${genScope === 'single' ? 'border-primary bg-primary/10 text-primary font-medium' : 'border-border text-muted-foreground hover:border-border/80'}`}
                       >
                         <UserIcon className="w-3.5 h-3.5 flex-shrink-0" />Satu Pelanggan
                       </button>
@@ -1574,7 +1574,7 @@ export default function InvoicesPage() {
                           placeholder="Nama / username / no. HP..."
                           value={genUserSearch}
                           onChange={e => { setGenUserSearch(e.target.value); setGenUserId(''); searchUsersForGenerate(e.target.value); }}
-                          className="w-full pl-8 pr-3 py-2 text-xs bg-muted/50 border border-border rounded-xl focus:outline-none focus:border-blue-500/60"
+                          className="w-full pl-8 pr-3 py-2 text-xs bg-muted/50 border border-border rounded-xl focus:outline-none focus:border-primary/60"
                         />
                       </div>
                       {genLoadingUsers && <p className="text-[10px] text-muted-foreground mt-1">Mencari...</p>}
@@ -1608,7 +1608,7 @@ export default function InvoicesPage() {
                       type="month"
                       value={genMonth}
                       onChange={e => setGenMonth(e.target.value)}
-                      className="w-full px-3 py-2 text-xs bg-muted/50 border border-border rounded-xl focus:outline-none focus:border-blue-500/60"
+                      className="w-full px-3 py-2 text-xs bg-muted/50 border border-border rounded-xl focus:outline-none focus:border-primary/60"
                     />
                   </div>
 
@@ -1635,9 +1635,9 @@ export default function InvoicesPage() {
                   </div>
 
                   {genScope === 'all' && (
-                    <div className="flex items-start gap-2 bg-blue-500/10 border border-blue-500/20 rounded-xl px-3 py-2.5">
-                      <AlertCircle className="w-3.5 h-3.5 text-blue-400 flex-shrink-0 mt-0.5" />
-                      <p className="text-[11px] text-blue-300 leading-snug">
+                    <div className="flex items-start gap-2 bg-primary/10 border border-primary/20 rounded-xl px-3 py-2.5">
+                      <AlertCircle className="w-3.5 h-3.5 text-primary flex-shrink-0 mt-0.5" />
+                      <p className="text-[11px] text-primary leading-snug">
                         Generate untuk <strong>semua pelanggan aktif (POSTPAID &amp; PREPAID)</strong>. Pelanggan yang sudah punya tagihan bulan tersebut akan dilewati secara otomatis.
                       </p>
                     </div>
@@ -1650,7 +1650,7 @@ export default function InvoicesPage() {
                     <Button
                       type="button"
                       size="sm"
-                      className="flex-1 h-9 text-xs bg-primary hover:bg-primary/90 text-primary-foreground"
+                      className="flex-1 h-9 text-xs"
                       onClick={handleGenerate}
                       disabled={generateMutation.isPending || (genScope === 'single' && !genUserId)}
                     >

@@ -180,7 +180,7 @@ export default function AdminOntRemovalTasksPage() {
               setCustomerSearch('');
               setShowCreate(true);
             }}
-            className="flex items-center gap-1 px-3 py-2 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-bold rounded-xl transition"
+            className="flex items-center gap-1 px-3 py-2 bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-bold rounded-xl transition"
           >
             <Plus className="w-4 h-4" /> Buat Tugas
           </button>
@@ -359,7 +359,7 @@ export default function AdminOntRemovalTasksPage() {
               <button onClick={() => setShowCreate(false)} className="flex-1 px-3 py-2 bg-muted text-muted-foreground text-sm font-bold rounded-lg transition">
                 Batal
               </button>
-              <button disabled={creating} onClick={createTask} className="flex-1 px-3 py-2 bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground text-sm font-bold rounded-lg transition">
+              <button disabled={creating} onClick={createTask} className="flex-1 px-3 py-2 bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 text-sm font-bold rounded-lg transition">
                 {creating ? 'Menyimpan...' : 'Buat Tugas'}
               </button>
             </div>
