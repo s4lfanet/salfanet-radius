@@ -3,6 +3,7 @@ import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { executeMultipleCommands, TelnetConfig } from '@/lib/olt/telnet';
 import { snmpWalk, SNMPConfig } from '@/lib/olt/snmp';
+import { readRack } from '@/lib/olt/rack';
 
 // ── ZTE C320 Board/Shelf MIB OIDs ─────────────────────────────────────────────
 const ZTE_BASE        = '1.3.6.1.4.1.3902.1012';
@@ -42,6 +43,8 @@ function classifyCard(cardType: string): SlotType {
   const ctUpper = cardType.toUpperCase();
   if (ctUpper.startsWith('MCUD') || ctUpper.startsWith('MCUA') || ctUpper === 'MCU') return 'mcud';
   if (ctUpper.startsWith('SMXA') || ctUpper.startsWith('GICF') || ctUpper.startsWith('GISF') || ctUpper.startsWith('UPLINK')) return 'uplink';
+  // ZTE C300 uplink and control cards
+  if (/^(?:SCXN|SCXM|SCXO|HUVQ)/.test(ctUpper)) return 'uplink';
   return 'service';
 }
 
@@ -339,6 +342,11 @@ export async function GET(
       },
     });
     if (!olt) return NextResponse.json({ error: 'OLT not found' }, { status: 404 });
+
+    // Everything below speaks ZTE ("show card", slots 0 to 17). Other brands have no such chassis.
+    if (olt.vendor && olt.vendor.toLowerCase() !== 'zte') {
+      return NextResponse.json({ success: true, vendor: olt.vendor, model: olt.model, source: 'rack', chassis: [], rack: await readRack(olt, olt.onuStatuses) });
+    }
 
     // ── Step 1: Fire Telnet (single multi-cmd session) + SNMP in PARALLEL ─────
     const snmpConfig: SNMPConfig | null = olt.snmpEnabled

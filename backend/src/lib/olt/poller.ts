@@ -40,6 +40,7 @@ export async function pollOLTWithOptions(
   let memoryUsage: number | null = null;
   let uptime: bigint = BigInt(0);
   let discoveredOnus: any[] = [];
+  let reported: { firmware?: string | null; model?: string | null } = {};
 
   try {
     const vendor = getVendorModule(olt.vendor);
@@ -72,10 +73,29 @@ export async function pollOLTWithOptions(
       }
     }
 
+    // The login also goes along for brands that read a web page (Hioso), the model for readers that
+    // depend on it (ZTE C300).
+    const device = { host: olt.ipAddress, username: olt.username ?? '', password: olt.password ?? '', model: olt.model };
+
+    // A brand with its own poll (Hioso) decides reachability, metrics and ONUs itself.
+    const ownPoll = (vendor as any).pollDevice as undefined | ((context: unknown) => Promise<any>);
+    if (ownPoll) {
+      const report = await ownPoll({
+        snmp: isOnline ? snmpConfig : null,
+        telnet: telnetConfig,
+        credentials: olt.username ? device : null,
+        model: olt.model,
+      });
+      isOnline = isOnline || report.reachable;
+      ({ temperature, cpuUsage, memoryUsage } = report);
+      discoveredOnus = report.onus;
+      reported = { firmware: report.firmware, model: report.model };
+    }
+
     // If SNMP failed or not enabled, try a lightweight SSH/Telnet connectivity test.
     // Do NOT assume online just because credentials are configured — actually test
     // the connection before marking the OLT as online.
-    if (!isOnline && (sshConfig || telnetConfig)) {
+    if (!ownPoll && !isOnline && (sshConfig || telnetConfig)) {
       try {
         if (telnetConfig) {
           // Quick Telnet test: execute a single harmless command
@@ -95,7 +115,7 @@ export async function pollOLTWithOptions(
     }
 
     // Get performance metrics
-    if (snmpConfig && isOnline) {
+    if (!ownPoll && snmpConfig && isOnline) {
       [temperature, cpuUsage, memoryUsage] = await Promise.all([
         vendor.getTemperature(snmpConfig),
         vendor.getCpuUsage(snmpConfig),
@@ -104,17 +124,19 @@ export async function pollOLTWithOptions(
     }
 
     // Discover ONUs — try SNMP first (ZTE C320 supports SNMP-based ONU discovery)
-    if (snmpConfig && isOnline && typeof (vendor as any).discoverONUsSNMP === 'function') {
+    if (!ownPoll && snmpConfig && isOnline && typeof (vendor as any).discoverONUsSNMP === 'function') {
       try {
-        // The login is also passed on, for brands that read a web page (Hioso).
-        const credentials = olt.username ? { host: olt.ipAddress, username: olt.username, password: olt.password ?? '' } : null;
-        discoveredOnus = await (vendor as any).discoverONUsSNMP(snmpConfig, olt.firmwareVersion, telnetConfig, credentials);
+        discoveredOnus = await (vendor as any).discoverONUsSNMP(snmpConfig, olt.firmwareVersion, telnetConfig, device);
       } catch { /* fallback to SSH/Telnet */ }
     }
-    if (discoveredOnus.length === 0 && sshConfig && isOnline) {
+    if (!ownPoll && discoveredOnus.length === 0 && sshConfig && isOnline) {
       discoveredOnus = await vendor.discoverONUsSSH(sshConfig);
-    } else if (discoveredOnus.length === 0 && telnetConfig && isOnline) {
+    } else if (!ownPoll && discoveredOnus.length === 0 && telnetConfig && isOnline) {
       discoveredOnus = await vendor.discoverONUs(telnetConfig);
+    }
+    // Brands read over the CLI: SNMP only when the CLI gave nothing, so an install that works stays as it is.
+    if (discoveredOnus.length === 0 && snmpConfig && isOnline && typeof (vendor as any).discoverSnmpFallback === 'function') {
+      discoveredOnus = await (vendor as any).discoverSnmpFallback(snmpConfig).catch(() => []);
     }
 
     // Re-check the OLT wasn't deleted while the SNMP/Telnet/SSH probes above
@@ -141,7 +163,7 @@ export async function pollOLTWithOptions(
     const [totalOnu, onlineOnu, offlineOnu] = await Promise.all([
       prisma.oltOnuStatus.count({ where: { oltId } }),
       prisma.oltOnuStatus.count({ where: { oltId, status: 'online' } }),
-      prisma.oltOnuStatus.count({ where: { oltId, status: 'offline' } }),
+      prisma.oltOnuStatus.count({ where: { oltId, status: { in: ['offline', 'los', 'dying_gasp'] } } }),
     ]);
 
     // Update OLT record
@@ -156,6 +178,9 @@ export async function pollOLTWithOptions(
         totalOnu,
         onlineOnu,
         offlineOnu,
+        // What the OLT itself says fills an empty field; a value the admin typed is left alone.
+        ...(reported.firmware && !olt.firmwareVersion ? { firmwareVersion: reported.firmware } : {}),
+        ...(reported.model && !olt.model ? { model: reported.model } : {}),
         lastPollAt: now,
         updatedAt: now,
       },

@@ -6,6 +6,7 @@ import { snmpDiagnosis } from '@/lib/olt/scan';
 import { testSSH } from '@/lib/olt/ssh';
 import { testTelnet } from '@/lib/olt/telnet';
 import { checkHiosoLogin } from '@/lib/olt/hioso-telnet';
+import { readHiosoWeb } from '@/lib/olt/hioso-web';
 
 /** Brand, ONU count and per-column rows after SNMP connects; null if it takes too long. */
 async function snmpDiagnosisWithin(host: string, community: string | null | undefined, port: number | null | undefined): Promise<string | null> {
@@ -185,6 +186,22 @@ export async function POST(request: NextRequest) {
         });
       } catch (e: any) {
         results.push({ method: 'Telnet', success: false, message: e.message, time: Date.now() - telStart });
+      }
+    }
+
+    // A Hioso OLT is mainly read through its web page, so that gets its own line.
+    if (vendor?.toLowerCase() === 'hioso' && username) {
+      const webStart = Date.now();
+      try {
+        const { onus } = await readHiosoWeb({ host: ipAddress, username, password: password ?? '' });
+        results.push({
+          method: 'Web',
+          success: true,
+          message: onus.length > 0 ? `Connected, ${onus.length} ONU` : 'Connected, daftar ONU kosong',
+          time: Date.now() - webStart,
+        });
+      } catch (e: any) {
+        results.push({ method: 'Web', success: false, message: `Failed: ${e.message}`, time: Date.now() - webStart });
       }
     }
 

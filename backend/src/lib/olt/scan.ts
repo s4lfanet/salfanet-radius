@@ -6,7 +6,7 @@
 import type { SNMPConfig } from './snmp';
 import { detectVendor, PROBE_ORDER, type OltVendorKey } from './detect';
 import { profileCoverage, type PonProfile } from './pon-snmp';
-import { CDATA_PROFILES, HSGQ_PROFILES, NSCRTV_EPON, VSOL_G } from './profiles';
+import { CDATA_PROFILES, HSGQ_PROFILES, NSCRTV_EPON, VSOL_G, VSOL_NMS } from './profiles';
 import { getVendorModule } from './vendors/modules';
 import { identify } from './vendors/auto';
 
@@ -23,7 +23,7 @@ const PROFILES: Partial<Record<OltVendorKey, PonProfile[]>> = {
   cdata: CDATA_PROFILES,
   hioso: [NSCRTV_EPON],
   hsgq: HSGQ_PROFILES,
-  vsol: [VSOL_G],
+  vsol: [VSOL_G, VSOL_NMS],
 };
 
 const COLUMN_LABEL: Record<string, string> = {

@@ -7,7 +7,7 @@
  */
 import { snmpWalk, type SNMPConfig } from '../snmp';
 import { discoverFirstWorking, normalizeMac, parsePowerDbm, readScalar, suffixOf, type DiscoveredOnu, type Walk } from '../pon-snmp';
-import { VSOL_G, VSOL_V1600D } from '../profiles';
+import { VSOL_G, VSOL_NMS, VSOL_V1600D } from '../profiles';
 import * as hioso from './hioso';
 
 // Chassis values as listed in the Observium V-SOL ticket; units are not documented, so ranges are checked.
@@ -92,7 +92,7 @@ export async function discoverV1600D(config: SNMPConfig, walk: Walk = snmpWalk):
 export async function discoverONUsSNMP(config: SNMPConfig): Promise<any[]> {
   const epon = await discoverV1600D(config);
   if (epon.length > 0) return epon;
-  return discoverFirstWorking(config, [VSOL_G]);
+  return discoverFirstWorking(config, [VSOL_G, VSOL_NMS]);
 }
 
 export async function getOnuOpticalInfo(): Promise<null> {

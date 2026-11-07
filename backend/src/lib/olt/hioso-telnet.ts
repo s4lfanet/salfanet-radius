@@ -78,6 +78,33 @@ export function isCliError(output: string): boolean {
   return CLI_ERROR.test(output);
 }
 
+/** PON numbering: "epon 0/1" on HA7304C-era firmware, "epon 1/1" on older "V" firmware such as HA7304V. */
+export function hiosoPonBase(model: string | null | undefined): number {
+  return /VX?$/i.test((model ?? '').trim()) ? 1 : 0;
+}
+
+/** "show epon optical-ddm": the temperature of the OLT's PON module. */
+export function parseDdmTemperature(output: string): number | null {
+  if (isCliError(output)) return null;
+  const match = output.match(/Temperature\s*:\s*([-+]?\d+(?:\.\d+)?)/i);
+  return match ? Math.round(Number(match[1])) : null;
+}
+
+/** "show memory": "Used 28800 / Total 127616". */
+export function parseMemoryPercent(output: string): number | null {
+  const match = output.match(/Used\s+(\d+)\s*\/\s*Total\s+(\d+)/i);
+  if (!match || Number(match[2]) <= 0) return null;
+  return Math.round((Number(match[1]) / Number(match[2])) * 100);
+}
+
+/** "show process cpu", which not every firmware has. */
+export function parseCpuPercent(output: string): number | null {
+  if (isCliError(output)) return null;
+  const match = output.match(/(\d{1,3})\s*%/);
+  const value = match ? Number(match[1]) : null;
+  return value !== null && value <= 100 ? value : null;
+}
+
 /** Strips Telnet negotiation from received bytes and returns the replies to send back. */
 export function filterTelnet(data: Buffer): { text: string; replies: Buffer[] } {
   const replies: Buffer[] = [];
@@ -261,36 +288,84 @@ export async function checkHiosoLogin(config: HiosoTelnetConfig): Promise<string
 }
 
 /**
- * Every ONU the OLT lists. PON numbering is probed once ("epon 0/1" then "epon 1/1") and the
- * scan stops after the first port the OLT rejects.
+ * ONUs of every PON. The numbering is probed once, the expected base first, and the scan stops at
+ * the first port the OLT rejects. Null when neither base is accepted: HA7304V has no "show onu info".
  */
+async function readPonPages(session: Session, firstBase: number, maxPon: number): Promise<{ onus: HiosoCliOnu[]; base: number } | null> {
+  let base = firstBase;
+  let first = await run(session, `show onu info epon ${base}/1 all`);
+  if (isCliError(first)) {
+    base = 1 - firstBase;
+    first = await run(session, `show onu info epon ${base}/1 all`);
+    if (isCliError(first)) return null;
+  }
+
+  const onus = parseOnuInfo(first);
+  for (let pon = 2; pon <= maxPon; pon++) {
+    const output = await run(session, `show onu info epon ${base}/${pon} all`);
+    if (isCliError(output)) break;
+    onus.push(...parseOnuInfo(output));
+  }
+  return { onus, base };
+}
+
+function logout(session: Session): void {
+  try {
+    session.send('exit');
+  } catch {
+    /* the session is closed by the caller anyway */
+  }
+}
+
+/** Every ONU the OLT lists. */
 export async function readHiosoOnus(config: HiosoTelnetConfig, maxPon = 16): Promise<HiosoCliOnu[]> {
   const socket = await connect(config);
   const session = new Session(socket);
   const deadline = setTimeout(() => session.close(), (config.timeout ?? 90) * 1000);
   try {
     await login(session, config);
+    const pages = await readPonPages(session, 0, maxPon);
+    if (!pages) throw new Error('Telnet: perintah "show onu info epon" tidak dikenali OLT ini');
+    logout(session);
+    return pages.onus;
+  } finally {
+    clearTimeout(deadline);
+    session.close();
+  }
+}
 
-    let base = 0;
-    let first = await run(session, `show onu info epon ${base}/1 all`);
-    if (isCliError(first)) {
-      base = 1;
-      first = await run(session, `show onu info epon ${base}/1 all`);
-      if (isCliError(first)) throw new Error('Telnet: perintah "show onu info epon" tidak dikenali OLT ini');
-    }
+export interface HiosoCliReport {
+  onus: HiosoCliOnu[];
+  temperature: number | null;
+  memory: number | null;
+  cpu: number | null;
+}
 
-    const onus = parseOnuInfo(first);
-    for (let pon = 2; pon <= maxPon; pon++) {
-      const output = await run(session, `show onu info epon ${base}/${pon} all`);
-      if (isCliError(output)) break;
-      onus.push(...parseOnuInfo(output));
+/**
+ * One Telnet session for everything the CLI offers: the ONU list and the OLT's temperature, memory
+ * and CPU. A command this firmware lacks leaves its value null instead of ending the session.
+ */
+export async function readHiosoCli(config: HiosoTelnetConfig, options: { model?: string | null; maxPon?: number } = {}): Promise<HiosoCliReport> {
+  const socket = await connect(config);
+  const session = new Session(socket);
+  const deadline = setTimeout(() => session.close(), (config.timeout ?? 90) * 1000);
+  const attempt = (command: string) => run(session, command, 8000).catch(() => '');
+  try {
+    await login(session, config);
+    const firstBase = hiosoPonBase(options.model);
+    const pages = await readPonPages(session, firstBase, options.maxPon ?? 16);
+    const base = pages?.base ?? firstBase;
+
+    let temperature: number | null = null;
+    for (const command of [`show epon optical-ddm ${base}/1`, `show epon ${Math.max(base, 1)}/1 optical-ddm`]) {
+      temperature = parseDdmTemperature(await attempt(command));
+      if (temperature !== null) break;
     }
-    try {
-      session.send('exit');
-    } catch {
-      /* the session is closed below anyway */
-    }
-    return onus;
+    const memory = parseMemoryPercent(await attempt('show memory'));
+    const cpu = parseCpuPercent(await attempt('show process cpu'));
+
+    logout(session);
+    return { onus: pages?.onus ?? [], temperature, memory, cpu };
   } finally {
     clearTimeout(deadline);
     session.close();

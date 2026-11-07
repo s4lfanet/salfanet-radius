@@ -17,9 +17,10 @@
 
 import { SNMPConfig, snmpGet, snmpWalk } from '../snmp';
 import { TelnetConfig } from '../telnet';
-import { decodeSnmpText, normalizeMac, parsePowerDbm, parseRxDbm } from '../pon-snmp';
-import { readHiosoOnus } from '../hioso-telnet';
-import { readHiosoWeb, type HiosoWebOnu } from '../hioso-web';
+import { decodeSnmpText, normalizeMac, parseEnumInt, parsePowerDbm, parseRxDbm } from '../pon-snmp';
+import { readHiosoCli, readHiosoOnus, type HiosoCliOnu, type HiosoCliReport } from '../hioso-telnet';
+import { distanceFromRtt, readHiosoWeb, type HiosoSystemInfo, type HiosoWebOnu } from '../hioso-web';
+import { defaultPonCount } from '../rack';
 
 // ─── OID Definitions ─────────────────────────────────────────────────────────
 
@@ -29,9 +30,9 @@ const HIOSO_EPON_OIDS = {
   onuName:      '1.3.6.1.4.1.25355.3.2.6.3.2.1.37', // String, custom name or "NA"
   onuSn:        '1.3.6.1.4.1.25355.3.2.6.3.2.1.11', // Hex serial number
   onuMac:       '1.3.6.1.4.1.25355.3.2.6.3.2.1.12', // MAC address (alt SN candidate)
-  onuStatus:    '1.3.6.1.4.1.25355.3.2.6.3.2.1.39', // 1=online, 2=offline
+  onuStatus:    '1.3.6.1.4.1.25355.3.2.6.3.2.1.39', // 1=online, 2=LOS
   onuDyingGasp: '1.3.6.1.4.1.25355.3.2.6.3.2.1.41', // 1 = powered off (only on firmware that has the table)
-  onuDistance:  '1.3.6.1.4.1.25355.3.2.6.3.2.1.25', // Integer, meters
+  onuDistance:  '1.3.6.1.4.1.25355.3.2.6.3.2.1.25', // Round-trip counter, see distanceFromRtt
   // Optical readings (index format: board.pon.onu_id)
   onuTxPower:   '1.3.6.1.4.1.25355.3.2.6.14.2.1.4', // Float string dBm (already in dBm, divider=1)
   onuRxPower:   '1.3.6.1.4.1.25355.3.2.6.14.2.1.8', // Float string dBm (already in dBm, divider=1)
@@ -52,6 +53,7 @@ const HIOSO_B_OIDS = {
   onuStatus:  '1.3.6.1.4.1.3320.101.10.1.1.26', // Status
   onuTxPower: '1.3.6.1.4.1.3320.101.10.5.1.5',  // Integer raw — auto-scale
   onuRxPower: '1.3.6.1.4.1.3320.101.10.5.1.6',  // Integer raw — auto-scale
+  onuDistance: '1.3.6.1.4.1.3320.101.10.1.1.38', // Round-trip counter
 };
 
 // HIOSO_GPON profile — C-Data GPON MIB (.25355.3.3)
@@ -61,6 +63,7 @@ const HIOSO_GPON_OIDS = {
   onuStatus:  '1.3.6.1.4.1.25355.3.3.1.1.1.11', // Status
   onuTxPower: '1.3.6.1.4.1.25355.3.3.1.1.4.1.2',// Integer raw — auto-scale (divider=100)
   onuRxPower: '1.3.6.1.4.1.25355.3.3.1.1.4.1.1',// Integer raw — auto-scale (divider=100)
+  onuDistance: '1.3.6.1.4.1.25355.3.3.1.1.1.9',  // Round-trip counter
 };
 
 // Standard MIBs — common to all profiles
@@ -89,7 +92,7 @@ export type HiosoProfile = 'HIOSO_C' | 'HIOSO_B2' | 'HIOSO_VX' | 'HIOSO_B' | 'HI
  */
 function detectProfile(sysDescr: string, model?: string | null): HiosoProfile {
   const desc = (sysDescr + ' ' + (model ?? '')).toLowerCase();
-  if (desc.includes('gpon') || desc.includes('3.3'))     return 'HIOSO_GPON';
+  if (desc.includes('gpon') || desc.includes('3.3') || /\b(?:ha)?74\d\d/.test(desc)) return 'HIOSO_GPON';
   if (desc.includes('bdcom') || desc.includes('3320'))   return 'HIOSO_B';
   if (desc.includes('ha7304vx') || desc.includes('vx'))  return 'HIOSO_VX';
   if (desc.includes('hioso b') || desc.includes('b2') || desc.includes('ha7304c')) return 'HIOSO_B2';
@@ -142,8 +145,8 @@ function parseOnuStatusWalk(
   walkResults: Record<string, string>,
   baseOid: string,
   _profile: HiosoProfile,
-): Array<{ board: number; pon: number; onuId: number; status: string }> {
-  const onus: Array<{ board: number; pon: number; onuId: number; status: string }> = [];
+): Array<{ board: number; pon: number; onuId: number; rawStatus: number }> {
+  const onus: Array<{ board: number; pon: number; onuId: number; rawStatus: number }> = [];
 
   for (const [fullOid, rawValue] of Object.entries(walkResults)) {
     // Strip base OID prefix to get the index suffix
@@ -155,14 +158,20 @@ function parseOnuStatusWalk(
     if (parts.length < 3 || parts.some(isNaN)) continue;
 
     const [board, pon, onuId] = parts;
-    const statusInt = parseInt(rawValue);
-    // 1 = online, 2 = offline (all Hioso profiles)
-    const status = statusInt === 1 ? 'online' : 'offline';
-
-    onus.push({ board, pon, onuId, status });
+    onus.push({ board, pon, onuId, rawStatus: parseEnumInt(rawValue) ?? 0 });
   }
 
   return onus;
+}
+
+/**
+ * 1 is online on every family, and 3 too on the BDCOM clone. A set dying-gasp flag means the ONU lost
+ * power; otherwise 2 is a lost optical link. The dying-gasp flag exists only on some firmware.
+ */
+export function hiosoStatus(rawStatus: number, dyingGasp: boolean, bdcom: boolean): 'online' | 'dying_gasp' | 'los' | 'offline' {
+  if (rawStatus === 1 || (bdcom && rawStatus === 3)) return 'online';
+  if (dyingGasp) return 'dying_gasp';
+  return rawStatus === 2 ? 'los' : 'offline';
 }
 
 // ─── Temperature ─────────────────────────────────────────────────────────────
@@ -243,10 +252,19 @@ export interface OltCredentials {
   password: string;
 }
 
+async function tryWeb(credentials: OltCredentials | null | undefined): Promise<{ onus: HiosoWebOnu[]; system: HiosoSystemInfo | null } | null> {
+  if (!credentials?.username) return null;
+  try {
+    return await readHiosoWeb({ host: credentials.host, username: credentials.username, password: credentials.password });
+  } catch (error: any) {
+    console.warn(`[Hioso] web page not read for ${credentials.host}: ${error?.message ?? error}`);
+    return null;
+  }
+}
+
 /**
- * SNMP first, then the OLT's web page when the login is known. The page lists every PON, which
- * SNMP does not on firmware that merges them, and adds distance and the reason an ONU is down.
- * See mergeWithWeb for how the two are combined.
+ * The OLT's web page when it answers, SNMP otherwise, in the order of the NMS that runs on this
+ * hardware: the page lists every PON, which SNMP does not on firmware that merges them.
  */
 export async function discoverONUsSNMP(
   config: SNMPConfig,
@@ -254,15 +272,90 @@ export async function discoverONUsSNMP(
   _telnet?: unknown,
   credentials?: OltCredentials | null,
 ): Promise<any[]> {
-  const snmp = await discoverViaSnmp(config, model);
-  if (!credentials?.username) return snmp;
-  try {
-    const web = await readHiosoWeb({ host: credentials.host, username: credentials.username, password: credentials.password });
-    return mergeWithWeb(snmp, web);
-  } catch (error: any) {
-    console.warn(`[Hioso] web page not read for ${credentials.host}: ${error?.message ?? error}`);
-    return snmp;
+  const web = await tryWeb(credentials);
+  if (web && web.onus.length > 0) return web.onus.map(fromWeb);
+  return discoverViaSnmp(config, model);
+}
+
+export interface HiosoPollContext {
+  /** Null when the OLT did not answer SNMP. */
+  snmp: SNMPConfig | null;
+  telnet: TelnetConfig | null;
+  credentials: OltCredentials | null;
+  model: string | null;
+}
+
+/**
+ * The whole poll, as the NMS does it: Telnet for the ONU details and health, the web page for the
+ * ONU list, then SNMP for whatever is still missing. The OLT counts as reachable when any of the
+ * three answers, so a blocked SNMP community no longer makes a working OLT look offline.
+ */
+export async function pollDevice(context: HiosoPollContext) {
+  const { snmp, telnet, credentials, model } = context;
+
+  let cli: HiosoCliReport | null = null;
+  if (telnet) {
+    try {
+      cli = await readHiosoCli(
+        { host: telnet.host, port: telnet.port ?? 23, username: telnet.username, password: telnet.password },
+        { model, maxPon: defaultPonCount('hioso', model) },
+      );
+    } catch (error: any) {
+      console.warn(`[Hioso] Telnet not read for ${telnet.host}: ${error?.message ?? error}`);
+    }
   }
+  const web = await tryWeb(credentials);
+
+  let onus: any[] = web?.onus.map(fromWeb) ?? [];
+  if (onus.length === 0 && snmp) onus = await discoverViaSnmp(snmp, model);
+  if (onus.length === 0 && cli) onus = cli.onus.map(fromCli);
+
+  const [snmpTemperature, snmpCpu, snmpMemory] = snmp
+    ? await Promise.all([
+        cli?.temperature != null ? null : getTemperature(snmp),
+        web?.system?.cpu != null || cli?.cpu != null ? null : getCpuUsage(snmp),
+        web?.system?.memory != null || cli?.memory != null ? null : getMemoryUsage(snmp),
+      ])
+    : [null, null, null];
+
+  return {
+    reachable: cli !== null || web !== null,
+    onus: fillFromCli(onus, cli?.onus ?? []),
+    temperature: cli?.temperature ?? snmpTemperature,
+    cpuUsage: web?.system?.cpu ?? cli?.cpu ?? snmpCpu,
+    memoryUsage: web?.system?.memory ?? cli?.memory ?? snmpMemory,
+    firmware: web?.system?.firmware ?? null,
+    model: web?.system?.model ?? null,
+  };
+}
+
+function fromCli(row: HiosoCliOnu): any {
+  return {
+    frame:        1,
+    slot:         row.pon,
+    port:         row.pon,
+    onuId:        row.onuId,
+    serialNumber: row.mac,
+    macAddress:   row.mac,
+    description:  row.name && row.name.toUpperCase() !== 'NA' ? row.name : null,
+    status:       row.up ? 'online' : 'offline',
+  };
+}
+
+/** The CLI fills the name and MAC that the other source left empty, never its status or power. */
+export function fillFromCli(onus: any[], cli: HiosoCliOnu[]): any[] {
+  if (cli.length === 0) return onus;
+  const byPosition = new Map(cli.map((row) => [`${row.pon}:${row.onuId}`, fromCli(row)]));
+  return onus.map((onu) => {
+    const row = byPosition.get(`${onu.port}:${onu.onuId}`);
+    if (!row) return onu;
+    return {
+      ...onu,
+      description:  onu.description ?? row.description,
+      macAddress:   onu.macAddress ?? row.macAddress,
+      serialNumber: onu.serialNumber ?? row.serialNumber,
+    };
+  });
 }
 
 function fromWeb(onu: HiosoWebOnu): any {
@@ -281,35 +374,6 @@ function fromWeb(onu: HiosoWebOnu): any {
     distance:     onu.distance,
     signalLevel:  signalLevel(onu.rxPower),
   };
-}
-
-/**
- * When the web page lists more ONUs than SNMP, SNMP is partial (some firmware folds PON 2 to 4
- * together) and the page is used whole. Otherwise SNMP stays the base, since its link state is the
- * reference, and the page only fills what SNMP left empty: name, MAC, power and distance.
- */
-export function mergeWithWeb(snmp: any[], web: HiosoWebOnu[]): any[] {
-  if (web.length === 0) return snmp;
-  if (snmp.length === 0 || web.length > snmp.length) return web.map(fromWeb);
-
-  const byPosition = new Map(web.map((onu) => [`${onu.pon}:${onu.onuId}`, onu]));
-  return snmp.map((onu) => {
-    const page = byPosition.get(`${onu.slot}:${onu.onuId}`);
-    if (!page) return onu;
-    const online = onu.status === 'online';
-    const rxPower = onu.rxPower ?? (online ? page.rxPower : null);
-    return {
-      ...onu,
-      description:  onu.description ?? page.name,
-      name:         onu.name ?? page.name,
-      macAddress:   onu.macAddress ?? page.mac,
-      serialNumber: onu.serialNumber ?? page.mac,
-      rxPower,
-      txPower:      onu.txPower ?? (online ? page.txPower : null),
-      distance:     onu.distance ?? page.distance,
-      signalLevel:  signalLevel(rxPower),
-    };
-  });
 }
 
 async function discoverViaSnmp(
@@ -338,6 +402,7 @@ const ZERO_MAC = '00:00:00:00:00:00';
 export async function readProfile(config: SNMPConfig, profile: HiosoProfile, walk: typeof snmpWalk = snmpWalk): Promise<any[]> {
   const oids = getProfileOids(profile);
   const isEpon = oids === HIOSO_EPON_OIDS;
+  const isBdcom = oids === HIOSO_B_OIDS;
 
   // Walk ONU status OID to enumerate all ONUs
   const statusWalk = await walk(config, oids.onuStatus);
@@ -348,11 +413,12 @@ export async function readProfile(config: SNMPConfig, profile: HiosoProfile, wal
 
   // Walk serial numbers, names, power and (on EPON) the MAC and dying-gasp tables in parallel
   const none = Promise.resolve({ success: false } as { success: boolean; results?: Record<string, string> });
-  const [snWalk, nameWalk, rxWalk, txWalk, macWalk, dygWalk] = await Promise.all([
+  const [snWalk, nameWalk, rxWalk, txWalk, distanceWalk, macWalk, dygWalk] = await Promise.all([
     walk(config, oids.onuSn),
     walk(config, oids.onuName),
     walk(config, oids.onuRxPower),
     walk(config, oids.onuTxPower),
+    walk(config, oids.onuDistance),
     isEpon ? walk(config, HIOSO_EPON_OIDS.onuMac) : none,
     isEpon ? walk(config, HIOSO_EPON_OIDS.onuDyingGasp) : none,
   ]);
@@ -361,6 +427,7 @@ export async function readProfile(config: SNMPConfig, profile: HiosoProfile, wal
   const nameMap  = nameWalk.results  ?? {};
   const rxMap    = rxWalk.results    ?? {};
   const txMap    = txWalk.results    ?? {};
+  const distanceMap = distanceWalk.results ?? {};
   const macMap   = macWalk.results   ?? {};
   const dygMap   = dygWalk.results   ?? {};
 
@@ -376,60 +443,42 @@ export async function readProfile(config: SNMPConfig, profile: HiosoProfile, wal
     const txRaw  = txMap[`${oids.onuTxPower}.${suffix}`]  ?? findBySuffix(txMap, suffix);
     const macRaw = macMap[`${HIOSO_EPON_OIDS.onuMac}.${suffix}`] ?? findBySuffix(macMap, suffix);
     const dygRaw = dygMap[`${HIOSO_EPON_OIDS.onuDyingGasp}.${suffix}`] ?? findBySuffix(dygMap, suffix);
+    const distanceRaw = distanceMap[`${oids.onuDistance}.${suffix}`] ?? findBySuffix(distanceMap, suffix);
+
+    const status = hiosoStatus(onu.rawStatus, dygRaw != null && parseEnumInt(dygRaw) === 1, isBdcom);
+    const online = status === 'online';
 
     // The MAC is the ONU's identity on EPON; the second column is the fallback.
     const mac = normalizeMac(snRaw) ?? normalizeMac(macRaw);
     // An unregistered slot shows up as a row with an all-zero MAC.
-    if (isEpon && onu.status !== 'online' && mac === ZERO_MAC) continue;
+    if (isEpon && !online && mac === ZERO_MAC) continue;
 
     // Unset names arrive as zero-filled octet strings; "NA" is the OLT's own placeholder.
     const label = decodeSnmpText(namRaw);
     const description = label && label.toUpperCase() !== 'NA' ? label : null;
 
-    const rxPower = onu.status === 'online' && rxRaw != null ? parsePower(rxRaw, profile, 'rx') : null;
-    const txPower = onu.status === 'online' && txRaw != null ? parsePower(txRaw, profile, 'tx') : null;
-
-    // Down because it lost power, if the OLT says so. Not inferred from missing Rx.
-    const status = onu.status !== 'online' && dygRaw != null && parseInt(dygRaw) === 1 ? 'dying_gasp' : onu.status;
+    const rxPower = online && rxRaw != null ? parsePower(rxRaw, profile, 'rx') : null;
+    const txPower = online && txRaw != null ? parsePower(txRaw, profile, 'tx') : null;
+    const usableMac = mac && mac !== ZERO_MAC ? mac : null;
 
     onus.push({
-      frame:        onu.board,
+      frame:        Math.max(onu.board, 1),
       slot:         onu.pon,
       port:         onu.pon,    // PON port = slot for Hioso
       onuId:        onu.onuId,
-      serialNumber: (snRaw ?? '').trim() || (macRaw ?? '').trim() || null,
-      macAddress:   mac && mac !== ZERO_MAC ? mac : null,
+      serialNumber: usableMac ?? ((snRaw ?? '').trim() || (macRaw ?? '').trim() || null),
+      macAddress:   usableMac,
       name:         description,
       description,
       status,
       rxPower,
       txPower,
+      distance:     distanceFromRtt(distanceRaw),
       signalLevel:  signalLevel(rxPower),
     });
   }
 
   return onus;
-}
-
-/** Walk distance OID and return map of suffix → distance (meters) */
-export async function getOnuDistances(
-  config: SNMPConfig,
-  model?: string | null,
-): Promise<Record<string, number>> {
-  const descResult = await snmpGet(config, STD_OIDS.sysDescr);
-  const profile = detectProfile(descResult.value ?? '', model);
-  if (profile === 'HIOSO_B' || profile === 'HIOSO_GPON') return {}; // No distance OID
-
-  const walk = await snmpWalk(config, HIOSO_EPON_OIDS.onuDistance);
-  if (!walk.success || !walk.results) return {};
-
-  const result: Record<string, number> = {};
-  for (const [oid, val] of Object.entries(walk.results)) {
-    const suffix = oid.split('.').slice(-3).join('.');
-    const dist = parseInt(val);
-    if (!isNaN(dist)) result[suffix] = dist;
-  }
-  return result;
 }
 
 // ─── ONU Discovery via Telnet ─────────────────────────────────────────────────
@@ -442,16 +491,7 @@ export async function getOnuDistances(
 export async function discoverONUs(config: TelnetConfig): Promise<any[]> {
   try {
     const rows = await readHiosoOnus({ host: config.host, port: config.port, username: config.username, password: config.password });
-    return rows.map((row) => ({
-      frame:        1,
-      slot:         row.pon,
-      port:         row.pon,
-      onuId:        row.onuId,
-      serialNumber: row.mac,
-      macAddress:   row.mac,
-      description:  row.name && row.name.toUpperCase() !== 'NA' ? row.name : null,
-      status:       row.up ? 'online' : 'offline',
-    }));
+    return rows.map(fromCli);
   } catch (error: any) {
     console.warn(`[Hioso] Telnet discovery failed for ${config.host}: ${error?.message ?? error}`);
     return [];

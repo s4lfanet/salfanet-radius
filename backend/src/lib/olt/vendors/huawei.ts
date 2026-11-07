@@ -6,6 +6,8 @@
 import { SNMPConfig, snmpGet } from '../snmp';
 import { TelnetConfig, executeCommand } from '../telnet';
 import { SSHConfig, executeCommand as sshExecute } from '../ssh';
+import { discoverFirstWorking } from '../pon-snmp';
+import { HUAWEI_NMS } from '../profiles';
 
 const HUAWEI_OIDS = {
   temperature:   '1.3.6.1.4.1.2011.6.3.3.2.1.6',
@@ -69,6 +71,11 @@ function parseOpticalInfo(output: string): any {
   const distMatch = output.match(/Distance.*?:\s*(\d+)/i);
   if (distMatch) info.distance = parseInt(distMatch[1]);
   return info;
+}
+
+/** Read by the poller only when Telnet and SSH found no ONU. */
+export function discoverSnmpFallback(config: SNMPConfig): Promise<any[]> {
+  return discoverFirstWorking(config, [HUAWEI_NMS]);
 }
 
 export async function discoverONUs(config: TelnetConfig): Promise<any[]> {

@@ -6,6 +6,44 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.44.0] - 2026-11-07 - Peta Port Semua Merek OLT dan Alur Baca dari NMS
+
+### Peta port
+- **[NEW]** Tab **Port Map** kini berlaku untuk semua merek. Selain ZTE, tampil port PON dengan jumlah ONU online, termasuk port kosong, dan port uplink dari IF-MIB. Klik port PON untuk melihat ONU-nya: nama, serial atau MAC, status, Rx, dan jarak. Sebelumnya semua merek digambar sebagai sasis ZTE C320 dan OLT merek lain dikirimi perintah `show card`
+- **[CHANGE]** Bila status uplink tidak terbaca, G1 sampai G4 tampil "Tidak terbaca" dengan keterangan. NMS menampilkannya Up mengikuti status OLT; itu sengaja tidak ditiru karena bukan data
+- **[CHANGE]** Judul diagram ZTE mengikuti model OLT, dan kartu uplink C300 (SCXN, SCXM, SCXO, HUVQ) tidak lagi dianggap kartu layanan
+
+### Hioso mengikuti NMS
+- **[CHANGE]** Urutan baca sama dengan NMS: halaman web menjadi daftar ONU utama, SNMP cadangan. Sebelumnya SNMP dasar dan halaman hanya pelengkap
+- **[FIX]** OLT Hioso yang SNMP-nya tidak menjawab tidak lagi tampil offline bila web atau Telnet hidup. Sebelumnya poll memakai tes Telnet bawaan yang tidak cocok dengan Hioso
+- **[NEW]** Telnet membaca suhu modul PON, memori, dan CPU dalam satu sesi bersama daftar ONU. `/system.asp` memberi CPU, memori, model, dan firmware; model dan firmware hanya mengisi kolom yang kosong
+- **[FIX]** Status SNMP 2 kini LOS, bukan offline, sesuai NMS
+- **[NEW]** Jarak dari SNMP diisi dengan rumus NMS, untuk EPON, GPON, dan clone BDCOM. Serial memakai format MAC yang sama dengan halaman web
+- **[NEW]** Uji Koneksi menampilkan baris **Web** untuk Hioso beserta jumlah ONU atau alasan gagal
+
+### ZTE C300
+- **[NEW]** Model yang memuat C300 dibaca dari tabel C300 milik NMS, dengan status 4 sebagai online dan rumus daya C300. Sebelumnya tabel ini tidak dipakai untuk C300. Bila kosong, jalur lama tetap berjalan. C320 tidak berubah
+
+### Merek lain
+- **[NEW]** Tabel NMS untuk V-SOL, Huawei, BDCOM, FiberHome, dan Raisecom ditambahkan sebagai cadangan. Selain V-SOL, tabel ini hanya dibaca bila Telnet dan SSH tidak menemukan ONU, jadi instalasi yang sudah berjalan tidak berubah
+
+### Angka offline
+- **[FIX]** Jumlah ONU offline dan aturan peringatan kini menghitung LOS dan dying gasp. Sebelumnya hanya status `offline`, sehingga ONU LOS tidak terhitung. Angka offline untuk merek apa pun, termasuk ZTE, bisa terlihat naik setelah pembaruan
+
+### Hal yang perlu diketahui
+- **Belum diuji pada OLT sungguhan.** Logikanya diuji dengan data SNMP dan server Telnet tiruan, dan halaman Port Map baru diperiksa tipenya, belum dibuka di browser
+- Baris ONU Hioso bisa berganti setelah pembaruan bila sumbernya berganti dari SNMP ke web. Baris lama yang tidak terbaca lagi dihapus otomatis saat poll, seperti biasa
+- Jarak Hioso dari SNMP mengikuti NMS, sedangkan KusumaVision NMS menyebut nilainya sudah meter. Bandingkan satu ONU dengan halaman web OLT
+- Jarak C300 disimpan sebagai meter sesuai komentar OID di NMS, walau kode NMS mengalikan 0,112. Periksa satu ONU
+- Port web Hioso tetap 80, karena belum ada isiannya
+- Belum diambil dari NMS: tipe ONU (belum ada kolomnya), ganti nama ONU dan reboot (perintah tulis ke OLT), status kipas ZTE, dan SFP per port. Kolom FAN pada diagram ZTE masih mengikuti status OLT, bukan bacaan kipas
+- Aplikasi admin tidak perlu diperbarui. Tombol Info Chassis di sana menerima data port untuk merek selain ZTE
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema. Naikkan versi: root, backend, frontend ke 5.44.0
+
+---
+
 ## [5.43.1] - 2026-11-07 - Uji Koneksi Telnet untuk OLT Hioso
 
 ### Data OLT

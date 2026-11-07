@@ -156,7 +156,7 @@ export function createRuleContext(
   }
 ): RuleContext {
   const onlineOnus = onus.filter((o) => o.status === 'online');
-  const offlineOnus = onus.filter((o) => o.status === 'offline');
+  const offlineOnus = onus.filter((o) => o.status === 'offline' || o.status === 'los' || o.status === 'dying_gasp');
   const dyingGaspOnus = onus.filter((o) => o.status === 'dying_gasp');
   const lowSignalOnus = onus.filter((o) => o.rxPower !== null && o.rxPower < -27);
 

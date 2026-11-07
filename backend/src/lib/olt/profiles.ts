@@ -214,6 +214,56 @@ export const VSOL_G: PonProfile = {
   },
 };
 
+/**
+ * The per-brand tables of the operator's NMS. That NMS was run on ZTE and Hioso; these rows were
+ * not all seen on hardware, so each one is a candidate: V-SOL after the MIB tables above, the
+ * others only when the brand's Telnet or SSH reader found nothing. Online is 1 unless noted.
+ */
+const nmsProfile = (
+  id: string,
+  label: string,
+  columns: PonProfile['columns'],
+  options: Partial<Pick<PonProfile, 'online' | 'index' | 'tech'>> = {},
+): PonProfile => ({ id, label, tech: 'EPON', index: 'packed', online: [1], scale: 'auto', lastResort: true, columns, ...options });
+
+export const VSOL_NMS = nmsProfile('vsol-nms', 'V-SOL (37950.1.1.5.12.1.1)', {
+  serial: '1.3.6.1.4.1.37950.1.1.5.12.1.1.1.1',
+  status: '1.3.6.1.4.1.37950.1.1.5.12.1.1.1.2',
+  name: '1.3.6.1.4.1.37950.1.1.5.12.1.1.1.6',
+  rx: '1.3.6.1.4.1.37950.1.1.5.12.1.3.1.2',
+});
+
+export const HUAWEI_NMS = nmsProfile('huawei-nms', 'Huawei GPON (2011.6.128)', {
+  serial: '1.3.6.1.4.1.2011.6.128.1.1.2.43.1.3',
+  status: '1.3.6.1.4.1.2011.6.128.1.1.2.46.1.15',
+  name: '1.3.6.1.4.1.2011.6.128.1.1.2.43.1.9',
+  distance: '1.3.6.1.4.1.2011.6.128.1.1.2.46.1.20',
+  rx: '1.3.6.1.4.1.2011.6.128.1.1.2.51.1.4',
+}, { tech: 'GPON', index: 'huawei-ifindex' });
+
+export const BDCOM_NMS = nmsProfile('bdcom-nms', 'BDCOM (3320.101.10)', {
+  serial: '1.3.6.1.4.1.3320.101.10.1.1.3',
+  status: '1.3.6.1.4.1.3320.101.10.1.1.26',
+  name: '1.3.6.1.4.1.3320.101.10.1.1.8',
+  distance: '1.3.6.1.4.1.3320.101.10.1.1.27',
+  rx: '1.3.6.1.4.1.3320.101.10.5.1.5',
+}, { online: [1, 3] });
+
+export const FIBERHOME_NMS = nmsProfile('fiberhome-nms', 'FiberHome (5765.1.33)', {
+  serial: '1.3.6.1.4.1.5765.1.33.1.2.1.1.2',
+  status: '1.3.6.1.4.1.5765.1.33.1.2.1.1.3',
+  name: '1.3.6.1.4.1.5765.1.33.1.2.1.1.6',
+  rx: '1.3.6.1.4.1.5765.1.33.1.2.3.1.4',
+});
+
+export const RAISECOM_NMS = nmsProfile('raisecom-nms', 'Raisecom (8886.18.3)', {
+  serial: '1.3.6.1.4.1.8886.18.3.1.3.1.1.2',
+  status: '1.3.6.1.4.1.8886.18.3.1.3.1.1.17',
+  name: '1.3.6.1.4.1.8886.18.3.1.3.1.1.20',
+  distance: '1.3.6.1.4.1.8886.18.3.1.3.1.1.16',
+  rx: '1.3.6.1.4.1.8886.18.3.1.3.3.1.1',
+});
+
 // V-SOL V1600D (EPON): the ONU list and the optical table are different tables, so it is read by vsol.ts.
 export const VSOL_V1600D = {
   auth: '1.3.6.1.4.1.37950.1.1.5.12.1.12.1',

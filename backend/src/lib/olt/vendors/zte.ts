@@ -11,6 +11,7 @@
 import { SNMPConfig, snmpGet, snmpWalk } from '../snmp';
 import { TelnetConfig, executeCommand } from '../telnet';
 import { SSHConfig, executeCommand as sshExecute } from '../ssh';
+import { decodeSnmpText, suffixOf, type Walk } from '../pon-snmp';
 
 // ── ZTE C320 V2.1.0 OID Profile (base: 1.3.6.1.4.1.3902.1012) ──────────────
 // OIDs verified against real ZTE C320 V2.1.0 via live SNMP walk.
@@ -92,6 +93,51 @@ const ZTE_OIDS = {
   cpuUsage:    '1.3.6.1.4.1.3902.1015.1015.6.1.1.1.5.0',
   memoryUsage: '1.3.6.1.4.1.3902.1015.1015.6.1.1.1.6.0',
 };
+
+// ── ZTE C300 (OID trees and decoding as used by the operator's NMS) ────────
+const C300 = {
+  serial:   '1.3.6.1.4.1.3902.1082.500.10.2.3.3.1.18',  // "1,HWTC7C9A0A9B", index ifIndex.onu
+  descr:    '1.3.6.1.4.1.3902.1082.500.10.2.3.3.1.2',
+  name:     '1.3.6.1.4.1.3902.1082.500.10.2.3.3.1.3',
+  status:   '1.3.6.1.4.1.3902.1082.500.10.2.3.8.1.4',
+  distance: '1.3.6.1.4.1.3902.1082.500.10.2.3.10.1.2',
+  onuRx:    '1.3.6.1.4.1.3902.1082.500.20.2.2.2.1.10',  // index ifIndex.onu.1
+  onuTx:    '1.3.6.1.4.1.3902.1082.500.20.2.2.2.1.14',  // index ifIndex.onu.1
+  oltRx:    '1.3.6.1.4.1.3902.1015.1010.11.2.1.2',      // index ponIndex.onu
+};
+
+/** Run status: 1 init, 2 LOS, 3 ranging, 4 online, 5 dying gasp, 6 offline, 7 auth failed. */
+export function c300Status(raw: number | null): 'online' | 'offline' | 'dying_gasp' | 'los' | 'auth_failed' {
+  switch (raw) {
+    case 2: return 'los';
+    case 4: return 'online';
+    case 5: return 'dying_gasp';
+    case 7: return 'auth_failed';
+    default: return 'offline';
+  }
+}
+
+/** ONU-side power: signed 16-bit in 0.002 dB steps above -30 dBm; 0 and 0xFFFF mean no reading. */
+export function decodeC300OnuPower(raw: number | null): number | null {
+  if (raw === null || raw === 0 || raw === 0xffff) return null;
+  const signed = raw >= 32768 ? raw - 65536 : raw;
+  return Math.round((signed * 0.002 - 30) * 100) / 100;
+}
+
+/** OLT-side Rx: signed 32-bit in thousandths of a dBm. */
+export function decodeC300OltRx(raw: number | null): number | null {
+  if (raw === null || raw === 0) return null;
+  const signed = raw >= 2147483648 ? raw - 4294967296 : raw;
+  return Math.round(signed / 10) / 100;
+}
+
+/** 0x11SS00PP, with the port sometimes packed as PP00. */
+export function parseC300IfIndex(ifIndex: number): { slot: number; port: number } | null {
+  if (ifIndex < 0x11000000) return null;
+  const slot = Math.floor(ifIndex / 65536) % 256;
+  const low = ifIndex % 65536;
+  return { slot, port: low >= 256 ? Math.floor(low / 256) : low };
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -742,6 +788,64 @@ async function discoverPonV22(config: SNMPConfig, board: number, pon: number): P
   return onus;
 }
 
+/**
+ * ZTE C300: whole tables instead of a walk per port, since its ifIndex is known only from the rows.
+ * One table at a time, as a C320 agent got slower under parallel walks.
+ */
+export async function discoverC300(config: SNMPConfig, walk: Walk = snmpWalk): Promise<any[]> {
+  // Rows keyed "ifIndex.onu"; the ONU-side optical tables have one more index part.
+  const table = async (base: string): Promise<Map<string, string>> => {
+    const rows = new Map<string, string>();
+    const result = await walk(config, base);
+    for (const [oid, value] of Object.entries(result.success ? (result.results ?? {}) : {})) {
+      const parts = suffixOf(oid, base)?.split('.');
+      if (parts && parts.length >= 2) rows.set(`${parts[0]}.${parts[1]}`, value);
+    }
+    return rows;
+  };
+  const numberOf = (raw: string | undefined): number | null => {
+    const match = raw?.match(/-?\d+/);
+    return match ? Number(match[0]) : null;
+  };
+
+  const serials = await table(C300.serial);
+  if (serials.size === 0) return [];
+  const status = await table(C300.status);
+  const descriptions = await table(C300.descr);
+  const names = await table(C300.name);
+  const distances = await table(C300.distance);
+  const onuRx = await table(C300.onuRx);
+  const onuTx = await table(C300.onuTx);
+  const oltRx = await table(C300.oltRx);
+
+  const onus: any[] = [];
+  for (const [key, rawSerial] of serials) {
+    const [ifIndex, onuId] = key.split('.').map(Number);
+    const position = parseC300IfIndex(ifIndex);
+    const serialNumber = rawSerial.replace(/^[01],/, '').trim();
+    if (!position || !serialNumber) continue;
+
+    const onuStatus = c300Status(numberOf(status.get(key)));
+    const online = onuStatus === 'online';
+    const ponIndex = 0x10000000 + position.slot * 65536 + position.port * 256;
+    const distance = numberOf(distances.get(key));
+    onus.push({
+      frame: 1,
+      slot: position.slot,
+      port: position.port - 1, // DB and rack diagram count ZTE ports from 0
+      onuId,
+      serialNumber,
+      macAddress: null,
+      status: onuStatus,
+      description: decodeSnmpText(descriptions.get(key)) || decodeSnmpText(names.get(key)) || null,
+      rxPower: online ? (decodeC300OnuPower(numberOf(onuRx.get(key))) ?? decodeC300OltRx(numberOf(oltRx.get(`${ponIndex}.${onuId}`)))) : null,
+      txPower: online ? decodeC300OnuPower(numberOf(onuTx.get(key))) : null,
+      distance: distance !== null && distance > 0 ? distance : null,
+    });
+  }
+  return onus;
+}
+
 // ── Public: SNMP-based ONU Discovery ─────────────────────────────────────────
 
 /**
@@ -749,12 +853,19 @@ async function discoverPonV22(config: SNMPConfig, board: number, pon: number): P
  * Supports V2.1.0 (base 1012) and V2.2+ (base 1082).
  * For V2.1: dynamically discovers PON ports from the PON table (supports 8, 16, or more ports).
  * For V2.2: falls back to scanning 2 boards × 8 ports.
+ * A C300 has its own tables; when they are empty the steps above still run.
  */
 export async function discoverONUsSNMP(
   config: SNMPConfig,
   firmwareVersion?: string | null,
   telnetConfig?: TelnetConfig | null,
+  device?: { model?: string | null } | null,
 ): Promise<any[]> {
+  if (/c300/i.test(device?.model ?? '')) {
+    const onus = await discoverC300(config);
+    if (onus.length > 0) return onus;
+  }
+
   const useV22 = isV22(firmwareVersion);
   const onus: any[] = [];
 

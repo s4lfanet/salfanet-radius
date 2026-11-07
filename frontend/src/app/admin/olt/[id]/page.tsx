@@ -15,6 +15,7 @@ import { Server, RefreshCw, AlertCircle, Wifi, WifiOff, Clock, Activity, ArrowLe
 import { formatWIB } from '@/lib/timezone';
 import { showError, showSuccess, showInfo, showWarning, showConfirm } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';
+import { StandaloneRack } from './StandaloneRack';
 
 interface ONU {
   id: string;
@@ -686,7 +687,7 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
             <div>
               <div className="flex items-center gap-2">
                 <Server className="h-4 w-4 text-green-400" />
-                <span className="font-semibold text-sm text-foreground">ZTE C320 Rack Diagram</span>
+                <span className="font-semibold text-sm text-foreground">ZTE {olt.model || 'C320'} Rack Diagram</span>
               </div>
               <div className="text-[11px] text-slate-500 mt-1">Updated: {olt.lastPollAt ? formatWIB(olt.lastPollAt, 'HH:mm') : '-'}</div>
             </div>
@@ -2960,9 +2961,9 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
           </Card>
         </TabsContent>
 
-        {/* Port Map Tab - Realistic ZTE C320 Chassis Diagram */}
+        {/* Port Map: a ZTE chassis has cards and slots, the other brands are one box of PON ports */}
         <TabsContent value="portmap">
-          <ZTEChassisView olt={olt} />
+          {!olt.vendor || olt.vendor.toLowerCase() === 'zte' ? <ZTEChassisView olt={olt} /> : <StandaloneRack olt={olt} />}
         </TabsContent>
       </Tabs>
 

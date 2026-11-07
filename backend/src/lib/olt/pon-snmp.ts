@@ -24,8 +24,10 @@ export type Walk = (config: SNMPConfig, oid: string) => Promise<SNMPWalkResult>;
  * gpon-sequence: a global sequence starting at 0x480001; the position is in the name.
  * hsgq: 0x01000000 | PON << 8 | ONU.
  * dotted: the parts of the OID itself.
+ * packed: ifIndex or ifIndex.onu, with the PON in the second byte, as the operator's NMS reads it.
+ * huawei-ifindex: 4194304000 + slot * 8192 + port * 256, then the ONU.
  */
-export type IndexLayout = 'epon-device' | 'gpon-sequence' | 'hsgq' | 'dotted';
+export type IndexLayout = 'epon-device' | 'gpon-sequence' | 'hsgq' | 'dotted' | 'packed' | 'huawei-ifindex';
 /** centi: integers are hundredths of a dBm. auto: guess from magnitude. */
 export type PowerScale = 'centi' | 'auto';
 
@@ -204,9 +206,30 @@ const GPON_SEQUENCE_BASE = 0x480000;
  * Where an index suffix puts the ONU. Every layout is injective enough that two ONUs do not
  * share an address and overwrite each other in the database.
  */
+const HUAWEI_IFINDEX_BASE = 4194304000;
+
 export function decodeIndex(suffix: string, layout: IndexLayout): OnuAddress | null {
   const parts = suffix.split('.').map(Number);
   if (parts.length === 0 || parts.some((p) => !Number.isInteger(p) || p < 0)) return null;
+
+  if (layout === 'huawei-ifindex' && parts.length === 2 && parts[0] >= HUAWEI_IFINDEX_BASE) {
+    const offset = parts[0] - HUAWEI_IFINDEX_BASE;
+    return { frame: 0, slot: Math.floor(offset / 8192), port: Math.floor((offset % 8192) / 256), onuId: parts[1] };
+  }
+
+  if (layout === 'packed' && parts.length === 2) {
+    const port = parts[0] > 65535 ? Math.floor(parts[0] / 256) % 256 : parts[0];
+    return { frame: 0, slot: 1, port: Math.max(port, 1), onuId: Math.max(parts[1], 1) };
+  }
+
+  if (layout === 'packed' && parts.length === 1) {
+    const value = parts[0];
+    if (value > 0x01000000) {
+      return { frame: 0, slot: Math.max(Math.floor(value / 16777216) % 256, 1), port: Math.max(Math.floor(value / 256) % 256, 1), onuId: Math.max(value % 256, 1) };
+    }
+    if (value > 256) return { frame: 0, slot: 1, port: Math.max(Math.floor(value / 256) % 256, 1), onuId: Math.max(value % 256, 1) };
+    return { frame: 0, slot: 1, port: 1, onuId: Math.max(value, 1) };
+  }
 
   if (parts.length === 1) {
     const value = parts[0];

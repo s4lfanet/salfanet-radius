@@ -84,6 +84,11 @@ export async function discoverONUsSNMP(
   return typeof reader.discoverONUsSNMP === 'function' ? reader.discoverONUsSNMP(config, firmwareVersion, telnetConfig, credentials) : [];
 }
 
+export async function discoverSnmpFallback(config: SNMPConfig): Promise<any[]> {
+  const reader = await readerFor(config);
+  return typeof reader.discoverSnmpFallback === 'function' ? reader.discoverSnmpFallback(config) : [];
+}
+
 export async function discoverONUs(config: { host: string }): Promise<any[]> {
   return (getVendorModule(knownFor(config.host)) as any).discoverONUs(config);
 }

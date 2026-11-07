@@ -5,6 +5,8 @@
 import { SNMPConfig, snmpGet } from '../snmp';
 import { TelnetConfig, executeCommand } from '../telnet';
 import { SSHConfig, executeCommand as sshExecute } from '../ssh';
+import { discoverFirstWorking } from '../pon-snmp';
+import { FIBERHOME_NMS } from '../profiles';
 
 export async function getTemperature(config: SNMPConfig): Promise<number | null> {
   const result = await snmpGet(config, '1.3.6.1.4.1.5875.91.1.3.1.3.0');
@@ -35,6 +37,11 @@ function parseOnuInfo(output: string, frame: number, slot: number, port: number)
     }
   }
   return onus;
+}
+
+/** Read by the poller only when Telnet and SSH found no ONU. */
+export function discoverSnmpFallback(config: SNMPConfig): Promise<any[]> {
+  return discoverFirstWorking(config, [FIBERHOME_NMS]);
 }
 
 export async function discoverONUs(config: TelnetConfig): Promise<any[]> {

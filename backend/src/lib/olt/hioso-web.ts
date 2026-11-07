@@ -8,6 +8,7 @@
  *
  * The page defines a JavaScript array of single-quoted strings, 22 per ONU. Basic authentication
  * with the OLT's own login is sent on every request; the first request to "/" opens the session.
+ * /system.asp gives the model, firmware and CPU and memory load the same way.
  */
 import { normalizeMac, parsePowerDbm, parseRxDbm } from './pon-snmp';
 
@@ -29,6 +30,13 @@ export interface HiosoWebOnu {
   txPower: number | null;
   distance: number | null;
   status: 'online' | 'offline' | 'dying_gasp' | 'los';
+}
+
+export interface HiosoSystemInfo {
+  model: string | null;
+  firmware: string | null;
+  cpu: number | null;
+  memory: number | null;
 }
 
 const FIELDS_PER_ONU = 22;
@@ -80,6 +88,25 @@ export function parseOnuTable(html: string): HiosoWebOnu[] {
   return onus;
 }
 
+const percent = (raw: string | undefined): number | null => {
+  const value = parseFloat(raw ?? '');
+  return Number.isFinite(value) && value >= 0 && value <= 100 ? Math.round(value) : null;
+};
+
+/** Parses `var sysInfo = new Array("...", ...)` of /system.asp: 3 model, 4 firmware, 11 CPU %, 12 memory %. */
+export function parseSystemInfo(html: string): HiosoSystemInfo | null {
+  const block = html.match(/var\s+sysInfo\s*=\s*new\s+Array\(([\s\S]*?)\)\s*;/);
+  if (!block) return null;
+  const items = [...block[1].matchAll(/"([^"]*)"/g)].map((m) => m[1]);
+  if (items.length < 13) return null;
+  return {
+    model: items[3].trim() || null,
+    firmware: items[4].trim() || null,
+    cpu: percent(items[11]),
+    memory: percent(items[12]),
+  };
+}
+
 async function fetchText(url: string, authorization: string, timeoutMs: number): Promise<string> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -92,12 +119,14 @@ async function fetchText(url: string, authorization: string, timeoutMs: number):
   }
 }
 
-/** Every ONU the OLT's web page lists, or an empty list when the page is not there. */
-export async function readHiosoWeb(config: HiosoWebConfig): Promise<HiosoWebOnu[]> {
+/** Every ONU the OLT's web page lists, plus its system page when that one answers too. */
+export async function readHiosoWeb(config: HiosoWebConfig): Promise<{ onus: HiosoWebOnu[]; system: HiosoSystemInfo | null }> {
   const base = `http://${config.host}${config.port && config.port !== 80 ? `:${config.port}` : ''}`;
   const authorization = `Basic ${Buffer.from(`${config.username}:${config.password}`).toString('base64')}`;
   const timeout = config.timeoutMs ?? 8000;
 
   await fetchText(`${base}/`, authorization, timeout);
-  return parseOnuTable(await fetchText(`${base}/onuAllPonOnuList.asp`, authorization, timeout));
+  const onus = parseOnuTable(await fetchText(`${base}/onuAllPonOnuList.asp`, authorization, timeout));
+  const system = await fetchText(`${base}/system.asp`, authorization, timeout).then(parseSystemInfo, () => null);
+  return { onus, system };
 }
