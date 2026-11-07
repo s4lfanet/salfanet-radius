@@ -1585,7 +1585,7 @@ export default function PppoeUsersPage() {
           <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition">
             <div className="flex items-center justify-between">
               <div className="min-w-0"><p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide">{t('pppoe.renewalsThisMonth')}</p><p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{renewalsThisMonth}</p></div>
-              <RefreshCw className="h-5 w-5 sm:h-8 sm:w-8 text-green-400 drop- flex-shrink-0" />
+              <RefreshCw className="h-5 w-5 sm:h-8 sm:w-8 text-green-600 dark:text-green-400 drop- flex-shrink-0" />
             </div>
           </div>
           <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition">
@@ -1597,7 +1597,7 @@ export default function PppoeUsersPage() {
           <div className="bg-card rounded-xl border border-border p-2.5 sm:p-4  hover:border-border transition">
             <div className="flex items-center justify-between">
               <div className="min-w-0"><p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide">{t('pppoe.blockedUsers')}</p><p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{blockedUsers}</p></div>
-              <Ban className="h-5 w-5 sm:h-8 sm:w-8 text-red-400 drop-shadow-md shadow-red-500/40 flex-shrink-0" />
+              <Ban className="h-5 w-5 sm:h-8 sm:w-8 text-red-600 dark:text-red-400 drop-shadow-md shadow-red-500/40 flex-shrink-0" />
             </div>
           </div>
         </div>
@@ -1698,8 +1698,8 @@ export default function PppoeUsersPage() {
                 <button onClick={() => handleBulkStatusChange('active')} className="px-2.5 py-2 min-h-[36px] text-xs bg-success text-white rounded-md flex items-center gap-1"><Shield className="h-3.5 w-3.5" />{t('pppoe.active')}</button>
                 <button onClick={() => handleBulkStatusChange('isolated')} className="px-2.5 py-2 min-h-[36px] text-xs bg-warning text-white rounded-md flex items-center gap-1"><ShieldOff className="h-3.5 w-3.5" />{t('pppoe.isolir')}</button>
                 <button onClick={() => handleBulkStatusChange('blocked')} className="px-2.5 py-2 min-h-[36px] text-xs bg-destructive text-destructive-foreground rounded-md flex items-center gap-1"><Ban className="h-3.5 w-3.5" />{t('pppoe.block')}</button>
-                <button onClick={handleExportSelected} className="px-2.5 py-2 min-h-[36px] text-xs bg-teal-600 text-white rounded-md flex items-center gap-1"><Download className="h-3.5 w-3.5" />{t('common.export')}</button>
-                <button onClick={handleBulkEdit} className="px-2.5 py-2 min-h-[36px] text-xs bg-blue-600 text-white rounded-md flex items-center gap-1"><Pencil className="h-3.5 w-3.5" />Edit</button>
+                <button onClick={handleExportSelected} className="px-2.5 py-2 min-h-[36px] text-xs bg-card text-foreground border border-border hover:bg-muted rounded-md flex items-center gap-1"><Download className="h-3.5 w-3.5" />{t('common.export')}</button>
+                <button onClick={handleBulkEdit} className="px-2.5 py-2 min-h-[36px] text-xs bg-primary text-primary-foreground hover:bg-primary/90 rounded-md flex items-center gap-1"><Pencil className="h-3.5 w-3.5" />Edit</button>
                 <button onClick={handleBulkDelete} className="px-2.5 py-2 min-h-[36px] text-xs bg-destructive text-destructive-foreground rounded-md flex items-center gap-1"><Trash2 className="h-3.5 w-3.5" />{t('common.delete')}</button>
               </div>
             )}
@@ -1795,9 +1795,9 @@ export default function PppoeUsersPage() {
                   </div>
                   {/* Actions */}
                   <div className="flex items-center gap-1 pt-1 border-t border-border/50 flex-wrap">
-                    <button onClick={() => handleEdit(user)} className="compact-action p-1.5 text-green-500 hover:bg-green-500/10 rounded cursor-pointer flex items-center justify-center focus:outline-none" aria-label="Lihat detail" title="Lihat detail"><Eye className="h-3.5 w-3.5 pointer-events-none" /></button>
+                    <button onClick={() => handleEdit(user)} className="compact-action p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded cursor-pointer flex items-center justify-center focus:outline-none" aria-label="Lihat detail" title="Lihat detail"><Eye className="h-3.5 w-3.5 pointer-events-none" /></button>
                     <button onClick={() => handleEdit(user)} className="compact-action p-1.5 text-brand-500 hover:bg-brand-500/10 rounded cursor-pointer flex items-center justify-center focus:outline-none" aria-label="Edit" title="Edit"><Pencil className="h-3.5 w-3.5 pointer-events-none" /></button>
-                    <button onClick={() => handleSyncToRadius(user)} className="compact-action p-1.5 text-blue-500 hover:bg-blue-500/10 rounded cursor-pointer flex items-center justify-center focus:outline-none" aria-label="Sync RADIUS" title="Sync RADIUS"><RefreshCw className="h-3.5 w-3.5 pointer-events-none" /></button>
+                    <button onClick={() => handleSyncToRadius(user)} className="compact-action p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded cursor-pointer flex items-center justify-center focus:outline-none" aria-label="Sync RADIUS" title="Sync RADIUS"><RefreshCw className="h-3.5 w-3.5 pointer-events-none" /></button>
                     <button
                       onClick={() => handleStatusChange(user.id, user.status === 'isolated' ? 'active' : 'isolated')}
                       className={`compact-action p-1.5 rounded cursor-pointer flex items-center justify-center focus:outline-none ${user.status === 'isolated' ? 'text-success hover:bg-success/10' : 'text-orange-500 hover:bg-orange-500/10'}`}
@@ -2455,7 +2455,7 @@ export default function PppoeUsersPage() {
                 </ModalSelect>
               </div>
               <div className="flex items-end">
-                <button onClick={handleSyncAudit} disabled={!auditRouterId || auditLoading} className="w-full px-3 py-2 text-xs bg-blue-600 text-white hover:bg-blue-700 rounded-lg shadow-md disabled:opacity-50 flex items-center justify-center gap-2 transition">
+                <button onClick={handleSyncAudit} disabled={!auditRouterId || auditLoading} className="w-full px-3 py-2 text-xs bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg shadow-md disabled:opacity-50 flex items-center justify-center gap-2 transition">
                   {auditLoading ? (<><RefreshCcw className="h-3 w-3 animate-spin" />Memeriksa...</>) : (<><Search className="h-3 w-3" />Mulai Audit</>)}
                 </button>
               </div>
@@ -2804,7 +2804,7 @@ export default function PppoeUsersPage() {
           <ModalBody className="space-y-2 pb-2">
             <button
               onClick={() => printDialogUser && handlePrintFromUser(printDialogUser, 'standard')}
-              className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+              className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
             >
               <FileText className="w-5 h-5 flex-shrink-0" />
               <div className="text-left">
@@ -2814,7 +2814,7 @@ export default function PppoeUsersPage() {
             </button>
             <button
               onClick={() => printDialogUser && handlePrintFromUser(printDialogUser, 'thermal')}
-              className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
+              className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-card text-foreground border border-border hover:bg-muted transition-colors"
             >
               <Printer className="w-5 h-5 flex-shrink-0" />
               <div className="text-left">

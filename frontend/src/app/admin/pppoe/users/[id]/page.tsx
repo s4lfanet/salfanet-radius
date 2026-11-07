@@ -436,7 +436,7 @@ export default function PppoeUserDetailPage({ params }: { params: Promise<{ id: 
               href={`https://wa.me/${user.phone.replace(/^0/, '62').replace(/\D/g, '')}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium bg-green-50/10 border border-green-500/20 rounded text-green-500/80 hover:bg-green-500/10 hover:text-green-500 transition"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium bg-green-500/10 border border-green-500/30 rounded text-green-600 dark:text-green-400 hover:bg-green-500/20 transition"
             >
               <Phone className="w-3 h-3" />
               Buka WA
@@ -507,7 +507,7 @@ export default function PppoeUserDetailPage({ params }: { params: Promise<{ id: 
               </div>
             </div>
             <div className="flex items-start gap-2">
-              <Download className="w-3.5 h-3.5 text-blue-400 mt-0.5 shrink-0" />
+              <Download className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
               <div>
                 <div className="text-[10px] text-muted-foreground">Download (RX)</div>
                 <div className="text-foreground">{formatBytes(Number(activeSession.acctinputoctets || 0))}</div>
@@ -643,7 +643,7 @@ export default function PppoeUserDetailPage({ params }: { params: Promise<{ id: 
                     <span className="text-foreground">{s.durationFormatted}</span>
                   </div>
                   <div className="flex gap-3">
-                    <span className="text-blue-400">↓ {s.download}</span>
+                    <span className="text-blue-600 dark:text-blue-400">↓ {s.download}</span>
                     <span className="text-amber-400">↑ {s.upload}</span>
                   </div>
                 </div>
