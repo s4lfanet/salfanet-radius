@@ -7,6 +7,7 @@ import '../../core/guides/guides.dart';
 import '../../core/forms/form_screen.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/update/app_updater.dart';
+import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../activity_log/activity_log_screen.dart';
 import '../resources/genieacs_resources.dart';
@@ -269,11 +270,47 @@ class _MoreMenuScreenState extends State<MoreMenuScreen> {
                         const SizedBox(height: Gap.sm),
                       ],
                       if (user?.can('settings.view') ?? true) const _SupportLink(),
+                      const SizedBox(height: Gap.md),
+                      const _LogoutButton(),
                     ],
                   ),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Sign-out sits on the menu itself (outside every category) so it is one
+/// tap from the tab bar instead of buried under Profil & Tampilan.
+class _LogoutButton extends StatelessWidget {
+  const _LogoutButton();
+
+  Future<void> _logout(BuildContext context) async {
+    final auth = context.read<AuthProvider>();
+    final ok = await confirmAction(
+      context,
+      title: 'Keluar',
+      message: 'Anda perlu login lagi untuk membuka aplikasi.',
+      confirmLabel: 'Keluar',
+      destructive: true,
+    );
+    if (!ok || !context.mounted) return;
+    Navigator.of(context).popUntil((r) => r.isFirst);
+    auth.logout();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final danger = context.tone(Tone.danger);
+    return OutlinedButton.icon(
+      onPressed: () => _logout(context),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: danger,
+        side: BorderSide(color: danger.withValues(alpha: 0.5)),
+      ),
+      icon: const Icon(Icons.logout_rounded, size: 18),
+      label: const Text('Keluar'),
     );
   }
 }
