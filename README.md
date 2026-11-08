@@ -1111,6 +1111,35 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.46.0 — 2026-11-08 - Tampilan Mobile OLT, Nama ONU N/A, dan Tema Terang/Gelap Seragam
+
+### Tampilan mobile OLT
+- **[FIX]** Detail OLT: judul dan tombol Export/Sync tidak lagi saling menimpa di layar kecil, lima tab bisa digeser ke samping, dan kartu status ONU tidak menggantung sendirian
+- **[NEW]** Daftar ONU di Detail OLT tampil sebagai **kartu per ONU** di HP (tabel 11 kolom tetap dipakai di layar tablet ke atas), lengkap dengan Detail, Assign/Register, Config, Reboot dengan konfirmasi, Hapus, dan Pilih semua untuk reboot massal
+- **[FIX]** OLT Monitoring: tombol dan filter selebar layar, info perangkat 2 kolom, teks 9px dinaikkan, tombol aksi 36px, dan tombol di dalam tautan dihapus
+- **[FIX]** OLT Management: status kartu berlabel Online/Offline (sebelumnya hanya emoji), jumlah ONU/ODC/ODP sejajar, tombol Detail/Edit/Hapus berukuran sentuh
+
+### Nama dan deskripsi ONU
+- **[FIX]** ONU yang namanya belum diisi tampil **N/A** di OLT Hioso dan ZTE secara seragam. Nilai kosong Hioso (`NA`, `N/A`, `NULL`, `-`, nol-biner) kini dinormalkan di jalur web, CLI, dan SNMP
+- **[FIX]** Baris Nama di OLT dan Deskripsi di detail ONU selalu tampil, berisi N/A bila kosong. Tabel rack ikut N/A, bukan `-`
+- **[FIX]** Aplikasi admin membaca field `name` yang tidak ada di data ONU, sehingga Nama dan Deskripsi hilang. Kini satu baris **Nama / Deskripsi** dari `description`, N/A bila kosong
+
+### Warna dan tombol mengikuti tema (terang dan gelap)
+- **[CHANGE]** Komponen `Button` bersama tidak lagi bergaya cyan/neon (gradien, teks hitam, huruf kapital); kini memakai token tema primary, destructive, success, warning, outline, secondary, dan ghost. `CyberButton` di portal ikut memakai token
+- **[CHANGE]** Warna teal dan warna solid acak (biru, indigo, cyan, oranye, ungu, hijau) di PPPoE, Tagihan, Bukti Bayar, Suspend, ONT Removal, Payment Gateway, Deposit Agen, Jaringan, GenieACS, Pengaturan, dan portal customer, agen, teknisi, kolektor diganti token tema
+- **[CHANGE]** Tombol aksi ONU dibedakan menurut fungsi: Detail biru brand, Assign biru lembut, Config netral, Reboot amber, Hapus merah
+- **[NEW]** `ToggleRow` (label di kiri, switch di kanan) dipakai untuk monitoring, SNMP, SSH, dan Telnet di Pengaturan OLT, serta SSH, Telnet, dan Follow road di form tambah/ubah OLT. Track `Switch` nonaktif lebih jelas, checkbox kecil diperbesar
+- **[FIX]** Sekitar 350 teks dan badge berwarna pucat (`-300`/`-400`) yang tidak terbaca di latar putih kini punya varian `-600`/`-700` untuk mode terang. Mode gelap tidak berubah
+- **[FIX]** Aplikasi admin: warna status ONT dan titik lokasi di peta jaringan memakai tone tema
+
+### Hal yang perlu diketahui
+- **Belum dilihat langsung di layar.** Perubahan tampilan hanya diperiksa tipenya dan lint, belum dibandingkan di HP dan browser pada mode terang dan gelap. Dart di aplikasi admin belum dianalisis di mesin pengembangan; build CI yang memverifikasi
+- Peta unified-map dan chip kategori Push Notifications sengaja tidak diubah karena warnanya fungsional
+- Aplikasi collector Flutter tidak termasuk dalam audit tema
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema. Aplikasi admin 1.0.39+40. Naikkan versi: root, backend, frontend ke 5.46.0
+
 ### v5.45.0 — 2026-11-07 - Tipe ONU, Kipas ZTE, Modul Optik, Ganti Nama dan Reboot ONU, Dasan
 
 ### Reboot ONU
@@ -1203,22 +1232,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 ### Catatan Pembaruan
 - Menambah kolom `snmpWriteCommunity` (boleh kosong) pada tabel OLT, diterapkan otomatis saat pembaruan. Aplikasi admin 1.0.36. Naikkan versi: root, backend, frontend ke 5.43.0
-
-### v5.42.0 — 2026-11-06 - Halaman Web Hioso sebagai Sumber Data
-
-### Hioso
-- **[NEW]** Halaman web OLT (`/onuAllPonOnuList.asp`) kini dibaca sebagai sumber ketiga bila username OLT diisi. Halaman itu memuat semua ONU dari semua PON dalam satu permintaan: nama, MAC, status, daya Rx dan Tx, jarak, alasan offline, dan dying gasp
-- **[NEW]** Penggabungan dengan SNMP: bila halaman memuat lebih banyak ONU, SNMP dianggap parsial (HA7304V menggabungkan PON 2 sampai 4) dan halaman dipakai utuh. Bila tidak, SNMP tetap dasar dan halaman hanya mengisi nama, MAC, daya, dan jarak yang kosong. Halaman yang tidak terbaca tidak mengubah hasil SNMP
-- **[NEW]** Jarak ONU Hioso terisi, dari kolom RTT halaman dengan rumus firmware. Alamat ONU sama dengan jalur SNMP dan Telnet, jadi tidak ada baris ganda
-- **[DOCS]** Format halaman, aturan penggabungan, dan rumus jarak di `docs/features/OLT-SNMP-REFERENCE.md`
-
-### Hal yang perlu diketahui
-- Jarak memakai rumus yang disalin NMS operator dari JavaScript firmware. Bandingkan satu ONU dengan halaman web OLT; bila selisih, beri tahu agar rumusnya dikoreksi
-- Port web dianggap 80, dan login yang dipakai adalah username dan password OLT di Data OLT
-- Diuji dengan server HTTP tiruan, belum pada OLT sungguhan
-
-### Catatan Pembaruan
-- Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.42.0
 
 <!-- AUTO-CHANGELOG:END -->
 
