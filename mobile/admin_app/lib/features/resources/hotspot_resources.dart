@@ -193,6 +193,25 @@ String _readableTextOn(String hex) {
 
 String setVoucherTemplateColor(String html, String hex) => html.replaceFirstMapped(_themeRe, (m) => '${m[1]}$hex${m[3]}${_readableTextOn(hex)}');
 
+/// The original orange card (hard-coded #ff8c00) predates the colour line;
+/// same in-place conversion as the web editor's enableVoucherColor.
+bool _canEnableVoucherColor(String html) =>
+    voucherTemplateColor(html) == null && RegExp('#ff8c00', caseSensitive: false).hasMatch(html) && html.contains('voucher-card');
+
+String _enableVoucherColor(String html) {
+  const themeLine = '/* WARNA: cukup ubah --vc-warna (dan --vc-teks = warna tulisan di atasnya). */\n.vc-theme { --vc-warna: #ff8c00; --vc-teks: #ffffff; }\n';
+  var out = html
+      .replaceAll('class="voucher-card ', 'class="vc-theme voucher-card ')
+      .replaceAll(RegExp(r'background:\s*#ff8c00;\s*color:\s*#fff;', caseSensitive: false), 'background: var(--vc-warna); color: var(--vc-teks);')
+      .replaceAll(RegExp(r'color:\s*#ff8c00;', caseSensitive: false), 'color: color-mix(in srgb, var(--vc-warna) 80%, #000000);')
+      .replaceAll(RegExp(r'1px dashed #ffa500;', caseSensitive: false), '1px dashed var(--vc-warna);')
+      .replaceAll(RegExp(r'background:\s*#fffaf0;', caseSensitive: false), 'background: color-mix(in srgb, var(--vc-warna) 8%, #ffffff);');
+  out = out.contains('<style>')
+      ? out.replaceFirst('<style>', '<style>\n$themeLine')
+      : out.replaceFirstMapped(RegExp(r'(\{include file="rad-template-header\.tpl"\}\n?)'), (m) => '${m[1]}<style>\n$themeLine</style>\n');
+  return out;
+}
+
 /// Built-in models served by the backend (GET /api/voucher-templates/presets).
 Map<String, Json> _templatePresets = {};
 
@@ -254,10 +273,18 @@ CrudConfig voucherTemplatesConfig() => CrudConfig(
   metaOf: (t) => voucherTemplateColor('${t['htmlTemplate'] ?? ''}') == null ? null : 'Warna ${voucherTemplateColor('${t['htmlTemplate']}')}',
   itemActions: [
     CrudAction('Ubah warna', Icons.palette_rounded, (ctx, t) async {
-      final html = '${t['htmlTemplate'] ?? ''}';
+      var html = '${t['htmlTemplate'] ?? ''}';
+      if (_canEnableVoucherColor(html)) html = _enableVoucherColor(html);
       final current = voucherTemplateColor(html);
       if (current == null) {
-        showToast(ctx, 'Template ini belum memakai variabel warna. Pasang ulang dari model bawaan, atau aktifkan di halaman web.');
+        await showDialog<void>(
+          context: ctx,
+          builder: (dc) => AlertDialog(
+            title: const Text('Warna belum bisa diubah'),
+            content: const Text('Template ini tidak memakai variabel warna. Gunakan "Ganti dengan model" untuk memasang model bawaan, lalu ubah warnanya.'),
+            actions: [TextButton(onPressed: () => Navigator.of(dc).pop(), child: const Text('Mengerti'))],
+          ),
+        );
         return false;
       }
       return openForm(
