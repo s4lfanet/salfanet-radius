@@ -259,7 +259,7 @@ class _UserTile extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           StatusPill.status(user.status),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [

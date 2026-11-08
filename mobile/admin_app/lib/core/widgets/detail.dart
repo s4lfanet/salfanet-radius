@@ -23,14 +23,14 @@ class DetailHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(Gap.lg),
+        padding: const EdgeInsets.all(Gap.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                RoleIconTile(icon: icon, color: context.tone(tone), size: 48),
+                RoleIconTile(icon: icon, color: context.tone(tone), size: 44),
                 const SizedBox(width: Gap.md),
                 Expanded(
                   child: Column(
@@ -79,7 +79,7 @@ class DetailSection extends StatelessWidget {
     final visible = rows.whereType<InfoRow>().where((r) => r.hasValue).toList();
     if (visible.isEmpty && trailing == null) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.only(top: Gap.lg),
+      padding: const EdgeInsets.only(top: Gap.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -122,7 +122,7 @@ class InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final row = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: Gap.lg, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: Gap.lg, vertical: 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -320,7 +320,7 @@ class ProofImage extends StatelessWidget {
     final provider = _provider;
     if (provider == null) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.only(top: Gap.lg),
+      padding: const EdgeInsets.only(top: Gap.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
