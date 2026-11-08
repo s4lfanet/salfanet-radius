@@ -53,112 +53,157 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
     final company = context.watch<CompanyProvider>().info;
+    // With the keyboard up the brand block shrinks so the form keeps its room.
+    final compact = MediaQuery.of(context).viewInsets.bottom > 0;
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            tooltip: 'Pengaturan Server',
-            onPressed: _openServerSettings,
-          ),
-        ],
-      ),
+      backgroundColor: scheme.primary,
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 28),
-            child: Form(
-              key: _formKey,
+        bottom: false,
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(28, compact ? 4 : 8, 8, compact ? 16 : 36),
               child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(child: CompanyLogo(company: company, size: 76, radius: 22)),
-                  const SizedBox(height: 26),
-                  Text('Selamat Datang', style: Theme.of(context).textTheme.headlineSmall),
-                  const SizedBox(height: 8),
-                  Text(
-                    company != null
-                        ? 'Masuk ke akun ${company.name} dengan nomor HP atau ID pelanggan Anda'
-                        : 'Masuk dengan nomor HP atau ID pelanggan Anda',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
-                  ),
-                  const SizedBox(height: 32),
-                  TextFormField(
-                    controller: _identifierController,
-                    keyboardType: TextInputType.phone,
-                    autofillHints: const [AutofillHints.telephoneNumber],
-                    decoration: const InputDecoration(
-                      labelText: 'No. HP / ID Pelanggan',
-                      prefixIcon: Icon(Icons.person_outline),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().length < 4) {
-                        return 'Masukkan nomor HP atau ID pelanggan yang valid';
-                      }
-                      return null;
-                    },
-                  ),
-                  // An icon beside the message, so the failure still reads for
-                  // anyone who cannot pick red out from the surrounding text.
-                  if (_errorText != null) ...[
-                    const SizedBox(height: 14),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: scheme.errorContainer,
-                        borderRadius: BorderRadius.circular(AppRadius.control),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(Icons.error_outline_rounded, size: 18, color: scheme.onErrorContainer),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              _errorText!,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onErrorContainer),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 24),
-                  FilledButton(
-                    onPressed: _submitting ? null : _submit,
-                    child: _submitting
-                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Text('Masuk'),
-                  ),
-                  if (company?.phone != null && company!.phone!.isNotEmpty) ...[
-                    const SizedBox(height: 18),
-                    Center(
-                      child: Text(
-                        'Belum punya akun atau lupa nomor terdaftar?\nHubungi ${company.phone}',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 10),
-                  Center(
-                    child: TextButton.icon(
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: IconButton(
+                      icon: Icon(Icons.settings_outlined, color: scheme.onPrimary),
+                      tooltip: 'Pengaturan Server',
                       onPressed: _openServerSettings,
-                      icon: const Icon(Icons.dns_outlined, size: 15),
-                      label: Text(
-                        Uri.tryParse(ApiClient.instance.baseUrl)?.host ?? ApiClient.instance.baseUrl,
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
-                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 20),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
+                          child: CompanyLogo(company: company, size: compact ? 44 : 56, radius: 14),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Text(
+                            company?.name ?? 'Portal Pelanggan',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: text.titleLarge?.copyWith(color: scheme.onPrimary, fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-          ),
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: scheme.surface,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(28, 32, 28, 24),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text('Masuk', style: text.headlineSmall?.copyWith(fontWeight: FontWeight.w800)),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Gunakan nomor HP atau ID pelanggan yang terdaftar.',
+                          style: text.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
+                        ),
+                        const SizedBox(height: 28),
+                        TextFormField(
+                          controller: _identifierController,
+                          keyboardType: TextInputType.phone,
+                          textInputAction: TextInputAction.done,
+                          autofillHints: const [AutofillHints.telephoneNumber],
+                          onFieldSubmitted: (_) => _submitting ? null : _submit(),
+                          decoration: const InputDecoration(
+                            labelText: 'No. HP / ID Pelanggan',
+                            prefixIcon: Icon(Icons.person_outline),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.trim().length < 4) {
+                              return 'Masukkan nomor HP atau ID pelanggan yang valid';
+                            }
+                            return null;
+                          },
+                        ),
+                        // An icon beside the message, so the failure still reads for
+                        // anyone who cannot pick red out from the surrounding text.
+                        if (_errorText != null) ...[
+                          const SizedBox(height: 14),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: scheme.errorContainer,
+                              borderRadius: BorderRadius.circular(AppRadius.control),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(Icons.error_outline_rounded, size: 18, color: scheme.onErrorContainer),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    _errorText!,
+                                    style: text.bodySmall?.copyWith(color: scheme.onErrorContainer),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 24),
+                        FilledButton(
+                          onPressed: _submitting ? null : _submit,
+                          child: _submitting
+                              ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                              : const Text('Lanjut'),
+                        ),
+                        if (company?.phone != null && company!.phone!.isNotEmpty) ...[
+                          const SizedBox(height: 20),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(Icons.support_agent_rounded, size: 18, color: scheme.onSurfaceVariant),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Belum punya akun atau lupa nomor terdaftar? Hubungi ${company.phone}',
+                                  style: text.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                        const SizedBox(height: 12),
+                        Center(
+                          child: TextButton.icon(
+                            onPressed: _openServerSettings,
+                            icon: const Icon(Icons.dns_outlined, size: 15),
+                            label: Text(
+                              Uri.tryParse(ApiClient.instance.baseUrl)?.host ?? ApiClient.instance.baseUrl,
+                              style: text.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

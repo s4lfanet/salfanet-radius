@@ -74,133 +74,145 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final muted = context.colors.onSurfaceVariant;
+    final compact = MediaQuery.of(context).viewInsets.bottom > 0;
+    const onBrand = Colors.white;
 
     return Scaffold(
+      backgroundColor: AppTheme.brand,
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: Gap.xl, vertical: Gap.xl),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+        bottom: false,
+        child: Column(
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(Gap.xl, compact ? Gap.lg : 40, Gap.xl, compact ? Gap.lg : 40),
+              child: Row(
                 children: [
-                  Center(
+                  Container(
+                    width: compact ? 48 : 60,
+                    height: compact ? 48 : 60,
+                    padding: const EdgeInsets.all(Gap.sm),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppTheme.radiusCard)),
                     child: _companyLogo != null
-                        ? Container(
-                            width: 84,
-                            height: 84,
-                            padding: const EdgeInsets.all(Gap.sm),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(AppTheme.radiusBrand),
-                              border: Border.all(color: context.colors.outlineVariant),
-                            ),
-                            child: Image.network(_companyLogo!, fit: BoxFit.contain, errorBuilder: (_, __, ___) => const _BrandMark()),
-                          )
+                        ? Image.network(_companyLogo!, fit: BoxFit.contain, errorBuilder: (_, __, ___) => const _BrandMark())
                         : const _BrandMark(),
                   ),
-                  const SizedBox(height: Gap.xl),
-                  Text(
-                    _companyName ?? 'Portal Kolektor',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, height: 1.2),
-                  ),
-                  const SizedBox(height: Gap.xs),
-                  Text(
-                    _companyName != null ? 'Masuk ke panel admin' : 'Masuk dengan akun staf Anda',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: muted, fontSize: 14),
-                  ),
-                  const SizedBox(height: Gap.xl + Gap.sm),
-                  if (_error != null) ...[
-                    Container(
-                      padding: const EdgeInsets.all(Gap.md),
-                      decoration: BoxDecoration(
-                        color: context.tone(Tone.danger).withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(AppTheme.radiusControl),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.error_outline_rounded, size: 18, color: context.tone(Tone.danger)),
-                          const SizedBox(width: Gap.sm),
-                          Expanded(
-                            child: Text(
-                              _error!,
-                              style: TextStyle(color: context.tone(Tone.danger), fontSize: 13, fontWeight: FontWeight.w600),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: Gap.lg),
-                  ],
-                  TextField(
-                    controller: _username,
-                    autocorrect: false,
-                    textInputAction: TextInputAction.next,
-                    autofillHints: const [AutofillHints.username],
-                    decoration: const InputDecoration(labelText: 'Username', prefixIcon: Icon(Icons.person_outline_rounded)),
-                  ),
-                  const SizedBox(height: Gap.md),
-                  TextField(
-                    controller: _password,
-                    obscureText: !_showPassword,
-                    textInputAction: TextInputAction.done,
-                    autofillHints: const [AutofillHints.password],
-                    onSubmitted: (_) => auth.loading ? null : _submit(),
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: const Icon(Icons.lock_outline_rounded),
-                      suffixIcon: IconButton(
-                        tooltip: _showPassword ? 'Sembunyikan' : 'Tampilkan',
-                        icon: Icon(_showPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
-                        onPressed: () => setState(() => _showPassword = !_showPassword),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: Gap.xl),
-                  FilledButton(
-                    onPressed: auth.loading ? null : _submit,
-                    child: auth.loading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Masuk'),
-                  ),
-                  const SizedBox(height: Gap.lg),
-                  Center(
-                    child: TextButton.icon(
-                      onPressed: () async {
-                        await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ServerSettingsScreen()));
-                        _loadBranding();
-                      },
-                      style: TextButton.styleFrom(foregroundColor: muted),
-                      icon: const Icon(Icons.dns_outlined, size: 18),
-                      label: Text(Uri.tryParse(ApiClient.instance.baseUrl)?.host ?? 'Pengaturan Server'),
+                  const SizedBox(width: Gap.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _companyName ?? 'Portal Kolektor',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: onBrand, fontSize: 19, fontWeight: FontWeight.w800, height: 1.2),
+                        ),
+                        const SizedBox(height: 2),
+                        Text('Aplikasi Kolektor', style: TextStyle(color: onBrand.withValues(alpha: 0.9), fontSize: 13)),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-          ),
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(Gap.xl, 32, Gap.xl, Gap.xl),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text('Masuk', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 6),
+                      Text('Gunakan akun kolektor yang diberikan admin.', style: TextStyle(color: muted, fontSize: 14)),
+                      const SizedBox(height: Gap.xl),
+                      if (_error != null) ...[
+                        Container(
+                          padding: const EdgeInsets.all(Gap.md),
+                          decoration: BoxDecoration(
+                            color: context.tone(Tone.danger).withValues(alpha: 0.10),
+                            borderRadius: BorderRadius.circular(AppTheme.radiusControl),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.error_outline_rounded, size: 18, color: context.tone(Tone.danger)),
+                              const SizedBox(width: Gap.sm),
+                              Expanded(
+                                child: Text(
+                                  _error!,
+                                  style: TextStyle(color: context.tone(Tone.danger), fontSize: 13, fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: Gap.lg),
+                      ],
+                      TextField(
+                        controller: _username,
+                        autocorrect: false,
+                        textInputAction: TextInputAction.next,
+                        autofillHints: const [AutofillHints.username],
+                        decoration: const InputDecoration(labelText: 'Username', prefixIcon: Icon(Icons.person_outline_rounded)),
+                      ),
+                      const SizedBox(height: Gap.md),
+                      TextField(
+                        controller: _password,
+                        obscureText: !_showPassword,
+                        textInputAction: TextInputAction.done,
+                        autofillHints: const [AutofillHints.password],
+                        onSubmitted: (_) => auth.loading ? null : _submit(),
+                        decoration: InputDecoration(
+                          labelText: 'Password',
+                          prefixIcon: const Icon(Icons.lock_outline_rounded),
+                          suffixIcon: IconButton(
+                            tooltip: _showPassword ? 'Sembunyikan' : 'Tampilkan',
+                            icon: Icon(_showPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined),
+                            onPressed: () => setState(() => _showPassword = !_showPassword),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: Gap.xl),
+                      FilledButton(
+                        onPressed: auth.loading ? null : _submit,
+                        child: auth.loading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Masuk'),
+                      ),
+                      const SizedBox(height: Gap.lg),
+                      Center(
+                        child: TextButton.icon(
+                          onPressed: () async {
+                            await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ServerSettingsScreen()));
+                            _loadBranding();
+                          },
+                          style: TextButton.styleFrom(foregroundColor: muted),
+                          icon: const Icon(Icons.dns_outlined, size: 18),
+                          label: Text(Uri.tryParse(ApiClient.instance.baseUrl)?.host ?? 'Pengaturan Server'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-/// Fallback mark when the operator has no logo set. The only gradient in
-/// the app (DESIGN.md) — same blue→indigo as the web login panel.
+/// Fallback mark when the operator has no logo set: brand shield on the
+/// white tile that holds the logo.
 class _BrandMark extends StatelessWidget {
   const _BrandMark();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 72,
-      height: 72,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(colors: [AppTheme.brand, AppTheme.brandDeep], begin: Alignment.topLeft, end: Alignment.bottomRight),
-        borderRadius: BorderRadius.circular(AppTheme.radiusBrand),
-      ),
-      child: const Icon(Icons.shield_rounded, color: Colors.white, size: 34),
-    );
+    return const Center(child: Icon(Icons.shield_rounded, color: AppTheme.brand, size: 30));
   }
 }
