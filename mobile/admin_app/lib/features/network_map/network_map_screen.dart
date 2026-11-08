@@ -630,7 +630,7 @@ class _NetworkMapScreenState extends State<NetworkMapScreen> {
                       height: 22,
                       child: Container(
                         decoration: BoxDecoration(
-                          color: Colors.blue,
+                          color: scheme.primary,
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 3),
                           boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 4)],
@@ -833,10 +833,10 @@ class _OntSectionState extends State<_OntSection> {
     final rxColor = rx == null
         ? null
         : rx >= -25
-            ? Colors.green.shade700
+            ? context.tone(Tone.success)
             : rx >= -28
-                ? Colors.amber.shade800
-                : Colors.red.shade600;
+                ? context.tone(Tone.warning)
+                : context.tone(Tone.danger);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -855,9 +855,9 @@ class _OntSectionState extends State<_OntSection> {
             child: Row(
               children: [
                 SizedBox(width: 110, child: Text('Status ONT', style: text.bodySmall?.copyWith(color: muted))),
-                Icon(Icons.circle, size: 8, color: online ? Colors.green : Colors.red),
+                Icon(Icons.circle, size: 8, color: online ? context.tone(Tone.success) : context.tone(Tone.danger)),
                 const SizedBox(width: 6),
-                Text(online ? 'Online' : 'Offline', style: text.bodyMedium?.copyWith(color: online ? Colors.green.shade700 : Colors.red.shade600, fontWeight: FontWeight.w600)),
+                Text(online ? 'Online' : 'Offline', style: text.bodyMedium?.copyWith(color: online ? context.tone(Tone.success) : context.tone(Tone.danger), fontWeight: FontWeight.w600)),
               ],
             ),
           ),
