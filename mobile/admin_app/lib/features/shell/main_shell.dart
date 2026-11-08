@@ -25,7 +25,7 @@ class _MainShellState extends State<MainShell> {
   static const _tabs = <(Widget, NavigationDestination, String?)>[
     (
       GuideScope(path: '/admin', child: DashboardScreen()),
-      NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard_rounded), label: 'Dashboard'),
+      NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard_rounded), label: 'Beranda'),
       null,
     ),
     (
@@ -63,9 +63,11 @@ class _MainShellState extends State<MainShell> {
       bottomNavigationBar: DecoratedBox(
         decoration: BoxDecoration(border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant))),
         child: NavigationBar(
-        selectedIndex: index,
-        onDestinationSelected: (i) => setState(() => _index = i),
-        destinations: [for (final t in tabs) t.$2],
+          height: 64,
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          selectedIndex: index,
+          onDestinationSelected: (i) => setState(() => _index = i),
+          destinations: [for (final t in tabs) t.$2],
         ),
       ),
     );
