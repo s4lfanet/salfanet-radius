@@ -782,7 +782,7 @@ class _MetricCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(Gap.lg),
+          padding: const EdgeInsets.all(Gap.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
