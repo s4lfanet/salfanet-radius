@@ -62,7 +62,17 @@ jobs:
 
       - name: Build release APK
         working-directory: ${{ matrix.app_dir }}
-        run: flutter build apk --release --split-per-abi --android-skip-build-dependency-validation --dart-define=API_BASE_URL=${{ inputs.server_url || 'https://radius.salfa.my.id' }}
+        # Gradle's own distribution is downloaded from GitHub releases; when
+        # that returns 5xx the build fails for no code reason, so retry.
+        run: |
+          for attempt in 1 2 3 4 5 6; do
+            if flutter build apk --release --split-per-abi --android-skip-build-dependency-validation --dart-define=API_BASE_URL=${{ inputs.server_url || 'https://radius.salfa.my.id' }}; then
+              exit 0
+            fi
+            echo "Build attempt $attempt failed; retrying in 150s"
+            sleep 150
+          done
+          exit 1
 
       - name: Rename APK
         run: |
