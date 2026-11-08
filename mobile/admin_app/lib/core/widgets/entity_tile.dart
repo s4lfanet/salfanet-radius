@@ -39,7 +39,7 @@ class EntityTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final muted = context.colors.onSurfaceVariant;
     final body = Padding(
-      padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
+      padding: const EdgeInsets.fromLTRB(Gap.md, Gap.md, Gap.md, Gap.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -117,7 +117,7 @@ class StatusPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.tone(tone);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         // 7% in light mode keeps every tone's text at >=4.5:1 on its own
         // tint (10% dropped danger/success/warning just under).

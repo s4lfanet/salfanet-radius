@@ -461,8 +461,8 @@ class _QuickButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 2, vertical: Gap.sm),
           child: Column(
             children: [
-              RoleIconTile(icon: action.icon, color: context.tone(action.tone), size: 44),
-              const SizedBox(height: 6),
+              RoleIconTile(icon: action.icon, color: context.tone(action.tone), size: 40),
+              const SizedBox(height: 4),
               Text(
                 action.label,
                 textAlign: TextAlign.center,
@@ -516,7 +516,7 @@ class _RevenueHero extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(Gap.xl, Gap.xl, Gap.xl, Gap.lg),
+          padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.lg, Gap.lg, Gap.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -539,12 +539,12 @@ class _RevenueHero extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   stats.invoiceRevenueFormatted,
-                  style: const TextStyle(color: onBrand, fontSize: 28, fontWeight: FontWeight.w800, height: 1.15),
+                  style: const TextStyle(color: onBrand, fontSize: 26, fontWeight: FontWeight.w800, height: 1.15),
                 ),
               ),
-              const SizedBox(height: Gap.lg),
-              Container(height: 1, color: Colors.white.withValues(alpha: 0.28)),
               const SizedBox(height: Gap.md),
+              Container(height: 1, color: Colors.white.withValues(alpha: 0.28)),
+              const SizedBox(height: Gap.sm),
               Row(
                 children: [
                   if (today) Expanded(child: _HeroStat(label: 'Invoice hari ini', value: stats.invoiceRevenueTodayFormatted)),
@@ -607,10 +607,10 @@ class _ActionRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.md, Gap.md, Gap.md),
+        padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.sm, Gap.md, Gap.sm),
         child: Row(
           children: [
-            RoleIconTile(icon: icon, color: idle ? context.tone(Tone.neutral) : c, size: 40),
+            RoleIconTile(icon: icon, color: idle ? context.tone(Tone.neutral) : c, size: 36),
             const SizedBox(width: Gap.md),
             Expanded(
               child: Column(
