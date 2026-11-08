@@ -213,7 +213,7 @@ class _BiayaScreenState extends State<BiayaScreen> {
     final change = delta == 0 ? 'sama dengan bulan lalu' : '${delta > 0 ? 'naik' : 'turun'} ${formatCurrency(delta.abs())}';
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(Gap.lg),
+        padding: const EdgeInsets.all(Gap.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -255,7 +255,7 @@ class _BiayaScreenState extends State<BiayaScreen> {
     if (cats.isEmpty) {
       return Card(
         child: Padding(
-          padding: const EdgeInsets.all(Gap.lg),
+          padding: const EdgeInsets.all(Gap.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -343,7 +343,7 @@ class _BiayaScreenState extends State<BiayaScreen> {
                 itemBuilder: (context, i) {
                   if (expenses.isEmpty) {
                     return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: Gap.lg, horizontal: Gap.md),
+                      padding: const EdgeInsets.symmetric(vertical: Gap.md, horizontal: Gap.md),
                       child: Text(
                         'Belum ada biaya tercatat di ${_monthName.format(_month)}. Catat setiap pembayaran, misalnya tagihan bandwidth atau gaji teknisi.',
                         textAlign: TextAlign.center,

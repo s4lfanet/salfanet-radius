@@ -146,7 +146,7 @@ class _InvoiceListScreenState extends State<InvoiceListScreen> {
                 padding: const EdgeInsets.fromLTRB(Gap.page, Gap.sm, Gap.page, 0),
                 child: Card(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: Gap.lg, vertical: Gap.md),
+                    padding: const EdgeInsets.symmetric(horizontal: Gap.lg, vertical: Gap.sm),
                     child: Row(
                       children: [
                         Expanded(
