@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.45.0 - Tipe ONU, Kipas ZTE, Modul Optik, Ganti Nama dan Reboot ONU, Dasan
+> **Version:** 5.46.0 - Tampilan Mobile OLT, Nama ONU N/A, dan Tema Terang/Gelap Seragam
 
 ---
 
@@ -13,15 +13,15 @@ Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with Free
 |----------|-----------------|
 | **RADIUS / Auth** | FreeRADIUS 3.0.26, PAP/CHAP/MS-CHAP, VPN L2TP/IPSec, PPPoE & Hotspot, CoA real-time speed/disconnect, **IP Pool management**, **Multi-NAS isolation** |
 | **VPN Management** | MikroTik CHR via API, VPS built-in WireGuard & L2TP/IPsec peer management, configurable IP pool & gateway per protocol, auto-generated RouterOS scripts |
-| **PPPoE Management** | Customer accounts, profile-based bandwidth, isolation, IP assignment, MikroTik auto-sync, foto KTP+instalasi via kamera HP, GPS otomatis, **realtime online/offline status (polling 10s)**, **realtime status isolir/aktif (polling 10s)**, **PSB wizard 3-step (adopt dari home.pmynet.id)**, **true optimistic update (reactivate/delete instant)**, **placeholder MAC rejection** |
+| **PPPoE Management** | Customer accounts, profile-based bandwidth, isolation, IP assignment, MikroTik auto-sync, foto KTP+instalasi via kamera HP, GPS otomatis, **realtime online/offline status (polling 10s)**, **realtime status isolir/aktif (polling 10s)**, **PSB wizard 3-step (adopt dari home.pmynet.id)**, **true optimistic update (reactivate/delete instant)**, **placeholder MAC rejection**, **Instalatur** (kelompokkan pelanggan, tagihan, transaksi, dan export per pemasang; riwayat tidak pernah dihapus), halaman **Pelanggan Berhenti** dengan alat pemulihan auto stop |
 | **IP Pool** | RADIUS ippool module — dynamic IP allocation per speed tier, pool create/expand/delete, Pool-Name → group mapping, utilization stats |
 | **Hotspot Voucher** | 8 code types, batch up to 25,000, agent distribution, auto-sync with RADIUS, print templates, **MikroTik local-only mode** (voucher sync via RouterOS API, `salfanet:` comment marker, batch cleanup, cron status sync), **Rekap Voucher** (laporan penjualan per hari/minggu/bulan, filter by agent & profile, export Excel, rincian per hari, pendapatan per agent — support both RADIUS & local NAS via `firstLoginAt`) |
 | **Billing** | Postpaid/prepaid invoices, auto-generation, payment reminders, balance/deposit, auto-renewal, **postpaid isolir date per customer or for all at once** (same as the billing date, or following the payment date, with the due date fixed), one expiry calculation shared by every payment path |
 | **Payment** | Manual upload (bukti transfer), **QRIS Mandiri** (QR dinamis + listener), Midtrans/Xendit/Duitku/**Tripay** gateway, approval workflow, 0–5 bank accounts, halaman bayar publik `/pay/[token]` |
 | **Notifications** | WhatsApp (Fonnte/WAHA/GOWA/MPWA/Wablas/WABlast/**Kirimi.id**/**Baileys native**), Email SMTP, broadcast (outage/invoice/payment), webhook pesan masuk, **Telegram** (backup DB terjadwal + bot 2-arah untuk teknisi: cek redaman/pelanggan) |
 | **Agent/Reseller** | Balance-based voucher generation, commission tracking, sales stats |
-| **Financial** | Income/expense tracking with categories, keuangan reconciliation, **Kewajiban BHP & USO** for licensed ISPs (revenue base without PPN, write-offs and interconnection deductions, monthly recap, Excel/PDF, April reminder), DPP and PPN per invoice in Export Data |
-| **Network (FTTH)** | OLT multi-vendor (ZTE/Huawei/FiberHome/BDCOM/Hioso/Raisecom/**C-Data/HSGQ/V-SOL**, plus mode **Otomatis** yang mengenali merek dari OLT) via SNMP+Telnet+SSH, ONU discovery/register/reboot/config (dry-run preview + commit), ODC/ODP/fiber inventory & trace, network map, **OLT poll + low-signal & mass-outage alert per PON**, **ACS RX/offline alert via GenieACS** |
+| **Financial** | Income/expense tracking with categories, keuangan reconciliation, **Kewajiban BHP & USO** for licensed ISPs (revenue base without PPN, write-offs and interconnection deductions, monthly recap, Excel/PDF, April reminder), DPP and PPN per invoice in Export Data, **Riwayat Transaksi** memuat semua pembayaran termasuk tunai kolektor |
+| **Network (FTTH)** | OLT multi-vendor (ZTE/Huawei/FiberHome/BDCOM/Hioso/Raisecom/**C-Data/HSGQ/V-SOL**, plus mode **Otomatis** yang mengenali merek dari OLT) via SNMP+Telnet+SSH, ONU discovery/register/reboot/config (dry-run preview + commit), ODC/ODP/fiber inventory & trace, network map, **OLT poll + low-signal & mass-outage alert per PON**, **ACS RX/offline alert via GenieACS**, daftar ONU berbentuk kartu di HP, nama ONU kosong tampil N/A |
 | **GenieACS TR-069** | CPE/ONT management, WiFi config (SSID/password), device status & uptime |
 | **Isolation** | Auto-isolate expired customers, customizable WhatsApp/Email/HTML landing page templates, **fallback MikroTik API kick saat radacct kosong**, **HOTSPOT local mode isolation/reactivation** (manageHotspotUser enable/disable + kick), **connectionType-aware reactivation** (PPPoE & Hotspot) di semua route (webhook, mark-paid, status, bulk-status, extend) |
 | **Cron Jobs** | 27 automated background jobs (tsx runner via PM2 fork), history, distributed locking, manual trigger, **auto-close orphaned/stale sessions** |
