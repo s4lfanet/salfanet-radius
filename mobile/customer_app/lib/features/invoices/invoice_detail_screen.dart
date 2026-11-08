@@ -154,10 +154,10 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
         Card(
           child: Padding(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -205,7 +205,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
               children: [
                 for (var i = 0; i < inv.company.bankAccounts.length; i++) ...[
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     child: Row(
                       children: [
                         Container(
@@ -253,7 +253,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
           const SizedBox(height: 12),
           Text(_payError!, style: TextStyle(color: scheme.error)),
         ],
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
         if (!inv.isPaid)
           FilledButton.icon(
             onPressed: _payingNow ? null : _pay,
@@ -339,7 +339,7 @@ class _InvoiceDetailScreenState extends State<InvoiceDetailScreen> {
     final scheme = Theme.of(context).colorScheme;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             for (final item in inv.items) _itemRow(context, item.description, item.quantity, item.total),
