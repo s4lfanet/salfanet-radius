@@ -42,7 +42,11 @@ class _MainShellState extends State<MainShell> {
     context.watch<AuthProvider>();
     return Scaffold(
       body: IndexedStack(index: _index, children: _tabs),
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: DecoratedBox(
+        decoration: BoxDecoration(border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant))),
+        child: NavigationBar(
+        height: 64,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
@@ -52,6 +56,7 @@ class _MainShellState extends State<MainShell> {
           NavigationDestination(icon: Icon(Icons.person_off_outlined), selectedIcon: Icon(Icons.person_off_rounded), label: 'Isolir'),
           NavigationDestination(icon: Icon(Icons.grid_view_outlined), selectedIcon: Icon(Icons.grid_view_rounded), label: 'Menu'),
         ],
+        ),
       ),
     );
   }

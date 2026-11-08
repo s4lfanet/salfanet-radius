@@ -147,19 +147,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   const SizedBox(height: 14),
                   _AccountDetailCard(customer: customer),
                   if (banners.isNotEmpty) ...[
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
                     PromoCarousel(banners: banners),
                   ],
                   if (invoiceProvider.nextUnpaid != null) ...[
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
                     _UnpaidInvoiceCard(invoice: invoiceProvider.nextUnpaid!),
                   ],
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
                   _SectionLabel('Menu Cepat'),
                   const SizedBox(height: 12),
                   _QuickMenu(onNavigateToTab: widget.onNavigateToTab),
                   if (dashboardProvider.data != null) ...[
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     _SectionLabel('Status Koneksi'),
                     const SizedBox(height: 12),
                     _ConnectionCard(
@@ -201,7 +201,7 @@ class _StatusHeroCard extends StatelessWidget {
     final expiringSoon = daysLeft != null && daysLeft <= 3;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: scheme.primaryContainer,
         borderRadius: BorderRadius.circular(AppRadius.hero),
@@ -233,7 +233,7 @@ class _StatusHeroCard extends StatelessWidget {
               _StatusChip(status: customer.status),
             ],
           ),
-          const SizedBox(height: 22),
+          const SizedBox(height: 18),
           Text(
             _daysLabel(daysLeft),
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: scheme.onPrimaryContainer),
@@ -345,7 +345,7 @@ class _AccountDetailCard extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -586,7 +586,7 @@ class _ConnectionCard extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(18),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

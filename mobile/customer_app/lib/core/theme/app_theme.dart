@@ -198,7 +198,7 @@ class AppTheme {
         surfaceTintColor: Colors.transparent,
         indicatorColor: scheme.primaryContainer,
         elevation: 0,
-        height: 68,
+        height: 64,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         labelTextStyle: WidgetStateProperty.resolveWith((states) => TextStyle(
               fontFamily: kFontFamily,
