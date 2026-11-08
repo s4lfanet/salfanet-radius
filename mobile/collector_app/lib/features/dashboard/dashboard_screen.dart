@@ -198,7 +198,7 @@ class _HeroCard extends StatelessWidget {
     final c = context.tone(tone);
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(Gap.lg),
+        padding: const EdgeInsets.all(Gap.md),
         child: Row(
           children: [
             Container(
@@ -241,7 +241,7 @@ class _StatTile extends StatelessWidget {
     final c = tone != null ? context.tone(tone!) : context.colors.primary;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(Gap.lg),
+        padding: const EdgeInsets.all(Gap.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
