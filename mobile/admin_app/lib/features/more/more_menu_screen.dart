@@ -340,10 +340,10 @@ class _CategoryCard extends StatelessWidget {
           InkWell(
             onTap: onToggle,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.md, Gap.md, Gap.md),
+              padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.sm, Gap.md, Gap.sm),
               child: Row(
                 children: [
-                  RoleIconTile(icon: category.icon, color: context.tone(category.tone), size: 40),
+                  RoleIconTile(icon: category.icon, color: context.tone(category.tone), size: 36),
                   const SizedBox(width: Gap.md),
                   Expanded(child: Text(category.title, style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w800))),
                   Text('${entries.length}', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: context.colors.onSurfaceVariant)),
@@ -602,10 +602,10 @@ class _Row extends StatelessWidget {
         ));
       },
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.md, Gap.md, Gap.md),
+        padding: const EdgeInsets.fromLTRB(Gap.lg, Gap.sm, Gap.md, Gap.sm),
         child: Row(
           children: [
-            RoleIconTile(icon: entry.icon, color: context.tone(entry.tone), size: 38),
+            RoleIconTile(icon: entry.icon, color: context.tone(entry.tone), size: 34),
             const SizedBox(width: Gap.md),
             Expanded(
               child: Column(
