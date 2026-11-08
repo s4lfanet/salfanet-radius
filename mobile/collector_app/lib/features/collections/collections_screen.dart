@@ -62,7 +62,7 @@ class _CollectionsScreenState extends State<CollectionsScreen> {
           onRefresh: _load,
           header: Card(
             child: Padding(
-              padding: const EdgeInsets.all(Gap.lg),
+              padding: const EdgeInsets.all(Gap.md),
               child: Row(
                 children: [
                   Expanded(

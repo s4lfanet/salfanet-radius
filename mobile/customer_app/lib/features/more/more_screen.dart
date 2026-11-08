@@ -73,7 +73,7 @@ class MoreScreen extends StatelessWidget {
                 ),
               ),
             ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           _GroupLabel('Langganan'),
           const SizedBox(height: 8),
           _MenuCard(
@@ -102,7 +102,7 @@ class MoreScreen extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           _GroupLabel('Saldo & Reward'),
           const SizedBox(height: 8),
           _MenuCard(
@@ -124,7 +124,7 @@ class MoreScreen extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
           _GroupLabel('Alat Bantu'),
           const SizedBox(height: 8),
           _MenuCard(

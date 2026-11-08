@@ -88,7 +88,7 @@ class _MoreScreenState extends State<MoreScreen> {
   }
 
   Widget _heading(BuildContext context, String text) => Padding(
-        padding: const EdgeInsets.only(left: 2, top: Gap.lg, bottom: Gap.sm),
+        padding: const EdgeInsets.only(left: 2, top: Gap.md, bottom: Gap.sm),
         child: Text(text, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: context.colors.onSurfaceVariant)),
       );
 

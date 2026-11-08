@@ -76,7 +76,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                 padding: const EdgeInsets.only(bottom: 10),
                 child: _InvoiceTile(invoice: invoice),
               )),
-          const SizedBox(height: 18),
+          const SizedBox(height: 16),
         ],
         if (settled.isNotEmpty) ...[
           _ListHeading('Riwayat', count: settled.length),
