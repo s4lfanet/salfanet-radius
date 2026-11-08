@@ -40,7 +40,7 @@ class _Summary extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(Gap.lg),
+        padding: const EdgeInsets.all(Gap.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
