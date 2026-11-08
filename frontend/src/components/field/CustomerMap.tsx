@@ -148,7 +148,7 @@ export default function CustomerMap({
             onClick={() => setBasemap(b)}
             className={cn(
               'h-[36px] px-3 rounded-lg text-xs font-medium pointer-coarse:h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
-              basemap === b ? 'bg-blue-600 text-white' : 'text-muted-foreground hover:text-foreground',
+              basemap === b ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
             )}
           >
             {b === 'street' ? 'Peta' : 'Satelit'}

@@ -432,7 +432,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
                       <div className="flex items-center gap-1">
                         {notifHistory.length > 0 && (
                           <button onClick={handleClearAllNotifications} title="Hapus semua" className="p-1 hover:bg-red-500/20 rounded-lg transition-colors">
-                            <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                            <Trash2 className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
                           </button>
                         )}
                         <button onClick={() => setBellOpen(false)} className="p-2 hover:bg-primary/10 rounded-lg" aria-label="Close notifications"><X className="w-3.5 h-3.5 text-primary" /></button>
@@ -449,16 +449,16 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
                                 n.type === 'payment_rejected' ? 'bg-red-500/20' :
                                 n.type === 'package_changed' ? 'bg-blue-500/20' : 'bg-primary/10'
                               }`}>
-                                {n.type === 'payment_success' && <CheckCircle2 className="w-3 h-3 text-green-400" />}
-                                {n.type === 'payment_rejected' && <XCircle className="w-3 h-3 text-red-400" />}
-                                {n.type === 'package_changed' && <Package className="w-3 h-3 text-blue-400" />}
+                                {n.type === 'payment_success' && <CheckCircle2 className="w-3 h-3 text-green-600 dark:text-green-400" />}
+                                {n.type === 'payment_rejected' && <XCircle className="w-3 h-3 text-red-600 dark:text-red-400" />}
+                                {n.type === 'package_changed' && <Package className="w-3 h-3 text-blue-600 dark:text-blue-400" />}
                                 {n.type !== 'payment_success' && n.type !== 'payment_rejected' && n.type !== 'package_changed' && <Bell className="w-3 h-3 text-primary" />}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className={`text-xs font-bold mb-0.5 ${
-                                  n.type === 'payment_success' ? 'text-green-400' :
-                                  n.type === 'payment_rejected' ? 'text-red-400' :
-                                  n.type === 'package_changed' ? 'text-blue-400' : 'text-primary'
+                                  n.type === 'payment_success' ? 'text-green-600 dark:text-green-400' :
+                                  n.type === 'payment_rejected' ? 'text-red-600 dark:text-red-400' :
+                                  n.type === 'package_changed' ? 'text-blue-600 dark:text-blue-400' : 'text-primary'
                                 }`}>{n.title}</p>
                                 <p className="text-[11px] text-muted-foreground leading-tight">{n.message}</p>
                                 <p className="text-[10px] text-muted-foreground/50 mt-1">{formatWIB(n.timestamp, 'dd MMM yyyy HH:mm')}</p>
@@ -468,7 +468,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
                                 className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded-lg transition flex-shrink-0"
                                 aria-label="Delete notification"
                               >
-                                <X className="w-3 h-3 text-red-400" />
+                                <X className="w-3 h-3 text-red-600 dark:text-red-400" />
                               </button>
                             </div>
                         </div>
@@ -485,7 +485,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
               title={isDark ? 'Mode Terang' : 'Mode Gelap'}
             >
               {isDark
-                ? <Sun className="w-4 h-4 text-yellow-400 drop-" />
+                ? <Sun className="w-4 h-4 text-yellow-600 dark:text-yellow-400 drop-" />
                 : <Moon className="w-4 h-4 text-slate-400" />
               }
             </button>
@@ -544,7 +544,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
                         <div className="flex items-center gap-1">
                           {notifHistory.length > 0 && (
                             <button onClick={handleClearAllNotifications} title="Hapus semua" className="p-1 hover:bg-red-500/20 rounded-lg transition-colors">
-                              <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                              <Trash2 className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
                             </button>
                           )}
                           <button onClick={() => setBellOpen(false)} className="p-2 hover:bg-primary/10 rounded-lg" aria-label="Close notifications"><X className="w-3.5 h-3.5 text-primary" /></button>
@@ -561,16 +561,16 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
                                 n.type === 'payment_rejected' ? 'bg-red-500/20' :
                                 n.type === 'package_changed' ? 'bg-blue-500/20' : 'bg-primary/10'
                               }`}>
-                                {n.type === 'payment_success' && <CheckCircle2 className="w-3 h-3 text-green-400" />}
-                                {n.type === 'payment_rejected' && <XCircle className="w-3 h-3 text-red-400" />}
-                                {n.type === 'package_changed' && <Package className="w-3 h-3 text-blue-400" />}
+                                {n.type === 'payment_success' && <CheckCircle2 className="w-3 h-3 text-green-600 dark:text-green-400" />}
+                                {n.type === 'payment_rejected' && <XCircle className="w-3 h-3 text-red-600 dark:text-red-400" />}
+                                {n.type === 'package_changed' && <Package className="w-3 h-3 text-blue-600 dark:text-blue-400" />}
                                 {n.type !== 'payment_success' && n.type !== 'payment_rejected' && n.type !== 'package_changed' && <Bell className="w-3 h-3 text-primary" />}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className={`text-xs font-bold mb-0.5 ${
-                                  n.type === 'payment_success' ? 'text-green-400' :
-                                  n.type === 'payment_rejected' ? 'text-red-400' :
-                                  n.type === 'package_changed' ? 'text-blue-400' : 'text-primary'
+                                  n.type === 'payment_success' ? 'text-green-600 dark:text-green-400' :
+                                  n.type === 'payment_rejected' ? 'text-red-600 dark:text-red-400' :
+                                  n.type === 'package_changed' ? 'text-blue-600 dark:text-blue-400' : 'text-primary'
                                 }`}>{n.title}</p>
                                 <p className="text-[11px] text-muted-foreground leading-tight">{n.message}</p>
                                 <p className="text-[10px] text-muted-foreground/50 mt-1">{formatWIB(n.timestamp, 'dd MMM yyyy HH:mm')}</p>
@@ -580,7 +580,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
                                 className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded-lg transition flex-shrink-0"
                                 aria-label="Delete notification"
                               >
-                                <X className="w-3 h-3 text-red-400" />
+                                <X className="w-3 h-3 text-red-600 dark:text-red-400" />
                               </button>
                             </div>
                           </div>
@@ -597,7 +597,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
                 title={isDark ? 'Mode Terang' : 'Mode Gelap'}
               >
                 {isDark
-                  ? <Sun className="w-4 h-4 text-yellow-400 drop-" />
+                  ? <Sun className="w-4 h-4 text-yellow-600 dark:text-yellow-400 drop-" />
                   : <Moon className="w-4 h-4 text-slate-400" />
                 }
               </button>

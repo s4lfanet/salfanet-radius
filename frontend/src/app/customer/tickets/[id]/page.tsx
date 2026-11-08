@@ -138,10 +138,10 @@ export default function TicketDetailPage() {
 
   const getStatusColor = (status: TicketStatus) => {
     const colors = {
-      OPEN: 'bg-blue-500/15 text-blue-400 border border-blue-500/30',
+      OPEN: 'bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30',
       IN_PROGRESS: 'bg-amber-500/15 text-amber-400 border border-amber-500/30',
       WAITING_CUSTOMER: 'bg-primary/10 text-primary border border-border',
-      RESOLVED: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30',
+      RESOLVED: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30',
       CLOSED: 'bg-muted text-muted-foreground border border-border',
     };
     return colors[status] || colors.OPEN;
@@ -151,17 +151,17 @@ export default function TicketDetailPage() {
     const colors = {
       LOW: 'bg-muted text-muted-foreground border border-border',
       MEDIUM: 'bg-teal-500/15 text-teal-400 border border-teal-500/30',
-      HIGH: 'bg-orange-500/15 text-orange-400 border border-orange-500/30',
-      URGENT: 'bg-red-500/15 text-red-400 border border-red-500/30',
+      HIGH: 'bg-orange-500/15 text-orange-600 dark:text-orange-400 border border-orange-500/30',
+      URGENT: 'bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30',
     };
     return colors[priority] || colors.MEDIUM;
   };
 
   const getSenderBadgeColor = (senderType: SenderType) => {
     const colors = {
-      CUSTOMER: 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30',
+      CUSTOMER: 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30',
       ADMIN: 'bg-teal-500/15 text-teal-400 border border-teal-500/30',
-      TECHNICIAN: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30',
+      TECHNICIAN: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30',
       SYSTEM: 'bg-muted text-muted-foreground border border-border',
     };
     return colors[senderType] || colors.SYSTEM;
@@ -184,7 +184,7 @@ export default function TicketDetailPage() {
           </h2>
           <Link
             href="/customer/tickets"
-            className="text-cyan-400 hover:text-cyan-300"
+            className="text-cyan-600 dark:text-cyan-400 hover:text-cyan-300"
           >
             {t('ticket.backToTickets')}
           </Link>
@@ -202,7 +202,7 @@ export default function TicketDetailPage() {
         <div className="flex items-center gap-3 mb-3">
           <Link
             href="/customer/tickets"
-            className="text-cyan-400 hover:text-cyan-300 transition-colors"
+            className="text-cyan-600 dark:text-cyan-400 hover:text-cyan-300 transition-colors"
           >
             <ArrowLeft size={22} />
           </Link>
@@ -251,7 +251,7 @@ export default function TicketDetailPage() {
         <CyberCard className="p-4 space-y-3">
           {ticket.locationTag && (
             <div className="flex items-start gap-2">
-              <MapPin size={16} className="text-cyan-400 flex-shrink-0 mt-0.5" />
+              <MapPin size={16} className="text-cyan-600 dark:text-cyan-400 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-xs text-muted-foreground mb-0.5">Lokasi</p>
                 <p className="text-sm text-foreground">{ticket.locationTag}</p>
@@ -260,12 +260,12 @@ export default function TicketDetailPage() {
           )}
           {ticket.latitude && ticket.longitude && (
             <div className="flex items-center gap-2">
-              <MapPin size={16} className="text-emerald-400 flex-shrink-0" />
+              <MapPin size={16} className="text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
               <a
                 href={`https://maps.google.com/?q=${ticket.latitude},${ticket.longitude}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-cyan-400 hover:text-cyan-300 underline"
+                className="text-sm text-cyan-600 dark:text-cyan-400 hover:text-cyan-300 underline"
               >
                 {ticket.latitude}, {ticket.longitude} - Lihat di Google Maps
               </a>
@@ -277,7 +277,7 @@ export default function TicketDetailPage() {
               return (
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <Paperclip size={16} className="text-cyan-400" />
+                    <Paperclip size={16} className="text-cyan-600 dark:text-cyan-400" />
                     <p className="text-xs text-muted-foreground">Lampiran ({files.length})</p>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -292,7 +292,7 @@ export default function TicketDetailPage() {
                           className="flex items-center gap-2 p-2 rounded-lg bg-background dark:bg-slate-900/50 border border-cyan-500/20 hover:border-cyan-500/40 transition"
                         >
                           {isPdf ? (
-                            <FileText size={20} className="text-red-400 flex-shrink-0" />
+                            <FileText size={20} className="text-red-600 dark:text-red-400 flex-shrink-0" />
                           ) : (
                             <img src={url} alt={`Lampiran ${idx + 1}`} className="w-12 h-12 object-cover rounded border border-border flex-shrink-0" />
                           )}
@@ -322,7 +322,7 @@ export default function TicketDetailPage() {
             <div className="flex items-start gap-2">
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 rounded-full bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center">
-                  <User size={16} className="text-cyan-400" />
+                  <User size={16} className="text-cyan-600 dark:text-cyan-400" />
                 </div>
               </div>
               <div className="flex-1 min-w-0">

@@ -18,7 +18,7 @@ export default function CustomerSpeedTestPage() {
       <div className="flex items-center justify-between gap-2 min-w-0">
         <div>
           <h1 className="text-lg lg:text-xl font-extrabold text-foreground flex items-center gap-2">
-            <Gauge className="w-5 h-5 text-cyan-400" />
+            <Gauge className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
             Speed Test
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">
@@ -27,7 +27,7 @@ export default function CustomerSpeedTestPage() {
         </div>
         <button
           onClick={handleReload}
-          className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 rounded-xl hover:bg-cyan-500/20 transition active:scale-95"
+          className="flex items-center gap-1.5 px-3 py-2 text-xs font-bold bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/30 rounded-xl hover:bg-cyan-500/20 transition active:scale-95"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           Muat Ulang
@@ -38,7 +38,7 @@ export default function CustomerSpeedTestPage() {
         <div className="relative w-full" style={{ height: 'calc(100dvh - 220px)', minHeight: 480 }}>
           {loading && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-card z-10">
-              <Loader2 className="w-6 h-6 animate-spin text-cyan-400" />
+              <Loader2 className="w-6 h-6 animate-spin text-cyan-600 dark:text-cyan-400" />
               <p className="text-xs text-muted-foreground">Memuat OpenSpeedTest...</p>
             </div>
           )}
@@ -61,7 +61,7 @@ export default function CustomerSpeedTestPage() {
           href="https://openspeedtest.com/speedtest"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-[10px] text-cyan-400 hover:underline flex items-center gap-1 flex-shrink-0"
+          className="text-[10px] text-cyan-600 dark:text-cyan-400 hover:underline flex items-center gap-1 flex-shrink-0"
         >
           Buka di tab baru <ExternalLink className="w-2.5 h-2.5" />
         </a>

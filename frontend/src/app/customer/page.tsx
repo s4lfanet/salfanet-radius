@@ -440,7 +440,7 @@ export default function CustomerDashboard() {
               : user.status === 'active'
               ? <span className="px-2.5 py-1 bg-success/20 text-success text-[10px] font-bold rounded-full border border-success/40">Aktif</span>
               : user.status === 'isolated'
-              ? <span className="px-2.5 py-1 bg-orange-500/20 text-orange-400 text-[10px] font-bold rounded-full border border-orange-500/40">Terisolir</span>
+              ? <span className="px-2.5 py-1 bg-orange-500/20 text-orange-600 dark:text-orange-400 text-[10px] font-bold rounded-full border border-orange-500/40">Terisolir</span>
               : <span className="px-2.5 py-1 bg-warning/20 text-warning text-[10px] font-bold rounded-full border border-warning/40">{user.status}</span>
             }
           </div>
@@ -489,10 +489,10 @@ export default function CustomerDashboard() {
         <div className="grid grid-cols-4 lg:grid-cols-8 gap-2">
           {([
             { name: 'Riwayat',      href: '/customer/history',       icon: Receipt,       color: 'text-primary',  bg: 'bg-primary/10 border-border' },
-            { name: 'WiFi',         href: '/customer/wifi',          icon: Wifi,          color: 'text-blue-400',    bg: 'bg-blue-500/10 border-blue-500/30' },
-            { name: 'Speed Test',   href: '/customer/speedtest',     icon: Gauge,         color: 'text-cyan-300',    bg: 'bg-cyan-500/10 border-cyan-500/30' },
-            { name: 'Bantuan',      href: '/customer/tickets',       icon: MessageSquare, color: 'text-yellow-400',  bg: 'bg-yellow-500/10 border-yellow-500/30' },
-            { name: 'Upgrade',      href: '/customer/upgrade',       icon: Package,       color: 'text-orange-400',  bg: 'bg-orange-500/10 border-orange-500/30' },
+            { name: 'WiFi',         href: '/customer/wifi',          icon: Wifi,          color: 'text-blue-600 dark:text-blue-400',    bg: 'bg-blue-500/10 border-blue-500/30' },
+            { name: 'Speed Test',   href: '/customer/speedtest',     icon: Gauge,         color: 'text-cyan-700 dark:text-cyan-300',    bg: 'bg-cyan-500/10 border-cyan-500/30' },
+            { name: 'Bantuan',      href: '/customer/tickets',       icon: MessageSquare, color: 'text-yellow-600 dark:text-yellow-400',  bg: 'bg-yellow-500/10 border-yellow-500/30' },
+            { name: 'Upgrade',      href: '/customer/upgrade',       icon: Package,       color: 'text-orange-600 dark:text-orange-400',  bg: 'bg-orange-500/10 border-orange-500/30' },
             { name: 'Ajak Teman',   href: '/customer/referral',      icon: Gift,          color: 'text-pink-400',    bg: 'bg-pink-500/10 border-pink-500/30' },
             { name: 'Profil',       href: '/customer/profile',       icon: User,          color: 'text-slate-400',   bg: 'bg-slate-500/10 border-slate-500/30' },
           ] as const).map(({ name, href, icon: Icon, color, bg }) => (
@@ -540,7 +540,7 @@ export default function CustomerDashboard() {
                       </button>
                     )}
                     <button onClick={() => setManualPayModal({ id: invoice.id, invoiceNumber: invoice.invoiceNumber, amount: invoice.amount })}
-                      className="px-3 py-2.5 min-h-[40px] bg-purple-600 text-white text-xs font-bold rounded-lg flex items-center gap-1">
+                      className="px-3 py-2.5 min-h-[40px] bg-primary text-primary-foreground text-xs font-bold rounded-lg flex items-center gap-1">
                       <Banknote className="w-3 h-3" /> Bukti
                     </button>
                   </>
@@ -581,7 +581,7 @@ export default function CustomerDashboard() {
                 <div className="bg-muted/20 rounded-lg p-2"><span className="text-muted-foreground block text-[10px] uppercase font-bold">{t('customer.ontStatus')}</span>
                   <span className={`text-xs font-bold ${ontDevice.status === 'Online' ? 'text-success' : 'text-destructive'}`}>{ontDevice.status}</span>
                 </div>
-                <div className="bg-muted/20 rounded-lg p-2"><span className="text-muted-foreground block text-[10px] uppercase font-bold">{t('customer.rxPower')}</span><span className="text-xs text-red-300">{ontDevice.signalStrength?.rxPower || '-'}</span></div>
+                <div className="bg-muted/20 rounded-lg p-2"><span className="text-muted-foreground block text-[10px] uppercase font-bold">{t('customer.rxPower')}</span><span className="text-xs text-red-700 dark:text-red-300">{ontDevice.signalStrength?.rxPower || '-'}</span></div>
                 <div className="bg-muted/20 rounded-lg p-2"><span className="text-muted-foreground block text-[10px] uppercase font-bold">{t('customer.connectedDevices')}</span><span className="text-xs font-bold text-primary">{Array.isArray(ontDevice.connectedHosts) ? ontDevice.connectedHosts.length : 0}</span></div>
               </div>
               
@@ -618,7 +618,7 @@ export default function CustomerDashboard() {
                               <p className="text-[9px] text-muted-foreground mt-0.5">{t('customer.securityModeNote')}</p>
                             </div>
                             <div className="flex gap-1">
-                              <button onClick={handleUpdateWifi} disabled={updatingWifi} className="flex-1 px-2 py-1 bg-teal-600 text-white text-[10px] rounded disabled:opacity-50 flex items-center justify-center gap-1">
+                              <button onClick={handleUpdateWifi} disabled={updatingWifi} className="flex-1 px-2 py-1 bg-primary text-primary-foreground text-[10px] rounded disabled:opacity-50 flex items-center justify-center gap-1">
                                 {updatingWifi ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}{t('common.save')}
                               </button>
                               <button onClick={() => { setEditingWifi(null); setWifiForm({ ssid: '', password: '' }); }} className="px-2 py-1 border text-[10px] rounded" aria-label="Cancel"><X className="w-3 h-3" /></button>
@@ -696,7 +696,7 @@ export default function CustomerDashboard() {
                               {generatingPayment === invoice.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
                             </button>
                           )}
-                          <button onClick={() => setManualPayModal({ id: invoice.id, invoiceNumber: invoice.invoiceNumber, amount: invoice.amount })} className="px-2.5 py-2 min-h-[36px] bg-purple-600 text-white text-[10px] font-bold rounded-lg">
+                          <button onClick={() => setManualPayModal({ id: invoice.id, invoiceNumber: invoice.invoiceNumber, amount: invoice.amount })} className="px-2.5 py-2 min-h-[36px] bg-primary text-primary-foreground text-[10px] font-bold rounded-lg">
                             <Banknote className="w-3 h-3" />
                           </button>
                         </div>
@@ -749,10 +749,10 @@ export default function CustomerDashboard() {
                         >
                           <div>
                             <p className="text-xs font-bold text-foreground">{acc.bankName}</p>
-                            <p className="font-mono text-sm text-cyan-300 tracking-wider mt-0.5">{acc.accountNumber}</p>
+                            <p className="font-mono text-sm text-cyan-700 dark:text-cyan-300 tracking-wider mt-0.5">{acc.accountNumber}</p>
                             <p className="text-[10px] text-muted-foreground mt-0.5">a/n {acc.accountName}</p>
                           </div>
-                          {selectedAdminBank === acc && <Check className="w-4 h-4 text-cyan-400 flex-shrink-0" />}
+                          {selectedAdminBank === acc && <Check className="w-4 h-4 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />}
                         </button>
                       ))}
                     </div>

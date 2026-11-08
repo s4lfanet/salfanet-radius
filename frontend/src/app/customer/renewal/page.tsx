@@ -334,9 +334,9 @@ export default function RenewalPage() {
           <CyberCard className="p-4 bg-card border-2 border-cyan-500/30">
             <div className="flex items-center gap-2 mb-3">
               <div className="p-1.5 bg-cyan-500/20 rounded-lg border border-cyan-500/30 flex items-center justify-center">
-                <Zap className="w-3.5 h-3.5 text-cyan-400" />
+                <Zap className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
               </div>
-              <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Pilih Paket</span>
+              <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400 uppercase tracking-wider">Pilih Paket</span>
             </div>
             <div className="space-y-2">
               {pkgError ? (
@@ -359,7 +359,7 @@ export default function RenewalPage() {
                   >
                     <div className="flex items-center gap-3">
                       <div className="p-1.5 bg-muted dark:bg-slate-800 rounded-lg border border-border/30 flex items-center justify-center">
-                        <Package className="w-4 h-4 text-cyan-400" />
+                        <Package className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
@@ -375,7 +375,7 @@ export default function RenewalPage() {
                       <p className="text-sm font-bold text-foreground">{formatCurrency(pkg.price)}</p>
                       <p className="text-[9px] text-muted-foreground">/bulan</p>
                     </div>
-                    {selectedPackageId === pkg.id && <Check className="w-4 h-4 text-cyan-400 ml-2" />}
+                    {selectedPackageId === pkg.id && <Check className="w-4 h-4 text-cyan-600 dark:text-cyan-400 ml-2" />}
                   </button>
                 ))
               )}
@@ -465,12 +465,12 @@ export default function RenewalPage() {
               onClick={() => paymentGateways.length > 0 ? setStep('online-pay') : (createdInvoice.paymentLink ? window.open(createdInvoice.paymentLink, '_blank') : toast('warning', 'Tidak tersedia', 'Payment gateway tidak dikonfigurasi'))}
               className="w-full flex items-center gap-3 p-4 bg-cyan-500/10 hover:bg-cyan-500/20 border-2 border-cyan-500/40 rounded-xl transition text-left"
             >
-              <div className="p-2 bg-cyan-500/20 rounded-lg border border-cyan-500/30 flex items-center justify-center"><CreditCard className="w-5 h-5 text-cyan-400" /></div>
+              <div className="p-2 bg-cyan-500/20 rounded-lg border border-cyan-500/30 flex items-center justify-center"><CreditCard className="w-5 h-5 text-cyan-600 dark:text-cyan-400" /></div>
               <div className="flex-1">
                 <p className="text-sm font-bold text-foreground">Bayar Online</p>
                 <p className="text-[10px] text-muted-foreground">Payment Gateway (Midtrans, Xendit, dll)</p>
               </div>
-              <ChevronRight className="w-4 h-4 text-cyan-400" />
+              <ChevronRight className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
             </button>
             <button
               onClick={() => setStep('offline-pay')}
@@ -506,13 +506,13 @@ export default function RenewalPage() {
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-1.5 bg-muted dark:bg-slate-800 rounded-lg border border-border/30 flex items-center justify-center"><CreditCard className="w-4 h-4 text-cyan-400" /></div>
+                  <div className="p-1.5 bg-muted dark:bg-slate-800 rounded-lg border border-border/30 flex items-center justify-center"><CreditCard className="w-4 h-4 text-cyan-600 dark:text-cyan-400" /></div>
                   <div className="text-left">
                     <p className="text-sm font-bold text-foreground">{gw.name}</p>
                     <p className="text-[10px] text-muted-foreground capitalize">{gw.provider}</p>
                   </div>
                 </div>
-                {selectedGateway === gw.provider && <Check className="w-4 h-4 text-cyan-400" />}
+                {selectedGateway === gw.provider && <Check className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />}
               </button>
             ))}
           </div>
@@ -538,9 +538,9 @@ export default function RenewalPage() {
             <CyberCard className="p-4 bg-card border-2 border-cyan-500/30">
               <div className="flex items-center gap-2 mb-3">
                 <div className="p-1.5 bg-cyan-500/20 rounded-lg border border-cyan-500/30">
-                  <Building2 className="w-3.5 h-3.5 text-cyan-400" />
+                  <Building2 className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
                 </div>
-                <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider">Tujuan Transfer</span>
+                <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400 uppercase tracking-wider">Tujuan Transfer</span>
               </div>
               <p className="text-[10px] text-muted-foreground mb-3">Silakan transfer ke salah satu rekening berikut:</p>
               <div className="space-y-2">
@@ -557,10 +557,10 @@ export default function RenewalPage() {
                   >
                     <div>
                       <p className="text-xs font-bold text-foreground">{acc.bankName}</p>
-                      <p className="text-sm font-mono font-bold text-cyan-300 mt-0.5">{acc.accountNumber}</p>
+                      <p className="text-sm font-mono font-bold text-cyan-700 dark:text-cyan-300 mt-0.5">{acc.accountNumber}</p>
                       <p className="text-[10px] text-muted-foreground">{acc.accountName}</p>
                     </div>
-                    {selectedAdminBank === acc && <Check className="w-4 h-4 text-cyan-400 flex-shrink-0" />}
+                    {selectedAdminBank === acc && <Check className="w-4 h-4 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />}
                   </button>
                 ))}
               </div>

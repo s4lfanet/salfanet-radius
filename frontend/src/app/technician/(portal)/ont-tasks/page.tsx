@@ -168,7 +168,7 @@ export default function TechnicianOntTasksPage() {
                         <button
                           disabled={submitting}
                           onClick={() => submit(task.id, 'complete')}
-                          className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white text-xs font-bold rounded-lg transition"
+                          className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-success hover:bg-success/90 disabled:opacity-50 text-success-foreground text-xs font-bold rounded-lg transition"
                         >
                           <CheckCircle2 className="w-4 h-4" /> Selesai
                         </button>

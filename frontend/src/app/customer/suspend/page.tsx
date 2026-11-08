@@ -20,11 +20,11 @@ interface SuspendRequest {
 }
 
 const STATUS_LABEL: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  PENDING:   { label: 'Menunggu Persetujuan', color: 'text-yellow-400',  icon: Clock },
-  APPROVED:  { label: 'Disetujui',           color: 'text-green-400',   icon: CheckCircle2 },
-  REJECTED:  { label: 'Ditolak',             color: 'text-red-400',     icon: XCircle },
+  PENDING:   { label: 'Menunggu Persetujuan', color: 'text-yellow-600 dark:text-yellow-400',  icon: Clock },
+  APPROVED:  { label: 'Disetujui',           color: 'text-green-600 dark:text-green-400',   icon: CheckCircle2 },
+  REJECTED:  { label: 'Ditolak',             color: 'text-red-600 dark:text-red-400',     icon: XCircle },
   CANCELLED: { label: 'Dibatalkan',          color: 'text-gray-400',    icon: XCircle },
-  COMPLETED: { label: 'Selesai',             color: 'text-blue-400',    icon: CheckCircle2 },
+  COMPLETED: { label: 'Selesai',             color: 'text-blue-600 dark:text-blue-400',    icon: CheckCircle2 },
 };
 
 const fmt = (d: string) => formatWIB(d, 'dd MMM yyyy');
@@ -145,7 +145,7 @@ export default function CustomerSuspendPage() {
       {/* Alert Message */}
       {msg && (
         <div className={`flex items-center gap-2 p-3 rounded-lg text-sm ${
-          msg.type === 'success' ? 'bg-green-900/30 border border-green-500/50 text-green-300' : 'bg-red-900/30 border border-red-500/50 text-red-300'
+          msg.type === 'success' ? 'bg-green-900/30 border border-green-500/50 text-green-700 dark:text-green-300' : 'bg-red-900/30 border border-red-500/50 text-red-700 dark:text-red-300'
         }`}>
           {msg.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <XCircle className="w-4 h-4 shrink-0" />}
           {msg.text}
@@ -173,7 +173,7 @@ export default function CustomerSuspendPage() {
                 size="sm"
                 onClick={handleCancel}
                 disabled={cancelling}
-                className="text-xs text-red-400 hover:text-red-300 border-red-500/30"
+                className="text-xs text-red-600 dark:text-red-400 hover:text-red-300 border-red-500/30"
               >
                 {cancelling ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
                 Batalkan
@@ -226,7 +226,7 @@ export default function CustomerSuspendPage() {
                   }`}
                 />
               </div>
-              {errors.startDate && <p className="text-red-400 text-xs mt-1">{errors.startDate}</p>}
+              {errors.startDate && <p className="text-red-600 dark:text-red-400 text-xs mt-1">{errors.startDate}</p>}
             </div>
             <div>
               <label className="text-xs text-muted-foreground/60 mb-1 block">Tanggal Selesai *</label>
@@ -242,7 +242,7 @@ export default function CustomerSuspendPage() {
                   }`}
                 />
               </div>
-              {errors.endDate && <p className="text-red-400 text-xs mt-1">{errors.endDate}</p>}
+              {errors.endDate && <p className="text-red-600 dark:text-red-400 text-xs mt-1">{errors.endDate}</p>}
             </div>
           </div>
 

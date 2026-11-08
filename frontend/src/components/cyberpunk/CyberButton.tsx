@@ -13,64 +13,64 @@ const cyberButtonVariants = cva(
       variant: {
         // Primary - Blue
         default: [
-          'bg-blue-600 text-white',
-          'border border-blue-600',
+          'bg-primary text-primary-foreground',
+          'border border-primary',
           'shadow-sm',
-          'hover:bg-blue-700 hover:border-blue-700 hover:shadow-md hover:shadow-blue-500/20',
+          'hover:bg-primary/90 hover:border-primary/90 hover:shadow-md hover:shadow-primary/20',
           'active:scale-[0.98]',
         ].join(' '),
 
         // Cyan → mapped to Blue-400
         cyan: [
-          'bg-blue-500 text-white',
-          'border border-blue-500',
+          'bg-primary text-primary-foreground',
+          'border border-primary',
           'shadow-sm',
-          'hover:bg-blue-600 hover:border-blue-600 hover:shadow-md hover:shadow-blue-500/20',
+          'hover:bg-primary/90 hover:border-primary/90 hover:shadow-md hover:shadow-primary/20',
           'active:scale-[0.98]',
         ].join(' '),
 
         // Magenta → Violet
         magenta: [
-          'bg-violet-500 text-white',
-          'border border-violet-500',
+          'bg-primary text-primary-foreground',
+          'border border-primary',
           'shadow-sm',
-          'hover:bg-violet-600 hover:border-violet-600 hover:shadow-md hover:shadow-violet-500/20',
+          'hover:bg-primary/90 hover:border-primary/90 hover:shadow-md hover:shadow-primary/20',
           'active:scale-[0.98]',
         ].join(' '),
 
         // Purple → Indigo
         purple: [
-          'bg-indigo-600 text-white',
-          'border border-indigo-600',
+          'bg-primary text-primary-foreground',
+          'border border-primary',
           'shadow-sm',
-          'hover:bg-indigo-700 hover:shadow-md hover:shadow-indigo-500/20',
+          'hover:bg-primary/90 hover:shadow-md hover:shadow-primary/20',
           'active:scale-[0.98]',
         ].join(' '),
 
         // Destructive - Red
         destructive: [
-          'bg-red-600 text-white',
-          'border border-red-600',
+          'bg-destructive text-destructive-foreground',
+          'border border-destructive',
           'shadow-sm',
-          'hover:bg-red-700 hover:border-red-700 hover:shadow-md hover:shadow-red-500/20',
+          'hover:bg-destructive/90 hover:border-destructive/90 hover:shadow-md hover:shadow-destructive/20',
           'active:scale-[0.98]',
         ].join(' '),
 
         // Success - Emerald
         success: [
-          'bg-emerald-600 text-white',
-          'border border-emerald-600',
+          'bg-success text-success-foreground',
+          'border border-success',
           'shadow-sm',
-          'hover:bg-emerald-700 hover:border-emerald-700 hover:shadow-md hover:shadow-emerald-500/20',
+          'hover:bg-success/90 hover:border-success/90 hover:shadow-md hover:shadow-success/20',
           'active:scale-[0.98]',
         ].join(' '),
 
         // Warning - Amber
         warning: [
-          'bg-amber-500 text-white',
-          'border border-amber-500',
+          'bg-warning text-warning-foreground',
+          'border border-warning',
           'shadow-sm',
-          'hover:bg-amber-600 hover:border-amber-600 hover:shadow-md hover:shadow-amber-500/20',
+          'hover:bg-warning/90 hover:border-warning/90 hover:shadow-md hover:shadow-warning/20',
           'active:scale-[0.98]',
         ].join(' '),
 

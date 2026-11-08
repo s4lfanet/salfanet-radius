@@ -184,7 +184,7 @@ export default function AgentLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition shadow-sm flex items-center justify-center gap-2"
+              className="w-full py-3 bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground text-sm font-semibold rounded-lg transition shadow-sm flex items-center justify-center gap-2"
             >
               {loading ? (
                 <><Loader2 className="w-4 h-4 animate-spin" />{t('agent.portal.loggingIn')}...</>
@@ -228,7 +228,7 @@ export default function AgentLoginPage() {
               <button
                 type="submit"
                 disabled={loading || otp.length !== 6}
-                className="flex-[2] py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition flex items-center justify-center gap-2"
+                className="flex-[2] py-3 bg-primary hover:bg-primary/90 disabled:opacity-50 text-primary-foreground text-sm font-semibold rounded-lg transition flex items-center justify-center gap-2"
               >
                 {loading ? <><Loader2 className="w-4 h-4 animate-spin" />Memverifikasi...</> : <>Verifikasi<ArrowRight className="w-4 h-4" /></>}
               </button>

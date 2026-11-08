@@ -213,8 +213,8 @@ export default function UpgradePackagePage() {
       {/* Error Alert */}
       {error && (
         <div className="flex items-center gap-3 p-4 bg-red-500/10 border-2 border-red-500/30 rounded-xl">
-          <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
-          <p className="text-sm text-red-400">{error}</p>
+          <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
         </div>
       )}
 
@@ -254,10 +254,10 @@ export default function UpgradePackagePage() {
           <CyberCard className="p-4 bg-card border-2 border-cyan-500/20">
             <div className="flex items-start gap-3">
               <div className="p-1.5 bg-cyan-500/20 rounded-lg border border-cyan-500/30 flex-shrink-0 mt-0.5 flex items-center justify-center">
-                <Wifi className="w-4 h-4 text-cyan-400" />
+                <Wifi className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
               </div>
               <div className="space-y-1.5">
-                <p className="text-xs font-bold text-cyan-400">Cara Kerja Ganti Paket</p>
+                <p className="text-xs font-bold text-cyan-600 dark:text-cyan-400">Cara Kerja Ganti Paket</p>
                 <ul className="space-y-1">
                   {[
                     'Pilih paket baru dari daftar di sebelah kanan',
@@ -266,7 +266,7 @@ export default function UpgradePackagePage() {
                     'Paket aktif setelah pembayaran dikonfirmasi',
                   ].map((item, i) => (
                     <li key={i} className="flex items-start gap-1.5 text-[10px] text-muted-foreground dark:text-muted-foreground/60">
-                      <span className="w-3.5 h-3.5 flex-shrink-0 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-[8px] font-bold text-cyan-400 mt-0.5">{i + 1}</span>
+                      <span className="w-3.5 h-3.5 flex-shrink-0 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-[8px] font-bold text-cyan-600 dark:text-cyan-400 mt-0.5">{i + 1}</span>
                       {item}
                     </li>
                   ))}
@@ -414,8 +414,8 @@ export default function UpgradePackagePage() {
           {selectedPackage && paymentGateways.length === 0 && (
             <CyberCard className="p-5 bg-card border-2 border-brand-500/30">
               <div className="flex items-start gap-3 mb-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-                <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
-                <p className="text-sm text-yellow-400">{t('customer.contactAdminPayment')}</p>
+                <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-yellow-600 dark:text-yellow-400">{t('customer.contactAdminPayment')}</p>
               </div>
               <CyberButton
                 onClick={handleUpgradeManual}

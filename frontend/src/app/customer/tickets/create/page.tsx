@@ -263,7 +263,7 @@ export default function CreateTicketPage() {
           <p className="text-sm text-muted-foreground mb-6">
             {t('ticket.whatsappNotificationSent')}
           </p>
-          <p className="text-sm text-cyan-400">
+          <p className="text-sm text-cyan-600 dark:text-cyan-400">
             {t('ticket.redirectingToTicket')}...
           </p>
         </CyberCard>
@@ -277,12 +277,12 @@ export default function CreateTicketPage() {
       <div className="flex items-center gap-3">
         <Link
           href="/customer/tickets"
-          className="text-cyan-400 hover:text-cyan-300 transition-colors drop-"
+          className="text-cyan-600 dark:text-cyan-400 hover:text-cyan-300 transition-colors drop-"
         >
           <ArrowLeft size={22} />
         </Link>
         <div>
-          <h1 className="text-xl font-bold text-cyan-400 drop-">
+          <h1 className="text-xl font-bold text-cyan-600 dark:text-cyan-400 drop-">
             {t('ticket.createTicket')}
           </h1>
           <p className="text-sm text-muted-foreground">
@@ -295,8 +295,8 @@ export default function CreateTicketPage() {
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Customer Name */}
           <div>
-            <label className="block text-sm font-medium text-cyan-400 mb-2 drop-">
-              {t('ticket.customerName')} <span className="text-red-400">*</span>
+            <label className="block text-sm font-medium text-cyan-600 dark:text-cyan-400 mb-2 drop-">
+              {t('ticket.customerName')} <span className="text-red-600 dark:text-red-400">*</span>
             </label>
             <input
               type="text"
@@ -308,14 +308,14 @@ export default function CreateTicketPage() {
               placeholder={t('ticket.enterYourName')}
             />
             {errors.customerName && (
-              <p className="text-red-400 text-sm mt-1">{errors.customerName}</p>
+              <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.customerName}</p>
             )}
           </div>
 
           {/* Customer Phone */}
           <div>
-            <label className="block text-sm font-medium text-cyan-400 mb-2 drop-">
-              {t('ticket.customerPhone')} <span className="text-red-400">*</span>
+            <label className="block text-sm font-medium text-cyan-600 dark:text-cyan-400 mb-2 drop-">
+              {t('ticket.customerPhone')} <span className="text-red-600 dark:text-red-400">*</span>
             </label>
             <input
               type="text"
@@ -327,13 +327,13 @@ export default function CreateTicketPage() {
               placeholder="08xxxxxxxxxx"
             />
             {errors.customerPhone && (
-              <p className="text-red-400 text-sm mt-1">{errors.customerPhone}</p>
+              <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.customerPhone}</p>
             )}
           </div>
 
           {/* Customer Email */}
           <div>
-            <label className="block text-sm font-medium text-cyan-400 mb-2 drop-">
+            <label className="block text-sm font-medium text-cyan-600 dark:text-cyan-400 mb-2 drop-">
               {t('ticket.customerEmail')}
             </label>
             <input
@@ -347,8 +347,8 @@ export default function CreateTicketPage() {
 
           {/* Subject */}
           <div>
-            <label className="block text-sm font-medium text-cyan-400 mb-2 drop-">
-              {t('ticket.subject')} <span className="text-red-400">*</span>
+            <label className="block text-sm font-medium text-cyan-600 dark:text-cyan-400 mb-2 drop-">
+              {t('ticket.subject')} <span className="text-red-600 dark:text-red-400">*</span>
             </label>
             <input
               type="text"
@@ -360,13 +360,13 @@ export default function CreateTicketPage() {
               placeholder={t('ticket.subjectPlaceholder')}
             />
             {errors.subject && (
-              <p className="text-red-400 text-sm mt-1">{errors.subject}</p>
+              <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.subject}</p>
             )}
           </div>
 
           {/* Category */}
           <div>
-            <label className="block text-sm font-medium text-cyan-400 mb-2 drop-">
+            <label className="block text-sm font-medium text-cyan-600 dark:text-cyan-400 mb-2 drop-">
               {t('ticket.category')}
             </label>
             <select
@@ -385,8 +385,8 @@ export default function CreateTicketPage() {
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-cyan-400 mb-2 drop-">
-              {t('ticket.description')} <span className="text-red-400">*</span>
+            <label className="block text-sm font-medium text-cyan-600 dark:text-cyan-400 mb-2 drop-">
+              {t('ticket.description')} <span className="text-red-600 dark:text-red-400">*</span>
             </label>
             <textarea
               value={formData.description}
@@ -398,7 +398,7 @@ export default function CreateTicketPage() {
               placeholder={t('ticket.descriptionPlaceholder')}
             />
             {errors.description && (
-              <p className="text-red-400 text-sm mt-1">{errors.description}</p>
+              <p className="text-red-600 dark:text-red-400 text-sm mt-1">{errors.description}</p>
             )}
             <p className="text-muted-foreground text-sm mt-1">
               {t('ticket.minCharacters')}: 10
@@ -407,7 +407,7 @@ export default function CreateTicketPage() {
 
           {/* Location Tag */}
           <div>
-            <label className="block text-sm font-medium text-cyan-400 mb-2 drop-">
+            <label className="block text-sm font-medium text-cyan-600 dark:text-cyan-400 mb-2 drop-">
               <MapPin size={14} className="inline mr-1" />
               Lokasi / Alamat Rumah
             </label>
@@ -450,7 +450,7 @@ export default function CreateTicketPage() {
                 type="button"
                 onClick={handleGetGPS}
                 disabled={gpsLoading}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-cyan-500/40 text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-cyan-500/40 text-cyan-600 dark:text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/20 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {gpsLoading ? (
                   <><div className="w-3 h-3 border border-cyan-400 border-t-transparent rounded-full animate-spin" /> Mendapatkan lokasi�</>
@@ -462,7 +462,7 @@ export default function CreateTicketPage() {
                 <button
                   type="button"
                   onClick={handleUseCustomerCoords}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-emerald-500/40 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 transition"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-emerald-500/40 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 transition"
                 >
                   <MapPinned size={12} /> Dari Data Pelanggan
                 </button>
@@ -472,7 +472,7 @@ export default function CreateTicketPage() {
                   href={`https://maps.google.com/?q=${formData.latitude},${formData.longitude}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs text-cyan-400 hover:text-cyan-300 underline"
+                  className="text-xs text-cyan-600 dark:text-cyan-400 hover:text-cyan-300 underline"
                 >
                   ?? Lihat di Maps
                 </a>
@@ -485,7 +485,7 @@ export default function CreateTicketPage() {
 
           {/* File Upload */}
           <div>
-            <label className="block text-sm font-medium text-cyan-400 mb-2 drop-">
+            <label className="block text-sm font-medium text-cyan-600 dark:text-cyan-400 mb-2 drop-">
               <Upload size={14} className="inline mr-1" />
               Lampiran (Foto / Dokumen)
             </label>
@@ -507,7 +507,7 @@ export default function CreateTicketPage() {
               {uploading ? (
                 <div className="flex flex-col items-center gap-2">
                   <div className="w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-xs text-cyan-400">Mengupload�</span>
+                  <span className="text-xs text-cyan-600 dark:text-cyan-400">Mengupload�</span>
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-1.5">
@@ -531,9 +531,9 @@ export default function CreateTicketPage() {
                     className="flex items-center gap-3 p-2 rounded-lg bg-background dark:bg-slate-900/50 border border-cyan-500/20"
                   >
                     {file.type === 'pdf' ? (
-                      <FileText size={20} className="text-red-400 flex-shrink-0" />
+                      <FileText size={20} className="text-red-600 dark:text-red-400 flex-shrink-0" />
                     ) : (
-                      <ImageIcon size={20} className="text-cyan-400 flex-shrink-0" />
+                      <ImageIcon size={20} className="text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-foreground truncate">{file.name}</p>
@@ -549,7 +549,7 @@ export default function CreateTicketPage() {
                     <button
                       type="button"
                       onClick={() => handleRemoveFile(index)}
-                      className="p-1.5 rounded-lg hover:bg-red-500/10 text-red-400 transition-colors flex-shrink-0"
+                      className="p-1.5 rounded-lg hover:bg-red-500/10 text-red-600 dark:text-red-400 transition-colors flex-shrink-0"
                       aria-label="Hapus file"
                     >
                       <X size={16} />

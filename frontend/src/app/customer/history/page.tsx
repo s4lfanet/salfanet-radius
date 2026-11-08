@@ -29,7 +29,7 @@ const INVOICE_TYPE_LABEL: Record<string, string> = {
 
 // Payment source config
 const PAYMENT_SOURCE_CONFIG: Record<string, { label: string; color: string }> = {
-  gateway: { label: 'Payment Gateway', color: 'text-cyan-400' },
+  gateway: { label: 'Payment Gateway', color: 'text-cyan-600 dark:text-cyan-400' },
   manual:  { label: 'Transfer Bank',   color: 'text-primary' },
   admin:   { label: 'Dikonfirmasi Admin', color: 'text-success' },
 };
@@ -576,8 +576,8 @@ export default function PaymentHistoryPage() {
                     {/* Manual payment status banners */}
                     {payment.manualPaymentStatus === 'pending' && (
                       <div className="mb-3 flex items-center gap-2 p-2.5 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-                        <Clock className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0" />
-                        <p className="text-[11px] text-yellow-300">
+                        <Clock className="w-3.5 h-3.5 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
+                        <p className="text-[11px] text-yellow-700 dark:text-yellow-300">
                           Bukti transfer {payment.manualPaymentBank ? `(${payment.manualPaymentBank}) ` : ''}sudah dikirim, menunggu konfirmasi admin.
                         </p>
                       </div>
@@ -585,8 +585,8 @@ export default function PaymentHistoryPage() {
                     {payment.manualPaymentStatus === 'rejected' && (
                       <div className="mb-3 p-2.5 bg-red-500/10 border border-red-500/30 rounded-lg">
                         <div className="flex items-center gap-2 mb-1">
-                          <AlertCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
-                          <p className="text-[11px] text-red-300 font-semibold">Pembayaran ditolak. Silakan kirim ulang bukti transfer.</p>
+                          <AlertCircle className="w-3.5 h-3.5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                          <p className="text-[11px] text-red-700 dark:text-red-300 font-semibold">Pembayaran ditolak. Silakan kirim ulang bukti transfer.</p>
                         </div>
                         {payment.manualPaymentRejectionReason && (
                           <p className="text-[10px] text-red-300/70 ml-5">Alasan: {payment.manualPaymentRejectionReason}</p>
@@ -606,7 +606,7 @@ export default function PaymentHistoryPage() {
                       {canPay && (
                         <button
                           onClick={() => hasLink ? handlePayLink(payment) : handlePayInvoice(payment)}
-                          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 rounded-lg text-xs font-bold text-cyan-300 transition-colors"
+                          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 rounded-lg text-xs font-bold text-cyan-700 dark:text-cyan-300 transition-colors"
                         >
                           <CreditCard className="w-3.5 h-3.5" />
                           Bayar Sekarang
@@ -783,18 +783,18 @@ export default function PaymentHistoryPage() {
                     </div>
                     <button onClick={() => setPaymentChoiceVisible(false)} className="p-1.5 rounded-lg bg-muted/20 hover:bg-muted/40 border border-border/50" aria-label="Close"><X className="w-4 h-4 text-muted-foreground" /></button>
                   </div>
-                  <p className="text-base font-bold text-cyan-400 mb-4">{formatCurrency(selectedPaymentInvoice.amount)}</p>
+                  <p className="text-base font-bold text-cyan-600 dark:text-cyan-400 mb-4">{formatCurrency(selectedPaymentInvoice.amount)}</p>
                   <div className="space-y-3">
                     <button
                       onClick={handleChooseOnline}
                       className="w-full flex items-center gap-3 p-4 bg-cyan-500/10 hover:bg-cyan-500/20 border-2 border-cyan-500/40 rounded-xl transition text-left"
                     >
-                      <div className="p-2 bg-cyan-500/20 rounded-lg border border-cyan-500/30 flex items-center justify-center"><CreditCard className="w-5 h-5 text-cyan-400" /></div>
+                      <div className="p-2 bg-cyan-500/20 rounded-lg border border-cyan-500/30 flex items-center justify-center"><CreditCard className="w-5 h-5 text-cyan-600 dark:text-cyan-400" /></div>
                       <div className="flex-1">
                         <p className="text-sm font-bold text-foreground">Bayar Online</p>
                         <p className="text-[10px] text-muted-foreground">Payment Gateway (Midtrans, Xendit, dll)</p>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-cyan-400" />
+                      <ChevronRight className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
                     </button>
                     <button
                       onClick={handleChooseOffline}
@@ -841,13 +841,13 @@ export default function PaymentHistoryPage() {
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <div className="p-1.5 bg-muted dark:bg-slate-800 rounded-lg border border-border/30 flex items-center justify-center"><CreditCard className="w-4 h-4 text-cyan-400" /></div>
+                          <div className="p-1.5 bg-muted dark:bg-slate-800 rounded-lg border border-border/30 flex items-center justify-center"><CreditCard className="w-4 h-4 text-cyan-600 dark:text-cyan-400" /></div>
                           <div className="text-left">
                             <p className="text-sm font-bold text-foreground">{gw.name}</p>
                             <p className="text-[10px] text-muted-foreground capitalize">{gw.provider}</p>
                           </div>
                         </div>
-                        {selectedGateway === gw.provider && <Check className="w-4 h-4 text-cyan-400" />}
+                        {selectedGateway === gw.provider && <Check className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />}
                       </button>
                     ))}
                   </div>
@@ -891,7 +891,7 @@ export default function PaymentHistoryPage() {
                           onClick={() => { setBankName(bank); setCustomBank(''); }}
                           className={`px-3 py-1.5 text-[11px] font-semibold rounded-lg border transition ${
                             bankName === bank && !customBank
-                              ? 'bg-cyan-500/30 border-cyan-400 text-cyan-300'
+                              ? 'bg-cyan-500/30 border-cyan-400 text-cyan-700 dark:text-cyan-300'
                               : 'bg-muted/20 border-border/40 text-muted-foreground hover:border-cyan-500/40'
                           }`}
                         >
@@ -971,7 +971,7 @@ export default function PaymentHistoryPage() {
                   </div>
 
                   <div className="flex items-center gap-2 p-2.5 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                    <Info className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0" />
+                    <Info className="w-3.5 h-3.5 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
                     <p className="text-[10px] text-yellow-300/80">Pembayaran akan diverifikasi admin dalam 1?24 jam</p>
                   </div>
                 </div>
@@ -1097,8 +1097,8 @@ export default function PaymentHistoryPage() {
                     {/* Manual payment rejection */}
                     {selectedDetail.manualPaymentStatus === 'rejected' && selectedDetail.manualPaymentRejectionReason && (
                       <div className="p-3 bg-red-500/10 rounded-xl border border-red-500/20">
-                        <p className="text-[10px] text-red-400 font-bold mb-1">Alasan Penolakan</p>
-                        <p className="text-[11px] text-red-300">{selectedDetail.manualPaymentRejectionReason}</p>
+                        <p className="text-[10px] text-red-600 dark:text-red-400 font-bold mb-1">Alasan Penolakan</p>
+                        <p className="text-[11px] text-red-700 dark:text-red-300">{selectedDetail.manualPaymentRejectionReason}</p>
                       </div>
                     )}
 
@@ -1107,12 +1107,12 @@ export default function PaymentHistoryPage() {
                       <div className="p-3 bg-muted/10 rounded-xl border border-border/40">
                         <p className="text-[9px] text-muted-foreground uppercase tracking-wide mb-1.5">Link Pembayaran</p>
                         {selectedDetail.paymentLink && selectedDetail.paymentLink.trim() !== '' && !selectedDetail.paymentLink.includes('localhost') ? (
-                          <a href={selectedDetail.paymentLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[11px] font-semibold text-cyan-400 hover:text-cyan-300">
+                          <a href={selectedDetail.paymentLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[11px] font-semibold text-cyan-600 dark:text-cyan-400 hover:text-cyan-300">
                             <ExternalLink className="w-3 h-3 flex-shrink-0" />
                             {selectedDetail.paymentLink.length > 40 ? selectedDetail.paymentLink.substring(0, 40) + '...' : selectedDetail.paymentLink}
                           </a>
                         ) : selectedDetail.paymentToken ? (
-                          <a href={`/pay/${selectedDetail.paymentToken}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[11px] font-semibold text-cyan-400 hover:text-cyan-300">
+                          <a href={`/pay/${selectedDetail.paymentToken}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-[11px] font-semibold text-cyan-600 dark:text-cyan-400 hover:text-cyan-300">
                             <ExternalLink className="w-3 h-3" />
                             /pay/{selectedDetail.paymentToken}
                           </a>
