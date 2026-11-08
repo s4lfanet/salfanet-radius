@@ -281,7 +281,7 @@ export default function CollectorCustomersPage() {
                     onClick={() => setView(key)}
                     className={cn(
                       'h-[36px] pointer-coarse:h-[44px] px-3 inline-flex items-center gap-1.5 rounded-lg text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
-                      view === key ? 'bg-blue-600 text-white' : 'text-muted-foreground hover:text-foreground',
+                      view === key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground',
                     )}
                   >
                     <Icon className="w-4 h-4" /> {label}

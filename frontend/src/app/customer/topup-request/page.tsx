@@ -126,7 +126,7 @@ export default function TopUpRequestPage() {
             {/* Amount */}
             <div>
               <label className="block text-sm font-bold text-brand-500 mb-2 uppercase tracking-wider">
-                {t('customer.topupAmount')} <span className="text-red-400">*</span>
+                {t('customer.topupAmount')} <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60">
@@ -151,7 +151,7 @@ export default function TopUpRequestPage() {
             {/* Payment Method */}
             <div>
               <label className="block text-sm font-bold text-brand-500 mb-3 uppercase tracking-wider">
-                {t('customer.paymentMethod')} <span className="text-red-400">*</span>
+                {t('customer.paymentMethod')} <span className="text-red-600 dark:text-red-400">*</span>
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <button
@@ -208,7 +208,7 @@ export default function TopUpRequestPage() {
             {formData.paymentMethod !== 'CASH' && (
               <div>
                 <label className="block text-sm font-bold text-brand-500 mb-3 uppercase tracking-wider">
-                  {t('customer.paymentProof')} <span className="text-red-400">*</span>
+                  {t('customer.paymentProof')} <span className="text-red-600 dark:text-red-400">*</span>
                 </label>
                 <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-brand-500/50 transition-colors bg-slate-900/50">
                   <input

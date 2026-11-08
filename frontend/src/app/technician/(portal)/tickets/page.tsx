@@ -7,7 +7,7 @@ function renderWithLinks(text: string) {
   const parts = text.split(urlRegex);
   return parts.map((part, i) =>
     urlRegex.test(part) ? (
-      <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline break-all hover:text-blue-300">
+      <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 underline break-all hover:text-blue-300">
         {part}
       </a>
     ) : (
@@ -775,7 +775,7 @@ export default function TechnicianTicketsPage() {
                         <button
                           onClick={sendReply}
                           disabled={replyLoading || (!replyMessage.trim() && !photoFile)}
-                          className="flex items-center justify-center w-9 h-9 rounded-xl bg-violet-500 hover:bg-primary/10 text-white transition-colors disabled:opacity-40"
+                          className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary hover:bg-primary/10 text-primary-foreground transition-colors disabled:opacity-40"
                           title="Kirim (Ctrl+Enter)"
                         >
                           {replyLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}

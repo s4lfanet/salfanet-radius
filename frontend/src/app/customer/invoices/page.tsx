@@ -58,18 +58,18 @@ const STATUS_TABS: { key: StatusFilter; label: string; icon: React.ElementType }
 ];
 
 const getStatusBadge = (inv: Invoice) => {
-  if (inv.status === 'PAID')    return { label: 'Lunas',       Icon: CheckCircle,    cls: 'bg-green-500/20 text-green-400 border-green-500/30' };
-  if (inv.status === 'OVERDUE') return { label: 'Jatuh Tempo', Icon: AlertCircle,    cls: 'bg-red-500/20 text-red-400 border-red-500/30' };
-  if (inv.manualPaymentStatus === 'pending')  return { label: 'Menunggu Konfirmasi', Icon: Hourglass, cls: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' };
-  if (inv.manualPaymentStatus === 'rejected') return { label: 'Ditolak',            Icon: XCircle,   cls: 'bg-red-500/20 text-red-400 border-red-500/30' };
-  return { label: 'Belum Bayar', Icon: CircleDollarSign, cls: 'bg-orange-500/20 text-orange-400 border-orange-500/30' };
+  if (inv.status === 'PAID')    return { label: 'Lunas',       Icon: CheckCircle,    cls: 'bg-green-500/20 text-green-600 dark:text-green-400 border-green-500/30' };
+  if (inv.status === 'OVERDUE') return { label: 'Jatuh Tempo', Icon: AlertCircle,    cls: 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30' };
+  if (inv.manualPaymentStatus === 'pending')  return { label: 'Menunggu Konfirmasi', Icon: Hourglass, cls: 'bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 border-yellow-500/30' };
+  if (inv.manualPaymentStatus === 'rejected') return { label: 'Ditolak',            Icon: XCircle,   cls: 'bg-red-500/20 text-red-600 dark:text-red-400 border-red-500/30' };
+  return { label: 'Belum Bayar', Icon: CircleDollarSign, cls: 'bg-orange-500/20 text-orange-600 dark:text-orange-400 border-orange-500/30' };
 };
 
 const getPaymentSourceBadge = (src: string | null) => {
   switch (src) {
-    case 'gateway': return { label: 'Payment Gateway',    Icon: CreditCard,   cls: 'text-cyan-400' };
+    case 'gateway': return { label: 'Payment Gateway',    Icon: CreditCard,   cls: 'text-cyan-600 dark:text-cyan-400' };
     case 'manual':  return { label: 'Transfer Bank',      Icon: Banknote,     cls: 'text-primary' };
-    case 'admin':   return { label: 'Dikonfirmasi Admin', Icon: ShieldCheck,  cls: 'text-green-400' };
+    case 'admin':   return { label: 'Dikonfirmasi Admin', Icon: ShieldCheck,  cls: 'text-green-600 dark:text-green-400' };
     default: return null;
   }
 };
@@ -252,7 +252,7 @@ export default function CustomerInvoicesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-white flex items-center gap-2">
-            <Receipt className="w-5 h-5 text-cyan-400" />
+            <Receipt className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
             Tagihan
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">{pagination.total} tagihan ditemukan</p>
@@ -262,7 +262,7 @@ export default function CustomerInvoicesPage() {
           disabled={refreshing || loading}
           className="p-2 rounded-xl border border-cyan-500/30 hover:bg-cyan-500/10 transition disabled:opacity-50"
         >
-          <RefreshCw className={`w-4 h-4 text-cyan-400 ${refreshing ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-4 h-4 text-cyan-600 dark:text-cyan-400 ${refreshing ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
@@ -277,7 +277,7 @@ export default function CustomerInvoicesPage() {
               onClick={() => setStatusFilter(tab.key)}
               className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition border ${
                 active
-                  ? 'bg-cyan-500/15 text-cyan-400 border-cyan-500/40 '
+                  ? 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/40 '
                   : 'text-slate-400 border-slate-700/50 hover:border-slate-600 hover:text-slate-300'
               }`}
             >
@@ -318,7 +318,7 @@ export default function CustomerInvoicesPage() {
                   <div className="flex-1 min-w-0">
                     {/* Invoice number + type */}
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-bold text-cyan-400 font-mono">{inv.invoiceNumber}</span>
+                      <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400 font-mono">{inv.invoiceNumber}</span>
                       <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-700/50 text-slate-400 border border-slate-600/30">
                         {INVOICE_TYPE_LABEL[inv.invoiceType] || inv.invoiceType}
                       </span>
@@ -356,7 +356,7 @@ export default function CustomerInvoicesPage() {
                         </div>
                       )}
                       {inv.manualPaymentStatus === 'pending' && (
-                        <span className="flex items-center gap-1 text-[10px] text-yellow-400 animate-pulse font-medium">
+                        <span className="flex items-center gap-1 text-[10px] text-yellow-600 dark:text-yellow-400 animate-pulse font-medium">
                           <Clock className="w-3 h-3" />
                           Menunggu konfirmasi admin�
                         </span>
@@ -446,7 +446,7 @@ export default function CustomerInvoicesPage() {
               setPrintDialogInvoice(null);
               void handlePrintStandard(invoiceId);
             }}
-            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground transition-colors"
           >
             <FileText className="w-5 h-5 flex-shrink-0" />
             <div className="text-left">
@@ -461,7 +461,7 @@ export default function CustomerInvoicesPage() {
               setPrintDialogInvoice(null);
               void handlePrintThermal(invoiceId);
             }}
-            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-colors"
+            className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-success hover:bg-success/90 text-success-foreground transition-colors"
           >
             <Printer className="w-5 h-5 flex-shrink-0" />
             <div className="text-left">
@@ -500,7 +500,7 @@ export default function CustomerInvoicesPage() {
               {/* Transfer destination: admin bank accounts */}
               <div>
                 <label className="text-xs font-bold text-white block mb-2">
-                  Transfer ke Rekening <span className="text-red-400">*</span>
+                  Transfer ke Rekening <span className="text-red-600 dark:text-red-400">*</span>
                 </label>
                 {adminBankAccounts.length > 0 ? (
                   <div className="space-y-2">
@@ -539,7 +539,7 @@ export default function CustomerInvoicesPage() {
               </div>
               <div>
                 <label className="text-xs font-medium text-foreground dark:text-slate-300 block mb-1.5">
-                  Nama Pengirim <span className="text-red-400">*</span>
+                  Nama Pengirim <span className="text-red-600 dark:text-red-400">*</span>
                 </label>
                 <input
                   type="text"

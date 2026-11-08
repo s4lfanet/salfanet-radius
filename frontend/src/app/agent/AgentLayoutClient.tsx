@@ -385,7 +385,7 @@ function AgentLayoutInner({ children }: { children: React.ReactNode }) {
                 className="p-2 bg-card/50 hover:bg-card rounded-xl transition border border-border flex items-center justify-center"
                 title={isDark ? 'Mode Terang' : 'Mode Gelap'}
               >
-                {isDark ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4 text-muted-foreground" />}
+                {isDark ? <Sun className="w-4 h-4 text-yellow-600 dark:text-yellow-400" /> : <Moon className="w-4 h-4 text-muted-foreground" />}
               </button>
               {agent && <AgentNotificationDropdown agentId={agent.id} enableToasts={false} />}
               <button

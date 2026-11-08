@@ -53,18 +53,18 @@ interface Category {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  OPEN:             'bg-blue-500/10 text-blue-400 border-blue-500/30',
-  IN_PROGRESS:      'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
+  OPEN:             'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30',
+  IN_PROGRESS:      'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/30',
   WAITING_CUSTOMER: 'bg-primary/10 text-primary border-border',
-  RESOLVED:         'bg-green-500/10 text-green-400 border-green-500/30',
+  RESOLVED:         'bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/30',
   CLOSED:           'bg-slate-500/10 text-slate-400 border-slate-500/30',
 };
 
 const PRIORITY_COLORS: Record<string, string> = {
   LOW:    'bg-slate-500/10 text-slate-400 border-slate-500/30',
-  MEDIUM: 'bg-blue-500/10 text-blue-400 border-blue-500/30',
-  HIGH:   'bg-orange-500/10 text-orange-400 border-orange-500/30',
-  URGENT: 'bg-red-500/10 text-red-400 border-red-500/30',
+  MEDIUM: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30',
+  HIGH:   'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30',
+  URGENT: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30',
 };
 
 const STATUS_ICON: Record<string, React.ReactNode> = {
@@ -289,7 +289,7 @@ export default function AgentTicketsPage() {
 
           {/* Subject */}
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-muted-foreground">Subjek <span className="text-red-400">*</span></label>
+            <label className="text-xs font-semibold text-muted-foreground">Subjek <span className="text-red-600 dark:text-red-400">*</span></label>
             <input
               value={form.subject}
               onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
@@ -300,7 +300,7 @@ export default function AgentTicketsPage() {
 
           {/* Description */}
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-muted-foreground">Deskripsi <span className="text-red-400">*</span></label>
+            <label className="text-xs font-semibold text-muted-foreground">Deskripsi <span className="text-red-600 dark:text-red-400">*</span></label>
             <textarea
               value={form.description}
               onChange={e => setForm(f => ({ ...f, description: e.target.value }))}

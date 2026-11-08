@@ -125,7 +125,7 @@ export default function TechnicianIsolatedPage() {
         </div>
         <div className="flex gap-1">
           {(['all', 'online', 'offline'] as const).map(f => (
-            <button key={f} onClick={() => setFilter(f)} className={`px-3 py-2 text-xs font-bold rounded-xl transition ${filter === f ? 'bg-violet-500 text-white ' : 'bg-slate-100 dark:bg-muted border border-border text-muted-foreground hover:bg-slate-200 dark:hover:bg-primary/10'}`}>
+            <button key={f} onClick={() => setFilter(f)} className={`px-3 py-2 text-xs font-bold rounded-xl transition ${filter === f ? 'bg-primary text-primary-foreground ' : 'bg-slate-100 dark:bg-muted border border-border text-muted-foreground hover:bg-slate-200 dark:hover:bg-primary/10'}`}>
               {f === 'all' ? t('techPortal.all') : f === 'online' ? 'Online' : 'Offline'}
             </button>
           ))}

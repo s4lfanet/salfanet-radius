@@ -268,7 +268,7 @@ export default function CustomerWiFiPage() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-lg font-bold text-white flex items-center gap-2">
-            <Wifi className="w-5 h-5 text-cyan-400" />
+            <Wifi className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
             Pengaturan WiFi
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">Kelola SSID dan password WiFi perangkat Anda</p>
@@ -280,7 +280,7 @@ export default function CustomerWiFiPage() {
             title="Reboot Modem/ONT"
             className="p-2 rounded-lg border border-slate-700 text-slate-400 hover:text-red-400 hover:border-red-400 transition-colors disabled:opacity-40"
           >
-            <Power className={`w-4 h-4 ${rebooting ? 'animate-pulse text-red-400' : ''}`} />
+            <Power className={`w-4 h-4 ${rebooting ? 'animate-pulse text-red-600 dark:text-red-400' : ''}`} />
           </button>
           <button
             onClick={handleRefresh}
@@ -297,7 +297,7 @@ export default function CustomerWiFiPage() {
       <CyberCard className="p-4 sm:p-5">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-full bg-cyan-400/10 flex items-center justify-center">
-            <Router className="w-5 h-5 text-cyan-400" />
+            <Router className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-bold text-white truncate">{device.model || 'Perangkat ONT'}</p>
@@ -305,8 +305,8 @@ export default function CustomerWiFiPage() {
           </div>
           <span className={`text-xs font-bold px-2 py-1 rounded-full ${
             device.status === 'Online'
-              ? 'bg-emerald-400/10 text-emerald-400 border border-emerald-400/20'
-              : 'bg-red-400/10 text-red-400 border border-red-400/20'
+              ? 'bg-emerald-400/10 text-emerald-600 dark:text-emerald-400 border border-emerald-400/20'
+              : 'bg-red-400/10 text-red-600 dark:text-red-400 border border-red-400/20'
           }`}>
             {device.status}
           </span>
@@ -389,7 +389,7 @@ export default function CustomerWiFiPage() {
             {/* WLAN Header */}
             <div className="flex items-center gap-3 mb-4">
               <div className="w-9 h-9 rounded-full bg-muted dark:bg-slate-800 flex items-center justify-center">
-                <Radio className={`w-5 h-5 ${wlan.enabled ? 'text-emerald-400' : 'text-slate-500'}`} />
+                <Radio className={`w-5 h-5 ${wlan.enabled ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500'}`} />
               </div>
               <div className="flex-1">
                 <p className="font-bold text-white text-sm">WiFi {bandLabel}</p>
@@ -397,8 +397,8 @@ export default function CustomerWiFiPage() {
               </div>
               <span className={`text-xs font-bold px-2 py-1 rounded-full border ${
                 wlan.enabled
-                  ? 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20'
-                  : 'bg-red-400/10 text-red-400 border-red-400/20'
+                  ? 'bg-emerald-400/10 text-emerald-600 dark:text-emerald-400 border-emerald-400/20'
+                  : 'bg-red-400/10 text-red-600 dark:text-red-400 border-red-400/20'
               }`}>
                 {wlan.enabled ? 'Aktif' : 'Mati'}
               </span>
@@ -445,7 +445,7 @@ export default function CustomerWiFiPage() {
                           {wlanDevices.map((host, i) => (
                             <div key={i} className="flex items-center gap-2 p-1.5 rounded-lg bg-muted/40 dark:bg-slate-800/40 border border-border/40 dark:border-slate-700/40">
                               <div className="w-6 h-6 rounded-full bg-emerald-400/10 flex items-center justify-center shrink-0">
-                                <Monitor className="w-3 h-3 text-emerald-400" />
+                                <Monitor className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className="text-xs font-medium text-white truncate">
@@ -456,7 +456,7 @@ export default function CustomerWiFiPage() {
                                   {host.signalStrength && host.signalStrength !== '-' ? ` · ${host.signalStrength}` : ''}
                                 </p>
                               </div>
-                              <span className="text-xs text-emerald-400 shrink-0">?</span>
+                              <span className="text-xs text-emerald-600 dark:text-emerald-400 shrink-0">?</span>
                             </div>
                           ))}
                         </div>
@@ -560,7 +560,7 @@ export default function CustomerWiFiPage() {
       {/* Info Box */}
       <CyberCard className="p-4 sm:p-5 border-blue-500/20 bg-blue-500/5">
         <div className="flex items-start gap-3">
-          <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+          <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
           <p className="text-xs text-slate-400">
             Perubahan dikirim langsung ke perangkat via TR-069. Setelah disimpan, tunggu <strong className="text-slate-300">30-60 detik</strong> lalu sambungkan kembali ke WiFi dengan nama/password baru.
           </p>

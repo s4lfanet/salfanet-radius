@@ -575,7 +575,7 @@ export default function TechnicianGenieACSPage() {
                                   <button
                                     onClick={handleSaveWifi}
                                     disabled={savingWifi || (!wifiEdit.ssid && !wifiEdit.wifiPassword)}
-                                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 min-h-[44px] text-xs font-bold bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition disabled:opacity-50"
+                                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 min-h-[44px] text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition disabled:opacity-50"
                                   >
                                     {savingWifi ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
                                     {savingWifi ? t('techPortal.savingWifi') : t('techPortal.save')}

@@ -218,7 +218,7 @@ export default function AgentVouchersPage() {
             {selectedVouchers.length > 0 && (
               <button
                 onClick={handleSendWhatsApp}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs transition font-bold shadow-sm"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-success hover:bg-success/90 text-success-foreground rounded-lg text-xs transition font-bold shadow-sm"
               >
                 <MessageCircle className="h-3.5 w-3.5" />
                 {t('agent.portal.sendWhatsApp')} ({selectedVouchers.length})
@@ -261,7 +261,7 @@ export default function AgentVouchersPage() {
             </select>
             <button
               onClick={handleFilter}
-              className="flex items-center gap-1 px-3 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-xs transition font-bold"
+              className="flex items-center gap-1 px-3 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-xs transition font-bold"
             >
               <Filter className="h-3 w-3" />
               {t('agent.portal.filter')}
@@ -480,7 +480,7 @@ export default function AgentVouchersPage() {
               <button
                 onClick={handleWhatsAppSubmit}
                 disabled={sendingWhatsApp || !whatsappPhone}
-                className="px-4 py-2 text-sm bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition disabled:opacity-50 flex items-center gap-1.5 font-bold"
+                className="px-4 py-2 text-sm bg-success hover:bg-success/90 text-success-foreground rounded-xl transition disabled:opacity-50 flex items-center gap-1.5 font-bold"
               >
                 {sendingWhatsApp ? (
                   <><div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>Mengirim...</>
