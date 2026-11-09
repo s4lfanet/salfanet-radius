@@ -31,6 +31,7 @@ const _typeIcons = <String, IconData>{
   'invoice_overdue': Icons.receipt_long_rounded,
   'invoice_generated': Icons.description_rounded,
   'new_registration': Icons.person_add_alt_1_rounded,
+  'technician_registration_pending': Icons.how_to_reg_rounded,
   'payment_received': Icons.payments_rounded,
   'manual_payment_submitted': Icons.receipt_rounded,
   'manual_payment_approved': Icons.task_alt_rounded,
