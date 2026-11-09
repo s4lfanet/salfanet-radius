@@ -670,15 +670,28 @@ async function notifyRegisteringTechnician(
 ) {
   if (!user.registeredByTechnicianId) return;
   try {
-    const { sendWebPushToTechnician } = await import('@/server/services/push-notification.service');
-    await sendWebPushToTechnician(user.registeredByTechnicianId, {
+    const { sendWebPushToTechnician, sendWebPushToAdmin } = await import('@/server/services/push-notification.service');
+    const payload = {
       title: decision.approved ? 'Pendaftaran Disetujui' : 'Pendaftaran Ditolak',
       body: decision.approved
         ? `Pelanggan ${user.name || user.username} (${user.username}) sudah disetujui admin.`
         : `Pelanggan ${user.name || user.username} (${user.username}) ditolak: ${decision.reason}`,
       url: '/technician',
       tag: decision.approved ? 'technician_registration_approved' : 'technician_registration_rejected',
-    });
+    };
+    await sendWebPushToTechnician(user.registeredByTechnicianId, payload);
+
+    // A technician who signs in with an admin account (role TECHNICIAN) is
+    // credited through a linked technicians row, but subscribes to push as an
+    // admin — so the row above has no subscription. Find the account by the
+    // same link (placeholder phone `admin:<id>`, else the shared phone number).
+    const tech = await prisma.technician.findUnique({ where: { id: user.registeredByTechnicianId }, select: { phoneNumber: true } });
+    if (tech?.phoneNumber) {
+      const adminId = tech.phoneNumber.startsWith('admin:')
+        ? tech.phoneNumber.slice('admin:'.length)
+        : (await prisma.adminUser.findFirst({ where: { role: 'TECHNICIAN', isActive: true, phone: tech.phoneNumber }, select: { id: true } }))?.id;
+      if (adminId) await sendWebPushToAdmin(adminId, payload);
+    }
   } catch { /* best-effort */ }
 }
 

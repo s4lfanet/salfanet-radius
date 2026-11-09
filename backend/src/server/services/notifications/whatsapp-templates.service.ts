@@ -138,6 +138,27 @@ export async function sendRegistrationConfirmation(data: {
 }
 
 /**
+ * Tell the applicant their registration was turned down. Plain text rather
+ * than a DB template so it works on installs that never seeded one.
+ */
+export async function sendRegistrationRejection(data: { customerName: string; customerPhone: string; reason: string }) {
+  try {
+    const company = await prisma.company.findFirst();
+    const companyName = company?.name || '';
+    const companyPhone = company?.phone || '';
+    const message =
+      `Halo ${data.customerName},\n\n` +
+      `Mohon maaf, pendaftaran layanan internet Anda belum dapat kami setujui.\n` +
+      `Alasan: ${data.reason}\n\n` +
+      (companyPhone ? `Untuk informasi lebih lanjut, silakan hubungi ${companyPhone}.\n\n` : '') +
+      `Terima kasih,\n${companyName}`.trim();
+    await WhatsAppService.sendMessage({ phone: data.customerPhone, message });
+  } catch (error) {
+    console.error('[WA] Failed to send registration rejection:', error);
+  }
+}
+
+/**
  * Send registration approval notification
  * Includes username, password, and installation info
  */

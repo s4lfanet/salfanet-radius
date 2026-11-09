@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
+import { sendRegistrationRejection } from '@/server/services/notifications/whatsapp-templates.service';
 
 export async function POST(
   request: NextRequest,
@@ -47,6 +48,13 @@ export async function POST(
         rejectionReason: reason,
       },
     });
+
+    // Fire-and-forget: a failed WhatsApp must not undo the rejection.
+    sendRegistrationRejection({
+      customerName: registration.name,
+      customerPhone: registration.phone,
+      reason,
+    }).catch(() => {});
 
     return NextResponse.json({
       success: true,
