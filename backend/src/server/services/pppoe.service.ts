@@ -656,10 +656,31 @@ export async function createPppoeUser(
   // Invalidate profiles cache (user count changed)
   try { await invalidateKey(CACHE_KEYS.profiles); } catch {}
 
+  await notifyRegisteringTechnician(user, { approved: true });
+
   return { user: { ...user, syncedToRadius: radiusSynced }, radiusSynced };
 }
 
 // ─── Approve pending technician registration ────────────────────────────────
+
+/** Tells the technician who registered a customer how the admin decided. Best-effort. */
+async function notifyRegisteringTechnician(
+  user: { registeredByTechnicianId: string | null; username: string; name: string | null },
+  decision: { approved: true } | { approved: false; reason: string },
+) {
+  if (!user.registeredByTechnicianId) return;
+  try {
+    const { sendWebPushToTechnician } = await import('@/server/services/push-notification.service');
+    await sendWebPushToTechnician(user.registeredByTechnicianId, {
+      title: decision.approved ? 'Pendaftaran Disetujui' : 'Pendaftaran Ditolak',
+      body: decision.approved
+        ? `Pelanggan ${user.name || user.username} (${user.username}) sudah disetujui admin.`
+        : `Pelanggan ${user.name || user.username} (${user.username}) ditolak: ${decision.reason}`,
+      url: '/technician',
+      tag: decision.approved ? 'technician_registration_approved' : 'technician_registration_rejected',
+    });
+  } catch { /* best-effort */ }
+}
 
 export async function approvePppoeUser(
   userId: string,
@@ -858,6 +879,8 @@ export async function rejectPppoeUser(
       metadata: { userId, username: user.username, reason },
     });
   } catch {}
+
+  await notifyRegisteringTechnician(user, { approved: false, reason });
 
   return { user };
 }
