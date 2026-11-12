@@ -54,6 +54,10 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          # Pinned to the stable that built all three apps on 2026-11-09. The unpinned channel moved to
+          # 3.50.0 on 2026-11-11, and the next run failed in the build step of all three apps. Raise this
+          # on purpose once the 3.50 build is known to work.
+          flutter-version: '3.47.9'
           cache: true
 
       - name: Pub get
