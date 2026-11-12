@@ -110,9 +110,22 @@ class _TicketTile extends StatelessWidget {
                   TicketStatusPill(status: ticket.status),
                 ],
               ),
-              const SizedBox(height: 8),
+              if (ticket.description.trim().isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  ticket.description,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                ),
+              ],
+              const SizedBox(height: 10),
               Text(
-                '#${ticket.ticketNumber} · dibuat ${formatDate(ticket.createdAt)}',
+                [
+                  '#${ticket.ticketNumber}',
+                  'dibuat ${formatDate(ticket.createdAt)}',
+                  if (ticket.messageCount > 0) '${ticket.messageCount} balasan',
+                ].join(' · '),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
               ),
             ],
@@ -155,9 +168,11 @@ class TicketStatusPill extends StatelessWidget {
   static (String, Color, IconData) visual(String status, ColorScheme scheme, Brightness brightness) {
     switch (status.toUpperCase()) {
       case 'OPEN':
-        return ('Terbuka', StatusColors.warning(brightness), Icons.markunread_mailbox_rounded);
+        return ('Terbuka', scheme.primary, Icons.markunread_mailbox_rounded);
       case 'IN_PROGRESS':
         return ('Diproses', FeatureColors.ticket.of(brightness), Icons.engineering_rounded);
+      case 'WAITING_CUSTOMER':
+        return ('Menunggu jawaban Anda', StatusColors.warning(brightness), Icons.reply_rounded);
       case 'RESOLVED':
         return ('Selesai', StatusColors.success(brightness), Icons.check_circle_rounded);
       case 'CLOSED':

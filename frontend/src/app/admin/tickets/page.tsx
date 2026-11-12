@@ -3,7 +3,9 @@
 import { useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Ticket, MessageSquare, Filter, Search, TrendingUp, Clock, CheckCircle, AlertCircle, Users, Send, X, ChevronDown, Loader2, MapPin, Navigation, Upload, FileText, Ticket as TicketIcon } from 'lucide-react';
+import Link from 'next/link';
+import { Ticket, MessageSquare, Search, Send, X, ChevronDown, Loader2, MapPin, Navigation, Upload, FileText } from 'lucide-react';
+import { CategoryBadge, PriorityBadge, StatusBadge } from '@/components/tickets/ticket-ui';
 import { formatWIB } from '@/lib/timezone';
 import { showSuccess, showError } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';
@@ -22,9 +24,11 @@ interface TicketItem {
   createdAt: string;
   assignedToId?: string;
   assignedToType?: string;
+  assignedToName?: string | null;
+  updatedAt?: string;
   category?: {
     name: string;
-    color: string;
+    color: string | null;
   };
   _count: {
     messages: number;
@@ -263,332 +267,190 @@ export default function AdminTicketsPage() {
     }
   };
 
-  const getStatusColor = (status: TicketStatus) => {
-    const colors = {
-      OPEN: 'bg-info/10 text-info',
-      IN_PROGRESS: 'bg-primary/10 text-primary',
-      WAITING_CUSTOMER: 'bg-warning/10 text-warning',
-      RESOLVED: 'bg-success/10 text-success',
-      CLOSED: 'bg-muted text-muted-foreground',
-    };
-    return colors[status] || colors.OPEN;
-  };
+  const hasFilter = !!(filters.status || filters.priority || filters.search);
+  const FIELD = 'min-h-10 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary';
 
-  const getPriorityColor = (priority: TicketPriority) => {
-    const colors = {
-      LOW: 'bg-muted text-muted-foreground',
-      MEDIUM: 'bg-primary/10 text-primary',
-      HIGH: 'bg-warning/10 text-warning',
-      URGENT: 'bg-destructive/10 text-destructive',
-    };
-    return colors[priority] || colors.MEDIUM;
-  };
+  // Each tile is a real count from /api/tickets/stats; the ones that map to a filter apply it.
+  const summary: { label: string; value: string | number; apply?: () => void; active?: boolean; tone?: string }[] = stats
+    ? [
+        { label: t('ticket.status_OPEN'), value: stats.byStatus.open, apply: () => setFilters({ ...filters, status: 'OPEN', priority: '' }), active: filters.status === 'OPEN' },
+        { label: t('ticket.status_IN_PROGRESS'), value: stats.byStatus.inProgress, apply: () => setFilters({ ...filters, status: 'IN_PROGRESS', priority: '' }), active: filters.status === 'IN_PROGRESS' },
+        { label: t('ticket.status_WAITING_CUSTOMER'), value: stats.byStatus.waitingCustomer, apply: () => setFilters({ ...filters, status: 'WAITING_CUSTOMER', priority: '' }), active: filters.status === 'WAITING_CUSTOMER' },
+        { label: t('ticket.priority_URGENT'), value: stats.byPriority.urgent, apply: () => setFilters({ ...filters, status: '', priority: 'URGENT' }), active: filters.priority === 'URGENT' && !filters.status, tone: stats.byPriority.urgent > 0 ? 'text-red-600 dark:text-red-400' : '' },
+        { label: t('ticket.unassigned'), value: stats.unassigned },
+        { label: t('ticket.avgResponseTime'), value: `${stats.avgResponseTimeHours.toFixed(1)} ${t('ticket.hours')}` },
+      ]
+    : [];
 
   return (
-    <div className="bg-background relative">
-      {/* Neon Cyberpunk Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-primary/10 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/3 right-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-1/2 w-48 h-48 sm:w-96 sm:h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
-        <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
-      </div>
-      
-      <div className="relative z-10 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-        <div className="min-w-0 flex items-center gap-2">
-          <TicketIcon className="w-5 h-5 sm:w-6 sm:h-6 text-brand-500 shrink-0" />
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-">
-            {t('ticket.tickets')}
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+    <div className="space-y-5">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold text-foreground sm:text-2xl">{t('ticket.tickets')}</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">
             {t('ticket.manageAllTickets')}
+            {stats && <> · {stats.total} tiket</>}
           </p>
         </div>
         <button
           onClick={openDispatch}
-          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-brand-500 hover:bg-brand-600 text-white rounded-xl shadow-sm hover:shadow-md transition"
+          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
-          <Send className="w-4 h-4" />
+          <Send className="h-4 w-4" aria-hidden="true" />
           Kirim ke Teknisi
         </button>
-      </div>
+      </header>
 
-      {/* Stats Cards */}
-      {stats && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-3 mb-4">
-          <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition">
-            <div className="flex items-center justify-between gap-2 min-w-0">
-              <div className="min-w-0">
-                <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('ticket.totalTickets')}</p>
-                <p className="text-lg sm:text-xl font-bold text-foreground mt-1">{stats.total}</p>
-              </div>
-              <Ticket className="text-brand-500 h-5 w-5 sm:h-6 sm:w-6 drop- flex-shrink-0" />
-            </div>
-          </div>
-
-          <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition">
-            <div className="flex items-center justify-between gap-2 min-w-0">
-              <div className="min-w-0">
-                <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('ticket.openTickets')}</p>
-                <p className="text-lg sm:text-xl font-bold text-foreground mt-1">{stats.byStatus.open}</p>
-              </div>
-              <TrendingUp className="text-brand-500 h-5 w-5 sm:h-6 sm:w-6 drop- flex-shrink-0" />
-            </div>
-          </div>
-
-          <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition">
-            <div className="flex items-center justify-between gap-2 min-w-0">
-              <div className="min-w-0">
-                <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('ticket.urgentTickets')}</p>
-                <p className="text-lg sm:text-xl font-bold text-foreground mt-1">{stats.byPriority.urgent}</p>
-              </div>
-              <AlertCircle className="text-red-600 dark:text-red-400 h-5 w-5 sm:h-6 sm:w-6 drop-shadow-md shadow-red-500/40 flex-shrink-0" />
-            </div>
-          </div>
-
-          <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition">
-            <div className="flex items-center justify-between gap-2 min-w-0">
-              <div className="min-w-0">
-                <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('ticket.unassigned')}</p>
-                <p className="text-lg sm:text-xl font-bold text-foreground mt-1">{stats.unassigned}</p>
-              </div>
-              <Users className="text-amber-400 h-5 w-5 sm:h-6 sm:w-6 drop- flex-shrink-0" />
-            </div>
-          </div>
-
-          <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition">
-            <div className="flex items-center justify-between gap-2 min-w-0">
-              <div className="min-w-0">
-                <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('ticket.inProgress')}</p>
-                <p className="text-lg sm:text-xl font-bold text-foreground mt-1">{stats.byStatus.inProgress}</p>
-              </div>
-              <Clock className="text-amber-400 h-5 w-5 sm:h-6 sm:w-6 drop- flex-shrink-0" />
-            </div>
-          </div>
-
-          <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition">
-            <div className="flex items-center justify-between gap-2 min-w-0">
-              <div className="min-w-0">
-                <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('ticket.resolved')}</p>
-                <p className="text-lg sm:text-xl font-bold text-foreground mt-1">{stats.byStatus.resolved}</p>
-              </div>
-              <CheckCircle className="text-green-600 dark:text-green-400 h-5 w-5 sm:h-6 sm:w-6 drop- flex-shrink-0" />
-            </div>
-          </div>
-
-          <div className="col-span-2 sm:col-span-1 bg-card rounded-xl border border-border p-3  hover:border-border transition">
-            <div className="flex items-center justify-between gap-2 min-w-0">
-              <div className="min-w-0">
-                <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('ticket.avgResponseTime')}</p>
-                <p className="text-lg sm:text-xl font-bold text-foreground mt-1">
-                  {stats.avgResponseTimeHours.toFixed(1)} {t('ticket.hours')}
-                </p>
-              </div>
-              <Clock className="text-brand-500 h-5 w-5 sm:h-6 sm:w-6 drop- flex-shrink-0" />
-            </div>
-          </div>
-        </div>
+      {summary.length > 0 && (
+        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-3 lg:grid-cols-6">
+          {summary.map((s) => {
+            const body = (
+              <>
+                <dt className="truncate text-xs text-muted-foreground">{s.label}</dt>
+                <dd className={`mt-1 text-lg font-semibold tabular-nums text-foreground ${s.tone ?? ''}`}>{s.value}</dd>
+              </>
+            );
+            return s.apply ? (
+              <button
+                key={s.label}
+                type="button"
+                onClick={s.apply}
+                aria-pressed={s.active}
+                className={`block bg-card px-4 py-3 text-left hover:bg-muted focus-visible:relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary ${s.active ? 'bg-muted' : ''}`}
+              >
+                {body}
+              </button>
+            ) : (
+              <div key={s.label} className="bg-card px-4 py-3">{body}</div>
+            );
+          })}
+        </dl>
       )}
 
-      {/* Filters */}
-      <div className="bg-card rounded-lg shadow-sm border border-border p-3 mb-4">
-        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:gap-3">
-          <Filter className="h-4 w-4 text-muted-foreground hidden sm:block" />
-          
-          <div className="flex-1 min-w-0 sm:min-w-[180px]">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <input
-                type="text"
-                value={filters.search}
-                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                placeholder={t('ticket.searchPlaceholder')}
-                className="w-full pl-8 pr-3 py-1.5 text-sm border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
-              />
-            </div>
-          </div>
-
-          <div className="flex gap-2">
-            <select
-              value={filters.status}
-              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-              className="flex-1 sm:flex-initial border border-border rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
-            >
-              <option value="">{t('ticket.allStatus')}</option>
-              <option value="OPEN">{t('ticket.status_OPEN')}</option>
-              <option value="IN_PROGRESS">{t('ticket.status_IN_PROGRESS')}</option>
-              <option value="WAITING_CUSTOMER">{t('ticket.status_WAITING_CUSTOMER')}</option>
-              <option value="RESOLVED">{t('ticket.status_RESOLVED')}</option>
-              <option value="CLOSED">{t('ticket.status_CLOSED')}</option>
-            </select>
-
-            <select
-              value={filters.priority}
-              onChange={(e) => setFilters({ ...filters, priority: e.target.value })}
-              className="flex-1 sm:flex-initial border border-border rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground"
-            >
-              <option value="">{t('ticket.allPriority')}</option>
-              <option value="LOW">{t('ticket.priority_LOW')}</option>
-              <option value="MEDIUM">{t('ticket.priority_MEDIUM')}</option>
-              <option value="HIGH">{t('ticket.priority_HIGH')}</option>
-              <option value="URGENT">{t('ticket.priority_URGENT')}</option>
-            </select>
-          </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-0 flex-1 basis-60">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+          <input
+            type="search"
+            value={filters.search}
+            onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+            placeholder={t('ticket.searchPlaceholder')}
+            aria-label={t('ticket.searchPlaceholder')}
+            className={`${FIELD} w-full pl-9`}
+          />
         </div>
+        <select value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })} aria-label={t('ticket.status')} className={`${FIELD} flex-1 sm:flex-none`}>
+          <option value="">{t('ticket.allStatus')}</option>
+          <option value="OPEN">{t('ticket.status_OPEN')}</option>
+          <option value="IN_PROGRESS">{t('ticket.status_IN_PROGRESS')}</option>
+          <option value="WAITING_CUSTOMER">{t('ticket.status_WAITING_CUSTOMER')}</option>
+          <option value="RESOLVED">{t('ticket.status_RESOLVED')}</option>
+          <option value="CLOSED">{t('ticket.status_CLOSED')}</option>
+        </select>
+        <select value={filters.priority} onChange={(e) => setFilters({ ...filters, priority: e.target.value })} aria-label={t('ticket.priority')} className={`${FIELD} flex-1 sm:flex-none`}>
+          <option value="">{t('ticket.allPriority')}</option>
+          <option value="LOW">{t('ticket.priority_LOW')}</option>
+          <option value="MEDIUM">{t('ticket.priority_MEDIUM')}</option>
+          <option value="HIGH">{t('ticket.priority_HIGH')}</option>
+          <option value="URGENT">{t('ticket.priority_URGENT')}</option>
+        </select>
+        {hasFilter && (
+          <button
+            type="button"
+            onClick={() => setFilters({ ...filters, status: '', priority: '', search: '' })}
+            className="inline-flex min-h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <X className="h-4 w-4" aria-hidden="true" /> Hapus saringan
+          </button>
+        )}
       </div>
 
-      {/* Tickets Table */}
-      <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden">
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
         {loading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
-            <p className="text-xs text-muted-foreground mt-2">{t('ticket.loading')}</p>
+          <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> {t('ticket.loading')}
           </div>
         ) : tickets.length === 0 ? (
-          <div className="text-center py-8">
-            <Ticket className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">{t('ticket.noTicketsFound')}</p>
+          <div className="px-4 py-12 text-center">
+            <Ticket className="mx-auto mb-2 h-8 w-8 text-muted-foreground" aria-hidden="true" />
+            <p className="text-sm font-medium text-foreground">{t('ticket.noTicketsFound')}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {hasFilter ? 'Tidak ada tiket yang cocok dengan saringan ini.' : 'Tiket dari pelanggan dan kiriman ke teknisi akan tampil di sini.'}
+            </p>
           </div>
         ) : (
-          <div className="space-y-4">
-            <div className="overflow-x-auto hidden md:block">
-              <table className="w-full">
-              <thead className="bg-muted border-b border-border">
+          <>
+            <table className="hidden w-full text-sm md:table">
+              <thead className="border-b border-border bg-muted/60 text-left text-xs text-muted-foreground">
                 <tr>
-                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                    {t('ticket.ticketNumber')}
-                  </th>
-                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                    {t('ticket.customer')}
-                  </th>
-                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                    {t('ticket.subject')}
-                  </th>
-                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                    {t('ticket.status')}
-                  </th>
-                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                    {t('ticket.priority')}
-                  </th>
-                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase tracking-wider hidden lg:table-cell">
-                    {t('ticket.messages')}
-                  </th>
-                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase tracking-wider hidden lg:table-cell">
-                    {t('ticket.created')}
-                  </th>
+                  <th scope="col" className="px-4 py-2.5 font-medium">Tiket</th>
+                  <th scope="col" className="px-4 py-2.5 font-medium">{t('ticket.customer')}</th>
+                  <th scope="col" className="px-4 py-2.5 font-medium">{t('ticket.status')}</th>
+                  <th scope="col" className="px-4 py-2.5 font-medium">{t('ticket.priority')}</th>
+                  <th scope="col" className="hidden px-4 py-2.5 font-medium lg:table-cell">Ditangani</th>
+                  <th scope="col" className="hidden px-4 py-2.5 font-medium xl:table-cell">Aktivitas</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {tickets.map((ticket) => (
-                  <tr
-                    key={ticket.id}
-                    onClick={() => router.push(`/admin/tickets/${ticket.id}`)}
-                    className="hover:bg-muted cursor-pointer"
-                  >
-                    <td className="px-3 py-2 whitespace-nowrap">
-                      <span className="text-xs font-mono font-medium text-primary">
-                        #{ticket.ticketNumber}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap">
-                      <span className="text-xs text-foreground">
-                        {ticket.customerName}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-foreground line-clamp-2">
-                          {ticket.subject}
-                        </span>
-                        {ticket.category && (
-                          <span
-                            className="px-1.5 py-0.5 rounded text-[10px] font-medium text-foreground whitespace-nowrap truncate overflow-hidden"
-                            style={{ backgroundColor: ticket.category.color }}
-                          >
-                            {ticket.category.name}
-                          </span>
-                        )}
+                  <tr key={ticket.id} onClick={() => router.push(`/admin/tickets/${ticket.id}`)} className="cursor-pointer align-top hover:bg-muted/50">
+                    <td className="max-w-md px-4 py-3">
+                      <Link
+                        href={`/admin/tickets/${ticket.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="font-medium text-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      >
+                        <span className="line-clamp-2">{ticket.subject}</span>
+                      </Link>
+                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        <span className="font-mono">#{ticket.ticketNumber}</span>
+                        {ticket.category && <CategoryBadge name={ticket.category.name} color={ticket.category.color} />}
                       </div>
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(ticket.status)}`}>
-                        {t(`ticket.status_${ticket.status}`)}
-                      </span>
+                    <td className="px-4 py-3 text-foreground">{ticket.customerName}</td>
+                    <td className="px-4 py-3"><StatusBadge status={ticket.status} label={t(`ticket.status_${ticket.status}`)} /></td>
+                    <td className="px-4 py-3"><PriorityBadge priority={ticket.priority} label={t(`ticket.priority_${ticket.priority}`)} /></td>
+                    <td className="hidden px-4 py-3 lg:table-cell">
+                      {ticket.assignedToId ? (
+                        <span className="text-foreground">{ticket.assignedToName || 'Petugas'}</span>
+                      ) : (
+                        <span className="text-muted-foreground">Belum ada</span>
+                      )}
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${getPriorityColor(ticket.priority)}`}>
-                        {t(`ticket.priority_${ticket.priority}`)}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap hidden lg:table-cell">
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <MessageSquare className="h-3 w-3" />
-                        {ticket._count.messages}
-                      </div>
-                    </td>
-                    <td className="px-3 py-2 whitespace-nowrap text-xs text-muted-foreground hidden lg:table-cell">
-                      {formatWIB(ticket.createdAt, 'd MMM yyyy')}
+                    <td className="hidden whitespace-nowrap px-4 py-3 text-xs text-muted-foreground xl:table-cell">
+                      <span className="inline-flex items-center gap-1"><MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />{ticket._count.messages}</span>
+                      <span className="ml-3">{formatWIB(ticket.updatedAt || ticket.createdAt, 'd MMM, HH:mm')}</span>
                     </td>
                   </tr>
                 ))}
               </tbody>
-              </table>
-            </div>
+            </table>
 
-            {/* Mobile Card View */}
-            <div className="block md:hidden divide-y divide-border">
+            <ul className="divide-y divide-border md:hidden">
               {tickets.map((ticket) => (
-                <div
-                  key={ticket.id}
-                  onClick={() => router.push(`/admin/tickets/${ticket.id}`)}
-                  className="p-3 hover:bg-muted/50 cursor-pointer transition-colors active:bg-muted"
-                >
-                  <div className="flex items-start justify-between gap-2 min-w-0 mb-1.5">
-                    <div className="min-w-0">
-                      <span className="text-[11px] font-mono font-medium text-primary">
-                        #{ticket.ticketNumber}
-                      </span>
-                      <p className="text-xs font-medium text-foreground mt-0.5 line-clamp-2">{ticket.subject}</p>
+                <li key={ticket.id}>
+                  <Link href={`/admin/tickets/${ticket.id}`} className="block px-4 py-3 active:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="line-clamp-2 min-w-0 text-sm font-medium text-foreground">{ticket.subject}</p>
+                      <StatusBadge status={ticket.status} label={t(`ticket.status_${ticket.status}`)} />
                     </div>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap truncate overflow-hidden flex-shrink-0 ${getPriorityColor(ticket.priority)}`}>
-                      {t(`ticket.priority_${ticket.priority}`)}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 flex-wrap mt-2">
-                    <span className="text-[11px] text-muted-foreground">{ticket.customerName}</span>
-                    <span className="text-[9px] text-muted-foreground/50">•</span>
-                    <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-medium ${getStatusColor(ticket.status)}`}>
-                      {t(`ticket.status_${ticket.status}`)}
-                    </span>
-                    {ticket.category && (
-                      <>
-                        <span className="text-[9px] text-muted-foreground/50">•</span>
-                        <span
-                          className="px-1.5 py-0.5 rounded text-[9px] font-medium text-foreground"
-                          style={{ backgroundColor: ticket.category.color }}
-                        >
-                          {ticket.category.name}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between mt-2">
-                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                      <MessageSquare className="h-3 w-3" />
-                      {ticket._count.messages}
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      <span className="font-mono">#{ticket.ticketNumber}</span>
+                      <span className="mx-1.5" aria-hidden="true">·</span>
+                      {ticket.customerName}
+                    </p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      <PriorityBadge priority={ticket.priority} label={t(`ticket.priority_${ticket.priority}`)} />
+                      {ticket.category && <CategoryBadge name={ticket.category.name} color={ticket.category.color} />}
+                      <span className="inline-flex items-center gap-1"><MessageSquare className="h-3.5 w-3.5" aria-hidden="true" />{ticket._count.messages}</span>
+                      <span className="ml-auto">{formatWIB(ticket.updatedAt || ticket.createdAt, 'd MMM, HH:mm')}</span>
                     </div>
-                    <span className="text-[10px] text-muted-foreground">
-                      {formatWIB(ticket.createdAt, 'd MMM yyyy')}
-                    </span>
-                  </div>
-                </div>
+                  </Link>
+                </li>
               ))}
-            </div>
-          </div>
+            </ul>
+          </>
         )}
-      </div>
       </div>
 
       {/* Dispatch Modal */}

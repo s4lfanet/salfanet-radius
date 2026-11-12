@@ -68,6 +68,8 @@ export async function GET(request: NextRequest) {
             color: true,
           },
         },
+        // Replies the customer can see; staff notes are left out of the count.
+        _count: { select: { messages: { where: { isInternal: false } } } },
       },
       orderBy: [
         { createdAt: 'desc' },

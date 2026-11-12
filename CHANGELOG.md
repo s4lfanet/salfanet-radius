@@ -6,6 +6,55 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.48.0] - 2026-11-13 - Tampilan Tiket Baru untuk Admin, Teknisi, dan Pelanggan
+
+### Detail tiket (web)
+- **[CHANGE]** Detail tiket admin, teknisi, dan pelanggan memakai tata letak yang sama. Di atas: nomor tiket, waktu dibuat, judul, status, prioritas, dan kategori. Di bawahnya: percakapan di kiri dan panel info di kanan. Di layar HP semuanya bertumpuk dalam satu kolom
+- **[CHANGE]** Percakapan tampil seperti chat. Pesan dari pihak yang sedang membuka tiket ada di kanan, pesan pihak lain di kiri, dan pesan dikelompokkan per hari. Setiap pesan menunjukkan nama dan peran pengirim (Pelanggan, Admin, Teknisi) serta jam kirim. Catatan internal diberi warna kuning dengan label "Catatan internal"
+- **[CHANGE]** Deskripsi dari pelanggan menjadi pesan pertama dengan label "Laporan awal", lengkap dengan fotonya, sehingga keluhan dan balasannya terbaca berurutan
+- **[CHANGE]** Kotak balasan baru dipakai di ketiga peran. Admin dan teknisi memilih **Balasan ke pelanggan** atau **Catatan internal** lewat dua tombol, bukan kotak centang. Saat catatan internal dipilih, bingkai kotak berubah kuning dan tombol kirim berbunyi "Simpan catatan". Foto yang sudah dipilih diberi tulisan "Belum terkirim. Tekan Kirim." Ctrl+Enter mengirim balasan
+- **[CHANGE]** Admin mengubah status, prioritas, dan perkiraan perbaikan dari panel **Kelola tiket**, lalu menyimpan semuanya dengan satu tombol. Sebelumnya tiap kolom punya tombol ubah dan simpan sendiri
+- **[NEW]** Panel pelanggan (admin dan teknisi) punya tombol Telepon dan WhatsApp. Tiket yang punya titik lokasi punya tombol Buka di Google Maps
+- **[NEW]** Pelanggan melihat penjelasan status dalam bahasa sehari-hari, misalnya "Petugas menunggu jawaban Anda", ditambah perkiraan perbaikan bila sudah diisi
+- **[CHANGE]** Kolom "Ditangani" menampilkan nama teknisi atau staf. Sebelumnya admin melihat jenis dan ID mentah, misalnya `TECHNICIAN #clx...`
+- **[CHANGE]** Teknisi kini bisa mengirim sampai 5 foto per balasan (sebelumnya 1), masing-masing 5 MB, tetap hanya gambar
+- **[CHANGE]** Jendela tiket teknisi memenuhi layar di HP, dengan tab **Percakapan** dan **Info dan tindakan**. Di desktop keduanya tampil berdampingan. Tombol Esc menutup jendela
+
+### Daftar tiket (web)
+- **[CHANGE]** Daftar tiket admin tanpa efek latar berpendar dan garis kotak-kotak. Angka ringkasan dipadatkan menjadi satu baris; angka Terbuka, Dalam Proses, Menunggu Pelanggan, dan Mendesak bisa diklik untuk menyaring daftar. Tabel menampilkan judul tiket lebih dulu, lalu pelanggan, status, prioritas, petugas, dan waktu pembaruan terakhir. Tombol **Hapus saringan** muncul saat saringan aktif
+- **[CHANGE]** Daftar tiket teknisi dan pelanggan memakai tab status di atas daftar. Setiap kartu menampilkan cuplikan keluhan, prioritas, kategori, dan jumlah balasan. Kartu teknisi menampilkan langkah berikutnya sebagai tombol utama (Ambil tiket, Tandai selesai, Lanjutkan pengerjaan)
+- **[CHANGE]** Warna status dan prioritas kini sama di semua halaman tiket. Prioritas Mendesak satu-satunya yang berwarna penuh merah, supaya cepat terlihat
+- **[CHANGE]** Keadaan kosong, gagal muat, dan memuat kini menjelaskan sebabnya. Daftar pelanggan yang gagal dimuat punya tombol Coba lagi
+
+### Aplikasi admin
+- **[CHANGE]** Detail tiket: status, prioritas, judul, dan tanggal dibuka tampil di kartu atas, dengan tombol **Ubah status** yang terlihat. Sebelumnya status hanya bisa diubah dari ikon panah di bilah atas. Edit dan Hapus pindah ke menu titik tiga
+- **[NEW]** Bagian Pelanggan punya tombol Telepon dan WhatsApp. Bagian Penanganan menampilkan petugas, estimasi, waktu selesai, dan lokasi, plus tombol buka Google Maps bila ada koordinat
+- **[CHANGE]** Percakapan dikelompokkan per hari, diawali laporan awal pelanggan, dengan nama dan peran pengirim di setiap pesan. Teks pesan bisa dipilih dan disalin
+- **[CHANGE]** Pilihan **Ke pelanggan / Catatan internal** pindah ke atas kotak balasan sebagai dua tombol, bukan kotak centang di bawah. Mode catatan internal memberi garis kuning dan tombol kirim kuning. Tiket yang ditutup tidak menampilkan kotak balasan
+- **[CHANGE]** Baris di daftar tiket menampilkan nama petugas (atau "Belum ditangani") dan waktu pembaruan terakhir
+
+### Aplikasi pelanggan
+- **[FIX]** Pelanggan tidak bisa membalas tiket berstatus **Menunggu pelanggan** atau **Selesai**: kotak balasan hanya muncul untuk tiket Terbuka dan Diproses. Padahal di status menunggu, petugas justru butuh jawaban pelanggan. Kini balasan hanya ditutup untuk tiket yang sudah Ditutup
+- **[FIX]** Status Menunggu pelanggan tampil sebagai teks mentah `WAITING_CUSTOMER`. Kini berbunyi "Menunggu jawaban Anda"
+- **[CHANGE]** Detail tiket: kartu atas menampilkan status, judul, penjelasan status, petugas yang menangani, perkiraan perbaikan, kategori, prioritas, dan lokasi. Percakapan diawali laporan pelanggan, dikelompokkan per hari, dan menandai petugas yang membalas dengan nama dan perannya
+- **[CHANGE]** Tarik ke bawah memuat ulang tiket tanpa mengosongkan layar. Penyegaran otomatis tiap 20 detik kini ikut memperbarui status tiket, bukan hanya pesan
+- **[CHANGE]** Kartu di daftar tiket menampilkan cuplikan keluhan dan jumlah balasan
+
+### Server
+- **[CHANGE]** `GET /api/tickets` menyertakan `assignedToName`, yaitu nama teknisi atau staf yang menangani tiket
+- **[CHANGE]** `GET /api/customer/tickets` menyertakan jumlah balasan yang boleh dilihat pelanggan. Catatan internal tidak dihitung
+
+### Hal yang perlu diketahui
+- **Tampilan baru belum dijalankan di browser atau perangkat.** Pemeriksaannya baru TypeScript, ESLint, dan `flutter analyze`, semuanya tanpa galat baru. Periksa di layar HP dan desktop setelah pembaruan
+- Label status di aplikasi admin tetap "Baru" dan "Diproses", sedangkan web memakai "Terbuka" dan "Dalam Proses" dari berkas terjemahan. Belum disamakan
+- Tiket pelanggan di web tidak lagi memakai komponen bergaya cyberpunk, tetapi tema warna tetap dari pengaturan
+- `ReplyPhotoPicker` dihapus. Penggantinya kotak balasan bersama di `components/tickets/ticket-ui.tsx`
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema. Aplikasi admin 1.0.49 dan pelanggan 1.1.20. Naikkan versi: root, backend, frontend ke 5.48.0
+
+---
+
 ## [5.47.0] - 2026-11-12 - Foto dan Catatan Internal Tiket Tampil di Semua Peran
 
 ### Foto di percakapan tiket

@@ -171,7 +171,27 @@ export async function GET(req: NextRequest) {
       ],
     });
 
-    return NextResponse.json(tickets);
+    // The pages show who holds a ticket by name; the row only stores an id and its kind.
+    const techIds = new Set<string>();
+    const staffIds = new Set<string>();
+    for (const tk of tickets) {
+      if (!tk.assignedToId) continue;
+      (tk.assignedToType === 'TECHNICIAN' ? techIds : staffIds).add(tk.assignedToId);
+    }
+    const [techs, staff] = await Promise.all([
+      techIds.size ? prisma.technician.findMany({ where: { id: { in: [...techIds] } }, select: { id: true, name: true } }) : [],
+      staffIds.size ? prisma.adminUser.findMany({ where: { id: { in: [...staffIds] } }, select: { id: true, name: true, username: true } }) : [],
+    ]);
+    const names = new Map<string, string>();
+    for (const t of techs) names.set(`T:${t.id}`, t.name);
+    for (const s of staff) names.set(`S:${s.id}`, s.name || s.username);
+
+    return NextResponse.json(tickets.map((tk) => ({
+      ...tk,
+      assignedToName: tk.assignedToId
+        ? names.get(`${tk.assignedToType === 'TECHNICIAN' ? 'T' : 'S'}:${tk.assignedToId}`) ?? null
+        : null,
+    })));
   } catch (error) {
     console.error('Error fetching tickets:', error);
     return NextResponse.json(

@@ -16,6 +16,14 @@ class Ticket {
     this.messageCount = 0,
     this.estimatedRepair,
     this.attachments = const [],
+    this.assignedToName,
+    this.isAssigned = false,
+    this.locationTag,
+    this.latitude,
+    this.longitude,
+    this.resolvedAt,
+    this.updatedAt,
+    this.categoryColor,
     this.raw = const {},
   });
 
@@ -35,6 +43,16 @@ class Ticket {
   final int messageCount;
   final String? estimatedRepair;
   final List<String> attachments;
+  final String? assignedToName;
+  final bool isAssigned;
+  final String? locationTag;
+  final double? latitude;
+  final double? longitude;
+  final DateTime? resolvedAt;
+  final DateTime? updatedAt;
+  final String? categoryColor;
+
+  bool get hasCoordinates => latitude != null && longitude != null;
 
   factory Ticket.fromJson(Map<String, dynamic> json) {
     final category = (json['category'] as Map?)?.cast<String, dynamic>();
@@ -53,6 +71,14 @@ class Ticket {
       messageCount: count?['messages'] is num ? (count!['messages'] as num).toInt() : 0,
       estimatedRepair: json['estimatedRepair']?.toString(),
       attachments: _parseAttachments(json['attachments']),
+      assignedToName: json['assignedToName']?.toString(),
+      isAssigned: (json['assignedToId']?.toString() ?? '').isNotEmpty,
+      locationTag: json['locationTag']?.toString(),
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
+      resolvedAt: DateTime.tryParse(json['resolvedAt']?.toString() ?? ''),
+      updatedAt: DateTime.tryParse(json['updatedAt']?.toString() ?? ''),
+      categoryColor: category?['color']?.toString(),
       raw: json,
     );
   }

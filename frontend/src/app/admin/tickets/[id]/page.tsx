@@ -1,45 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-
-function renderWithLinks(text: string) {
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
-  const parts = text.split(urlRegex);
-  return parts.map((part, i) =>
-    urlRegex.test(part) ? (
-      <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline break-all hover:text-blue-400">
-        {part}
-      </a>
-    ) : (
-      part
-    ),
-  );
-}
+import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { ArrowLeft, Loader2, MapPin, MessageCircle, Phone } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError } from '@/lib/sweetalert';
-import { ArrowLeft, Send, User, Clock, Lock, Edit2, Save, X } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
-import TicketAttachments from '@/components/tickets/TicketAttachments';
-import MessageAttachments, { hasVisibleText } from '@/components/tickets/MessageAttachments';
-import ReplyPhotoPicker from '@/components/tickets/ReplyPhotoPicker';
-
-type TicketStatus = 'OPEN' | 'IN_PROGRESS' | 'WAITING_CUSTOMER' | 'RESOLVED' | 'CLOSED';
-type TicketPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-type SenderType = 'CUSTOMER' | 'ADMIN' | 'TECHNICIAN' | 'SYSTEM';
-
-interface Message {
-  id: string;
-  senderType: SenderType;
-  senderName: string;
-  message: string;
-  createdAt: string;
-  isInternal: boolean;
-  attachments?: string | null;
-}
+import {
+  CategoryBadge,
+  Fact,
+  Panel,
+  PriorityBadge,
+  ReplyComposer,
+  StatusBadge,
+  TicketThread,
+  uploadAll,
+  type ReplyPayload,
+  type ThreadMessage,
+  type TicketPriority,
+  type TicketStatus,
+} from '@/components/tickets/ticket-ui';
 
 interface TicketDetail {
   id: string;
@@ -50,51 +33,48 @@ interface TicketDetail {
   status: TicketStatus;
   priority: TicketPriority;
   createdAt: string;
+  resolvedAt?: string | null;
+  closedAt?: string | null;
   customerName: string;
   customerPhone: string;
-  customerEmail?: string;
-  assignedToId?: string;
-  assignedToType?: string;
+  customerEmail?: string | null;
+  customer?: { username: string } | null;
+  assignedToId?: string | null;
+  assignedToName?: string | null;
   estimatedRepair?: string | null;
-  category?: {
-    id: string;
-    name: string;
-    color: string;
-  };
+  latitude?: number | null;
+  longitude?: number | null;
+  locationTag?: string | null;
+  category?: { id: string; name: string; color: string | null } | null;
 }
+
+const STATUSES: TicketStatus[] = ['OPEN', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'RESOLVED', 'CLOSED'];
+const PRIORITIES: TicketPriority[] = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
+
+/** wa.me wants the number in international form without the plus. */
+function waLink(phone: string) {
+  const digits = phone.replace(/\D/g, '');
+  return `https://wa.me/${digits.startsWith('0') ? `62${digits.slice(1)}` : digits}`;
+}
+
+const FIELD = 'w-full min-h-10 rounded-lg border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary';
 
 export default function AdminTicketDetailPage() {
   const { t } = useTranslation();
   const params = useParams();
-  const _router = useRouter();
   const ticketId = params.id as string;
   const queryClient = useQueryClient();
-
-  const [replyText, setReplyText] = useState('');
-  const [isInternal, setIsInternal] = useState(false);
-  const [photos, setPhotos] = useState<File[]>([]);
-  const [sending, setSending] = useState(false);
-  
-  // Quick actions state
-  const [editingStatus, setEditingStatus] = useState(false);
-  const [editingPriority, setEditingPriority] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState<TicketStatus>('OPEN');
-  const [selectedPriority, setSelectedPriority] = useState<TicketPriority>('MEDIUM');
-  const [editingETA, setEditingETA] = useState(false);
-  const [etaValue, setEtaValue] = useState('');
 
   const ticketQueryKey = buildQueryKey('/api/tickets', { id: ticketId });
   const messagesQueryKey = buildQueryKey('/api/tickets/messages', { ticketId, includeInternal: true });
 
-  // ─── React Query: Ticket detail ───────────────────────────────────────────────
   const { data: ticketData, isLoading: loading } = useApiQuery<TicketDetail[]>('/api/tickets', {
     params: { id: ticketId },
     enabled: !!ticketId,
   });
-  const ticket = (Array.isArray(ticketData) && ticketData.length > 0) ? ticketData[0] : null;
+  const ticket = Array.isArray(ticketData) && ticketData.length > 0 ? ticketData[0] : null;
 
-  // ─── React Query: Messages ────────────────────────────────────────────────────
-  const { data: messagesData } = useApiQuery<Message[]>('/api/tickets/messages', {
+  const { data: messagesData, isLoading: messagesLoading } = useApiQuery<ThreadMessage[]>('/api/tickets/messages', {
     params: { ticketId, includeInternal: true },
     enabled: !!ticketId,
     // Replies and photos from the customer or a technician show up without reloading the page.
@@ -102,470 +82,188 @@ export default function AdminTicketDetailPage() {
   });
   const messages = messagesData || [];
 
-  // Sync selected status/priority when ticket loads
+  const [status, setStatus] = useState<TicketStatus>('OPEN');
+  const [priority, setPriority] = useState<TicketPriority>('MEDIUM');
+  const [eta, setEta] = useState('');
+  const [saving, setSaving] = useState(false);
+
   useEffect(() => {
-    if (ticket) {
-      setSelectedStatus(ticket.status);
-      setSelectedPriority(ticket.priority);
-      setEtaValue(ticket.estimatedRepair || '');
-    }
+    if (!ticket) return;
+    setStatus(ticket.status);
+    setPriority(ticket.priority);
+    setEta(ticket.estimatedRepair || '');
   }, [ticket]);
 
-  const handleReply = async (e: React.FormEvent) => {
+  const dirty = !!ticket && (status !== ticket.status || priority !== ticket.priority || eta.trim() !== (ticket.estimatedRepair || ''));
+
+  const saveChanges = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!replyText.trim() && photos.length === 0) return;
-
-    setSending(true);
+    if (!ticket || !dirty) return;
+    const changes: Record<string, string> = {};
+    if (status !== ticket.status) changes.status = status;
+    if (priority !== ticket.priority) changes.priority = priority;
+    if (eta.trim() !== (ticket.estimatedRepair || '')) changes.estimatedRepair = eta.trim();
+    setSaving(true);
     try {
-      const attachments: string[] = [];
-      for (const file of photos) {
-        const form = new FormData();
-        form.append('file', file);
-        const uploaded = await apiAdmin<{ url?: string; error?: string }>('/api/tickets/upload', { method: 'POST', body: form });
-        if (!uploaded.url) throw new Error(uploaded.error || `${file.name} gagal diunggah`);
-        attachments.push(uploaded.url);
-      }
+      await apiAdmin('/api/tickets', { method: 'PUT', body: JSON.stringify({ id: ticketId, ...changes }) });
+      await queryClient.invalidateQueries({ queryKey: ticketQueryKey });
+      queryClient.invalidateQueries({ queryKey: messagesQueryKey });
+      await showSuccess('Perubahan tiket disimpan');
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('ticket.updateFailed'));
+    } finally {
+      setSaving(false);
+    }
+  };
 
+  const sendReply = async ({ text, files, internal }: ReplyPayload) => {
+    try {
+      const attachments = await uploadAll(files, (form) =>
+        apiAdmin<{ url?: string; error?: string }>('/api/tickets/upload', { method: 'POST', body: form }),
+      );
       await apiAdmin('/api/tickets/messages', {
         method: 'POST',
-        body: JSON.stringify({
-          ticketId,
-          senderType: 'ADMIN',
-          senderName: 'Admin',
-          message: replyText,
-          isInternal,
-          attachments,
-        }),
+        body: JSON.stringify({ ticketId, senderType: 'ADMIN', senderName: 'Admin', message: text, isInternal: internal, attachments }),
       });
-
-      setReplyText('');
-      setPhotos([]);
-      setIsInternal(false);
       queryClient.invalidateQueries({ queryKey: messagesQueryKey });
-      queryClient.invalidateQueries({ queryKey: ticketQueryKey }); // Update lastResponseAt
-      await showSuccess(t('ticket.replySent') || 'Reply sent successfully');
+      queryClient.invalidateQueries({ queryKey: ticketQueryKey });
+      return true;
     } catch (error: unknown) {
-      console.error('Failed to send reply:', error);
       await showError((error instanceof Error ? error.message : String(error)) || t('ticket.replyFailed'));
-    } finally {
-      setSending(false);
+      return false;
     }
-  };
-
-  const handleUpdateStatus = async () => {
-    try {
-      await apiAdmin('/api/tickets', {
-        method: 'PUT',
-        body: JSON.stringify({
-          id: ticketId,
-          status: selectedStatus,
-        }),
-      });
-
-      queryClient.invalidateQueries({ queryKey: ticketQueryKey });
-      setEditingStatus(false);
-      await showSuccess(t('ticket.statusUpdated') || 'Status updated successfully');
-    } catch (error: unknown) {
-      console.error('Failed to update status:', error);
-      await showError((error instanceof Error ? error.message : String(error)) || t('ticket.updateFailed'));
-    }
-  };
-
-  const handleUpdatePriority = async () => {
-    try {
-      await apiAdmin('/api/tickets', {
-        method: 'PUT',
-        body: JSON.stringify({
-          id: ticketId,
-          priority: selectedPriority,
-        }),
-      });
-
-      queryClient.invalidateQueries({ queryKey: ticketQueryKey });
-      setEditingPriority(false);
-      await showSuccess(t('ticket.priorityUpdated') || 'Priority updated successfully');
-    } catch (error: unknown) {
-      console.error('Failed to update priority:', error);
-      await showError((error instanceof Error ? error.message : String(error)) || t('ticket.updateFailed'));
-    }
-  };
-
-  const handleUpdateETA = async () => {
-    try {
-      await apiAdmin('/api/tickets', {
-        method: 'PUT',
-        body: JSON.stringify({
-          id: ticketId,
-          estimatedRepair: etaValue,
-        }),
-      });
-      queryClient.invalidateQueries({ queryKey: ticketQueryKey });
-      setEditingETA(false);
-      await showSuccess('Perkiraan perbaikan diperbarui');
-    } catch (error: unknown) {
-      console.error('Failed to update ETA:', error);
-      await showError((error instanceof Error ? error.message : String(error)) || t('ticket.updateFailed'));
-    }
-  };
-
-  const getStatusColor = (status: TicketStatus) => {
-    const colors = {
-      OPEN: 'bg-info/10 text-info',
-      IN_PROGRESS: 'bg-primary/10 text-primary',
-      WAITING_CUSTOMER: 'bg-warning/10 text-warning',
-      RESOLVED: 'bg-success/10 text-success',
-      CLOSED: 'bg-muted text-muted-foreground',
-    };
-    return colors[status] || colors.OPEN;
-  };
-
-  const getPriorityColor = (priority: TicketPriority) => {
-    const colors = {
-      LOW: 'bg-muted text-muted-foreground',
-      MEDIUM: 'bg-primary/10 text-primary',
-      HIGH: 'bg-warning/10 text-warning',
-      URGENT: 'bg-destructive/10 text-destructive',
-    };
-    return colors[priority] || colors.MEDIUM;
-  };
-
-  const getSenderBadgeColor = (senderType: SenderType) => {
-    const colors = {
-      CUSTOMER: 'bg-info/10 text-info',
-      ADMIN: 'bg-primary/10 text-primary',
-      TECHNICIAN: 'bg-success/10 text-success',
-      SYSTEM: 'bg-muted text-muted-foreground',
-    };
-    return colors[senderType] || colors.SYSTEM;
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        </div>
-        <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-brand-500 dark:border-brand-500 dark:drop- relative z-10"></div>
+      <div className="flex min-h-[50vh] items-center justify-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> Memuat tiket
       </div>
     );
   }
 
   if (!ticket) {
     return (
-      <div className="p-6 text-center">
-        <h2 className="text-lg sm:text-2xl font-bold text-foreground mb-2">
-          {t('ticket.ticketNotFound')}
-        </h2>
-        <Link href="/admin/tickets" className="text-primary hover:text-primary/80">
-          {t('ticket.backToTickets')}
+      <div className="mx-auto max-w-md py-16 text-center">
+        <h1 className="text-lg font-semibold text-foreground">{t('ticket.ticketNotFound')}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Tiket mungkin sudah dihapus atau tautannya salah.</p>
+        <Link href="/admin/tickets" className="mt-4 inline-flex min-h-10 items-center gap-2 text-sm font-medium text-primary hover:underline">
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" /> {t('ticket.backToTickets')}
         </Link>
       </div>
     );
   }
 
+  const hasCoords = ticket.latitude != null && ticket.longitude != null;
+
   return (
-    <div className="bg-background relative">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-primary/10 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/3 right-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-1/2 w-48 h-48 sm:w-96 sm:h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
-      </div>
-      <div className="relative z-10 space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
-        <Link href="/admin/tickets" className="text-muted-foreground hover:text-foreground">
-          <ArrowLeft size={24} />
-        </Link>
-        <div className="flex-1">
-          <div className="flex items-center gap-3 mb-2">
-            <span className="text-lg font-mono text-muted-foreground">#{ticket.ticketNumber}</span>
-            
-            {/* Status - Editable */}
-            {editingStatus ? (
-              <div className="flex items-center gap-2">
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value as TicketStatus)}
-                  className="border border-border rounded px-2 py-1 text-sm bg-background text-foreground"
-                >
-                  <option value="OPEN">{t('ticket.status_OPEN')}</option>
-                  <option value="IN_PROGRESS">{t('ticket.status_IN_PROGRESS')}</option>
-                  <option value="WAITING_CUSTOMER">{t('ticket.status_WAITING_CUSTOMER')}</option>
-                  <option value="RESOLVED">{t('ticket.status_RESOLVED')}</option>
-                  <option value="CLOSED">{t('ticket.status_CLOSED')}</option>
-                </select>
-                <button
-                  onClick={handleUpdateStatus}
-                  className="text-green-600 hover:text-green-700"
-                >
-                  <Save size={16} />
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setEditingStatus(true)}
-                className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(ticket.status)}`}
-              >
-                {t(`ticket.status_${ticket.status}`)}
-                <Edit2 size={12} />
-              </button>
-            )}
+    <div className="mx-auto max-w-6xl space-y-5">
+      <Link href="/admin/tickets" className="inline-flex min-h-10 items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+        <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Semua tiket
+      </Link>
 
-            {/* Priority - Editable */}
-            {editingPriority ? (
-              <div className="flex items-center gap-2">
-                <select
-                  value={selectedPriority}
-                  onChange={(e) => setSelectedPriority(e.target.value as TicketPriority)}
-                  className="border border-border rounded px-2 py-1 text-sm bg-background text-foreground"
-                >
-                  <option value="LOW">{t('ticket.priority_LOW')}</option>
-                  <option value="MEDIUM">{t('ticket.priority_MEDIUM')}</option>
-                  <option value="HIGH">{t('ticket.priority_HIGH')}</option>
-                  <option value="URGENT">{t('ticket.priority_URGENT')}</option>
-                </select>
-                <button
-                  onClick={handleUpdatePriority}
-                  className="text-green-600 hover:text-green-700"
-                >
-                  <Save size={16} />
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setEditingPriority(true)}
-                className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getPriorityColor(ticket.priority)}`}
-              >
-                {t(`ticket.priority_${ticket.priority}`)}
-                <Edit2 size={12} />
-              </button>
-            )}
-
-            {ticket.category && (
-              <span
-                className="px-3 py-1 rounded-full text-xs font-medium text-foreground"
-                style={{ backgroundColor: ticket.category.color }}
-              >
-                {ticket.category.name}
-              </span>
-            )}
-          </div>
-          <h1 className="text-lg sm:text-2xl font-bold text-foreground">{ticket.subject}</h1>
+      <header className="space-y-2">
+        <p className="text-sm text-muted-foreground">
+          <span className="font-mono font-medium text-foreground">#{ticket.ticketNumber}</span>
+          <span className="mx-2" aria-hidden="true">·</span>
+          Dibuat {formatWIB(ticket.createdAt, 'd MMM yyyy, HH:mm')}
+        </p>
+        <h1 className="text-xl font-semibold leading-snug text-foreground sm:text-2xl">{ticket.subject}</h1>
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusBadge status={ticket.status} label={t(`ticket.status_${ticket.status}`)} />
+          <PriorityBadge priority={ticket.priority} withPrefix />
+          {ticket.category && <CategoryBadge name={ticket.category.name} color={ticket.category.color} />}
         </div>
-      </div>
+      </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Ticket Info */}
-          <div className="bg-card rounded-lg shadow-sm border border-border p-6">
-            <h3 className="font-semibold text-foreground mb-3">
-              {t('ticket.description')}
-            </h3>
-            <p className="text-foreground/80 whitespace-pre-wrap mb-4">
-              {renderWithLinks(ticket.description)}
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px] lg:grid-rows-[auto_auto_1fr]">
+        <Panel title="Pelanggan" className="lg:col-start-2 lg:row-start-1">
+          <dl className="grid grid-cols-2 gap-3 lg:grid-cols-1">
+            <Fact label="Nama">{ticket.customerName}</Fact>
+            <Fact label="Username">{ticket.customer?.username && <span className="font-mono">{ticket.customer.username}</span>}</Fact>
+            <Fact label="No. HP">{ticket.customerPhone}</Fact>
+            <Fact label="Email">{ticket.customerEmail}</Fact>
+          </dl>
+          {ticket.customerPhone && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              <a href={`tel:${ticket.customerPhone}`} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border px-3 text-sm font-medium text-foreground hover:bg-muted">
+                <Phone className="h-4 w-4" aria-hidden="true" /> Telepon
+              </a>
+              <a href={waLink(ticket.customerPhone)} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border px-3 text-sm font-medium text-foreground hover:bg-muted">
+                <MessageCircle className="h-4 w-4" aria-hidden="true" /> WhatsApp
+              </a>
+            </div>
+          )}
+        </Panel>
+
+        <div className="min-w-0 space-y-4 lg:col-start-1 lg:row-span-3 lg:row-start-1">
+          <Panel title={`Percakapan (${messages.length + 1})`}>
+            <TicketThread
+              viewer="ADMIN"
+              messages={messages}
+              loading={messagesLoading}
+              opening={{ name: ticket.customerName, text: ticket.description, attachments: ticket.attachments, createdAt: ticket.createdAt }}
+            />
+          </Panel>
+          {ticket.status === 'CLOSED' ? (
+            <p className="rounded-xl border border-border bg-muted px-4 py-3 text-sm text-muted-foreground">
+              Tiket ini ditutup. Ubah status di panel Kelola tiket untuk membalas lagi.
             </p>
-            <div className="mb-4">
-              <TicketAttachments attachments={ticket.attachments} />
-            </div>
-            <div className="border-t border-border pt-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">{t('ticket.customer')}:</span>
-                  <p className="font-medium text-foreground">{ticket.customerName}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">{t('ticket.customerPhone')}:</span>
-                  <p className="font-medium text-foreground">{ticket.customerPhone}</p>
-                </div>
-                {ticket.customerEmail && (
-                  <div>
-                    <span className="text-muted-foreground">{t('ticket.customerEmail')}:</span>
-                    <p className="font-medium text-foreground">{ticket.customerEmail}</p>
-                  </div>
-                )}
-                <div>
-                  <span className="text-muted-foreground">{t('ticket.created')}:</span>
-                  <p className="font-medium text-foreground">
-                    {formatWIB(ticket.createdAt, 'd MMMM yyyy HH:mm')}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Messages */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-foreground">{t('ticket.conversation')}</h3>
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`rounded-lg shadow-sm border p-4 ${
-                  msg.isInternal
-                    ? 'bg-warning/10 border-warning/30'
-                    : msg.senderType === 'SYSTEM'
-                    ? 'bg-muted border-border'
-                    : 'bg-card border-border'
-                }`}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="flex-shrink-0">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      msg.isInternal ? 'bg-warning/20' : 'bg-primary/10'
-                    }`}>
-                      {msg.isInternal ? <Lock size={20} className="text-warning" /> : <User size={20} className="text-primary" />}
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="font-semibold text-foreground">{msg.senderName}</span>
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${getSenderBadgeColor(msg.senderType)}`}>
-                        {t(`ticket.senderType_${msg.senderType}`)}
-                      </span>
-                      {msg.isInternal && (
-                        <span className="px-2 py-0.5 rounded text-xs font-medium bg-warning/20 text-warning">
-                          {t('ticket.internal')}
-                        </span>
-                      )}
-                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                        <Clock size={14} />
-                        {formatWIB(msg.createdAt, 'd MMM HH:mm')}
-                      </div>
-                    </div>
-                    {hasVisibleText(msg.message, msg.attachments) && (
-                      <p className="text-foreground/80 whitespace-pre-wrap">{renderWithLinks(msg.message)}</p>
-                    )}
-                    <MessageAttachments attachments={msg.attachments} />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Reply Form */}
-          <div className="bg-card rounded-lg shadow-sm border border-border p-6">
-            <h3 className="font-semibold text-foreground mb-4">{t('ticket.addReply')}</h3>
-            <form onSubmit={handleReply}>
-              <div className="mb-4">
-                <label className="flex items-center gap-2 mb-3">
-                  <input
-                    type="checkbox"
-                    checked={isInternal}
-                    onChange={(e) => setIsInternal(e.target.checked)}
-                    className="rounded border-border"
-                  />
-                  <Lock size={16} className="text-muted-foreground" />
-                  <span className="text-sm font-medium text-foreground">
-                    {t('ticket.internalNote')}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    ({t('ticket.notVisibleToCustomer')})
-                  </span>
-                </label>
-                <textarea
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  rows={4}
-                  className="w-full border border-border rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary focus:border-transparent bg-background text-foreground placeholder:text-muted-foreground"
-                  placeholder={isInternal ? t('ticket.internalNotePlaceholder') : t('ticket.replyPlaceholder')}
-                  disabled={sending}
-                />
-                <div className="mt-3">
-                  <ReplyPhotoPicker files={photos} onChange={setPhotos} onReject={(reason) => { void showError(reason); }} disabled={sending} />
-                </div>
-              </div>
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  disabled={sending || (!replyText.trim() && photos.length === 0)}
-                  className="flex items-center gap-2 bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {sending ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                      {t('ticket.sending')}...
-                    </>
-                  ) : (
-                    <>
-                      <Send size={20} />
-                      {isInternal ? t('ticket.addInternalNote') : t('ticket.sendReply')}
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
+          ) : (
+            <ReplyComposer allowInternal onSend={sendReply} onReject={(reason) => { void showError(reason); }} />
+          )}
         </div>
 
-        {/* Sidebar - Quick Actions */}
-        <div className="space-y-6">
-          <div className="bg-card rounded-lg shadow-sm border border-border p-4">
-            <h3 className="font-semibold text-foreground mb-4">{t('ticket.quickActions')}</h3>
-            <div className="space-y-3 text-sm">
-              <div>
-                <span className="text-muted-foreground block mb-1">{t('ticket.status')}:</span>
-                <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(ticket.status)}`}>
-                  {t(`ticket.status_${ticket.status}`)}
-                </span>
-              </div>
-              <div>
-                <span className="text-muted-foreground block mb-1">{t('ticket.priority')}:</span>
-                <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${getPriorityColor(ticket.priority)}`}>
-                  {t(`ticket.priority_${ticket.priority}`)}
-                </span>
-              </div>
-              <div>
-                <span className="text-muted-foreground block mb-1">{t('ticket.assigned')}:</span>
-                <span className="text-foreground">
-                  {ticket.assignedToId ? `${ticket.assignedToType} #${ticket.assignedToId}` : t('ticket.unassigned')}
-                </span>
-              </div>
-              {/* Perkiraan Perbaikan (ETA) */}
-              <div>
-                <span className="text-muted-foreground block mb-1">Perkiraan Perbaikan:</span>
-                {editingETA ? (
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={etaValue}
-                      onChange={(e) => setEtaValue(e.target.value)}
-                      placeholder="cth: 2 jam, Besok sore, 3 Nov 2026"
-                      className="flex-1 border border-border rounded px-2 py-1 text-sm bg-background text-foreground"
-                      autoFocus
-                    />
-                    <button onClick={handleUpdateETA} className="text-green-600 hover:text-green-700">
-                      <Save size={16} />
-                    </button>
-                    <button
-                      onClick={() => { setEditingETA(false); setEtaValue(ticket.estimatedRepair || ''); }}
-                      className="text-red-500 hover:text-red-600"
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setEditingETA(true)}
-                    className="inline-flex items-center gap-1 text-foreground hover:text-primary"
-                  >
-                    {ticket.estimatedRepair ? (
-                      <span className="px-2 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs">
-                        {ticket.estimatedRepair}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-muted-foreground italic">Belum ditentukan</span>
-                    )}
-                    <Edit2 size={12} className="text-muted-foreground" />
-                  </button>
-                )}
-              </div>
+        <Panel title="Kelola tiket" className="lg:col-start-2 lg:row-start-2">
+          <form onSubmit={saveChanges} className="space-y-3">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-1">
+              <label className="block text-xs text-muted-foreground">
+                Status
+                <select value={status} onChange={(e) => setStatus(e.target.value as TicketStatus)} className={`${FIELD} mt-1`}>
+                  {STATUSES.map((s) => <option key={s} value={s}>{t(`ticket.status_${s}`)}</option>)}
+                </select>
+              </label>
+              <label className="block text-xs text-muted-foreground">
+                Prioritas
+                <select value={priority} onChange={(e) => setPriority(e.target.value as TicketPriority)} className={`${FIELD} mt-1`}>
+                  {PRIORITIES.map((p) => <option key={p} value={p}>{t(`ticket.priority_${p}`)}</option>)}
+                </select>
+              </label>
             </div>
-          </div>
-        </div>
-      </div>
+            <label className="block text-xs text-muted-foreground">
+              Perkiraan perbaikan
+              <input value={eta} onChange={(e) => setEta(e.target.value)} placeholder="Contoh: hari ini pukul 15.00" className={`${FIELD} mt-1`} />
+            </label>
+            <button
+              type="submit"
+              disabled={!dirty || saving}
+              className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {saving && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
+              {dirty ? 'Simpan perubahan' : 'Tidak ada perubahan'}
+            </button>
+          </form>
+        </Panel>
+
+        <Panel title="Detail" className="lg:col-start-2 lg:row-start-3 lg:self-start">
+          <dl className="grid grid-cols-2 gap-3 lg:grid-cols-1">
+            <Fact label="Ditangani">{ticket.assignedToId ? ticket.assignedToName || 'Petugas' : 'Belum ada'}</Fact>
+            <Fact label="Kategori">{ticket.category?.name}</Fact>
+            <Fact label="Perkiraan perbaikan">{ticket.estimatedRepair}</Fact>
+            <Fact label="Selesai">{ticket.resolvedAt ? formatWIB(ticket.resolvedAt, 'd MMM yyyy, HH:mm') : null}</Fact>
+            <Fact label="Lokasi">{ticket.locationTag}</Fact>
+          </dl>
+          {hasCoords && (
+            <a
+              href={`https://maps.google.com/?q=${ticket.latitude},${ticket.longitude}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-lg border border-border px-3 text-sm font-medium text-foreground hover:bg-muted"
+            >
+              <MapPin className="h-4 w-4" aria-hidden="true" /> Buka di Google Maps
+            </a>
+          )}
+        </Panel>
       </div>
     </div>
   );

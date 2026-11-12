@@ -9,7 +9,7 @@ import '../../core/api/api_client.dart';
 import '../../core/formatters.dart';
 import '../../models/ticket.dart';
 import '../auth/auth_provider.dart';
-import 'ticket_attachments.dart';
+import 'ticket_thread.dart';
 import 'ticket_provider.dart';
 import 'tickets_screen.dart';
 
@@ -73,11 +73,30 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
     }
   }
 
+  /// Pull to refresh: fetches again without replacing the screen with a spinner.
+  Future<void> _reload() async {
+    final provider = context.read<TicketProvider>();
+    try {
+      final results = await Future.wait([provider.fetchTicketDetail(widget.ticketId), provider.fetchMessages(widget.ticketId)]);
+      if (!mounted) return;
+      setState(() {
+        _ticket = (results[0] as Ticket?) ?? _ticket;
+        _messages = results[1] as List<TicketMessage>;
+      });
+    } catch (_) {
+      _toast('Gagal memuat ulang. Periksa koneksi internet.');
+    }
+  }
+
   Future<void> _refreshMessages() async {
     if (!mounted || _loading || _sending) return;
     try {
-      final latest = await context.read<TicketProvider>().fetchMessages(widget.ticketId);
+      final provider = context.read<TicketProvider>();
+      final latest = await provider.fetchMessages(widget.ticketId);
+      // The status can change with a reply (for example to waiting for the customer).
+      final ticket = await provider.fetchTicketDetail(widget.ticketId);
       if (!mounted) return;
+      if (ticket != null && (ticket.status != _ticket?.status || ticket.estimatedRepair != _ticket?.estimatedRepair)) setState(() => _ticket = ticket);
       final changed = latest.length != _messages.length || (latest.isNotEmpty && latest.last.id != _messages.last.id);
       if (changed) {
         setState(() => _messages = latest);
@@ -222,25 +241,56 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ticket = _ticket;
     return Scaffold(
-      appBar: AppBar(title: Text(_ticket?.ticketNumber ?? 'Detail Tiket')),
+      appBar: AppBar(title: Text(ticket == null ? 'Detail Tiket' : 'Tiket #${ticket.ticketNumber}')),
       body: SafeArea(
         child: _loading
             ? const Center(child: CircularProgressIndicator())
-            : _error != null
-                ? Center(child: Text(_error!))
+            : _error != null || ticket == null
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(_error ?? 'Tiket tidak ditemukan.', textAlign: TextAlign.center),
+                          const SizedBox(height: 12),
+                          OutlinedButton(onPressed: _load, child: const Text('Coba lagi')),
+                        ],
+                      ),
+                    ),
+                  )
                 : Column(
                     children: [
-                      if (_ticket != null) _TicketHeader(ticket: _ticket!),
                       Expanded(
-                        child: ListView.builder(
-                          controller: _scrollController,
-                          padding: const EdgeInsets.all(16),
-                          itemCount: _messages.length,
-                          itemBuilder: (context, index) => _MessageBubble(message: _messages[index]),
+                        child: RefreshIndicator(
+                          onRefresh: _reload,
+                          child: ListView(
+                            controller: _scrollController,
+                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                            children: [
+                              _TicketHeader(ticket: ticket),
+                              const SizedBox(height: 20),
+                              Text(
+                                'Percakapan',
+                                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                              ),
+                              const SizedBox(height: 4),
+                              ...buildTicketThread(context, ticket: ticket, messages: _messages),
+                              if (_messages.isEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 4),
+                                  child: Text(
+                                    'Belum ada balasan dari petugas. Anda akan diberi tahu saat ada balasan.',
+                                    style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ),
-                      if (_ticket?.isOpen ?? true)
+                      if (ticket.canReply)
                         _Composer(
                           controller: _messageController,
                           sending: _sending,
@@ -248,6 +298,17 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                           onSend: _send,
                           onAttach: _attach,
                           onRemove: (item) => setState(() => _pending.remove(item)),
+                        )
+                      else
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(14),
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                          child: Text(
+                            'Tiket ini sudah ditutup. Buat tiket baru jika ada masalah lain.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                          ),
                         ),
                     ],
                   ),
@@ -256,6 +317,26 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
   }
 }
 
+/// What the customer can expect next, said in their terms.
+String _statusHint(String status) {
+  switch (status.toUpperCase()) {
+    case 'OPEN':
+      return 'Laporan Anda sudah diterima dan menunggu ditangani petugas.';
+    case 'IN_PROGRESS':
+      return 'Petugas sedang menangani laporan Anda.';
+    case 'WAITING_CUSTOMER':
+      return 'Petugas menunggu jawaban Anda. Balas di bawah agar penanganan bisa dilanjutkan.';
+    case 'RESOLVED':
+      return 'Petugas menandai masalah ini selesai. Balas jika masalah masih terjadi.';
+    case 'CLOSED':
+      return 'Tiket ini sudah ditutup.';
+    default:
+      return '';
+  }
+}
+
+String _priorityLabel(String p) => const {'URGENT': 'Mendesak', 'HIGH': 'Tinggi', 'MEDIUM': 'Sedang', 'LOW': 'Rendah'}[p.toUpperCase()] ?? p;
+
 class _TicketHeader extends StatelessWidget {
   const _TicketHeader({required this.ticket});
   final Ticket ticket;
@@ -263,63 +344,48 @@ class _TicketHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: scheme.surfaceContainer, border: Border(bottom: BorderSide(color: scheme.outlineVariant))),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(child: Text(ticket.subject, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
-              const SizedBox(width: 10),
-              TicketStatusPill(status: ticket.status),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(ticket.description, style: TextStyle(color: scheme.onSurfaceVariant)),
-          TicketAttachments(paths: ticket.attachments),
-          const SizedBox(height: 6),
-          Text('Dibuat ${formatDateTime(ticket.createdAt)}', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12)),
-        ],
-      ),
-    );
-  }
-}
+    final muted = TextStyle(fontSize: 13, color: scheme.onSurfaceVariant);
+    final done = ['RESOLVED', 'CLOSED'].contains(ticket.status.toUpperCase());
+    final rows = <(String, String)>[
+      ('Ditangani', ticket.isAssigned ? (ticket.assignedToName ?? 'Petugas') : 'Belum ada petugas'),
+      if (ticket.estimatedRepair != null && !done) ('Perkiraan perbaikan', ticket.estimatedRepair!),
+      if (ticket.category != null) ('Kategori', ticket.category!.name),
+      ('Prioritas', _priorityLabel(ticket.priority)),
+      if (ticket.resolvedAt != null) ('Selesai', formatDateTime(ticket.resolvedAt!)),
+      if (ticket.locationTag != null && ticket.locationTag!.isNotEmpty) ('Lokasi', ticket.locationTag!),
+    ];
 
-class _MessageBubble extends StatelessWidget {
-  const _MessageBubble({required this.message});
-  final TicketMessage message;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final isMine = message.isFromCustomer;
-
-    return Align(
-      alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
-        decoration: BoxDecoration(
-          color: isMine ? scheme.primary : scheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(16),
-        ),
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (!isMine)
-              Text(message.senderName, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: scheme.onSurfaceVariant)),
-            if (message.attachments.isNotEmpty) TicketAttachments(paths: message.attachments, showLabel: false),
-            if (!message.isPhotoOnly) Text(message.message, style: TextStyle(color: isMine ? scheme.onPrimary : scheme.onSurface)),
-            const SizedBox(height: 4),
-            Text(
-              formatDateTime(message.createdAt),
-              style: TextStyle(fontSize: 10, color: (isMine ? scheme.onPrimary : scheme.onSurfaceVariant).withValues(alpha: 0.7)),
+            Row(
+              children: [
+                TicketStatusPill(status: ticket.status),
+                const Spacer(),
+                Text('Dibuat ${formatDate(ticket.createdAt)}', style: muted.copyWith(fontSize: 12)),
+              ],
             ),
+            const SizedBox(height: 12),
+            Text(ticket.subject, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, height: 1.3)),
+            const SizedBox(height: 6),
+            Text(_statusHint(ticket.status), style: muted),
+            const SizedBox(height: 12),
+            Divider(color: scheme.outlineVariant, height: 1),
+            const SizedBox(height: 8),
+            for (final (label, value) in rows)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(width: 132, child: Text(label, style: muted)),
+                    Expanded(child: Text(value, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600))),
+                  ],
+                ),
+              ),
           ],
         ),
       ),
@@ -363,7 +429,13 @@ class _Composer extends StatelessWidget {
       decoration: BoxDecoration(color: scheme.surface, border: Border(top: BorderSide(color: scheme.outlineVariant))),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (pending.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text('Foto belum terkirim. Tekan Kirim.', style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
+            ),
           if (pending.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(bottom: 8),
@@ -382,20 +454,23 @@ class _Composer extends StatelessWidget {
               IconButton(
                 tooltip: 'Tambah foto',
                 onPressed: sending ? null : onAttach,
-                icon: const Icon(Icons.attach_file_rounded),
+                style: IconButton.styleFrom(minimumSize: const Size(48, 48)),
+                icon: const Icon(Icons.add_a_photo_outlined),
               ),
               Expanded(
                 child: TextField(
                   controller: controller,
                   minLines: 1,
                   maxLines: 4,
-                  decoration: const InputDecoration(hintText: 'Tulis pesan...'),
+                  textCapitalization: TextCapitalization.sentences,
+                  decoration: const InputDecoration(hintText: 'Tulis balasan untuk petugas'),
                 ),
               ),
               const SizedBox(width: 8),
               IconButton.filled(
                 tooltip: 'Kirim',
                 onPressed: sending ? null : onSend,
+                style: IconButton.styleFrom(minimumSize: const Size(48, 48)),
                 icon: sending
                     ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
                     : const Icon(Icons.send),

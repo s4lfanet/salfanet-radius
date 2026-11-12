@@ -104,7 +104,8 @@ class _Tile extends StatelessWidget {
       title: ticket.subject,
       subtitle: '${ticket.customerName} · #${ticket.ticketNumber}',
       meta: [
-        formatRelativeTime(ticket.createdAt),
+        formatRelativeTime(ticket.updatedAt ?? ticket.createdAt),
+        ticket.isAssigned ? (ticket.assignedToName ?? 'Ditangani') : 'Belum ditangani',
         if (ticket.messageCount > 0) '${ticket.messageCount} balasan',
         if (ticket.categoryName != null) ticket.categoryName!,
       ].join(' · '),

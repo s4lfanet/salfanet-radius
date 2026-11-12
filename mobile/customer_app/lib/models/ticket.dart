@@ -25,6 +25,12 @@ class Ticket {
     this.category,
     this.resolvedAt,
     this.attachments = const [],
+    this.estimatedRepair,
+    this.assignedToName,
+    this.isAssigned = false,
+    this.locationTag,
+    this.updatedAt,
+    this.messageCount = 0,
   });
 
   final String id;
@@ -37,8 +43,15 @@ class Ticket {
   final TicketCategory? category;
   final DateTime? resolvedAt;
   final List<String> attachments;
+  final String? estimatedRepair;
+  final String? assignedToName;
+  final bool isAssigned;
+  final String? locationTag;
+  final DateTime? updatedAt;
+  final int messageCount;
 
-  bool get isOpen => status.toUpperCase() == 'OPEN' || status.toUpperCase() == 'IN_PROGRESS';
+  /// Only a closed ticket refuses replies; a ticket waiting for the customer needs their answer most.
+  bool get canReply => status.toUpperCase() != 'CLOSED';
 
   factory Ticket.fromJson(Map<String, dynamic> json) => Ticket(
         id: json['id']?.toString() ?? '',
@@ -51,6 +64,12 @@ class Ticket {
         category: json['category'] is Map<String, dynamic> ? TicketCategory.fromJson(json['category']) : null,
         resolvedAt: json['resolvedAt'] != null ? DateTime.tryParse(json['resolvedAt'].toString()) : null,
         attachments: parseAttachmentList(json['attachments']),
+        estimatedRepair: (json['estimatedRepair']?.toString().trim().isEmpty ?? true) ? null : json['estimatedRepair'].toString(),
+        assignedToName: json['assignedToName']?.toString(),
+        isAssigned: (json['assignedToId']?.toString() ?? '').isNotEmpty,
+        locationTag: json['locationTag']?.toString(),
+        updatedAt: DateTime.tryParse(json['updatedAt']?.toString() ?? ''),
+        messageCount: json['_count'] is Map && (json['_count'] as Map)['messages'] is num ? ((json['_count'] as Map)['messages'] as num).toInt() : 0,
       );
 }
 

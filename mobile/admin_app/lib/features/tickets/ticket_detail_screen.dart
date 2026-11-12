@@ -16,7 +16,7 @@ import '../../core/widgets/entity_tile.dart';
 import '../../models/ticket.dart';
 import '../auth/auth_provider.dart';
 import 'ticket_list_screen.dart' show ticketStatusOptions, priorityTone, priorityLabel;
-import 'ticket_attachments.dart';
+import 'ticket_thread.dart';
 import 'ticket_provider.dart';
 import 'ticket_tools.dart';
 import '../../core/guides/guides.dart';
@@ -176,8 +176,46 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
     await launchUrl(Uri.parse('https://wa.me/$n'), mode: LaunchMode.externalApplication);
   }
 
+  Future<void> _call() async {
+    final n = t.customerPhone.replaceAll(RegExp(r'[^0-9+]'), '');
+    if (n.isEmpty) return;
+    await launchUrl(Uri.parse('tel:$n'));
+  }
+
+  Future<void> _openMap() async {
+    await launchUrl(Uri.parse('https://maps.google.com/?q=${t.latitude},${t.longitude}'), mode: LaunchMode.externalApplication);
+  }
+
+  Future<void> _pickStatus() async {
+    final next = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(Gap.page, 0, Gap.page, Gap.sm),
+              child: Text('Ubah status tiket', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+            ),
+            for (final (value, label) in ticketStatusOptions)
+              ListTile(
+                title: Text(label),
+                trailing: value == _status ? Icon(Icons.check_rounded, color: context.colors.primary) : null,
+                selected: value == _status,
+                onTap: () => Navigator.pop(sheetContext, value),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (next != null) await _changeStatus(next);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final muted = TextStyle(fontSize: 13, color: context.colors.onSurfaceVariant);
     return ChangeNotifierProvider.value(
       value: _messages,
       child: Scaffold(
@@ -185,32 +223,18 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
           title: Text('Tiket #${t.ticketNumber}'),
           actions: [
             const GuideAction(),
-            IconButton(
-              tooltip: 'Edit',
-              icon: const Icon(Icons.edit_rounded),
-              onPressed: () async {
-                if (await editTicket(context, t.raw) && context.mounted) {
-                  context.read<TicketProvider>().load();
-                  Navigator.pop(context);
-                }
-              },
-            ),
-            IconButton(
-              tooltip: 'Hapus',
-              icon: const Icon(Icons.delete_outline_rounded),
-              onPressed: () async {
-                if (await deleteTicket(context, t.raw) && context.mounted) {
-                  context.read<TicketProvider>().load();
-                  Navigator.pop(context);
-                }
-              },
-            ),
             PopupMenuButton<String>(
-              tooltip: 'Ubah status',
-              icon: const Icon(Icons.swap_horiz_rounded),
-              onSelected: _changeStatus,
-              itemBuilder: (_) => [
-                for (final (value, label) in ticketStatusOptions) CheckedPopupMenuItem(value: value, checked: value == _status, child: Text(label)),
+              tooltip: 'Lainnya',
+              onSelected: (value) async {
+                final changed = value == 'edit' ? await editTicket(context, t.raw) : await deleteTicket(context, t.raw);
+                if (changed && context.mounted) {
+                  context.read<TicketProvider>().load();
+                  Navigator.pop(context);
+                }
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'edit', child: ListTile(leading: Icon(Icons.edit_outlined), title: Text('Edit tiket'), contentPadding: EdgeInsets.zero)),
+                PopupMenuItem(value: 'delete', child: ListTile(leading: Icon(Icons.delete_outline_rounded), title: Text('Hapus tiket'), contentPadding: EdgeInsets.zero)),
               ],
             ),
           ],
@@ -225,65 +249,126 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                     controller: _scroll,
                     padding: const EdgeInsets.fromLTRB(Gap.page, Gap.sm, Gap.page, Gap.lg),
                     children: [
-                      DetailHeader(
-                        icon: Icons.support_agent_rounded,
-                        tone: priorityTone(t.priority),
-                        title: t.subject,
-                        subtitle: 'Dibuka ${formatDateTime(t.createdAt)}',
-                        status: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            StatusPill.status(_status),
-                            const SizedBox(height: 6),
-                            StatusPill(label: priorityLabel(t.priority), tone: priorityTone(t.priority)),
-                          ],
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(Gap.lg),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Wrap(
+                                spacing: 6,
+                                runSpacing: 6,
+                                children: [
+                                  StatusPill.status(_status),
+                                  StatusPill(label: 'Prioritas ${priorityLabel(t.priority).toLowerCase()}', tone: priorityTone(t.priority)),
+                                ],
+                              ),
+                              const SizedBox(height: Gap.md),
+                              Text(t.subject, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, height: 1.3)),
+                              const SizedBox(height: 4),
+                              Text('Dibuka ${formatDateTime(t.createdAt)}${t.categoryName != null ? ' · ${t.categoryName}' : ''}', style: muted),
+                              const SizedBox(height: Gap.md),
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  onPressed: _pickStatus,
+                                  icon: const Icon(Icons.swap_horiz_rounded),
+                                  label: const Text('Ubah status'),
+                                  style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(44)),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      DetailSection(
-                        title: 'Keluhan',
-                        rows: [InfoRow('Deskripsi', t.description), InfoRow('Kategori', t.categoryName), InfoRow('Estimasi', t.estimatedRepair)],
-                      ),
-                      TicketAttachments(paths: t.attachments),
                       DetailSection(
                         title: 'Pelanggan',
                         rows: [
                           InfoRow('Nama', t.customerName),
-                          InfoRow('Telepon', t.customerPhone, copyable: true, onTap: _whatsapp),
+                          InfoRow('Username', t.raw['customer'] is Map ? (t.raw['customer'] as Map)['username']?.toString() : null, copyable: true),
+                          InfoRow('Telepon', t.customerPhone, copyable: true),
                         ],
+                        trailing: t.customerPhone.isEmpty
+                            ? null
+                            : Padding(
+                                padding: const EdgeInsets.all(Gap.md),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton.icon(onPressed: _call, icon: const Icon(Icons.call_outlined), label: const Text('Telepon')),
+                                    ),
+                                    const SizedBox(width: Gap.sm),
+                                    Expanded(
+                                      child: OutlinedButton.icon(onPressed: _whatsapp, icon: const Icon(Icons.chat_outlined), label: const Text('WhatsApp')),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                      ),
+                      DetailSection(
+                        title: 'Penanganan',
+                        rows: [
+                          InfoRow('Ditangani', t.isAssigned ? (t.assignedToName ?? 'Petugas') : 'Belum ada'),
+                          InfoRow('Estimasi', t.estimatedRepair),
+                          InfoRow('Selesai', t.resolvedAt == null ? null : formatDateTime(t.resolvedAt!)),
+                          InfoRow('Lokasi', t.locationTag),
+                        ],
+                        trailing: t.hasCoordinates
+                            ? ListTile(
+                                leading: const Icon(Icons.map_outlined),
+                                title: const Text('Buka di Google Maps'),
+                                trailing: const Icon(Icons.open_in_new_rounded, size: 18),
+                                onTap: _openMap,
+                              )
+                            : null,
                       ),
                       const SizedBox(height: Gap.lg),
-                      SectionHeader('Percakapan'),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 2, bottom: Gap.xs),
+                        child: Text(
+                          'Percakapan',
+                          style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: context.colors.onSurfaceVariant),
+                        ),
+                      ),
                       if (m.loading && m.messages.isEmpty)
                         const Padding(
                           padding: EdgeInsets.all(Gap.xl),
                           child: Center(child: CircularProgressIndicator()),
                         )
-                      else if (m.error != null && m.messages.isEmpty)
-                        Text(m.error!, style: TextStyle(color: context.tone(Tone.danger)))
-                      else if (m.messages.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: Gap.lg),
-                          child: Text(
-                            'Belum ada balasan. Balasan Anda dikirim ke pelanggan lewat WhatsApp.',
-                            style: TextStyle(color: context.colors.onSurfaceVariant, fontSize: 13),
+                      else ...[
+                        ...buildTicketThread(context, ticket: t, messages: m.messages, viewer: 'ADMIN'),
+                        if (m.error != null) Text(m.error!, style: TextStyle(color: context.tone(Tone.danger))),
+                        if (m.messages.isEmpty && m.error == null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: Gap.sm),
+                            child: Text('Belum ada balasan. Balasan Anda dikirim ke pelanggan lewat WhatsApp.', style: muted),
                           ),
-                        )
-                      else
-                        ...m.messages.map((msg) => _Bubble(message: msg)),
+                      ],
                     ],
                   ),
                 ),
               ),
             ),
-            _Composer(
-              controller: _replyController,
-              internal: _internal,
-              onInternalChanged: (v) => setState(() => _internal = v),
-              onSend: _send,
-              pending: _pending,
-              onAttach: _attach,
-              onRemovePending: (item) => setState(() => _pending.remove(item)),
-            ),
+            if (_status != 'CLOSED')
+              _Composer(
+                controller: _replyController,
+                internal: _internal,
+                onInternalChanged: (v) => setState(() => _internal = v),
+                onSend: _send,
+                pending: _pending,
+                onAttach: _attach,
+                onRemovePending: (item) => setState(() => _pending.remove(item)),
+              )
+            else
+              SafeArea(
+                top: false,
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(Gap.md),
+                  color: context.colors.surfaceContainerHighest,
+                  child: Text('Tiket ditutup. Ubah status untuk membalas lagi.', textAlign: TextAlign.center, style: muted),
+                ),
+              ),
           ],
         ),
       ),
@@ -324,17 +409,35 @@ class _Composer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sending = context.watch<TicketMessagesProvider>().sending;
+    final warning = context.tone(Tone.warning);
     return Container(
       decoration: BoxDecoration(
         color: context.colors.surface,
-        border: Border(top: BorderSide(color: context.colors.outlineVariant)),
+        border: Border(top: BorderSide(color: internal ? warning : context.colors.outlineVariant, width: internal ? 2 : 1)),
       ),
       padding: const EdgeInsets.fromLTRB(Gap.md, Gap.sm, Gap.md, Gap.sm),
       child: SafeArea(
         top: false,
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            SegmentedButton<bool>(
+              segments: const [
+                ButtonSegment(value: false, label: Text('Ke pelanggan'), icon: Icon(Icons.reply_rounded)),
+                ButtonSegment(value: true, label: Text('Catatan internal'), icon: Icon(Icons.lock_outline_rounded)),
+              ],
+              selected: {internal},
+              showSelectedIcon: false,
+              onSelectionChanged: sending ? null : (v) => onInternalChanged(v.first),
+              style: const ButtonStyle(visualDensity: VisualDensity.compact, tapTargetSize: MaterialTapTargetSize.padded),
+            ),
+            if (internal)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Text('Hanya admin dan teknisi yang melihat catatan ini.', style: TextStyle(fontSize: 12, color: warning)),
+              ),
+            const SizedBox(height: Gap.sm),
             if (pending.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(bottom: Gap.sm),
@@ -355,41 +458,29 @@ class _Composer extends StatelessWidget {
                   tooltip: 'Tambah foto',
                   onPressed: sending ? null : onAttach,
                   style: IconButton.styleFrom(minimumSize: const Size(48, 48)),
-                  icon: const Icon(Icons.attach_file_rounded),
+                  icon: const Icon(Icons.add_a_photo_outlined),
                 ),
                 Expanded(
                   child: TextField(
                     controller: controller,
                     minLines: 1,
-                    maxLines: 4,
+                    maxLines: 5,
                     textCapitalization: TextCapitalization.sentences,
-                    decoration: InputDecoration(hintText: internal ? 'Catatan internal (tidak dikirim ke pelanggan)' : 'Tulis balasan ke pelanggan'),
+                    decoration: InputDecoration(hintText: internal ? 'Tulis catatan untuk tim' : 'Tulis balasan ke pelanggan'),
                   ),
                 ),
                 const SizedBox(width: Gap.sm),
                 IconButton.filled(
-                  tooltip: 'Kirim',
+                  tooltip: internal ? 'Simpan catatan' : 'Kirim',
                   onPressed: sending ? null : onSend,
-                  style: IconButton.styleFrom(minimumSize: const Size(48, 48)),
+                  style: IconButton.styleFrom(
+                    minimumSize: const Size(48, 48),
+                    backgroundColor: internal ? warning : null,
+                    foregroundColor: internal ? Colors.white : null,
+                  ),
                   icon: sending ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.send_rounded),
                 ),
               ],
-            ),
-            InkWell(
-              onTap: () => onInternalChanged(!internal),
-              child: Padding(
-                padding: const EdgeInsets.only(top: Gap.xs),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      height: 32,
-                      width: 32,
-                      child: Checkbox(value: internal, onChanged: (v) => onInternalChanged(v ?? false)),
-                    ),
-                    Text('Catatan internal staf', style: TextStyle(fontSize: 12.5, color: context.colors.onSurfaceVariant)),
-                  ],
-                ),
-              ),
             ),
           ],
         ),
@@ -455,68 +546,6 @@ class _PendingTile extends StatelessWidget {
                 ),
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _Bubble extends StatelessWidget {
-  const _Bubble({required this.message});
-  final TicketMessage message;
-
-  @override
-  Widget build(BuildContext context) {
-    final fromCustomer = message.senderType == 'CUSTOMER';
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final Color bg;
-    if (message.isInternal) {
-      bg = context.tone(Tone.warning).withValues(alpha: dark ? 0.16 : 0.10);
-    } else if (fromCustomer) {
-      bg = context.colors.surface;
-    } else {
-      bg = context.colors.primary.withValues(alpha: dark ? 0.20 : 0.09);
-    }
-    return Align(
-      alignment: fromCustomer ? Alignment.centerLeft : Alignment.centerRight,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: Gap.sm),
-        padding: const EdgeInsets.fromLTRB(Gap.md, 10, Gap.md, 10),
-        constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.8),
-        decoration: BoxDecoration(
-          color: bg,
-          border: fromCustomer ? Border.all(color: context.colors.outlineVariant) : null,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(AppTheme.radiusCard),
-            topRight: const Radius.circular(AppTheme.radiusCard),
-            bottomLeft: Radius.circular(fromCustomer ? 4 : AppTheme.radiusCard),
-            bottomRight: Radius.circular(fromCustomer ? AppTheme.radiusCard : 4),
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(
-                  child: Text(message.senderName, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5)),
-                ),
-                if (message.isInternal) ...[
-                  const SizedBox(width: 6),
-                  Text(
-                    'Internal',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: context.tone(Tone.warning)),
-                  ),
-                ],
-              ],
-            ),
-            const SizedBox(height: 3),
-            if (message.attachments.isNotEmpty) TicketAttachments(paths: message.attachments, showLabel: false),
-            if (!message.isPhotoOnly) Text(message.message, style: const TextStyle(fontSize: 14, height: 1.4)),
-            const SizedBox(height: 4),
-            Text(formatDateTime(message.createdAt), style: TextStyle(fontSize: 11, color: context.colors.onSurfaceVariant)),
           ],
         ),
       ),
