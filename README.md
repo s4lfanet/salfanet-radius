@@ -53,8 +53,11 @@ update themselves from the APK uploaded in the web panel (Build APK).
 
 - **Build a release APK for your own deployment**: [`docs/BUILD-APK.md`](docs/BUILD-APK.md) —
   your own Firebase project, signing keystore, `flutter build apk --split-per-abi`, or the
-  manual GitHub Actions workflow **Build Native APKs** (signing and `google-services.json`
-  come from repository secrets; APKs are published to the `apk-latest` release)
+  GitHub Actions workflow **Build Native APKs**. It runs when an `apk-v*` tag is pushed or from
+  **Run workflow** (a push to `master` alone builds nothing), signs with keys from repository
+  secrets, and publishes to the `apk-latest` release. Flutter is pinned (`flutter-version` in
+  `.github/workflows/build-apk.yml`, now 3.47.9): the unpinned `stable` moved to 3.50.0 and
+  all three builds failed until it was pinned, so raise it on purpose
 - **Run it in development**: [`mobile/customer_app/README.md`](mobile/customer_app/README.md)
 - **Enable push notifications (FCM)**: [`mobile/customer_app/FIREBASE_SETUP.md`](mobile/customer_app/FIREBASE_SETUP.md)
   — creating the Firebase project, `google-services.json`, the backend's service
@@ -1124,7 +1127,14 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - **[NEW]** Teknisi bisa menulis catatan internal (kotak **Catatan internal** di balasan, juga dengan foto). Admin dan teknisi membacanya, pelanggan tidak, dan pelanggan tidak diberi notifikasi
 - **[CHANGE]** Percakapan menyegarkan diri tiap 15 detik (admin, teknisi) dan 20 detik (pelanggan, kedua aplikasi), tanpa menutup dan membuka tiket lagi. Sebelumnya balasan baru tidak muncul sampai halaman dimuat ulang
 
+### Build APK
+- **[FIX]** Build APK untuk rilis ini gagal di ketiga aplikasi (admin, pelanggan, kolektor) pada langkah build, juga setelah 6 kali diulang. Workflow memakai Flutter `stable` tanpa versi, dan stable naik ke 3.50.0 pada 2026-11-11. Workflow kini dikunci ke Flutter 3.47.9, versi build sukses terakhir, dan build ulang lewat tag `apk-v5.47.0-2` sukses: admin 1.0.48, pelanggan 1.1.19, dan kolektor 1.4.5 ada di rilis `apk-latest`
+- **[CHANGE]** Versi Flutter untuk build APK tidak lagi ikut naik sendiri. Naikkan `flutter-version` di `.github/workflows/build-apk.yml` dengan sengaja, lalu coba build sekali
+- **[DOCS]** `docs/BUILD-APK.md` dan README menjelaskan pemicu workflow (tag `apk-v*` atau Run workflow, bukan push ke `master`) dan kunci versi Flutter. README tidak lagi menyebut `google-services.json` diambil dari secrets, sesuai dokumen build
+- **[FIX]** `scripts/sync-readme-changelog.mjs` kini membaca CHANGELOG berakhiran baris CRLF. Bila dijalankan di Windows, skrip itu menyalin garis pemisah antarentri ke README, yang lalu dihapus lagi oleh bot GitHub
+
 ### Hal yang perlu diketahui
+- **Bagian Flutter 3.50.0 yang membuat build gagal belum diketahui.** Log build tidak diperiksa. Kesimpulan bahwa versi Flutter penyebabnya datang dari build yang kembali sukses setelah versi dikunci
 - **Catatan internal lama dari admin kini terlihat oleh teknisi**, termasuk yang ditulis sebelum pembaruan. Itu yang diminta, tetapi periksa dulu bila ada catatan yang tidak untuk teknisi
 - Foto yang pernah dikirim admin atau pelanggan lewat balasan sebelum pembaruan tidak tersimpan dan tidak bisa dipulihkan
 - Teknisi masih mengirim satu foto per balasan dan hanya gambar, bukan PDF

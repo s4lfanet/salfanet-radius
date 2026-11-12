@@ -42,7 +42,8 @@ function updateReadme(readmeText, renderedEntries) {
   return readmeText.replace(pattern, block);
 }
 
-const changelogText = readFileSync(changelogPath, 'utf8');
+// A Windows checkout has CRLF line ends; entries are split on "\n---\n", so normalise first.
+const changelogText = readFileSync(changelogPath, 'utf8').replace(/\r\n/g, '\n');
 const readmeText = readFileSync(readmePath, 'utf8');
 
 const entries = extractEntries(changelogText);

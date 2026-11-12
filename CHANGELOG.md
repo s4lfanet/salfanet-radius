@@ -19,7 +19,14 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **[NEW]** Teknisi bisa menulis catatan internal (kotak **Catatan internal** di balasan, juga dengan foto). Admin dan teknisi membacanya, pelanggan tidak, dan pelanggan tidak diberi notifikasi
 - **[CHANGE]** Percakapan menyegarkan diri tiap 15 detik (admin, teknisi) dan 20 detik (pelanggan, kedua aplikasi), tanpa menutup dan membuka tiket lagi. Sebelumnya balasan baru tidak muncul sampai halaman dimuat ulang
 
+### Build APK
+- **[FIX]** Build APK untuk rilis ini gagal di ketiga aplikasi (admin, pelanggan, kolektor) pada langkah build, juga setelah 6 kali diulang. Workflow memakai Flutter `stable` tanpa versi, dan stable naik ke 3.50.0 pada 2026-11-11. Workflow kini dikunci ke Flutter 3.47.9, versi build sukses terakhir, dan build ulang lewat tag `apk-v5.47.0-2` sukses: admin 1.0.48, pelanggan 1.1.19, dan kolektor 1.4.5 ada di rilis `apk-latest`
+- **[CHANGE]** Versi Flutter untuk build APK tidak lagi ikut naik sendiri. Naikkan `flutter-version` di `.github/workflows/build-apk.yml` dengan sengaja, lalu coba build sekali
+- **[DOCS]** `docs/BUILD-APK.md` dan README menjelaskan pemicu workflow (tag `apk-v*` atau Run workflow, bukan push ke `master`) dan kunci versi Flutter. README tidak lagi menyebut `google-services.json` diambil dari secrets, sesuai dokumen build
+- **[FIX]** `scripts/sync-readme-changelog.mjs` kini membaca CHANGELOG berakhiran baris CRLF. Bila dijalankan di Windows, skrip itu menyalin garis pemisah antarentri ke README, yang lalu dihapus lagi oleh bot GitHub
+
 ### Hal yang perlu diketahui
+- **Bagian Flutter 3.50.0 yang membuat build gagal belum diketahui.** Log build tidak diperiksa. Kesimpulan bahwa versi Flutter penyebabnya datang dari build yang kembali sukses setelah versi dikunci
 - **Catatan internal lama dari admin kini terlihat oleh teknisi**, termasuk yang ditulis sebelum pembaruan. Itu yang diminta, tetapi periksa dulu bila ada catatan yang tidak untuk teknisi
 - Foto yang pernah dikirim admin atau pelanggan lewat balasan sebelum pembaruan tidak tersimpan dan tidak bisa dipulihkan
 - Teknisi masih mengirim satu foto per balasan dan hanya gambar, bukan PDF

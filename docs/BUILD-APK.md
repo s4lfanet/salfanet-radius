@@ -123,10 +123,31 @@ flutter build apk --release --split-per-abi \
 Output di `build/app/outputs/flutter-apk/app-<abi>-release.apk`.
 `arm64-v8a` cocok untuk hampir semua HP modern; `armeabi-v7a` untuk HP lama.
 
+Pakai versi Flutter yang sama dengan workflow (lihat bagian 4) agar hasil build di PC
+sama dengan hasil GitHub Actions.
+
 ## 4. Build via GitHub Actions (opsional)
 
-Repo menyediakan workflow `Build Native APKs` (manual). Untuk release-signed
-build, set repository secrets:
+Workflow `Build Native APKs` membangun aplikasi admin, pelanggan, dan kolektor, lalu
+menerbitkan APK dan manifest versinya ke rilis `apk-latest`. Workflow ini berjalan bila:
+
+- tag `apk-v*` di-push, misalnya `git tag -a apk-v5.47.0 -m "..."` lalu `git push origin apk-v5.47.0`, atau
+- dijalankan dari **Actions → Build Native APKs → Run workflow**.
+
+Push biasa ke `master` **tidak** memicu build. Versi APK diambil dari `version:` di
+`pubspec.yaml` tiap aplikasi, bukan dari nama tag, jadi tag kedua untuk build ulang
+(misalnya `apk-v5.47.0-2`) menghasilkan versi yang sama.
+
+**Versi Flutter dikunci** lewat `flutter-version` di `.github/workflows/build-apk.yml`
+(saat ini 3.47.9). Tanpa kunci, workflow memakai Flutter `stable` terbaru. Saat stable
+naik ke 3.50.0 (11 November 2026), build ketiga aplikasi gagal sampai versinya dikunci.
+Untuk naik versi, ubah angka itu dan jalankan workflow sekali. Jangan lepas kuncinya.
+
+Langkah build mengulang sampai 6 kali dengan jeda 150 detik, untuk unduhan Gradle yang
+gagal sesaat. Akibatnya build yang gagal karena kode atau versi Flutter baru terlihat
+gagal setelah sekitar 16 menit, bukan seketika.
+
+Untuk release-signed build, set repository secrets:
 
 | Secret | Isi |
 |---|---|
