@@ -1135,8 +1135,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Catatan Pembaruan
 - Tidak ada perubahan skema. Aplikasi admin 1.0.48 dan pelanggan 1.1.19. Naikkan versi: root, backend, frontend ke 5.47.0
 
----
-
 ### v5.46.0 — 2026-11-08 - Tampilan Mobile OLT, Nama ONU N/A, dan Tema Terang/Gelap Seragam
 
 ### Tampilan mobile OLT
@@ -1166,8 +1164,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Catatan Pembaruan
 - Tidak ada perubahan skema. Aplikasi admin 1.0.39+40. Naikkan versi: root, backend, frontend ke 5.46.0
 
----
-
 ### v5.45.0 — 2026-11-07 - Tipe ONU, Kipas ZTE, Modul Optik, Ganti Nama dan Reboot ONU, Dasan
 
 ### Reboot ONU
@@ -1195,8 +1191,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 ### Catatan Pembaruan
 - Menambah kolom `onuType` pada tabel ONU dan `webPort` pada tabel OLT, diterapkan otomatis saat pembaruan. Aplikasi admin 1.0.37. Naikkan versi: root, backend, frontend ke 5.45.0
-
----
 
 ### v5.44.0 — 2026-11-07 - Peta Port Semua Merek OLT dan Alur Baca dari NMS
 
@@ -1234,8 +1228,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Catatan Pembaruan
 - Tidak ada perubahan skema. Naikkan versi: root, backend, frontend ke 5.44.0
 
----
-
 ### v5.43.1 — 2026-11-07 - Uji Koneksi Telnet untuk OLT Hioso
 
 ### Data OLT
@@ -1248,8 +1240,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 ### Catatan Pembaruan
 - Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.43.1
-
----
 
 <!-- AUTO-CHANGELOG:END -->
 
