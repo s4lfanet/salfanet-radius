@@ -37,12 +37,14 @@ import {
   MapPin,
   Calendar,
   Hash,
+  Lock,
 } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatWIB } from '@/lib/timezone';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api/client';
 import TicketAttachments from '@/components/tickets/TicketAttachments';
+import { hasVisibleText } from '@/components/tickets/MessageAttachments';
 
 interface TicketData {
   id: string;
@@ -142,6 +144,7 @@ export default function TechnicianTicketsPage() {
   // Reply state
   const [replyMessage, setReplyMessage] = useState('');
   const [replyLoading, setReplyLoading] = useState(false);
+  const [replyInternal, setReplyInternal] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [gpsLoading, setGpsLoading] = useState(false);
@@ -173,22 +176,32 @@ export default function TechnicianTicketsPage() {
 
   useEffect(() => { loadTickets(); }, [loadTickets]);
 
-  const loadMessages = useCallback(async (ticketId: string) => {
-    setMessagesLoading(true);
+  // `silent` is the background refresh: no spinner, no scrolling, no error toast.
+  const loadMessages = useCallback(async (ticketId: string, silent = false) => {
+    if (!silent) setMessagesLoading(true);
     try {
       const data = await apiAdmin<TicketMessage[]>(`/api/technician/tickets?ticketId=${encodeURIComponent(ticketId)}`);
       setMessages(Array.isArray(data) ? data : []);
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+      if (!silent) setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     } catch {
-      addToast({ type: 'error', title: 'Gagal memuat pesan tiket' });
+      if (!silent) addToast({ type: 'error', title: 'Gagal memuat pesan tiket' });
     } finally {
-      setMessagesLoading(false);
+      if (!silent) setMessagesLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Replies, photos and notes from the customer, admin or another technician show up without reopening the ticket.
+  useEffect(() => {
+    if (!detailTicket) return;
+    const id = detailTicket.id;
+    const timer = setInterval(() => { void loadMessages(id, true); }, 15000);
+    return () => clearInterval(timer);
+  }, [detailTicket, loadMessages]);
+
   async function openDetail(ticket: TicketData) {
     setDetailTicket(ticket);
+    setReplyInternal(false);
     setReplyMessage('');
     setPhotoFile(null);
     setPhotoPreview(null);
@@ -197,6 +210,7 @@ export default function TechnicianTicketsPage() {
 
   function closeDetail() {
     setDetailTicket(null);
+    setReplyInternal(false);
     setMessages([]);
     setReplyMessage('');
     setPhotoFile(null);
@@ -278,9 +292,11 @@ export default function TechnicianTicketsPage() {
           action: 'reply',
           message: replyMessage.trim() || undefined,
           attachments: uploadedUrls.length > 0 ? uploadedUrls : undefined,
+          isInternal: replyInternal,
         }),
       });
-      addToast({ type: 'success', title: 'Pesan terkirim' });
+      addToast({ type: 'success', title: replyInternal ? 'Catatan internal tersimpan' : 'Pesan terkirim' });
+      setReplyInternal(false);
       setReplyMessage('');
       setPhotoFile(null);
       setPhotoPreview(null);
@@ -681,8 +697,14 @@ export default function TechnicianTicketsPage() {
                       return (
                         <div key={msg.id} className={`flex ${isTech ? 'justify-end' : 'justify-start'}`}>
                           <div className="max-w-[80%] space-y-1">
-                            <div className={`text-[10px] font-medium mb-1 ${isTech ? 'text-right text-brand-500' : 'text-left text-muted-foreground'}`}>
+                            <div className={`text-[10px] font-medium mb-1 flex items-center gap-1.5 ${isTech ? 'justify-end text-brand-500' : 'justify-start text-muted-foreground'}`}>
                               {msg.senderName}
+                              {msg.isInternal && (
+                                <span className="inline-flex items-center gap-0.5 font-semibold text-warning">
+                                  <Lock className="w-3 h-3" aria-hidden="true" />
+                                  Internal
+                                </span>
+                              )}
                             </div>
                             {/* Photo attachments */}
                             {attachs.length > 0 && (
@@ -700,9 +722,11 @@ export default function TechnicianTicketsPage() {
                               </div>
                             )}
                             {/* Message text */}
-                            {msg.message && msg.message !== 'Foto dikirim' && (
+                            {msg.message && hasVisibleText(msg.message, msg.attachments) && (
                               <div className={`px-3 py-2 rounded-2xl text-xs leading-relaxed whitespace-pre-wrap ${
-                                isTech
+                                msg.isInternal
+                                  ? 'bg-warning/10 text-foreground rounded-tr-sm border border-warning/30'
+                                  : isTech
                                   ? 'bg-primary/10 dark:bg-primary/10 text-slate-800 dark:text-[#f0e0ff] rounded-tr-sm border border-border'
                                   : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-muted-foreground/90 rounded-tl-sm border border-border'
                               }`}>
@@ -737,6 +761,18 @@ export default function TechnicianTicketsPage() {
                       </div>
                     )}
 
+                    <label className="mb-2 flex min-h-11 w-fit cursor-pointer items-center gap-2 text-xs text-foreground">
+                      <input
+                        type="checkbox"
+                        checked={replyInternal}
+                        onChange={(e) => setReplyInternal(e.target.checked)}
+                        className="h-4 w-4 rounded border-border accent-amber-500"
+                      />
+                      <Lock className="w-3.5 h-3.5 text-warning" aria-hidden="true" />
+                      Catatan internal
+                      <span className="text-muted-foreground">(hanya admin dan teknisi)</span>
+                    </label>
+
                     <div className="flex gap-2 items-end">
                       <textarea
                         ref={replyTextareaRef}
@@ -746,7 +782,7 @@ export default function TechnicianTicketsPage() {
                           if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) sendReply();
                         }}
                         rows={2}
-                        placeholder="Tulis balasan... (Ctrl+Enter untuk kirim)"
+                        placeholder={replyInternal ? 'Tulis catatan internal... (Ctrl+Enter untuk kirim)' : 'Tulis balasan... (Ctrl+Enter untuk kirim)'}
                         className="flex-1 px-3 py-2.5 text-xs bg-input/80 border border-border rounded-xl text-foreground placeholder-slate-400 focus:outline-none focus:border-brand-500/60 focus:ring-1 focus:ring-brand-500/30 resize-none"
                       />
                       <div className="flex flex-col gap-1.5">

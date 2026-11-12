@@ -6,6 +6,32 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.47.0] - 2026-11-12 - Foto dan Catatan Internal Tiket Tampil di Semua Peran
+
+### Foto di percakapan tiket
+- **[FIX]** Foto yang dikirim admin atau pelanggan lewat balasan tiket tidak pernah tersimpan: rute pesan tidak membaca lampiran sama sekali. Kini tersimpan dan ikut terbaca oleh admin, teknisi, dan pelanggan
+- **[FIX]** Halaman tiket admin dan pelanggan (web dan APK) tidak menampilkan foto pada pesan, sehingga foto dari teknisi tidak terlihat di sana. Kini tampil sebagai gambar kecil yang dibuka ukuran penuh. Pesan yang hanya berisi foto tidak lagi menampilkan tulisan "Foto dikirim" di sampingnya
+- **[NEW]** Admin dan pelanggan bisa mengirim foto atau PDF di balasan (paling banyak 5, masing-masing 10 MB), di web dan di aplikasi admin serta pelanggan. Pesan boleh hanya berisi foto
+- **[CHANGE]** Lampiran pesan hanya diterima bila berupa berkas yang diunggah lewat unggahan tiket (`/uploads/tickets/...`). Alamat lain ditolak dengan kode 400. Tanpa batas ini, pelanggan bisa menyimpan alamat sembarang yang dibuka di browser staf
+
+### Catatan internal
+- **[FIX]** Teknisi tidak bisa membaca catatan internal: daftar pesan teknisi menyaring semuanya, termasuk catatan dari admin. Kini terbaca
+- **[NEW]** Teknisi bisa menulis catatan internal (kotak **Catatan internal** di balasan, juga dengan foto). Admin dan teknisi membacanya, pelanggan tidak, dan pelanggan tidak diberi notifikasi
+- **[CHANGE]** Percakapan menyegarkan diri tiap 15 detik (admin, teknisi) dan 20 detik (pelanggan, kedua aplikasi), tanpa menutup dan membuka tiket lagi. Sebelumnya balasan baru tidak muncul sampai halaman dimuat ulang
+
+### Hal yang perlu diketahui
+- **Catatan internal lama dari admin kini terlihat oleh teknisi**, termasuk yang ditulis sebelum pembaruan. Itu yang diminta, tetapi periksa dulu bila ada catatan yang tidak untuk teknisi
+- Foto yang pernah dikirim admin atau pelanggan lewat balasan sebelum pembaruan tidak tersimpan dan tidak bisa dipulihkan
+- Teknisi masih mengirim satu foto per balasan dan hanya gambar, bukan PDF
+- Bila balasan gagal terkirim setelah fotonya terunggah, berkas itu tetap ada di server dan tidak dibersihkan otomatis
+- Diuji dengan rute asli dan database tiruan: foto dari pelanggan terbaca admin dan teknisi, foto dan catatan internal teknisi terbaca admin, catatan internal tidak sampai ke pelanggan, alamat berbahaya ditolak. Uji yang sama gagal pada rute lama. **Tampilan web dan aplikasi belum dijalankan di browser atau perangkat**, hanya diperiksa tipenya dan dianalisis. Notifikasi push tidak ikut diuji
+- "Catatan Internal" di formulir pelanggan (data PSB) adalah kolom lain dan tidak diubah
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema. Aplikasi admin 1.0.48 dan pelanggan 1.1.19. Naikkan versi: root, backend, frontend ke 5.47.0
+
+---
+
 ## [5.46.0] - 2026-11-08 - Tampilan Mobile OLT, Nama ONU N/A, dan Tema Terang/Gelap Seragam
 
 ### Tampilan mobile OLT

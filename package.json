@@ -1,6 +1,6 @@
 {
   "name": "salfanet-radius",
-  "version": "5.46.0",
+  "version": "5.47.0",
   "license": "MIT",
   "private": true,
   "description": "Salfanet Radius — ISP/RADIUS management system (monorepo)",

@@ -74,6 +74,7 @@ class TicketMessage {
     required this.senderName,
     required this.message,
     required this.createdAt,
+    this.attachments = const [],
   });
 
   final String id;
@@ -81,6 +82,10 @@ class TicketMessage {
   final String senderName;
   final String message;
   final DateTime createdAt;
+  final List<String> attachments;
+
+  /// Only photos: the server stores a placeholder text for it, which the photos make redundant.
+  bool get isPhotoOnly => attachments.isNotEmpty && RegExp(r'^(?:📷\s*)?Foto dikirim$', caseSensitive: false).hasMatch(message.trim());
 
   bool get isFromCustomer => senderType.toUpperCase() == 'CUSTOMER';
 
@@ -90,5 +95,6 @@ class TicketMessage {
         senderName: json['senderName']?.toString() ?? '-',
         message: json['message']?.toString() ?? '',
         createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? DateTime.now(),
+        attachments: parseAttachmentList(json['attachments']),
       );
 }

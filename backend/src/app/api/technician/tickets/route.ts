@@ -3,6 +3,7 @@ import { jwtVerify } from 'jose';
 import { prisma } from '@/server/db/client';
 import { TECH_JWT_SECRET } from '@/server/auth/technician-secret';
 import { createAdminNotification } from '@/server/services/notifications/admin-notification.service';
+import { encodeAttachments, messageText, parseAttachmentInput } from '@/lib/ticket-attachments';
 
 async function verifyTechnician(req: NextRequest) {
   const token = req.cookies.get('technician-token')?.value;
@@ -45,8 +46,10 @@ export async function GET(req: NextRequest) {
     });
     const visible = ticket && (ticket.assignedToId === null || (ticket.assignedToId === tech.id && ticket.assignedToType === 'TECHNICIAN'));
     if (!visible) return NextResponse.json({ error: 'Tiket tidak ditemukan' }, { status: 404 });
+    // Internal notes are part of the thread for a technician: they are how admin and technicians
+    // talk about a ticket without the customer reading it. The customer routes still leave them out.
     const messages = await prisma.ticketMessage.findMany({
-      where: { ticketId, isInternal: false },
+      where: { ticketId },
       orderBy: { createdAt: 'asc' },
     });
     return NextResponse.json(messages);
@@ -102,12 +105,13 @@ export async function PATCH(req: NextRequest) {
   if (!tech) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
-  const { ticketId, action, status, message, attachments } = body as {
+  const { ticketId, action, status, message, attachments, isInternal } = body as {
     ticketId: string;
     action: 'claim' | 'update_status' | 'reply';
     status?: string;
     message?: string;
     attachments?: string[];
+    isInternal?: boolean;
   };
 
   if (!ticketId || !action) {
@@ -196,9 +200,16 @@ export async function PATCH(req: NextRequest) {
     if (ticket.assignedToId !== tech.id) {
       return NextResponse.json({ error: 'Anda tidak ditugaskan pada tiket ini' }, { status: 403 });
     }
-    if (!message?.trim() && (!attachments || attachments.length === 0)) {
+    const files = parseAttachmentInput(attachments);
+    if (files === null) {
+      return NextResponse.json({ error: 'Lampiran tidak valid' }, { status: 400 });
+    }
+    const text = messageText(message?.trim(), files.length);
+    if (!text) {
       return NextResponse.json({ error: 'Pesan atau lampiran tidak boleh kosong' }, { status: 400 });
     }
+    // An internal note stays between admin and technicians. The customer is not told about it.
+    const internal = isInternal === true;
     const msg = await prisma.ticketMessage.create({
       data: {
         id: crypto.randomUUID(),
@@ -206,9 +217,9 @@ export async function PATCH(req: NextRequest) {
         senderType: 'TECHNICIAN',
         senderId: tech.id,
         senderName: tech.name,
-        message: message?.trim() || '📷 Foto dikirim',
-        isInternal: false,
-        attachments: attachments && attachments.length > 0 ? JSON.stringify(attachments) : null,
+        message: text,
+        isInternal: internal,
+        attachments: encodeAttachments(files),
       },
     });
     await prisma.ticket.update({
@@ -216,12 +227,12 @@ export async function PATCH(req: NextRequest) {
       data: { lastResponseAt: new Date() },
     });
     // Send web push to customer
-    if (ticket.customerId) {
+    if (ticket.customerId && !internal) {
       try {
         const { sendWebPushToUser } = await import('@/server/services/push-notification.service');
         await sendWebPushToUser(ticket.customerId, {
           title: '💬 Balasan Baru di Tiket Anda',
-          body: `${tech.name}: ${(message?.trim() || '📷 Foto dikirim').substring(0, 100)}`,
+          body: `${tech.name}: ${text.substring(0, 100)}`,
           url: '/customer/tickets',
           tag: 'ticket-reply',
         });

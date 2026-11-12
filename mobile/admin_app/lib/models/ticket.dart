@@ -79,6 +79,7 @@ class TicketMessage {
     required this.message,
     required this.createdAt,
     this.isInternal = false,
+    this.attachments = const [],
   });
 
   final String id;
@@ -87,6 +88,10 @@ class TicketMessage {
   final String message;
   final DateTime createdAt;
   final bool isInternal;
+  final List<String> attachments;
+
+  /// Only photos: the server stores a placeholder text for it, which the photos make redundant.
+  bool get isPhotoOnly => attachments.isNotEmpty && RegExp(r'^(?:📷\s*)?Foto dikirim$', caseSensitive: false).hasMatch(message.trim());
 
   factory TicketMessage.fromJson(Map<String, dynamic> json) {
     return TicketMessage(
@@ -96,6 +101,7 @@ class TicketMessage {
       message: (json['message'] ?? '').toString(),
       createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? DateTime.now(),
       isInternal: json['isInternal'] == true,
+      attachments: Ticket._parseAttachments(json['attachments']),
     );
   }
 }

@@ -6,8 +6,11 @@ import '../../core/api/api_client.dart';
 /// Thumbnails for a ticket's uploaded photos/PDFs. Paths are server-relative
 /// (/uploads/tickets/...), so they are resolved against the configured server.
 class TicketAttachments extends StatelessWidget {
-  const TicketAttachments({super.key, required this.paths});
+  const TicketAttachments({super.key, required this.paths, this.showLabel = true});
   final List<String> paths;
+
+  /// The "Lampiran (n)" heading. Inside a chat bubble the thumbnails speak for themselves.
+  final bool showLabel;
 
   String _resolve(String path) {
     if (path.startsWith('http')) return path;
@@ -20,12 +23,14 @@ class TicketAttachments extends StatelessWidget {
     if (paths.isEmpty) return const SizedBox.shrink();
     final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.only(top: 10),
+      padding: EdgeInsets.only(top: showLabel ? 10 : 6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Lampiran (${paths.length})', style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
-          const SizedBox(height: 6),
+          if (showLabel) ...[
+            Text('Lampiran (${paths.length})', style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
+            const SizedBox(height: 6),
+          ],
           Wrap(
             spacing: 8,
             runSpacing: 8,

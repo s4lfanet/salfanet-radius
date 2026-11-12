@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.46.0 - Tampilan Mobile OLT, Nama ONU N/A, dan Tema Terang/Gelap Seragam
+> **Version:** 5.47.0 - Foto dan Catatan Internal Tiket Tampil di Semua Peran
 
 ---
 
@@ -1111,6 +1111,32 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.47.0 — 2026-11-12 - Foto dan Catatan Internal Tiket Tampil di Semua Peran
+
+### Foto di percakapan tiket
+- **[FIX]** Foto yang dikirim admin atau pelanggan lewat balasan tiket tidak pernah tersimpan: rute pesan tidak membaca lampiran sama sekali. Kini tersimpan dan ikut terbaca oleh admin, teknisi, dan pelanggan
+- **[FIX]** Halaman tiket admin dan pelanggan (web dan APK) tidak menampilkan foto pada pesan, sehingga foto dari teknisi tidak terlihat di sana. Kini tampil sebagai gambar kecil yang dibuka ukuran penuh. Pesan yang hanya berisi foto tidak lagi menampilkan tulisan "Foto dikirim" di sampingnya
+- **[NEW]** Admin dan pelanggan bisa mengirim foto atau PDF di balasan (paling banyak 5, masing-masing 10 MB), di web dan di aplikasi admin serta pelanggan. Pesan boleh hanya berisi foto
+- **[CHANGE]** Lampiran pesan hanya diterima bila berupa berkas yang diunggah lewat unggahan tiket (`/uploads/tickets/...`). Alamat lain ditolak dengan kode 400. Tanpa batas ini, pelanggan bisa menyimpan alamat sembarang yang dibuka di browser staf
+
+### Catatan internal
+- **[FIX]** Teknisi tidak bisa membaca catatan internal: daftar pesan teknisi menyaring semuanya, termasuk catatan dari admin. Kini terbaca
+- **[NEW]** Teknisi bisa menulis catatan internal (kotak **Catatan internal** di balasan, juga dengan foto). Admin dan teknisi membacanya, pelanggan tidak, dan pelanggan tidak diberi notifikasi
+- **[CHANGE]** Percakapan menyegarkan diri tiap 15 detik (admin, teknisi) dan 20 detik (pelanggan, kedua aplikasi), tanpa menutup dan membuka tiket lagi. Sebelumnya balasan baru tidak muncul sampai halaman dimuat ulang
+
+### Hal yang perlu diketahui
+- **Catatan internal lama dari admin kini terlihat oleh teknisi**, termasuk yang ditulis sebelum pembaruan. Itu yang diminta, tetapi periksa dulu bila ada catatan yang tidak untuk teknisi
+- Foto yang pernah dikirim admin atau pelanggan lewat balasan sebelum pembaruan tidak tersimpan dan tidak bisa dipulihkan
+- Teknisi masih mengirim satu foto per balasan dan hanya gambar, bukan PDF
+- Bila balasan gagal terkirim setelah fotonya terunggah, berkas itu tetap ada di server dan tidak dibersihkan otomatis
+- Diuji dengan rute asli dan database tiruan: foto dari pelanggan terbaca admin dan teknisi, foto dan catatan internal teknisi terbaca admin, catatan internal tidak sampai ke pelanggan, alamat berbahaya ditolak. Uji yang sama gagal pada rute lama. **Tampilan web dan aplikasi belum dijalankan di browser atau perangkat**, hanya diperiksa tipenya dan dianalisis. Notifikasi push tidak ikut diuji
+- "Catatan Internal" di formulir pelanggan (data PSB) adalah kolom lain dan tidak diubah
+
+### Catatan Pembaruan
+- Tidak ada perubahan skema. Aplikasi admin 1.0.48 dan pelanggan 1.1.19. Naikkan versi: root, backend, frontend ke 5.47.0
+
+---
+
 ### v5.46.0 — 2026-11-08 - Tampilan Mobile OLT, Nama ONU N/A, dan Tema Terang/Gelap Seragam
 
 ### Tampilan mobile OLT
@@ -1140,6 +1166,8 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Catatan Pembaruan
 - Tidak ada perubahan skema. Aplikasi admin 1.0.39+40. Naikkan versi: root, backend, frontend ke 5.46.0
 
+---
+
 ### v5.45.0 — 2026-11-07 - Tipe ONU, Kipas ZTE, Modul Optik, Ganti Nama dan Reboot ONU, Dasan
 
 ### Reboot ONU
@@ -1167,6 +1195,8 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 ### Catatan Pembaruan
 - Menambah kolom `onuType` pada tabel ONU dan `webPort` pada tabel OLT, diterapkan otomatis saat pembaruan. Aplikasi admin 1.0.37. Naikkan versi: root, backend, frontend ke 5.45.0
+
+---
 
 ### v5.44.0 — 2026-11-07 - Peta Port Semua Merek OLT dan Alur Baca dari NMS
 
@@ -1204,6 +1234,8 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Catatan Pembaruan
 - Tidak ada perubahan skema. Naikkan versi: root, backend, frontend ke 5.44.0
 
+---
+
 ### v5.43.1 — 2026-11-07 - Uji Koneksi Telnet untuk OLT Hioso
 
 ### Data OLT
@@ -1217,21 +1249,7 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Catatan Pembaruan
 - Tidak ada perubahan skema, dan aplikasi tidak perlu diperbarui. Naikkan versi: root, backend, frontend ke 5.43.1
 
-### v5.43.0 — 2026-11-06 - Community SNMP Baca dan Tulis di Data OLT
-
-### Data OLT
-- **[NEW]** Form tambah dan ubah OLT punya **Community (Baca)** dan **Community (Tulis)** terpisah, begitu pula pengaturan SNMP di halaman detail OLT, impor Excel (kolom `snmpWriteCommunity`, dengan templat yang diperbarui), dan aplikasi admin. Sebelumnya hanya ada satu isian
-- **[CHANGE]** Community tulis tidak pernah dikirim ke browser. Klien database menyembunyikan kolomnya dari semua hasil, termasuk baris OLT yang terbawa lewat relasi seperti ODP, uplink router, dan penugasan pelanggan. Form hanya menerima penanda sudah tersimpan atau belum. Kosong berarti tidak diubah, dan ada kotak centang untuk menghapus
-- **[FIX]** Impor Excel mengubah merek C-Data, HSGQ, V-SOL, Hioso, dan Otomatis menjadi ZTE secara diam-diam, karena daftar merek yang diterima hanya lima. Kini semuanya dikenali
-- **[FIX]** Pilihan merek di aplikasi admin kini sama dengan web: Otomatis, C-Data, HSGQ, V-SOL
-- **[DOCS]** Penjelasan community baca dan tulis di `docs/features/OLT-SNMP-REFERENCE.md` dan Pusat Panduan
-
-### Hal yang perlu diketahui
-- **Belum ada fitur yang memakai community tulis.** Tidak ada kode yang melakukan SNMP SET; pemantauan tetap memakai community baca. Isian ini disiapkan untuk fitur berikutnya, misalnya mengganti nama ONU Hioso HA7302
-- Penyembunyian kolom diuji pada tipe dan konfigurasi klien, belum terhadap database sungguhan
-
-### Catatan Pembaruan
-- Menambah kolom `snmpWriteCommunity` (boleh kosong) pada tabel OLT, diterapkan otomatis saat pembaruan. Aplikasi admin 1.0.36. Naikkan versi: root, backend, frontend ke 5.43.0
+---
 
 <!-- AUTO-CHANGELOG:END -->
 

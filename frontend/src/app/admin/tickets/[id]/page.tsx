@@ -24,6 +24,8 @@ import { formatWIB } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import TicketAttachments from '@/components/tickets/TicketAttachments';
+import MessageAttachments, { hasVisibleText } from '@/components/tickets/MessageAttachments';
+import ReplyPhotoPicker from '@/components/tickets/ReplyPhotoPicker';
 
 type TicketStatus = 'OPEN' | 'IN_PROGRESS' | 'WAITING_CUSTOMER' | 'RESOLVED' | 'CLOSED';
 type TicketPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
@@ -36,6 +38,7 @@ interface Message {
   message: string;
   createdAt: string;
   isInternal: boolean;
+  attachments?: string | null;
 }
 
 interface TicketDetail {
@@ -69,6 +72,7 @@ export default function AdminTicketDetailPage() {
 
   const [replyText, setReplyText] = useState('');
   const [isInternal, setIsInternal] = useState(false);
+  const [photos, setPhotos] = useState<File[]>([]);
   const [sending, setSending] = useState(false);
   
   // Quick actions state
@@ -93,6 +97,8 @@ export default function AdminTicketDetailPage() {
   const { data: messagesData } = useApiQuery<Message[]>('/api/tickets/messages', {
     params: { ticketId, includeInternal: true },
     enabled: !!ticketId,
+    // Replies and photos from the customer or a technician show up without reloading the page.
+    refetchInterval: 15000,
   });
   const messages = messagesData || [];
 
@@ -108,10 +114,19 @@ export default function AdminTicketDetailPage() {
   const handleReply = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!replyText.trim()) return;
+    if (!replyText.trim() && photos.length === 0) return;
 
     setSending(true);
     try {
+      const attachments: string[] = [];
+      for (const file of photos) {
+        const form = new FormData();
+        form.append('file', file);
+        const uploaded = await apiAdmin<{ url?: string; error?: string }>('/api/tickets/upload', { method: 'POST', body: form });
+        if (!uploaded.url) throw new Error(uploaded.error || `${file.name} gagal diunggah`);
+        attachments.push(uploaded.url);
+      }
+
       await apiAdmin('/api/tickets/messages', {
         method: 'POST',
         body: JSON.stringify({
@@ -120,10 +135,12 @@ export default function AdminTicketDetailPage() {
           senderName: 'Admin',
           message: replyText,
           isInternal,
+          attachments,
         }),
       });
 
       setReplyText('');
+      setPhotos([]);
       setIsInternal(false);
       queryClient.invalidateQueries({ queryKey: messagesQueryKey });
       queryClient.invalidateQueries({ queryKey: ticketQueryKey }); // Update lastResponseAt
@@ -418,7 +435,10 @@ export default function AdminTicketDetailPage() {
                         {formatWIB(msg.createdAt, 'd MMM HH:mm')}
                       </div>
                     </div>
-                    <p className="text-foreground/80 whitespace-pre-wrap">{renderWithLinks(msg.message)}</p>
+                    {hasVisibleText(msg.message, msg.attachments) && (
+                      <p className="text-foreground/80 whitespace-pre-wrap">{renderWithLinks(msg.message)}</p>
+                    )}
+                    <MessageAttachments attachments={msg.attachments} />
                   </div>
                 </div>
               </div>
@@ -453,11 +473,14 @@ export default function AdminTicketDetailPage() {
                   placeholder={isInternal ? t('ticket.internalNotePlaceholder') : t('ticket.replyPlaceholder')}
                   disabled={sending}
                 />
+                <div className="mt-3">
+                  <ReplyPhotoPicker files={photos} onChange={setPhotos} onReject={(reason) => { void showError(reason); }} disabled={sending} />
+                </div>
               </div>
               <div className="flex justify-end">
                 <button
                   type="submit"
-                  disabled={sending || !replyText.trim()}
+                  disabled={sending || (!replyText.trim() && photos.length === 0)}
                   className="flex items-center gap-2 bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {sending ? (

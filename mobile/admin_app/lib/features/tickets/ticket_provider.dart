@@ -65,13 +65,30 @@ class TicketMessagesProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> reply({required String senderName, required String message, bool isInternal = false}) async {
+  /// Uploads one photo or PDF and returns the path the reply should carry.
+  Future<String> uploadAttachment(String path, String name) async {
+    final res = await ApiClient.instance.upload('/api/tickets/upload', path, filename: name);
+    final url = res is Map ? res['url']?.toString() : null;
+    if (url == null || url.isEmpty) {
+      throw ApiException(res is Map ? (res['error']?.toString() ?? 'Lampiran gagal diunggah.') : 'Lampiran gagal diunggah.');
+    }
+    return url;
+  }
+
+  Future<void> reply({required String senderName, required String message, bool isInternal = false, List<String> attachments = const []}) async {
     sending = true;
     notifyListeners();
     try {
       await ApiClient.instance.post(
         '/api/tickets/messages',
-        data: {'ticketId': ticketId, 'senderType': 'ADMIN', 'senderName': senderName, 'message': message, 'isInternal': isInternal},
+        data: {
+          'ticketId': ticketId,
+          'senderType': 'ADMIN',
+          'senderName': senderName,
+          'message': message,
+          'isInternal': isInternal,
+          if (attachments.isNotEmpty) 'attachments': attachments,
+        },
       );
       await load();
     } finally {

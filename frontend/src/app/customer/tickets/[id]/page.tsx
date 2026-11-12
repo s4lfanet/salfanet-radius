@@ -10,6 +10,8 @@ import { formatWIB } from '@/lib/timezone';
 import { apiCustomer, ApiError } from '@/lib/api';
 import { CyberCard } from '@/components/cyberpunk/CyberCard';
 import { CyberButton } from '@/components/cyberpunk/CyberButton';
+import MessageAttachments, { hasVisibleText } from '@/components/tickets/MessageAttachments';
+import ReplyPhotoPicker from '@/components/tickets/ReplyPhotoPicker';
 
 type TicketStatus = 'OPEN' | 'IN_PROGRESS' | 'WAITING_CUSTOMER' | 'RESOLVED' | 'CLOSED';
 type TicketPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
@@ -22,6 +24,7 @@ interface Message {
   message: string;
   createdAt: string;
   isInternal: boolean;
+  attachments?: string | null;
 }
 
 interface TicketDetail {
@@ -56,6 +59,7 @@ export default function TicketDetailPage() {
   const [loading, setLoading] = useState(true);
   const [replyText, setReplyText] = useState('');
   const [sending, setSending] = useState(false);
+  const [photos, setPhotos] = useState<File[]>([]);
 
   useEffect(() => {
     // Check auth
@@ -65,10 +69,12 @@ export default function TicketDetailPage() {
       return;
     }
     
-    if (ticketId) {
-      fetchTicket();
-      fetchMessages();
-    }
+    if (!ticketId) return;
+    fetchTicket();
+    fetchMessages();
+    // A reply from staff, with its photos, shows up without reloading the page.
+    const timer = setInterval(fetchMessages, 20000);
+    return () => clearInterval(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticketId, router]);
 
@@ -97,7 +103,7 @@ export default function TicketDetailPage() {
   const handleReply = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!replyText.trim()) return;
+    if (!replyText.trim() && photos.length === 0) return;
 
     // Get customer name from session
     let senderName = 'Customer';
@@ -113,6 +119,15 @@ export default function TicketDetailPage() {
 
     setSending(true);
     try {
+      const attachments: string[] = [];
+      for (const file of photos) {
+        const form = new FormData();
+        form.append('file', file);
+        const uploaded = await apiCustomer<{ url?: string; error?: string }>('/api/customer/tickets/upload', { method: 'POST', body: form });
+        if (!uploaded.url) throw new Error(uploaded.error || `${file.name} gagal diunggah`);
+        attachments.push(uploaded.url);
+      }
+
       await apiCustomer('/api/tickets/messages', {
         method: 'POST',
         body: JSON.stringify({
@@ -121,10 +136,12 @@ export default function TicketDetailPage() {
           senderName,
           message: replyText,
           isInternal: false,
+          attachments,
         }),
       });
 
       setReplyText('');
+      setPhotos([]);
       fetchMessages();
       toast('success', t('ticket.replySent') || 'Balasan terkirim');
     } catch (error) {
@@ -338,9 +355,12 @@ export default function TicketDetailPage() {
                       {formatWIB(msg.createdAt, 'd MMM HH:mm')}
                     </div>
                   </div>
-                  <p className="text-foreground/80 text-sm whitespace-pre-wrap">
-                    {msg.message}
-                  </p>
+                  {hasVisibleText(msg.message, msg.attachments) && (
+                    <p className="text-foreground/80 text-sm whitespace-pre-wrap">
+                      {msg.message}
+                    </p>
+                  )}
+                  <MessageAttachments attachments={msg.attachments} />
                 </div>
               </div>
           </CyberCard>
@@ -362,10 +382,13 @@ export default function TicketDetailPage() {
               placeholder={t('ticket.replyPlaceholder')}
               disabled={sending}
             />
+            <div className="mb-3">
+              <ReplyPhotoPicker files={photos} onChange={setPhotos} onReject={(reason) => toast('error', reason)} disabled={sending} />
+            </div>
             <div className="flex justify-end">
               <CyberButton
                 type="submit"
-                disabled={sending || !replyText.trim()}
+                disabled={sending || (!replyText.trim() && photos.length === 0)}
                 variant="cyan"
                 className="flex items-center gap-2 px-4 py-2 text-sm"
               >

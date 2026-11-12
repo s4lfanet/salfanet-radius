@@ -2,6 +2,7 @@
 import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { createAdminNotification } from '@/server/services/notifications/admin-notification.service';
+import { encodeAttachments, messageText, parseAttachmentInput } from '@/lib/ticket-attachments';
 
 /**
  * Resolves who is calling: an admin/technician (NextAuth session, checked via
@@ -146,7 +147,16 @@ export async function POST(req: NextRequest) {
       senderName,
       message,
       isInternal,
+      attachments,
     } = body;
+
+    // Photos are the upload paths the sender's own upload route returned. This route used to drop
+    // them, so a photo sent by an admin or a customer never reached the conversation.
+    const files = parseAttachmentInput(attachments);
+    if (files === null) {
+      return NextResponse.json({ error: 'Lampiran tidak valid' }, { status: 400 });
+    }
+    message = messageText(message, files.length);
 
     if (!ticketId || !senderType || !senderName || !message) {
       return NextResponse.json(
@@ -189,6 +199,7 @@ export async function POST(req: NextRequest) {
         senderName,
         message,
         isInternal: isInternal || false,
+        attachments: encodeAttachments(files),
       },
     });
 

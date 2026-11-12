@@ -1400,7 +1400,9 @@
    "steps": [
     "Buka tiket baru, tentukan prioritas.",
     "Klik Kirim ke Teknisi untuk menugaskan.",
-    "Balas pelanggan dari detail tiket dan tutup tiket setelah selesai."
+    "Balas pelanggan dari detail tiket dan tutup tiket setelah selesai.",
+    "Foto dan PDF (maksimal 5 per balasan, 10 MB) bisa dilampirkan dengan Tambah foto. Foto dari pelanggan dan teknisi tampil di percakapan.",
+    "Centang Catatan internal untuk pesan yang hanya dibaca admin dan teknisi. Pelanggan tidak melihatnya dan tidak diberi tahu."
    ],
    "related": [
     {

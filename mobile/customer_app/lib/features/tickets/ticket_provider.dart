@@ -100,6 +100,7 @@ class TicketProvider extends ChangeNotifier {
     required String ticketId,
     required String message,
     required CustomerProfile sender,
+    List<String> attachments = const [],
   }) async {
     final res = await ApiClient.instance.post('/api/tickets/messages', data: {
       'ticketId': ticketId,
@@ -107,6 +108,7 @@ class TicketProvider extends ChangeNotifier {
       'senderId': sender.id,
       'senderName': sender.name,
       'message': message,
+      if (attachments.isNotEmpty) 'attachments': attachments,
     });
     return TicketMessage.fromJson(res);
   }
