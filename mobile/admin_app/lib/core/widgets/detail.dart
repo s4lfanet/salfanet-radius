@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import '../../features/auth/auth_provider.dart';
 
 import '../theme/app_theme.dart';
 import 'entity_tile.dart';
@@ -231,6 +233,12 @@ class ActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Read-only accounts keep navigation-style actions (call, WhatsApp, map)
+    // but not the ones that approve, reject, delete or otherwise change data.
+    final writer = context.watch<AuthProvider>().user?.canWrite ?? false;
+    final actions = writer
+        ? this.actions
+        : this.actions.where((a) => a.kind == ActionKind.neutral || a.kind == ActionKind.primary).toList();
     if (actions.isEmpty) return const SizedBox.shrink();
     // Filled primary goes last (rightmost) so the destructive/secondary
     // choice is never where the thumb lands by default.

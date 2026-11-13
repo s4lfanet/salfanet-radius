@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const authCheck = await requirePermission('settings.view');
+  const authCheck = await requirePermission('settings.edit');
   if (!authCheck.authorized) return authCheck.response;
 
   const path = request.nextUrl.pathname.replace('/api/admin/ippool', '');
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const authCheck = await requirePermission('settings.view');
+  const authCheck = await requirePermission('settings.edit');
   if (!authCheck.authorized) return authCheck.response;
 
   const path = request.nextUrl.pathname.replace('/api/admin/ippool', '');
@@ -164,7 +164,7 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const authCheck = await requirePermission('settings.view');
+  const authCheck = await requirePermission('settings.edit');
   if (!authCheck.authorized) return authCheck.response;
 
   const path = request.nextUrl.pathname.replace('/api/admin/ippool', '');

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requirePermission } from '@/server/middleware/api-auth';
+import { requireAnyPermission } from '@/server/middleware/api-auth';
 import { runPppoeSessionSync } from '@/server/cron/additional-jobs';
 import { runHotspotSync } from '@/server/cron/additional-jobs';
 
@@ -9,7 +9,7 @@ import { runHotspotSync } from '@/server/cron/additional-jobs';
  * Query: ?type=pppoe | hotspot | all
  */
 export async function POST(request: NextRequest) {
-  const authCheck = await requirePermission('sessions.view');
+  const authCheck = await requireAnyPermission(['customers.isolate', 'network.edit']);
   if (!authCheck.authorized) return authCheck.response;
 
   const type = request.nextUrl.searchParams.get('type');

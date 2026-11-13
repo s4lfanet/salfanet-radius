@@ -17,6 +17,17 @@ class AdminUser {
   /// Whether a menu, tab or shortcut needing [key] is shown.
   bool can(String? key) => key == null || isSuperAdmin || permissions == null || permissions!.contains(key);
 
+  /// Whether this account may change anything at all. Fail-closed: when the
+  /// permission list could not be read (null) a non-Super-Admin is treated as
+  /// read-only, so buttons for add, edit and delete stay hidden. The server
+  /// still enforces every write; this only keeps the screen honest.
+  bool get canWrite => isSuperAdmin || (permissions?.any(_isWriteKey) ?? false);
+
+  static bool _isWriteKey(String k) => const [
+        '.create', '.edit', '.delete', '.manage', '.generate', '.approve', '.reject',
+        '.send', '.broadcast', '.isolate', '.templates', '.providers', '.categories', '.permissions',
+      ].any(k.endsWith);
+
   factory AdminUser.fromJson(Map<String, dynamic> json) {
     return AdminUser(
       id: (json['id'] ?? '').toString(),

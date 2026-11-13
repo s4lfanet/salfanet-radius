@@ -38,7 +38,7 @@ export async function GET(_request: NextRequest) {
 
 // POST /api/admin/ippool — create pool
 export async function POST(request: NextRequest) {
-  const authCheck = await requirePermission('settings.view');
+  const authCheck = await requirePermission('settings.edit');
   if (!authCheck.authorized) return authCheck.response;
 
   try {
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
 
 // DELETE /api/admin/ippool?poolName=...
 export async function DELETE(request: NextRequest) {
-  const authCheck = await requirePermission('settings.view');
+  const authCheck = await requirePermission('settings.edit');
   if (!authCheck.authorized) return authCheck.response;
 
   try {

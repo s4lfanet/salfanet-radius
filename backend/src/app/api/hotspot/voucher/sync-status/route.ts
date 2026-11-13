@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { requirePermission } from '@/server/middleware/api-auth'
+import { requireAnyPermission } from '@/server/middleware/api-auth'
 import { fetchAllVoucherStatusesFromMikrotik } from '@/server/services/mikrotik/hotspot-voucher.service'
 import { syncVoucherStatusFromRadius } from '@/server/services/radius/hotspot-sync.service'
 
@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic'
  * Can be called manually (cron job calls the service in-process instead).
  */
 export async function POST() {
-  const authCheck = await requirePermission('vouchers.view')
+  const authCheck = await requireAnyPermission(['vouchers.generate', 'hotspot.manage'])
   if (!authCheck.authorized) return authCheck.response
   try {
     const [mtResult, radiusResult] = await Promise.all([

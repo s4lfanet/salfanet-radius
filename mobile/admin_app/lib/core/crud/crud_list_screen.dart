@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../features/auth/auth_provider.dart';
 
 import '../api/api_client.dart';
 import '../forms/field_spec.dart';
@@ -353,9 +355,12 @@ class _CrudListScreenState extends State<CrudListScreen> {
     return list.toList();
   }
 
-  bool get _canCreate => c.create != null && c.fields != null;
-  bool _canEdit(Json i) => c.update != null && c.fields != null && (c.canEdit?.call(i) ?? true);
-  bool _canDelete(Json i) => c.delete != null && (c.canDelete?.call(i) ?? true);
+  /// Read-only accounts (e.g. Viewer) never see add, edit, delete or the
+  /// row/toolbar actions; the server rejects those writes regardless.
+  bool get _writer => context.read<AuthProvider>().user?.canWrite ?? false;
+  bool get _canCreate => _writer && c.create != null && c.fields != null;
+  bool _canEdit(Json i) => _writer && c.update != null && c.fields != null && (c.canEdit?.call(i) ?? true);
+  bool _canDelete(Json i) => _writer && c.delete != null && (c.canDelete?.call(i) ?? true);
 
   Future<void> _openCreate() async {
     final saved = await openForm(context, title: 'Tambah ${c.noun}', fields: c.fields!(null), onSubmit: c.create!, success: '${c.noun} ditambahkan.');
@@ -418,7 +423,7 @@ class _CrudListScreenState extends State<CrudListScreen> {
       _load();
       return;
     }
-    final extra = c.itemActions.where((a) => a.visible?.call(item) ?? true).toList();
+    final extra = _writer ? c.itemActions.where((a) => a.visible?.call(item) ?? true).toList() : <CrudAction>[];
     await showDetailSheet(
       context,
       header: DetailHeader(
@@ -483,9 +488,9 @@ class _CrudListScreenState extends State<CrudListScreen> {
                 title: Text(c.title),
                 actions: [
                   const GuideAction(),
-                  if (c.toolbar.length == 1)
+                  if (_writer && c.toolbar.length == 1)
                     IconButton(tooltip: c.toolbar.first.label, icon: Icon(c.toolbar.first.icon), onPressed: () => _runToolbar(c.toolbar.first)),
-                  if (c.toolbar.length > 1) PopupMenuButton<CrudAction>(onSelected: _runToolbar, itemBuilder: (_) => [for (final a in c.toolbar) _menuItem(a)]),
+                  if (_writer && c.toolbar.length > 1) PopupMenuButton<CrudAction>(onSelected: _runToolbar, itemBuilder: (_) => [for (final a in c.toolbar) _menuItem(a)]),
                 ],
               ),
         floatingActionButton: _canCreate && !_selecting

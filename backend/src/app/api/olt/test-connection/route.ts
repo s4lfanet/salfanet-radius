@@ -36,7 +36,7 @@ async function telnetLogin(
 //   { oltId, protocol } — look up OLT from DB
 //   { ipAddress, username, password, snmpCommunity, sshEnabled, telnetEnabled, sshPort, telnetPort, snmpPort } — direct params (for new OLT before save)
 export async function POST(request: NextRequest) {
-  const authCheck = await requirePermission('network.view');
+  const authCheck = await requirePermission('network.edit');
   if (!authCheck.authorized) return authCheck.response;
 
   try {

@@ -25,7 +25,7 @@ interface RouteParams {
  *      (`POST /devices/{id}/tasks?connection_request`).
  */
 export async function POST(request: NextRequest, { params }: RouteParams) {
-  const authCheck = await requirePermission('network.view');
+  const authCheck = await requirePermission('network.edit');
   if (!authCheck.authorized) return authCheck.response;
 
   try {
