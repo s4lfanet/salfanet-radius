@@ -8,9 +8,14 @@ import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api/client';
 import { Pagination } from '@/components/Pagination';
+import CustomerDetailSheet, { type DetailCustomer } from '@/components/field/CustomerDetailSheet';
+import { ConnectionBadge, SourceBadge, UnreachableNotice } from '@/components/field/ConnectionBadge';
 
 interface Session {
   id: string;
+  source: 'radius' | 'mikrotik';
+  status: string;
+  customer: DetailCustomer;
   username: string;
   sessionId: string;
   framedIpAddress: string;
@@ -34,6 +39,7 @@ interface Session {
 
 interface Pagination { total: number; page: number; limit: number; totalPages: number; }
 interface Router { id: string; name: string; }
+interface Summary { radius: number; mikrotik: number; isolated: number; unreachableRouters: Router[]; }
 
 export default function TechnicianOnlinePage() {
   const { t } = useTranslation();
@@ -43,6 +49,9 @@ export default function TechnicianOnlinePage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [routerFilter, setRouterFilter] = useState('');
+  const [sourceFilter, setSourceFilter] = useState('');
+  const [summary, setSummary] = useState<Summary | null>(null);
+  const [detail, setDetail] = useState<Session | null>(null);
   const [pagination, setPagination] = useState<Pagination>({ total: 0, page: 1, limit: 20, totalPages: 1 });
   const pageRef = useRef(1);
 
@@ -64,10 +73,12 @@ export default function TechnicianOnlinePage() {
       params.set('page', page.toString());
       params.set('limit', '20');
       if (routerFilter) params.set('routerId', routerFilter);
+      if (sourceFilter) params.set('source', sourceFilter);
       if (search) params.set('search', search);
 
-      const data = await apiAdmin<{ sessions?: Session[]; pagination?: Pagination }>(`/api/technician/sessions?${params}`, { cache: 'no-store' });
+      const data = await apiAdmin<{ sessions?: Session[]; pagination?: Pagination; summary?: Summary }>(`/api/technician/sessions?${params}`, { cache: 'no-store' });
       setSessions(data.sessions || []);
+      if (data.summary) setSummary(data.summary);
       if (data.pagination) { setPagination(data.pagination); pageRef.current = data.pagination.page; }
     } catch {
       if (!isPoll) addToast({ type: 'error', title: 'Failed to load sessions' });
@@ -75,7 +86,7 @@ export default function TechnicianOnlinePage() {
       if (!isPoll) setLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [routerFilter, search]);
+  }, [routerFilter, sourceFilter, search]);
 
   useEffect(() => {
     apiAdmin<{ routers?: Router[] }>('/api/technician/form-data').then(d => setRouters(d.routers || [])).catch(() => {});
@@ -97,13 +108,18 @@ export default function TechnicianOnlinePage() {
           </div>
           <div>
             <h1 className="text-lg font-bold text-foreground">{t('techPortal.onlineUsers')}</h1>
-            <p className="text-xs text-muted-foreground">{pagination.total} {t('techPortal.activeUsers')}</p>
+            <p className="text-xs text-muted-foreground">
+              {pagination.total} {t('techPortal.activeUsers')}
+              {summary && <span className="ml-1">· RADIUS {summary.radius} · Lokal {summary.mikrotik}</span>}
+            </p>
           </div>
         </div>
         <button onClick={() => fetchSessions(pagination.page)} title="Perbarui Data" className="p-2 bg-slate-100 dark:bg-muted border border-border rounded-xl hover:bg-slate-200 dark:hover:bg-primary/10 transition">
           <RefreshCw className={`w-4 h-4 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
+
+      <UnreachableNotice routers={summary?.unreachableRouters} />
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-2">
@@ -114,6 +130,11 @@ export default function TechnicianOnlinePage() {
         <select value={routerFilter} onChange={(e) => setRouterFilter(e.target.value)} className="px-3 py-2.5 bg-card border border-border rounded-xl text-sm text-foreground">
           <option value="">{t('techPortal.allRouters')}</option>
           {routers.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+        </select>
+        <select value={sourceFilter} onChange={(e) => setSourceFilter(e.target.value)} className="px-3 py-2.5 bg-card border border-border rounded-xl text-sm text-foreground">
+          <option value="">Semua sumber</option>
+          <option value="radius">RADIUS</option>
+          <option value="mikrotik">Lokal (MikroTik)</option>
         </select>
       </div>
 
@@ -142,12 +163,16 @@ export default function TechnicianOnlinePage() {
                   <th className="px-4 py-3 font-semibold text-muted-foreground">Download</th>
                   <th className="px-4 py-3 font-semibold text-muted-foreground">Upload</th>
                   <th className="px-4 py-3 font-semibold text-muted-foreground">Router</th>
+                  <th className="px-4 py-3 font-semibold text-muted-foreground">Sumber</th>
                 </tr>
               </thead>
               <tbody>
                 {sessions.map((s) => (
-                  <tr key={s.id} className="border-b border-slate-100 dark:border-border hover:bg-slate-50 dark:hover:bg-primary/10 transition">
-                    <td className="px-4 py-3 font-medium text-foreground">{s.username}</td>
+                  <tr key={s.id} onClick={() => setDetail(s)} className="border-b border-slate-100 dark:border-border hover:bg-slate-50 dark:hover:bg-primary/10 transition cursor-pointer">
+                    <td className="px-4 py-3 font-medium text-foreground">
+                      {s.username}
+                      {(s.status === 'isolated' || s.status === 'suspended') && <span className="ml-2 rounded bg-orange-500/10 px-1.5 py-0.5 text-[10px] font-bold text-orange-600 dark:text-orange-400">Isolir</span>}
+                    </td>
                     <td className="px-4 py-3 text-muted-foreground/80">{s.user?.name || '-'}</td>
                     <td className="px-4 py-3 text-muted-foreground/80 font-mono text-xs">{s.framedIpAddress}</td>
                     <td className="px-4 py-3 text-muted-foreground/80 font-mono text-xs">{s.macAddress}</td>
@@ -155,6 +180,7 @@ export default function TechnicianOnlinePage() {
                     <td className="px-4 py-3 text-blue-600 dark:text-blue-400 text-xs">{s.downloadFormatted}</td>
                     <td className="px-4 py-3 text-purple-600 dark:text-primary text-xs">{s.uploadFormatted}</td>
                     <td className="px-4 py-3 text-muted-foreground/80">{s.router?.name || '-'}</td>
+                    <td className="px-4 py-3"><SourceBadge source={s.source} /></td>
                   </tr>
                 ))}
               </tbody>
@@ -164,10 +190,10 @@ export default function TechnicianOnlinePage() {
           {/* Mobile Cards */}
           <div className="lg:hidden space-y-3">
             {sessions.map((s) => (
-              <div key={s.id} className="bg-card border border-border rounded-2xl p-4 space-y-2">
+              <div key={s.id} onClick={() => setDetail(s)} className="bg-card border border-border rounded-2xl p-4 space-y-2 cursor-pointer">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-bold text-foreground">{s.username}</p>
+                    <p className="text-sm font-bold text-foreground flex items-center gap-1.5">{s.username} <SourceBadge source={s.source} />{(s.status === 'isolated' || s.status === 'suspended') && <span className="rounded bg-orange-500/10 px-1.5 py-0.5 text-[10px] font-bold text-orange-600 dark:text-orange-400">Isolir</span>}</p>
                     <p className="text-xs text-muted-foreground">{s.user?.name || '-'}</p>
                   </div>
                   <div className="flex items-center gap-1 px-2 py-1 bg-green-500/10 rounded-lg">
@@ -209,6 +235,25 @@ export default function TechnicianOnlinePage() {
             onPageChange={(p) => fetchSessions(p)}
           />
         </>
+      )}
+
+      {detail && (
+        <CustomerDetailSheet customer={detail.customer} onClose={() => setDetail(null)}>
+          <div className="space-y-2 rounded-xl border border-border bg-card p-3 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-foreground">Koneksi</span>
+              <span className="flex items-center gap-2"><SourceBadge source={detail.source} /><ConnectionBadge state="online" /></span>
+            </div>
+            <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+              <dt className="text-muted-foreground">IP</dt><dd className="text-right font-mono text-foreground">{detail.framedIpAddress || '-'}</dd>
+              <dt className="text-muted-foreground">MAC</dt><dd className="text-right font-mono text-foreground">{detail.macAddress || '-'}</dd>
+              <dt className="text-muted-foreground">Uptime</dt><dd className="text-right text-foreground">{formatUptime(detail.duration)}</dd>
+              <dt className="text-muted-foreground">Download</dt><dd className="text-right text-foreground">{detail.downloadFormatted}</dd>
+              <dt className="text-muted-foreground">Upload</dt><dd className="text-right text-foreground">{detail.uploadFormatted}</dd>
+              <dt className="text-muted-foreground">Router</dt><dd className="text-right text-foreground">{detail.router?.name || '-'}</dd>
+            </dl>
+          </div>
+        </CustomerDetailSheet>
       )}
     </div>
   );

@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { prisma } from '@/server/db/client';
-import { getTimezoneOffsetMs } from '@/lib/timezone';
 import { TECH_JWT_SECRET } from '@/server/auth/technician-secret';
-import { listPppActiveDetailed } from '@/server/services/mikrotik/active-sessions.service';
+import {
+  getConnectivitySnapshot,
+  loadPaymentStatus,
+  TECH_CUSTOMER_SELECT,
+} from '@/server/services/technician/connectivity.service';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -50,154 +53,100 @@ async function verifyTechnician(req: NextRequest) {
   }
 }
 
+/**
+ * Online customers = RADIUS sessions (non-stale) plus live router sessions
+ * (local-auth or missing accounting). Same rule as Offline / Isolir / Monitor,
+ * see technician/connectivity.service. Each row says where it was seen
+ * (`source`: radius | mikrotik) and carries the full customer record.
+ */
 export async function GET(req: NextRequest) {
   const tech = await verifyTechnician(req);
   if (!tech) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
-  const search = searchParams.get('search') || '';
+  const search = (searchParams.get('search') || '').toLowerCase();
   const routerFilter = searchParams.get('routerId') || '';
+  const sourceFilter = searchParams.get('source') || '';
   const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
   const limit = Math.min(100, parseInt(searchParams.get('limit') || '50', 10));
 
-  // Only RADIUS-connected PPPoE sessions: an open radacct row proves the
-  // session authenticated through this app's FreeRADIUS. Hotspot vouchers
-  // and local-auth MikroTik sessions never appear here because their
-  // usernames are not pppoeUser rows.
-  const radacctSessions = await prisma.radacct.findMany({
-    where: { acctstoptime: null },
-    select: {
-      radacctid: true,
-      acctuniqueid: true,
-      acctsessionid: true,
-      username: true,
-      framedipaddress: true,
-      callingstationid: true,
-      nasipaddress: true,
-      acctstarttime: true,
-      acctinputoctets: true,
-      acctoutputoctets: true,
-    },
-    orderBy: { acctstarttime: 'desc' },
-    take: 2000,
-  });
+  const snap = await getConnectivitySnapshot();
+  const usernames = [...snap.sessions.keys()];
 
-  const usernames = [...new Set(radacctSessions.map((s) => s.username))];
-  const pppoeUsers = usernames.length
+  // Only registered customers are listed (router-only secrets without a
+  // customer record are not "customers").
+  const customers = usernames.length
     ? await prisma.pppoeUser.findMany({
         where: { username: { in: usernames } },
-        select: {
-          id: true,
-          username: true,
-          customerId: true,
-          name: true,
-          phone: true,
-          profile: { select: { id: true, name: true } },
-          area: { select: { id: true, name: true } },
-          router: { select: { id: true, name: true } },
-        },
+        select: TECH_CUSTOMER_SELECT,
       })
     : [];
-  const userMap = new Map(pppoeUsers.map((u) => [u.username, u]));
+  const customerByUsername = new Map(customers.map((c) => [c.username, c]));
+  const payment = await loadPaymentStatus(customers.map((c) => c.id));
 
-  // Live byte counters: radacct octets only refresh on interim-update/stop,
-  // so overlay the real counters from each router's pppoe-in interface stats.
-  // Router comes from the session's nasipaddress (authoritative) with the
-  // customer's assigned router as fallback — an unassigned router must not
-  // silently kill the overlay.
-  const nasIps = [...new Set(radacctSessions.map((s) => s.nasipaddress).filter(Boolean))] as string[];
-  const nasRouters = nasIps.length
-    ? await prisma.router.findMany({
-        where: { OR: [{ ipAddress: { in: nasIps } }, { nasname: { in: nasIps } }] },
-        select: { id: true, ipAddress: true, nasname: true },
-      })
-    : [];
-  const routerByNas = new Map<string, string>();
-  for (const r of nasRouters) {
-    if (r.ipAddress) routerByNas.set(r.ipAddress, r.id);
-    if (r.nasname) routerByNas.set(r.nasname, r.id);
-  }
-
-  const routerIds = [...new Set(
-    radacctSessions
-      .map((s) => (s.nasipaddress ? routerByNas.get(s.nasipaddress) : undefined))
-      .filter((id): id is string => Boolean(id)),
-  )];
-  const liveBytes = new Map<string, { rx: number; tx: number }>();
-  await Promise.all(routerIds.map(async (routerId) => {
-    try {
-      const active = await listPppActiveDetailed(routerId);
-      for (const s of active) {
-        liveBytes.set(`${routerId}:${s.username}`, { rx: s.rxBytes ?? 0, tx: s.txBytes ?? 0 });
-      }
-    } catch { /* router unreachable — fall back to radacct counters */ }
-  }));
-
-  const TZ_OFFSET_MS = getTimezoneOffsetMs();
-  const now = Date.now() + TZ_OFFSET_MS; // WIB-as-UTC for duration calc
-
-  // Keep the newest open session per PPPoE customer (rows are already
-  // ordered by acctstarttime desc).
-  const seen = new Set<string>();
-  let sessions = radacctSessions
-    .filter((s) => {
-      if (!userMap.has(s.username) || seen.has(s.username)) return false;
-      seen.add(s.username);
-      return true;
-    })
+  let rows = [...snap.sessions.values()]
+    .filter((s) => customerByUsername.has(s.username))
     .map((s) => {
-      const pUser = userMap.get(s.username)!;
-      const startMs = s.acctstarttime ? new Date(s.acctstarttime).getTime() : now;
-      const durationSec = Math.max(0, Math.floor((now - startMs) / 1000));
-      const liveRouterId = (s.nasipaddress ? routerByNas.get(s.nasipaddress) : undefined) ?? pUser.router?.id;
-      const live = liveRouterId ? liveBytes.get(`${liveRouterId}:${s.username}`) : undefined;
-      const dl = live?.tx ?? Number(s.acctoutputoctets ?? 0);
-      const ul = live?.rx ?? Number(s.acctinputoctets ?? 0);
+      const c = customerByUsername.get(s.username)!;
+      const routerId = s.routerId ?? c.router?.id ?? null;
+      const routerName = s.routerName ?? c.router?.name ?? null;
       return {
-        id: s.acctuniqueid ?? String(s.radacctid),
+        id: `${s.source}-${s.username}`,
         username: s.username,
-        sessionId: s.acctsessionid ?? '',
-        framedIpAddress: s.framedipaddress ?? '',
-        macAddress: s.callingstationid ?? '',
-        startTime: s.acctstarttime ? new Date(s.acctstarttime).toISOString() : '',
-        duration: durationSec,
-        durationFormatted: fmtDuration(durationSec),
-        uploadFormatted: fmtBytes(ul),
-        downloadFormatted: fmtBytes(dl),
-        totalFormatted: fmtBytes(ul + dl),
-        router: pUser.router ?? null,
+        source: s.source,
+        sessionId: s.sessionId,
+        framedIpAddress: s.ip ?? '',
+        macAddress: s.mac ?? '',
+        startTime: s.startTime ?? '',
+        duration: s.uptimeSec,
+        durationFormatted: fmtDuration(s.uptimeSec),
+        uploadFormatted: fmtBytes(s.rxBytes),
+        downloadFormatted: fmtBytes(s.txBytes),
+        totalFormatted: fmtBytes(s.rxBytes + s.txBytes),
+        router: routerId ? { id: routerId, name: routerName ?? '' } : null,
+        status: c.status,
         user: {
-          id: pUser.id,
-          customerId: pUser.customerId,
-          name: pUser.name ?? '',
-          phone: pUser.phone ?? '',
-          profile: pUser.profile?.name ?? '',
-          area: pUser.area ?? null,
+          id: c.id,
+          customerId: c.customerId,
+          name: c.name ?? '',
+          phone: c.phone ?? '',
+          profile: c.profile?.name ?? '',
+          area: c.area ?? null,
         },
+        customer: { ...c, paymentStatus: payment.get(c.id) ?? 'paid' },
       };
-    });
+    })
+    .sort((a, b) => (a.user.name || a.username).localeCompare(b.user.name || b.username));
+
+  const counts = {
+    radius: rows.filter((r) => r.source === 'radius').length,
+    mikrotik: rows.filter((r) => r.source === 'mikrotik').length,
+    isolated: rows.filter((r) => r.status === 'isolated' || r.status === 'suspended').length,
+  };
 
   if (search) {
-    const q = search.toLowerCase();
-    sessions = sessions.filter(
+    rows = rows.filter(
       (s) =>
-        s.username.toLowerCase().includes(q) ||
-        (s.user?.name?.toLowerCase().includes(q)) ||
-        s.framedIpAddress.includes(q) ||
-        s.macAddress.toLowerCase().includes(q),
+        s.username.toLowerCase().includes(search) ||
+        s.user.name.toLowerCase().includes(search) ||
+        s.user.phone.includes(search) ||
+        (s.user.customerId ?? '').toLowerCase().includes(search) ||
+        (s.customer.address ?? '').toLowerCase().includes(search) ||
+        s.framedIpAddress.includes(search) ||
+        s.macAddress.toLowerCase().includes(search),
     );
   }
-  if (routerFilter) {
-    sessions = sessions.filter((s) => s.router?.id === routerFilter);
-  }
+  if (routerFilter) rows = rows.filter((s) => s.router?.id === routerFilter);
+  if (sourceFilter === 'radius' || sourceFilter === 'mikrotik') rows = rows.filter((s) => s.source === sourceFilter);
 
-  const total = sessions.length;
+  const total = rows.length;
   const totalPages = Math.ceil(total / limit);
-  const paged = sessions.slice((page - 1) * limit, page * limit);
+  const paged = rows.slice((page - 1) * limit, page * limit);
 
   return NextResponse.json({
     sessions: paged,
     pagination: { total, page, limit, totalPages },
+    summary: { ...counts, unreachableRouters: snap.unreachableRouters },
   }, {
     headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' },
   });

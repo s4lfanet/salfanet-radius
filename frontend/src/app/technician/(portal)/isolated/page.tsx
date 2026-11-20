@@ -3,11 +3,14 @@
 export const dynamic = 'force-dynamic';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Shield, Search, RefreshCw, Loader2, Wifi, WifiOff, DollarSign, ChevronDown, ChevronUp } from 'lucide-react';
+import { Shield, Search, RefreshCw, Loader2, DollarSign, ChevronDown, ChevronUp } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatCurrency } from '@/lib/utils';
+import { formatWIB } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api/client';
+import CustomerDetailSheet, { type DetailCustomer } from '@/components/field/CustomerDetailSheet';
+import { ConnectionBadge, SourceBadge, UnreachableNotice } from '@/components/field/ConnectionBadge';
 
 interface UnpaidInvoice {
   id: string;
@@ -28,6 +31,11 @@ interface IsolatedUser {
   totalUnpaid: number;
   unpaidInvoicesCount: number;
   isOnline: boolean;
+  connection: 'online' | 'offline' | 'unknown';
+  source: 'radius' | 'mikrotik' | null;
+  routerName: string | null;
+  expiredAt: string | null;
+  customer: DetailCustomer;
   ipAddress: string | null;
   areaName: string | null;
   unpaidInvoices: UnpaidInvoice[];
@@ -37,6 +45,7 @@ interface Stats {
   totalIsolated: number;
   totalOnline: number;
   totalOffline: number;
+  totalUnknown: number;
   totalUnpaidAmount: number;
 }
 
@@ -47,17 +56,20 @@ export default function TechnicianIsolatedPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<'all' | 'online' | 'offline'>('all');
+  const [filter, setFilter] = useState<'all' | 'online' | 'offline' | 'unknown'>('all');
+  const [unreachable, setUnreachable] = useState<Array<{ id: string; name: string }>>([]);
+  const [detail, setDetail] = useState<IsolatedUser | null>(null);
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
 
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await apiAdmin<{ success: boolean; data?: IsolatedUser[]; stats?: Stats | null }>('/api/technician/isolated');
+      const data = await apiAdmin<{ success: boolean; data?: IsolatedUser[]; stats?: Stats | null; unreachableRouters?: Array<{ id: string; name: string }> }>('/api/technician/isolated');
       if (data.success) {
         setUsers(data.data || []);
         setStats(data.stats || null);
+        setUnreachable(data.unreachableRouters || []);
       }
     } catch {
       addToast({ type: 'error', title: 'Failed to load data' });
@@ -77,7 +89,7 @@ export default function TechnicianIsolatedPage() {
     const matchSearch = u.username.toLowerCase().includes(search.toLowerCase()) ||
       u.name.toLowerCase().includes(search.toLowerCase()) ||
       u.phone.includes(search);
-    const matchFilter = filter === 'all' || (filter === 'online' ? u.isOnline : !u.isOnline);
+    const matchFilter = filter === 'all' || u.connection === filter;
     return matchSearch && matchFilter;
   });
 
@@ -101,7 +113,7 @@ export default function TechnicianIsolatedPage() {
 
       {/* Stats */}
       {stats && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <div className="bg-card border border-border rounded-xl p-3 text-center">
             <p className="text-lg font-bold text-foreground">{stats.totalIsolated}</p>
             <p className="text-[10px] text-muted-foreground">Total</p>
@@ -114,8 +126,14 @@ export default function TechnicianIsolatedPage() {
             <p className="text-lg font-bold text-red-600 dark:text-red-400">{stats.totalOffline}</p>
             <p className="text-[10px] text-muted-foreground">Offline</p>
           </div>
+          <div className="bg-card border border-slate-200 dark:border-amber-500/20 rounded-xl p-3 text-center">
+            <p className="text-lg font-bold text-amber-600 dark:text-amber-400">{stats.totalUnknown}</p>
+            <p className="text-[10px] text-muted-foreground">Tidak diketahui</p>
+          </div>
         </div>
       )}
+
+      <UnreachableNotice routers={unreachable} />
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-2">
@@ -124,9 +142,9 @@ export default function TechnicianIsolatedPage() {
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('techPortal.search')} className="w-full pl-10 pr-3 py-2.5 bg-card border border-border rounded-xl text-sm text-foreground placeholder:text-slate-400 focus:ring-2 focus:ring-brand-500/30 transition" />
         </div>
         <div className="flex gap-1">
-          {(['all', 'online', 'offline'] as const).map(f => (
+          {(['all', 'online', 'offline', 'unknown'] as const).map(f => (
             <button key={f} onClick={() => setFilter(f)} className={`px-3 py-2 text-xs font-bold rounded-xl transition ${filter === f ? 'bg-primary text-primary-foreground ' : 'bg-slate-100 dark:bg-muted border border-border text-muted-foreground hover:bg-slate-200 dark:hover:bg-primary/10'}`}>
-              {f === 'all' ? t('techPortal.all') : f === 'online' ? 'Online' : 'Offline'}
+              {f === 'all' ? t('techPortal.all') : f === 'online' ? 'Online' : f === 'offline' ? 'Offline' : 'Tidak diketahui'}
             </button>
           ))}
         </div>
@@ -160,16 +178,13 @@ export default function TechnicianIsolatedPage() {
               </thead>
               <tbody>
                 {filtered.map((u) => (
-                  <tr key={u.id} onClick={() => setExpandedUser(expandedUser === u.id ? null : u.id)} className="border-b border-slate-100 dark:border-border hover:bg-slate-50 dark:hover:bg-primary/10 transition cursor-pointer">
+                  <tr key={u.id} onClick={() => setDetail(u)} className="border-b border-slate-100 dark:border-border hover:bg-slate-50 dark:hover:bg-primary/10 transition cursor-pointer">
                     <td className="px-4 py-3 font-medium text-foreground">{u.username}</td>
                     <td className="px-4 py-3 text-muted-foreground/80">{u.name}</td>
                     <td className="px-4 py-3 text-muted-foreground/80">{u.profileName}</td>
                     <td className="px-4 py-3 text-muted-foreground/80">{u.areaName || '-'}</td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold ${u.isOnline ? 'bg-green-500/10 text-green-600 dark:text-green-400' : 'bg-red-500/10 text-red-600 dark:text-red-400'}`}>
-                        {u.isOnline ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-                        {u.isOnline ? 'Online' : 'Offline'}
-                      </span>
+                      <span className="inline-flex items-center gap-1.5"><ConnectionBadge state={u.connection} /><SourceBadge source={u.source} /></span>
                     </td>
                     <td className="px-4 py-3 text-red-600 dark:text-red-400 font-bold text-xs">{formatCurrency(u.totalUnpaid)}</td>
                     <td className="px-4 py-3 font-mono text-xs text-muted-foreground/80">{u.ipAddress || '-'}</td>
@@ -183,17 +198,18 @@ export default function TechnicianIsolatedPage() {
           <div className="lg:hidden space-y-3">
             {filtered.map((u) => (
               <div key={u.id} className="bg-card border border-border rounded-2xl overflow-hidden">
-                <div className="p-4 space-y-2" onClick={() => setExpandedUser(expandedUser === u.id ? null : u.id)}>
+                <div className="p-4 space-y-2" onClick={() => setDetail(u)}>
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-bold text-foreground">{u.username}</p>
                       <p className="text-xs text-muted-foreground">{u.name}</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold ${u.isOnline ? 'bg-green-500/10 text-green-600 dark:text-green-400' : 'bg-red-500/10 text-red-600 dark:text-red-400'}`}>
-                        {u.isOnline ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
-                      </span>
-                      {expandedUser === u.id ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                      <ConnectionBadge state={u.connection} />
+                      <SourceBadge source={u.source} />
+                      <button type="button" aria-label="Tagihan" onClick={(e) => { e.stopPropagation(); setExpandedUser(expandedUser === u.id ? null : u.id); }} className="p-1">
+                        {expandedUser === u.id ? <ChevronUp className="w-4 h-4 text-slate-400" /> : <ChevronDown className="w-4 h-4 text-slate-400" />}
+                      </button>
                     </div>
                   </div>
                   <div className="flex items-center justify-between text-xs">
@@ -221,6 +237,35 @@ export default function TechnicianIsolatedPage() {
             ))}
           </div>
         </>
+      )}
+
+      {detail && (
+        <CustomerDetailSheet customer={detail.customer} onClose={() => setDetail(null)}>
+          <div className="space-y-2 rounded-xl border border-border bg-card p-3 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-foreground">Koneksi</span>
+              <span className="flex items-center gap-2"><SourceBadge source={detail.source} /><ConnectionBadge state={detail.connection} /></span>
+            </div>
+            <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+              <dt className="text-muted-foreground">IP</dt><dd className="text-right font-mono text-foreground">{detail.ipAddress || '-'}</dd>
+              <dt className="text-muted-foreground">Router</dt><dd className="text-right text-foreground">{detail.routerName || '-'}</dd>
+            </dl>
+          </div>
+          <div className="space-y-2 rounded-xl border border-border bg-card p-3 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-foreground">{t('techPortal.unpaidInvoices')} ({detail.unpaidInvoices.length})</span>
+              <span className="text-xs font-bold text-red-600 dark:text-red-400">{formatCurrency(detail.totalUnpaid)}</span>
+            </div>
+            {detail.unpaidInvoices.length === 0 ? (
+              <p className="text-xs text-muted-foreground">Tidak ada tagihan tertunggak.</p>
+            ) : detail.unpaidInvoices.map((inv) => (
+              <div key={inv.id} className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">{inv.invoiceNumber} · jatuh tempo {formatWIB(inv.dueDate, 'dd MMM yyyy')}</span>
+                <span className="font-bold text-red-600 dark:text-red-400">{formatCurrency(inv.amount)}</span>
+              </div>
+            ))}
+          </div>
+        </CustomerDetailSheet>
       )}
     </div>
   );

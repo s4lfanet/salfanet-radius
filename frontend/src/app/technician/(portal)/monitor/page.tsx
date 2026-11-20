@@ -22,9 +22,11 @@ import {
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatWIB } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api/client';
+import { SourceBadge, UnreachableNotice } from '@/components/field/ConnectionBadge';
 
 interface OnlineSession {
   uniqueId: string;
+  source: 'radius' | 'mikrotik';
   username: string;
   framedIp: string;
   nasIp: string;
@@ -51,6 +53,8 @@ interface IsolatedCustomer {
 
 interface Stats {
   online: number;
+  offline: number;
+  unknown: number;
   isolated: number;
   active: number;
   stopped: number;
@@ -61,17 +65,19 @@ export default function TechnicianMonitorPage() {
   const { addToast } = useToast();
   const [sessions, setSessions] = useState<OnlineSession[]>([]);
   const [isolatedCustomers, setIsolatedCustomers] = useState<IsolatedCustomer[]>([]);
-  const [stats, setStats] = useState<Stats>({ online: 0, isolated: 0, active: 0, stopped: 0, total: 0 });
+  const [stats, setStats] = useState<Stats>({ online: 0, offline: 0, unknown: 0, isolated: 0, active: 0, stopped: 0, total: 0 });
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<'online' | 'isolated'>('online');
+  const [unreachable, setUnreachable] = useState<Array<{ id: string; name: string }>>([]);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await apiAdmin<{ stats: Stats; sessions?: OnlineSession[]; isolatedCustomers?: IsolatedCustomer[] }>('/api/technician/monitor');
+      const data = await apiAdmin<{ stats: Stats; sessions?: OnlineSession[]; isolatedCustomers?: IsolatedCustomer[]; unreachableRouters?: Array<{ id: string; name: string }> }>('/api/technician/monitor');
       setStats(data.stats);
       setSessions(data.sessions ?? []);
+      setUnreachable(data.unreachableRouters ?? []);
       setIsolatedCustomers(data.isolatedCustomers ?? []);
       setLastRefresh(new Date());
     } catch {
@@ -119,8 +125,10 @@ export default function TechnicianMonitorPage() {
         </button>
       </div>
 
+      <UnreachableNotice routers={unreachable} />
+
       {/* Stats cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         {[
           {
             label: 'Online Sekarang',
@@ -134,6 +142,20 @@ export default function TechnicianMonitorPage() {
             value: stats.isolated,
             icon: <AlertTriangle className="w-4 h-4" />,
             color: 'text-red-500 bg-red-500/10 border-red-500/30',
+            pulse: false,
+          },
+          {
+            label: 'Offline',
+            value: stats.offline,
+            icon: <WifiOff className="w-4 h-4" />,
+            color: 'text-slate-500 bg-slate-500/10 border-slate-500/30',
+            pulse: false,
+          },
+          {
+            label: 'Tidak Diketahui',
+            value: stats.unknown,
+            icon: <AlertTriangle className="w-4 h-4" />,
+            color: 'text-amber-500 bg-amber-500/10 border-amber-500/30',
             pulse: false,
           },
           {
@@ -221,7 +243,7 @@ export default function TechnicianMonitorPage() {
                       <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse flex-shrink-0 mt-1" />
                       <div className="min-w-0">
                         <p className="text-xs font-semibold text-foreground truncate">{s.customerName ?? s.username}</p>
-                        <p className="text-xs font-mono text-brand-500">{s.username}</p>
+                        <p className="text-xs font-mono text-brand-500">{s.username} <SourceBadge source={s.source} /></p>
                         {s.customerPhone && (
                           <p className="text-xs text-muted-foreground flex items-center gap-0.5">
                             <Phone className="w-2.5 h-2.5" />{s.customerPhone}
@@ -293,7 +315,7 @@ export default function TechnicianMonitorPage() {
                               <p className="text-xs font-semibold text-foreground">
                                 {s.customerName ?? s.username}
                               </p>
-                              <p className="text-xs text-brand-500 font-mono">{s.username}</p>
+                              <p className="text-xs text-brand-500 font-mono">{s.username} <SourceBadge source={s.source} /></p>
                               {s.customerPhone && (
                                 <p className="text-xs text-muted-foreground flex items-center gap-0.5">
                                   <Phone className="w-2.5 h-2.5" />
