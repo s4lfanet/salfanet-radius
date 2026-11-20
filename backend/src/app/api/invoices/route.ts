@@ -14,7 +14,7 @@ import { generateInvoiceNumber } from '@/server/services/billing/invoice.service
 import { toUTC, nowWIB } from '@/lib/timezone';
 import { ok, created, badRequest, notFound, serverError } from '@/lib/api-response';
 import { notifyCollector, fmtRupiah } from '@/server/services/collector-notification.service';
-import { expiryAfterPayment } from '@/server/services/billing/invoice-schedule';
+import { expiryForInvoicePayment } from '@/server/services/billing/first-period';
 // Generate secure random token for payment link
 function generatePaymentToken(): string {
   return randomBytes(32).toString('hex');
@@ -401,7 +401,7 @@ export async function PUT(request: NextRequest) {
         }
 
         // For package change: preserve existing expiredAt, do NOT extend
-        const finalExpiry = isPackageChange ? (user.expiredAt || now) : expiryAfterPayment(user, profile, existingInvoice.dueDate, now);
+        const finalExpiry = isPackageChange ? (user.expiredAt || now) : await expiryForInvoicePayment(prisma, user, existingInvoice.id, existingInvoice.dueDate, profile, now);
 
         // Update user expiredAt, activate if isolated/suspended/expired, and update profileId if package changed
         const shouldActivate = ['isolated', 'suspended', 'expired'].includes(user.status);
