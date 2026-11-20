@@ -7,7 +7,7 @@ import { nowWIB, getCurrentTimezone } from '@/lib/timezone';
 import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service';
 import { managePppSecret, shouldManagePppSecretForSuspend, kickPppoeSession } from '@/server/services/mikrotik/ppp-secret.service';
 import { recordInvoiceIncome } from '@/server/services/billing/invoice-income.service';
-import { expiryAfterPayment } from '@/server/services/billing/invoice-schedule';
+import { expiryForInvoicePayment } from '@/server/services/billing/first-period';
 
 // POST - mark invoice as paid by collector
 // Mirrors the payment webhook flow: records payment, extends expiry,
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
 
     // Extend expiry by profile validity
     let newExpiredAt: Date | null = user.expiredAt;
-    if (user.profile) newExpiredAt = expiryAfterPayment(user, user.profile, invoice.dueDate, nowWIB());
+    if (user.profile) newExpiredAt = await expiryForInvoicePayment(prisma, user, invoice.id, invoice.dueDate, user.profile, nowWIB());
 
     // Wrap invoice update + proof creation in a transaction so they
     // either both succeed or both roll back — prevents orphaned PAID

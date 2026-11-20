@@ -9,6 +9,7 @@ import { sendPushToUser } from '@/server/services/notifications/push-templates.s
 import { toUTC, nowWIB, getCurrentTimezone } from '@/lib/timezone';
 import { createAdminNotification } from '@/server/services/notifications/admin-notification.service';
 import { expiryAfterPayment } from '@/server/services/billing/invoice-schedule';
+import { expiryForInvoicePayment } from '@/server/services/billing/first-period';
 
 function formatBankAccountsWA(bankAccounts: any): string {
   if (!bankAccounts) return '';
@@ -147,7 +148,9 @@ export async function PATCH(
       const validityValue = manualPayment.user.profile?.validityValue ?? 1;
       const validityUnit = manualPayment.user.profile?.validityUnit ?? 'MONTHS';
 
-      const newExpiry = expiryAfterPayment(manualPayment.user, { validityUnit, validityValue }, manualPayment.invoice?.dueDate, now);
+      const newExpiry = manualPayment.invoiceId
+        ? await expiryForInvoicePayment(prisma, manualPayment.user, manualPayment.invoiceId, manualPayment.invoice?.dueDate, { validityUnit, validityValue }, now)
+        : expiryAfterPayment(manualPayment.user, { validityUnit, validityValue }, null, now);
 
       // ============================================
       // CHECK FOR PACKAGE CHANGE IN INVOICE METADATA

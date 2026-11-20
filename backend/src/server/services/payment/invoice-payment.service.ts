@@ -8,7 +8,7 @@ import { managePppSecret, shouldManagePppSecretForSuspend, kickPppoeSession } fr
 import { settlePaymentAttempt } from '@/server/services/payment/payment-attempt.service';
 import crypto from 'crypto';
 import { nanoid } from 'nanoid';
-import { expiryAfterPayment } from '@/server/services/billing/invoice-schedule';
+import { expiryForInvoicePayment } from '@/server/services/billing/first-period';
 
 /**
  * Settles a PPPoE invoice paid through any channel: marks it PAID, records
@@ -169,7 +169,7 @@ export async function handleInvoicePayment(
         const now = nowWIB();
         const normalizedStatus = (user.status || '').toLowerCase();
 
-        const newExpiredAt = expiryAfterPayment(user, profile, invoice.dueDate, now);
+        const newExpiredAt = await expiryForInvoicePayment(tx, user, invoice.id, invoice.dueDate, profile, now);
 
         // Determine if user should be activated (include blocked/stop status)
         wasDisabled = ['isolated', 'suspended', 'blocked', 'stop'].includes(normalizedStatus);
