@@ -87,8 +87,24 @@ function parseUptime(uptime: string | null | undefined): number {
  * by interface name (<pppoe-{session.name}>).
  */
 export async function listPppActiveDetailed(routerId: string): Promise<MikrotikActiveSession[]> {
+  return fetchPppActive(routerId, false)
+}
+
+/**
+ * Same as listPppActiveDetailed, but a router that cannot be queried
+ * (no API credentials, unreachable, timeout) throws instead of looking like
+ * "nobody is online" — callers that must tell offline from unknown use this.
+ */
+export async function listPppActiveStrict(routerId: string): Promise<MikrotikActiveSession[]> {
+  return fetchPppActive(routerId, true)
+}
+
+async function fetchPppActive(routerId: string, strict: boolean): Promise<MikrotikActiveSession[]> {
   const router = await getRouterConfig(routerId)
-  if (!router) return []
+  if (!router) {
+    if (strict) throw new Error('router has no API credentials')
+    return []
+  }
 
   const host = router.ipAddress || router.nasname
   const apiPort = router.port || 8728
@@ -157,6 +173,7 @@ export async function listPppActiveDetailed(routerId: string): Promise<MikrotikA
     }).filter((s: MikrotikActiveSession) => s.username)
   } catch (e: any) {
     console.error(`[MIKROTIK_SESSIONS] listPppActiveDetailed for ${router.name}:`, e?.message || e)
+    if (strict) throw e
     return []
   } finally {
     try { if (api) await api.close() } catch { /* ignore */ }
