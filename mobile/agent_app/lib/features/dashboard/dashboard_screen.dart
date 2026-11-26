@@ -125,16 +125,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
           borderRadius: BorderRadius.circular(AppTheme.radiusCard),
           onTap: onTap,
           child: Container(
-            padding: const EdgeInsets.symmetric(vertical: Gap.md),
+            width: double.infinity,
+            height: 76,
+            padding: const EdgeInsets.symmetric(horizontal: 4),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppTheme.radiusCard),
               border: primary ? null : Border.all(color: c.outlineVariant),
             ),
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(icon, size: 22, color: primary ? onColor(c.primary) : c.primary),
                 const SizedBox(height: 6),
-                Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: primary ? onColor(c.primary) : c.onSurface)),
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  style: TextStyle(fontSize: 12, height: 1.15, fontWeight: FontWeight.w700, color: primary ? onColor(c.primary) : c.onSurface),
+                ),
               ],
             ),
           ),
