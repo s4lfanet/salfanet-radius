@@ -5,6 +5,16 @@ final _dateFormat = DateFormat('d MMM yyyy', 'id_ID');
 final _dateTimeFormat = DateFormat('d MMM yyyy, HH:mm', 'id_ID');
 
 String formatCurrency(num value) => _currencyFormat.format(value);
+/// Short money for tight tiles: Rp 51.000, Rp 3,16 jt, Rp 1,2 M. Full value stays in detail views.
+String formatCompactCurrency(num value) {
+  final v = value.abs();
+  String trim(double d) => d.toStringAsFixed(2).replaceFirst(RegExp(r'0+$'), '').replaceFirst(RegExp(r'\.$'), '').replaceAll('.', ',');
+  final sign = value < 0 ? '-' : '';
+  if (v >= 1000000000) return '${sign}Rp ${trim(v / 1000000000)} M';
+  if (v >= 1000000) return '${sign}Rp ${trim(v / 1000000)} jt';
+  return formatCurrency(value);
+}
+
 String formatDate(DateTime date) => _dateFormat.format(date);
 String formatDateTime(DateTime date) => _dateTimeFormat.format(date);
 

@@ -74,6 +74,7 @@ model agent {
   deposits          agentDeposit[]
   vouchers          hotspotVoucher[]
   notifications     agentNotification[]
+  pushTokens        agentPushToken[]
   pushSubscriptions agentPushSubscription[]
 
   @@index([phone])
@@ -1806,6 +1807,20 @@ model collectorPushToken {
 
   @@index([collectorId])
   @@map("collector_push_tokens")
+}
+
+// FCM device token for the agent Flutter app.
+model agentPushToken {
+  id         String   @id @default(cuid())
+  agentId    String
+  agent      agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  token      String   @unique @db.VarChar(500)
+  platform   String   @default("android")
+  createdAt  DateTime @default(now())
+  lastUsedAt DateTime @default(now())
+
+  @@index([agentId])
+  @@map("agent_push_tokens")
 }
 
 // What the collector portal's bell lists. Stored, so each one can be marked

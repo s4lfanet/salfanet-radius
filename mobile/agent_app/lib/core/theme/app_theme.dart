@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Direction: see DESIGN.md. Brand blue/indigo is reused from the web admin
-/// panel (frontend/src/app/admin/login/page.tsx) so staff moving between web
-/// and app see one product.
+/// Agent app: violet brand, matching the web agent portal (from-primary to-violet-800).
 ///
 /// Both themes are built from the same component definitions below and
 /// differ only in the [_Palette] they get — previously the dark theme only
@@ -13,8 +11,8 @@ class AppTheme {
 
   /// Brand fill used on fixed-color surfaces (dashboard hero, login mark).
   /// Not theme-dependent on purpose: white text on it is 5.3:1.
-  static const brand = Color(0xFF2563EB);
-  static const brandDeep = Color(0xFF4F46E5);
+  static const brand = Color(0xFF6D28D9);
+  static const brandDeep = Color(0xFF4C1D95);
 
   static const radiusBrand = 20.0; // login brand mark only
   static const radiusCard = 16.0; // cards, sheets, list rows
@@ -252,28 +250,28 @@ class _Palette {
 
   static const light = _Palette(
     brightness: Brightness.light,
-    background: Color(0xFFF3F5F9),
+    background: Color(0xFFF5F3FA),
     surface: Colors.white,
-    surfaceMuted: Color(0xFFF1F4F8),
-    border: Color(0xFFB8C2D1),
-    borderStrong: Color(0xFF7D8799),
-    text: Color(0xFF0F172A),
-    textMuted: Color(0xFF5B6678),
-    primary: Color(0xFF2563EB),
+    surfaceMuted: Color(0xFFF0EDF8),
+    border: Color(0xFFD9D4EA),
+    borderStrong: Color(0xFF857E9E),
+    text: Color(0xFF17142B),
+    textMuted: Color(0xFF5C5776),
+    primary: Color(0xFF6D28D9),
     danger: Color(0xFFB91C1C),
     tones: AppTones.light,
   );
 
   static const dark = _Palette(
     brightness: Brightness.dark,
-    background: Color(0xFF0B1120),
-    surface: Color(0xFF131B2C),
-    surfaceMuted: Color(0xFF1B2537),
-    border: Color(0xFF3E4A66),
-    borderStrong: Color(0xFF6B7894),
-    text: Color(0xFFE6EAF2),
-    textMuted: Color(0xFF9AA6BA),
-    primary: Color(0xFF5B8DEF),
+    background: Color(0xFF0F0B1A),
+    surface: Color(0xFF191428),
+    surfaceMuted: Color(0xFF231C38),
+    border: Color(0xFF3A3258),
+    borderStrong: Color(0xFF7468A0),
+    text: Color(0xFFECE9F7),
+    textMuted: Color(0xFFA59FBF),
+    primary: Color(0xFFA78BFA),
     danger: Color(0xFFF87171),
     tones: AppTones.dark,
   );
@@ -290,8 +288,8 @@ class AppTones extends ThemeExtension<AppTones> {
   final Map<Tone, Color> colors;
 
   static const light = AppTones({
-    Tone.primary: Color(0xFF2563EB),
-    Tone.accent: Color(0xFF4F46E5),
+    Tone.primary: Color(0xFF6D28D9),
+    Tone.accent: Color(0xFF0F766E),
     Tone.success: Color(0xFF15803D),
     Tone.warning: Color(0xFFB45309),
     // red-700: red-600 is 4.8:1 on white and drops below 4.5:1 once it
@@ -302,8 +300,8 @@ class AppTones extends ThemeExtension<AppTones> {
   });
 
   static const dark = AppTones({
-    Tone.primary: Color(0xFF6EA0F7),
-    Tone.accent: Color(0xFF8B93F8),
+    Tone.primary: Color(0xFFA78BFA),
+    Tone.accent: Color(0xFF2DD4BF),
     Tone.success: Color(0xFF4ADE80),
     Tone.warning: Color(0xFFFBBF24),
     Tone.danger: Color(0xFFF87171),

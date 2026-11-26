@@ -16,7 +16,10 @@ import '../auth/auth_provider.dart';
 /// Daftar voucher agen dengan tab status (Semua / Menunggu / Aktif / Kedaluwarsa),
 /// pencarian kode, dan tombol Buat Voucher — sama dengan halaman voucher portal agen.
 class VouchersScreen extends StatefulWidget {
-  const VouchersScreen({super.key});
+  const VouchersScreen({super.key, this.generateSignal});
+
+  /// Dinaikkan oleh shell (tombol "Buat Voucher" di Ringkasan) untuk membuka sheet pembuatan.
+  final ValueNotifier<int>? generateSignal;
 
   @override
   State<VouchersScreen> createState() => _VouchersScreenState();
@@ -52,7 +55,13 @@ String _voucherLabel(String status) {
 
 class _VouchersScreenState extends State<VouchersScreen> {
   static const _limit = 20;
-  static const _tabs = <(String, String)>[('ALL', 'Semua'), ('WAITING', 'Menunggu'), ('ACTIVE', 'Aktif'), ('EXPIRED', 'Kedaluwarsa')];
+  static const _tabs = <(String, String)>[
+    ('ALL', 'Semua'),
+    ('WAITING', 'Menunggu'),
+    ('SOLD', 'Terjual'),
+    ('ACTIVE', 'Aktif'),
+    ('EXPIRED', 'Expired'),
+  ];
 
   final _scroll = ScrollController();
   final _searchCtl = TextEditingController();
@@ -65,6 +74,7 @@ class _VouchersScreenState extends State<VouchersScreen> {
   int _totalPages = 1;
   int _total = 0;
   String _status = 'ALL';
+  String? _profileFilter;
   String _search = '';
   bool _loading = true;
   bool _loadingMore = false;
@@ -76,11 +86,17 @@ class _VouchersScreenState extends State<VouchersScreen> {
     _scroll.addListener(() {
       if (_scroll.position.pixels > _scroll.position.maxScrollExtent - 300) _loadMore();
     });
+    widget.generateSignal?.addListener(_onSignal);
     _load();
+  }
+
+  void _onSignal() {
+    if (mounted) _generate();
   }
 
   @override
   void dispose() {
+    widget.generateSignal?.removeListener(_onSignal);
     _debounce?.cancel();
     _scroll.dispose();
     _searchCtl.dispose();
@@ -93,6 +109,7 @@ class _VouchersScreenState extends State<VouchersScreen> {
       'limit': _limit,
       if (_status != 'ALL') 'status': _status,
       if (_search.isNotEmpty) 'search': _search,
+      if (_profileFilter != null) 'profileId': _profileFilter,
     });
     return res is Map ? Map<String, dynamic>.from(res) : <String, dynamic>{};
   }
@@ -242,6 +259,119 @@ class _VouchersScreenState extends State<VouchersScreen> {
     );
   }
 
+  Widget _statusBar(BuildContext context) {
+    final c = context.colors;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(Gap.page, 0, Gap.page, Gap.sm),
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(color: c.surfaceContainerHigh, borderRadius: BorderRadius.circular(AppTheme.radiusControl)),
+      child: Row(
+        children: [
+          for (final t in _tabs)
+            Expanded(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => _setStatus(t.$1),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  padding: const EdgeInsets.symmetric(vertical: 9),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: _status == t.$1 ? c.primary : Colors.transparent,
+                    borderRadius: BorderRadius.circular(AppTheme.radiusControl - 3),
+                  ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      t.$2,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        color: _status == t.$1 ? onColor(c.primary) : c.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _profileBar(BuildContext context) {
+    if (_profiles.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(Gap.page, 0, Gap.page, Gap.sm),
+      child: DropdownButtonFormField<String?>(
+        value: _profileFilter,
+        isExpanded: true,
+        isDense: true,
+        decoration: const InputDecoration(labelText: 'Paket', prefixIcon: Icon(Icons.filter_list_rounded, size: 20)),
+        items: [
+          const DropdownMenuItem<String?>(value: null, child: Text('Semua paket')),
+          for (final p in _profiles) DropdownMenuItem<String?>(value: str(p, 'id'), child: Text(str(p, 'name') ?? '-', overflow: TextOverflow.ellipsis)),
+        ],
+        onChanged: (v) {
+          setState(() {
+            _profileFilter = v;
+            _items = [];
+          });
+          _load();
+        },
+      ),
+    );
+  }
+
+  Widget _card(BuildContext context, Map<String, dynamic> v) {
+    final c = context.colors;
+    final status = str(v, 'status') ?? '-';
+    final batch = str(v, 'batchCode');
+    final shortBatch = batch == null ? null : (batch.length > 6 ? '…${batch.substring(batch.length - 6)}' : batch);
+    final created = formatDateTimeOrNull(dateOf(v, 'createdAt')?.toLocal());
+    return Card(
+      margin: const EdgeInsets.only(bottom: Gap.sm),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+        onTap: () => _detail(v),
+        child: Padding(
+          padding: const EdgeInsets.all(Gap.md),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(str(v, 'code') ?? '-', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
+                    const SizedBox(height: 3),
+                    Text(str(v, 'profileName') ?? '-', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: c.onSurface)),
+                    const SizedBox(height: 3),
+                    Text(
+                      [if (shortBatch != null) 'Batch $shortBatch', if (created != null) created].join(' · '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 11.5, color: c.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: Gap.md),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  StatusPill(label: _voucherLabel(status), tone: _voucherTone(status)),
+                  const SizedBox(height: 8),
+                  Text(formatCurrency(numOf(v, 'sellingPrice')), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -254,7 +384,8 @@ class _VouchersScreenState extends State<VouchersScreen> {
       body: Column(
         children: [
           SearchField(hint: 'Cari kode voucher', controller: _searchCtl, onChanged: _onSearch),
-          FilterChipRow(options: _tabs, selected: _status, onSelected: _setStatus),
+          _statusBar(context),
+          _profileBar(context),
           Expanded(
             child: DataStateView(
               loading: _loading,
@@ -262,7 +393,7 @@ class _VouchersScreenState extends State<VouchersScreen> {
               isEmpty: _items.isEmpty,
               emptyIcon: Icons.confirmation_number_outlined,
               emptyMessage: 'Belum ada voucher',
-              emptyHint: _search.isNotEmpty || _status != 'ALL' ? 'Coba ubah pencarian atau tab status.' : 'Tekan Buat Voucher untuk membuat stok voucher.',
+              emptyHint: _search.isNotEmpty || _status != 'ALL' || _profileFilter != null ? 'Coba ubah pencarian atau filter.' : 'Tekan Buat Voucher untuk membuat stok voucher.',
               onRetry: _load,
               child: RefreshableList(
                 controller: _scroll,
@@ -271,22 +402,10 @@ class _VouchersScreenState extends State<VouchersScreen> {
                 itemCount: _items.length,
                 onRefresh: _load,
                 header: Padding(
-                  padding: const EdgeInsets.only(bottom: Gap.xs, left: 2),
+                  padding: const EdgeInsets.only(bottom: Gap.sm, left: 2),
                   child: Text('$_total voucher · saldo ${formatCurrency(_balance)}', style: TextStyle(fontSize: 12.5, color: context.colors.onSurfaceVariant)),
                 ),
-                itemBuilder: (context, i) {
-                  final v = _items[i];
-                  final status = str(v, 'status') ?? '-';
-                  return EntityTile(
-                    icon: Icons.confirmation_number_outlined,
-                    tone: _voucherTone(status),
-                    title: str(v, 'code') ?? '-',
-                    subtitle: [str(v, 'profileName'), formatCurrency(numOf(v, 'sellingPrice'))].whereType<String>().join(' · '),
-                    meta: str(v, 'batchCode'),
-                    trailing: StatusPill(label: _voucherLabel(status), tone: _voucherTone(status)),
-                    onTap: () => _detail(v),
-                  );
-                },
+                itemBuilder: (context, i) => _card(context, _items[i]),
               ),
             ),
           ),

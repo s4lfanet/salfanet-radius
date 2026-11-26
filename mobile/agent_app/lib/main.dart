@@ -5,6 +5,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 
 import 'core/api/api_client.dart';
+import 'core/push/push_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
 import 'features/auth/auth_provider.dart';
@@ -17,6 +18,7 @@ Future<void> main() async {
   await initializeDateFormatting('id_ID', null);
   final themeController = ThemeController();
   await themeController.restore();
+  await PushService.instance.initialize();
   runApp(AgentApp(themeController: themeController));
 }
 
@@ -33,6 +35,7 @@ class AgentApp extends StatelessWidget {
       ],
       child: Consumer<ThemeController>(
         builder: (context, theme, _) => MaterialApp(
+          navigatorKey: PushService.instance.navigatorKey,
           title: 'Salfanet Agen',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light,

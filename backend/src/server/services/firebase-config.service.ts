@@ -17,6 +17,7 @@ export const APP_PACKAGES = {
   customer: 'id.my.salfa.customer_app',
   admin: 'id.my.salfa.admin_app',
   collector: 'id.my.salfa.collector_app',
+  agent: 'id.my.salfa.agent_app',
 } as const;
 export type PushApp = keyof typeof APP_PACKAGES;
 
@@ -82,6 +83,7 @@ export function parseGoogleServices(raw: string): ClientConfig {
   // A file registered for only the admin and customer apps still serves the
   // collector app: same project, same sender, so it reuses their client entry.
   if (!apps.collector && (apps.admin || apps.customer)) apps.collector = apps.admin ?? apps.customer;
+  if (!apps.agent && (apps.admin || apps.customer)) apps.agent = apps.admin ?? apps.customer;
   if (!apps.customer && !apps.admin) {
     throw new Error(`Tidak ada aplikasi Android dengan package ${APP_PACKAGES.customer} atau ${APP_PACKAGES.admin} di file ini.`);
   }
@@ -158,6 +160,7 @@ export function getFirebaseStatus() {
       customer: !!getAppFirebaseOptions('customer'),
       admin: !!getAppFirebaseOptions('admin'),
       collector: !!getAppFirebaseOptions('collector'),
+      agent: !!getAppFirebaseOptions('agent'),
     },
   };
 }
