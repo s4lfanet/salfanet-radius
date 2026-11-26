@@ -190,10 +190,19 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
     final c = context.colors;
     return Scaffold(
       appBar: AppBar(title: const Text('Tiket Baru')),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(Gap.page, Gap.sm, Gap.page, Gap.sm),
+          child: FilledButton(
+            onPressed: _submitting ? null : _submit,
+            child: _submitting ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Kirim Tiket'),
+          ),
+        ),
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: EdgeInsets.fromLTRB(Gap.page, Gap.md, Gap.page, MediaQuery.viewInsetsOf(context).bottom + Gap.xl),
+          padding: EdgeInsets.fromLTRB(Gap.page, Gap.md, Gap.page, Gap.xl),
           children: [
             if (_categories.isNotEmpty) ...[
               DropdownButtonFormField<String>(
@@ -304,11 +313,6 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
               const SizedBox(height: Gap.md),
               Text(_error!, style: TextStyle(color: context.tone(Tone.danger), fontWeight: FontWeight.w600)),
             ],
-            const SizedBox(height: Gap.lg),
-            FilledButton(
-              onPressed: _submitting ? null : _submit,
-              child: _submitting ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Kirim Tiket'),
-            ),
           ],
         ),
       ),

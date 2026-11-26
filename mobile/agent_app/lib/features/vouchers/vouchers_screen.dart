@@ -269,6 +269,7 @@ class _VouchersScreenState extends State<VouchersScreen> {
         children: [
           for (final t in _tabs)
             Expanded(
+              flex: t.$2.length + 3,
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () => _setStatus(t.$1),
@@ -285,7 +286,7 @@ class _VouchersScreenState extends State<VouchersScreen> {
                     child: Text(
                       t.$2,
                       style: TextStyle(
-                        fontSize: 12.5,
+                        fontSize: 12,
                         fontWeight: FontWeight.w700,
                         color: _status == t.$1 ? onColor(c.primary) : c.onSurfaceVariant,
                       ),
@@ -328,7 +329,7 @@ class _VouchersScreenState extends State<VouchersScreen> {
     final status = str(v, 'status') ?? '-';
     final batch = str(v, 'batchCode');
     final shortBatch = batch == null ? null : (batch.length > 6 ? '…${batch.substring(batch.length - 6)}' : batch);
-    final created = formatDateTimeOrNull(dateOf(v, 'createdAt')?.toLocal());
+    final created = formatDateTimeOrNull(dateOf(v, 'createdAt')?.toLocal())?.split(',').first;
     return Card(
       margin: const EdgeInsets.only(bottom: Gap.sm),
       child: InkWell(
