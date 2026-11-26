@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { prisma } from '@/server/db/client';
 import { staticToDynamic, generateUniqueAmountSafeAsync } from '@/lib/qris';
 
-const QRIS_TTL_MS = 15 * 60 * 1000;
+const QRIS_TTL_MS = 60 * 60 * 1000; // 60 menit
 
 export class QrisUnavailableError extends Error {}
 

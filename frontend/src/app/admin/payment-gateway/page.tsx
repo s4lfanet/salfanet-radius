@@ -13,6 +13,7 @@ import { Toggle } from '@/components/ui/toggle';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import { NumberInput } from '@/components/ui/number-input';
+import { QrisUnmatchedPanel } from '@/components/admin/QrisUnmatchedPanel';
 
 interface PaymentGateway {
   id: string;
@@ -925,6 +926,8 @@ export default function PaymentGatewayPage() {
                   </div>
                 )}
               </div>
+
+              <QrisUnmatchedPanel />
 
               <button
                 onClick={saveQris}
