@@ -31,6 +31,7 @@ interface CompanySettings {
   bankAccounts: BankAccount[];
   poweredBy: string;
   customerIdPrefix: string;
+  speedtestUrl: string;
   footerAdmin: string;
   footerCustomer: string;
   footerTechnician: string;
@@ -43,6 +44,7 @@ type CompanySettingsResponse = Company & {
   bankAccounts?: BankAccount[];
   poweredBy?: string;
   customerIdPrefix?: string;
+  speedtestUrl?: string | null;
   footerAdmin?: string;
   footerCustomer?: string;
   footerTechnician?: string;
@@ -79,6 +81,7 @@ export default function CompanySettingsPage() {
     bankAccounts: [],
     poweredBy: 'SALFANET RADIUS',
     customerIdPrefix: '',
+    speedtestUrl: '',
     footerAdmin: '',
     footerCustomer: '',
     footerTechnician: '',
@@ -104,6 +107,7 @@ export default function CompanySettingsPage() {
         bankAccounts: companyData.bankAccounts || [],
         poweredBy: companyData.poweredBy || 'SALFANET RADIUS',
         customerIdPrefix: companyData.customerIdPrefix || '',
+        speedtestUrl: companyData.speedtestUrl || '',
         footerAdmin: companyData.footerAdmin || '',
         footerCustomer: companyData.footerCustomer || '',
         footerTechnician: companyData.footerTechnician || '',
@@ -414,6 +418,21 @@ export default function CompanySettingsPage() {
                   required
                 />
                 <p className="mt-1 text-[10px] text-muted-foreground">{t('settings.baseUrlHelp')}</p>
+              </div>
+
+              {/* Speedtest server */}
+              <div>
+                <label className="flex items-center gap-1.5 text-[11px] font-medium text-foreground mb-1">
+                  URL Speedtest (server terdekat)
+                </label>
+                <input
+                  type="url"
+                  value={settings.speedtestUrl}
+                  onChange={(e) => setSettings({ ...settings, speedtestUrl: e.target.value })}
+                  className="w-full px-2.5 py-1.5 text-sm border border-border rounded-lg bg-card focus:ring-1 focus:ring-ring focus:border-primary"
+                  placeholder="https://speedtest.domain.com"
+                />
+                <p className="mt-1 text-[10px] text-muted-foreground">Halaman Speed Test pelanggan membuka alamat ini, mis. OpenSpeedTest yang dipasang di server/jaringan Anda sendiri agar hasilnya mengukur kecepatan ke server terdekat. Kosongkan untuk memakai openspeedtest.com.</p>
               </div>
 
               {/* Invoice Generate Days */}

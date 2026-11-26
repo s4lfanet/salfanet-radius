@@ -18,6 +18,7 @@ export async function GET() {
         footerAgent: true,
         footerCollector: true,
         timezone: true,
+        speedtestUrl: true,
       }
     });
 
@@ -34,6 +35,7 @@ export async function GET() {
         footerAgent: company?.footerAgent || null,
         footerCollector: company?.footerCollector || null,
         timezone: company?.timezone || 'Asia/Jakarta',
+        speedtestUrl: company?.speedtestUrl || null,
       }
     });
   } catch (error: any) {

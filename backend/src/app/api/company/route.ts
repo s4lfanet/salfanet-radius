@@ -71,6 +71,12 @@ export async function POST(request: Request) {
       }
     }
     
+    // Speedtest server for the customer portal: only http(s) URLs; empty clears it.
+    const speedtestUrl: string | null | undefined =
+      typeof data.speedtestUrl === 'string'
+        ? (/^https?:\/\/\S+$/i.test(data.speedtestUrl.trim()) ? data.speedtestUrl.trim() : null)
+        : undefined;
+
     let company;
     if (existingCompany) {
       // Update existing
@@ -87,6 +93,7 @@ export async function POST(request: Request) {
           timezone: data.timezone,
           poweredBy: data.poweredBy,
           customerIdPrefix: data.customerIdPrefix ?? null,
+          speedtestUrl,
           footerAdmin: data.footerAdmin,
           footerCustomer: data.footerCustomer,
           footerTechnician: data.footerTechnician,
@@ -115,6 +122,7 @@ export async function POST(request: Request) {
           timezone: data.timezone,
           poweredBy: data.poweredBy,
           customerIdPrefix: data.customerIdPrefix ?? null,
+          speedtestUrl: speedtestUrl ?? null,
           footerAdmin: data.footerAdmin || 'Powered by SALFANET RADIUS',
           footerCustomer: data.footerCustomer || 'Powered by SALFANET RADIUS',
           footerTechnician: data.footerTechnician || 'Powered by SALFANET RADIUS',

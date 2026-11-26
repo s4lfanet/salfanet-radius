@@ -1,12 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Gauge, Loader2, ExternalLink, RefreshCw } from 'lucide-react';
 import { CyberCard } from '@/components/cyberpunk';
+
+const DEFAULT_SPEEDTEST_URL = 'https://openspeedtest.com/speedtest';
 
 export default function CustomerSpeedTestPage() {
   const [loading, setLoading] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
+  // Address set by the ISP in Pengaturan Perusahaan (their own, nearest server);
+  // null until the setting is loaded so the page never opens the wrong server first.
+  const [testUrl, setTestUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/public/company', { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((d) => { if (!cancelled) setTestUrl(d?.company?.speedtestUrl || DEFAULT_SPEEDTEST_URL); })
+      .catch(() => { if (!cancelled) setTestUrl(DEFAULT_SPEEDTEST_URL); });
+    return () => { cancelled = true; };
+  }, []);
 
   const handleReload = () => {
     setLoading(true);
@@ -42,14 +56,16 @@ export default function CustomerSpeedTestPage() {
               <p className="text-xs text-muted-foreground">Memuat OpenSpeedTest...</p>
             </div>
           )}
-          <iframe
-            key={reloadKey}
-            src="https://openspeedtest.com/speedtest"
-            title="OpenSpeedTest"
-            className="w-full h-full border-0"
-            onLoad={() => setLoading(false)}
-            allow="fullscreen"
-          />
+          {testUrl && (
+            <iframe
+              key={`${reloadKey}-${testUrl}`}
+              src={testUrl}
+              title="Speed Test"
+              className="w-full h-full border-0"
+              onLoad={() => setLoading(false)}
+              allow="fullscreen"
+            />
+          )}
         </div>
       </CyberCard>
 
@@ -58,7 +74,7 @@ export default function CustomerSpeedTestPage() {
           Powered by OpenSpeedTest - hasil dapat bervariasi tergantung jaringan lokal Anda.
         </p>
         <a
-          href="https://openspeedtest.com/speedtest"
+          href={testUrl ?? DEFAULT_SPEEDTEST_URL}
           target="_blank"
           rel="noopener noreferrer"
           className="text-[10px] text-cyan-600 dark:text-cyan-400 hover:underline flex items-center gap-1 flex-shrink-0"
