@@ -8,7 +8,7 @@
 #   bash updater.sh                         # Update to latest release
 #   bash updater.sh --version v2.12.0       # Update to specific version
 #   bash updater.sh --branch master         # Update from git branch (no build)
-#   bash updater.sh --skip-backup           # Skip pre-update backup
+#   bash updater.sh --with-backup           # Keep a source copy before updating (off by default)
 # ============================================================================
 
 set -e
@@ -35,7 +35,9 @@ PM2_WA_NAME="salfanet-wa"
 BACKUP_BASE="/root/salfanet-backups"
 TARGET_VERSION=""
 USE_BRANCH=""
-SKIP_BACKUP=false
+# No source backup by default: the code is in git and the database has its own
+# backups. A copy per update is what filled the VPS disk.
+SKIP_BACKUP=true
 ARCH="amd64"
 GENIEACS_BACKUP_SQL="/tmp/genieacs-data-backup-$$.sql"
 
@@ -208,9 +210,10 @@ while [[ "$#" -gt 0 ]]; do
         --version)     TARGET_VERSION="$2"; shift ;;
         --branch)      USE_BRANCH="$2"; shift ;;
         --skip-backup) SKIP_BACKUP=true ;;
+        --with-backup) SKIP_BACKUP=false ;;
         --app-dir)     APP_DIR="$2"; shift ;;
         --help|-h)
-            echo "Usage: bash updater.sh [--version vX.Y.Z] [--branch master] [--skip-backup]"
+            echo "Usage: bash updater.sh [--version vX.Y.Z] [--branch master] [--with-backup]"
             exit 0 ;;
     esac
     shift
@@ -540,6 +543,12 @@ if [ -n "$USE_BRANCH" ]; then
     NEW_VERSION=$(node -p "require('$APP_DIR/frontend/package.json').version" 2>/dev/null || node -p "require('$APP_DIR/package.json').version" 2>/dev/null || echo "unknown")
     echo ""
     print_success "Update complete! ${CURRENT_VERSION} → ${NEW_VERSION}"
+    # Source backups are not kept; remove any left by earlier updates, plus build caches.
+    if [ "$SKIP_BACKUP" = true ] && [ -d "$BACKUP_BASE" ]; then
+        rm -rf "$BACKUP_BASE"
+        print_info "Backup source lama dihapus ($BACKUP_BASE)"
+    fi
+    rm -rf "$APP_DIR/backend/.next/cache" "$APP_DIR/frontend/.next/cache" 2>/dev/null || true
     exit 0
 fi
 
@@ -828,7 +837,11 @@ print_success "${CURRENT_VERSION}  →  ${NEW_VERSION}"
 echo ""
 print_info "Cek status   : pm2 status"
 print_info "Cek log      : pm2 logs ${PM2_FRONTEND_NAME} / ${PM2_BACKEND_NAME}"
-print_info "Backup ada di: $BACKUP_BASE"
+# Source backups are not kept; remove any left by earlier updates.
+if [ "$SKIP_BACKUP" = true ] && [ -d "$BACKUP_BASE" ]; then
+    rm -rf "$BACKUP_BASE"
+    print_info "Backup source lama dihapus ($BACKUP_BASE)"
+fi
 # Tampilkan status VPN
 [ -f "/usr/local/bin/vpn-connect" ]               && print_info "VPN Client (CHR) : vpn-connect status"
 [ -f "/etc/wireguard/wg-server-info.json" ]        && print_info "WireGuard Server : wg show wg0"
