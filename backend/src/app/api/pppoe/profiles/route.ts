@@ -64,6 +64,7 @@ export async function POST(request: NextRequest) {
       hpp,
       ppnActive,
       ppnRate,
+      hiddenFromPublic,
     } = body;
 
     // Parse rateLimit if provided (format: "10M/5M" or full MikroTik format)
@@ -113,6 +114,7 @@ export async function POST(request: NextRequest) {
         isActive: true,
         hpp: hpp !== undefined ? parseInt(hpp) || null : null,
         ppnActive: ppnActive === true,
+        hiddenFromPublic: hiddenFromPublic === true,
         ppnRate: ppnRate !== undefined && ppnRate !== null ? (parseInt(ppnRate) || 11) : 11,
       },
     });
@@ -182,6 +184,7 @@ export async function PUT(request: NextRequest) {
       validityUnit,
       sharedUser,
       isActive,
+      hiddenFromPublic,
       hpp,
       ppnActive,
       ppnRate,
@@ -254,6 +257,7 @@ export async function PUT(request: NextRequest) {
     if (validityUnit) updateData.validityUnit = validityUnit;
     if (sharedUser !== undefined) updateData.sharedUser = sharedUser;
     if (isActive !== undefined) updateData.isActive = isActive;
+    if (hiddenFromPublic !== undefined) updateData.hiddenFromPublic = hiddenFromPublic === true;
     if (hpp !== undefined) updateData.hpp = hpp !== null ? (parseInt(hpp) || null) : null;
     if (ppnActive !== undefined) updateData.ppnActive = ppnActive === true;
     if (ppnRate !== undefined) updateData.ppnRate = ppnRate !== null ? (parseInt(ppnRate) || 11) : 11;

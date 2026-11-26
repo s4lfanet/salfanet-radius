@@ -33,6 +33,8 @@ interface PackageOption {
   downloadSpeed: number;
   uploadSpeed: number;
   price: number;
+  displayPrice?: number; // sudah termasuk PPN bila ada
+  ppnRate?: number;
 }
 
 interface PaymentGateway {
@@ -372,7 +374,7 @@ export default function RenewalPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-bold text-foreground">{formatCurrency(pkg.price)}</p>
+                      <p className="text-sm font-bold text-foreground">{formatCurrency(pkg.displayPrice ?? pkg.price)}</p>
                       <p className="text-[9px] text-muted-foreground">/bulan</p>
                     </div>
                     {selectedPackageId === pkg.id && <Check className="w-4 h-4 text-cyan-600 dark:text-cyan-400 ml-2" />}
@@ -396,7 +398,7 @@ export default function RenewalPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Harga</span>
-                  <span className="font-bold text-foreground">{formatCurrency(selectedPkg.price)}</span>
+                  <span className="font-bold text-foreground">{formatCurrency(selectedPkg.displayPrice ?? selectedPkg.price)}{selectedPkg.ppnRate ? <span className="ml-1 text-[10px] font-normal text-muted-foreground">(termasuk PPN {selectedPkg.ppnRate}%)</span> : null}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Perpanjangan</span>
