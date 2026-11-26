@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show FontFeature;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,6 +12,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
+import '../../core/widgets/underline_tabs.dart';
 import '../auth/auth_provider.dart';
 
 /// Daftar voucher agen dengan tab status (Semua / Menunggu / Aktif / Kedaluwarsa),
@@ -60,7 +62,7 @@ class _VouchersScreenState extends State<VouchersScreen> {
     ('WAITING', 'Menunggu'),
     ('SOLD', 'Terjual'),
     ('ACTIVE', 'Aktif'),
-    ('EXPIRED', 'Expired'),
+    ('EXPIRED', 'Kedaluwarsa'),
   ];
 
   final _scroll = ScrollController();
@@ -259,46 +261,7 @@ class _VouchersScreenState extends State<VouchersScreen> {
     );
   }
 
-  Widget _statusBar(BuildContext context) {
-    final c = context.colors;
-    return Container(
-      margin: const EdgeInsets.fromLTRB(Gap.page, 0, Gap.page, Gap.sm),
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(color: c.surfaceContainerHigh, borderRadius: BorderRadius.circular(AppTheme.radiusControl)),
-      child: Row(
-        children: [
-          for (final t in _tabs)
-            Expanded(
-              flex: t.$2.length + 3,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => _setStatus(t.$1),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  padding: const EdgeInsets.symmetric(vertical: 9),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: _status == t.$1 ? c.primary : Colors.transparent,
-                    borderRadius: BorderRadius.circular(AppTheme.radiusControl - 3),
-                  ),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      t.$2,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: _status == t.$1 ? onColor(c.primary) : c.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
+  Widget _statusBar(BuildContext context) => UnderlineTabs(options: _tabs, selected: _status, onSelected: _setStatus);
 
   Widget _profileBar(BuildContext context) {
     if (_profiles.isEmpty) return const SizedBox.shrink();
@@ -327,46 +290,74 @@ class _VouchersScreenState extends State<VouchersScreen> {
   Widget _card(BuildContext context, Map<String, dynamic> v) {
     final c = context.colors;
     final status = str(v, 'status') ?? '-';
+    final tone = context.tone(_voucherTone(status));
     final batch = str(v, 'batchCode');
-    final shortBatch = batch == null ? null : (batch.length > 6 ? '…${batch.substring(batch.length - 6)}' : batch);
+    final shortBatch = batch == null ? null : (batch.length > 6 ? batch.substring(batch.length - 6) : batch);
     final created = formatDateTimeOrNull(dateOf(v, 'createdAt')?.toLocal())?.split(',').first;
-    return Card(
-      margin: const EdgeInsets.only(bottom: Gap.sm),
-      child: InkWell(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: Gap.sm),
+      child: Material(
+        color: c.surface,
         borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-        onTap: () => _detail(v),
-        child: Padding(
-          padding: const EdgeInsets.all(Gap.md),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(str(v, 'code') ?? '-', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
-                    const SizedBox(height: 3),
-                    Text(str(v, 'profileName') ?? '-', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: c.onSurface)),
-                    const SizedBox(height: 3),
-                    Text(
-                      [if (shortBatch != null) 'Batch $shortBatch', if (created != null) created].join(' · '),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 11.5, color: c.onSurfaceVariant),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: Gap.md),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: () => _detail(v),
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: c.outlineVariant),
+              borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+            ),
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  StatusPill(label: _voucherLabel(status), tone: _voucherTone(status)),
-                  const SizedBox(height: 8),
-                  Text(formatCurrency(numOf(v, 'sellingPrice')), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800)),
+                  Container(width: 5, color: tone),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(Gap.md, Gap.md, Gap.md, Gap.md),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(str(v, 'code') ?? '-', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: 1.2, fontFeatures: [FontFeature.tabularFigures()])),
+                                const SizedBox(height: 2),
+                                Text(str(v, 'profileName') ?? '-', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13.5, color: c.onSurface)),
+                                const SizedBox(height: 6),
+                                Text(
+                                  [if (created != null) created, if (shortBatch != null) 'batch $shortBatch'].join(', '),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(fontSize: 12, color: c.onSurfaceVariant),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: Gap.md),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(formatCurrency(numOf(v, 'sellingPrice')), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                              const SizedBox(height: 6),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(width: 8, height: 8, decoration: BoxDecoration(color: tone, shape: BoxShape.circle)),
+                                  const SizedBox(width: 6),
+                                  Text(_voucherLabel(status), style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: tone)),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),

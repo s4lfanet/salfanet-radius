@@ -5,6 +5,7 @@ import '../../core/formatters.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
+import '../../core/widgets/underline_tabs.dart';
 import '../notifications/notifications_screen.dart';
 
 /// Ringkasan agen: saldo, penjualan dan komisi per periode, stok voucher,
@@ -56,97 +57,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final balance = numOf(agent, 'balance');
     final minBalance = numOf(agent, 'minBalance');
     final low = minBalance > 0 && balance < minBalance;
-    const onBrand = Colors.white;
-    Widget mini(String label, num v) => Expanded(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: Gap.md, vertical: Gap.sm + 2),
-            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(AppTheme.radiusControl)),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: onBrand.withValues(alpha: 0.85))),
-                const SizedBox(height: 2),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text('${v.toInt()}', style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: onBrand)),
-                ),
-              ],
-            ),
+    final soft = Colors.white.withValues(alpha: 0.7);
+    Widget stat(String label, num v) => Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('${v.toInt()}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white, height: 1.1)),
+              const SizedBox(height: 2),
+              Text(label, style: TextStyle(fontSize: 12, color: soft)),
+            ],
           ),
         );
+    Widget gap() => Container(width: 1, height: 34, margin: const EdgeInsets.symmetric(horizontal: Gap.md), color: Colors.white.withValues(alpha: 0.18));
     return Container(
       padding: const EdgeInsets.all(Gap.lg),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppTheme.radiusBrand),
-        gradient: const LinearGradient(colors: [AppTheme.brand, AppTheme.brandDeep], begin: Alignment.topLeft, end: Alignment.bottomRight),
-      ),
+      decoration: BoxDecoration(color: AppTheme.brandDeep, borderRadius: BorderRadius.circular(AppTheme.radiusBrand)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Halo, ${str(agent, 'name') ?? 'Agen'}', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: onBrand.withValues(alpha: 0.9))),
-          const SizedBox(height: Gap.md),
-          Text('Saldo', style: TextStyle(fontSize: 12, color: onBrand.withValues(alpha: 0.8))),
+          Text(str(agent, 'name') ?? 'Agen', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: soft)),
+          const SizedBox(height: Gap.xs),
+          Text('Saldo', style: TextStyle(fontSize: 12, color: soft)),
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: Text(formatCurrency(balance), style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: onBrand, height: 1.15)),
+            child: Text(formatCurrency(balance), style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w800, color: AppTheme.signal, height: 1.15)),
           ),
-          if (low) ...[
-            const SizedBox(height: Gap.sm),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppTheme.radiusPill)),
-              child: Text('Saldo di bawah minimum ${formatCurrency(minBalance)}', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFFB91C1C))),
+          if (low)
+            Padding(
+              padding: const EdgeInsets.only(top: Gap.sm),
+              child: Text('Di bawah saldo minimum ${formatCurrency(minBalance)}', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFFFFB4A8))),
             ),
-          ],
           const SizedBox(height: Gap.lg),
-          Row(
-            children: [
-              mini('Stok voucher', numOf(stats, 'waiting')),
-              const SizedBox(width: Gap.sm),
-              mini('Dibuat', numOf(stats, 'generated')),
-              const SizedBox(width: Gap.sm),
-              mini('Terpakai', numOf(stats, 'used')),
-            ],
-          ),
+          Divider(height: 1, color: Colors.white.withValues(alpha: 0.18)),
+          const SizedBox(height: Gap.md),
+          Row(children: [stat('Stok', numOf(stats, 'waiting')), gap(), stat('Dibuat', numOf(stats, 'generated')), gap(), stat('Terpakai', numOf(stats, 'used'))]),
         ],
       ),
     );
   }
 
-  Widget _quick(BuildContext context, IconData icon, String label, VoidCallback onTap, {bool primary = false}) {
-    final c = context.colors;
-    return Expanded(
-      child: Material(
-        color: primary ? c.primary : c.surface,
-        borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-          onTap: onTap,
-          child: Container(
-            width: double.infinity,
-            height: 76,
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppTheme.radiusCard),
-              border: primary ? null : Border.all(color: c.outlineVariant),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: 22, color: primary ? onColor(c.primary) : c.primary),
-                const SizedBox(height: 6),
-                Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  style: TextStyle(fontSize: 12, height: 1.15, fontWeight: FontWeight.w700, color: primary ? onColor(c.primary) : c.onSurface),
-                ),
-              ],
-            ),
-          ),
-        ),
+  Widget _row(BuildContext context, String label, String value, {bool big = false, Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
+        children: [
+          Expanded(child: Text(label, style: TextStyle(fontSize: 14, color: context.colors.onSurfaceVariant))),
+          Text(value, style: TextStyle(fontSize: big ? 22 : 16, fontWeight: FontWeight.w800, color: color)),
+        ],
       ),
     );
   }
@@ -154,62 +114,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _periodCard(BuildContext context, Map<String, dynamic>? stats) {
     final key = _period == 'today' ? 'today' : _period == 'month' ? 'currentMonth' : 'allTime';
     final m = mapOf(stats, key);
-    final muted = context.colors.onSurfaceVariant;
-    Widget cell(String label, String value, {Color? color}) => Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: muted)),
-              const SizedBox(height: 4),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: color, height: 1.15)),
-              ),
-            ],
-          ),
-        );
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(Gap.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              width: double.infinity,
-              child: SegmentedButton<String>(
-                showSelectedIcon: false,
-                style: const ButtonStyle(visualDensity: VisualDensity.compact),
-                segments: const [
-                  ButtonSegment(value: 'today', label: Text('Hari ini')),
-                  ButtonSegment(value: 'month', label: Text('Bulan ini')),
-                  ButtonSegment(value: 'all', label: Text('Semua')),
-                ],
-                selected: {_period},
-                onSelectionChanged: (v) => setState(() => _period = v.first),
-              ),
-            ),
-            const SizedBox(height: Gap.lg),
-            Text('Penjualan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: muted)),
-            const SizedBox(height: 2),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(formatCurrency(numOf(m, 'income')), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, height: 1.15)),
-            ),
-            const SizedBox(height: Gap.md),
-            Divider(height: 1, color: context.colors.outlineVariant),
-            const SizedBox(height: Gap.md),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                cell('Komisi', formatCurrency(numOf(m, 'total')), color: context.tone(Tone.success)),
-                cell('Voucher terjual', '${numOf(m, 'count').toInt()}'),
-              ],
-            ),
-          ],
+    final line = Divider(height: 1, color: context.colors.outlineVariant);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        UnderlineTabs(
+          padding: EdgeInsets.zero,
+          options: const [('today', 'Hari ini'), ('month', 'Bulan ini'), ('all', 'Semua')],
+          selected: _period,
+          onSelected: (v) => setState(() => _period = v),
         ),
-      ),
+        _row(context, 'Penjualan', formatCurrency(numOf(m, 'income')), big: true),
+        line,
+        _row(context, 'Komisi', formatCurrency(numOf(m, 'total')), color: context.tone(Tone.success)),
+        line,
+        _row(context, 'Voucher terjual', '${numOf(m, 'count').toInt()}'),
+      ],
     );
   }
 
@@ -253,18 +173,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               _hero(context, agent, stats),
               const SizedBox(height: Gap.md),
-              Row(
-                children: [
-                  _quick(context, Icons.add_rounded, 'Buat Voucher', () => open?.call(1, generate: true), primary: true),
-                  const SizedBox(width: Gap.sm),
-                  _quick(context, Icons.confirmation_number_outlined, 'Voucher', () => open?.call(1)),
-                  const SizedBox(width: Gap.sm),
-                  _quick(context, Icons.wifi_rounded, 'Sesi', () => open?.call(2)),
-                  const SizedBox(width: Gap.sm),
-                  _quick(context, Icons.support_agent_outlined, 'Tiket', () => open?.call(3)),
-                ],
+              FilledButton.icon(
+                style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(50)),
+                onPressed: () => open?.call(1, generate: true),
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('Buat voucher'),
               ),
-              const SizedBox(height: Gap.md),
+              const SizedBox(height: Gap.lg),
               _periodCard(context, stats),
               const SizedBox(height: Gap.lg),
               const SectionHeader('Deposit terakhir'),
