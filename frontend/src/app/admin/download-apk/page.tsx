@@ -300,7 +300,7 @@ function RoleCard({
 // ─── published releases ──────────────────────────────────────────────────────
 
 interface ApkRelease {
-  target: 'customer' | 'admin' | 'collector';
+  target: 'customer' | 'admin' | 'collector' | 'agent';
   label: string;
   available: boolean;
   size?: number;
@@ -403,7 +403,7 @@ function ReleasePanel() {
       <div className="rounded-lg border border-slate-700/60 bg-slate-800/40 p-3 mb-3">
         <p className="text-xs font-semibold text-white mb-1">Sumber pembaruan di aplikasi</p>
         <p className="text-[11px] text-slate-400 mb-2">
-          Dengan GitHub, aplikasi admin, pelanggan, dan kolektor yang terpasang langsung ditawari build terbaru dari rilis
+          Dengan GitHub, aplikasi admin, pelanggan, kolektor, dan agen yang terpasang langsung ditawari build terbaru dari rilis
           <span className="font-mono"> apk-latest</span> (sesuai arsitektur HP), tanpa perlu mengunggah APK di sini. Pakai
           Unggahan sendiri bila APK Anda memakai logo, alamat server, atau kunci tanda tangan sendiri; build GitHub bisa
           ditolak Android bila kunci tanda tangannya berbeda. Bila GitHub tidak terjangkau, APK unggahan yang ditawarkan.

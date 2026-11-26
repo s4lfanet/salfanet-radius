@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
   const mandatory = form.get('mandatory') === '1';
 
   if (!(target in APK_RELEASES)) {
-    return NextResponse.json({ success: false, error: 'Pilih aplikasi: pelanggan atau admin.' }, { status: 400 });
+    return NextResponse.json({ success: false, error: 'Pilih aplikasi: pelanggan, admin, kolektor, atau agen.' }, { status: 400 });
   }
   if (!(file instanceof File) || file.size === 0) {
     return NextResponse.json({ success: false, error: 'File APK belum dipilih.' }, { status: 400 });
