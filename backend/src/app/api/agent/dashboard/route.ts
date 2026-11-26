@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { nowWIB, WIB_TIMEZONE } from '@/lib/timezone';
 import { formatInTimeZone } from 'date-fns-tz';
@@ -214,6 +214,12 @@ export async function GET(request: NextRequest) {
         sellingPrice: v.profile?.sellingPrice || 0,
         resellerFee: v.profile?.resellerFee || 0,
         routerName: v.router?.name || null,
+        password: v.password || v.code,
+        voucherType: v.voucherType,
+        validity: v.profile ? `${v.profile.validityValue} ${v.profile.validityUnit}` : null,
+        speed: v.profile?.speed ?? null,
+        usageQuota: v.profile?.usageQuota != null ? Number(v.profile.usageQuota) : null,
+        usageDuration: v.profile?.usageDuration ?? null,
         firstLoginAt: v.firstLoginAt ? v.firstLoginAt.toISOString() : null,
         expiresAt: v.expiresAt ? v.expiresAt.toISOString() : null,
         createdAt: v.createdAt.toISOString(),

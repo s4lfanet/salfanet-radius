@@ -15,6 +15,7 @@ import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
 import '../../core/widgets/underline_tabs.dart';
 import '../auth/auth_provider.dart';
+import '../print/voucher_print.dart';
 
 /// Daftar voucher agen dengan tab status (Semua / Menunggu / Aktif / Kedaluwarsa),
 /// pencarian kode, dan tombol Buat Voucher — sama dengan halaman voucher portal agen.
@@ -195,8 +196,9 @@ class _VouchersScreenState extends State<VouchersScreen> {
     final text = 'Voucher WiFi\nKode: $code\nPaket: ${str(v, 'profileName') ?? '-'}';
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (ctx) => SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(Gap.page),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -210,6 +212,10 @@ class _VouchersScreenState extends State<VouchersScreen> {
               ),
               const SizedBox(height: Gap.md),
               _kv(ctx, 'Paket', str(v, 'profileName')),
+              _kv(ctx, 'Password', (str(v, 'password') != null && str(v, 'password') != code) ? str(v, 'password') : null),
+              _kv(ctx, 'Masa aktif', str(v, 'validity')),
+              _kv(ctx, 'Kecepatan', str(v, 'speed')),
+              _kv(ctx, 'Kuota', str(v, 'usageQuota')),
               _kv(ctx, 'Harga jual', formatCurrency(numOf(v, 'sellingPrice'))),
               _kv(ctx, 'Komisi', formatCurrency(numOf(v, 'resellerFee'))),
               _kv(ctx, 'Batch', str(v, 'batchCode')),
@@ -240,6 +246,16 @@ class _VouchersScreenState extends State<VouchersScreen> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: Gap.sm),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(44)),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  showVoucherPrintSheet(context, [v]);
+                },
+                icon: const Icon(Icons.print_rounded, size: 18),
+                label: const Text('Cetak voucher'),
               ),
               const SizedBox(height: Gap.sm),
               OutlinedButton.icon(
@@ -432,13 +448,16 @@ class _GenerateSheetState extends State<_GenerateSheet> {
   static const _codeTypes = <(String, String)>[
     ('alpha-upper', 'Huruf besar (ABCD)'),
     ('alpha-lower', 'Huruf kecil (abcd)'),
+    ('alpha-mixed', 'Huruf campuran (AbCd)'),
     ('numeric', 'Angka (1234)'),
-    ('alphanumeric-upper', 'Huruf besar + angka'),
-    ('alphanumeric-lower', 'Huruf kecil + angka'),
+    ('alphanumeric-upper', 'Huruf besar + angka (AB12)'),
+    ('alphanumeric-lower', 'Huruf kecil + angka (ab12)'),
+    ('alphanumeric-mixed', 'Campuran + angka (Ab12)'),
   ];
 
   String? _profileId;
   String _codeType = 'alphanumeric-upper';
+  String _voucherType = 'same';
   final _qty = TextEditingController(text: '1');
   final _len = TextEditingController(text: '6');
   final _prefix = TextEditingController();
@@ -457,6 +476,13 @@ class _GenerateSheetState extends State<_GenerateSheet> {
     _len.dispose();
     _prefix.dispose();
     super.dispose();
+  }
+
+  num get _total {
+    final qty = int.tryParse(_qty.text.trim()) ?? 0;
+    final p = widget.profiles.where((e) => str(e, 'id') == _profileId);
+    if (p.isEmpty || qty < 1) return 0;
+    return numOf(p.first, 'sellingPrice') * qty;
   }
 
   Future<void> _submit() async {
@@ -485,6 +511,7 @@ class _GenerateSheetState extends State<_GenerateSheet> {
         'quantity': qty,
         'codeLength': len,
         'codeType': _codeType,
+        'voucherType': _voucherType,
         'prefix': _prefix.text.trim(),
       });
       if (!mounted) return;
@@ -496,6 +523,8 @@ class _GenerateSheetState extends State<_GenerateSheet> {
         builder: (_) => GeneratedVouchersScreen(
           vouchers: vouchers,
           profileName: str(profile, 'name') ?? '',
+          profileInfo: res is Map ? (mapOf(Map<String, dynamic>.from(res), 'profile') ?? const <String, dynamic>{}) : const {},
+          batchCode: res is Map ? str(Map<String, dynamic>.from(res), 'batchCode') : null,
           cost: res is Map ? numOf(Map<String, dynamic>.from(res), 'cost') : 0,
           newBalance: res is Map ? numOf(Map<String, dynamic>.from(res), 'newBalance') : 0,
         ),
@@ -537,10 +566,21 @@ class _GenerateSheetState extends State<_GenerateSheet> {
                 onChanged: (v) => setState(() => _profileId = v),
               ),
             const SizedBox(height: Gap.md),
+            DropdownButtonFormField<String>(
+              value: _voucherType,
+              isExpanded: true,
+              decoration: const InputDecoration(labelText: 'Tipe voucher'),
+              items: const [
+                DropdownMenuItem(value: 'same', child: Text('Username = Password')),
+                DropdownMenuItem(value: 'different', child: Text('Username ≠ Password')),
+              ],
+              onChanged: (v) => setState(() => _voucherType = v ?? _voucherType),
+            ),
+            const SizedBox(height: Gap.md),
             Row(
               children: [
                 Expanded(
-                  child: TextField(controller: _qty, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Jumlah')),
+                  child: TextField(onChanged: (_) => setState(() {}), controller: _qty, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Jumlah')),
                 ),
                 const SizedBox(width: Gap.md),
                 Expanded(
@@ -557,7 +597,22 @@ class _GenerateSheetState extends State<_GenerateSheet> {
               onChanged: (v) => setState(() => _codeType = v ?? _codeType),
             ),
             const SizedBox(height: Gap.md),
-            TextField(controller: _prefix, maxLength: 10, decoration: const InputDecoration(labelText: 'Awalan kode (opsional)', counterText: '')),
+            TextField(controller: _prefix, maxLength: 10, decoration: const InputDecoration(labelText: 'Awalan kode (opsional)', counterText: '', helperText: 'Panjang kode sudah termasuk awalan.')),
+            if (_total > 0) ...[
+              const SizedBox(height: Gap.md),
+              Container(
+                padding: const EdgeInsets.all(Gap.md),
+                decoration: BoxDecoration(color: context.colors.surfaceContainerHighest, borderRadius: BorderRadius.circular(AppTheme.radiusControl)),
+                child: Row(
+                  children: [
+                    Expanded(child: Text('Total biaya', style: TextStyle(color: context.colors.onSurfaceVariant))),
+                    Text(formatCurrency(_total), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: _total > widget.balance ? context.tone(Tone.danger) : null)),
+                  ],
+                ),
+              ),
+              if (_total > widget.balance)
+                Padding(padding: const EdgeInsets.only(top: 4), child: Text('Saldo tidak cukup. Isi saldo dulu.', style: TextStyle(fontSize: 12, color: context.tone(Tone.danger)))),
+            ],
             if (_error != null) ...[
               const SizedBox(height: Gap.md),
               Text(_error!, style: TextStyle(color: context.tone(Tone.danger), fontWeight: FontWeight.w600)),
@@ -574,13 +629,23 @@ class _GenerateSheetState extends State<_GenerateSheet> {
   }
 }
 
-/// Hasil pembuatan: daftar kode yang bisa disalin atau dibagikan (mis. ke WhatsApp pembeli).
+/// Hasil pembuatan: ringkasan batch, daftar voucher lengkap, cetak, salin, bagikan.
 class GeneratedVouchersScreen extends StatelessWidget {
-  const GeneratedVouchersScreen({super.key, required this.vouchers, required this.profileName, required this.cost, required this.newBalance});
+  const GeneratedVouchersScreen({
+    super.key,
+    required this.vouchers,
+    required this.profileName,
+    required this.cost,
+    required this.newBalance,
+    this.profileInfo = const {},
+    this.batchCode,
+  });
   final List<Map<String, dynamic>> vouchers;
   final String profileName;
   final num cost;
   final num newBalance;
+  final Map<String, dynamic> profileInfo;
+  final String? batchCode;
 
   String get _text {
     final lines = <String>[];
@@ -592,17 +657,61 @@ class GeneratedVouchersScreen extends StatelessWidget {
     return 'Voucher WiFi${profileName.isEmpty ? '' : ' $profileName'}\n${lines.join('\n')}';
   }
 
+  Widget _row(BuildContext context, String k, String? v, {bool bold = false}) {
+    if (v == null || v.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(width: 110, child: Text(k, style: TextStyle(color: context.colors.onSurfaceVariant, fontSize: 13))),
+          Expanded(child: Text(v, style: TextStyle(fontSize: 13.5, fontWeight: bold ? FontWeight.w800 : FontWeight.w600))),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
+    final first = vouchers.isNotEmpty ? vouchers.first : const <String, dynamic>{};
+    String? pick(String key) => str(first, key) ?? str(profileInfo, key);
+    final price = numOf(first, 'sellingPrice') > 0 ? numOf(first, 'sellingPrice') : numOf(profileInfo, 'sellingPrice');
     return Scaffold(
       appBar: AppBar(title: const Text('Voucher Dibuat')),
       body: ListView(
         padding: EdgeInsets.fromLTRB(Gap.page, Gap.md, Gap.page, listBottomPadding(context)),
         children: [
-          Text('${vouchers.length} voucher $profileName', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 2),
-          Text('Saldo dipotong ${formatCurrency(cost)} · saldo sekarang ${formatCurrency(newBalance)}', style: TextStyle(fontSize: 12.5, color: context.colors.onSurfaceVariant)),
+          Container(
+            padding: const EdgeInsets.all(Gap.md),
+            decoration: BoxDecoration(color: c.surface, border: Border.all(color: c.outlineVariant), borderRadius: BorderRadius.circular(AppTheme.radiusCard)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('${vouchers.length} voucher berhasil dibuat', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                const SizedBox(height: Gap.sm),
+                _row(context, 'Paket', profileName),
+                _row(context, 'Batch', batchCode),
+                _row(context, 'Harga jual', price > 0 ? formatCurrency(price) : null),
+                _row(context, 'Masa aktif', pick('validity')),
+                _row(context, 'Kecepatan', pick('speed')),
+                _row(context, 'Kuota', pick('usageQuota')),
+                _row(context, 'Durasi pakai', pick('usageDuration')),
+                _row(context, 'Router', str(first, 'routerName')),
+                const Divider(height: Gap.lg),
+                _row(context, 'Saldo dipotong', formatCurrency(cost), bold: true),
+                _row(context, 'Saldo sekarang', formatCurrency(newBalance), bold: true),
+              ],
+            ),
+          ),
           const SizedBox(height: Gap.md),
+          FilledButton.icon(
+            style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(46)),
+            onPressed: () => showVoucherPrintSheet(context, vouchers),
+            icon: const Icon(Icons.print_rounded, size: 20),
+            label: const Text('Cetak voucher'),
+          ),
+          const SizedBox(height: Gap.sm),
           Row(
             children: [
               Expanded(
@@ -612,12 +721,12 @@ class GeneratedVouchersScreen extends StatelessWidget {
                     showToast(context, 'Daftar kode disalin');
                   },
                   icon: const Icon(Icons.copy_rounded, size: 18),
-                  label: const Text('Salin semua'),
+                  label: const Text('Salin'),
                 ),
               ),
               const SizedBox(width: Gap.sm),
               Expanded(
-                child: FilledButton.icon(
+                child: OutlinedButton.icon(
                   onPressed: () => Share.share(_text, subject: 'Voucher WiFi'),
                   icon: const Icon(Icons.share_rounded, size: 18),
                   label: const Text('Bagikan'),
@@ -632,12 +741,28 @@ class GeneratedVouchersScreen extends StatelessWidget {
             icon: const Icon(Icons.chat_rounded, size: 18),
             label: const Text('Kirim ke WhatsApp pembeli'),
           ),
-          const SizedBox(height: Gap.md),
+          const SizedBox(height: Gap.lg),
           for (final v in vouchers) ...[
-            Card(
-              child: ListTile(
-                title: SelectableText(str(v, 'code') ?? '-', style: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: 1)),
-                subtitle: str(v, 'password') != null && str(v, 'password') != str(v, 'code') ? Text('Password: ${str(v, 'password')}') : null,
+            Container(
+              padding: const EdgeInsets.all(Gap.md),
+              decoration: BoxDecoration(color: c.surface, border: Border.all(color: c.outlineVariant), borderRadius: BorderRadius.circular(AppTheme.radiusCard)),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SelectableText(str(v, 'code') ?? '-', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, letterSpacing: 1)),
+                        if (str(v, 'password') != null && str(v, 'password') != str(v, 'code')) Text('Password: ${str(v, 'password')}', style: TextStyle(fontSize: 13, color: c.onSurfaceVariant)),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Cetak',
+                    onPressed: () => showVoucherPrintSheet(context, [v]),
+                    icon: const Icon(Icons.print_outlined, size: 20),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: Gap.xs),

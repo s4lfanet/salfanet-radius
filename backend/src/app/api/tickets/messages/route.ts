@@ -1,7 +1,8 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { createAdminNotification } from '@/server/services/notifications/admin-notification.service';
+import { createAgentNotificationAndPush } from '@/server/services/agent-notification.service';
 import { encodeAttachments, messageText, parseAttachmentInput } from '@/lib/ticket-attachments';
 
 /**
@@ -212,9 +213,22 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Tickets opened from the agent app/portal carry customerEmail = `agent:<id>` and have no
+    // customerId, so the customer branches below never reach them. Notify the agent's bell + push.
+    const ticketAgentId = ticket.customerEmail?.startsWith('agent:') ? ticket.customerEmail.slice('agent:'.length) : null;
+    if (ticketAgentId && !isInternal && senderType !== 'CUSTOMER') {
+      await createAgentNotificationAndPush(ticketAgentId, {
+        type: 'ticket_reply',
+        title: `Balasan Tiket #${ticket.ticketNumber}`,
+        message: `${senderName}: ${String(message).substring(0, 100)}`,
+        link: '/agent/tickets',
+      });
+    }
+
     // Send notification to customer if reply is from staff and not internal
     if (
       !isInternal &&
+      !ticketAgentId &&
       senderType !== 'CUSTOMER' &&
       ticket.customerPhone
     ) {

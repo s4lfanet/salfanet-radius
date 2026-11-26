@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { requireAgentAuth } from '@/server/middleware/agent-auth';
+import { createAdminNotification } from '@/server/services/notifications/admin-notification.service';
 
 /** GET /api/agent/tickets/[id] */
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -78,6 +79,30 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         status: ticket.status === 'CLOSED' || ticket.status === 'RESOLVED' ? 'OPEN' : ticket.status,
       },
     });
+
+    // Tell admin + technicians the agent replied (previously silent).
+    const preview = ((message || '').trim() || '(lampiran)').substring(0, 80);
+    try {
+      await createAdminNotification({
+        data: {
+          type: 'ticket_reply',
+          title: 'Balasan Tiket dari Agen',
+          message: `${agent.name} membalas tiket #${ticket.ticketNumber}: "${preview}"`,
+          link: `/admin/tickets/${id}`,
+        },
+      });
+    } catch (e) {
+      console.error('[AgentTicket] Admin notification error:', e);
+    }
+    try {
+      const { sendWebPushToAllTechnicians } = await import('@/server/services/push-notification.service');
+      await sendWebPushToAllTechnicians({
+        title: `💬 Balasan Agen - Tiket #${ticket.ticketNumber}`,
+        body: `${agent.name}: ${preview}`,
+        url: '/technician/tickets',
+        tag: 'ticket-reply',
+      });
+    } catch { /* ignore */ }
 
     return NextResponse.json({ success: true, message: newMessage });
   } catch (error) {
