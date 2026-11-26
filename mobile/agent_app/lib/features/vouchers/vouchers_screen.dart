@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/formatters.dart';
@@ -239,6 +240,16 @@ class _VouchersScreenState extends State<VouchersScreen> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: Gap.sm),
+              OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(44)),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  sendVoucherWhatsApp(context, text);
+                },
+                icon: const Icon(Icons.chat_rounded, size: 18),
+                label: const Text('Kirim ke WhatsApp pembeli'),
               ),
             ],
           ),
@@ -614,6 +625,13 @@ class GeneratedVouchersScreen extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: Gap.sm),
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(44)),
+            onPressed: () => sendVoucherWhatsApp(context, _text),
+            icon: const Icon(Icons.chat_rounded, size: 18),
+            label: const Text('Kirim ke WhatsApp pembeli'),
+          ),
           const SizedBox(height: Gap.md),
           for (final v in vouchers) ...[
             Card(
@@ -628,4 +646,26 @@ class GeneratedVouchersScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+
+/// Minta nomor pembeli lalu buka WhatsApp dengan pesan voucher terisi.
+Future<void> sendVoucherWhatsApp(BuildContext context, String message) async {
+  final ctl = TextEditingController();
+  final phone = await showDialog<String>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: const Text('Kirim ke WhatsApp'),
+      content: TextField(controller: ctl, keyboardType: TextInputType.phone, autofocus: true, decoration: const InputDecoration(labelText: 'Nomor WhatsApp pembeli', hintText: '08xxxxxxxxxx')),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Batal')),
+        FilledButton(onPressed: () => Navigator.pop(ctx, ctl.text.trim()), child: const Text('Kirim')),
+      ],
+    ),
+  );
+  if (phone == null || phone.isEmpty) return;
+  var n = phone.replaceAll(RegExp(r'[^0-9]'), '');
+  if (n.startsWith('0')) n = '62${n.substring(1)}';
+  final ok = await launchUrl(Uri.parse('https://wa.me/$n?text=${Uri.encodeComponent(message)}'), mode: LaunchMode.externalApplication);
+  if (!ok && context.mounted) showToast(context, 'WhatsApp tidak bisa dibuka.');
 }

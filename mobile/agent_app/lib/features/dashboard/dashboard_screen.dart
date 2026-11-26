@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
 import '../../core/widgets/underline_tabs.dart';
+import '../deposit/deposit_screen.dart';
 import '../notifications/notifications_screen.dart';
 
 /// Ringkasan agen: saldo, penjualan dan komisi per periode, stok voucher,
@@ -51,6 +52,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Future<void> _topUp() async {
+    final gateways = (_data?['paymentGateways'] as List?)?.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList() ?? const [];
+    final ok = await Navigator.of(context).push<bool>(MaterialPageRoute(builder: (_) => DepositScreen(gateways: gateways)));
+    if (ok == true) _load();
   }
 
   Widget _hero(BuildContext context, Map<String, dynamic>? agent, Map<String, dynamic>? stats) {
@@ -173,12 +180,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               _hero(context, agent, stats),
               const SizedBox(height: Gap.md),
-              FilledButton.icon(
-                style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(50)),
-                onPressed: () => open?.call(1, generate: true),
-                icon: const Icon(Icons.add_rounded),
-                label: const Text('Buat voucher'),
-              ),
+              Row(children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(50)),
+                    onPressed: _topUp,
+                    icon: const Icon(Icons.account_balance_wallet_outlined),
+                    label: const Text('Isi saldo'),
+                  ),
+                ),
+                const SizedBox(width: Gap.sm),
+                Expanded(
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(50)),
+                    onPressed: () => open?.call(1, generate: true),
+                    icon: const Icon(Icons.add_rounded),
+                    label: const Text('Buat voucher'),
+                  ),
+                ),
+              ]),
               const SizedBox(height: Gap.lg),
               _periodCard(context, stats),
               const SizedBox(height: Gap.lg),
@@ -203,7 +223,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ],
               const SizedBox(height: Gap.sm),
               Text(
-                'Isi saldo (deposit) dilakukan lewat portal web agen.',
+                'Saldo bertambah otomatis setelah pembayaran lunas atau disetujui admin.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 12, color: context.colors.outline),
               ),
