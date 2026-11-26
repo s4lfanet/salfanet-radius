@@ -8,6 +8,7 @@ import '../../core/formatters.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/entity_tile.dart';
+import '../../core/widgets/filter_grid.dart';
 import '../../core/widgets/state_views.dart';
 import 'create_ticket_screen.dart';
 import 'ticket_attachments.dart';
@@ -71,7 +72,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
   bool _loading = true;
   String? _error;
   String _filter = 'ALL';
-  static const _filters = <(String, String)>[('ALL', 'Semua'), ('OPEN', 'Baru'), ('IN_PROGRESS', 'Diproses'), ('WAITING_CUSTOMER', 'Menunggu Anda'), ('RESOLVED', 'Selesai'), ('CLOSED', 'Ditutup')];
+  static const _filters = <(String, String)>[('ALL', 'Semua'), ('OPEN', 'Baru'), ('IN_PROGRESS', 'Diproses'), ('WAITING_CUSTOMER', 'Perlu balasan'), ('RESOLVED', 'Selesai'), ('CLOSED', 'Ditutup')];
 
   @override
   void initState() {
@@ -112,7 +113,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
       appBar: AppBar(title: const Text('Tiket Bantuan')),
       floatingActionButton: FloatingActionButton.extended(onPressed: _create, icon: const Icon(Icons.add_rounded), label: const Text('Tiket Baru')),
       body: Column(children: [
-       FilterChipRow(options: _filters, selected: _filter, onSelected: (v) => setState(() => _filter = v)),
+       Padding(padding: const EdgeInsets.only(top: Gap.sm, bottom: Gap.sm), child: FilterGrid(options: _filters, selected: _filter, onSelected: (v) => setState(() => _filter = v))),
        Expanded(child: DataStateView(
         loading: _loading,
         error: _error,

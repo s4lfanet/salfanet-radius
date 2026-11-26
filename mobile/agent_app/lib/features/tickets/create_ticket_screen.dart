@@ -9,6 +9,7 @@ import '../../core/api/api_client.dart';
 import '../../core/formatters.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/dialogs.dart';
+import '../../core/widgets/filter_grid.dart';
 
 /// Unggah satu foto ke server; mengembalikan path relatif (`/uploads/tickets/...`).
 Future<String> uploadTicketFile(File file) async {
@@ -216,20 +217,7 @@ class _CreateTicketScreenState extends State<CreateTicketScreen> {
             ],
             const Text('Prioritas', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
             const SizedBox(height: Gap.xs),
-            Wrap(
-              spacing: Gap.sm,
-              children: [
-                for (final p in _priorities)
-                  ChoiceChip(
-                    label: Text(p.$2),
-                    selected: _priority == p.$1,
-                    onSelected: (_) => setState(() => _priority = p.$1),
-                    labelStyle: TextStyle(fontWeight: FontWeight.w700, color: _priority == p.$1 ? onColor(c.primary) : c.onSurface),
-                    selectedColor: c.primary,
-                    showCheckmark: false,
-                  ),
-              ],
-            ),
+            FilterGrid(padding: EdgeInsets.zero, columns: 4, options: _priorities, selected: _priority, onSelected: (v) => setState(() => _priority = v)),
             const SizedBox(height: Gap.md),
             TextFormField(
               controller: _subject,
