@@ -5,7 +5,8 @@ import { isExpiredWIB, formatWIB } from '@/lib/timezone';
 import { apiAgent } from '@/lib/api';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Filter, MessageCircle } from 'lucide-react';
+import { Search, Filter, MessageCircle, Printer } from 'lucide-react';
+import { printVouchersThermal } from '@/lib/voucher-print';
 import { Pagination } from '@/components/Pagination';
 
 interface AgentData {
@@ -37,7 +38,7 @@ export default function AgentVouchersPage() {
   const router = useRouter();
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
-  const [_agent, setAgent] = useState<AgentData | null>(null);
+  const [agent, setAgent] = useState<AgentData | null>(null);
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [selectedVouchers, setSelectedVouchers] = useState<string[]>([]);
@@ -148,6 +149,26 @@ export default function AgentVouchersPage() {
     }
   };
 
+  const handleStatusTab = (status: string) => {
+    setFilterStatus(status);
+    setSelectedVouchers([]);
+    setCurrentPage(1);
+    loadVouchers(1, status, filterProfile, searchCode, perPage);
+  };
+
+  const handlePrintThermal = async () => {
+    const chosen = vouchers.filter((v) => selectedVouchers.includes(v.id));
+    if (chosen.length === 0) {
+      await showError('Pilih voucher terlebih dahulu');
+      return;
+    }
+    const ok = printVouchersThermal(
+      chosen.map((v) => ({ code: v.code, profileName: v.profileName, sellingPrice: v.sellingPrice })),
+      { agentName: agent?.name },
+    );
+    if (!ok) await showError('Jendela cetak diblokir browser. Izinkan pop-up lalu coba lagi.');
+  };
+
   const handleSendWhatsApp = () => {
     if (selectedVouchers.length === 0) {
       showError('Pilih voucher terlebih dahulu');
@@ -216,6 +237,14 @@ export default function AgentVouchersPage() {
               <p className="text-xs text-muted-foreground mt-0.5">{t('agent.portal.total')}: {pagination.total} {t('agent.portal.voucher').toLowerCase()}</p>
             </div>
             {selectedVouchers.length > 0 && (
+              <div className="flex items-center gap-2">
+              <button
+                onClick={handlePrintThermal}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-xs transition font-bold shadow-sm"
+              >
+                <Printer className="h-3.5 w-3.5" />
+                Cetak Termal ({selectedVouchers.length})
+              </button>
               <button
                 onClick={handleSendWhatsApp}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-success hover:bg-success/90 text-success-foreground rounded-lg text-xs transition font-bold shadow-sm"
@@ -223,7 +252,30 @@ export default function AgentVouchersPage() {
                 <MessageCircle className="h-3.5 w-3.5" />
                 {t('agent.portal.sendWhatsApp')} ({selectedVouchers.length})
               </button>
+              </div>
             )}
+          </div>
+
+          {/* Status tabs: Semua / Menunggu / Aktif / Kedaluwarsa */}
+          <div className="mb-3 flex gap-1 overflow-x-auto rounded-xl bg-muted p-1" role="tablist">
+            {[
+              { value: '', label: t('agent.portal.allStatus') },
+              { value: 'WAITING', label: t('agent.portal.waiting') },
+              { value: 'ACTIVE', label: t('agent.portal.active') },
+              { value: 'EXPIRED', label: t('agent.portal.expired') },
+            ].map((tab) => (
+              <button
+                key={tab.value || 'all'}
+                role="tab"
+                aria-selected={filterStatus === tab.value}
+                onClick={() => handleStatusTab(tab.value)}
+                className={`flex-1 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-bold transition ${
+                  filterStatus === tab.value ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
 
           {/* Filter Controls */}
@@ -239,16 +291,6 @@ export default function AgentVouchersPage() {
                 className="w-full pl-9 pr-3 py-2 text-xs bg-input border border-border rounded-lg text-foreground focus:border-cyan-500 dark:focus:border-cyan-400 outline-none"
               />
             </div>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-3 py-2 text-xs bg-input border border-border rounded-lg text-foreground min-w-[100px] outline-none"
-            >
-              <option value="">{t('agent.portal.allStatus')}</option>
-              <option value="WAITING">{t('agent.portal.waiting')}</option>
-              <option value="ACTIVE">{t('agent.portal.active')}</option>
-              <option value="EXPIRED">{t('agent.portal.expired')}</option>
-            </select>
             <select
               value={filterProfile}
               onChange={(e) => setFilterProfile(e.target.value)}
