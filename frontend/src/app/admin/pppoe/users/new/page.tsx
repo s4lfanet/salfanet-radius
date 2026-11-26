@@ -33,7 +33,7 @@ export default function NewPppoeUserPage() {
   const [uploadingIdCard, setUploadingIdCard] = useState(false);
   const [uploadingInstallation, setUploadingInstallation] = useState(false);
   const [hasPppoeAccount, setHasPppoeAccount] = useState(true);
-  const [firstInvoice, setFirstInvoice] = useState<'none' | 'prorate' | 'full'>('prorate');
+  const [firstInvoice, setFirstInvoice] = useState<'none' | 'prorate' | 'full'>('none');
   const [formWarnings, setFormWarnings] = useState<{ nik: string; phone: string }>({ nik: '', phone: '' });
   const [createPppSecret, setCreatePppSecret] = useState(false);
 

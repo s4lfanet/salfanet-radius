@@ -65,7 +65,7 @@ List<FieldSpec> _fields({required bool editing, Map<String, dynamic>? installer}
       'firstInvoice',
       'Tagihan pertama',
       type: FieldType.select,
-      initial: 'prorate',
+      initial: 'none',
       required: true,
       options: [('prorate', 'Prorata sampai tanggal tagihan'), ('full', 'Penuh satu periode'), ('none', 'Tidak dibuat')],
     ),
