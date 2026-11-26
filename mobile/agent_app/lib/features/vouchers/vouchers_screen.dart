@@ -266,7 +266,7 @@ class _VouchersScreenState extends State<VouchersScreen> {
   Widget _profileBar(BuildContext context) {
     if (_profiles.isEmpty) return const SizedBox.shrink();
     return Padding(
-      padding: const EdgeInsets.fromLTRB(Gap.page, 0, Gap.page, Gap.sm),
+      padding: const EdgeInsets.fromLTRB(Gap.page, Gap.lg, Gap.page, Gap.sm),
       child: DropdownButtonFormField<String?>(
         value: _profileFilter,
         isExpanded: true,
