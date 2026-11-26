@@ -22,21 +22,24 @@ export function collectorWaText(c: {
   unpaid_amount: number;
   profile?: { name: string } | null;
 }, company?: string) {
-  const who = c.name || c.username;
-  const from = company ? ` dari ${company}` : '';
+  // Customer name only — never the company. A blank name falls back to the username.
+  const who = (c.name || '').trim() || c.username;
+  const h = new Date().getHours();
+  const salam = h < 11 ? 'pagi' : h < 15 ? 'siang' : h < 18 ? 'sore' : 'malam';
+  const hello = `Halo, selamat ${salam} Bapak/Ibu ${who},`;
   if (c.unpaid_count > 0) {
     const id = c.customerId || c.username;
     const pkg = c.profile?.name ? `, paket ${c.profile.name}` : '';
     const bills = c.unpaid_count > 1 ? ` (${c.unpaid_count} tagihan)` : '';
     return [
-      `Halo Bapak/Ibu ${who},`,
+      hello,
       '',
-      `Kami${from} ingin mengingatkan tagihan internet Anda (ID pelanggan ${id}${pkg}) sebesar ${rp(c.unpaid_amount)}${bills} belum dibayar.`,
+      `Kami ingin mengingatkan tagihan internet Anda (ID pelanggan ${id}${pkg}) sebesar ${rp(c.unpaid_amount)}${bills} belum dibayar.`,
       '',
       'Pembayaran bisa melalui kolektor kami atau transfer. Jika sudah membayar, mohon abaikan pesan ini.',
       '',
-      'Terima kasih.',
+      company ? `Terima kasih.\n${company}` : 'Terima kasih.',
     ].join('\n');
   }
-  return company ? `Halo Bapak/Ibu ${who}, kami dari ${company}.\n\n` : `Halo Bapak/Ibu ${who},\n\n`;
+  return `${hello}\n\n`;
 }
