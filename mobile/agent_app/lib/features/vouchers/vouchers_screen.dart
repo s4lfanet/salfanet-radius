@@ -63,7 +63,7 @@ class _VouchersScreenState extends State<VouchersScreen> {
     ('WAITING', 'Menunggu'),
     ('SOLD', 'Terjual'),
     ('ACTIVE', 'Aktif'),
-    ('EXPIRED', 'Kedaluwarsa'),
+    ('EXPIRED', 'Expired'),
   ];
 
   final _scroll = ScrollController();
@@ -510,7 +510,7 @@ class _GenerateSheetState extends State<_GenerateSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(Gap.page, Gap.md, Gap.page, MediaQuery.viewInsetsOf(context).bottom + Gap.page),
+      padding: EdgeInsets.fromLTRB(Gap.page, Gap.md, Gap.page, (MediaQuery.viewInsetsOf(context).bottom > 0 ? MediaQuery.viewInsetsOf(context).bottom : MediaQuery.viewPaddingOf(context).bottom) + Gap.page),
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
