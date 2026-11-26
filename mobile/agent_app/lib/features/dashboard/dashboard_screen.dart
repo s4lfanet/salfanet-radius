@@ -69,7 +69,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('${v.toInt()}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white, height: 1.1)),
+              Text('${v.toInt()}', style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: Colors.white, height: 1.1)),
               const SizedBox(height: 2),
               Text(label, style: TextStyle(fontSize: 12, color: soft)),
             ],
@@ -88,7 +88,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: Text(formatCurrency(balance), style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w800, color: AppTheme.signal, height: 1.15)),
+            child: Text(formatCurrency(balance), style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: AppTheme.signal, height: 1.15)),
           ),
           if (low)
             Padding(

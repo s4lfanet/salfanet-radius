@@ -55,7 +55,17 @@ class AppTheme {
       error: p.danger,
     );
 
-    final text = ThemeData(brightness: p.brightness, fontFamily: 'PlusJakartaSans').textTheme.apply(bodyColor: p.text, displayColor: p.text);
+    final text = ThemeData(brightness: p.brightness, fontFamily: 'PlusJakartaSans').textTheme.apply(bodyColor: p.text, displayColor: p.text).copyWith(
+      titleLarge: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+      titleMedium: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600),
+      titleSmall: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+      bodyLarge: const TextStyle(fontSize: 14.5),
+      bodyMedium: const TextStyle(fontSize: 13.5),
+      bodySmall: const TextStyle(fontSize: 12),
+      labelLarge: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600),
+      labelMedium: const TextStyle(fontSize: 12),
+      labelSmall: const TextStyle(fontSize: 11),
+    );
 
     final controlShape = RoundedRectangleBorder(borderRadius: BorderRadius.circular(radiusControl));
 
@@ -75,7 +85,7 @@ class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: TextStyle(fontFamily: 'PlusJakartaSans', fontSize: 18, fontWeight: FontWeight.w700, color: p.text),
+        titleTextStyle: TextStyle(fontFamily: 'PlusJakartaSans', fontSize: 17, fontWeight: FontWeight.w700, color: p.text),
       ),
       // A 1px border instead of a shadow: on a near-white background an
       // un-bordered white card has no visible edge, and shadows everywhere

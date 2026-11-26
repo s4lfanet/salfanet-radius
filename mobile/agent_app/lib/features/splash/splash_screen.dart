@@ -105,7 +105,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     opacity: _titleIn,
                     child: SlideTransition(
                       position: Tween<Offset>(begin: const Offset(0, 0.4), end: Offset.zero).animate(_titleIn),
-                      child: const Text('Salfanet Agen', style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800, height: 1.2)),
+                      child: const Text('Salfanet Agen', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, height: 1.2)),
                     ),
                   ),
                   const SizedBox(height: Gap.xs),
