@@ -16,15 +16,18 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _index = 0;
+  final _generateSignal = ValueNotifier<int>(0);
 
-  // Same tabs as the web portal: Ringkasan, Voucher, Sesi, Tiket; the rest is under Menu.
-  static const _tabs = <Widget>[
-    DashboardScreen(),
-    VouchersScreen(),
-    SessionsScreen(),
-    TicketsScreen(),
-    MoreScreen(),
-  ];
+  void _openTab(int i, {bool generate = false}) {
+    setState(() => _index = i);
+    if (generate) _generateSignal.value++;
+  }
+
+  @override
+  void dispose() {
+    _generateSignal.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -37,7 +40,13 @@ class _MainShellState extends State<MainShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(index: _index, children: _tabs),
+      body: IndexedStack(index: _index, children: [
+        DashboardScreen(onOpenTab: _openTab),
+        VouchersScreen(generateSignal: _generateSignal),
+        const SessionsScreen(),
+        const TicketsScreen(),
+        const MoreScreen(),
+      ]),
       bottomNavigationBar: DecoratedBox(
         decoration: BoxDecoration(border: Border(top: BorderSide(color: Theme.of(context).colorScheme.outlineVariant))),
         child: NavigationBar(

@@ -39,9 +39,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const { id } = await params;
     const body = await request.json();
-    const { message } = body;
+    const { message, attachments } = body;
+    const attachmentJson = Array.isArray(attachments) && attachments.length > 0 ? JSON.stringify(attachments.filter((a: unknown) => typeof a === 'string' && a.startsWith('/uploads/tickets/'))) : null;
 
-    if (!message?.trim()) {
+    if (!message?.trim() && !attachmentJson) {
       return NextResponse.json({ error: 'message is required' }, { status: 400 });
     }
 
@@ -64,7 +65,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         senderType: 'CUSTOMER',
         senderId: agentId,
         senderName: agent.name,
-        message: message.trim(),
+        message: (message || '').trim() || '(lampiran)',
+        attachments: attachmentJson,
       },
     });
 

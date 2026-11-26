@@ -58,7 +58,10 @@ export async function POST(request: NextRequest) {
     const { agentId } = auth;
 
     const body = await request.json();
-    const { subject, description, categoryId, priority } = body;
+    const { subject, description, categoryId, priority, latitude, longitude, locationTag, attachments } = body;
+    const lat = latitude != null && latitude !== '' ? parseFloat(latitude) : null;
+    const lng = longitude != null && longitude !== '' ? parseFloat(longitude) : null;
+    const attachmentJson = Array.isArray(attachments) && attachments.length > 0 ? JSON.stringify(attachments.filter((a: unknown) => typeof a === 'string' && a.startsWith('/uploads/tickets/'))) : null;
 
     if (!subject?.trim() || !description?.trim()) {
       return NextResponse.json({ error: 'subject and description are required' }, { status: 400 });
@@ -89,6 +92,10 @@ export async function POST(request: NextRequest) {
         categoryId: categoryId || null,
         priority: priority || 'MEDIUM',
         status: 'OPEN',
+        latitude: Number.isFinite(lat as number) ? lat : null,
+        longitude: Number.isFinite(lng as number) ? lng : null,
+        locationTag: locationTag ? String(locationTag).slice(0, 500) : null,
+        attachments: attachmentJson,
         messages: {
           create: {
             senderType: 'CUSTOMER',

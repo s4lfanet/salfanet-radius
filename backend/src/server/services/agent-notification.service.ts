@@ -1,6 +1,7 @@
 import 'server-only';
 import { prisma } from '@/server/db/client';
 import { sendWebPushToAgent } from '@/server/services/push-notification.service';
+import { sendFcmToAgent } from '@/server/services/fcm-push.service';
 
 /**
  * Create an agent notification AND send a web push notification in one call.
@@ -40,5 +41,17 @@ export async function createAgentNotificationAndPush(
     });
   } catch (e) {
     console.error('[AgentNotif] Push failed:', e);
+  }
+
+  // Native app push (FCM), best-effort
+  try {
+    await sendFcmToAgent(agentId, {
+      title: data.title,
+      body: data.message,
+      tag: data.type,
+      data: { type: data.type },
+    });
+  } catch (e) {
+    console.error('[AgentNotif] FCM failed:', e);
   }
 }

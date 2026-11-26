@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../core/api/api_client.dart';
 import '../../core/formatters.dart';
@@ -6,6 +9,8 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/dialogs.dart';
 import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
+import 'create_ticket_screen.dart';
+import 'ticket_attachments.dart';
 
 String _ticketLabel(String s) {
   switch (s.toUpperCase()) {
@@ -39,6 +44,20 @@ Tone _ticketTone(String s) {
   }
 }
 
+String? _priorityLabel(String? p) {
+  switch ((p ?? '').toUpperCase()) {
+    case 'LOW':
+      return 'Rendah';
+    case 'MEDIUM':
+      return 'Sedang';
+    case 'HIGH':
+      return 'Tinggi';
+    case 'URGENT':
+      return 'Mendesak';
+  }
+  return null;
+}
+
 /// Tiket bantuan agen ke admin — buat tiket baru dan balas percakapan.
 class TicketsScreen extends StatefulWidget {
   const TicketsScreen({super.key});
@@ -51,6 +70,8 @@ class _TicketsScreenState extends State<TicketsScreen> {
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;
   String? _error;
+  String _filter = 'ALL';
+  static const _filters = <(String, String)>[('ALL', 'Semua'), ('OPEN', 'Baru'), ('IN_PROGRESS', 'Diproses'), ('WAITING_CUSTOMER', 'Menunggu Anda'), ('RESOLVED', 'Selesai'), ('CLOSED', 'Ditutup')];
 
   @override
   void initState() {
@@ -76,12 +97,7 @@ class _TicketsScreenState extends State<TicketsScreen> {
   }
 
   Future<void> _create() async {
-    final ok = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (_) => const _NewTicketSheet(),
-    );
+    final ok = await Navigator.of(context).push<bool>(MaterialPageRoute(builder: (_) => const CreateTicketScreen()));
     if (ok == true) _load();
   }
 
@@ -95,120 +111,40 @@ class _TicketsScreenState extends State<TicketsScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Tiket Bantuan')),
       floatingActionButton: FloatingActionButton.extended(onPressed: _create, icon: const Icon(Icons.add_rounded), label: const Text('Tiket Baru')),
-      body: DataStateView(
+      body: Column(children: [
+       FilterChipRow(options: _filters, selected: _filter, onSelected: (v) => setState(() => _filter = v)),
+       Expanded(child: DataStateView(
         loading: _loading,
         error: _error,
-        isEmpty: _items.isEmpty,
+        isEmpty: _shown.isEmpty,
         emptyIcon: Icons.support_agent_outlined,
         emptyMessage: 'Belum ada tiket',
         emptyHint: 'Ada kendala? Tekan Tiket Baru untuk menghubungi admin.',
         onRetry: _load,
         child: RefreshableList(
           hasFab: true,
-          itemCount: _items.length,
+          itemCount: _shown.length,
           onRefresh: _load,
           itemBuilder: (context, i) {
-            final t = _items[i];
+            final t = _shown[i];
             final status = str(t, 'status') ?? '-';
             return EntityTile(
               icon: Icons.support_agent_rounded,
               tone: _ticketTone(status),
               title: str(t, 'subject') ?? '-',
-              subtitle: [str(t, 'ticketNumber'), str(mapOf(t, 'category'), 'name')].whereType<String>().join(' · '),
+              subtitle: [str(t, 'ticketNumber'), str(mapOf(t, 'category'), 'name'), _priorityLabel(str(t, 'priority'))].whereType<String>().join(' · '),
               meta: formatDateTimeOrNull(dateOf(t, 'createdAt')?.toLocal()),
               trailing: StatusPill(label: _ticketLabel(status), tone: _ticketTone(status)),
               onTap: () => _open(t),
             );
           },
         ),
-      ),
+      )),
+      ]),
     );
   }
-}
 
-class _NewTicketSheet extends StatefulWidget {
-  const _NewTicketSheet();
-
-  @override
-  State<_NewTicketSheet> createState() => _NewTicketSheetState();
-}
-
-class _NewTicketSheetState extends State<_NewTicketSheet> {
-  final _subject = TextEditingController();
-  final _desc = TextEditingController();
-  String _priority = 'MEDIUM';
-  bool _busy = false;
-  String? _error;
-
-  @override
-  void dispose() {
-    _subject.dispose();
-    _desc.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    if (_subject.text.trim().isEmpty || _desc.text.trim().isEmpty) {
-      setState(() => _error = 'Isi judul dan penjelasan kendala.');
-      return;
-    }
-    setState(() {
-      _busy = true;
-      _error = null;
-    });
-    try {
-      await ApiClient.instance.post('/api/agent/tickets', data: {
-        'subject': _subject.text.trim(),
-        'description': _desc.text.trim(),
-        'priority': _priority,
-      });
-      if (mounted) Navigator.pop(context, true);
-    } on ApiException catch (e) {
-      if (mounted) setState(() => _error = e.message);
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(Gap.page, Gap.md, Gap.page, MediaQuery.viewInsetsOf(context).bottom + Gap.page),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text('Tiket Baru', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-            const SizedBox(height: Gap.lg),
-            TextField(controller: _subject, textInputAction: TextInputAction.next, decoration: const InputDecoration(labelText: 'Judul')),
-            const SizedBox(height: Gap.md),
-            TextField(controller: _desc, maxLines: 4, decoration: const InputDecoration(labelText: 'Penjelasan kendala')),
-            const SizedBox(height: Gap.md),
-            DropdownButtonFormField<String>(
-              value: _priority,
-              decoration: const InputDecoration(labelText: 'Prioritas'),
-              items: const [
-                DropdownMenuItem(value: 'LOW', child: Text('Rendah')),
-                DropdownMenuItem(value: 'MEDIUM', child: Text('Sedang')),
-                DropdownMenuItem(value: 'HIGH', child: Text('Tinggi')),
-              ],
-              onChanged: (v) => setState(() => _priority = v ?? _priority),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: Gap.md),
-              Text(_error!, style: TextStyle(color: context.tone(Tone.danger), fontWeight: FontWeight.w600)),
-            ],
-            const SizedBox(height: Gap.lg),
-            FilledButton(
-              onPressed: _busy ? null : _submit,
-              child: _busy ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Kirim'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  List<Map<String, dynamic>> get _shown => _filter == 'ALL' ? _items : _items.where((t) => (str(t, 'status') ?? '').toUpperCase() == _filter).toList();
 }
 
 class TicketDetailScreen extends StatefulWidget {
@@ -225,6 +161,7 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
   final _reply = TextEditingController();
   bool _loading = true;
   bool _sending = false;
+  final List<String> _replyFiles = [];
   String? _error;
 
   @override
@@ -257,12 +194,31 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
 
   Future<void> _send() async {
     final text = _reply.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty && _replyFiles.isEmpty) return;
     setState(() => _sending = true);
-    final ok = await runAction(context, () => ApiClient.instance.post('/api/agent/tickets/${widget.ticketId}', data: {'message': text}));
-    if (ok) _reply.clear();
+    final ok = await runAction(context, () => ApiClient.instance.post('/api/agent/tickets/${widget.ticketId}', data: {'message': text, 'attachments': _replyFiles}));
+    if (ok) {
+      _reply.clear();
+      _replyFiles.clear();
+    }
     if (mounted) setState(() => _sending = false);
     if (ok) _load();
+  }
+
+  Future<void> _attach() async {
+    try {
+      final x = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 80);
+      if (x == null) return;
+      setState(() => _sending = true);
+      final url = await uploadTicketFile(File(x.path));
+      if (mounted) setState(() => _replyFiles.add(url));
+    } on ApiException catch (e) {
+      if (mounted) showToast(context, e.message);
+    } catch (_) {
+      if (mounted) showToast(context, 'Gagal mengunggah foto.');
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
   }
 
   @override
@@ -294,7 +250,23 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                   ),
                   const SizedBox(height: Gap.md),
                   if (str(_ticket, 'description') != null)
-                    Card(child: Padding(padding: const EdgeInsets.all(Gap.md), child: Text(str(_ticket, 'description')!))),
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(Gap.md),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(str(_ticket, 'description')!),
+                          if (str(_ticket, 'locationTag') != null || _ticket?['latitude'] != null) ...[
+                            const SizedBox(height: Gap.sm),
+                            Row(children: [
+                              Icon(Icons.location_on_outlined, size: 16, color: context.colors.onSurfaceVariant),
+                              const SizedBox(width: 4),
+                              Expanded(child: Text(str(_ticket, 'locationTag') ?? '${_ticket?['latitude']}, ${_ticket?['longitude']}', style: TextStyle(fontSize: 12.5, color: context.colors.onSurfaceVariant))),
+                            ]),
+                          ],
+                          TicketAttachments(paths: parseAttachments(_ticket?['attachments'])),
+                        ]),
+                      ),
+                    ),
                   const SizedBox(height: Gap.sm),
                   for (final m in messages)
                     Align(
@@ -310,7 +282,8 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(str(m, 'message') ?? ''),
+                            if ((str(m, 'message') ?? '') != '(lampiran)') Text(str(m, 'message') ?? ''),
+                            TicketAttachments(paths: parseAttachments(m['attachments'])),
                             const SizedBox(height: 4),
                             Text(
                               [(str(m, 'senderType') ?? '').toUpperCase() == 'CUSTOMER' ? 'Anda' : 'Admin', formatDateTimeOrNull(dateOf(m, 'createdAt')?.toLocal())].whereType<String>().join(' · '),
@@ -331,6 +304,10 @@ class _TicketDetailScreenState extends State<TicketDetailScreen> {
                 padding: const EdgeInsets.fromLTRB(Gap.page, Gap.sm, Gap.page, Gap.sm),
                 child: Row(
                   children: [
+                    IconButton(
+                      onPressed: _sending ? null : _attach,
+                      icon: Badge(isLabelVisible: _replyFiles.isNotEmpty, label: Text('${_replyFiles.length}'), child: const Icon(Icons.attach_file_rounded)),
+                    ),
                     Expanded(child: TextField(controller: _reply, minLines: 1, maxLines: 4, decoration: const InputDecoration(hintText: 'Tulis balasan'))),
                     const SizedBox(width: Gap.sm),
                     IconButton.filled(

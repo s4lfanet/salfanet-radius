@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: NextRequest) {
   const app = req.nextUrl.searchParams.get('app') as PushApp | null;
   if (!app || !(app in APP_PACKAGES)) {
-    return NextResponse.json({ success: false, error: 'app harus customer, admin, atau collector' }, { status: 400 });
+    return NextResponse.json({ success: false, error: 'app harus customer, admin, collector, atau agent' }, { status: 400 });
   }
   const fcm = getAppFirebaseOptions(app);
   return NextResponse.json(

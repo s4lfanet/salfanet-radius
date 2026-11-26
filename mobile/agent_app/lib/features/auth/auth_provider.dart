@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../core/api/api_client.dart';
+import '../../core/push/push_service.dart';
 import '../../models/agent_user.dart';
 
 enum AuthStatus { unknown, authenticated, unauthenticated }
@@ -26,6 +27,7 @@ class AuthProvider extends ChangeNotifier {
     }
     status = ok ? AuthStatus.authenticated : AuthStatus.unauthenticated;
     notifyListeners();
+    if (ok) PushService.instance.onSignedIn();
   }
 
   /// Step 1. Returns true when a code was sent and must be entered; false
@@ -63,9 +65,11 @@ class AuthProvider extends ChangeNotifier {
     final a = res['agent'];
     user = a is Map ? AgentUser.fromJson(Map<String, dynamic>.from(a)) : null;
     status = AuthStatus.authenticated;
+    PushService.instance.onSignedIn();
   }
 
   Future<void> logout() async {
+    await PushService.instance.onSigningOut();
     await ApiClient.instance.signOut();
     user = null;
     status = AuthStatus.unauthenticated;
@@ -75,6 +79,7 @@ class AuthProvider extends ChangeNotifier {
   /// Called by ApiClient when any request comes back 401.
   void forceLogout() {
     if (status != AuthStatus.authenticated) return;
+    PushService.instance.signedIn = false;
     ApiClient.instance.clearSession();
     user = null;
     status = AuthStatus.unauthenticated;

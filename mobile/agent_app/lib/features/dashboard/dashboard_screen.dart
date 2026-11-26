@@ -7,10 +7,13 @@ import '../../core/widgets/entity_tile.dart';
 import '../../core/widgets/state_views.dart';
 import '../notifications/notifications_screen.dart';
 
-/// Ringkasan agen: saldo, penjualan dan komisi (hari ini / bulan ini / total),
-/// stok voucher, dan riwayat deposit terakhir — sama dengan dashboard portal web.
+/// Ringkasan agen: saldo, penjualan dan komisi per periode, stok voucher,
+/// akses cepat, dan deposit terakhir — sama dengan dashboard portal web agen.
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  const DashboardScreen({super.key, this.onOpenTab});
+
+  /// Pindah tab di shell: 1 Voucher, 2 Sesi, 3 Tiket.
+  final void Function(int index, {bool generate})? onOpenTab;
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -20,6 +23,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Map<String, dynamic>? _data;
   bool _loading = true;
   String? _error;
+  String _period = 'today';
+  int _unread = 0;
 
   @override
   void initState() {
@@ -36,6 +41,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final res = await ApiClient.instance.get('/api/agent/dashboard', query: {'limit': 1});
       if (!mounted) return;
       setState(() => _data = res is Map ? Map<String, dynamic>.from(res) : null);
+      try {
+        final n = await ApiClient.instance.get('/api/agent/notifications');
+        if (mounted && n is Map) setState(() => _unread = numOf(Map<String, dynamic>.from(n), 'unreadCount').toInt());
+      } on ApiException catch (_) {}
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
     } finally {
@@ -43,21 +52,151 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  Widget _statCard(BuildContext context, String title, Map<String, dynamic>? m) {
+  Widget _hero(BuildContext context, Map<String, dynamic>? agent, Map<String, dynamic>? stats) {
+    final balance = numOf(agent, 'balance');
+    final minBalance = numOf(agent, 'minBalance');
+    final low = minBalance > 0 && balance < minBalance;
+    const onBrand = Colors.white;
+    Widget mini(String label, num v) => Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: Gap.md, vertical: Gap.sm + 2),
+            decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(AppTheme.radiusControl)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: onBrand.withValues(alpha: 0.85))),
+                const SizedBox(height: 2),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text('${v.toInt()}', style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: onBrand)),
+                ),
+              ],
+            ),
+          ),
+        );
+    return Container(
+      padding: const EdgeInsets.all(Gap.lg),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppTheme.radiusBrand),
+        gradient: const LinearGradient(colors: [AppTheme.brand, AppTheme.brandDeep], begin: Alignment.topLeft, end: Alignment.bottomRight),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Halo, ${str(agent, 'name') ?? 'Agen'}', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: onBrand.withValues(alpha: 0.9))),
+          const SizedBox(height: Gap.md),
+          Text('Saldo', style: TextStyle(fontSize: 12, color: onBrand.withValues(alpha: 0.8))),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(formatCurrency(balance), style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: onBrand, height: 1.15)),
+          ),
+          if (low) ...[
+            const SizedBox(height: Gap.sm),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(AppTheme.radiusPill)),
+              child: Text('Saldo di bawah minimum ${formatCurrency(minBalance)}', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700, color: Color(0xFFB91C1C))),
+            ),
+          ],
+          const SizedBox(height: Gap.lg),
+          Row(
+            children: [
+              mini('Stok voucher', numOf(stats, 'waiting')),
+              const SizedBox(width: Gap.sm),
+              mini('Dibuat', numOf(stats, 'generated')),
+              const SizedBox(width: Gap.sm),
+              mini('Terpakai', numOf(stats, 'used')),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _quick(BuildContext context, IconData icon, String label, VoidCallback onTap, {bool primary = false}) {
+    final c = context.colors;
+    return Expanded(
+      child: Material(
+        color: primary ? c.primary : c.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: Gap.md),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+              border: primary ? null : Border.all(color: c.outlineVariant),
+            ),
+            child: Column(
+              children: [
+                Icon(icon, size: 22, color: primary ? onColor(c.primary) : c.primary),
+                const SizedBox(height: 6),
+                Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: primary ? onColor(c.primary) : c.onSurface)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _periodCard(BuildContext context, Map<String, dynamic>? stats) {
+    final key = _period == 'today' ? 'today' : _period == 'month' ? 'currentMonth' : 'allTime';
+    final m = mapOf(stats, key);
     final muted = context.colors.onSurfaceVariant;
+    Widget cell(String label, String value, {Color? color}) => Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: muted)),
+              const SizedBox(height: 4),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: color, height: 1.15)),
+              ),
+            ],
+          ),
+        );
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(Gap.md),
+        padding: const EdgeInsets.all(Gap.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: muted)),
-            const SizedBox(height: Gap.sm),
+            SizedBox(
+              width: double.infinity,
+              child: SegmentedButton<String>(
+                showSelectedIcon: false,
+                style: const ButtonStyle(visualDensity: VisualDensity.compact),
+                segments: const [
+                  ButtonSegment(value: 'today', label: Text('Hari ini')),
+                  ButtonSegment(value: 'month', label: Text('Bulan ini')),
+                  ButtonSegment(value: 'all', label: Text('Semua')),
+                ],
+                selected: {_period},
+                onSelectionChanged: (v) => setState(() => _period = v.first),
+              ),
+            ),
+            const SizedBox(height: Gap.lg),
+            Text('Penjualan', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: muted)),
+            const SizedBox(height: 2),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(formatCurrency(numOf(m, 'income')), style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, height: 1.15)),
+            ),
+            const SizedBox(height: Gap.md),
+            Divider(height: 1, color: context.colors.outlineVariant),
+            const SizedBox(height: Gap.md),
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(child: LabeledFigure(label: 'Terjual', value: '${numOf(m, 'count').toInt()} voucher')),
-                Expanded(child: LabeledFigure(label: 'Penjualan', value: formatCurrency(numOf(m, 'income')))),
-                Expanded(child: LabeledFigure(label: 'Komisi', value: formatCurrency(numOf(m, 'total')), color: context.tone(Tone.success))),
+                cell('Komisi', formatCurrency(numOf(m, 'total')), color: context.tone(Tone.success)),
+                cell('Voucher terjual', '${numOf(m, 'count').toInt()}'),
               ],
             ),
           ],
@@ -71,17 +210,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final agent = mapOf(_data, 'agent');
     final stats = mapOf(_data, 'stats');
     final deposits = (_data?['deposits'] as List?)?.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList() ?? const [];
-    final balance = numOf(agent, 'balance');
-    final minBalance = numOf(agent, 'minBalance');
+    final open = widget.onOpenTab;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ringkasan Agen'),
+        title: const Text('Ringkasan'),
         actions: [
           IconButton(
             tooltip: 'Notifikasi',
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsScreen())),
+            icon: Badge(
+              isLabelVisible: _unread > 0,
+              label: Text(_unread > 99 ? '99+' : '${_unread}'),
+              child: const Icon(Icons.notifications_outlined),
+            ),
+            onPressed: () async {
+              await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+              _load();
+            },
           ),
         ],
       ),
@@ -98,47 +243,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
             physics: const AlwaysScrollableScrollPhysics(),
             padding: EdgeInsets.fromLTRB(Gap.page, Gap.sm, Gap.page, listBottomPadding(context)),
             children: [
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(Gap.lg),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Halo, ${str(agent, 'name') ?? 'Agen'}', style: TextStyle(fontSize: 13, color: context.colors.onSurfaceVariant)),
-                      const SizedBox(height: Gap.xs),
-                      Text('Saldo', style: TextStyle(fontSize: 12.5, color: context.colors.onSurfaceVariant)),
-                      Text(formatCurrency(balance), style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
-                      if (minBalance > 0) ...[
-                        const SizedBox(height: Gap.xs),
-                        Text(
-                          'Saldo minimum ${formatCurrency(minBalance)}',
-                          style: TextStyle(fontSize: 12, color: balance < minBalance ? context.tone(Tone.danger) : context.colors.onSurfaceVariant),
-                        ),
-                      ],
-                      const SizedBox(height: Gap.md),
-                      Row(
-                        children: [
-                          Expanded(child: LabeledFigure(label: 'Stok voucher', value: '${numOf(stats, 'waiting').toInt()}')),
-                          Expanded(child: LabeledFigure(label: 'Dibuat', value: '${numOf(stats, 'generated').toInt()}')),
-                          Expanded(child: LabeledFigure(label: 'Terpakai', value: '${numOf(stats, 'used').toInt()}')),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
+              _hero(context, agent, stats),
+              const SizedBox(height: Gap.md),
+              Row(
+                children: [
+                  _quick(context, Icons.add_rounded, 'Buat Voucher', () => open?.call(1, generate: true), primary: true),
+                  const SizedBox(width: Gap.sm),
+                  _quick(context, Icons.confirmation_number_outlined, 'Voucher', () => open?.call(1)),
+                  const SizedBox(width: Gap.sm),
+                  _quick(context, Icons.wifi_rounded, 'Sesi', () => open?.call(2)),
+                  const SizedBox(width: Gap.sm),
+                  _quick(context, Icons.support_agent_outlined, 'Tiket', () => open?.call(3)),
+                ],
               ),
-              const SizedBox(height: Gap.sm),
-              _statCard(context, 'Hari ini', mapOf(stats, 'today')),
-              const SizedBox(height: Gap.sm),
-              _statCard(context, 'Bulan ini', mapOf(stats, 'currentMonth')),
-              const SizedBox(height: Gap.sm),
-              _statCard(context, 'Sepanjang waktu', mapOf(stats, 'allTime')),
+              const SizedBox(height: Gap.md),
+              _periodCard(context, stats),
               const SizedBox(height: Gap.lg),
               const SectionHeader('Deposit terakhir'),
               if (deposits.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: Gap.lg),
-                  child: Center(child: Text('Belum ada deposit.', style: TextStyle(color: context.colors.onSurfaceVariant))),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(Gap.lg),
+                    child: Center(child: Text('Belum ada deposit.', style: TextStyle(color: context.colors.onSurfaceVariant))),
+                  ),
                 )
               else
                 for (final d in deposits) ...[

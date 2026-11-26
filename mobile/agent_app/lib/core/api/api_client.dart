@@ -106,6 +106,8 @@ class ApiClient {
 
   Future<dynamic> post(String path, {Object? data}) => _run(() => _dio.post(path, data: data));
 
+  Future<dynamic> postForm(String path, FormData data) => _run(() => _dio.post(path, data: data, options: Options(contentType: 'multipart/form-data')));
+
   Future<dynamic> put(String path, {Object? data}) => _run(() => _dio.put(path, data: data));
 
   Future<dynamic> delete(String path, {Map<String, dynamic>? query}) => _run(() => _dio.delete(path, queryParameters: query));
