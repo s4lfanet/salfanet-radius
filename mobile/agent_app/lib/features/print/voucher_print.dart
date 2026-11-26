@@ -4,6 +4,7 @@ import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
+import 'package:pdf/pdf.dart' show PdfPageFormat;
 import 'package:printing/printing.dart';
 
 import '../../core/api/api_client.dart';

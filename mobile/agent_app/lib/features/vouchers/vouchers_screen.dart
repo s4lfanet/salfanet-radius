@@ -523,7 +523,7 @@ class _GenerateSheetState extends State<_GenerateSheet> {
         builder: (_) => GeneratedVouchersScreen(
           vouchers: vouchers,
           profileName: str(profile, 'name') ?? '',
-          profileInfo: res is Map ? mapOf(Map<String, dynamic>.from(res), 'profile') : const {},
+          profileInfo: res is Map ? (mapOf(Map<String, dynamic>.from(res), 'profile') ?? const <String, dynamic>{}) : const {},
           batchCode: res is Map ? str(Map<String, dynamic>.from(res), 'batchCode') : null,
           cost: res is Map ? numOf(Map<String, dynamic>.from(res), 'cost') : 0,
           newBalance: res is Map ? numOf(Map<String, dynamic>.from(res), 'newBalance') : 0,
