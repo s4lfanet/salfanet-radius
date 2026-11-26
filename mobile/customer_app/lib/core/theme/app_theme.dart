@@ -57,17 +57,17 @@ class AppTheme {
     );
     return light
         ? scheme.copyWith(
-            surface: const Color(0xFFF4F5F7),
-            onSurface: const Color(0xFF111827),
-            onSurfaceVariant: const Color(0xFF4B5563),
+            surface: const Color(0xFFF5F7FA),
+            onSurface: const Color(0xFF1F2937),
+            onSurfaceVariant: const Color(0xFF5B6472),
             surfaceContainerLowest: const Color(0xFFFFFFFF),
             surfaceContainerLow: const Color(0xFFFFFFFF),
-            surfaceContainer: const Color(0xFFF0F2F5),
-            surfaceContainerHigh: const Color(0xFFE9ECF0),
-            surfaceContainerHighest: const Color(0xFFE2E6EB),
+            surfaceContainer: const Color(0xFFF1F4F8),
+            surfaceContainerHigh: const Color(0xFFEAEEF3),
+            surfaceContainerHighest: const Color(0xFFE4E9EF),
             surfaceTint: Colors.transparent,
             outline: const Color(0xFF8A93A3),
-            outlineVariant: const Color(0xFFDDE1E7),
+            outlineVariant: const Color(0xFFE3E7ED),
           )
         : scheme.copyWith(
             surface: const Color(0xFF0F1115),

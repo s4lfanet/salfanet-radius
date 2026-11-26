@@ -281,12 +281,12 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-dvh bg-background relative overflow-x-hidden">
+    <div className="customer-soft min-h-dvh bg-background relative overflow-x-hidden">
       {/* Background Effects */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0" style={{ willChange: 'transform' }}>
-        <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-primary/10 rounded-full blur-[80px]" style={{ transform: 'translateZ(0)' }} />
-        <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] bg-blue-500/10 rounded-full blur-[80px]" style={{ transform: 'translateZ(0)' }} />
-        <div className="absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] w-[50%] h-[50%] bg-sky-400/10 rounded-full blur-[100px]" />
+        <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-primary/[0.05] dark:bg-primary/10 rounded-full blur-[80px]" style={{ transform: 'translateZ(0)' }} />
+        <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] bg-blue-500/[0.04] dark:bg-blue-500/10 rounded-full blur-[80px]" style={{ transform: 'translateZ(0)' }} />
+        <div className="absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] w-[50%] h-[50%] bg-sky-400/[0.04] dark:bg-sky-400/10 rounded-full blur-[100px]" />
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(70,95,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(70,95,255,0.03)_1px,transparent_1px)] bg-[size:50px_50px]" />
       </div>
 

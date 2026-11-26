@@ -2535,3 +2535,37 @@ div[style*="z-index: 9999"].fixed.inset-0 {
 .dark .modal-title-override {
  color: #ffffff !important;
 }
+
+/* =====================================================
+  CUSTOMER PORTAL - SOFT LIGHT MODE
+  The shared light palette (near-black text on pure white, vivid
+  borders) suits the admin. For customers it is softened: a cool
+  off-white page, slate-800 text instead of slate-900, quieter
+  borders and shadows. Text contrast stays above WCAG AA.
+  Scoped to .customer-soft so admin/agent/technician are untouched.
+  ===================================================== */
+:root:not(.dark) .customer-soft {
+ --background: #f4f6fa;
+ --foreground: #1f2937;
+ --card-foreground: #1f2937;
+ --muted: #eef1f6;
+ --muted-foreground: #5b6472;   /* 5.8:1 on white */
+ --secondary: #eef2ff;
+ --border: #e3e8f0;
+}
+
+/* Thick, saturated outlines become hairlines in the page's own tone. */
+:root:not(.dark) .customer-soft .border-2 {
+ border-width: 1px;
+}
+:root:not(.dark) .customer-soft [class*="border-cyan-500"],
+:root:not(.dark) .customer-soft [class*="border-brand-400"],
+:root:not(.dark) .customer-soft [class*="border-success/"] {
+ border-color: #dbe4f0;
+}
+
+/* Depth from a faint shadow rather than a dark blur. */
+:root:not(.dark) .customer-soft .shadow-md,
+:root:not(.dark) .customer-soft .shadow-lg {
+ box-shadow: 0 2px 10px rgb(15 23 42 / 0.05);
+}
