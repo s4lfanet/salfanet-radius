@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { verifyCollector } from '@/server/auth/collector-auth';
 import { getCollectorScope, scopeWhere } from '@/server/auth/collector-scope';
+import { loadInvoiceReminderContext, renderInvoiceReminderMessage } from '@/server/services/notifications/whatsapp-templates.service';
 
 export async function GET(req: NextRequest) {
   const collector = await verifyCollector(req);
@@ -61,6 +62,7 @@ export async function GET(req: NextRequest) {
         paidAt: true,
         paidById: true,
         paymentMethod: true,
+        paymentToken: true,
       },
       orderBy: { dueDate: 'desc' },
     });
@@ -91,13 +93,45 @@ export async function GET(req: NextRequest) {
       allInvoiceMap.set(inv.userId, arr);
     }
 
+    // Same wording the admin sends for a bill (invoice-reminder / invoice-overdue template),
+    // so the collector's WhatsApp opens with the invoice already written.
+    const [reminderCtx, company] = await Promise.all([
+      loadInvoiceReminderContext().catch(() => null),
+      prisma.company.findFirst({ select: { name: true, phone: true, baseUrl: true } }),
+    ]);
+
     let enriched = users.map(u => {
       const userAllInvoices = allInvoiceMap.get(u.id) || [];
       const userDisplayInvoices = invoiceMap.get(u.id) || [];
       const unpaid = userAllInvoices.filter(i => i.status === 'PENDING' || i.status === 'OVERDUE');
       const paid = userAllInvoices.filter(i => i.status === 'PAID');
+      // Oldest open invoice first — that's the one the customer owes soonest.
+      const oldest = [...unpaid].sort((a, b) => +new Date(a.dueDate) - +new Date(b.dueDate))[0];
+      let waMessage: string | null = null;
+      if (oldest && reminderCtx) {
+        try {
+          waMessage = renderInvoiceReminderMessage(reminderCtx, {
+            customerName: u.name || u.username,
+            customerId: u.customerId || undefined,
+            customerUsername: u.username,
+            profileName: u.profile?.name,
+            area: u.area?.name,
+            address: u.address || undefined,
+            invoiceNumber: oldest.invoiceNumber,
+            amount: oldest.amount,
+            dueDate: oldest.dueDate,
+            paymentLink: company?.baseUrl && oldest.paymentToken ? `${company.baseUrl}/pay/${oldest.paymentToken}` : '-',
+            companyName: company?.name || '',
+            companyPhone: company?.phone || '',
+            isOverdue: oldest.status === 'OVERDUE' || new Date(oldest.dueDate).getTime() < Date.now(),
+          });
+        } catch {
+          waMessage = null;
+        }
+      }
       return {
         ...u,
+        wa_message: waMessage,
         invoices: userDisplayInvoices,
         unpaid_count: unpaid.length,
         unpaid_amount: unpaid.reduce((s, i) => s + i.amount, 0),

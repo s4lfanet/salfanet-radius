@@ -251,6 +251,9 @@ String collectorWaText(Map<String, dynamic> c, String company) {
   final hello = 'Halo, selamat $salam Bapak/Ibu $who,';
   final sign = company.isEmpty ? 'Terima kasih.' : 'Terima kasih.\n$company';
   final count = num.tryParse('${c['unpaid_count']}') ?? 0;
+  // Unpaid customers get the admin's invoice template, rendered by the server.
+  final tpl = '${c['wa_message'] ?? ''}'.trim();
+  if (count > 0 && tpl.isNotEmpty) return tpl;
   if (count > 0) {
     final id = '${c['customerId'] ?? c['username']}';
     final profile = c['profile'] is Map ? (c['profile'] as Map)['name'] : null;

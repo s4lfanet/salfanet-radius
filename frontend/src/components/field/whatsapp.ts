@@ -21,12 +21,16 @@ export function collectorWaText(c: {
   unpaid_count: number;
   unpaid_amount: number;
   profile?: { name: string } | null;
+  /** Server-rendered bill text (the admin's invoice template); preferred when present. */
+  wa_message?: string | null;
 }, company?: string) {
   // Customer name only — never the company. A blank name falls back to the username.
   const who = (c.name || '').trim() || c.username;
   const h = new Date().getHours();
   const salam = h < 11 ? 'pagi' : h < 15 ? 'siang' : h < 18 ? 'sore' : 'malam';
   const hello = `Halo, selamat ${salam} Bapak/Ibu ${who},`;
+  // Unpaid customers get the admin's invoice template, rendered by the server.
+  if (c.unpaid_count > 0 && c.wa_message) return c.wa_message;
   if (c.unpaid_count > 0) {
     const id = c.customerId || c.username;
     const pkg = c.profile?.name ? `, paket ${c.profile.name}` : '';
