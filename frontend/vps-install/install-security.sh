@@ -250,17 +250,10 @@ find /tmp -maxdepth 1 -name "salfanet-apk-*" -type d -mtime +1 -exec rm -rf {} +
 # 9. FreeRADIUS old logs
 find /var/log/freeradius -name "*.log.*" -mtime +30 -delete 2>/dev/null
 
-# 10. Prune old update backups — keep only 2 most recent
-BACKUP_BASE=/root/salfanet-backups
-if [ -d "$BACKUP_BASE" ]; then
-    BACKUP_COUNT=$(ls -1t "$BACKUP_BASE" 2>/dev/null | wc -l)
-    if [ "$BACKUP_COUNT" -gt 2 ]; then
-        ls -1t "$BACKUP_BASE" | tail -n +3 | while read -r OLD; do
-            rm -rf "${BACKUP_BASE:?}/$OLD"
-            echo "[$TIMESTAMP] Removed old backup: $OLD" >> $LOG
-        done
-    fi
-fi
+# 10. Backup source hasil update lama — tidak dipakai (kode ada di git, DB punya backup sendiri)
+rm -rf /root/salfanet-backups 2>/dev/null
+# Cache build Next.js — dibuat ulang otomatis saat build
+rm -rf /var/www/salfanet-radius/backend/.next/cache /var/www/salfanet-radius/frontend/.next/cache 2>/dev/null
 
 # 11. NPM cache — hapus jika > 1GB
 NPM_CACHE_SIZE=$(du -sb /root/.npm 2>/dev/null | cut -f1 || echo 0)

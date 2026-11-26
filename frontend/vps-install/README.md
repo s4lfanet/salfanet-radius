@@ -210,7 +210,7 @@ http://IP_LXC_CONTAINER
 | `/var/data/salfanet/baileys_auth/` | Sesi WhatsApp Baileys (tanpa ini harus scan QR ulang) |
 | `/var/data/salfanet/backups/freeradius/` | Arsip backup konfigurasi FreeRADIUS |
 | `/var/www/salfanet-radius/INSTALLATION_INFO.txt` | Ringkasan hasil instalasi |
-| `/root/salfanet-backups/` | Backup otomatis sebelum update |
+| `/root/salfanet-backups/` | Tidak lagi dibuat (opsional: `updater.sh --with-backup`) |
 | `/var/log/salfanet-vps-install.log` | Log proses instalasi |
 
 ---

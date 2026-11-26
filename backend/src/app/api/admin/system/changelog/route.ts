@@ -360,6 +360,16 @@ if [ -f "${appDir}/deploy/freeradius/fix-runtime-config.sh" ]; then
   bash "${appDir}/deploy/freeradius/fix-runtime-config.sh" >> "$LOG_FILE" 2>&1 || true
 fi
 
+# Free the disk the update itself used. Source is in git, so no copy of the
+# old version is kept (database backups live elsewhere and are not touched).
+log "Cleanup: build cache, old source backups, package store"
+rm -rf "${appDir}/backend/.next/cache" "${appDir}/frontend/.next/cache" 2>/dev/null || true
+rm -rf /root/salfanet-backups 2>/dev/null || true
+pnpm store prune >> "$LOG_FILE" 2>&1 || true
+npm cache clean --force >> "$LOG_FILE" 2>&1 || true
+journalctl --vacuum-size=100M >> "$LOG_FILE" 2>&1 || true
+log "Disk free after cleanup: $(df -h "${appDir}" | awk 'NR==2 {print $4}')"
+
 # Done
 NEW_COMMIT=$(git rev-parse --short HEAD)
 write_status '{"phase":"done","step":"Complete","newCommit":"'"$NEW_COMMIT"'","finishedAt":'$(date +%s)'}'
