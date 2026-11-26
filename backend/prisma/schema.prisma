@@ -96,6 +96,7 @@ model company {
   bankAccounts     Json? // Array of bank account objects: [{bankName, accountNumber, accountName}]
   poweredBy        String?  @default("SALFANET RADIUS")
   customerIdPrefix String?  @db.VarChar(10) // Prefix for generated customer IDs e.g. "SF-"
+  speedtestUrl     String?  @db.VarChar(255) // URL speedtest server terdekat (mis. OpenSpeedTest di server ISP); kosong = openspeedtest.com
 
   // Footer settings for different portals
   footerAdmin      String? @db.Text // Footer for admin login page
