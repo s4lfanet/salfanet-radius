@@ -56,6 +56,11 @@ export async function GET(request: NextRequest) {
           downloadSpeed: user.profile.downloadSpeed,
           uploadSpeed: user.profile.uploadSpeed,
           price: user.profile.price,
+          displayPrice:
+            user.profile.ppnActive && user.profile.ppnRate > 0
+              ? Math.round(user.profile.price + (user.profile.price * user.profile.ppnRate) / 100)
+              : user.profile.price,
+          ppnRate: user.profile.ppnActive ? user.profile.ppnRate : 0,
           description: user.profile.description,
         }]
       : [];

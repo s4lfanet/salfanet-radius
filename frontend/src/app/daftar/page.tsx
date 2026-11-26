@@ -12,6 +12,8 @@ interface Profile {
   id: string;
   name: string;
   price: number;
+  displayPrice?: number; // harga yang dibayar pelanggan (sudah termasuk PPN bila ada)
+  ppnRate?: number;
   downloadSpeed: number;
   uploadSpeed: number;
   description: string | null;
@@ -414,7 +416,7 @@ function DaftarPageInner() {
                   <option value="" className="bg-card">Pilih paket internet</option>
                   {profiles.map((profile) => (
                     <option key={profile.id} value={profile.id} className="bg-card">
-                      {profile.name} - {formatCurrency(profile.price)}/bln
+                      {profile.name} - {formatCurrency(profile.displayPrice ?? profile.price)}/bln
                     </option>
                   ))}
                 </select>
@@ -430,7 +432,7 @@ function DaftarPageInner() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground/70">Harga:</span>
-                      <span className="font-bold text-green-500 text-base">{formatCurrency(selectedProfile.price)}/bln</span>
+                      <span className="font-bold text-green-500 text-base">{formatCurrency(selectedProfile.displayPrice ?? selectedProfile.price)}/bln{selectedProfile.ppnRate ? <span className="ml-1 text-[10px] font-normal text-muted-foreground">(termasuk PPN {selectedProfile.ppnRate}%)</span> : null}</span>
                     </div>
                     {selectedProfile.description && (
                       <p className="pt-2 border-t border-border text-muted-foreground/80 text-xs">{selectedProfile.description}</p>

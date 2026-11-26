@@ -530,6 +530,7 @@ model pppoeProfile {
   ppnActive           Boolean                     @default(false) // PPN aktif
   ppnRate             Int                         @default(11) // Tarif PPN (%)
   isActive            Boolean                     @default(true)
+  hiddenFromPublic    Boolean                     @default(false) // Sembunyikan dari pendaftaran/pilihan paket pelanggan (admin & teknisi tetap melihatnya)
   lastSyncAt          DateTime?
   syncedToRadius      Boolean                     @default(false)
   validityUnit        pppoe_profiles_validityUnit @default(MONTHS)

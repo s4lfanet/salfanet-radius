@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
       where: { id: packageId }
     });
 
-    if (!package_data) {
+    if (!package_data || package_data.hiddenFromPublic || !package_data.isActive) {
       return NextResponse.json(
         { success: false, error: 'Package not found' },
         { status: 404 }

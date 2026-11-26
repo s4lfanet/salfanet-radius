@@ -27,7 +27,7 @@ interface PPPoEProfile {
   radiusPoolName?: string | null;
   rateLimit?: string | null;
   validityValue: number; validityUnit: 'DAYS' | 'MONTHS' | 'HOURS';
-  sharedUser: boolean; isActive: boolean; syncedToRadius: boolean; createdAt: string;
+  sharedUser: boolean; isActive: boolean; hiddenFromPublic?: boolean; syncedToRadius: boolean; createdAt: string;
   userCount?: number;
 }
 
@@ -92,7 +92,7 @@ const defaultForm = {
   burstThresholdDownload: '', burstThresholdUpload: '', burstTime: '8',
   priority: '8', limitAtDownload: '', limitAtUpload: '',
   groupName: '', validityValue: '1', validityUnit: 'MONTHS' as 'DAYS' | 'MONTHS' | 'HOURS',
-  sharedUser: true, isActive: true,
+  sharedUser: true, isActive: true, hiddenFromPublic: false,
   radiusPoolName: '',  // RADIUS IP Pool (empty = auto from speed-tier)
 };
 
@@ -217,6 +217,7 @@ export default function PPPoEProfilesPage() {
         validityUnit: formData.validityUnit,
         sharedUser: formData.sharedUser,
         isActive: formData.isActive,
+        hiddenFromPublic: formData.hiddenFromPublic,
         ppnRate: formData.ppnActive ? (parseInt(formData.ppnRate) || 11) : null,
         radiusPoolName: formData.radiusPoolName || null,
       };
@@ -268,7 +269,7 @@ export default function PPPoEProfilesPage() {
       burstThresholdDownload: thDl, burstThresholdUpload: thUl, burstTime: burstT,
       priority: prio, limitAtDownload: laDl, limitAtUpload: laUl,
       groupName: profile.groupName, validityValue: profile.validityValue.toString(), validityUnit: profile.validityUnit,
-      sharedUser: profile.sharedUser, isActive: profile.isActive,
+      sharedUser: profile.sharedUser, isActive: profile.isActive, hiddenFromPublic: profile.hiddenFromPublic ?? false,
       ppnRate: profile.ppnRate?.toString() || '11',
       radiusPoolName: profile.radiusPoolName || '',
     });
@@ -640,6 +641,9 @@ export default function PPPoEProfilesPage() {
                         ) : (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium bg-muted text-muted-foreground border border-border"><XCircle className="h-2.5 w-2.5 mr-1" />Nonaktif</span>
                         )}
+                        {profile.hiddenFromPublic && (
+                          <span className="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">Tersembunyi</span>
+                        )}
                       </td>
                       <td className="px-3 py-2.5 text-center">
                         {profile.syncedToRadius ? (
@@ -934,6 +938,10 @@ export default function PPPoEProfilesPage() {
                 <label className="flex items-center gap-2 text-xs text-foreground cursor-pointer">
                   <input type="checkbox" checked={formData.isActive} onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })} className="rounded border-border bg-muted text-primary focus:ring-primary" />
                   <span>Aktif</span>
+                </label>
+                <label className="flex items-center gap-2 text-xs text-foreground cursor-pointer">
+                  <input type="checkbox" checked={formData.hiddenFromPublic} onChange={(e) => setFormData({ ...formData, hiddenFromPublic: e.target.checked })} className="rounded border-border bg-muted text-primary focus:ring-primary" />
+                  <span>Sembunyikan dari pelanggan <span className="text-muted-foreground">(tidak muncul di pendaftaran &amp; pilihan paket; admin tetap bisa memakainya)</span></span>
                 </label>
                 <label className="flex items-center gap-2 text-xs text-foreground cursor-pointer">
                   <input type="checkbox" checked={formData.sharedUser} onChange={(e) => setFormData({ ...formData, sharedUser: e.target.checked })} className="rounded border-border bg-muted text-primary focus:ring-primary" />

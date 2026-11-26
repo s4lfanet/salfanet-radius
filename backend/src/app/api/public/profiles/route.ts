@@ -5,7 +5,8 @@ export async function GET() {
   try {
     const profiles = await prisma.pppoeProfile.findMany({
       where: {
-        isActive: true
+        isActive: true,
+        hiddenFromPublic: false,
       },
       select: {
         id: true,
@@ -13,7 +14,9 @@ export async function GET() {
         downloadSpeed: true,
         uploadSpeed: true,
         price: true,
-        description: true
+        description: true,
+        ppnActive: true,
+        ppnRate: true,
       },
       orderBy: {
         price: 'asc'
@@ -22,7 +25,13 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      profiles: profiles
+      // displayPrice = what the customer actually pays (price + PPN when the
+      // profile has PPN). The pre-tax price is not shown to customers.
+      profiles: profiles.map(({ ppnActive, ppnRate, ...p }) => ({
+        ...p,
+        ppnRate: ppnActive ? ppnRate : 0,
+        displayPrice: ppnActive && ppnRate > 0 ? Math.round(p.price + (p.price * ppnRate) / 100) : p.price,
+      })),
     });
   } catch (error) {
     console.error('Get profiles error:', error);

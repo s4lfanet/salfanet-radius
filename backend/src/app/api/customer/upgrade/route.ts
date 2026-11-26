@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       where: { id: newProfileId }
     });
 
-    if (!newProfile) {
+    if (!newProfile || newProfile.hiddenFromPublic || !newProfile.isActive) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 

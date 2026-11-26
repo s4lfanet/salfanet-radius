@@ -15,6 +15,7 @@ interface InternetPackage {
   downloadSpeed: number;
   uploadSpeed: number;
   price: number;
+  displayPrice?: number; // sudah termasuk PPN bila ada
   description: string | null;
 }
 
@@ -322,7 +323,7 @@ export default function UpgradePackagePage() {
                       {pkg.description || pkg.name}
                     </p>
                     <p className="text-lg font-bold text-brand-500 drop-">
-                      {formatCurrency(pkg.price)}<span className="text-[10px] font-normal text-muted-foreground dark:text-muted-foreground/40">/{t('common.month')}</span>
+                      {formatCurrency(pkg.displayPrice ?? pkg.price)}<span className="text-[10px] font-normal text-muted-foreground dark:text-muted-foreground/40">/{t('common.month')}</span>
                     </p>
                     {pkg.description && (
                       <p className="text-[10px] text-muted-foreground dark:text-muted-foreground/40 mt-1.5 leading-tight">{pkg.description}</p>
@@ -345,7 +346,7 @@ export default function UpgradePackagePage() {
                   <span className="text-[10px] text-muted-foreground dark:text-muted-foreground/50 hidden sm:inline">({formatSpeed(pkg.downloadSpeed)}/{formatSpeed(pkg.uploadSpeed)})</span>
                 </div>
                 <ArrowRight className="w-4 h-4 text-brand-500 flex-shrink-0" />
-                <span className="text-sm font-bold text-brand-500 flex-shrink-0">{formatCurrency(pkg.price)}</span>
+                <span className="text-sm font-bold text-brand-500 flex-shrink-0">{formatCurrency(pkg.displayPrice ?? pkg.price)}</span>
               </div>
             );
           })()}
