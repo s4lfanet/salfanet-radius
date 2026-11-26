@@ -40,6 +40,7 @@ export const generateVoucherSchema = z.object({
   codeLength: z.number().int().min(4).max(32).default(6),
   codeType: z.enum(['alpha-upper', 'alpha-lower', 'alpha-mixed', 'numeric', 'alphanumeric-upper', 'alphanumeric-lower', 'alphanumeric-mixed']).default('alpha-upper'),
   prefix: z.string().max(10).regex(/^[A-Za-z0-9_-]*$/, 'Karakter tidak valid').default(''),
+  voucherType: z.enum(['same', 'different']).default('same'),
 })
 
 export const agentListQuerySchema = z.object({

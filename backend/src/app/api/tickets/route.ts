@@ -1,8 +1,9 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { createAdminNotification } from '@/server/services/notifications/admin-notification.service';
 import { notifyCollector } from '@/server/services/collector-notification.service';
+import { createAgentNotificationAndPush } from '@/server/services/agent-notification.service';
 
 // Generate unique ticket number
 function generateTicketNumber(): string {
@@ -414,6 +415,16 @@ export async function PUT(req: NextRequest) {
           tag: 'ticket-resolved',
         });
       } catch { /* ignore */ }
+    }
+
+    // Agent-owned tickets (customerEmail = `agent:<id>`): tell the agent on resolve/close.
+    if ((resolvedNow || closedNow) && ticket.customerEmail?.startsWith('agent:')) {
+      await createAgentNotificationAndPush(ticket.customerEmail.slice('agent:'.length), {
+        type: 'ticket_status',
+        title: resolvedNow ? 'Tiket Diselesaikan' : 'Tiket Ditutup',
+        message: `Tiket #${ticket.ticketNumber} "${ticket.subject}" telah ${resolvedNow ? 'diselesaikan' : 'ditutup'}.`,
+        link: '/agent/tickets',
+      });
     }
 
     // A ticket handed to a collector shows up in their bell.

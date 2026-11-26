@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { syncVoucherToRadius } from '@/server/services/radius/hotspot-sync.service';
 import { syncVoucherToAssignedRouter } from '@/server/services/mikrotik/hotspot-voucher.service';
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     if (parsed.error) return parsed.error;
     // Use agentId from JWT — ignore any agentId from request body
     const agentId = auth.agentId;
-    const { profileId, quantity, codeLength, codeType, prefix } = parsed.data;
+    const { profileId, quantity, codeLength, codeType, prefix, voucherType } = parsed.data;
 
     // Verify agent and get router info
     const agent = await prisma.agent.findUnique({
@@ -146,6 +146,9 @@ export async function POST(request: NextRequest) {
             agentId: agentId,
             batchCode: batchCode,
             status: 'WAITING',
+            voucherType,
+            codeType,
+            password: voucherType === 'different' ? generateVoucherCode(codeLength, '', codeType) : null,
           },
         });
         vouchers.push(voucher);
@@ -195,7 +198,7 @@ export async function POST(request: NextRequest) {
     let syncFailCount = 0;
     for (const voucher of vouchers) {
       try {
-        const password = voucher.code; // hotspot: username = password = code
+        const password = voucher.password || voucher.code; // 'same' type: username = password = code
         const groupProfile = profile.groupProfile || profile.name;
         await syncVoucherToRadius(voucher.code, password, groupProfile);
         syncSuccessCount++;
@@ -284,10 +287,25 @@ export async function POST(request: NextRequest) {
       console.error('Activity log error:', logError);
     }
 
+    const validity = `${profile.validityValue} ${profile.validityUnit}`;
     return NextResponse.json({
       success: true,
-      vouchers,
+      vouchers: vouchers.map((v) => ({
+        ...v,
+        password: v.password || v.code,
+        profileName: profile.name,
+        sellingPrice: profile.sellingPrice,
+        resellerFee: profile.resellerFee,
+        validityValue: profile.validityValue,
+        validityUnit: profile.validityUnit,
+        validity,
+        speed: profile.speed,
+        usageQuota: profile.usageQuota != null ? Number(profile.usageQuota) : null,
+        usageDuration: profile.usageDuration,
+        routerName: agent.router?.name ?? null,
+      })),
       batchCode,
+      profile: { name: profile.name, sellingPrice: profile.sellingPrice, costPrice: profile.costPrice, resellerFee: profile.resellerFee },
       cost: totalCost,
       newBalance: updatedAgent?.balance || 0,
       message: `${vouchers.length} vouchers generated. Balance deducted: ${totalCost}`,
