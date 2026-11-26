@@ -112,6 +112,11 @@ const templateConfig = {
     description: 'Dikirim saat invoice baru dibuat oleh sistem',
     variables: ['{{customerId}}', '{{customerName}}', '{{username}}', '{{phone}}', '{{email}}', '{{address}}', '{{invoiceNumber}}', '{{amount}}', '{{dueDate}}', '{{paymentLink}}', '{{paymentToken}}', '{{baseUrl}}', '{{bankAccounts}}', '{{companyName}}', '{{companyPhone}}', '{{companyEmail}}', '{{companyAddress}}'],
   },
+  'otp-login': {
+    title: 'Kode OTP Login',
+    description: 'Dikirim saat pelanggan atau agen login dengan OTP. Nama perusahaan diambil dari Pengaturan Perusahaan',
+    variables: ['{{otpCode}}', '{{expiryMinutes}}', '{{companyName}}'],
+  },
   'invoice-overdue': {
     title: 'Invoice Overdue Reminder',
     description: 'Dikirim saat invoice sudah melewati tanggal jatuh tempo',

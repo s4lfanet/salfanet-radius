@@ -353,12 +353,7 @@ export async function sendAdminCreateUser(data: {
   }
 }
 
-/**
- * Send invoice reminder notification
- * For monthly recurring invoices - supports both pending (upcoming) and overdue invoices
- */
-export async function sendInvoiceReminder(data: {
-  phone: string;
+export type InvoiceReminderData = {
   customerName: string;
   customerId?: string;
   customerUsername?: string;
@@ -373,82 +368,106 @@ export async function sendInvoiceReminder(data: {
   companyPhone: string;
   isOverdue?: boolean; // Optional flag to use overdue template
   daysOverdue?: number; // Optional override for days overdue
-}) {
+};
+
+export type InvoiceReminderContext = {
+  reminder: string | null;
+  overdue: string | null;
+  bankAccountsText: string;
+};
+
+/** Templates + bank accounts, loaded once so many messages can be rendered cheaply. */
+export async function loadInvoiceReminderContext(): Promise<InvoiceReminderContext> {
+  const [reminder, overdue, company] = await Promise.all([
+    getTemplate('invoice-reminder'),
+    getTemplate('invoice-overdue'),
+    prisma.company.findFirst({ select: { bankAccounts: true } }),
+  ]);
+  return { reminder, overdue: overdue || reminder, bankAccountsText: formatBankAccountsForWA(company?.bankAccounts) };
+}
+
+/** Render the admin's invoice-reminder / invoice-overdue template. Null when no template is active. */
+export function renderInvoiceReminderMessage(ctx: InvoiceReminderContext, data: InvoiceReminderData): string | null {
+  const dueDateObj = data.dueDate instanceof Date ? data.dueDate : new Date(data.dueDate);
+  const dueDateStr = dueDateObj.toLocaleDateString('id-ID', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: getCurrentTimezone(),
+  });
+
+  const daysDiff = Math.ceil((dueDateObj.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  const isOverdue = data.isOverdue !== undefined ? data.isOverdue : daysDiff < 0;
+  const daysOverdue = data.daysOverdue !== undefined ? data.daysOverdue : Math.abs(daysDiff);
+  const daysRemaining = daysDiff > 0 ? daysDiff : 0;
+
+  const templateContent = isOverdue ? ctx.overdue : ctx.reminder;
+  if (!templateContent) return null;
+
+  return renderTemplate(templateContent, {
+    customerName: data.customerName,
+    customerId: data.customerId || '-',
+    username: data.customerUsername || '-',
+    profileName: data.profileName || '-',
+    area: data.area || '-',
+    address: data.address || '-',
+    invoiceNumber: data.invoiceNumber,
+    amount: `Rp ${data.amount.toLocaleString('id-ID')}`,
+    dueDate: dueDateStr,
+    daysRemaining: daysRemaining.toString(),
+    daysOverdue: daysOverdue.toString(),
+    paymentLink: data.paymentLink,
+    bankAccounts: ctx.bankAccountsText,
+    companyName: data.companyName,
+    companyPhone: data.companyPhone,
+  });
+}
+
+/**
+ * Send invoice reminder notification
+ * For monthly recurring invoices - supports both pending (upcoming) and overdue invoices
+ */
+export async function sendInvoiceReminder(data: InvoiceReminderData & { phone: string }) {
   try {
-    // Ensure dueDate is a Date object
-    const dueDateObj = data.dueDate instanceof Date ? data.dueDate : new Date(data.dueDate);
-
-    const dueDateStr = dueDateObj.toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      timeZone: getCurrentTimezone(),
-    });
-
-    // Calculate days remaining or overdue
-    const now = new Date();
-    const diffTime = dueDateObj.getTime() - now.getTime();
-    const daysDiff = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    // Determine if overdue (either by flag or by calculation)
-    const isOverdue = data.isOverdue !== undefined ? data.isOverdue : daysDiff < 0;
-    // Use provided daysOverdue or calculate from date difference
-    const daysOverdue = data.daysOverdue !== undefined ? data.daysOverdue : Math.abs(daysDiff);
-    const daysRemaining = daysDiff > 0 ? daysDiff : 0;
-
-    // Get appropriate template from database
-    const templateType = isOverdue ? 'invoice-overdue' : 'invoice-reminder';
-    let templateContent = await getTemplate(templateType);
-
-    // Fallback to invoice-reminder if overdue template not found
-    if (!templateContent && isOverdue) {
-      console.warn('[WA] No template found for invoice-overdue, using invoice-reminder');
-      templateContent = await getTemplate('invoice-reminder');
-    }
-
-    if (!templateContent) {
-      console.warn(`[WA] No template found for ${templateType}`);
+    const ctx = await loadInvoiceReminderContext();
+    const message = renderInvoiceReminderMessage(ctx, data);
+    if (!message) {
+      console.warn('[WA] No template found for invoice-reminder');
       return false;
     }
-
-    // Fetch bank accounts for payment templates
-    const company = await prisma.company.findFirst({ select: { bankAccounts: true } });
-    const bankAccountsText = formatBankAccountsForWA(company?.bankAccounts);
-
-    // Prepare variables (supports both templates)
-    const variables = {
-      customerName: data.customerName,
-      customerId: data.customerId || '-',
-      username: data.customerUsername || '-',
-      profileName: data.profileName || '-',
-      area: data.area || '-',
-      address: data.address || '-',
-      invoiceNumber: data.invoiceNumber,
-      amount: `Rp ${data.amount.toLocaleString('id-ID')}`,
-      dueDate: dueDateStr,
-      daysRemaining: daysRemaining.toString(),
-      daysOverdue: daysOverdue.toString(),
-      paymentLink: data.paymentLink,
-      bankAccounts: bankAccountsText,
-      companyName: data.companyName,
-      companyPhone: data.companyPhone,
-    };
-
-    // Render template
-    const message = renderTemplate(templateContent, variables);
 
     await WhatsAppService.sendMessage({
       phone: data.phone,
       message,
     });
 
-    const status = isOverdue ? 'overdue' : 'reminder';
-    console.log(`[WA] ✅ Invoice ${status} sent to ${data.phone}`);
+    console.log(`[WA] ✅ Invoice reminder sent to ${data.phone}`);
     return true;
   } catch (error) {
     console.error(`[WA] ❌ Failed to send invoice reminder:`, error);
     throw error; // Re-throw to let cron handle it
   }
+}
+
+export const DEFAULT_OTP_TEMPLATE =
+  'Kode OTP Anda: {{otpCode}}\n\nBerlaku {{expiryMinutes}} menit.\nJangan bagikan kode ini kepada siapapun.\n\n- {{companyName}}';
+
+/**
+ * Send a login OTP. The wording comes from the editable "otp-login" template and the
+ * company name from Pengaturan Perusahaan, so every installation signs with its own name.
+ * Throws when the WhatsApp send fails so callers can roll the OTP back.
+ */
+export async function sendOtpMessage(data: { phone: string; otpCode: string; expiryMinutes: number }) {
+  const [template, company] = await Promise.all([
+    getTemplate('otp-login'),
+    prisma.company.findFirst({ select: { name: true } }),
+  ]);
+  const message = renderTemplate(template || DEFAULT_OTP_TEMPLATE, {
+    otpCode: data.otpCode,
+    expiryMinutes: String(data.expiryMinutes),
+    companyName: company?.name?.trim() || 'Layanan Internet',
+  });
+  await WhatsAppService.sendMessage({ phone: data.phone, message });
 }
 
 /**

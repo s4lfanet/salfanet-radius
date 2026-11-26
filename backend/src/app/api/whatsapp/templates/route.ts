@@ -5,6 +5,16 @@ import { requireAnyPermission, requirePermission } from '@/server/middleware/api
 
 // Default templates (includes both broadcast and notification templates)
 const defaultTemplates = [
+  {
+    name: 'Kode OTP Login (Auto)',
+    type: 'otp-login',
+    message: `Kode OTP Anda: {{otpCode}}
+
+Berlaku {{expiryMinutes}} menit.
+Jangan bagikan kode ini kepada siapapun.
+
+- {{companyName}}`,
+  },
   // === NOTIFICATION TEMPLATES (Auto-sent, with invoice variables) ===
   {
     name: 'Invoice Reminder (Auto)',

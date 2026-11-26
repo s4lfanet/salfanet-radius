@@ -243,9 +243,17 @@ class _CustomersScreenState extends State<CustomersScreen> {
 /// Same message the web portal pre-fills: a payment reminder when invoices
 /// are open, otherwise a plain greeting.
 String collectorWaText(Map<String, dynamic> c, String company) {
-  final who = '${c['name'] ?? c['username'] ?? ''}';
-  final from = company.isEmpty ? '' : ' dari $company';
+  // Customer name only — never the company. An empty name falls back to the username.
+  final name = '${c['name'] ?? ''}'.trim();
+  final who = name.isNotEmpty ? name : '${c['username'] ?? ''}'.trim();
+  final h = DateTime.now().hour;
+  final salam = h < 11 ? 'pagi' : h < 15 ? 'siang' : h < 18 ? 'sore' : 'malam';
+  final hello = 'Halo, selamat $salam Bapak/Ibu $who,';
+  final sign = company.isEmpty ? 'Terima kasih.' : 'Terima kasih.\n$company';
   final count = num.tryParse('${c['unpaid_count']}') ?? 0;
+  // Unpaid customers get the admin's invoice template, rendered by the server.
+  final tpl = '${c['wa_message'] ?? ''}'.trim();
+  if (count > 0 && tpl.isNotEmpty) return tpl;
   if (count > 0) {
     final id = '${c['customerId'] ?? c['username']}';
     final profile = c['profile'] is Map ? (c['profile'] as Map)['name'] : null;
@@ -253,16 +261,16 @@ String collectorWaText(Map<String, dynamic> c, String company) {
     final bills = count > 1 ? ' ($count tagihan)' : '';
     final amount = formatCurrency(num.tryParse('${c['unpaid_amount']}') ?? 0);
     return [
-      'Halo Bapak/Ibu $who,',
+      hello,
       '',
-      'Kami$from ingin mengingatkan tagihan internet Anda (ID pelanggan $id$pkg) sebesar $amount$bills belum dibayar.',
+      'Kami ingin mengingatkan tagihan internet Anda (ID pelanggan $id$pkg) sebesar $amount$bills belum dibayar.',
       '',
       'Pembayaran bisa melalui kolektor kami atau transfer. Jika sudah membayar, mohon abaikan pesan ini.',
       '',
-      'Terima kasih.',
+      sign,
     ].join('\n');
   }
-  return company.isEmpty ? 'Halo Bapak/Ibu $who,\n\n' : 'Halo Bapak/Ibu $who, kami dari $company.\n\n';
+  return '$hello\n\n';
 }
 
 /// wa.me wants the number with country code and no symbols.

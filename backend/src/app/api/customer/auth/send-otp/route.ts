@@ -1,6 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { WhatsAppService } from '@/server/services/notifications/whatsapp.service';
+import { sendOtpMessage } from '@/server/services/notifications/whatsapp-templates.service';
 import { nowWIB } from '@/lib/timezone';
 import { z, parseBody } from '@/lib/parse-body';
 // ⚠️ TZ NOTE: CustomerSession.createdAt uses @default(now()) = MySQL CURRENT_TIMESTAMP.
@@ -88,17 +88,11 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Get company name
-    const company = await prisma.company.findFirst();
-    const companyName = company?.name || 'SALFANET RADIUS';
-
-    // Send OTP via WhatsApp
-    const message = `Kode OTP Anda: ${otpCode}\n\nBerlaku ${settings?.otpExpiry || 5} menit.\nJangan bagikan kode ini kepada siapapun.\n\n- ${companyName}\n\n By SALFANET RADIUS`;
-
     try {
-      await WhatsAppService.sendMessage({
+      await sendOtpMessage({
         phone: cleanPhone,
-        message,
+        otpCode,
+        expiryMinutes: settings?.otpExpiry || 5,
       });
 
       return NextResponse.json({

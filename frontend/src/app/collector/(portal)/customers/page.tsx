@@ -34,6 +34,7 @@ interface Customer {
   area: { name: string } | null;
   router: { name: string } | null;
   unpaid_count: number;
+  wa_message?: string | null;
   unpaid_amount: number;
   pay_status?: 'paid' | 'unpaid' | 'none';
   has_overdue?: boolean;
