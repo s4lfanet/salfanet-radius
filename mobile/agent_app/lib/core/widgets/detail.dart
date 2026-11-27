@@ -40,12 +40,12 @@ class DetailHeader extends StatelessWidget {
                       // was broken mid-number; shrink it to one line instead.
                       // Names with spaces still wrap normally.
                       if (title.contains(' '))
-                        Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, height: 1.25))
+                        Text(title, style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w800, height: 1.25))
                       else
                         FittedBox(
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerLeft,
-                          child: Text(title, maxLines: 1, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, height: 1.25)),
+                          child: Text(title, maxLines: 1, style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.w800, height: 1.25)),
                         ),
                       if (subtitle != null && subtitle!.isNotEmpty) ...[
                         const SizedBox(height: 2),

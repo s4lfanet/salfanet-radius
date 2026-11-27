@@ -206,7 +206,7 @@ class _VouchersScreenState extends State<VouchersScreen> {
             children: [
               Row(
                 children: [
-                  Expanded(child: SelectableText(code, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: 1))),
+                  Expanded(child: SelectableText(code, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, letterSpacing: 1))),
                   StatusPill(label: _voucherLabel(status), tone: _voucherTone(status)),
                 ],
               ),
@@ -349,7 +349,7 @@ class _VouchersScreenState extends State<VouchersScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(str(v, 'code') ?? '-', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: 1.2, fontFeatures: [FontFeature.tabularFigures()])),
+                                Text(str(v, 'code') ?? '-', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, letterSpacing: 1, fontFeatures: [FontFeature.tabularFigures()])),
                                 const SizedBox(height: 2),
                                 Text(str(v, 'profileName') ?? '-', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13.5, color: c.onSurface)),
                                 const SizedBox(height: 6),
@@ -545,7 +545,7 @@ class _GenerateSheetState extends State<_GenerateSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('Buat Voucher', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+            const Text('Buat Voucher', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
             const SizedBox(height: 2),
             Text('Saldo ${formatCurrency(widget.balance)} — dipotong sesuai paket dan jumlah.', style: TextStyle(fontSize: 12.5, color: context.colors.onSurfaceVariant)),
             const SizedBox(height: Gap.lg),
@@ -752,7 +752,7 @@ class GeneratedVouchersScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SelectableText(str(v, 'code') ?? '-', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, letterSpacing: 1)),
+                        SelectableText(str(v, 'code') ?? '-', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, letterSpacing: 1)),
                         if (str(v, 'password') != null && str(v, 'password') != str(v, 'code')) Text('Password: ${str(v, 'password')}', style: TextStyle(fontSize: 13, color: c.onSurfaceVariant)),
                       ],
                     ),

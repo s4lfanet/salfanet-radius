@@ -121,7 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           _companyName ?? 'Portal Agen',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: onBrand, fontSize: 19, fontWeight: FontWeight.w800, height: 1.2),
+                          style: const TextStyle(color: onBrand, fontSize: 17, fontWeight: FontWeight.w800, height: 1.2),
                         ),
                         const SizedBox(height: 2),
                         Text('Aplikasi Agen', style: TextStyle(color: onBrand.withValues(alpha: 0.9), fontSize: 13)),
@@ -143,7 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(_otpStep ? 'Kode OTP' : 'Masuk', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800)),
+                      Text(_otpStep ? 'Kode OTP' : 'Masuk', style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800)),
                       const SizedBox(height: 6),
                       Text(_otpStep ? 'Kode 6 digit dikirim ke WhatsApp $_otpPhone.' : 'Masuk dengan nomor HP yang didaftarkan admin sebagai agen.', style: TextStyle(color: muted, fontSize: 14)),
                       const SizedBox(height: Gap.xl),

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image/image.dart' as img;
 import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 import 'package:pdf/pdf.dart' show PdfPageFormat;
+import 'package:permission_handler/permission_handler.dart';
 import 'package:printing/printing.dart';
 
 import '../../core/api/api_client.dart';
@@ -49,6 +50,7 @@ class _PrintSheetState extends State<_PrintSheet> {
   @override
   void initState() {
     super.initState();
+    _mac = _lastMac;
     _loadTemplates();
   }
 
@@ -69,32 +71,82 @@ class _PrintSheetState extends State<_PrintSheet> {
     }
   }
 
+  /// Minta izin Bluetooth, cek printer terpasang, lalu tampilkan daftar pilihan (atau penjelasan kalau kosong).
   Future<void> _loadDevices() async {
+    if (_loadingDev) return;
     setState(() {
       _loadingDev = true;
       _error = null;
     });
+    String? problem;
+    var needSettings = false;
+    List<BluetoothInfo> list = [];
     try {
-      final on = await PrintBluetoothThermal.bluetoothEnabled;
-      if (!on) {
-        setState(() => _error = 'Bluetooth belum aktif. Nyalakan Bluetooth lalu coba lagi.');
-        return;
-      }
-      final list = await PrintBluetoothThermal.pairedBluetooths;
-      if (!mounted) return;
-      setState(() {
-        _devices = list;
+      final perm = await Permission.bluetoothConnect.request();
+      if (!perm.isGranted && !perm.isLimited) {
+        problem = 'Aplikasi belum diizinkan mengakses Bluetooth. Izinkan "Perangkat di sekitar" agar printer thermal bisa dipilih.';
+        needSettings = perm.isPermanentlyDenied;
+      } else if (!await PrintBluetoothThermal.bluetoothEnabled) {
+        problem = 'Bluetooth HP sedang mati. Nyalakan Bluetooth, lalu tekan Cari printer lagi.';
+      } else {
+        list = await PrintBluetoothThermal.pairedBluetooths;
         if (list.isEmpty) {
-          _error = 'Tidak ada printer yang dipasangkan. Pasangkan printer thermal di pengaturan Bluetooth HP dulu.';
-        } else {
-          _mac = list.any((d) => d.macAdress == _lastMac) ? _lastMac : list.first.macAdress;
+          problem = 'Belum ada printer yang dipasangkan.\n\nNyalakan printer thermal, buka Pengaturan Bluetooth di HP, pasangkan printernya (PIN biasanya 0000 atau 1234), lalu kembali ke sini.';
         }
-      });
-    } catch (e) {
-      if (mounted) setState(() => _error = 'Gagal membaca perangkat Bluetooth. Izinkan akses Bluetooth untuk aplikasi.');
-    } finally {
-      if (mounted) setState(() => _loadingDev = false);
+      }
+    } catch (_) {
+      problem = 'Daftar Bluetooth tidak bisa dibaca. Pastikan izin Bluetooth sudah diberikan.';
+      needSettings = true;
     }
+    if (!mounted) return;
+    setState(() {
+      _loadingDev = false;
+      _devices = list;
+    });
+    if (problem != null) {
+      final open = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          icon: const Icon(Icons.bluetooth_disabled_rounded),
+          title: const Text('Printer belum tersedia'),
+          content: Text(problem!),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Tutup')),
+            if (needSettings) FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Buka pengaturan')),
+          ],
+        ),
+      );
+      if (open == true) await openAppSettings();
+      return;
+    }
+    final picked = await showDialog<String>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Pilih printer'),
+        children: [
+          for (final d in list)
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(ctx, d.macAdress),
+              child: Row(
+                children: [
+                  Icon(d.macAdress == _mac ? Icons.radio_button_checked : Icons.radio_button_off, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(d.name, style: const TextStyle(fontWeight: FontWeight.w700)),
+                        Text(d.macAdress, style: const TextStyle(fontSize: 11.5)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+    if (picked != null && mounted) setState(() => _mac = picked);
   }
 
   List<String> get _codes => [for (final v in widget.vouchers) if (v['code'] != null) v['code'].toString()];
@@ -125,11 +177,11 @@ class _PrintSheetState extends State<_PrintSheet> {
             onLayout: (format) => Printing.convertHtml(format: format, html: html),
           );
         case _Mode.thermalTheme:
-          if (_mac == null) throw ApiException('Pilih printer thermal.');
+          if (_mac == null) throw ApiException('Pilih printer Bluetooth dulu.');
           final bytes = await _themeBytes();
           await _send(bytes);
         case _Mode.thermalText:
-          if (_mac == null) throw ApiException('Pilih printer thermal.');
+          if (_mac == null) throw ApiException('Pilih printer Bluetooth dulu.');
           final bytes = await _textBytes();
           await _send(bytes);
       }
@@ -242,7 +294,7 @@ class _PrintSheetState extends State<_PrintSheet> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Cetak Voucher', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+          const Text('Cetak Voucher', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
           const SizedBox(height: 2),
           Text('${widget.vouchers.length} voucher', style: TextStyle(fontSize: 12.5, color: c.onSurfaceVariant)),
           const SizedBox(height: Gap.lg),
@@ -269,7 +321,7 @@ class _PrintSheetState extends State<_PrintSheet> {
             selected: {_mode},
             onSelectionChanged: (s) {
               setState(() => _mode = s.first);
-              if (s.first != _Mode.a4 && _devices.isEmpty) _loadDevices();
+              if (s.first != _Mode.a4 && _mac == null) _loadDevices();
             },
           ),
           const SizedBox(height: 6),
@@ -290,21 +342,14 @@ class _PrintSheetState extends State<_PrintSheet> {
               onSelectionChanged: (s) => setState(() => _paper = s.first),
             ),
             const SizedBox(height: Gap.md),
-            Row(
-              children: [
-                Expanded(
-                  child: _devices.isEmpty
-                      ? Text(_loadingDev ? 'Mencari printer…' : 'Belum ada printer dipilih', style: TextStyle(color: c.onSurfaceVariant))
-                      : DropdownButtonFormField<String>(
-                          value: _mac,
-                          isExpanded: true,
-                          decoration: const InputDecoration(labelText: 'Printer'),
-                          items: [for (final d in _devices) DropdownMenuItem(value: d.macAdress, child: Text(d.name, overflow: TextOverflow.ellipsis))],
-                          onChanged: (v) => setState(() => _mac = v),
-                        ),
-                ),
-                IconButton(onPressed: _loadingDev ? null : _loadDevices, tooltip: 'Cari printer', icon: const Icon(Icons.bluetooth_searching_rounded)),
-              ],
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48), alignment: Alignment.centerLeft),
+              onPressed: _loadingDev ? null : _loadDevices,
+              icon: _loadingDev ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.bluetooth_searching_rounded, size: 20),
+              label: Text(
+                _mac == null ? 'Pilih printer Bluetooth' : 'Printer: ${_devices.where((d) => d.macAdress == _mac).map((d) => d.name).firstOrNull ?? _mac}',
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
           if (_error != null) ...[

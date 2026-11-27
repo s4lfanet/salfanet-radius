@@ -41,6 +41,11 @@ class AgentApp extends StatelessWidget {
           theme: AppTheme.light,
           darkTheme: AppTheme.dark,
           themeMode: theme.mode,
+          builder: (context, child) {
+            final mq = MediaQuery.of(context);
+            final s = mq.textScaler.scale(14) / 14;
+            return MediaQuery(data: mq.copyWith(textScaler: TextScaler.linear(s.clamp(0.9, 1.0))), child: child!);
+          },
           home: const _AuthGate(),
         ),
       ),
