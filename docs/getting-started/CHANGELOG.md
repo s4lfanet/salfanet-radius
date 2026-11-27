@@ -2,6 +2,8 @@
 
 All notable changes to SALFANET RADIUS will be documented in this file.
 
+> **Arsip:** file ini berhenti di 2.13.1 dan tidak lagi dipelihara. Riwayat terbaru ada di [`CHANGELOG.md`](../../CHANGELOG.md) di root repo.
+
 ---
 
 ## [2.13.1] - 2026-04-05 (Fix Wablas Send Endpoint)
