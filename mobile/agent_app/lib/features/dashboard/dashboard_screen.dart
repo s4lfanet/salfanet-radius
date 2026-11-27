@@ -8,6 +8,7 @@ import '../../core/widgets/state_views.dart';
 import '../../core/widgets/underline_tabs.dart';
 import '../deposit/deposit_screen.dart';
 import '../notifications/notifications_screen.dart';
+import 'promo_carousel.dart';
 
 /// Ringkasan agen: saldo, penjualan dan komisi per periode, stok voucher,
 /// akses cepat, dan deposit terakhir — sama dengan dashboard portal web agen.
@@ -180,6 +181,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               _hero(context, agent, stats),
               const SizedBox(height: Gap.md),
+              const PromoCarousel(),
               Row(children: [
                 Expanded(
                   child: OutlinedButton.icon(
