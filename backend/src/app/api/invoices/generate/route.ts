@@ -5,6 +5,7 @@ import { nanoid } from 'nanoid';
 import { randomBytes } from 'crypto';
 import { badRequest } from '@/lib/api-response';
 import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
+import { pushInvoiceCreated } from '@/server/services/notifications/push-templates.service';
 import {
   companyDate,
   companyMonthRange,
@@ -166,6 +167,8 @@ export async function POST(request: NextRequest) {
             createdAt: new Date(),
           },
         });
+
+        pushInvoiceCreated(user.id, { invoiceNumber, amount, dueDate, profileName: user.profile?.name });
 
         // Optionally send WA notification
         if (sendWa && user.phone) {

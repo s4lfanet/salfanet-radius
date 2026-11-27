@@ -13,6 +13,7 @@ import {
 
 // Template types matching email/WhatsApp system
 export type PushTemplateType = 
+  | 'invoice-created'
   | 'invoice-reminder'
   | 'invoice-overdue'
   | 'payment-success'
@@ -86,6 +87,21 @@ export function generatePushContent(
   const footer = phone ? `\n${company} ☎️ ${phone}` : `\n${company}`;
 
   switch (type) {
+    case 'invoice-created': {
+      const name = data.customerName || 'Pelanggan';
+      const inv = data.invoiceNumber || '';
+      const amt = data.amount ? formatCurrency(data.amount) : '';
+      const due = data.dueDate ? formatDate(data.dueDate) : '';
+      return {
+        title: `🧾 Tagihan Baru - ${inv}`,
+        body: `Halo ${name},\n\nTagihan baru untuk layanan internet Anda sudah terbit.\n\n🧾 No. Invoice: ${inv}${data.profileName ? `\n📦 Paket: ${data.profileName}` : ''}\n💰 Jumlah: ${amt}${due ? `\n📅 Jatuh Tempo: ${due}` : ''}\n\nBayar sebelum jatuh tempo agar layanan tidak terganggu.${footer}`,
+        dataPayload: {
+          ...dataPayload,
+          link: '/(tabs)/invoices',
+        },
+      };
+    }
+
     case 'invoice-reminder': {
       const name = data.customerName || 'Pelanggan';
       const inv = data.invoiceNumber || '';
@@ -364,4 +380,21 @@ export async function sendPushToAll(
     console.error(`[Push Broadcast] Error:`, error.message);
     return { success: 0, failed: 0 };
   }
+}
+
+/**
+ * Tells a customer their new invoice was issued (web push + FCM). Best-effort:
+ * never throws and never delays the billing flow that created the invoice.
+ */
+export function pushInvoiceCreated(
+  userId: string | null | undefined,
+  data: { invoiceNumber: string; amount: number; dueDate?: Date | null; profileName?: string | null },
+): void {
+  if (!userId) return;
+  sendPushToUser(userId, 'invoice-created', {
+    invoiceNumber: data.invoiceNumber,
+    amount: data.amount,
+    dueDate: data.dueDate ?? undefined,
+    profileName: data.profileName ?? undefined,
+  }).catch((e) => console.error('[Push] invoice-created failed:', e instanceof Error ? e.message : e));
 }

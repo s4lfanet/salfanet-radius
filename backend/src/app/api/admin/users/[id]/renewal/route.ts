@@ -4,6 +4,7 @@ import { randomBytes, randomUUID } from 'crypto';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { toUTC, nowWIB, getCurrentTimezone } from '@/lib/timezone';
 import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
+import { pushInvoiceCreated } from '@/server/services/notifications/push-templates.service';
 
 function generatePaymentToken(): string {
   return randomBytes(32).toString('hex');
@@ -131,6 +132,8 @@ export async function POST(
     if (!invoice) {
       throw new Error('Failed to create invoice after retries');
     }
+
+    pushInvoiceCreated(user.id, { invoiceNumber, amount, dueDate: invoice.dueDate });
 
     console.log(`✅ Admin created renewal invoice ${invoiceNumber} for ${user.username} - ${amount}`);
 
