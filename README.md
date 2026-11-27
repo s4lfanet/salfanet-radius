@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.48.0 - Tampilan Tiket Baru untuk Admin, Teknisi, dan Pelanggan
+> **Version:** 5.49.0 - Aplikasi Android Agen, Cetak Voucher dari HP, dan Perbaikan Notifikasi
 
 ---
 
@@ -48,20 +48,27 @@ own domain (no hard-coded host — configurable in-app), and every install needs
 own Firebase project for push notifications.
 
 A second native app for staff lives in `mobile/admin_app/` (customers, invoices, Kasir QRIS,
-network map, in-app guides, quick actions; menus follow each account's role). Both apps can
-update themselves from the APK uploaded in the web panel (Build APK).
+network map, in-app guides, quick actions; menus follow each account's role). Two more native
+apps follow the same pattern: `mobile/collector_app/` (field billing collectors) and
+`mobile/agent_app/` (voucher agents: balance and top-up, generate and print vouchers in the
+admin's template on A4 or a Bluetooth thermal printer, tickets, push notifications). All apps
+can update themselves from the APK uploaded in the web panel (Build APK) or published by the
+GitHub workflow.
 
 - **Build a release APK for your own deployment**: [`docs/BUILD-APK.md`](docs/BUILD-APK.md) —
   your own Firebase project, signing keystore, `flutter build apk --split-per-abi`, or the
   GitHub Actions workflow **Build Native APKs**. It runs when an `apk-v*` tag is pushed or from
   **Run workflow** (a push to `master` alone builds nothing), signs with keys from repository
-  secrets, and publishes to the `apk-latest` release. Flutter is pinned (`flutter-version` in
+  secrets, and publishes to the `apk-latest` release. It builds the admin, customer, collector
+  and agent apps. Flutter is pinned (`flutter-version` in
   `.github/workflows/build-apk.yml`, now 3.47.9): the unpinned `stable` moved to 3.50.0 and
-  all three builds failed until it was pinned, so raise it on purpose
+  all builds failed until it was pinned, so raise it on purpose
 - **Run it in development**: [`mobile/customer_app/README.md`](mobile/customer_app/README.md)
 - **Enable push notifications (FCM)**: [`mobile/customer_app/FIREBASE_SETUP.md`](mobile/customer_app/FIREBASE_SETUP.md)
   — creating the Firebase project, `google-services.json`, the backend's service
-  account key, and how to verify each side actually works. Neither credential is
+  account key, and how to verify each side actually works. Register every app package
+  (`id.my.salfa.customer_app`, `admin_app`, `collector_app`, `agent_app`) in the same project,
+  re-download `google-services.json`, and upload it in Admin → Download APK. Neither credential is
   ever committed to this repo.
 
 ---
@@ -1114,6 +1121,43 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.49.0 — 2026-11-27 - Aplikasi Android Agen, Cetak Voucher dari HP, dan Perbaikan Notifikasi
+
+### Aplikasi agen (baru, `mobile/agent_app`, paket `id.my.salfa.agent_app`)
+- **[NEW]** Aplikasi Android native untuk agen voucher, pendamping portal web `/agent`. Masuk dengan nomor HP dan kode OTP WhatsApp. Memperbarui dirinya dari APK yang terbit di rilis `apk-latest` (target `agent`)
+- **[NEW]** Ringkasan: saldo, penjualan, dan komisi per periode, stok voucher, akses cepat, deposit terakhir, dan banner promo yang sama dengan aplikasi pelanggan
+- **[NEW]** Voucher: tab status (Semua, Menunggu, Terjual, Aktif, Expired), pencarian kode, saring per paket, detail lengkap (password, masa aktif, kecepatan, kuota), salin, bagikan, dan kirim ke WhatsApp pembeli
+- **[NEW]** Buat voucher setara form admin: tipe voucher (username sama atau beda dengan password), tujuh jenis kode, awalan, panjang kode, dan total biaya yang memperingatkan saat saldo kurang. Hasilnya menampilkan batch, paket, harga, masa aktif, kecepatan, kuota, router, saldo dipotong, dan saldo sekarang
+- **[NEW]** Cetak voucher dari HP mengikuti desain voucher yang dibuat admin: A4 lewat printer biasa atau PDF, dan thermal Bluetooth 58 atau 80 mm, baik sebagai gambar bertema admin maupun teks polos. Printer dipilih dari daftar perangkat yang sudah dipasangkan, dengan dialog penjelasan bila Bluetooth mati, izin ditolak, atau belum ada printer
+- **[NEW]** Isi saldo lewat payment gateway atau transfer manual dengan bukti, tiket bantuan lengkap dengan foto dan balasan, sesi aktif, dan notifikasi
+- **[NEW]** Notifikasi push Firebase ke aplikasi agen. Token perangkat disimpan di tabel baru `agent_push_tokens`
+- **[CHANGE]** Tampilan dirapikan: palet petrol dan amber, tab bergaris bawah tanpa geser, kartu voucher bergaris status, ukuran huruf lebih kecil, dan skala huruf sistem dibatasi
+
+### Notifikasi agen dan admin
+- **[FIX]** Balasan tiket dari agen sekarang masuk ke notifikasi admin dan teknisi
+- **[FIX]** Balasan admin pada tiket agen sekarang sampai ke agen lewat notifikasi aplikasi dan push. Sebelumnya salah diarahkan ke WhatsApp pelanggan. Tiket agen yang diselesaikan atau ditutup juga memberi tahu agen
+- **[NEW]** Endpoint agen baru: `GET /api/agent/voucher-templates`, `POST /api/agent/vouchers/print-html`, dan unggah foto tiket. `POST /api/agent/generate-voucher` menerima `voucherType` dan mengembalikan detail voucher, paket, batch, dan router
+
+### Web
+- **[NEW]** Halaman Download APK: status push Firebase kini menampilkan aplikasi agen, dan daftar aplikasi di `google-services.json` memakai nama yang benar (kolektor, agen)
+- **[NEW]** Portal agen web: tab status voucher dan cetak termal 58 mm
+- **[NEW]** Paket: penanda **Sembunyikan dari pelanggan**, dan harga paket tampil termasuk PPN
+- **[NEW]** QRIS Mandiri: waktu tunggu 60 menit. Admin bisa mencocokkan, memproses ulang, atau mengabaikan notifikasi QRIS yang tidak cocok
+- **[NEW]** Pengaturan Perusahaan: URL speedtest server sendiri, yang dibuka dari portal pelanggan
+- **[CHANGE]** Mode terang di portal web dan APK pelanggan lebih soft
+
+### Perbaikan
+- **[FIX]** Pembayaran pertama pelanggan baru tidak lagi memberi masa aktif dua periode, dan tagihan pertama tidak lagi dibuat otomatis saat admin menambah pelanggan
+- **[FIX]** Portal teknisi memakai satu definisi online, offline, dan isolir, dengan data pelanggan lengkap read-only
+- **[FIX]** Endpoint tulis yang hanya butuh izin `.view` ditutup, dan APK admin menyembunyikan aksi ubah untuk akun read-only
+- **[FIX]** WhatsApp kolektor mengisi tagihan dan nama pelanggan otomatis, dan OTP memakai nama perusahaan dari pengaturan
+- **[FIX]** Pembaruan tidak lagi menyimpan backup source, serta membersihkan cache build dan backup lama
+
+### Catatan Pembaruan
+- Ada perubahan skema: tabel `agent_push_tokens`, kolom `speedtestUrl` pada pengaturan perusahaan, dan kolom `hiddenFromPublic` pada paket. Jalankan `npx prisma db push` bila tidak memakai skrip pembaruan
+- Agar push ke aplikasi agen jalan: daftarkan `id.my.salfa.agent_app` di project Firebase, unduh ulang `google-services.json`, lalu unggah di **Admin → Download APK → Notifikasi Push**
+- Versi aplikasi: agen 1.4.2, admin 1.0.49, pelanggan 1.1.20, kolektor 1.4.6. Naikkan versi: root, backend, frontend ke 5.49.0
+
 ### v5.48.0 — 2026-11-13 - Tampilan Tiket Baru untuk Admin, Teknisi, dan Pelanggan
 
 ### Detail tiket (web)
@@ -1248,42 +1292,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 ### Catatan Pembaruan
 - Menambah kolom `onuType` pada tabel ONU dan `webPort` pada tabel OLT, diterapkan otomatis saat pembaruan. Aplikasi admin 1.0.37. Naikkan versi: root, backend, frontend ke 5.45.0
-
-### v5.44.0 — 2026-11-07 - Peta Port Semua Merek OLT dan Alur Baca dari NMS
-
-### Peta port
-- **[NEW]** Tab **Port Map** kini berlaku untuk semua merek. Selain ZTE, tampil port PON dengan jumlah ONU online, termasuk port kosong, dan port uplink dari IF-MIB. Klik port PON untuk melihat ONU-nya: nama, serial atau MAC, status, Rx, dan jarak. Sebelumnya semua merek digambar sebagai sasis ZTE C320 dan OLT merek lain dikirimi perintah `show card`
-- **[CHANGE]** Bila status uplink tidak terbaca, G1 sampai G4 tampil "Tidak terbaca" dengan keterangan. NMS menampilkannya Up mengikuti status OLT; itu sengaja tidak ditiru karena bukan data
-- **[CHANGE]** Judul diagram ZTE mengikuti model OLT, dan kartu uplink C300 (SCXN, SCXM, SCXO, HUVQ) tidak lagi dianggap kartu layanan
-
-### Hioso mengikuti NMS
-- **[CHANGE]** Urutan baca sama dengan NMS: halaman web menjadi daftar ONU utama, SNMP cadangan. Sebelumnya SNMP dasar dan halaman hanya pelengkap
-- **[FIX]** OLT Hioso yang SNMP-nya tidak menjawab tidak lagi tampil offline bila web atau Telnet hidup. Sebelumnya poll memakai tes Telnet bawaan yang tidak cocok dengan Hioso
-- **[NEW]** Telnet membaca suhu modul PON, memori, dan CPU dalam satu sesi bersama daftar ONU. `/system.asp` memberi CPU, memori, model, dan firmware; model dan firmware hanya mengisi kolom yang kosong
-- **[FIX]** Status SNMP 2 kini LOS, bukan offline, sesuai NMS
-- **[NEW]** Jarak dari SNMP diisi dengan rumus NMS, untuk EPON, GPON, dan clone BDCOM. Serial memakai format MAC yang sama dengan halaman web
-- **[NEW]** Uji Koneksi menampilkan baris **Web** untuk Hioso beserta jumlah ONU atau alasan gagal
-
-### ZTE C300
-- **[NEW]** Model yang memuat C300 dibaca dari tabel C300 milik NMS, dengan status 4 sebagai online dan rumus daya C300. Sebelumnya tabel ini tidak dipakai untuk C300. Bila kosong, jalur lama tetap berjalan. C320 tidak berubah
-
-### Merek lain
-- **[NEW]** Tabel NMS untuk V-SOL, Huawei, BDCOM, FiberHome, dan Raisecom ditambahkan sebagai cadangan. Selain V-SOL, tabel ini hanya dibaca bila Telnet dan SSH tidak menemukan ONU, jadi instalasi yang sudah berjalan tidak berubah
-
-### Angka offline
-- **[FIX]** Jumlah ONU offline dan aturan peringatan kini menghitung LOS dan dying gasp. Sebelumnya hanya status `offline`, sehingga ONU LOS tidak terhitung. Angka offline untuk merek apa pun, termasuk ZTE, bisa terlihat naik setelah pembaruan
-
-### Hal yang perlu diketahui
-- **Belum diuji pada OLT sungguhan.** Logikanya diuji dengan data SNMP dan server Telnet tiruan, dan halaman Port Map baru diperiksa tipenya, belum dibuka di browser
-- Baris ONU Hioso bisa berganti setelah pembaruan bila sumbernya berganti dari SNMP ke web. Baris lama yang tidak terbaca lagi dihapus otomatis saat poll, seperti biasa
-- Jarak Hioso dari SNMP mengikuti NMS, sedangkan KusumaVision NMS menyebut nilainya sudah meter. Bandingkan satu ONU dengan halaman web OLT
-- Jarak C300 disimpan sebagai meter sesuai komentar OID di NMS, walau kode NMS mengalikan 0,112. Periksa satu ONU
-- Port web Hioso tetap 80, karena belum ada isiannya
-- Belum diambil dari NMS: tipe ONU (belum ada kolomnya), ganti nama ONU dan reboot (perintah tulis ke OLT), status kipas ZTE, dan SFP per port. Kolom FAN pada diagram ZTE masih mengikuti status OLT, bukan bacaan kipas
-- Aplikasi admin tidak perlu diperbarui. Tombol Info Chassis di sana menerima data port untuk merek selain ZTE
-
-### Catatan Pembaruan
-- Tidak ada perubahan skema. Naikkan versi: root, backend, frontend ke 5.44.0
 
 <!-- AUTO-CHANGELOG:END -->
 

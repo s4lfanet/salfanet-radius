@@ -320,6 +320,7 @@ export const GUIDES: PageGuide[] = [
       'Pilih profil hotspot dan jumlah voucher, atur format kode, lalu Generate.',
       'Saring per batch, lalu cetak dengan template (PDF atau kartu) atau export Excel.',
       'Kirim voucher ke pembeli lewat WhatsApp dari menu aksi.',
+      'Agen bisa membuat dan mencetak voucher sendiri dari aplikasi agen, memakai desain template yang aktif di sini (A4 atau thermal Bluetooth).',
       'Voucher yang sudah dipakai dan kedaluwarsa terlihat dari statusnya.',
     ],
     notes: ['Generate massal sampai 25.000 voucher bisa memakan waktu; jangan tutup halaman sampai selesai.'],
@@ -371,6 +372,7 @@ export const GUIDES: PageGuide[] = [
       'Klik Tambah Agen: isi nama, telepon, dan router tempat voucher agen dipakai.',
       'Isi saldo agen lewat Sesuaikan Saldo, atau setujui deposit yang diajukan agen.',
       'Lihat stok voucher dan riwayat penjualan tiap agen.',
+      'Agen juga bisa memakai aplikasi Android agen: bagikan APK dari Download APK. Agar notifikasi push jalan, daftarkan id.my.salfa.agent_app di Firebase dan unggah ulang google-services.json di Download APK.',
     ],
     related: [
       { label: 'Deposit Agen', href: '/admin/hotspot/agent/deposits' },

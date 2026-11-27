@@ -126,7 +126,7 @@ docs/
 
 ## Aplikasi Mobile — Flutter, Android native
 
-Dua aplikasi: pelanggan (`mobile/customer_app/`) dan admin (`mobile/admin_app/`). Keduanya memakai API backend yang sama dengan panel web dan memperbarui dirinya dari APK yang diunggah di Build APK.
+Empat aplikasi: pelanggan (`mobile/customer_app/`), admin (`mobile/admin_app/`), kolektor (`mobile/collector_app/`), dan agen (`mobile/agent_app/`). Semuanya memakai API backend yang sama dengan panel web dan memperbarui dirinya dari APK yang diunggah di Build APK.
 
 | Dokumen | Deskripsi |
 |---------|-----------|

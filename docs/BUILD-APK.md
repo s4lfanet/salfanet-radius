@@ -8,7 +8,7 @@ sendiri. Ada dua jenis APK dengan cara build yang berbeda:
 |---|---|---|
 | WebView portal (admin, customer, technician, agent) | Server VPS, dari **Admin → Download APK** | Java 17 + Android SDK di VPS (bagian A) |
 | QRIS Listener (HP kasir) | Server VPS, dari **Admin → Payment Gateway → tab QRIS Mandiri** | Sama dengan di atas (bagian A) |
-| Native Flutter (`mobile/admin_app`, `mobile/customer_app`) | PC/laptop atau GitHub Actions, **bukan VPS** | Flutter, keystore (bagian B). Firebase opsional — diatur di server, bukan di APK |
+| Native Flutter (`mobile/admin_app`, `customer_app`, `collector_app`, `agent_app`) | PC/laptop atau GitHub Actions, **bukan VPS** | Flutter, keystore (bagian B). Firebase opsional — diatur di server, bukan di APK |
 
 ---
 
@@ -43,10 +43,10 @@ Build berjalan 2–5 menit dan memakai RAM cukup besar. Di VPS dengan RAM kecil
 
 ---
 
-## B. APK native (admin_app / customer_app)
+## B. APK native (admin_app, customer_app, collector_app, agent_app)
 
-Kedua aplikasi native ada di `mobile/admin_app` dan `mobile/customer_app`
-(Flutter). File `key.properties` dan keystore **tidak disertakan di repo** —
+Keempat aplikasi native ada di `mobile/admin_app`, `mobile/customer_app`,
+`mobile/collector_app`, dan `mobile/agent_app` (Flutter). File `key.properties` dan keystore **tidak disertakan di repo** —
 setiap deployment membawa miliknya sendiri. `google-services.json` juga tidak
 perlu ada saat build: konfigurasi Firebase diambil aplikasi dari server saat
 berjalan (langkah 1), jadi **satu APK bisa dipakai semua instalasi**.
@@ -128,7 +128,7 @@ sama dengan hasil GitHub Actions.
 
 ## 4. Build via GitHub Actions (opsional)
 
-Workflow `Build Native APKs` membangun aplikasi admin, pelanggan, dan kolektor, lalu
+Workflow `Build Native APKs` membangun aplikasi admin, pelanggan, kolektor, dan agen, lalu
 menerbitkan APK dan manifest versinya ke rilis `apk-latest`. Workflow ini berjalan bila:
 
 - tag `apk-v*` di-push, misalnya `git tag -a apk-v5.47.0 -m "..."` lalu `git push origin apk-v5.47.0`, atau

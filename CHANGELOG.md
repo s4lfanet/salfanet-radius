@@ -6,6 +6,45 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.49.0] - 2026-11-27 - Aplikasi Android Agen, Cetak Voucher dari HP, dan Perbaikan Notifikasi
+
+### Aplikasi agen (baru, `mobile/agent_app`, paket `id.my.salfa.agent_app`)
+- **[NEW]** Aplikasi Android native untuk agen voucher, pendamping portal web `/agent`. Masuk dengan nomor HP dan kode OTP WhatsApp. Memperbarui dirinya dari APK yang terbit di rilis `apk-latest` (target `agent`)
+- **[NEW]** Ringkasan: saldo, penjualan, dan komisi per periode, stok voucher, akses cepat, deposit terakhir, dan banner promo yang sama dengan aplikasi pelanggan
+- **[NEW]** Voucher: tab status (Semua, Menunggu, Terjual, Aktif, Expired), pencarian kode, saring per paket, detail lengkap (password, masa aktif, kecepatan, kuota), salin, bagikan, dan kirim ke WhatsApp pembeli
+- **[NEW]** Buat voucher setara form admin: tipe voucher (username sama atau beda dengan password), tujuh jenis kode, awalan, panjang kode, dan total biaya yang memperingatkan saat saldo kurang. Hasilnya menampilkan batch, paket, harga, masa aktif, kecepatan, kuota, router, saldo dipotong, dan saldo sekarang
+- **[NEW]** Cetak voucher dari HP mengikuti desain voucher yang dibuat admin: A4 lewat printer biasa atau PDF, dan thermal Bluetooth 58 atau 80 mm, baik sebagai gambar bertema admin maupun teks polos. Printer dipilih dari daftar perangkat yang sudah dipasangkan, dengan dialog penjelasan bila Bluetooth mati, izin ditolak, atau belum ada printer
+- **[NEW]** Isi saldo lewat payment gateway atau transfer manual dengan bukti, tiket bantuan lengkap dengan foto dan balasan, sesi aktif, dan notifikasi
+- **[NEW]** Notifikasi push Firebase ke aplikasi agen. Token perangkat disimpan di tabel baru `agent_push_tokens`
+- **[CHANGE]** Tampilan dirapikan: palet petrol dan amber, tab bergaris bawah tanpa geser, kartu voucher bergaris status, ukuran huruf lebih kecil, dan skala huruf sistem dibatasi
+
+### Notifikasi agen dan admin
+- **[FIX]** Balasan tiket dari agen sekarang masuk ke notifikasi admin dan teknisi
+- **[FIX]** Balasan admin pada tiket agen sekarang sampai ke agen lewat notifikasi aplikasi dan push. Sebelumnya salah diarahkan ke WhatsApp pelanggan. Tiket agen yang diselesaikan atau ditutup juga memberi tahu agen
+- **[NEW]** Endpoint agen baru: `GET /api/agent/voucher-templates`, `POST /api/agent/vouchers/print-html`, dan unggah foto tiket. `POST /api/agent/generate-voucher` menerima `voucherType` dan mengembalikan detail voucher, paket, batch, dan router
+
+### Web
+- **[NEW]** Halaman Download APK: status push Firebase kini menampilkan aplikasi agen, dan daftar aplikasi di `google-services.json` memakai nama yang benar (kolektor, agen)
+- **[NEW]** Portal agen web: tab status voucher dan cetak termal 58 mm
+- **[NEW]** Paket: penanda **Sembunyikan dari pelanggan**, dan harga paket tampil termasuk PPN
+- **[NEW]** QRIS Mandiri: waktu tunggu 60 menit. Admin bisa mencocokkan, memproses ulang, atau mengabaikan notifikasi QRIS yang tidak cocok
+- **[NEW]** Pengaturan Perusahaan: URL speedtest server sendiri, yang dibuka dari portal pelanggan
+- **[CHANGE]** Mode terang di portal web dan APK pelanggan lebih soft
+
+### Perbaikan
+- **[FIX]** Pembayaran pertama pelanggan baru tidak lagi memberi masa aktif dua periode, dan tagihan pertama tidak lagi dibuat otomatis saat admin menambah pelanggan
+- **[FIX]** Portal teknisi memakai satu definisi online, offline, dan isolir, dengan data pelanggan lengkap read-only
+- **[FIX]** Endpoint tulis yang hanya butuh izin `.view` ditutup, dan APK admin menyembunyikan aksi ubah untuk akun read-only
+- **[FIX]** WhatsApp kolektor mengisi tagihan dan nama pelanggan otomatis, dan OTP memakai nama perusahaan dari pengaturan
+- **[FIX]** Pembaruan tidak lagi menyimpan backup source, serta membersihkan cache build dan backup lama
+
+### Catatan Pembaruan
+- Ada perubahan skema: tabel `agent_push_tokens`, kolom `speedtestUrl` pada pengaturan perusahaan, dan kolom `hiddenFromPublic` pada paket. Jalankan `npx prisma db push` bila tidak memakai skrip pembaruan
+- Agar push ke aplikasi agen jalan: daftarkan `id.my.salfa.agent_app` di project Firebase, unduh ulang `google-services.json`, lalu unggah di **Admin → Download APK → Notifikasi Push**
+- Versi aplikasi: agen 1.4.2, admin 1.0.49, pelanggan 1.1.20, kolektor 1.4.6. Naikkan versi: root, backend, frontend ke 5.49.0
+
+---
+
 ## [5.48.0] - 2026-11-13 - Tampilan Tiket Baru untuk Admin, Teknisi, dan Pelanggan
 
 ### Detail tiket (web)
