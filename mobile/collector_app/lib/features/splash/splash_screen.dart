@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/branding/company_brand.dart';
 import '../../core/theme/app_theme.dart';
 
 /// Branded first screen after the OS splash. Auth restores in the
@@ -25,6 +26,12 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
   late final _subIn = CurvedAnimation(parent: _controller, curve: const Interval(0.45, 0.88, curve: Curves.easeOut));
   late final _bar = CurvedAnimation(parent: _controller, curve: const Interval(0.15, 1.0, curve: Curves.easeInOut));
   late final _footIn = CurvedAnimation(parent: _controller, curve: const Interval(0.7, 1.0));
+
+  @override
+  void initState() {
+    super.initState();
+    CompanyBrand.instance.load();
+  }
 
   @override
   void dispose() {
@@ -62,26 +69,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
           scale: _logoScale,
           child: FadeTransition(
             opacity: _logoFade,
-            child: Container(
-              width: 76,
-              height: 76,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppTheme.brand, AppTheme.brandDeep],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(AppTheme.radiusBrand),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.brand.withValues(alpha: 0.35),
-                    blurRadius: 28,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: const Icon(Icons.payments_rounded, color: Colors.white, size: 36),
-            ),
+            child: const CompanyMark(icon: Icons.payments_rounded, size: 76),
           ),
         ),
       ],

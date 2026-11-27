@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/api/api_client.dart';
+import '../../core/branding/company_brand.dart';
 import '../../core/formatters.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/entity_tile.dart';
@@ -150,6 +151,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leadingWidth: 56,
+        leading: const Padding(padding: EdgeInsets.only(left: Gap.page), child: Center(child: CompanyMark(icon: Icons.storefront_rounded, size: 32))),
         title: const Text('Ringkasan'),
         actions: [
           IconButton(
