@@ -141,20 +141,6 @@ export async function PATCH(request: NextRequest) {
           },
         });
 
-        // Note: create outside transaction to avoid push blocking the tx
-        // The notification + push will be sent after the transaction commits
-
-        await tx.notification.create({
-          data: {
-            id: Math.random().toString(36).substring(2, 15),
-            type: 'agent_deposit_approved',
-            title: 'Deposit Agent Disetujui',
-            message: `Permintaan deposit ${deposit.agent.name} Rp ${deposit.amount.toLocaleString('id-ID')} (${targetBankLabel}) telah disetujui`,
-            link: '/admin/hotspot/agent/deposits',
-            createdAt: nowWIB(),
-          },
-        });
-
         return { alreadyProcessed: false as const, updatedAgent };
       });
 
@@ -170,6 +156,18 @@ export async function PATCH(request: NextRequest) {
         type: 'deposit_success',
         title: 'Deposit Disetujui',
         message: `Top up manual Rp ${deposit.amount.toLocaleString('id-ID')} disetujui. Saldo baru: Rp ${result.updatedAgent!.balance.toLocaleString('id-ID')}`,
+      });
+
+      // Admin bell + FCM to the admin app, sent after the transaction commits so the push never blocks it
+      await createAdminNotification({
+        data: {
+          id: Math.random().toString(36).substring(2, 15),
+          type: 'agent_deposit_approved',
+          title: 'Deposit Agent Disetujui',
+          message: `Permintaan deposit ${deposit.agent.name} Rp ${deposit.amount.toLocaleString('id-ID')} (${targetBankLabel}) telah disetujui`,
+          link: '/admin/hotspot/agent/deposits',
+          createdAt: nowWIB(),
+        },
       });
 
       return NextResponse.json({

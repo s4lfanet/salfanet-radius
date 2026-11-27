@@ -6,7 +6,7 @@ import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.servic
 import { managePppSecret, kickPppoeSession, shouldManagePppSecretForSuspend } from '@/server/services/mikrotik/ppp-secret.service';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { sendPaymentSuccess } from '@/server/services/notifications/whatsapp-templates.service';
-import { sendPushToUser } from '@/server/services/notifications/push-templates.service';
+import { sendPushToUser, pushInvoiceCreated } from '@/server/services/notifications/push-templates.service';
 import { EmailService } from '@/server/services/notifications/email.service';
 import { randomBytes } from 'crypto';
 import { nanoid } from 'nanoid';
@@ -244,6 +244,8 @@ export async function POST(request: NextRequest) {
         },
       },
     });
+
+    pushInvoiceCreated(userId, { invoiceNumber, amount, dueDate: calculatedDueDate });
 
     return created({ invoice });
   } catch (error) {

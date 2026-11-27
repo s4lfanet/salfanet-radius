@@ -5,7 +5,7 @@ import { generateInvoiceNumber } from '@/server/services/billing/invoice.service
 import { nanoid } from 'nanoid';
 import { randomBytes } from 'crypto';
 import { shouldManagePppSecretForSuspend } from '@/server/services/mikrotik/ppp-secret.service';
-import { sendPushToUser } from '@/server/services/notifications/push-templates.service';
+import { sendPushToUser, pushInvoiceCreated } from '@/server/services/notifications/push-templates.service';
 import {
   companyDate,
   companyMonthRange,
@@ -203,6 +203,7 @@ export async function runInvoiceGenerate(): Promise<{ generated: number; skipped
 
       if (created) {
         generated++;
+        pushInvoiceCreated(user.id, { invoiceNumber, amount, dueDate, profileName: user.profile?.name });
       } else {
         skipped++;
       }
