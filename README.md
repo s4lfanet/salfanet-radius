@@ -5,6 +5,11 @@ Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with Free
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
 > **Version:** 5.49.0 - Aplikasi Android Agen, Cetak Voucher dari HP, dan Perbaikan Notifikasi
 
+
+[![Telegram](https://img.shields.io/badge/Telegram-Grup%20Salfanet-26A5E4?logo=telegram&logoColor=white)](https://t.me/+WLSqwbXk59UxM2I1)
+
+💬 **Komunitas:** diskusi, update rilis, lapor bug & request fitur di [grup Telegram Salfanet](https://t.me/+WLSqwbXk59UxM2I1) (Salfanet Radius & Salfanet NMS).
+
 ---
 
 ## 🎯 Features

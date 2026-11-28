@@ -1269,6 +1269,15 @@ function AppVersionBadge({ systemAccess }: { systemAccess: boolean }) {
       <Heart className="w-3 h-3" aria-hidden />
       Dukung Salfanet
     </a>
+    <a
+      href="https://t.me/+WLSqwbXk59UxM2I1"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="mt-1 flex items-center gap-1.5 w-full px-2.5 py-1.5 rounded-lg text-[10px] text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-sidebar-ring"
+    >
+      <Send className="w-3 h-3" aria-hidden />
+      Grup Telegram Salfanet
+    </a>
     </>
   );
 }
